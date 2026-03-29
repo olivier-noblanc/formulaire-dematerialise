@@ -1,0 +1,53 @@
+# Dépendances PHP
+/vendor/
+/composer.lock
+
+# Fichiers de configuration sensibles
+/config.php
+/.env
+/.env.local
+
+# Fichiers temporaires et cache
+/tmp/
+/cache/
+*.tmp
+*.log
+
+# Système de fichiers
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+~*
+*.bak
+*.old
+
+# Fichiers de backup
+*.backup
+*.save
+
+# Répertoires de logs
+/logs/
+*.log
+
+# Fichiers de session
+/sessions/
+*.session
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*.old
+
+# Fichiers de développement
+.history/
+*.history/
+
+# Fichiers temporaires de PHP
+*.php~
