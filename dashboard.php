@@ -4,25 +4,21 @@ require_once __DIR__ . '/helpers.php';
 $pdo    = get_pdo();
 $filtre = $_GET['statut'] ?? 'tous';
 $form_f = $_GET['form']   ?? '';
-$user   = get_current_user();
 
 $where = ['1=1'];
-if ($filtre === 'en_cours') $where[] = 's.closed_at IS NULL';
-if ($filtre === 'complet')  $where[] = 's.closed_at IS NOT NULL';
-if ($form_f)                $where[] = "f.slug = " . $pdo->quote($form_f);
+$params = [];
+if ($filtre === 'en_cours') { $where[] = 's.status = ?'; $params[] = 'en_cours'; }
+if ($filtre === 'complet')  { $where[] = 's.status != ?'; $params[] = 'en_cours'; }
+if ($form_f) { $where[] = "f.slug = ?"; $params[] = $form_f; }
 $where = implode(' AND ', $where);
 
-$rows = $pdo->query("
-    SELECT s.*, f.label as form_label, f.slug as form_slug
-    FROM submissions s
-    JOIN forms f ON f.id = s.form_id
-    WHERE $where
-    ORDER BY s.submitted_at DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $pdo->prepare("SELECT s.*, f.label as form_label, f.slug as form_slug FROM submissions s JOIN forms f ON f.id = s.form_id WHERE $where ORDER BY s.submitted_at DESC");
+$stmt->execute($params);
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $forms   = $pdo->query("SELECT * FROM forms WHERE actif=1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
 $total   = $pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn();
-$complet = $pdo->query("SELECT COUNT(*) FROM submissions WHERE closed_at IS NOT NULL")->fetchColumn();
+$complet = $pdo->query("SELECT COUNT(*) FROM submissions WHERE status != 'en_cours'")->fetchColumn();
 
 // Statuts des tokens par soumission
 function get_tokens_status(int $sub_id): array {
@@ -75,7 +71,7 @@ function get_tokens_status(int $sub_id): array {
   </style>
 </head>
 <body>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <a href="admin_forms.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">⚙ Gestion formulaires</a></div>
+<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
 <div class="container">
   <h1>Supervision — Workflows en cours</h1>
 
@@ -120,6 +116,7 @@ function get_tokens_status(int $sub_id): array {
         $d      = json_decode($row['data'], true);
         $tokens = get_tokens_status((int)$row['id']);
         $nom    = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
+        $status = $row['status'] ?? 'en_cours';
       ?>
       <tr>
         <td><span style="font-size:.8rem;background:#e8eaf6;color:#003189;padding:.2rem .5rem;border-radius:3px;"><?= h($row['form_label']) ?></span></td>
@@ -140,12 +137,15 @@ function get_tokens_status(int $sub_id): array {
           </div>
         </td>
         <td style="white-space:nowrap;"><?= h(substr($row['submitted_at'],0,10)) ?></td>
-        <td><?= $row['closed_at']
-          ? (strpos($row['closed_at'], 'REFUSED:') === 0
-             ? '<span style="color:#c0392b;font-weight:bold;">❌ Refusé</span>'
-             : '<span style="color:#1a6b3c;font-weight:bold;">✓ Clôturé</span>')
-          : '<span style="color:#b45309;">En cours</span>' ?>
-        </td>
+        <td><?php
+          if ($status === 'refuse') {
+              echo '<span style="color:#c0392b;font-weight:bold;">❌ Refusé</span>';
+          } elseif ($status === 'valide') {
+              echo '<span style="color:#1a6b3c;font-weight:bold;">✓ Validé</span>';
+          } else {
+              echo '<span style="color:#b45309;">En cours</span>';
+          }
+        ?></td>
         <td><button class="detail-btn" onclick="toggle(<?= $i ?>)">détail</button></td>
       </tr>
       <tr class="detail-row" id="det-<?= $i ?>">

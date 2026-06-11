@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+session_start();
 // Tentative d'inclusion de vendor/autoload.php, mais ignorée si non présente
 require_once __DIR__ . '/PHPMailer/Exception.php';
 require_once __DIR__ . '/PHPMailer/PHPMailer.php';
@@ -37,6 +38,23 @@ function is_admin_user(): bool {
 function is_super_admin(): bool {
     $auth_user = get_auth_user();
     return $auth_user === ADMIN_EMAIL;
+}
+
+// ── CSRF ─────────────────────────────────────────────────────
+function generate_csrf_token(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string {
+    return '<input type="hidden" name="csrf_token" value="' . h(generate_csrf_token()) . '">';
+}
+
+function verify_csrf(): bool {
+    $token = $_POST['csrf_token'] ?? '';
+    return !empty($token) && hash_equals($_SESSION['csrf_token'] ?? '', $token);
 }
 
 // ── PDO ──────────────────────────────────────────────────────
@@ -100,6 +118,7 @@ function db_migrate(PDO $pdo): void {
             submitted_by TEXT NOT NULL,
             submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             closed_at DATETIME,
+            status TEXT DEFAULT 'en_cours',
             FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
         )
     ");
@@ -114,6 +133,7 @@ function db_migrate(PDO $pdo): void {
             sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             done_at DATETIME,
             relance_at DATETIME,
+            expires_at DATETIME,
             FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
             FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
         )
@@ -137,6 +157,15 @@ function db_migrate(PDO $pdo): void {
         )
     ");
     
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_by TEXT
+        )
+    ");
+    
     // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
     $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
     if ($count_stmt->fetchColumn() == 0) {
@@ -144,17 +173,64 @@ function db_migrate(PDO $pdo): void {
             ->execute([ADMIN_EMAIL, date('Y-m-d H:i:s')]);
     }
     
+    // Insertion des paramètres par défaut si la table settings est vide
+    $settings_count = $pdo->query("SELECT COUNT(*) FROM settings")->fetchColumn();
+    if ($settings_count == 0) {
+        $defaults = [
+            ['smtp_host', 'smtp.social.gouv.fr'],
+            ['smtp_port', '25'],
+            ['smtp_auth', '0'],
+            ['smtp_secure', ''],
+            ['smtp_user', ''],
+            ['smtp_pass', ''],
+            ['smtp_from', 'workflow@dreets.gouv.fr'],
+            ['smtp_from_name', 'Workflow DREETS'],
+            ['delai_relance_h', '48'],
+            ['token_expire_days', '30'],
+        ];
+        $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
+        foreach ($defaults as $row) {
+            $stmt->execute($row);
+        }
+    }
+    
     // Ajout de colonnes futures avec gestion d'erreur si déjà présentes
     try {
-        $pdo->exec("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS closed_at DATETIME");
+        $pdo->exec("ALTER TABLE submissions ADD COLUMN closed_at DATETIME");
     } catch (PDOException $e) {
         // Ignorer si la colonne existe déjà
     }
     
     try {
-        $pdo->exec("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS relance_at DATETIME");
+        $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_at DATETIME");
     } catch (PDOException $e) {
         // Ignorer si la colonne existe déjà
+    }
+    
+    // Ajout de la colonne status à submissions si elle n'existe pas
+    try {
+        $pdo->exec("ALTER TABLE submissions ADD COLUMN status TEXT DEFAULT 'en_cours'");
+    } catch (PDOException $e) {
+        // Ignorer si la colonne existe déjà
+    }
+    
+    // Ajout de la colonne expires_at à tokens si elle n'existe pas
+    try {
+        $pdo->exec("ALTER TABLE tokens ADD COLUMN expires_at DATETIME");
+    } catch (PDOException $e) {
+        // Ignorer si la colonne existe déjà
+    }
+    
+    // Migration des données existantes : peupler la colonne status à partir de closed_at
+    try {
+        // Les soumissions avec closed_at commençant par REFUSED: sont refusees
+        $pdo->exec("UPDATE submissions SET status = 'refuse' WHERE closed_at LIKE 'REFUSED:%' AND (status IS NULL OR status = 'en_cours')");
+        // Les soumissions avec closed_at non null (et pas REFUSED) sont validees
+        $pdo->exec("UPDATE submissions SET status = 'valide' WHERE closed_at IS NOT NULL AND closed_at NOT LIKE 'REFUSED:%' AND (status IS NULL OR status = 'en_cours')");
+        // Nettoyer closed_at : enlever le prefixe REFUSED: et mettre la vraie date
+        $pdo->exec("UPDATE submissions SET closed_at = SUBSTR(closed_at, 9) WHERE closed_at LIKE 'REFUSED:%'");
+    } catch (PDOException $e) {
+        // Ignorer si la migration a déjà été faite
     }
 }
 
@@ -166,16 +242,38 @@ function h(string $val): string {
     return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
 }
 
+// ── SETTINGS ─────────────────────────────────────────────────
+function get_setting(string $key, string $default = ''): string {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT value FROM settings WHERE key = ?");
+    $stmt->execute([$key]);
+    $val = $stmt->fetchColumn();
+    return $val !== false ? (string)$val : $default;
+}
+
+function set_setting(string $key, string $value, string $updated_by = ''): void {
+    $pdo = get_pdo();
+    $pdo->prepare("INSERT OR REPLACE INTO settings (key, value, updated_at, updated_by) VALUES (?, ?, datetime('now'), ?)")
+        ->execute([$key, $value, $updated_by]);
+}
+
 // ── MAIL ─────────────────────────────────────────────────────
 function send_mail(string $to, string $subject, string $body): bool {
     $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();
-        $mail->Host     = SMTP_HOST;
-        $mail->Port     = SMTP_PORT;
-        $mail->SMTPAuth = false;
+        $mail->Host     = get_setting('smtp_host', SMTP_HOST);
+        $mail->Port     = (int)get_setting('smtp_port', (string)SMTP_PORT);
+        $mail->SMTPAuth = get_setting('smtp_auth', '0') === '1';
+        if ($mail->SMTPAuth) {
+            $mail->Username = get_setting('smtp_user', '');
+            $mail->Password = get_setting('smtp_pass', '');
+        }
+        $secure = get_setting('smtp_secure', '');
+        if ($secure === 'tls') $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        elseif ($secure === 'ssl') $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->CharSet  = 'UTF-8';
-        $mail->setFrom(SMTP_FROM, SMTP_FROM_NAME);
+        $mail->setFrom(get_setting('smtp_from', SMTP_FROM), get_setting('smtp_from_name', SMTP_FROM_NAME));
         $mail->addAddress($to);
         $mail->isHTML(true);
         $mail->Subject  = $subject;
@@ -210,7 +308,7 @@ function build_mail_html(array $submission, string $step_label, string $token): 
   <a href="' . $validate_url . '" style="background:#003189;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;display:inline-block;">
     ✓ Marquer comme effectué
   </a>
-  <p style="font-size:12px;color:#999;margin-top:24px;">Lien à usage unique — ' . SMTP_FROM . '</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">Lien à usage unique — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
 </body></html>';
 }
 
@@ -284,14 +382,19 @@ function advance_workflow(int $submission_id): void {
         if (!$all_started) {
             // Cette étape n'a pas encore de tokens → on la démarre (parallèle dans le groupe)
             $now = date('Y-m-d H:i:s');
+            $expire_days = (int)get_setting('token_expire_days', '30');
+            $expires_at = date('Y-m-d H:i:s', strtotime("+{$expire_days} days"));
             foreach ($groupe as $step) {
                 $emails = explode('|', $step['emails']);
                 foreach ($emails as $email) {
                     $token = generate_token();
-                    $pdo->prepare("INSERT INTO tokens (submission_id, step_id, email, token, sent_at) VALUES (?,?,?,?,?)")
-                        ->execute([$submission_id, $step['id'], $email, $token, $now]);
+                    $pdo->prepare("INSERT INTO tokens (submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?)")
+                        ->execute([$submission_id, $step['id'], $email, $token, $now, $expires_at]);
                     $subject = '[Action requise] ' . ($submission['form_label'] ?? '') . ' — ' . $step['label'];
-                    send_mail($email, $subject, build_mail_html($submission, $step['label'], $token));
+                    $mail_sent = send_mail($email, $subject, build_mail_html($submission, $step['label'], $token));
+                    if (!$mail_sent) {
+                        error_log("Workflow: mail failed for token $token to $email");
+                    }
                 }
             }
             return; // On attend que cette étape soit terminée avant de passer à la suivante
@@ -305,7 +408,7 @@ function advance_workflow(int $submission_id): void {
     }
 
     // Toutes les étapes sont terminées → on close
-    $pdo->prepare("UPDATE submissions SET closed_at = ? WHERE id = ?")
+    $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'valide' WHERE id = ?")
         ->execute([date('Y-m-d H:i:s'), $submission_id]);
 }
 
@@ -318,7 +421,7 @@ function validate_token(string $token, string $action = 'valider', string $comme
 
     $row = $pdo->prepare("
         SELECT t.*, st.label as step_label, s.form_id,
-               f.label as form_label, s.data, s.closed_at
+               f.label as form_label, s.data, s.closed_at, s.status
         FROM tokens t
         JOIN steps st ON st.id = t.step_id
         JOIN submissions s ON s.id = t.submission_id
@@ -331,6 +434,11 @@ function validate_token(string $token, string $action = 'valider', string $comme
     if (!$t)             return ['status' => 'invalid'];
     if ($t['done_at'])   return ['status' => 'already_done', 'data' => $t];
     if ($t['closed_at']) return ['status' => 'closed',       'data' => $t];
+
+    // Vérifier si le token a expiré
+    if (!empty($t['expires_at']) && strtotime($t['expires_at']) < time()) {
+        return ['status' => 'expired', 'data' => $t];
+    }
 
     // Récupérer les données actuelles
     $data = json_decode($t['data'], true);
@@ -356,13 +464,27 @@ function validate_token(string $token, string $action = 'valider', string $comme
     $updated_data = json_encode($data);
     
     if ($action === 'refuser') {
-        // Pour le refus : mettre à jour done_at et fermer la soumission avec un statut spécial
+        // Pour le refus : mettre à jour done_at et fermer la soumission avec status refuse
         $pdo->prepare("UPDATE tokens SET done_at = ? WHERE token = ?")
             ->execute([date('Y-m-d H:i:s'), $token]);
             
-        // Fermer la soumission avec un statut spécial pour indiquer qu'elle est refusée
-        $pdo->prepare("UPDATE submissions SET closed_at = ? WHERE id = ?")
-            ->execute(['REFUSED:' . date('Y-m-d H:i:s'), $t['submission_id']]);
+        // Fermer la soumission avec le statut refuse
+        $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'refuse' WHERE id = ?")
+            ->execute([date('Y-m-d H:i:s'), $t['submission_id']]);
+
+        // Notifier l'agent du refus
+        $agent_email = $t['submitted_by'] ?? '';
+        if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
+            $refuse_subject = 'Demande refusée — ' . ($t['form_label'] ?? 'Workflow DREETS');
+            $refuse_body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
+  <h2 style="color:#c0392b;">Demande refusée</h2>
+  <p>Votre demande <strong>' . h($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . h($t['step_label']) . '</strong>.</p>
+  ' . (!empty($comment) ? '<p><strong>Motif :</strong> ' . h($comment) . '</p>' : '') . '
+  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+</body></html>';
+            send_mail($agent_email, $refuse_subject, $refuse_body);
+        }
     } else {
         // Pour la validation : comportement normal
         $pdo->prepare("UPDATE tokens SET done_at = ? WHERE token = ?")

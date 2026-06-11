@@ -20,6 +20,10 @@ $edit_step_id = (int)($_GET['edit_step'] ?? 0);
 // Traitement des actions POST
 $action = $_POST['action'] ?? '';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf()) {
+    die('Token CSRF invalide. Veuillez réessayer.');
+}
+
 if ($action === 'add_form') {
     $slug = trim($_POST['slug'] ?? '');
     $label = trim($_POST['label'] ?? '');
@@ -279,7 +283,7 @@ if ($form_id > 0) {
 <div class="bandeau">
     <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
     <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-    <a href="admin_access.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">⚙ Gestion accès</a>
+    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
 </div>
 <div class="container">
     <h1>Gestion des formulaires</h1>
@@ -310,6 +314,7 @@ if ($form_id > 0) {
         <div class="card">
             <h2>Ajouter un nouveau formulaire</h2>
             <form method="POST">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="add_form">
                 <div class="field">
                     <label>Slug (identifiant technique)</label>
@@ -336,6 +341,7 @@ if ($form_id > 0) {
             
             <?php if ($form): ?>
                 <form method="POST">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="update_form">
                     <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
                     <div class="field">
@@ -360,6 +366,7 @@ if ($form_id > 0) {
                 
                 <div class="form-actions" style="margin-top: 1rem;">
                     <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce formulaire ?');">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="action" value="delete_form">
                         <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
                         <button type="submit" class="btn btn-danger">Supprimer le formulaire</button>
@@ -378,6 +385,7 @@ if ($form_id > 0) {
             <div class="card">
                 <h3>Ajouter une étape</h3>
                 <form method="POST">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="add_step">
                     <input type="hidden" name="form_id" value="<?= $form_id ?>">
                     <div class="field">
@@ -414,6 +422,7 @@ if ($form_id > 0) {
                                 <td class="actions">
                                     <a href="?form_id=<?= $form_id ?>&edit_step=<?= $step['id'] ?>" class="btn action-btn btn-secondary">Modifier</a>
                                     <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette étape ?');">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="delete_step">
                                         <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                         <button type="submit" class="btn delete-btn">Supprimer</button>
@@ -427,6 +436,7 @@ if ($form_id > 0) {
                                     <div class="edit-form">
                                         <h4>Modifier l'étape</h4>
                                         <form method="POST">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="action" value="update_step">
                                             <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
@@ -495,6 +505,7 @@ if ($form_id > 0) {
                     <div class="card">
                         <h4>Ajouter un destinataire</h4>
                         <form method="POST">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="action" value="add_recipient">
                             <input type="hidden" name="step_id" value="<?= $selected_step['id'] ?>">
                             <div class="field">
@@ -520,6 +531,7 @@ if ($form_id > 0) {
                                         <td><?= h($recipient['email']) ?></td>
                                         <td class="actions">
                                             <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce destinataire ?');">
+                                                <?= csrf_field() ?>
                                                 <input type="hidden" name="action" value="delete_recipient">
                                                 <input type="hidden" name="recipient_id" value="<?= $recipient['id'] ?>">
                                                 <button type="submit" class="btn delete-btn">Supprimer</button>

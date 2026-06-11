@@ -1,8 +1,13 @@
 <?php
 require_once __DIR__ . '/helpers.php';
 
-// Traitement du POST
+// Traitement du POST — exécute l'action
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Vérification CSRF
+    if (!verify_csrf()) {
+        die('Token CSRF invalide. Veuillez réessayer.');
+    }
+
     $token = trim($_POST['token'] ?? '');
     $action = trim($_POST['action'] ?? '');
     $comment = trim($_POST['comment'] ?? '');
@@ -11,32 +16,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = validate_token($token, $action, $comment);
         
         if ($result['status'] === 'ok') {
-            // Afficher un message de succès
             $success = true;
         } else {
             $error = $result['status'] === 'invalid' ? 'Lien invalide ou expiré.' :
                      ($result['status'] === 'already_done' ? 'Cette tâche a déjà été traitée.' :
-                     ($result['status'] === 'closed' ? 'Le workflow est déjà terminé.' : 'Erreur inconnue.'));
+                     ($result['status'] === 'closed' ? 'Le workflow est déjà terminé.' :
+                     ($result['status'] === 'expired' ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
         }
     } else {
         $error = 'Données invalides.';
     }
 }
 
-// Si GET, afficher le formulaire de validation/refus
+// GET request — affichage uniquement (pas d'effet de bord)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $token = trim($_GET['token'] ?? '');
-    $result = $token ? validate_token($token) : ['status' => 'invalid'];
-    $data = $result['data'] ?? [];
-}
+    
+    if ($token) {
+        // Recherche le token dans la base de données sans appeler validate_token()
+        $pdo = get_pdo();
+        $row = $pdo->prepare("
+            SELECT t.*, st.label as step_label, s.form_id,
+                   f.label as form_label, s.data, s.closed_at, s.status
+            FROM tokens t
+            JOIN steps st ON st.id = t.step_id
+            JOIN submissions s ON s.id = t.submission_id
+            JOIN forms f ON f.id = s.form_id
+            WHERE t.token = ?
+        ");
+        $row->execute([$token]);
+        $data = $row->fetch(PDO::FETCH_ASSOC);
 
-// Si POST et succès, on ne fait rien d'autre que l'affichage
-if (!isset($success) && !isset($error) && $_SERVER['REQUEST_METHOD'] === 'GET' && $result['status'] === 'ok') {
-    // Afficher le formulaire
-} elseif (isset($success) || isset($error)) {
-    // Afficher le message de succès ou d'erreur
-} elseif (isset($error) && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Afficher l'erreur
+        if (!$data) {
+            $result = ['status' => 'invalid'];
+        } elseif ($data['done_at']) {
+            $result = ['status' => 'already_done', 'data' => $data];
+        } elseif ($data['closed_at']) {
+            $result = ['status' => 'closed', 'data' => $data];
+        } elseif (!empty($data['expires_at']) && strtotime($data['expires_at']) < time()) {
+            $result = ['status' => 'expired', 'data' => $data];
+        } else {
+            $result = ['status' => 'ok', 'data' => $data];
+        }
+    } else {
+        $result = ['status' => 'invalid'];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -48,7 +72,7 @@ if (!isset($success) && !isset($error) && $_SERVER['REQUEST_METHOD'] === 'GET' &
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; padding: 2rem 1rem; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; }
+    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
     .container { max-width: 560px; margin: 0 auto; }
     .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 2rem; }
     h1 { font-size: 1.3rem; color: #003189; margin-bottom: 1rem; }
@@ -68,7 +92,10 @@ if (!isset($success) && !isset($error) && $_SERVER['REQUEST_METHOD'] === 'GET' &
   </style>
 </head>
 <body>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités</div>
+<div class="bandeau">
+    <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
+    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a></span>
+</div>
 <div class="container"><div class="card">
 
 <?php if (isset($success)): ?>
@@ -84,6 +111,7 @@ if (!isset($success) && !isset($error) && $_SERVER['REQUEST_METHOD'] === 'GET' &
   <p class="err">Ce lien est introuvable ou expiré.</p>
 
 <?php elseif ($result['status'] === 'already_done'): ?>
+  <?php $data = $result['data'] ?? []; ?>
   <span class="badge"><?= h($data['step_label']) ?></span>
   <h1>Déjà validé</h1>
   <p class="info">Tâche validée le <?= h($data['done_at']) ?></p>
@@ -92,8 +120,13 @@ if (!isset($success) && !isset($error) && $_SERVER['REQUEST_METHOD'] === 'GET' &
   <h1>Workflow terminé</h1>
   <p class="info">Ce dossier est déjà clôturé.</p>
 
+<?php elseif ($result['status'] === 'expired'): ?>
+  <h1>Lien expiré</h1>
+  <p class="err">Ce lien de validation a expiré. Veuillez contacter l'expéditeur pour obtenir un nouveau lien.</p>
+
 <?php elseif ($result['status'] === 'ok'): ?>
   <?php
+    $data = $result['data'] ?? [];
     $d   = json_decode($data['data'] ?? '{}', true);
     $nom = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
   ?>
@@ -112,6 +145,7 @@ if (!isset($success) && !isset($error) && $_SERVER['REQUEST_METHOD'] === 'GET' &
   
   <!-- Formulaire de validation/refus -->
   <form method="post">
+    <?= csrf_field() ?>
     <input type="hidden" name="token" value="<?= h($token) ?>">
     
     <div class="form-group">

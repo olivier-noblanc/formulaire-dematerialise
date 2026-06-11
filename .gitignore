@@ -2,6 +2,10 @@
 /vendor/
 /composer.lock
 
+# Base de données SQLite
+/db/
+*.db
+
 # Fichiers de configuration sensibles
 /config.php
 /.env

@@ -20,7 +20,7 @@ foreach ($tokens as $t) {
     $last_ref = $t['relance_at'] ? new DateTimeImmutable($t['relance_at']) : $sent;
     $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
 
-    if ($depuis < DELAI_RELANCE_H) continue;
+    if ($depuis < (int)get_setting('delai_relance_h', (string)DELAI_RELANCE_H)) continue;
 
     $subject = '[RELANCE] ' . $t['form_label'] . ' — ' . $t['step_label'];
     if (send_mail($t['email'], $subject, build_mail_html($t, $t['step_label'], $t['token']))) {

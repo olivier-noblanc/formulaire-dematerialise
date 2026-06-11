@@ -11,8 +11,7 @@ $form = $form->fetch(PDO::FETCH_ASSOC);
 
 if (!$form) { http_response_code(404); die('<p>Formulaire introuvable.</p>'); }
 
-$submitted_by = $_SERVER['AUTH_USER'] ?? 'inconnu';
-$current_user = get_auth_user();
+$submitted_by = get_auth_user();
 $errors       = [];
 $success      = false;
 
@@ -21,6 +20,10 @@ $required = ['nom','prenom','date_naissance','corps_grade','affectation',
              'date_prise_poste','type_arrivee','quotite','type_poste','log_batiment_bureau'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verify_csrf()) {
+        die('Token CSRF invalide. Veuillez réessayer.');
+    }
+
     foreach ($required as $f) {
         if (empty(trim($_POST[$f] ?? ''))) $errors[] = 'Champ obligatoire manquant : ' . $f;
     }
@@ -35,7 +38,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare("INSERT INTO submissions (form_id, data, submitted_by, submitted_at) VALUES (?,?,?,?)")
             ->execute([$form['id'], json_encode($data, JSON_UNESCAPED_UNICODE), $submitted_by, $now]);
 
-        advance_workflow((int)$pdo->lastInsertId());
+        $submission_id = (int)$pdo->lastInsertId();
+        advance_workflow($submission_id);
+
+        // Envoyer un email de confirmation à l'agent
+        $confirm_subject = 'Demande enregistrée — ' . $form['label'];
+        $confirm_body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
+  <h2 style="color:#003189;">✓ Demande enregistrée</h2>
+  <p>Votre demande <strong>' . h($form['label']) . '</strong> a bien été enregistrée le ' . h(date('d/m/Y à H:i')) . '.</p>
+  <p>Le workflow de validation a été déclenché. Vous serez notifié par email lorsque votre demande sera traitée ou si un refus est émis.</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS — Ne pas répondre à cet email</p>
+</body></html>';
+        send_mail($submitted_by, $confirm_subject, $confirm_body);
+
         $success = true;
     }
 }
@@ -78,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <a href="admin_access.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">⚙ Back office</a></div>
+<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
 <div class="container">
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p class="agent-info"><?= h($form['description']) ?></p><?php endif; ?>
@@ -87,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php if ($success): ?>
     <div class="success">
       <strong>✓ Demande enregistrée</strong>
-      Le workflow de validation a été déclenché automatiquement.
+      Le workflow de validation a été déclenché automatiquement. Un email de confirmation vous a été envoyé.
     </div>
   <?php else: ?>
     <?php if (!empty($errors)): ?>
@@ -95,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
     <form method="POST" novalidate>
+      <?= csrf_field() ?>
 
       <div class="card">
         <h2>Identité de l'agent</h2>

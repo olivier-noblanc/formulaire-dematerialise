@@ -41,6 +41,11 @@ elseif ($action === 'reject' && !empty($token) && is_super_admin()) {
     }
 }
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Vérification CSRF
+    if (!verify_csrf()) {
+        die('Token CSRF invalide. Veuillez réessayer.');
+    }
+
     $action = $_POST['action'] ?? '';
     
     if ($action === 'request_access') {
@@ -139,7 +144,7 @@ if (is_super_admin() || is_admin_user()) {
 <div class="bandeau">
     <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
     <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-    <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">⚙ Back office</a>
+    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
 </div>
 <div class="container">
     <h1>Accès au back office</h1>
@@ -183,11 +188,13 @@ if (is_super_admin() || is_admin_user()) {
                                 <td><?= h($request['requested_at']) ?></td>
                                 <td class="actions">
                                     <form method="POST" style="display:inline;">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="approve_request">
                                         <input type="hidden" name="email" value="<?= h($request['email']) ?>">
                                         <button type="submit" class="action-btn approve-btn">Approuver</button>
                                     </form>
                                     <form method="POST" style="display:inline;">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="reject_request">
                                         <input type="hidden" name="email" value="<?= h($request['email']) ?>">
                                         <button type="submit" class="action-btn reject-btn">Refuser</button>
@@ -218,6 +225,7 @@ if (is_super_admin() || is_admin_user()) {
                             <td>
                                 <?php if ($admin['email'] !== ADMIN_EMAIL): ?>
                                     <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur ?');">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="remove_admin">
                                         <input type="hidden" name="email" value="<?= h($admin['email']) ?>">
                                         <button type="submit" class="action-btn reject-btn">Supprimer</button>
@@ -238,6 +246,7 @@ if (is_super_admin() || is_admin_user()) {
             <p>Une fois votre demande approuvée par l'administrateur principal, vous pourrez accéder au back office.</p>
             
             <form method="POST">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="request_access">
                 <button type="submit" class="btn btn-primary">Demander l'accès admin</button>
             </form>
