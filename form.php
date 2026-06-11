@@ -12,23 +12,29 @@ $form = $form->fetch(PDO::FETCH_ASSOC);
 if (!$form) { http_response_code(404); die('<p>Formulaire introuvable.</p>'); }
 
 $submitted_by = get_auth_user();
-$errors       = [];
+$field_errors = [];
 $success      = false;
 
-// Champs obligatoires hardcodés (identité agent — toujours présents)
-$required = ['nom','prenom','date_naissance','corps_grade','affectation',
-             'date_prise_poste','type_arrivee','quotite','type_poste','log_batiment_bureau'];
+// Charger les champs dynamiques du formulaire, ordonnés par ordre
+$fields_stmt = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre, id");
+$fields_stmt->execute([$form['id']]);
+$form_fields = $fields_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf()) {
         die('Token CSRF invalide. Veuillez réessayer.');
     }
 
-    foreach ($required as $f) {
-        if (empty(trim($_POST[$f] ?? ''))) $errors[] = 'Champ obligatoire manquant : ' . $f;
+    // Validation dynamique des champs obligatoires
+    foreach ($form_fields as $field) {
+        if ($field['required'] && $field['field_type'] !== 'checkbox') {
+            if (empty(trim($_POST[$field['field_name']] ?? ''))) {
+                $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
+            }
+        }
     }
 
-    if (empty($errors)) {
+    if (empty($field_errors)) {
         $now  = date('Y-m-d H:i:s');
         $data = [];
         foreach ($_POST as $k => $v) {
@@ -55,6 +61,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $success = true;
     }
 }
+
+// Regrouper les champs par card_group pour le rendu visuel
+$grouped = [];
+$field_labels = [];
+foreach ($form_fields as $field) {
+    $group = $field['card_group'] ?: 'Général';
+    $grouped[$group][] = $field;
+    $field_labels[$field['field_name']] = $field['label'];
+}
+
+/**
+ * Rend un champ dynamique en HTML avec support aria pour les erreurs
+ */
+function render_field(array $field, mixed $posted_val, array $field_errors): string {
+    $name = h($field['field_name']);
+    $label = h($field['label']);
+    $req_span = $field['required'] ? ' <span class="req">*</span>' : '';
+    $required_attr = ($field['required'] && $field['field_type'] !== 'checkbox') ? ' required aria-required="true"' : '';
+    $error_class = isset($field_errors[$field['field_name']]) ? ' field-error' : '';
+    $aria_attr = '';
+    if (isset($field_errors[$field['field_name']])) {
+        $aria_attr = ' aria-invalid="true" aria-describedby="err-' . $name . '"';
+    }
+    $error_html = '';
+    if (isset($field_errors[$field['field_name']])) {
+        $error_html = '<span id="err-' . $name . '" class="error-hint">' . h($field_errors[$field['field_name']]) . '</span>';
+    }
+
+    switch ($field['field_type']) {
+        case 'date':
+            $val = h($posted_val ?? '');
+            return <<<HTML
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="date" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"><span class="hint">Format : JJ/MM/AAAA</span>{$error_html}</div>
+HTML;
+
+        case 'select':
+            $opts_raw = $field['options'] ?? '[]';
+            $opts = json_decode($opts_raw, true) ?: [];
+            $options_html = '<option value="">— Sélectionner —</option>';
+            foreach ($opts as $opt) {
+                $sel = ($posted_val === $opt) ? ' selected' : '';
+                $options_html .= '<option value="' . h($opt) . '"' . $sel . '>' . h($opt) . '</option>';
+            }
+            return <<<HTML
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><select id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}">{$options_html}</select>{$error_html}</div>
+HTML;
+
+        case 'checkbox':
+            $checked = !empty($posted_val) ? ' checked' : '';
+            return <<<HTML
+<label class="checkbox-item"><input type="checkbox" name="{$name}" value="1"{$checked}> {$label}</label>
+HTML;
+
+        case 'textarea':
+            $val = h($posted_val ?? '');
+            return <<<HTML
+<div class="field full"><label for="{$name}">{$label}{$req_span}</label><textarea id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}">{$val}</textarea>{$error_html}</div>
+HTML;
+
+        default: // text
+            $val = h($posted_val ?? '');
+            return <<<HTML
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="text" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}">{$error_html}</div>
+HTML;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -62,15 +134,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= h($form['label']) ?> — DREETS</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; padding: 2rem 1rem; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
     .container { max-width: 780px; margin: 0 auto; }
     h1 { font-size: 1.5rem; color: #003189; margin-bottom: .25rem; }
     .agent-info { font-size: .85rem; color: #555; margin-bottom: 2rem; }
     .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .card h2 { font-size: 1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: .05em; }
+    fieldset.card { border: 1px solid #ddd; }
+    legend { font-size: 1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: .05em; width: 100%; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .field { display: flex; flex-direction: column; gap: .35rem; }
     .field.full { grid-column: 1 / -1; }
@@ -90,11 +164,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .success strong { display: block; font-size: 1.2rem; margin-bottom: .5rem; }
     .btn-submit { background: #003189; color: #fff; border: none; padding: .75rem 2.5rem; font-size: 1rem; font-family: inherit; border-radius: 3px; cursor: pointer; display: block; margin: 0 auto; }
     .btn-submit:hover { background: #002270; }
+    .field-error { border-color: #c0392b !important; background: #fff5f5; }
+    .error-hint { color: #c0392b; font-size: .78rem; }
+    .hint { font-size: .75rem; color: #888; }
+    .no-fields { text-align: center; padding: 2rem; color: #888; font-style: italic; }
     @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
+<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_submissions.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📋 Mes demandes</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a><?php if (is_admin_user()): ?> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a><?php endif; ?></span></div>
 <div class="container">
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p class="agent-info"><?= h($form['description']) ?></p><?php endif; ?>
@@ -106,102 +184,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       Le workflow de validation a été déclenché automatiquement. Un email de confirmation vous a été envoyé.
     </div>
   <?php else: ?>
-    <?php if (!empty($errors)): ?>
-      <div class="errors"><strong>Erreurs :</strong><ul><?php foreach ($errors as $e): ?><li><?= h($e) ?></li><?php endforeach; ?></ul></div>
+    <?php if (!empty($field_errors)): ?>
+      <div class="errors"><strong>Veuillez corriger les champs suivants :</strong><ul><?php foreach ($field_errors as $fn => $fe): ?><li><?= h($field_labels[$fn] ?? $fn) ?> : <?= h($fe) ?></li><?php endforeach; ?></ul></div>
     <?php endif; ?>
 
     <form method="POST" novalidate>
       <?= csrf_field() ?>
 
-      <div class="card">
-        <h2>Identité de l'agent</h2>
-        <div class="grid-2">
-          <div class="field"><label>Nom <span class="req">*</span></label><input type="text" name="nom" required value="<?= h($_POST['nom'] ?? '') ?>"></div>
-          <div class="field"><label>Prénom <span class="req">*</span></label><input type="text" name="prenom" required value="<?= h($_POST['prenom'] ?? '') ?>"></div>
-          <div class="field"><label>Date de naissance <span class="req">*</span></label><input type="date" name="date_naissance" required value="<?= h($_POST['date_naissance'] ?? '') ?>"></div>
-          <div class="field"><label>Date de prise de poste <span class="req">*</span></label><input type="date" name="date_prise_poste" required value="<?= h($_POST['date_prise_poste'] ?? '') ?>"></div>
-          <div class="field">
-            <label>Corps / Grade <span class="req">*</span></label>
-            <select name="corps_grade" required>
-              <option value="">— Sélectionner —</option>
-              <?php foreach (['Attaché d\'administration','Secrétaire administratif','Adjoint administratif','Inspecteur du travail','Contrôleur du travail','Technicien','Ingénieur','Autre'] as $g): ?>
-                <option value="<?= h($g) ?>" <?= (($_POST['corps_grade'] ?? '') === $g) ? 'selected' : '' ?>><?= h($g) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="field">
-            <label>Type d'arrivée <span class="req">*</span></label>
-            <select name="type_arrivee" required>
-              <option value="">— Sélectionner —</option>
-              <?php foreach (['Mutation','Primo-recrutement','Détachement','Stage','Alternance'] as $t): ?>
-                <option value="<?= h($t) ?>" <?= (($_POST['type_arrivee'] ?? '') === $t) ? 'selected' : '' ?>><?= h($t) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="field"><label>Service / Affectation <span class="req">*</span></label><input type="text" name="affectation" required value="<?= h($_POST['affectation'] ?? '') ?>"></div>
-          <div class="field">
-            <label>Quotité <span class="req">*</span></label>
-            <select name="quotite" required>
-              <option value="">— Sélectionner —</option>
-              <?php foreach (['100%','80%','50%'] as $q): ?>
-                <option value="<?= h($q) ?>" <?= (($_POST['quotite'] ?? '') === $q) ? 'selected' : '' ?>><?= h($q) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-      </div>
+      <?php if (empty($grouped)): ?>
+        <p class="no-fields">Aucun champ configuré pour ce formulaire. Contactez un administrateur.</p>
+      <?php else: ?>
+        <?php foreach ($grouped as $card_title => $card_fields): ?>
+          <?php
+          // Séparer les checkboxes des autres champs pour le rendu
+          $checkboxes = [];
+          $non_checkboxes = [];
+          foreach ($card_fields as $cf) {
+              if ($cf['field_type'] === 'checkbox') {
+                  $checkboxes[] = $cf;
+              } else {
+                  $non_checkboxes[] = $cf;
+              }
+          }
+          ?>
+          <fieldset class="card">
+            <legend><?= h($card_title) ?></legend>
+            <?php if (!empty($non_checkboxes)): ?>
+              <div class="grid-2">
+                <?php foreach ($non_checkboxes as $cf): ?>
+                  <?= render_field($cf, $_POST[$cf['field_name']] ?? null, $field_errors) ?>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+            <?php if (!empty($checkboxes)): ?>
+              <div class="checkboxes"<?php if (!empty($non_checkboxes)) echo ' style="margin-top:1rem;"'; ?>>
+                <?php foreach ($checkboxes as $cf): ?>
+                  <?= render_field($cf, $_POST[$cf['field_name']] ?? null, $field_errors) ?>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </fieldset>
+        <?php endforeach; ?>
+      <?php endif; ?>
 
-      <div class="card">
-        <h2>Informatique (IT)</h2>
-        <div class="grid-2">
-          <div class="field">
-            <label>Type de poste <span class="req">*</span></label>
-            <select name="type_poste" required>
-              <option value="">— Sélectionner —</option>
-              <?php foreach (['Fixe','Portable'] as $p): ?>
-                <option value="<?= h($p) ?>" <?= (($_POST['type_poste'] ?? '') === $p) ? 'selected' : '' ?>><?= h($p) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="field">
-            <label>Options</label>
-            <div class="checkboxes">
-              <label class="checkbox-item"><input type="checkbox" name="it_double_ecran" value="1" <?= isset($_POST['it_double_ecran']) ? 'checked' : '' ?>> Double écran</label>
-              <label class="checkbox-item"><input type="checkbox" name="it_acces_rpvn" value="1" <?= isset($_POST['it_acces_rpvn']) ? 'checked' : '' ?>> Accès RPVN</label>
-              <label class="checkbox-item"><input type="checkbox" name="it_telephone_pro" value="1" <?= isset($_POST['it_telephone_pro']) ? 'checked' : '' ?>> Téléphone professionnel</label>
-            </div>
-          </div>
-          <div class="field full"><label>Applicatifs métier</label><textarea name="it_applicatifs" placeholder="Ex : SOLEN, APART..."><?= h($_POST['it_applicatifs'] ?? '') ?></textarea></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Ressources Humaines</h2>
-        <div class="checkboxes">
-          <label class="checkbox-item"><input type="checkbox" name="rh_dossier_admin" value="1" <?= isset($_POST['rh_dossier_admin']) ? 'checked' : '' ?>> Dossier administratif à constituer</label>
-          <label class="checkbox-item"><input type="checkbox" name="rh_mutuelle" value="1" <?= isset($_POST['rh_mutuelle']) ? 'checked' : '' ?>> Affiliation mutuelle MGEN</label>
-          <label class="checkbox-item"><input type="checkbox" name="rh_visite_medicale" value="1" <?= isset($_POST['rh_visite_medicale']) ? 'checked' : '' ?>> Visite médicale à planifier</label>
-          <label class="checkbox-item"><input type="checkbox" name="rh_habilitation" value="1" <?= isset($_POST['rh_habilitation']) ? 'checked' : '' ?>> Habilitation sécurité requise</label>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Logistique</h2>
-        <div class="grid-2">
-          <div class="field full"><label>Bâtiment / Bureau <span class="req">*</span></label><input type="text" name="log_batiment_bureau" required placeholder="Ex : Bât. A — Bureau 214" value="<?= h($_POST['log_batiment_bureau'] ?? '') ?>"></div>
-          <div class="field full">
-            <div class="checkboxes">
-              <label class="checkbox-item"><input type="checkbox" name="log_badge_acces" value="1" <?= isset($_POST['log_badge_acces']) ? 'checked' : '' ?>> Badge d'accès</label>
-              <label class="checkbox-item"><input type="checkbox" name="log_vehicule_service" value="1" <?= isset($_POST['log_vehicule_service']) ? 'checked' : '' ?>> Véhicule de service</label>
-              <label class="checkbox-item"><input type="checkbox" name="log_epi_requis" value="1" <?= isset($_POST['log_epi_requis']) ? 'checked' : '' ?>> EPI à préparer</label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button type="submit" class="btn-submit">Envoyer la déclaration</button>
+      <?php if (!empty($grouped)): ?>
+        <button type="submit" class="btn-submit">Envoyer la déclaration</button>
+      <?php endif; ?>
     </form>
   <?php endif; ?>
 </div>
+<?php if (!empty($field_errors)): ?>
+<script>document.querySelector('.field-error')?.scrollIntoView({behavior:'smooth',block:'center'});</script>
+<?php endif; ?>
 </body>
 </html>

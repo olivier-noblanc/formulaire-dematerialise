@@ -4,6 +4,8 @@ require_once __DIR__ . '/helpers.php';
 $pdo    = get_pdo();
 $filtre = $_GET['statut'] ?? 'tous';
 $form_f = $_GET['form']   ?? '';
+$page   = max(1, (int)($_GET['page'] ?? 1));
+$per_page = 25;
 
 $where = ['1=1'];
 $params = [];
@@ -12,7 +14,15 @@ if ($filtre === 'complet')  { $where[] = 's.status != ?'; $params[] = 'en_cours'
 if ($form_f) { $where[] = "f.slug = ?"; $params[] = $form_f; }
 $where = implode(' AND ', $where);
 
-$stmt = $pdo->prepare("SELECT s.*, f.label as form_label, f.slug as form_slug FROM submissions s JOIN forms f ON f.id = s.form_id WHERE $where ORDER BY s.submitted_at DESC");
+// Count total matching rows for pagination
+$count_stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions s JOIN forms f ON f.id = s.form_id WHERE $where");
+$count_stmt->execute($params);
+$total_rows = (int)$count_stmt->fetchColumn();
+$total_pages = max(1, (int)ceil($total_rows / $per_page));
+if ($page > $total_pages) $page = $total_pages;
+$offset = ($page - 1) * $per_page;
+
+$stmt = $pdo->prepare("SELECT s.*, f.label as form_label, f.slug as form_slug FROM submissions s JOIN forms f ON f.id = s.form_id WHERE $where ORDER BY s.submitted_at DESC LIMIT $per_page OFFSET $offset");
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -39,10 +49,11 @@ function get_tokens_status(int $sub_id): array {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Supervision workflow — DREETS</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2rem; }
     h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
     .toolbar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
@@ -68,6 +79,10 @@ function get_tokens_status(int $sub_id): array {
     .detail-row.open { display: table-row; }
     .detail-content { padding: 1rem; background: #f0f0f8; font-size: .82rem; line-height: 1.9; }
     .ordre-label { font-size: .7rem; background: #003189; color: #fff; padding: .1rem .4rem; border-radius: 2px; margin-right: .25rem; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: .75rem; margin-top: 1.5rem; font-size: .9rem; }
+    .pagination a, .pagination span { padding: .4rem .75rem; border: 1px solid #003189; border-radius: 3px; text-decoration: none; color: #003189; }
+    .pagination .current { background: #003189; color: #fff; border-color: #003189; }
+    .pagination .disabled { color: #aaa; border-color: #ddd; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -181,6 +196,29 @@ function get_tokens_status(int $sub_id): array {
     <?php endif; ?>
     </tbody>
   </table>
+
+  <?php if ($total_pages > 1): ?>
+  <div class="pagination">
+    <?php
+      $qs = http_build_query(['statut' => $filtre, 'form' => $form_f, 'page' => '']);
+      $base_url = '?' . $qs;
+    ?>
+    <?php if ($page > 1): ?>
+      <a href="<?= $base_url . ($page - 1) ?>">← Précédent</a>
+    <?php else: ?>
+      <span class="disabled">← Précédent</span>
+    <?php endif; ?>
+
+    <span class="current">Page <?= $page ?> / <?= $total_pages ?></span>
+
+    <?php if ($page < $total_pages): ?>
+      <a href="<?= $base_url . ($page + 1) ?>">Suivant →</a>
+    <?php else: ?>
+      <span class="disabled">Suivant →</span>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
+
 </div>
 <script>
 function toggle(i){document.getElementById('det-'+i).classList.toggle('open');}

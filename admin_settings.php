@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'smtp_from_name'   => trim($_POST['smtp_from_name'] ?? ''),
             'delai_relance_h'  => trim($_POST['delai_relance_h'] ?? '48'),
             'token_expire_days'=> trim($_POST['token_expire_days'] ?? '30'),
+            'relance_max'      => trim($_POST['relance_max'] ?? '3'),
         ];
 
         // Conserver l'ancien mot de passe si le champ est vide
@@ -78,6 +79,7 @@ $smtp_from        = get_setting('smtp_from', SMTP_FROM);
 $smtp_from_name   = get_setting('smtp_from_name', SMTP_FROM_NAME);
 $delai_relance_h  = get_setting('delai_relance_h', (string)DELAI_RELANCE_H);
 $token_expire_days= get_setting('token_expire_days', '30');
+$relance_max      = get_setting('relance_max', '3');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -85,10 +87,11 @@ $token_expire_days= get_setting('token_expire_days', '30');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Paramètres — DREETS Workflow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; }
-        .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
         .container { max-width: 800px; margin: 0 auto; padding: 0 1rem 2rem; }
         h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
         .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
@@ -204,6 +207,11 @@ $token_expire_days= get_setting('token_expire_days', '30');
             <div class="field">
                 <label>Expiration des tokens en jours</label>
                 <input type="number" name="token_expire_days" value="<?= h($token_expire_days) ?>" min="1">
+            </div>
+
+            <div class="field">
+                <label>Nombre maximum de relances par token <span class="hint">(0 = illimité)</span></label>
+                <input type="number" name="relance_max" value="<?= h($relance_max) ?>" min="0">
             </div>
         </div>
 

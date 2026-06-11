@@ -17,6 +17,9 @@ $form_id = (int)($_GET['form_id'] ?? 0);
 // Récupération de l'ID de l'étape à modifier
 $edit_step_id = (int)($_GET['edit_step'] ?? 0);
 
+// Récupération de l'ID du champ à modifier
+$edit_field_id = (int)($_GET['edit_field'] ?? 0);
+
 // Traitement des actions POST
 $action = $_POST['action'] ?? '';
 
@@ -70,17 +73,23 @@ if ($action === 'add_form') {
     $form_id = (int)($_POST['form_id'] ?? 0);
     if ($form_id > 0) {
         $pdo = get_pdo();
-        try {
-            // Suppression des étapes associées
-            $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$form_id]);
-            // Suppression du formulaire
-            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$form_id]);
-            $success_msg = 'Formulaire supprimé avec succès.';
-            // Redirection pour éviter les doubles soumissions
-            header('Location: admin_forms.php');
-            exit;
-        } catch (PDOException $e) {
-            $error_msg = 'Erreur lors de la suppression du formulaire : ' . $e->getMessage();
+        // Vérifier s'il y a des soumissions actives
+        $active_count = has_active_submissions($form_id);
+        if ($active_count > 0) {
+            $error_msg = 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.';
+        } else {
+            try {
+                // Suppression des étapes associées
+                $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$form_id]);
+                // Suppression du formulaire
+                $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$form_id]);
+                $success_msg = 'Formulaire supprimé avec succès.';
+                // Redirection pour éviter les doubles soumissions
+                header('Location: admin_forms.php');
+                exit;
+            } catch (PDOException $e) {
+                $error_msg = 'Erreur lors de la suppression du formulaire : ' . $e->getMessage();
+            }
         }
     }
 } elseif ($action === 'add_step') {
@@ -128,17 +137,23 @@ if ($action === 'add_form') {
     $step_id = (int)($_POST['step_id'] ?? 0);
     if ($step_id > 0) {
         $pdo = get_pdo();
-        try {
-            // Suppression des destinataires associés
-            $pdo->prepare("DELETE FROM step_recipients WHERE step_id = ?")->execute([$step_id]);
-            // Suppression de l'étape
-            $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$step_id]);
-            $success_msg = 'Étape supprimée avec succès.';
-            // Redirection pour éviter les doubles soumissions
-            header('Location: admin_forms.php?form_id=' . $form_id);
-            exit;
-        } catch (PDOException $e) {
-            $error_msg = 'Erreur lors de la suppression de l\'étape : ' . $e->getMessage();
+        // Vérifier s'il y a des soumissions actives utilisant cette étape
+        $active_count = has_active_step_submissions($step_id);
+        if ($active_count > 0) {
+            $error_msg = 'Impossible de supprimer cette étape : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer l\'étape.';
+        } else {
+            try {
+                // Suppression des destinataires associés
+                $pdo->prepare("DELETE FROM step_recipients WHERE step_id = ?")->execute([$step_id]);
+                // Suppression de l'étape
+                $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$step_id]);
+                $success_msg = 'Étape supprimée avec succès.';
+                // Redirection pour éviter les doubles soumissions
+                header('Location: admin_forms.php?form_id=' . $form_id);
+                exit;
+            } catch (PDOException $e) {
+                $error_msg = 'Erreur lors de la suppression de l\'étape : ' . $e->getMessage();
+            }
         }
     }
 } elseif ($action === 'add_recipient') {
@@ -167,11 +182,90 @@ if ($action === 'add_form') {
         try {
             $pdo->prepare("DELETE FROM step_recipients WHERE id = ?")->execute([$recipient_id]);
             $success_msg = 'Destinataire supprimé avec succès.';
-            // Redirection pour éviter les doubles soumissions
             header('Location: admin_forms.php?form_id=' . $form_id);
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de la suppression du destinataire : ' . $e->getMessage();
+        }
+    }
+} elseif ($action === 'add_field') {
+    $form_id = (int)($_POST['form_id'] ?? 0);
+    $ff_label = trim($_POST['ff_label'] ?? '');
+    $ff_field_name = trim($_POST['ff_field_name'] ?? '');
+    $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
+    $ff_options = trim($_POST['ff_options'] ?? '');
+    $ff_required = isset($_POST['ff_required']) ? 1 : 0;
+    $ff_ordre = (int)($_POST['ff_ordre'] ?? 0);
+    $ff_card_group = trim($_POST['ff_card_group'] ?? 'Général');
+
+    if ($form_id > 0 && !empty($ff_label) && !empty($ff_field_name)) {
+        $pdo = get_pdo();
+        try {
+            // Validate options JSON if provided
+            $options_json = null;
+            if ($ff_field_type === 'select' && !empty($ff_options)) {
+                $decoded = json_decode($ff_options, true);
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+                    throw new RuntimeException('Les options doivent être un JSON valide, ex : ["Option A","Option B"]');
+                }
+                $options_json = $ff_options;
+            }
+            $pdo->prepare("INSERT INTO form_fields (form_id, label, field_type, field_name, options, required, ordre, card_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$form_id, $ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_required, $ff_ordre, $ff_card_group]);
+            $success_msg = 'Champ ajouté avec succès.';
+            header('Location: admin_forms.php?form_id=' . $form_id . '#fields');
+            exit;
+        } catch (PDOException|RuntimeException $e) {
+            $error_msg = 'Erreur lors de l\'ajout du champ : ' . $e->getMessage();
+        }
+    } else {
+        $error_msg = 'Le libellé et le nom technique du champ sont requis.';
+    }
+} elseif ($action === 'update_field') {
+    $field_id = (int)($_POST['field_id'] ?? 0);
+    $form_id = (int)($_POST['form_id'] ?? 0);
+    $ff_label = trim($_POST['ff_label'] ?? '');
+    $ff_field_name = trim($_POST['ff_field_name'] ?? '');
+    $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
+    $ff_options = trim($_POST['ff_options'] ?? '');
+    $ff_required = isset($_POST['ff_required']) ? 1 : 0;
+    $ff_ordre = (int)($_POST['ff_ordre'] ?? 0);
+    $ff_card_group = trim($_POST['ff_card_group'] ?? 'Général');
+
+    if ($field_id > 0 && !empty($ff_label) && !empty($ff_field_name)) {
+        $pdo = get_pdo();
+        try {
+            $options_json = null;
+            if ($ff_field_type === 'select' && !empty($ff_options)) {
+                $decoded = json_decode($ff_options, true);
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+                    throw new RuntimeException('Les options doivent être un JSON valide, ex : ["Option A","Option B"]');
+                }
+                $options_json = $ff_options;
+            }
+            $pdo->prepare("UPDATE form_fields SET label = ?, field_type = ?, field_name = ?, options = ?, required = ?, ordre = ?, card_group = ? WHERE id = ?")
+                ->execute([$ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_required, $ff_ordre, $ff_card_group, $field_id]);
+            $success_msg = 'Champ mis à jour avec succès.';
+            header('Location: admin_forms.php?form_id=' . $form_id . '#fields');
+            exit;
+        } catch (PDOException|RuntimeException $e) {
+            $error_msg = 'Erreur lors de la mise à jour du champ : ' . $e->getMessage();
+        }
+    } else {
+        $error_msg = 'Le libellé et le nom technique du champ sont requis.';
+    }
+} elseif ($action === 'delete_field') {
+    $field_id = (int)($_POST['field_id'] ?? 0);
+    $form_id = (int)($_POST['form_id'] ?? 0);
+    if ($field_id > 0) {
+        $pdo = get_pdo();
+        try {
+            $pdo->prepare("DELETE FROM form_fields WHERE id = ?")->execute([$field_id]);
+            $success_msg = 'Champ supprimé avec succès.';
+            header('Location: admin_forms.php?form_id=' . $form_id . '#fields');
+            exit;
+        } catch (PDOException $e) {
+            $error_msg = 'Erreur lors de la suppression du champ : ' . $e->getMessage();
         }
     }
 }
@@ -180,6 +274,7 @@ if ($action === 'add_form') {
 $form = null;
 $steps = [];
 $recipients = [];
+$form_fields = [];
 
 if ($form_id > 0) {
     $pdo = get_pdo();
@@ -211,6 +306,11 @@ if ($form_id > 0) {
             $stmt->execute([$step['id']]);
             $step['recipients'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
+
+        // Récupération des champs du formulaire
+        $stmt = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre, id");
+        $stmt->execute([$form_id]);
+        $form_fields = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>
@@ -220,10 +320,11 @@ if ($form_id > 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestion des formulaires — DREETS Workflow</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; }
-        .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2rem; }
         h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
         .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
@@ -548,6 +649,151 @@ if ($form_id > 0) {
             <?php else: ?>
                 <p>Sélectionnez une étape pour gérer ses destinataires.</p>
             <?php endif; ?>
+        </div>
+
+        <!-- Section D - Champs du formulaire -->
+        <div class="card" id="fields">
+            <div class="form-section-header">
+                <h2 class="section-title">Champs du formulaire</h2>
+            </div>
+            <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Ces champs définissent le formulaire que les agents rempliront. Modifiez-les pour personnaliser la collecte d'informations selon le type de formulaire.</p>
+
+            <?php if (!empty($form_fields)): ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ordre</th>
+                            <th>Groupe (carte)</th>
+                            <th>Libellé</th>
+                            <th>Nom technique</th>
+                            <th>Type</th>
+                            <th>Oblig.</th>
+                            <th>Options</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($form_fields as $ff): ?>
+                            <?php if ($edit_field_id === (int)$ff['id']): ?>
+                            <tr>
+                                <td colspan="8" style="background:#f0f4ff;">
+                                    <div class="edit-form">
+                                        <h4>Modifier le champ</h4>
+                                        <form method="POST">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="update_field">
+                                            <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
+                                            <input type="hidden" name="form_id" value="<?= $form_id ?>">
+                                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+                                                <div class="field">
+                                                    <label>Libellé</label>
+                                                    <input type="text" name="ff_label" value="<?= h($ff['label']) ?>" required>
+                                                </div>
+                                                <div class="field">
+                                                    <label>Nom technique (clé POST)</label>
+                                                    <input type="text" name="ff_field_name" value="<?= h($ff['field_name']) ?>" required placeholder="ex: nom, date_debut">
+                                                </div>
+                                                <div class="field">
+                                                    <label>Type de champ</label>
+                                                    <select name="ff_field_type">
+                                                        <?php foreach (['text'=>'Texte','date'=>'Date','select'=>'Sélecteur','checkbox'=>'Case à cocher','textarea'=>'Zone de texte'] as $val => $lbl): ?>
+                                                            <option value="<?= $val ?>" <?= $ff['field_type'] === $val ? 'selected' : '' ?>><?= $lbl ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <div class="field">
+                                                    <label>Groupe (carte)</label>
+                                                    <input type="text" name="ff_card_group" value="<?= h($ff['card_group']) ?>" placeholder="ex: Identité de l'agent">
+                                                </div>
+                                                <div class="field">
+                                                    <label>Options (JSON, pour sélecteur)</label>
+                                                    <input type="text" name="ff_options" value="<?= h($ff['options'] ?? '') ?>" placeholder='["Option A","Option B"]'>
+                                                </div>
+                                                <div class="field">
+                                                    <label>Ordre</label>
+                                                    <input type="number" name="ff_ordre" value="<?= $ff['ordre'] ?>" min="0">
+                                                </div>
+                                            </div>
+                                            <div class="field" style="margin-top:.5rem;">
+                                                <label><input type="checkbox" name="ff_required" <?= $ff['required'] ? 'checked' : '' ?>> Champ obligatoire</label>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary" style="margin-top:.5rem;">Enregistrer</button>
+                                            <a href="?form_id=<?= $form_id ?>#fields" class="btn btn-secondary" style="margin-top:.5rem;">Annuler</a>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php else: ?>
+                            <tr>
+                                <td><?= h($ff['ordre']) ?></td>
+                                <td><?= h($ff['card_group']) ?></td>
+                                <td><?= h($ff['label']) ?></td>
+                                <td><code><?= h($ff['field_name']) ?></code></td>
+                                <td><?= h($ff['field_type']) ?></td>
+                                <td><?= $ff['required'] ? '<strong style="color:#c0392b;">Oui</strong>' : 'Non' ?></td>
+                                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= h($ff['options'] ?? '') ?>"><?= h($ff['options'] ?? '—') ?></td>
+                                <td class="actions">
+                                    <a href="?form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#fields" class="btn action-btn btn-secondary">Modifier</a>
+                                    <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce champ ?');">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete_field">
+                                        <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
+                                        <input type="hidden" name="form_id" value="<?= $form_id ?>">
+                                        <button type="submit" class="btn delete-btn">Supprimer</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p>Aucun champ défini pour ce formulaire. Ajoutez-en ci-dessous.</p>
+            <?php endif; ?>
+
+            <!-- Formulaire d'ajout de champ -->
+            <div class="card" style="margin-top:1.5rem;">
+                <h3>Ajouter un champ</h3>
+                <form method="POST">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="add_field">
+                    <input type="hidden" name="form_id" value="<?= $form_id ?>">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+                        <div class="field">
+                            <label>Libellé</label>
+                            <input type="text" name="ff_label" required placeholder="ex: Nom, Date de début">
+                        </div>
+                        <div class="field">
+                            <label>Nom technique (clé POST)</label>
+                            <input type="text" name="ff_field_name" required placeholder="ex: nom, date_debut">
+                        </div>
+                        <div class="field">
+                            <label>Type de champ</label>
+                            <select name="ff_field_type">
+                                <?php foreach (['text'=>'Texte','date'=>'Date','select'=>'Sélecteur','checkbox'=>'Case à cocher','textarea'=>'Zone de texte'] as $val => $lbl): ?>
+                                    <option value="<?= $val ?>"><?= $lbl ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Groupe (carte)</label>
+                            <input type="text" name="ff_card_group" value="Général" placeholder="ex: Identité de l'agent">
+                        </div>
+                        <div class="field">
+                            <label>Options (JSON, pour sélecteur)</label>
+                            <input type="text" name="ff_options" placeholder='["Option A","Option B"]'>
+                        </div>
+                        <div class="field">
+                            <label>Ordre</label>
+                            <input type="number" name="ff_ordre" min="0" value="<?= count($form_fields ?? []) + 1 ?>">
+                        </div>
+                    </div>
+                    <div class="field" style="margin-top:.5rem;">
+                        <label><input type="checkbox" name="ff_required"> Champ obligatoire</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top:.5rem;">Ajouter le champ</button>
+                </form>
+            </div>
         </div>
     <?php endif; ?>
 </div>

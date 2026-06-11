@@ -1,5 +1,31 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [2.0.0] — 2026-06-11
+
+### Fonctionnalités majeures
+
+- **Formulaire dynamique** : Les champs du formulaire sont désormais configurables en base de données via la table `form_fields`. Un admin peut ajouter/modifier/supprimer des champs (text, date, select, checkbox, textarea) depuis le back office. Le formulaire hardcodé est supprimé au profit d'un rendu 100% dynamique groupé par cartes (`card_group`). Migration automatique des 21 champs existants de l'onboarding.
+- **Page « Mes demandes »** : Nouvelle page `my_submissions.php` permettant à l'agent de suivre l'avancement de toutes ses soumissions avec timeline visuelle (✓ validé / ⏳ en cours / ○ à venir), badges de statut, détails du refus le cas échéant, et liens vers les formulaires actifs.
+
+### Fonctionnalités
+
+- **Protection contre la suppression d'éléments actifs** : Impossible de supprimer un formulaire ou une étape si des soumissions en cours y sont rattachées (`has_active_submissions()`, `has_active_step_submissions()`)
+- **Plafond de relances** : Nouveau paramètre `relance_max` (défaut 3). Les tokens ont un compteur `relance_count`. Quand le plafond est atteint, les relances sont bloquées et loguées. Configurable depuis les paramètres admin.
+- **Erreur conviviale si AUTH_USER absent** : `get_auth_user()` affiche une page 401 stylisée au lieu d'une exception fatale PHP brute
+
+### UX / Accessibilité
+
+- **Erreurs de validation ciblées** : Chaque champ en erreur est mis en surbrillance avec message d'erreur en dessous, scroll automatique vers le premier champ en erreur
+- **Pagination** : Le dashboard affiche 25 soumissions par page avec navigation (Précédent/Suivant)
+- **Bandeau responsive** : `flex-wrap: wrap; gap: .5rem` sur le bandeau de toutes les pages
+- **Lien admin conditionnel** : Le lien « ⚙ Paramètres » n'est visible que pour les utilisateurs admin
+- **Labels accessibles** : Attributs `for`/`id` sur tous les labels et inputs, `fieldset`/`legend` à la place de `div`/`h2`
+- **ARIA** : `aria-required`, `aria-invalid`, `aria-describedby` sur les champs du formulaire
+- **Aide sur les champs date** : Indication « Format : JJ/MM/AAAA » sous les champs date
+- **Favicon** : Icône SVG inline (D bleu sur fond #003189) sur toutes les pages
+
+---
+
 ## [1.1.0] — 2026-06-11
 
 ### Sécurité

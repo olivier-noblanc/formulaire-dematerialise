@@ -11,7 +11,30 @@ use PHPMailer\PHPMailer\PHPMailer;
 function get_auth_user(): string {
     $auth_user = $_SERVER['AUTH_USER'] ?? '';
     if (empty($auth_user)) {
-        throw new RuntimeException('AUTH_USER manquant — Windows Authentication non configuré sur IIS.');
+        http_response_code(401);
+        die('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Authentification requise — DREETS</title>
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.error-box{background:#fff;border:1px solid #ddd;border-radius:6px;padding:2.5rem;max-width:520px;width:90%;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.error-icon{font-size:3rem;margin-bottom:1rem}
+h1{font-size:1.3rem;color:#003189;margin-bottom:.75rem}
+p{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:.75rem}
+.hint{font-size:.85rem;color:#888;background:#f5f5f5;border-radius:4px;padding:.75rem;margin-top:1rem;text-align:left}
+.hint strong{color:#333}
+</style></head><body>
+<div class="error-box">
+<div class="error-icon">🔒</div>
+<h1>Authentification requise</h1>
+<p>Cette application nécessite une authentification Windows (IIS) pour fonctionner.</p>
+<p>La variable d\'environnement <strong>AUTH_USER</strong> n\'est pas disponible, ce qui indique que l\'authentification Windows n\'est pas configurée ou n\'a pas pu être établie.</p>
+<div class="hint">
+<strong>Que faire ?</strong><br>
+• Vérifiez que vous accédez à l\'application via le réseau interne DREETS.<br>
+• Vérifiez que l\'authentification Windows est activée dans IIS (Anonymous Authentication doit être désactivé).<br>
+• Contactez votre administrateur réseau si le problème persiste.
+</div>
+</div></body></html>');
     }
     
     // Si l'utilisateur est au format DOMAINE\login, on extrait le login et on le transforme en email
@@ -165,6 +188,21 @@ function db_migrate(PDO $pdo): void {
             updated_by TEXT
         )
     ");
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS form_fields (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            form_id INTEGER NOT NULL,
+            label TEXT NOT NULL,
+            field_type TEXT NOT NULL DEFAULT 'text',
+            field_name TEXT NOT NULL,
+            options TEXT,
+            required INTEGER DEFAULT 0,
+            ordre INTEGER DEFAULT 0,
+            card_group TEXT DEFAULT 'Général',
+            FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+        )
+    ");
     
     // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
     $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
@@ -187,6 +225,7 @@ function db_migrate(PDO $pdo): void {
             ['smtp_from_name', 'Workflow DREETS'],
             ['delai_relance_h', '48'],
             ['token_expire_days', '30'],
+            ['relance_max', '3'],
         ];
         $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
         foreach ($defaults as $row) {
@@ -194,6 +233,50 @@ function db_migrate(PDO $pdo): void {
         }
     }
     
+    // S'assurer que relance_max existe même si la table settings a déjà des entrés
+    try {
+        $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('relance_max', '3')")->execute();
+    } catch (PDOException $e) {
+        // Ignorer si déjà présent
+    }
+    
+    // Seed default form_fields for the "onboarding" form if empty
+    $ff_count = $pdo->query("SELECT COUNT(*) FROM form_fields")->fetchColumn();
+    if ($ff_count == 0) {
+        // Find the onboarding form id
+        $ob = $pdo->query("SELECT id FROM forms WHERE slug = 'onboarding' LIMIT 1")->fetchColumn();
+        if ($ob) {
+            $fid = (int)$ob;
+            $defaults = [
+                ['Identité de l\'agent',  'Nom',                            'text',    'nom',               null,                                                           1, 1],
+                ['Identité de l\'agent',  'Prénom',                         'text',    'prenom',            null,                                                           1, 2],
+                ['Identité de l\'agent',  'Date de naissance',              'date',    'date_naissance',    null,                                                           1, 3],
+                ['Identité de l\'agent',  'Date de prise de poste',         'date',    'date_prise_poste',  null,                                                           1, 4],
+                ['Identité de l\'agent',  'Corps / Grade',                  'select',  'corps_grade',       '["Attaché d\'administration","Secrétaire administratif","Adjoint administratif","Inspecteur du travail","Contrôleur du travail","Technicien","Ingénieur","Autre"]', 1, 5],
+                ['Identité de l\'agent',  'Type d\'arrivée',                'select',  'type_arrivee',      '["Mutation","Primo-recrutement","Détachement","Stage","Alternance"]', 1, 6],
+                ['Identité de l\'agent',  'Service / Affectation',          'text',    'affectation',       null,                                                           1, 7],
+                ['Identité de l\'agent',  'Quotité',                        'select',  'quotite',           '["100%","80%","50%"]',                                         1, 8],
+                ['Informatique (IT)',     'Type de poste',                  'select',  'type_poste',        '["Fixe","Portable"]',                                          1, 9],
+                ['Informatique (IT)',     'Double écran',                   'checkbox','it_double_ecran',   null,                                                           0, 10],
+                ['Informatique (IT)',     'Accès RPVN',                     'checkbox','it_acces_rpvn',    null,                                                           0, 11],
+                ['Informatique (IT)',     'Téléphone professionnel',        'checkbox','it_telephone_pro', null,                                                           0, 12],
+                ['Informatique (IT)',     'Applicatifs métier',             'textarea','it_applicatifs',   null,                                                           0, 13],
+                ['Ressources Humaines',   'Dossier administratif à constituer','checkbox','rh_dossier_admin',null,                                                          0, 14],
+                ['Ressources Humaines',   'Affiliation mutuelle MGEN',      'checkbox','rh_mutuelle',      null,                                                           0, 15],
+                ['Ressources Humaines',   'Visite médicale à planifier',    'checkbox','rh_visite_medicale',null,                                                          0, 16],
+                ['Ressources Humaines',   'Habilitation sécurité requise',  'checkbox','rh_habilitation',  null,                                                           0, 17],
+                ['Logistique',            'Bâtiment / Bureau',              'text',    'log_batiment_bureau',null,                                                          1, 18],
+                ['Logistique',            'Badge d\'accès',                 'checkbox','log_badge_acces',  null,                                                           0, 19],
+                ['Logistique',            'Véhicule de service',            'checkbox','log_vehicule_service',null,                                                         0, 20],
+                ['Logistique',            'EPI à préparer',                 'checkbox','log_epi_requis',   null,                                                           0, 21],
+            ];
+            $stmt = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($defaults as $row) {
+                $stmt->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $fid]);
+            }
+        }
+    }
+
     // Ajout de colonnes futures avec gestion d'erreur si déjà présentes
     try {
         $pdo->exec("ALTER TABLE submissions ADD COLUMN closed_at DATETIME");
@@ -217,6 +300,13 @@ function db_migrate(PDO $pdo): void {
     // Ajout de la colonne expires_at à tokens si elle n'existe pas
     try {
         $pdo->exec("ALTER TABLE tokens ADD COLUMN expires_at DATETIME");
+    } catch (PDOException $e) {
+        // Ignorer si la colonne existe déjà
+    }
+    
+    // Ajout de la colonne relance_count à tokens si elle n'existe pas
+    try {
+        $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_count INTEGER DEFAULT 0");
     } catch (PDOException $e) {
         // Ignorer si la colonne existe déjà
     }
@@ -499,6 +589,33 @@ function validate_token(string $token, string $action = 'valider', string $comme
 
     $t['done_at'] = date('Y-m-d H:i:s');
     return ['status' => 'ok', 'data' => $t];
+}
+
+// ── ACTIVE SUBMISSIONS CHECK ───────────────────────────────────
+
+/**
+ * Vérifie si un formulaire a des soumissions actives (en_cours)
+ */
+function has_active_submissions(int $form_id): int {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = 'en_cours'");
+    $stmt->execute([$form_id]);
+    return (int)$stmt->fetchColumn();
+}
+
+/**
+ * Vérifie si une étape a des soumissions actives (tokens en cours sur cette étape)
+ */
+function has_active_step_submissions(int $step_id): int {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT t.submission_id)
+        FROM tokens t
+        JOIN submissions s ON s.id = t.submission_id
+        WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = 'en_cours'
+    ");
+    $stmt->execute([$step_id]);
+    return (int)$stmt->fetchColumn();
 }
 
 // ── ADMIN FUNCTIONS ───────────────────────────────────────────
