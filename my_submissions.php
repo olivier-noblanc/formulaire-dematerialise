@@ -268,5 +268,6 @@ foreach ($submissions as $s) {
     <?php endforeach; ?>
   <?php endif; ?>
 </div>
+<?= render_footer() ?>
 </body>
 </html>

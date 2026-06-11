@@ -332,6 +332,14 @@ function h(string $val): string {
     return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
 }
 
+// ── FOOTER ────────────────────────────────────────────────────
+function render_footer(): string {
+    return '<footer style="text-align:center;padding:1.5rem 1rem;font-size:.78rem;color:#888;background:#f5f5fe;border-top:1px solid #eee;margin-top:2rem;">
+  <a href="changelog.php" style="color:#003189;text-decoration:none;font-weight:bold;" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>
+  — Formulaire Dématérialisé DREETS
+</footer>';
+}
+
 // ── SETTINGS ─────────────────────────────────────────────────
 function get_setting(string $key, string $default = ''): string {
     $pdo = get_pdo();

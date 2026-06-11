@@ -260,5 +260,6 @@ if (is_super_admin() || is_admin_user()) {
         </div>
     <?php endif; ?>
 </div>
+<?= render_footer() ?>
 </body>
 </html>

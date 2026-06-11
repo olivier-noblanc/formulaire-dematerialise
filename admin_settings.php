@@ -232,5 +232,6 @@ $relance_max      = get_setting('relance_max', '3');
         </form>
     </div>
 </div>
+<?= render_footer() ?>
 </body>
 </html>

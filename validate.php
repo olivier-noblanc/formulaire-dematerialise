@@ -162,5 +162,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 <?php endif; ?>
 
 </div></div>
+<?= render_footer() ?>
 </body>
 </html>

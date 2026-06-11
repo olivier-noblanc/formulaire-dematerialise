@@ -236,5 +236,6 @@ HTML;
 <?php if (!empty($field_errors)): ?>
 <script>document.querySelector('.field-error')?.scrollIntoView({behavior:'smooth',block:'center'});</script>
 <?php endif; ?>
+<?= render_footer() ?>
 </body>
 </html>

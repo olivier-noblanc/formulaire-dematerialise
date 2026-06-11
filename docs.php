@@ -724,5 +724,6 @@ try {
   </div>
 
 </div>
+<?= render_footer() ?>
 </body>
 </html>

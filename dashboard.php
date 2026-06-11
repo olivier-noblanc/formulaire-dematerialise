@@ -223,5 +223,6 @@ function get_tokens_status(int $sub_id): array {
 <script>
 function toggle(i){document.getElementById('det-'+i).classList.toggle('open');}
 </script>
+<?= render_footer() ?>
 </body>
 </html>

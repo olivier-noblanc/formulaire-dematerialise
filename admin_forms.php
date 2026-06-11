@@ -797,5 +797,6 @@ if ($form_id > 0) {
         </div>
     <?php endif; ?>
 </div>
+<?= render_footer() ?>
 </body>
 </html>
