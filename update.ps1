@@ -11,7 +11,8 @@
 #
 # Fonctionne dans 2 scenarios :
 #   1. Le depot git existe deja -> git pull
-#   2. Pas de depot git -> clone puis copie (sans ecraser config.php, db/, etc.)
+#   2. Pas de depot git -> clone dans un temp puis copie a plat
+#      (les fichiers vont au meme niveau que le .ps1, pas dans un sous-dossier)
 
 param(
     [switch]$DryRun     = $false,
@@ -35,6 +36,7 @@ $ProtectedDirs = @(
 )
 
 # Repertoire du script = racine de l'application
+# C'est ici que les fichiers doivent aller, pas dans un sous-dossier
 $AppRoot = $PSScriptRoot
 if (-not $AppRoot) { $AppRoot = (Get-Location).Path }
 
@@ -63,8 +65,8 @@ function Get-LocalVersion {
 }
 
 function Get-RemoteVersion {
-    param([string]$GitDir)
-    $configPath = Join-Path $GitDir "config.php"
+    param([string]$Dir)
+    $configPath = Join-Path $Dir "config.php"
     if (Test-Path $configPath) {
         $content = Get-Content $configPath -Raw -ErrorAction SilentlyContinue
         if ($content -match "APP_VERSION.*?'([^']+)'") {
@@ -108,71 +110,6 @@ function Create-Backup {
     }
 }
 
-function Safe-Copy {
-    param(
-        [string]$SourceDir,
-        [string]$DestDir
-    )
-    # Copie les fichiers du clone vers l'application
-    # en protegeant config.php, db/, sessions/, etc.
-
-    $copiedCount = 0
-    $skippedCount = 0
-
-    # Lister les fichiers du clone (sauf .git, .history)
-    $files = Get-ChildItem -Path $SourceDir -Recurse -File |
-        Where-Object { $_.FullName -notmatch '\\\.git\\' -and $_.FullName -notmatch '\\\.history\\' }
-
-    foreach ($file in $files) {
-        $relativePath = $file.FullName.Substring($SourceDir.Length + 1)
-
-        # Verifier si le fichier est protege
-        $fileName = $file.Name
-        $isProtected = $false
-
-        # Fichiers proteges
-        foreach ($pf in $ProtectedFiles) {
-            if ($fileName -eq $pf) {
-                $isProtected = $true
-                break
-            }
-        }
-
-        # Dossiers proteges
-        if (-not $isProtected) {
-            foreach ($pd in $ProtectedDirs) {
-                if ($relativePath -like "$pd\*" -or $relativePath -like "$pd/*") {
-                    $isProtected = $true
-                    break
-                }
-            }
-        }
-
-        # Ne pas ecraser le script lui-meme en cours d'execution
-        if ($fileName -eq "update.ps1" -and $relativePath -eq "update.ps1") {
-            $isProtected = $true
-        }
-
-        if ($isProtected) {
-            Write-Status ">>" "Protege : $relativePath" "DarkGray"
-            $skippedCount++
-            continue
-        }
-
-        # Copier le fichier
-        $destPath = Join-Path $DestDir $relativePath
-        $destDir2 = Split-Path -Parent $destPath
-        if (-not (Test-Path $destDir2)) {
-            New-Item -ItemType Directory -Path $destDir2 -Force | Out-Null
-        }
-        Copy-Item -Path $file.FullName -Destination $destPath -Force
-        Write-Status "->" "Mis a jour : $relativePath" "Green"
-        $copiedCount++
-    }
-
-    return @{ Copied = $copiedCount; Skipped = $skippedCount }
-}
-
 # ── Programme principal ────────────────────────────────────────
 
 Clear-Host
@@ -181,6 +118,7 @@ Write-Host "  =====================================================" -Foreground
 Write-Host "    Workflow DREETS -- Mise a jour automatique (git)" -ForegroundColor DarkBlue
 Write-Host "  =====================================================" -ForegroundColor DarkBlue
 Write-Host ""
+Write-Status ">" "Dossier de l'application : $AppRoot" "White"
 
 # 1. Verifier que git est disponible
 Write-Section "Verification de l'environnement"
@@ -203,7 +141,7 @@ Write-Status ">" "Version installee : v$localVersion"
 $hasGit = Test-Path (Join-Path $AppRoot ".git")
 
 if ($hasGit) {
-    # ── MODE 1 : git pull (depot deja cloné) ───────────────────
+    # ── MODE 1 : git pull (depot deja clone) ───────────────────
 
     Write-Section "Mode : depot git existant (git pull)"
     Push-Location $AppRoot
@@ -314,34 +252,66 @@ if ($hasGit) {
 }
 else {
     # ── MODE 2 : clone + copie (pas de depot git) ──────────────
+    #
+    # Le clone se fait dans un dossier temporaire (en dehors de $AppRoot)
+    # puis les fichiers sont copies A PLAT dans $AppRoot (meme niveau que le .ps1)
+    # sans creer de sous-dossier formulaire-dematerialise
 
     Write-Section "Mode : pas de depot git (clone + copie)"
     Write-Status "!" "Pas de dossier .git detecte." "Yellow"
-    Write-Status ">" "Le depot va etre clone puis les fichiers copies." "White"
+    Write-Status ">" "Le depot va etre clone dans un temp puis les fichiers copies ici." "White"
 
-    # Cloner dans un dossier temporaire
-    $cloneDir = Join-Path $env:TEMP "formulaire-dematerialise-update"
+    # Dossier temporaire avec GUID pour eviter tout conflit
+    $guid = [System.Guid]::NewGuid().ToString("N").Substring(0, 8)
+    $cloneDir = Join-Path $env:TEMP "wf-dreets-update-$guid"
 
     # Nettoyer un ancien clone s'il existe
     if (Test-Path $cloneDir) {
         Remove-Item -Path $cloneDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 
+    # Cloner le depot
+    # git clone <url> <dir> met les fichiers DIRECTEMENT dans <dir>
+    # Pas de sous-dossier formulaire-dematerialise cree
     Write-Section "Clonage du depot"
     try {
-        & git clone --branch $RepoBranch --single-branch $RepoUrl $cloneDir 2>&1 | ForEach-Object {
+        & git clone --branch $RepoBranch --single-branch --depth 1 $RepoUrl $cloneDir 2>&1 | ForEach-Object {
             Write-Status "  " $_ "DarkGray"
         }
         if ($LASTEXITCODE -ne 0) { throw "git clone echoue" }
-        Write-Status "OK" "Clone reussi dans $cloneDir" "Green"
+        Write-Status "OK" "Clone reussi" "Green"
     }
     catch {
         Write-Status "X" "Impossible de cloner le depot. Verifiez connexion/proxy." "Red"
         exit 1
     }
 
+    # Verifier que le clone contient bien les fichiers a la racine
+    # (index.php doit etre directement dans $cloneDir, pas dans un sous-dossier)
+    if (-not (Test-Path (Join-Path $cloneDir "index.php"))) {
+        Write-Status "!" "Structure inattendue du clone. Recherche d'un sous-dossier..." "Yellow"
+
+        # Cas improbable : git aurait cree un sous-dossier
+        $subDir = Get-ChildItem -Path $cloneDir -Directory |
+            Where-Object { $_.Name -eq "formulaire-dematerialise" -or (Test-Path (Join-Path $_.FullName "index.php")) } |
+            Select-Object -First 1
+
+        if ($subDir) {
+            Write-Status "OK" "Sous-dossier detecte : $($subDir.Name). Ajustement..." "Green"
+            $cloneDir = $subDir.FullName
+        }
+        else {
+            Write-Status "X" "Impossible de trouver les fichiers du depot dans le clone." "Red"
+            Remove-Item -Path $cloneDir -Recurse -Force -ErrorAction SilentlyContinue
+            exit 1
+        }
+    }
+
+    Write-Status ">" "Dossier source du clone : $cloneDir" "DarkGray"
+    Write-Status ">" "Dossier de destination   : $AppRoot" "DarkGray"
+
     # Version distante
-    $remoteVersion = Get-RemoteVersion -GitDir $cloneDir
+    $remoteVersion = Get-RemoteVersion -Dir $cloneDir
     Write-Status ">" "Version disponible : v$remoteVersion"
 
     if ($remoteVersion -eq $localVersion -and -not $DryRun) {
@@ -355,13 +325,20 @@ else {
         }
     }
 
-    # Afficher les fichiers qui vont etre mis a jour
-    Write-Section "Fichiers a mettre a jour"
-    $remoteFiles = Get-ChildItem -Path $cloneDir -Recurse -File |
-        Where-Object { $_.FullName -notmatch '\\\.git\\' -and $_.FullName -notmatch '\\\.history\\' }
+    # Supprimer .git et .history du clone pour ne pas les copier
+    $gitDir = Join-Path $cloneDir ".git"
+    $histDir = Join-Path $cloneDir ".history"
+    if (Test-Path $gitDir)  { Remove-Item -Path $gitDir -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $histDir) { Remove-Item -Path $histDir -Recurse -Force -ErrorAction SilentlyContinue }
+
+    # Lister les fichiers a mettre a jour
+    Write-Section "Analyse des differences"
+    $remoteFiles = Get-ChildItem -Path $cloneDir -Recurse -File -ErrorAction SilentlyContinue
 
     $updateCount = 0
     $newCount = 0
+    $protectedCount = 0
+
     foreach ($file in $remoteFiles) {
         $relativePath = $file.FullName.Substring($cloneDir.Length + 1)
         $destPath = Join-Path $AppRoot $relativePath
@@ -371,17 +348,21 @@ else {
         foreach ($pf in $ProtectedFiles) {
             if ($file.Name -eq $pf) { $skip = $true; break }
         }
-        foreach ($pd in $ProtectedDirs) {
-            if ($relativePath -like "$pd\*" -or $relativePath -like "$pd/*") { $skip = $true; break }
+        if (-not $skip) {
+            foreach ($pd in $ProtectedDirs) {
+                if ($relativePath -like "$pd\*" -or $relativePath -like "$pd/*") { $skip = $true; break }
+            }
         }
         if ($file.Name -eq "update.ps1" -and $relativePath -eq "update.ps1") { $skip = $true }
 
-        if ($skip) { continue }
+        if ($skip) {
+            $protectedCount++
+            continue
+        }
 
         if (Test-Path $destPath) {
-            # Comparer le hash pour voir si le fichier a change
-            $localHash2  = (Get-FileHash -Path $destPath -Algorithm SHA256).Hash
-            $remoteHash2 = (Get-FileHash -Path $file.FullName -Algorithm SHA256).Hash
+            $localHash2  = (Get-FileHash -Path $destPath -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+            $remoteHash2 = (Get-FileHash -Path $file.FullName -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
             if ($localHash2 -ne $remoteHash2) {
                 Write-Status "~" "Modifie : $relativePath" "Yellow"
                 $updateCount++
@@ -396,13 +377,13 @@ else {
     $totalChanges = $updateCount + $newCount
     if ($totalChanges -eq 0) {
         Write-Host ""
-        Write-Status "OK" "Aucune mise a jour necessaire." "Green"
+        Write-Status "OK" "Aucune mise a jour necessaire. Tous les fichiers sont a jour." "Green"
         Remove-Item -Path $cloneDir -Recurse -Force -ErrorAction SilentlyContinue
         exit 0
     }
 
     Write-Host ""
-    Write-Status ">" "Resume : $updateCount fichier(s) modifie(s), $newCount nouveau(x) fichier(s)" "Cyan"
+    Write-Status ">" "Resume : $updateCount modifie(s), $newCount nouveau(x), $protectedCount protege(s)" "Cyan"
 
     # DryRun
     if ($DryRun) {
@@ -426,16 +407,52 @@ else {
         Write-Status "!" "Sauvegarde ignoree (-SkipBackup)" "Yellow"
     }
 
-    # Copie des fichiers
-    Write-Section "Mise a jour des fichiers"
-    $result = Safe-Copy -SourceDir $cloneDir -DestDir $AppRoot
+    # Copie des fichiers du clone vers l'application
+    # Chaque fichier va DIRECTEMENT dans $AppRoot (pas de sous-dossier)
+    Write-Section "Copie des fichiers"
+    $copiedCount = 0
+    $skippedCount = 0
 
-    # Nettoyer le clone
+    foreach ($file in $remoteFiles) {
+        # Chemin relatif par rapport a la racine du clone
+        $relativePath = $file.FullName.Substring($cloneDir.Length + 1)
+
+        # Verifier si le fichier est protege
+        $isProtected = $false
+        foreach ($pf in $ProtectedFiles) {
+            if ($file.Name -eq $pf) { $isProtected = $true; break }
+        }
+        if (-not $isProtected) {
+            foreach ($pd in $ProtectedDirs) {
+                if ($relativePath -like "$pd\*" -or $relativePath -like "$pd/*") { $isProtected = $true; break }
+            }
+        }
+        if ($file.Name -eq "update.ps1" -and $relativePath -eq "update.ps1") { $isProtected = $true }
+
+        if ($isProtected) {
+            Write-Status ">>" "Protege : $relativePath" "DarkGray"
+            $skippedCount++
+            continue
+        }
+
+        # Destination = $AppRoot + chemin relatif
+        # Ex: $AppRoot\index.php, $AppRoot\PHPMailer\Exception.php
+        $destPath = Join-Path $AppRoot $relativePath
+        $destParent = Split-Path -Parent $destPath
+        if (-not (Test-Path $destParent)) {
+            New-Item -ItemType Directory -Path $destParent -Force | Out-Null
+        }
+        Copy-Item -Path $file.FullName -Destination $destPath -Force
+        Write-Status "->" "$relativePath" "Green"
+        $copiedCount++
+    }
+
+    # Nettoyer le clone temporaire
     Remove-Item -Path $cloneDir -Recurse -Force -ErrorAction SilentlyContinue
 
     Write-Section "Resultat copie"
-    Write-Status "OK" "$($result.Copied) fichier(s) copie(s)" "Green"
-    Write-Status ">>" "$($result.Skipped) fichier(s) protege(s) ignores" "DarkGray"
+    Write-Status "OK" "$copiedCount fichier(s) copie(s)" "Green"
+    Write-Status ">>" "$skippedCount fichier(s) protege(s) non ecrase(s)" "DarkGray"
 }
 
 # ── Resultat final ─────────────────────────────────────────────
