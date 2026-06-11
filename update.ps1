@@ -1,12 +1,12 @@
-# update.ps1 — Script de mise à jour automatique du Workflow DREETS
-# Télécharge les derniers fichiers depuis le dépôt GitHub
+# update.ps1 — Script de mise a jour automatique du Workflow DREETS
+# Utilise git (deja configure avec proxy/credentials sur le poste)
 #
 # Usage :
-#   .\update.ps1              # Mise à jour normale (sauvegarde automatique)
-#   .\update.ps1 -DryRun      # Simule la mise à jour sans rien modifier
+#   .\update.ps1              # Mise a jour normale (sauvegarde automatique)
+#   .\update.ps1 -DryRun      # Simule la mise a jour sans rien modifier
 #   .\update.ps1 -SkipBackup  # Pas de sauvegarde (dangereux)
 #
-# Prérequis : PowerShell 5.1+, connexion Internet
+# Prerequis : PowerShell 5.1+, git installe et configure
 # Compatible Windows Server / IIS
 
 param(
@@ -14,31 +14,12 @@ param(
     [switch]$SkipBackup = $false
 )
 
-# ── Configuration ──────────────────────────────────────────────
-$RepoOwner  = "olivier-noblanc"
-$RepoName   = "formulaire-dematerialise"
-$Branch     = "master"
-$ApiBaseUrl = "https://api.github.com/repos/$RepoOwner/$RepoName/contents"
-$RawBaseUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch"
-
-# Fichiers à ignorer (configuration locale, données, cache)
-$ExcludeFiles = @(
-    "config.php",
-    "update.ps1",
-    ".gitignore"
+# Fichiers a proteger (jamais ecrases par git pull)
+$ProtectedFiles = @(
+    "config.php"
 )
 
-# Fichiers/dossiers protégés (jamais écrasés)
-$ExcludeDirs = @(
-    "db",
-    "sessions",
-    "vendor",
-    "logs",
-    ".git",
-    ".history"
-)
-
-# Répertoire du script = racine de l'application
+# Repertoire du script = racine de l'application
 $AppRoot = $PSScriptRoot
 if (-not $AppRoot) { $AppRoot = (Get-Location).Path }
 
@@ -52,67 +33,35 @@ function Write-Status {
 function Write-Section {
     param([string]$Title)
     Write-Host ""
-    Write-Host "  ── $Title ──" -ForegroundColor Cyan
+    Write-Host "  -- $Title --" -ForegroundColor Cyan
 }
 
-function Get-RemoteFileList {
-    param([string]$Path = "")
-    
-    $url = if ($Path) { "$ApiBaseUrl/$Path?ref=$Branch" } else { "$ApiBaseUrl`?ref=$Branch" }
-    
-    try {
-        $headers = @{
-            "User-Agent" = "DREETS-Workflow-Updater/1.0"
+function Get-LocalVersion {
+    $configPath = Join-Path $AppRoot "config.php"
+    if (Test-Path $configPath) {
+        $content = Get-Content $configPath -Raw -ErrorAction SilentlyContinue
+        if ($content -match "APP_VERSION.*?'([^']+)'") {
+            return $Matches[1]
         }
-        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get -ErrorAction Stop
-        return $response
     }
-    catch {
-        Write-Status "❌" "Impossible d'acceder a l'API GitHub : $_" "Red"
-        return $null
-    }
-}
-
-function Download-File {
-    param(
-        [string]$RemotePath,
-        [string]$LocalPath
-    )
-    
-    $url = "$RawBaseUrl/$RemotePath"
-    
-    try {
-        # Créer le dossier parent si nécessaire
-        $parentDir = Split-Path -Parent $LocalPath
-        if (-not (Test-Path $parentDir)) {
-            New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
-        }
-        
-        Invoke-WebRequest -Uri $url -OutFile $LocalPath -ErrorAction Stop
-        return $true
-    }
-    catch {
-        Write-Status "❌" "Echec du telechargement de $RemotePath : $_" "Red"
-        return $false
-    }
+    return "inconnue"
 }
 
 function Create-Backup {
     param([string]$SourceDir)
-    
+
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $backupDir = Join-Path $SourceDir "backups\backup-$timestamp"
-    
+
     try {
-        # Créer le dossier de backup
         New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
-        
-        # Copier les fichiers PHP, MD, CSS (pas db/, sessions/, .git/, etc.)
-        $extensions = @("*.php", "*.md", "*.css", "*.js")
+
+        # Copier les fichiers PHP, MD, CSS, JS, ps1 (pas db/, sessions/, .git/, etc.)
+        $extensions = @("*.php", "*.md", "*.css", "*.js", "*.ps1")
         foreach ($ext in $extensions) {
-            $files = Get-ChildItem -Path $SourceDir -Filter $ext -Recurse -File | 
+            $files = Get-ChildItem -Path $SourceDir -Filter $ext -Recurse -File |
                 Where-Object { $_.FullName -notmatch '\\(db|sessions|vendor|logs|\.git|\.history|backups)\\' }
-            
+
             foreach ($file in $files) {
                 $relativePath = $file.FullName.Substring($SourceDir.Length + 1)
                 $destPath = Join-Path $backupDir $relativePath
@@ -123,12 +72,12 @@ function Create-Backup {
                 Copy-Item -Path $file.FullName -Destination $destPath -Force
             }
         }
-        
-        Write-Status "✅" "Sauvegarde creee : backups\backup-$timestamp" "Green"
+
+        Write-Status "OK" "Sauvegarde creee : backups\backup-$timestamp" "Green"
         return $backupDir
     }
     catch {
-        Write-Status "❌" "Echec de la sauvegarde : $_" "Red"
+        Write-Status "X" "Echec de la sauvegarde : $_" "Red"
         return $null
     }
 }
@@ -137,233 +86,189 @@ function Create-Backup {
 
 Clear-Host
 Write-Host ""
-Write-Host "  ╔═══════════════════════════════════════════════════════════╗" -ForegroundColor DarkBlue
-Write-Host "  ║          Workflow DREETS — Mise a jour automatique        ║" -ForegroundColor DarkBlue
-Write-Host "  ╚═══════════════════════════════════════════════════════════╝" -ForegroundColor DarkBlue
+Write-Host "  =====================================================" -ForegroundColor DarkBlue
+Write-Host "    Workflow DREETS -- Mise a jour automatique (git)" -ForegroundColor DarkBlue
+Write-Host "  =====================================================" -ForegroundColor DarkBlue
 Write-Host ""
 
-# 1. Vérifier la connectivité
-Write-Section "Verification de la connectivite"
+# 1. Verifier que git est disponible
+Write-Section "Verification de l'environnement"
 try {
-    $null = Invoke-RestMethod -Uri "https://api.github.com" -TimeoutSec 10 -ErrorAction Stop
-    Write-Status "✅" "Connexion Internet OK" "Green"
+    $gitVersion = & git --version 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "git non trouve" }
+    Write-Status "OK" "Git detecte : $gitVersion" "Green"
 }
 catch {
-    Write-Status "❌" "Pas de connexion Internet. Abandon." "Red"
+    Write-Status "X" "Git n'est pas installe ou pas dans le PATH. Abandon." "Red"
     exit 1
 }
 
-# 2. Lire la version locale
+# Verifier qu'on est dans un depot git
+if (-not (Test-Path (Join-Path $AppRoot ".git"))) {
+    Write-Status "X" "Ce repertoire n'est pas un depot git. Abandon." "Red"
+    Write-Status "!" "Clonez d'abord le depot : git clone https://github.com/olivier-noblanc/formulaire-dematerialise.git" "Yellow"
+    exit 1
+}
+
+# 2. Version locale
 Write-Section "Version locale"
-$localVersion = "inconnue"
-$configPath = Join-Path $AppRoot "config.php"
-if (Test-Path $configPath) {
-    $configContent = Get-Content $configPath -Raw
-    if ($configContent -match "APP_VERSION.*?'([^']+)'") {
-        $localVersion = $Matches[1]
-    }
-}
-Write-Status "📌" "Version installee : v$localVersion"
+$localVersion = Get-LocalVersion
+Write-Status ">" "Version installee : v$localVersion"
 
-# 3. Récupérer la version distante
-Write-Section "Version distante"
-$remoteConfig = Invoke-RestMethod -Uri "$RawBaseUrl/config.php" -ErrorAction SilentlyContinue
-$remoteVersion = "inconnue"
-if ($remoteConfig -match "APP_VERSION.*?'([^']+)'") {
-    $remoteVersion = $Matches[1]
-}
-Write-Status "🌐" "Version disponible : v$remoteVersion"
+# 3. git fetch pour voir les nouveautes
+Write-Section "Verification des mises a jour distantes"
+Push-Location $AppRoot
 
-if ($remoteVersion -eq $localVersion -and -not $DryRun) {
-    Write-Host ""
-    Write-Status "ℹ️" "Vous etes deja a jour (v$localVersion)." "Yellow"
-    $answer = Read-Host "  Continuer quand meme ? (o/N)"
-    if ($answer -notmatch "^[oO]$") {
-        Write-Status "👋" "Mise a jour annulee." "Yellow"
-        exit 0
-    }
+try {
+    & git fetch origin 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "git fetch echoue" }
+    Write-Status "OK" "git fetch origin : OK" "Green"
 }
-
-# 4. Lister les fichiers distants
-Write-Section "Analyse des fichiers distants"
-$remoteFiles = Get-RemoteFileList
-if (-not $remoteFiles) {
-    Write-Status "❌" "Impossible de recuperer la liste des fichiers." "Red"
+catch {
+    Write-Status "X" "Impossible de contacter le depot distant. Verifiez la connexion/proxy." "Red"
+    Pop-Location
     exit 1
 }
 
-$toUpdate = @()
-$toAdd = @()
-
-foreach ($item in $remoteFiles) {
-    if ($item.type -ne "file") { continue }
-    
-    $fileName = $item.name
-    
-    # Ignorer les fichiers exclus
-    if ($ExcludeFiles -contains $fileName) {
-        Write-Status "⏭️" "Ignore (protege) : $fileName" "DarkGray"
-        continue
-    }
-    
-    $localPath = Join-Path $AppRoot $fileName
-    
-    if (Test-Path $localPath) {
-        # Fichier existant — comparer la taille comme indicateur rapide
-        $localSize = (Get-Item $localPath).Length
-        $remoteSize = $item.size
-        
-        if ($localSize -ne $remoteSize) {
-            $toUpdate += $item
-            Write-Status "📝" "A mettre a jour : $fileName" "Yellow"
-        }
-    }
-    else {
-        # Nouveau fichier
-        $toAdd += $item
-        Write-Status "➕" "Nouveau fichier : $fileName" "Green"
-    }
+# Comparer HEAD avec origin/master
+$branch = & git rev-parse --abbrev-ref HEAD 2>&1
+if ($branch -ne "master") {
+    Write-Status "!" "Branche actuelle : $branch (master attendu)" "Yellow"
 }
 
-# Aussi vérifier les sous-dossiers PHPMailer
-$subDirs = @("PHPMailer")
-foreach ($subDir in $subDirs) {
-    $subFiles = Get-RemoteFileList -Path $subDir
-    if ($subFiles) {
-        foreach ($item in $subFiles) {
-            if ($item.type -ne "file") { continue }
-            $relativePath = "$subDir/$($item.name)"
-            $localPath = Join-Path $AppRoot "$subDir\$($item.name)"
-            
-            if (-not (Test-Path $localPath)) {
-                $toAdd += $item
-                Write-Status "➕" "Nouveau fichier : $relativePath" "Green"
-            }
-            else {
-                $localSize = (Get-Item $localPath).Length
-                if ($localSize -ne $item.size) {
-                    $toUpdate += $item
-                    Write-Status "📝" "A mettre a jour : $relativePath" "Yellow"
-                }
-            }
-        }
-    }
-}
+$localHash  = & git rev-parse HEAD 2>&1
+$remoteHash = & git rev-parse "origin/master" 2>&1
 
-$totalChanges = $toUpdate.Count + $toAdd.Count
-
-if ($totalChanges -eq 0) {
-    Write-Host ""
-    Write-Status "✅" "Aucune mise a jour necessaire. Tous les fichiers sont a jour." "Green"
+if ($localHash -eq $remoteHash) {
+    Write-Status "OK" "Vous etes deja a jour (v$localVersion)." "Green"
+    Pop-Location
     exit 0
 }
 
-Write-Host ""
-Write-Status "📊" "Resume : $($toUpdate.Count) fichier(s) a mettre a jour, $($toAdd.Count) nouveau(x) fichier(s)" "Cyan"
+# Afficher le nombre de commits de retard
+$behindCount = & git rev-list --count "HEAD..origin/master" 2>&1
+Write-Status "!" "Votre version est en retard de $behindCount commit(s)" "Yellow"
 
-# 5. DryRun — arrêt ici
+# Afficher les nouveaux commits
+Write-Section "Nouveaux commits disponibles"
+& git log --oneline "HEAD..origin/master" 2>&1 | ForEach-Object {
+    Write-Status "  " $_ "DarkGray"
+}
+
+# 4. DryRun
 if ($DryRun) {
     Write-Host ""
-    Write-Status "🔍" "Mode simulation (DryRun) : aucune modification effectuee." "Yellow"
+    Write-Status "?" "Mode simulation (DryRun) : aucune modification effectuee." "Yellow"
+    Pop-Location
     exit 0
 }
 
-# 6. Sauvegarde
+# 5. Sauvegarde
 if (-not $SkipBackup) {
     Write-Section "Sauvegarde"
     $backupPath = Create-Backup -SourceDir $AppRoot
     if (-not $backupPath) {
-        Write-Status "❌" "Sauvegarde echouee. Mise a jour annulee." "Red"
+        Write-Status "X" "Sauvegarde echouee. Mise a jour annulee." "Red"
+        Pop-Location
         exit 1
     }
 }
 else {
-    Write-Status "⚠️" "Sauvegarde ignoree (--SkipBackup)" "Yellow"
+    Write-Status "!" "Sauvegarde ignoree (-SkipBackup)" "Yellow"
 }
 
-# 7. Téléchargement et mise à jour
-Write-Section "Mise a jour en cours"
-$successCount = 0
-$errorCount = 0
+# 6. Protéger les fichiers locaux (config.php, etc.)
+Write-Section "Protection des fichiers locaux"
 
-foreach ($item in ($toUpdate + $toAdd)) {
-    $remotePath = $item.path
-    $fileName = $item.name
-    $localPath = Join-Path $AppRoot ($remotePath -replace '/', '\')
-    
-    # Ne pas écraser les fichiers protégés
-    if ($ExcludeFiles -contains $fileName) {
-        Write-Status "⏭️" "Protege : $fileName" "DarkGray"
-        continue
+# Sauvegarder les fichiers proteges dans un dossier temporaire
+$tempDir = Join-Path $AppRoot ".update_tmp"
+if (Test-Path $tempDir) { Remove-Item -Path $tempDir -Recurse -Force }
+New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+foreach ($file in $ProtectedFiles) {
+    $src = Join-Path $AppRoot $file
+    if (Test-Path $src) {
+        Copy-Item -Path $src -Destination (Join-Path $tempDir $file) -Force
+        Write-Status "OK" "Protege : $file" "Green"
     }
-    
-    # Ne pas toucher aux dossiers protégés
-    $skip = $false
-    foreach ($exDir in $ExcludeDirs) {
-        if ($remotePath -like "$exDir/*" -or $remotePath -eq $exDir) {
-            $skip = $true
-            break
+}
+
+# 7. git pull
+Write-Section "Mise a jour (git pull)"
+try {
+    $pullOutput = & git pull origin master 2>&1
+    if ($LASTEXITCODE -ne 0) { throw $pullOutput }
+
+    # Afficher le resultat du pull
+    $pullOutput | ForEach-Object {
+        Write-Status "  " $_ "DarkGray"
+    }
+    Write-Status "OK" "git pull : reussi" "Green"
+}
+catch {
+    Write-Status "X" "git pull echoue : $_" "Red"
+
+    # Restaurer les fichiers proteges quand meme
+    foreach ($file in $ProtectedFiles) {
+        $tmp = Join-Path $tempDir $file
+        if (Test-Path $tmp) {
+            Copy-Item -Path $tmp -Destination (Join-Path $AppRoot $file) -Force
         }
     }
-    if ($skip) { continue }
-    
-    if (Download-File -RemotePath $remotePath -LocalPath $localPath) {
-        Write-Status "✅" "Telecharge : $remotePath" "Green"
-        $successCount++
-    }
-    else {
-        $errorCount++
+    Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    Pop-Location
+    exit 1
+}
+
+# 8. Restaurer les fichiers proteges
+Write-Section "Restauration des fichiers locaux"
+foreach ($file in $ProtectedFiles) {
+    $tmp = Join-Path $tempDir $file
+    $dest = Join-Path $AppRoot $file
+    if (Test-Path $tmp) {
+        Copy-Item -Path $tmp -Destination $dest -Force
+        Write-Status "OK" "Restaure : $file (version locale conservee)" "Green"
     }
 }
 
-# 8. Résultat
+# Nettoyer le dossier temporaire
+Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+
+# 9. Verifier la nouvelle version
 Write-Section "Resultat"
-if ($errorCount -eq 0) {
-    Write-Status "✅" "Mise a jour terminee avec succes !" "Green"
-    Write-Status "📊" "$successCount fichier(s) mis a jour" "Green"
+$newVersion = Get-LocalVersion
+if ($newVersion -ne $localVersion) {
+    Write-Status "OK" "Version mise a jour : v$localVersion -> v$newVersion" "Green"
 }
 else {
-    Write-Status "⚠️" "Mise a jour terminee avec $errorCount erreur(s)" "Yellow"
-    Write-Status "📊" "$successCount fichier(s) reussi(s), $errorCount echoue(s)" "Yellow"
+    Write-Status "OK" "Mise a jour appliquee (v$newVersion)" "Green"
 }
 
-# 9. Vérifier la nouvelle version
-$newConfigPath = Join-Path $AppRoot "config.php"
-if (Test-Path $newConfigPath) {
-    $newConfigContent = Get-Content $newConfigPath -Raw
-    $newVersion = "inconnue"
-    if ($newConfigContent -match "APP_VERSION.*?'([^']+)'") {
-        $newVersion = $Matches[1]
-    }
-    if ($newVersion -ne $localVersion) {
-        Write-Status "🎉" "Version mise a jour : v$localVersion → v$newVersion" "Green"
-    }
-}
-
-# 10. Instructions post-mise à jour
+# 10. Instructions post-mise a jour
 Write-Host ""
-Write-Host "  ── Post-mise a jour ──" -ForegroundColor Cyan
-Write-Status "💡" "Verifiez que l'application fonctionne correctement." "White"
-Write-Status "💡" "En cas de probleme, restaurez la sauvegarde dans backups/" "White"
-Write-Status "💡" "Le fichier config.php n'a PAS ete ecrase (protege)." "White"
-Write-Status "💡" "Si de nouveaux parametres existent, ajoutez-les manuellement dans config.php" "White"
+Write-Section "Post-mise a jour"
+Write-Status "!" "Verifiez que l'application fonctionne correctement." "White"
+Write-Status "!" "En cas de probleme, restaurez la sauvegarde dans backups/" "White"
+Write-Status "!" "config.php n'a PAS ete ecrase (version locale conservee)." "White"
+Write-Status "!" "Si de nouveaux parametres existent dans config.php, ajoutez-les manuellement." "White"
 
-# 11. Proposition de nettoyage des anciens backups
+# 11. Nettoyage des anciens backups
 $backupsDir = Join-Path $AppRoot "backups"
 if (Test-Path $backupsDir) {
     $oldBackups = Get-ChildItem -Path $backupsDir -Directory | Sort-Object CreationTime -Descending | Select-Object -Skip 5
     if ($oldBackups.Count -gt 0) {
         Write-Host ""
-        Write-Status "🗑️" "$($oldBackups.Count) ancienne(s) sauvegarde(s) trouvee(s) (5 conservees)." "Yellow"
+        Write-Status "!" "$($oldBackups.Count) ancienne(s) sauvegarde(s) trouvee(s) (5 conservees)." "Yellow"
         $clean = Read-Host "  Supprimer les anciennes sauvegardes ? (o/N)"
         if ($clean -match "^[oO]$") {
             foreach ($old in $oldBackups) {
                 Remove-Item -Path $old.FullName -Recurse -Force
-                Write-Status "🗑️" "Supprime : $($old.Name)" "DarkGray"
+                Write-Status "  " "Supprime : $($old.Name)" "DarkGray"
             }
         }
     }
 }
 
+Pop-Location
 Write-Host ""
-Write-Status "👋" "Fin du script de mise a jour." "White"
+Write-Status ">" "Fin du script de mise a jour." "White"
