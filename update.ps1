@@ -137,6 +137,91 @@ Write-Section "Version locale"
 $localVersion = Get-LocalVersion
 Write-Status ">" "Version installee : v$localVersion"
 
+# 2b. Detection des anomalies : sous-dossier contenant l'application
+#     Quand git clone est fait manuellement, il cree un sous-dossier
+#     (ex: formulaire-dematerialise/ ou un hash comme 6af52b/)
+#     Les fichiers doivent etre au meme niveau que le .ps1, pas en dessous.
+Write-Section "Detection des anomalies"
+$excludedDirNames = @("db", "sessions", "logs", "backups", ".git", ".history", ".update_tmp", "vendor", "PHPMailer")
+$anomalyDirs = Get-ChildItem -Path $AppRoot -Directory -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.Name -notin $excludedDirNames -and
+        (Test-Path (Join-Path $_.FullName "index.php")) -and
+        (Test-Path (Join-Path $_.FullName "helpers.php"))
+    }
+
+if ($anomalyDirs.Count -gt 0) {
+    Write-Status "!" "Anomalie detectee : sous-dossier(s) contenant les fichiers de l'application" "Yellow"
+
+    if ($DryRun) {
+        foreach ($d in $anomalyDirs) {
+            Write-Status "?" "Serait corrige : $($d.Name)\ -> deplace vers la racine" "Yellow"
+        }
+    }
+    else {
+        # Sauvegarde avant correction
+        if (-not $SkipBackup) {
+            $backupPath = Create-Backup -SourceDir $AppRoot
+            if (-not $backupPath) {
+                Write-Status "X" "Sauvegarde echouee, correction annulee" "Red"
+                exit 1
+            }
+        }
+
+        foreach ($badDir in $anomalyDirs) {
+            Write-Status ">" "Correction : $($badDir.Name)\ -> racine" "White"
+
+            # Deplacer tous les fichiers du sous-dossier vers $AppRoot (recursif)
+            $items = Get-ChildItem -Path $badDir.FullName -Recurse -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch '\(\.git|\.history)\\' }
+
+            foreach ($item in $items) {
+                $relativePath = $item.FullName.Substring($badDir.FullName.Length + 1)
+
+                # Sauter update.ps1 a la racine du sous-dossier (on ne deplace pas le script en cours)
+                if ($relativePath -eq "update.ps1") { continue }
+
+                # Sauter les fichiers proteges qui existent deja a la racine
+                $isProtected = $false
+                foreach ($pf in $ProtectedFiles) {
+                    if ($item.Name -eq $pf -and (Test-Path (Join-Path $AppRoot $pf))) {
+                        $isProtected = $true; break
+                    }
+                }
+                if ($isProtected) {
+                    Write-Status ">>" "Protege : $relativePath (version locale conservee)" "DarkGray"
+                    continue
+                }
+
+                $destPath = Join-Path $AppRoot $relativePath
+                $destParent = Split-Path -Parent $destPath
+                if (-not (Test-Path $destParent)) {
+                    New-Item -ItemType Directory -Path $destParent -Force | Out-Null
+                }
+
+                # Si le fichier existe deja et est identique, on saute
+                if (Test-Path $destPath) {
+                    $localH = (Get-FileHash -Path $destPath -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+                    $remoteH = (Get-FileHash -Path $item.FullName -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+                    if ($localH -eq $remoteH) { continue }
+                }
+
+                Move-Item -Path $item.FullName -Destination $destPath -Force
+                Write-Status "->" "Deplace : $relativePath" "Green"
+            }
+
+            # Supprimer le sous-dossier anomalie (ou ce qui reste)
+            Remove-Item -Path $badDir.FullName -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Status "OK" "Sous-dossier $($badDir.Name) supprime" "Green"
+        }
+
+        Write-Status "OK" "Anomalie corrigee !" "Green"
+    }
+}
+else {
+    Write-Status "OK" "Aucune anomalie detectee" "Green"
+}
+
 # 3. Determiner le mode : git pull ou clone + copie
 $hasGit = Test-Path (Join-Path $AppRoot ".git")
 
