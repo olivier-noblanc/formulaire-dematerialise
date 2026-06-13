@@ -1,5 +1,35 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [2.2.0] — 2026-06-13
+
+### Fonctionnalités majeures
+
+- **Formulaire d'outboarding** : Nouveau formulaire « Outboarding agent » (slug : `outboarding`) pour le départ d'un agent — restitution du matériel, révocation des accès, formalités RH et logistique. 21 champs répartis en 4 groupes (Identité, Informatique, RH, Logistique) avec 4 étapes de validation par défaut (Responsable direct, Service informatique, RH, Logistique). Seed automatique en base.
+
+- **Page monitoring.php** : Nouveau tableau de bord d'observabilité pour les administrateurs. Comprend : métriques globales (total soumissions, taux de validation, temps moyen de traitement), détection des tokens bloqués (en attente depuis plus de 2x le délai de relance), tokens expirés non traités, santé SMTP (test en un clic), suivi du script de relance (dernière exécution, alerte si > 24h), statistiques par formulaire, activité des 7 derniers jours (barres visuelles), et journal d'audit consultable avec filtres.
+
+- **Journal d'audit** : Nouvelle table `audit_log` et fonction `app_log()` qui tracent toutes les actions administratives (création/suppression de formulaires, ajout d'étapes, modification de paramètres, approbation/refus d'accès admin, exécution du script de relance, exports CSV, complétion de workflow). Chaque entrée enregistre l'action, la cible, un détail lisible, l'acteur (email) et l'adresse IP. Le journal est consultable depuis la page monitoring avec filtre par type d'action.
+
+- **Export CSV** : Fonction `export_csv()` permettant d'exporter les soumissions au format CSV (avec BOM UTF-8 pour Excel, séparateur point-virgule). Les colonnes dynamiques du formulaire sont automatiquement ajoutées. Export accessible depuis le dashboard avec conservation des filtres (statut, formulaire). L'export est tracé dans le journal d'audit.
+
+### Sécurité
+
+- **Approbation admin via POST** : Les liens d'approbation/refus dans les emails admin n'ont plus d'effet de bord au GET. Le clic sur un lien email affiche désormais une page de confirmation avec formulaire POST et protection CSRF, empêchant les préfetch de scanners email ou proxys de déclencher une action non intentionnelle.
+
+- **Validation des emails destinataires** : L'ajout d'un destinataire à une étape de validation vérifie désormais le format de l'adresse email via `filter_var(FILTER_VALIDATE_EMAIL)`. Un message d'erreur clair est affiché si le format est invalide.
+
+### Fonctionnalités
+
+- **Notification de validation finale** : L'agent reçoit désormais un email de confirmation quand sa demande est entièrement validée (toutes les étapes du workflow complétées). Auparavant, seul un email de confirmation de soumission et de refus était envoyé.
+
+- **Traçabilité du script de relance** : `remind.php` enregistre désormais sa dernière date d'exécution dans la table `settings` (clé `last_remind_run`) et logue le nombre de relances envoyées et bloquées dans le journal d'audit. La page monitoring affiche cette information et alerte si le script n'a pas été exécuté depuis plus de 24h.
+
+- **Lien Monitoring dans le dashboard** : Le bouton « 🖥 Monitoring » est désormais accessible depuis la barre d'outils du dashboard de supervision.
+
+- **Audit logging des actions admin** : Toutes les actions de modification dans `admin_forms.php` (création/modification/suppression de formulaires, étapes, destinataires, champs) et `admin_settings.php` (modification des paramètres) sont désormais tracées dans le journal d'audit via `app_log()`.
+
+---
+
 ## [2.1.0] — 2026-06-11
 
 ### Fonctionnalités

@@ -48,3 +48,7 @@ if ($blocked > 0) {
     echo " $blocked token(s) bloqué(s) : plafond de relances atteint (max={$relance_max}).";
 }
 echo "\n";
+
+// Tracer la derniere execution pour le monitoring
+set_setting('last_remind_run', date('Y-m-d H:i:s'), 'remind.php');
+app_log('remind_run', 'remind', "{$nb} relance(s) envoyée(s), {$blocked} bloquée(s)", 'remind.php');

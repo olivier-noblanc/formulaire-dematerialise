@@ -203,12 +203,73 @@ function db_migrate(PDO $pdo): void {
             FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
         )
     ");
+
+    // Table d'audit log — tracabilite de toutes les actions admin
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action TEXT NOT NULL,
+            target TEXT,
+            detail TEXT,
+            actor TEXT NOT NULL,
+            ip TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
     
     // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
     $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
     if ($count_stmt->fetchColumn() == 0) {
         $pdo->prepare("INSERT INTO admins (email, added_at) VALUES (?, ?)")
             ->execute([ADMIN_EMAIL, date('Y-m-d H:i:s')]);
+    }
+
+    // Seed formulaire outboarding si la table forms est vide ou ne contient que l'onboarding
+    $ob_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'outboarding'")->fetchColumn();
+    if ($ob_count == 0) {
+        $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
+            ->execute(['outboarding', 'Outboarding agent', 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat']);
+        $outboarding_id = (int)$pdo->lastInsertId();
+
+        $outboarding_fields = [
+            ['Identité de l\'agent',    'Nom',                                    'text',     'nom',                  null,                                                                                                   1, 1],
+            ['Identité de l\'agent',    'Prénom',                                 'text',     'prenom',               null,                                                                                                   1, 2],
+            ['Identité de l\'agent',    'Date de départ',                         'date',     'date_depart',          null,                                                                                                   1, 3],
+            ['Identité de l\'agent',    'Motif de départ',                        'select',   'motif_depart',         '["Démission","Retraite","Mutation","Fin de contrat","Licenciement","Autre"]',                  1, 4],
+            ['Identité de l\'agent',    'Service / Affectation',                  'text',     'affectation',          null,                                                                                                   1, 5],
+            ['Informatique (IT)',       'Restitution poste informatique',         'checkbox', 'it_restitution_poste', null,                                                                                                   0, 6],
+            ['Informatique (IT)',       'Restitution téléphone pro',              'checkbox', 'it_restitution_tel',   null,                                                                                                   0, 7],
+            ['Informatique (IT)',       'Révocation accès RPVN',                  'checkbox', 'it_revoq_rpvn',        null,                                                                                                   0, 8],
+            ['Informatique (IT)',       'Révocation accès applicatifs métier',    'checkbox', 'it_revoq_applicatifs', null,                                                                                                   0, 9],
+            ['Informatique (IT)',       'Révocation compte de messagerie',        'checkbox', 'it_revoq_messagerie',  null,                                                                                                   0, 10],
+            ['Informatique (IT)',       'Transfert boîte mail (destinataire)',    'text',     'it_transfert_mail',    null,                                                                                                   0, 11],
+            ['Ressources Humaines',     'Solde de tout compte',                   'checkbox', 'rh_solde_compte',      null,                                                                                                   0, 12],
+            ['Ressources Humaines',     'Attestation employeur',                  'checkbox', 'rh_attestation',       null,                                                                                                   0, 13],
+            ['Ressources Humaines',     'Certificat de travail',                  'checkbox', 'rh_certificat',        null,                                                                                                   0, 14],
+            ['Ressources Humaines',     'Récupération solde congés',              'checkbox', 'rh_conges',            null,                                                                                                   0, 15],
+            ['Ressources Humaines',     'Résiliation mutuelle MGEN',             'checkbox', 'rh_mutuelle',          null,                                                                                                   0, 16],
+            ['Ressources Humaines',     'Observations RH',                        'textarea', 'rh_observations',      null,                                                                                                   0, 17],
+            ['Logistique',              'Restitution badge d\'accès',             'checkbox', 'log_restitution_badge',null,                                                                                                   0, 18],
+            ['Logistique',              'Restitution véhicule de service',        'checkbox', 'log_restitution_vehicule',null,                                                                                               0, 19],
+            ['Logistique',              'Restitution EPI',                        'checkbox', 'log_restitution_epi',  null,                                                                                                   0, 20],
+            ['Logistique',              'Libération bureau / local',              'text',     'log_bureau',           null,                                                                                                   0, 21],
+        ];
+        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($outboarding_fields as $row) {
+            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $outboarding_id]);
+        }
+
+        // Etapes par defaut pour l'outboarding
+        $steps_data = [
+            ['Responsable direct', 1],
+            ['Service informatique', 2],
+            ['Ressources humaines', 3],
+            ['Logistique', 4],
+        ];
+        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+        foreach ($steps_data as $sd) {
+            $stmt_step->execute([$outboarding_id, $sd[0], $sd[1]]);
+        }
     }
     
     // Insertion des paramètres par défaut si la table settings est vide
@@ -505,9 +566,26 @@ function advance_workflow(int $submission_id): void {
         // Étape terminée → on continue la boucle vers l'ordre suivant
     }
 
-    // Toutes les étapes sont terminées → on close
+    // Toutes les étapes sont terminées → on close et on notifie l'agent
+    $now = date('Y-m-d H:i:s');
     $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'valide' WHERE id = ?")
-        ->execute([date('Y-m-d H:i:s'), $submission_id]);
+        ->execute([$now, $submission_id]);
+
+    // Notification de validation finale a l'agent
+    $agent_email = $submission['submitted_by'] ?? '';
+    if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
+        $subject = 'Demande validée — ' . ($submission['form_label'] ?? 'Workflow DREETS');
+        $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
+  <h2 style="color:#1a6b3c;">✓ Demande validée</h2>
+  <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été <strong>validée</strong> par l\'ensemble des validateurs.</p>
+  <p>Le processus de workflow est désormais terminé.</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+</body></html>';
+        send_mail($agent_email, $subject, $body);
+    }
+
+    app_log('workflow_complete', 'submission:' . $submission_id, 'Formulaire ' . ($submission['form_label'] ?? '') . ' validé', $agent_email);
 }
 
 /**
@@ -654,6 +732,8 @@ function process_admin_request(string $email): bool {
         $stmt = $pdo->prepare("INSERT INTO admin_requests (email, requested_at, status, token) VALUES (?, ?, 'pending', ?)");
         $stmt->execute([$email, date('Y-m-d H:i:s'), $token]);
         
+        app_log('admin_request', 'admin:' . $email, 'Demande d\'accès admin', $email);
+
         // Envoie un email à l'admin principal pour approbation
         $approve_url = BASE_URL . '/admin_access.php?action=approve&token=' . $token;
         $reject_url = BASE_URL . '/admin_access.php?action=reject&token=' . $token;
@@ -714,6 +794,7 @@ function approve_admin_request(string $email): bool {
 </html>';
         
         send_mail($email, $subject, $body);
+        app_log('admin_approve', 'admin:' . $email, 'Accès admin approuvé');
         return true;
     } catch (Exception $e) {
         error_log('Erreur lors de l\'approbation de la demande admin : ' . $e->getMessage());
@@ -747,6 +828,7 @@ function reject_admin_request(string $email): bool {
 </html>';
         
         send_mail($email, $subject, $body);
+        app_log('admin_reject', 'admin:' . $email, 'Accès admin refusé');
         return true;
     } catch (Exception $e) {
         error_log('Erreur lors du refus de la demande admin : ' . $e->getMessage());
@@ -768,9 +850,126 @@ function remove_admin(string $email): bool {
     try {
         $stmt = $pdo->prepare("DELETE FROM admins WHERE email = ?");
         $stmt->execute([$email]);
+        app_log('admin_remove', 'admin:' . $email, 'Admin supprimé', $email);
         return true;
     } catch (Exception $e) {
         error_log('Erreur lors de la suppression d\'un admin : ' . $e->getMessage());
         return false;
     }
+}
+
+// ── AUDIT LOG ────────────────────────────────────────────────
+
+/**
+ * Enregistre une action dans le journal d'audit
+ *
+ * @param string $action  Type d'action (ex: 'form_create', 'admin_remove', 'settings_update')
+ * @param string $target  Cible de l'action (ex: 'form:3', 'submission:42')
+ * @param string $detail  Description lisible de l'action
+ * @param string $actor   Acteur (email), si vide = utilisateur connecté
+ */
+function app_log(string $action, string $target = '', string $detail = '', string $actor = ''): void {
+    try {
+        $pdo = get_pdo();
+        if (empty($actor)) {
+            $actor = get_auth_user();
+        }
+        $ip = $_SERVER['REMOTE_ADDR'] ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'CLI');
+        $pdo->prepare("INSERT INTO audit_log (action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))")
+            ->execute([$action, $target, $detail, $actor, $ip]);
+    } catch (Exception $e) {
+        error_log('Audit log error: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Récupère les entrées du journal d'audit
+ */
+function get_audit_logs(int $limit = 100, string $action_filter = ''): array {
+    $pdo = get_pdo();
+    if ($action_filter) {
+        $stmt = $pdo->prepare("SELECT * FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?");
+        $stmt->execute([$action_filter, $limit]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?");
+        $stmt->execute([$limit]);
+    }
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ── EXPORT CSV ───────────────────────────────────────────────
+
+/**
+ * Exporte les soumissions au format CSV et force le téléchargement
+ *
+ * @param PDO   $pdo     Connexion base de données
+ * @param array $options Filtres optionnels ['form_id' => int, 'status' => string]
+ */
+function export_csv(PDO $pdo, array $options = []): void {
+    $where = ['1=1'];
+    $params = [];
+    if (!empty($options['form_id'])) {
+        $where[] = 's.form_id = ?';
+        $params[] = (int)$options['form_id'];
+    }
+    if (!empty($options['status'])) {
+        $where[] = 's.status = ?';
+        $params[] = $options['status'];
+    }
+    $where_sql = implode(' AND ', $where);
+
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status,
+               f.label as form_label, f.slug as form_slug
+        FROM submissions s
+        JOIN forms f ON f.id = s.form_id
+        WHERE $where_sql
+        ORDER BY s.submitted_at DESC
+    ");
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Collecter toutes les clés de données pour les colonnes
+    $all_keys = [];
+    foreach ($rows as $row) {
+        $data = json_decode($row['data'], true) ?: [];
+        foreach (array_keys($data) as $k) {
+            if ($k !== 'validations' && !in_array($k, $all_keys)) {
+                $all_keys[] = $k;
+            }
+        }
+    }
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="export_submissions_' . date('Ymd_His') . '.csv"');
+
+    $out = fopen('php://output', 'w');
+    // BOM pour Excel
+    fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+
+    // En-tête fixe
+    $headers = array_merge(['ID', 'Formulaire', 'Agent', 'Statut', 'Soumis le', 'Clôturé le'], $all_keys);
+    fputcsv($out, $headers, ';');
+
+    foreach ($rows as $row) {
+        $data = json_decode($row['data'], true) ?: [];
+        $line = [
+            $row['id'],
+            $row['form_label'],
+            $row['submitted_by'],
+            $row['status'],
+            $row['submitted_at'],
+            $row['closed_at'] ?? '',
+        ];
+        foreach ($all_keys as $k) {
+            $val = $data[$k] ?? '';
+            if ($val === '1') $val = 'Oui';
+            elseif ($val === '0') $val = 'Non';
+            elseif (is_array($val)) $val = json_encode($val, JSON_UNESCAPED_UNICODE);
+            $line[] = $val;
+        }
+        fputcsv($out, $line, ';');
+    }
+    fclose($out);
+    exit;
 }

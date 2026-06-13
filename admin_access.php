@@ -2,45 +2,10 @@
 // admin_access.php — Page d'accès au back office avec demande d'accès admin
 require_once __DIR__ . '/helpers.php';
 
-// Traitement des actions GET et POST
-$action = $_GET['action'] ?? ($_POST['action'] ?? '');
-$token = $_GET['token'] ?? ($_POST['token'] ?? '');
+// Traitement des actions POST uniquement (securite : plus d'actions modifiant la DB en GET)
+$confirm_data = null; // Pour afficher la page de confirmation si on clique sur un lien email
 
-if ($action === 'approve' && !empty($token) && is_super_admin()) {
-    // Approve request via token
-    $pdo = get_pdo();
-    $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
-    $stmt->execute([$token]);
-    $request = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($request) {
-        if (approve_admin_request($request['email'])) {
-            $success_msg = 'Demande d\'accès approuvée.';
-        } else {
-            $error_msg = 'Erreur lors de l\'approbation de la demande.';
-        }
-    } else {
-        $error_msg = 'Demande invalide ou déjà traitée.';
-    }
-}
-elseif ($action === 'reject' && !empty($token) && is_super_admin()) {
-    // Reject request via token
-    $pdo = get_pdo();
-    $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
-    $stmt->execute([$token]);
-    $request = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($request) {
-        if (reject_admin_request($request['email'])) {
-            $success_msg = 'Demande d\'accès refusée.';
-        } else {
-            $error_msg = 'Erreur lors du refus de la demande.';
-        }
-    } else {
-        $error_msg = 'Demande invalide ou déjà traitée.';
-    }
-}
-elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérification CSRF
     if (!verify_csrf()) {
         die('Token CSRF invalide. Veuillez réessayer.');
@@ -54,6 +19,38 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success_msg = 'Votre demande d\'accès admin a été envoyée. Vous recevrez un email lorsque l\'administrateur principal aura pris une décision.';
         } else {
             $error_msg = 'Une erreur est survenue lors de votre demande. Vous avez peut-être déjà une demande en attente.';
+        }
+    }
+    elseif ($action === 'approve' && is_super_admin()) {
+        $token = $_POST['token'] ?? '';
+        $pdo = get_pdo();
+        $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
+        $stmt->execute([$token]);
+        $request = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($request) {
+            if (approve_admin_request($request['email'])) {
+                $success_msg = 'Demande d\'accès approuvée pour ' . h($request['email']) . '.';
+            } else {
+                $error_msg = 'Erreur lors de l\'approbation de la demande.';
+            }
+        } else {
+            $error_msg = 'Demande invalide ou déjà traitée.';
+        }
+    }
+    elseif ($action === 'reject' && is_super_admin()) {
+        $token = $_POST['token'] ?? '';
+        $pdo = get_pdo();
+        $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
+        $stmt->execute([$token]);
+        $request = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($request) {
+            if (reject_admin_request($request['email'])) {
+                $success_msg = 'Demande d\'accès refusée pour ' . h($request['email']) . '.';
+            } else {
+                $error_msg = 'Erreur lors du refus de la demande.';
+            }
+        } else {
+            $error_msg = 'Demande invalide ou déjà traitée.';
         }
     }
     elseif ($action === 'approve_request' && is_super_admin()) {
@@ -79,6 +76,20 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $error_msg = 'Erreur lors de la suppression de l\'administrateur.';
         }
+    }
+}
+
+// Lien email GET : afficher une page de confirmation (pas d'effet de bord au GET)
+$get_action = $_GET['action'] ?? '';
+$get_token = $_GET['token'] ?? '';
+if (($get_action === 'approve' || $get_action === 'reject') && !empty($get_token) && is_super_admin()) {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT email, requested_at FROM admin_requests WHERE token = ? AND status = 'pending'");
+    $stmt->execute([$get_token]);
+    $confirm_data = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($confirm_data) {
+        $confirm_data['action'] = $get_action;
+        $confirm_data['token'] = $get_token;
     }
 }
 
@@ -157,8 +168,30 @@ if (is_super_admin() || is_admin_user()) {
     <?php if (isset($error_msg)): ?>
         <div class="msg-error"><?= h($error_msg) ?></div>
     <?php endif; ?>
-    
-    <?php if (is_admin_user()): ?>
+
+    <?php if ($confirm_data): ?>
+        <!-- Page de confirmation pour les liens email (securite : GET n'a plus d'effet de bord) -->
+        <div class="card" style="border:2px solid <?= $confirm_data['action'] === 'approve' ? '#1a6b3c' : '#c0392b' ?>;">
+            <h2 style="color:<?= $confirm_data['action'] === 'approve' ? '#1a6b3c' : '#c0392b' ?>;">
+                <?= $confirm_data['action'] === 'approve' ? '✅ Approuver' : '❌ Refuser' ?> la demande d'accès
+            </h2>
+            <p style="margin-bottom:1rem;">
+                <strong><?= h($confirm_data['email']) ?></strong> a demandé l'accès admin le <?= h(date('d/m/Y à H:i', strtotime($confirm_data['requested_at']))) ?>.
+            </p>
+            <p style="margin-bottom:1rem;color:#555;">
+                Confirmez-vous cette action ?
+            </p>
+            <form method="POST" style="display:flex;gap:.5rem;">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="<?= h($confirm_data['action']) ?>">
+                <input type="hidden" name="token" value="<?= h($confirm_data['token']) ?>">
+                <button type="submit" class="btn" style="background:<?= $confirm_data['action'] === 'approve' ? '#1a6b3c' : '#c0392b' ?>;color:#fff;">
+                    <?= $confirm_data['action'] === 'approve' ? 'Oui, approuver' : 'Oui, refuser' ?>
+                </button>
+                <a href="admin_access.php" class="btn btn-secondary">Annuler</a>
+            </form>
+        </div>
+    <?php elseif (is_admin_user()): ?>
         <div class="card">
             <h2>Accès autorisé</h2>
             <p>Bienvenue dans le back office ! Vous avez les droits d'administration.</p>

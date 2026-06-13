@@ -7,6 +7,22 @@ $form_f = $_GET['form']   ?? '';
 $page   = max(1, (int)($_GET['page'] ?? 1));
 $per_page = 25;
 
+// Export CSV
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $options = [];
+    if ($form_f) {
+        $f_stmt = $pdo->prepare("SELECT id FROM forms WHERE slug = ?");
+        $f_stmt->execute([$form_f]);
+        $fid = $f_stmt->fetchColumn();
+        if ($fid) $options['form_id'] = (int)$fid;
+    }
+    if ($filtre !== 'tous') {
+        $options['status'] = $filtre === 'en_cours' ? 'en_cours' : ($filtre === 'complet' ? 'valide' : '');
+    }
+    app_log('export_csv', '', 'Export CSV des soumissions');
+    export_csv($pdo, $options);
+}
+
 $where = ['1=1'];
 $params = [];
 if ($filtre === 'en_cours') { $where[] = 's.status = ?'; $params[] = 'en_cours'; }
@@ -108,7 +124,9 @@ function get_tokens_status(int $sub_id): array {
         <option value="<?= h($f['slug']) ?>" <?= $form_f===$f['slug']?'selected':'' ?>><?= h($f['label']) ?></option>
       <?php endforeach; ?>
     </select>
+    <a href="monitoring.php" class="btn-admin">🖥 Monitoring</a>
     <a href="admin_forms.php" class="btn-admin">⚙ Gestion formulaires</a>
+    <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>" class="btn-admin" style="background:#1a6b3c;">📥 Export CSV</a>
   </div>
 
   <table>

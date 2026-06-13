@@ -37,6 +37,7 @@ if ($action === 'add_form') {
         try {
             $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
                 ->execute([$slug, $label, $description]);
+            app_log('form_create', 'form:' . $pdo->lastInsertId(), "Formulaire '$label' créé");
             $success_msg = 'Formulaire ajouté avec succès.';
             // Redirection pour éviter les doubles soumissions
             header('Location: admin_forms.php?form_id=' . $pdo->lastInsertId());
@@ -59,6 +60,7 @@ if ($action === 'add_form') {
         try {
             $pdo->prepare("UPDATE forms SET slug = ?, label = ?, description = ?, actif = ? WHERE id = ?")
                 ->execute([$slug, $label, $description, $actif, $form_id]);
+            app_log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
             $success_msg = 'Formulaire mis à jour avec succès.';
             // Redirection pour éviter les doubles soumissions
             header('Location: admin_forms.php?form_id=' . $form_id);
@@ -83,6 +85,7 @@ if ($action === 'add_form') {
                 $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$form_id]);
                 // Suppression du formulaire
                 $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$form_id]);
+                app_log('form_delete', 'form:' . $form_id, "Formulaire #$form_id supprimé");
                 $success_msg = 'Formulaire supprimé avec succès.';
                 // Redirection pour éviter les doubles soumissions
                 header('Location: admin_forms.php');
@@ -102,6 +105,7 @@ if ($action === 'add_form') {
         try {
             $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)")
                 ->execute([$form_id, $label, $ordre]);
+            app_log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
             $success_msg = 'Étape ajoutée avec succès.';
             // Redirection pour éviter les doubles soumissions
             header('Location: admin_forms.php?form_id=' . $form_id);
@@ -123,6 +127,7 @@ if ($action === 'add_form') {
         try {
             $pdo->prepare("UPDATE steps SET label = ?, ordre = ?, actif = ? WHERE id = ?")
                 ->execute([$label, $ordre, $actif, $step_id]);
+            app_log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
             $success_msg = 'Étape mise à jour avec succès.';
             // Redirection pour éviter les doubles soumissions
             header('Location: admin_forms.php?form_id=' . $form_id);
@@ -161,16 +166,22 @@ if ($action === 'add_form') {
     $email = trim($_POST['email'] ?? '');
     
     if ($step_id > 0 && !empty($email)) {
-        $pdo = get_pdo();
-        try {
-            $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)")
-                ->execute([$step_id, $email]);
-            $success_msg = 'Destinataire ajouté avec succès.';
-            // Redirection pour éviter les doubles soumissions
-            header('Location: admin_forms.php?form_id=' . $form_id);
-            exit;
-        } catch (PDOException $e) {
-            $error_msg = 'Erreur lors de l\'ajout du destinataire : ' . $e->getMessage();
+        // Validation du format email
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error_msg = 'L\'adresse email "' . h($email) . '" n\'est pas valide. Format attendu : prenom.nom@dreets.gouv.fr';
+        } else {
+            $pdo = get_pdo();
+            try {
+                $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)")
+                    ->execute([$step_id, $email]);
+                app_log('recipient_add', 'step:' . $step_id, "Destinataire $email ajouté");
+                $success_msg = 'Destinataire ajouté avec succès.';
+                // Redirection pour éviter les doubles soumissions
+                header('Location: admin_forms.php?form_id=' . $form_id);
+                exit;
+            } catch (PDOException $e) {
+                $error_msg = 'Erreur lors de l\'ajout du destinataire : ' . $e->getMessage();
+            }
         }
     } else {
         $error_msg = 'L\'étape et l\'email sont requis.';

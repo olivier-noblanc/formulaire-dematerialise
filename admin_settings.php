@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($settings as $key => $value) {
                 set_setting($key, $value, $updated_by);
             }
+            app_log('settings_update', 'settings', 'Paramètres mis à jour', $updated_by);
             $success_msg = 'Paramètres enregistrés avec succès.';
         } catch (Exception $e) {
             $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
