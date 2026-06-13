@@ -53,6 +53,78 @@ $tokens_expired = $pdo->query("
       AND t.expires_at < datetime('now') AND s.status = 'en_cours'
 ")->fetchColumn();
 
+// ── Alertes actives : soumissions en cours proches de la deadline ──
+$active_alerts = [];
+try {
+    $alert_submissions = $pdo->query("
+        SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.form_id,
+               f.label as form_label, f.deadline_field
+        FROM submissions s
+        JOIN forms f ON f.id = s.form_id
+        WHERE s.status = 'en_cours' AND f.deadline_field != ''
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+    $now_ts = time();
+    foreach ($alert_submissions as $as) {
+        $data = json_decode($as['data'], true) ?: [];
+        $deadline_field = $as['deadline_field'];
+        $deadline_str = $data[$deadline_field] ?? '';
+        if (empty($deadline_str)) continue;
+
+        // Parser la date (format YYYY-MM-DD ou DD/MM/YYYY)
+        $deadline_ts = null;
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($deadline_str))) {
+            $deadline_ts = strtotime(trim($deadline_str) . ' 00:00:00');
+        } elseif (preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', trim($deadline_str), $m)) {
+            $deadline_ts = strtotime("{$m[3]}-{$m[2]}-{$m[1]} 00:00:00");
+        }
+
+        if (!$deadline_ts) continue;
+
+        $days_remaining = (int)(($deadline_ts - $now_ts) / 86400);
+
+        // Compter les tokens en attente
+        $pending = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL");
+        $pending->execute([$as['id']]);
+        $pending_count = (int)$pending->fetchColumn();
+
+        // Ne montrer que si : dans les 10 jours OU deja depasse
+        if ($days_remaining <= 10) {
+            $nom_agent = ($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '');
+            $active_alerts[] = [
+                'submission_id' => $as['id'],
+                'form_label' => $as['form_label'],
+                'nom_agent' => $nom_agent,
+                'deadline' => trim($deadline_str),
+                'deadline_formatted' => $deadline_ts ? date('d/m/Y', $deadline_ts) : $deadline_str,
+                'days_remaining' => $days_remaining,
+                'pending_steps' => $pending_count,
+                'submitted_by' => $as['submitted_by'],
+            ];
+        }
+    }
+    // Trier : les plus urgents d'abord
+    usort($active_alerts, fn($a, $b) => $a['days_remaining'] - $b['days_remaining']);
+} catch (Exception $e) {
+    $active_alerts = [];
+}
+
+// ── Dernieres alertes envoyees ──
+$recent_alerts = [];
+try {
+    $recent_alerts = $pdo->query("
+        SELECT al.*, f.label as form_label, ar.label as rule_label
+        FROM alert_log al
+        JOIN submissions s ON s.id = al.submission_id
+        JOIN forms f ON f.id = s.form_id
+        LEFT JOIN alert_rules ar ON ar.id = al.rule_id
+        ORDER BY al.sent_at DESC
+        LIMIT 20
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $recent_alerts = [];
+}
+
 // ── Test SMTP ──
 $smtp_status = 'inconnu';
 $smtp_detail = '';
@@ -73,6 +145,9 @@ if (isset($_GET['test_smtp']) && $_GET['test_smtp'] === '1') {
 
 // ── Dernier remind (setting追踪) ──
 $last_remind = get_setting('last_remind_run', '');
+
+// ── Dernier alert_check ──
+$last_alert_check = get_setting('last_alert_check', '');
 
 // ── Soumissions par jour (7 derniers jours) ──
 $daily_stmt = $pdo->query("
@@ -118,9 +193,28 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
     .grid-2 { gap: 1.5rem; margin-bottom: 2rem; }
 
     /* Page-specific */
+    .alert-row.urgent { background: #fde8e8 !important; }
+    .alert-row.warning { background: #fff3e0 !important; }
+    .alert-row.ok { background: #e8f5e9 !important; }
+    .days-remaining { font-weight: bold; padding: .2rem .6rem; border-radius: 3px; font-size: .85rem; }
+    .days-remaining.overdue { background: #c0392b; color: #fff; }
+    .days-remaining.critical { background: #b45309; color: #fff; }
+    .days-remaining.warning { background: #fff3e0; color: #b45309; }
+    .days-remaining.ok { background: #e8f5e9; color: #1a6b3c; }
+
     @media (max-width: 768px) {
       .grid-2 { grid-template-columns: 1fr; }
     }
+
+    /* Donut chart */
+    .chart-row { display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .donut-chart { width: 160px; height: 160px; border-radius: 50%; position: relative; flex-shrink: 0; }
+    .donut-chart .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: #fff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .donut-chart .donut-center .donut-value { font-size: 1.5rem; font-weight: bold; color: #003189; }
+    .donut-chart .donut-center .donut-label { font-size: .7rem; color: #888; }
+    .chart-legend { display: flex; flex-direction: column; gap: .5rem; }
+    .legend-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
+    .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -129,6 +223,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
   <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
   <span>
     <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
+    <a href="admin_alerts.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔔 Alertes</a>
     <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
     <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
   </span>
@@ -158,9 +253,51 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
       <div class="stat-value"><?= count($tokens_bloques) ?></div>
       <div class="stat-label">Tokens bloqués</div>
     </div>
-    <div class="stat-card <?= $tokens_expired > 0 ? 'danger' : 'success' ?>">
-      <div class="stat-value"><?= (int)$tokens_expired ?></div>
-      <div class="stat-label">Tokens expirés non traités</div>
+    <div class="stat-card <?= !empty($active_alerts) ? 'danger' : 'success' ?>">
+      <div class="stat-value"><?= count($active_alerts) ?></div>
+      <div class="stat-label">Alertes actives</div>
+    </div>
+  </div>
+
+  <!-- Graphique de répartition des statuts -->
+  <div class="card">
+    <h2>📊 Répartition des soumissions</h2>
+    <?php
+      // Calculer les proportions pour le donut chart
+      $p_valide = $total_sub > 0 ? round(($valide_sub / $total_sub) * 100) : 0;
+      $p_en_cours = $total_sub > 0 ? round(($en_cours_sub / $total_sub) * 100) : 0;
+      $p_refuse = $total_sub > 0 ? round(($refuse_sub / $total_sub) * 100) : 0;
+      // Ajuster pour que ça fasse 100%
+      $diff = 100 - $p_valide - $p_en_cours - $p_refuse;
+      $p_valide += $diff; // Compenser les arrondis
+
+      // Construire le conic-gradient
+      $g_valide_end = $p_valide;
+      $g_en_cours_end = $p_valide + $p_en_cours;
+      $g_refuse_end = 100;
+      $gradient = "conic-gradient(#1a6b3c 0% {$g_valide_end}%, #b45309 {$g_valide_end}% {$g_en_cours_end}%, #c0392b {$g_en_cours_end}% 100%)";
+    ?>
+    <div class="chart-row">
+      <div class="donut-chart" style="background: <?= $gradient ?>;">
+        <div class="donut-center">
+          <span class="donut-value"><?= $total_sub ?></span>
+          <span class="donut-label">Total</span>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#1a6b3c;"></span>
+          <strong>Validées</strong> : <?= $valide_sub ?> (<?= $p_valide ?>%)
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#b45309;"></span>
+          <strong>En cours</strong> : <?= $en_cours_sub ?> (<?= $p_en_cours ?>%)
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#c0392b;"></span>
+          <strong>Refusées</strong> : <?= $refuse_sub ?> (<?= $p_refuse ?>%)
+        </div>
+      </div>
     </div>
   </div>
 
@@ -192,37 +329,112 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
       <a href="?test_smtp=1" class="btn btn-primary">Tester SMTP</a>
     </div>
 
-    <!-- Dernier remind -->
+    <!-- Scripts automatises -->
     <div class="card">
-      <h2>🔄 Script de relance</h2>
-      <?php if ($last_remind): ?>
-        <?php
-          $remind_age = time() - strtotime($last_remind);
-          $remind_ok = $remind_age < 86400; // moins de 24h
-        ?>
-        <p style="margin-bottom:.5rem;">
-          <span class="health-dot <?= $remind_ok ? 'health-ok' : 'health-warn' ?>"></span>
+      <h2>🤖 Scripts automatisés</h2>
+      <!-- Script de relance -->
+      <div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #eee;">
+        <strong style="font-size:.9rem;">🔄 Script de relance (remind.php)</strong><br>
+        <?php if ($last_remind): ?>
+          <?php
+            $remind_age = time() - strtotime($last_remind);
+            $remind_ok = $remind_age < 86400;
+          ?>
+          <span class="health-dot <?= $remind_ok ? 'health-ok' : 'health-warn' ?>" style="margin-top:.5rem;"></span>
           Dernière exécution : <strong><?= h(date('d/m/Y à H:i', strtotime($last_remind))) ?></strong>
           <?php if (!$remind_ok): ?>
-            <br><span class="badge badge-warn" style="margin-top:.5rem;">⚠ Dernière exécution il y a plus de 24h — vérifiez la tâche planifiée</span>
+            <br><span class="badge badge-warn" style="margin-top:.25rem;">⚠ Il y a plus de 24h</span>
           <?php else: ?>
-            <br><span class="badge badge-ok" style="margin-top:.5rem;">✓ Script actif</span>
+            <br><span class="badge badge-ok" style="margin-top:.25rem;">✓ Actif</span>
           <?php endif; ?>
-        </p>
-      <?php else: ?>
-        <p>
+        <?php else: ?>
           <span class="health-dot health-unknown"></span>
           <span class="badge badge-info">Jamais exécuté</span>
-          Le script de relance (remind.php) n'a jamais été lancé ou ne trace pas son exécution.
+        <?php endif; ?>
+      </div>
+      <!-- Script d'alerte -->
+      <div>
+        <strong style="font-size:.9rem;">🔔 Script d'alerte (alert_check.php)</strong><br>
+        <?php if ($last_alert_check): ?>
+          <?php
+            $alert_age = time() - strtotime($last_alert_check);
+            $alert_ok = $alert_age < 86400;
+          ?>
+          <span class="health-dot <?= $alert_ok ? 'health-ok' : 'health-warn' ?>" style="margin-top:.5rem;"></span>
+          Dernière exécution : <strong><?= h(date('d/m/Y à H:i', strtotime($last_alert_check))) ?></strong>
+          <?php if (!$alert_ok): ?>
+            <br><span class="badge badge-warn" style="margin-top:.25rem;">⚠ Il y a plus de 24h</span>
+          <?php else: ?>
+            <br><span class="badge badge-ok" style="margin-top:.25rem;">✓ Actif</span>
+          <?php endif; ?>
+        <?php else: ?>
+          <span class="health-dot health-unknown"></span>
+          <span class="badge badge-info">Jamais exécuté</span>
+        <?php endif; ?>
+        <p style="font-size:.8rem;color:#888;margin-top:.5rem;">
+          Délai relance : <strong><?= h(get_setting('delai_relance_h', '48')) ?>h</strong> |
+          Max relances : <strong><?= h(get_setting('relance_max', '3')) ?></strong> |
+          Expiration tokens : <strong><?= h(get_setting('token_expire_days', '30')) ?>j</strong>
         </p>
-      <?php endif; ?>
-      <p style="font-size:.85rem;color:#888;margin-top:1rem;">
-        Délai de relance : <strong><?= h(get_setting('delai_relance_h', '48')) ?>h</strong> |
-        Max relances : <strong><?= h(get_setting('relance_max', '3')) ?></strong> |
-        Expiration tokens : <strong><?= h(get_setting('token_expire_days', '30')) ?> jours</strong>
-      </p>
+      </div>
     </div>
   </div>
+
+  <!-- Alertes actives : soumissions proches de la deadline -->
+  <?php if (!empty($active_alerts)): ?>
+  <div class="card">
+    <h2>🔔 Alertes actives — Soumissions proches de la date cible</h2>
+    <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+      Les soumissions suivantes sont en cours et approchent ou dépassent leur date cible avec des étapes non complétées.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Urgence</th><th>Formulaire</th><th>Agent</th><th>Date cible</th><th>Jours restants</th><th>Étapes en attente</th></tr>
+      </thead>
+      <tbody>
+      <?php foreach ($active_alerts as $aa):
+        $row_cls = $aa['days_remaining'] < 0 ? 'urgent' : ($aa['days_remaining'] <= 2 ? 'urgent' : ($aa['days_remaining'] <= 5 ? 'warning' : 'ok'));
+        $days_cls = $aa['days_remaining'] < 0 ? 'overdue' : ($aa['days_remaining'] <= 2 ? 'critical' : ($aa['days_remaining'] <= 5 ? 'warning' : 'ok'));
+        $days_text = $aa['days_remaining'] < 0 ? 'J+' . abs($aa['days_remaining']) : ($aa['days_remaining'] === 0 ? "Jour J" : 'J-' . $aa['days_remaining']);
+      ?>
+        <tr class="alert-row <?= $row_cls ?>">
+          <td><span class="days-remaining <?= $days_cls ?>"><?= $days_text ?></span></td>
+          <td><strong><?= h($aa['form_label']) ?></strong></td>
+          <td><?= h($aa['nom_agent']) ?></td>
+          <td style="white-space:nowrap;"><?= h($aa['deadline_formatted']) ?></td>
+          <td><span class="days-remaining <?= $days_cls ?>"><?= $days_text ?></span></td>
+          <td><span class="badge badge-warn"><?= $aa['pending_steps'] ?> en attente</span></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+    <p style="margin-top:1rem;">
+      <a href="admin_alerts.php" class="btn btn-secondary" style="font-size:.85rem;">⚙ Configurer les règles d'alerte</a>
+    </p>
+  </div>
+  <?php endif; ?>
+
+  <!-- Dernieres alertes envoyees -->
+  <?php if (!empty($recent_alerts)): ?>
+  <div class="card">
+    <h2>📬 Dernières alertes envoyées</h2>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Règle</th><th>Formulaire</th><th>Message</th></tr>
+      </thead>
+      <tbody>
+      <?php foreach ($recent_alerts as $ra): ?>
+        <tr>
+          <td style="white-space:nowrap;font-size:.8rem;"><?= h(date('d/m/Y H:i', strtotime($ra['sent_at']))) ?></td>
+          <td><span class="badge badge-info"><?= h($ra['rule_label'] ?? 'Règle supprimée') ?></span></td>
+          <td style="font-size:.85rem;"><?= h($ra['form_label']) ?></td>
+          <td style="font-size:.8rem;"><?= h($ra['message']) ?></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
 
   <!-- Soumissions par formulaire -->
   <div class="card">

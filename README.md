@@ -1,63 +1,109 @@
-# Workflow DREETS - Système d'administration
+# Workflow DREETS BFC — Système de validation dématérialisé
 
-## Modifications apportées
+Application PHP de gestion de workflows de validation de formulaires pour la DREETS Bourgogne-Franche-Comté. Permet de dématérialiser les circuits de validation (onboarding, outboarding, etc.) avec suivi en temps réel, alertes automatiques et supervision complète.
 
-Ce projet a été modifié pour implémenter un système d'administration sécurisé :
+**Version actuelle : 2.5.0**
 
-### 1. Configuration de l'administrateur principal
+---
 
-Dans `config.php`, un nouveau paramètre a été ajouté :
-```php
-define('ADMIN_EMAIL',    'admin@dreets.gouv.fr');
+## Fonctionnalités principales
+
+### Pour les agents
+- **Remplissage de formulaires dynamiques** : champs configurables par l'admin (texte, date, sélecteur, checkbox, textarea), groupés par sections visuelles
+- **Suivi des demandes** : page « Mes demandes » avec timeline visuelle, barres de progression, badges d'urgence deadline
+- **Notifications email** : confirmation de soumission, refus avec motif, validation finale du circuit
+
+### Pour les validateurs
+- **Validation par email** : lien à usage unique, aucune authentification nécessaire
+- **Dashboard validateur** : vue des tokens en attente, historique des validations, détection des tokens expirés
+- **Progression visible** : diagramme du circuit de validation affiché avant chaque décision
+
+### Pour les administrateurs
+- **Dashboard de supervision** : vue d'ensemble des soumissions, filtres, pagination, export CSV
+- **Form builder visuel** : création de formulaires sans compétence technique — auto-génération du nom technique, options une par ligne, diagramme du circuit de validation, prévisualisation
+- **Gestion des workflows** : étapes séquentielles ou parallèles, destinataires configurables
+- **Système d'alertes paramétrable** : alertes automatiques J-N jours avant une deadline si des étapes sont incomplètes, 6 cibles de notification possibles
+- **Monitoring** : métriques globales, tokens bloqués/expirés, santé SMTP, graphique camembert CSS, journal d'audit
+- **Régénération de tokens** : renvoi d'un lien de validation pour un validateur bloqué
+- **Annulation de soumission** : clôture immédiate avec notification de l'agent
+- **Paramètres SMTP** : configuration complète du serveur mail depuis l'interface
+
+---
+
+## Architecture technique
+
+- **PHP 8 procédural** — aucun framework, aucune dépendance hormis PHPMailer
+- **SQLite** — base embarquée, migration automatique au premier accès
+- **CSS pur** — pas de framework CSS, design Marianne, stylesheet partagée via `style.php`
+- **Zéro JavaScript** côté client (sauf confirms et toggles minimes)
+- **Auth Windows** — IIS + Kerberos, `$_SERVER['AUTH_USER']`
+- **Scripts CLI** — relance automatique (`remind.php`) et vérification d'alertes (`alert_check.php`)
+
+---
+
+## Déploiement
+
+### Prérequis
+- Windows Server avec IIS + PHP 8 FastCGI
+- Authentification Windows (Kerberos) activée sur IIS
+- SMTP accessible (intranet par défaut)
+- Accès en écriture au répertoire `db/`
+
+### Installation
+1. Copier les fichiers dans `C:\inetpub\wwwroot\workflow\`
+2. Adapter `config.php` (SMTP, email admin, BASE_URL)
+3. Accéder à l'application — la base SQLite est créée automatiquement
+4. Configurer les scripts CLI dans le Planificateur de tâches Windows :
+   - `remind.php` toutes les 12h
+   - `alert_check.php` toutes les 6h
+
+### Mise à jour
+Exécuter `update.ps1` en PowerShell :
+```powershell
+.\update.ps1              # Mise à jour standard
+.\update.ps1 -DryRun      # Simulation sans modification
 ```
+Le script sauvegarde automatiquement l'existant et préserve `config.php`.
 
-### 2. Système d'accès admin
+---
 
-#### Nouveau fichier : `admin_access.php`
-- Page d'accès au back office avec demande d'accès admin
-- Affichage de l'email de l'administrateur principal
-- Interface pour les utilisateurs demandant l'accès admin
-- Interface d'administration pour l'admin principal
+## Sécurité
 
-#### Modification de `index.php`
-- Redirection vers `admin_access.php` au lieu d'accéder directement au back office
+- Tokens CSRF sur tous les formulaires POST
+- Requêtes préparées PDO (pas d'injection SQL)
+- Validation des emails destinataires
+- Actions destructives protégées par confirmation + CSRF
+- Liens d'approbation admin en POST (pas d'effet de bord au GET)
+- Tokens de validation cryptographiques (`random_bytes(32)`), à usage unique, avec expiration
+- Journal d'audit de toutes les actions administratives
 
-#### Base de données mise à jour (`init_db.php`)
-- Table `admins` : stocke les emails des administrateurs
-- Table `admin_requests` : stocke les demandes d'accès admin
+---
 
-#### Fonctions ajoutées dans `helpers.php`
-- `is_admin_user()` : vérifie si l'utilisateur est administrateur
-- `is_super_admin()` : vérifie si l'utilisateur est l'admin principal
-- `process_admin_request()` : traite les demandes d'accès
-- `approve_admin_request()` : approuve une demande d'accès
-- `reject_admin_request()` : refuse une demande d'accès
-- `remove_admin()` : supprime un administrateur
+## Structure des fichiers
 
-### 3. Fonctionnalités implémentées
-
-#### Accès utilisateur :
-1. Les utilisateurs peuvent demander l'accès admin via la page `admin_access.php`
-2. Une fois la demande envoyée, un email est envoyé à l'administrateur principal
-3. L'utilisateur reçoit un email de confirmation ou de refus
-
-#### Administration :
-1. L'administrateur principal peut voir les demandes en attente
-2. Il peut approuver ou refuser les demandes
-3. Il peut gérer la liste des administrateurs
-4. Il peut supprimer des administrateurs (sauf lui-même)
-
-### 4. Sécurité
-
-- L'accès au back office est restreint aux utilisateurs approuvés
-- L'administrateur principal ne peut pas être supprimé
-- Les demandes d'accès sont stockées dans la base de données
-- Les emails sont envoyés via le serveur SMTP configuré
-
-### 5. Utilisation
-
-1. Accédez à la page d'accès admin : `admin_access.php`
-2. Connectez-vous avec votre compte Windows Auth
-3. Si vous n'avez pas d'accès, cliquez sur "Demander l'accès admin"
-4. L'administrateur principal recevra un email de notification
-5. Une fois approuvé, vous pouvez accéder au back office via `index.php`
+```
+config.php            Configuration (protégée par update.ps1)
+helpers.php           Fonctions partagées + moteur workflow + DB
+style.php             CSS commun (inclus via require_once)
+index.php             Accueil adapté au rôle
+form.php              Formulaire dynamique
+form_preview.php      Prévisualisation admin
+validate.php          Validation par token
+submission_view.php   Détail complet d'une soumission
+my_submissions.php    Suivi agent
+my_validations.php    Dashboard validateur
+dashboard.php         Supervision admin
+monitoring.php        Observabilité + audit
+admin_access.php      Gestion des accès admin
+admin_forms.php       Back office formulaires
+admin_alerts.php      Configuration alertes
+admin_settings.php    Paramètres SMTP & relances
+docs.php              Documentation utilisateur
+changelog.php         Journal des versions
+alert_check.php       Script CLI alertes (cron)
+remind.php            Script CLI relances (cron)
+update.ps1            Script PowerShell de mise à jour
+AGENT.md              Instructions pour agent IA
+CHANGELOG.md          Journal des modifications
+README.md             Ce fichier
+```

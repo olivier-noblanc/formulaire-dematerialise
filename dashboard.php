@@ -63,7 +63,7 @@ $total_pages = max(1, (int)ceil($total_rows / $per_page));
 if ($page > $total_pages) $page = $total_pages;
 $offset = ($page - 1) * $per_page;
 
-$stmt = $pdo->prepare("SELECT s.*, f.label as form_label, f.slug as form_slug FROM submissions s JOIN forms f ON f.id = s.form_id WHERE $where ORDER BY s.submitted_at DESC LIMIT $per_page OFFSET $offset");
+$stmt = $pdo->prepare("SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field FROM submissions s JOIN forms f ON f.id = s.form_id WHERE $where ORDER BY s.submitted_at DESC LIMIT $per_page OFFSET $offset");
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -115,7 +115,7 @@ function get_tokens_status(int $sub_id): array {
   </style>
 </head>
 <body>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
+<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_alerts.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔔 Alertes</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
 <div class="container">
   <h1>Supervision — Workflows en cours</h1>
 
@@ -141,6 +141,7 @@ function get_tokens_status(int $sub_id): array {
       <?php endforeach; ?>
     </select>
     <a href="monitoring.php" class="btn-admin">🖥 Monitoring</a>
+    <a href="admin_alerts.php" class="btn-admin" style="background:#b45309;">🔔 Alertes</a>
     <a href="admin_forms.php" class="btn-admin">⚙ Gestion formulaires</a>
     <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>" class="btn-admin" style="background:#1a6b3c;">📥 Export CSV</a>
   </div>
@@ -150,7 +151,7 @@ function get_tokens_status(int $sub_id): array {
       <tr>
         <th>Formulaire</th>
         <th>Agent</th>
-        <th>Prise de poste</th>
+        <th>Date cible</th>
         <th>Workflow</th>
         <th>Soumis le</th>
         <th>Statut</th>
@@ -166,11 +167,29 @@ function get_tokens_status(int $sub_id): array {
         $tokens = get_tokens_status((int)$row['id']);
         $nom    = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
         $status = $row['status'] ?? 'en_cours';
+        $deadline_field = $row['deadline_field'] ?? '';
+        $deadline_val = $deadline_field ? ($d[$deadline_field] ?? '') : ($d['date_prise_poste'] ?? $d['date_depart'] ?? '');
+        // Calculer l'urgence si on a une date cible
+        $deadline_urgency = '';
+        if (!empty($deadline_val) && $status === 'en_cours') {
+            $deadline_ts = null;
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($deadline_val))) {
+                $deadline_ts = strtotime(trim($deadline_val));
+            } elseif (preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', trim($deadline_val), $m)) {
+                $deadline_ts = strtotime("{$m[3]}-{$m[2]}-{$m[1]}");
+            }
+            if ($deadline_ts) {
+                $days_left = (int)(($deadline_ts - time()) / 86400);
+                if ($days_left < 0) $deadline_urgency = 'color:#c0392b;font-weight:bold;';
+                elseif ($days_left <= 2) $deadline_urgency = 'color:#c0392b;font-weight:bold;';
+                elseif ($days_left <= 5) $deadline_urgency = 'color:#b45309;font-weight:bold;';
+            }
+        }
       ?>
       <tr>
         <td><span style="font-size:.8rem;background:#e8eaf6;color:#003189;padding:.2rem .5rem;border-radius:3px;"><?= h($row['form_label']) ?></span></td>
         <td><strong><?= $nom ?></strong></td>
-        <td><?= h($d['date_prise_poste'] ?? '') ?></td>
+        <td style="white-space:nowrap;<?= $deadline_urgency ?>"><?= h($deadline_val) ?></td>
         <td>
           <div class="token-grid">
             <?php foreach ($tokens as $t):
@@ -195,7 +214,7 @@ function get_tokens_status(int $sub_id): array {
               echo '<span style="color:#b45309;">En cours</span>';
           }
         ?></td>
-        <td><button class="detail-btn" onclick="toggle(<?= $i ?>)">détail</button></td>
+        <td><button class="detail-btn" onclick="toggle(<?= $i ?>)">détail</button> <a href="submission_view.php?id=<?= (int)$row['id'] ?>" style="font-size:.8rem;color:#003189;text-decoration:underline;">voir</a></td>
       </tr>
       <tr class="detail-row" id="det-<?= $i ?>">
         <td colspan="7">

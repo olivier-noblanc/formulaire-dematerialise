@@ -12,5 +12,5 @@ define('DELAI_RELANCE_H', 48);
 // Email de l'administrateur principal
 define('ADMIN_EMAIL',    'olivier.noblanc@dreets.gouv.fr');
 // Version de l'application — à mettre à jour à chaque release
-define('APP_VERSION',    '2.3.0');
+define('APP_VERSION',    '2.5.0');
 date_default_timezone_set('Europe/Paris');

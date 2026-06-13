@@ -216,6 +216,34 @@ function db_migrate(PDO $pdo): void {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ");
+
+    // Table des regles d'alerte — alertes parametrables avant deadline
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS alert_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            form_id INTEGER NOT NULL,
+            days_before INTEGER NOT NULL DEFAULT 5,
+            condition_type TEXT NOT NULL DEFAULT 'steps_incomplete',
+            notify_who TEXT NOT NULL DEFAULT 'admin',
+            label TEXT NOT NULL,
+            actif INTEGER DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+        )
+    ");
+
+    // Table de log des alertes envoyees — eviter les doublons
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS alert_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id INTEGER NOT NULL,
+            submission_id INTEGER NOT NULL,
+            sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            message TEXT,
+            FOREIGN KEY (rule_id) REFERENCES alert_rules(id) ON DELETE CASCADE,
+            FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+        )
+    ");
     
     // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
     $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
@@ -372,6 +400,40 @@ function db_migrate(PDO $pdo): void {
         // Ignorer si la colonne existe déjà
     }
     
+    // Ajout de la colonne deadline_field à forms si elle n'existe pas
+    try {
+        $pdo->exec("ALTER TABLE forms ADD COLUMN deadline_field TEXT DEFAULT ''");
+    } catch (PDOException $e) {
+        // Ignorer si la colonne existe déjà
+    }
+
+    // Seed des regles d'alerte par defaut si la table est vide
+    try {
+        $alert_count = $pdo->query("SELECT COUNT(*) FROM alert_rules")->fetchColumn();
+        if ($alert_count == 0) {
+            // Onboarding : alerter 5 jours et 2 jours avant la prise de poste
+            $onb = $pdo->query("SELECT id FROM forms WHERE slug = 'onboarding' LIMIT 1")->fetchColumn();
+            if ($onb) {
+                $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, 1)");
+                $stmt_ar->execute([$onb, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
+                $stmt_ar->execute([$onb, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);
+                // Mettre à jour le deadline_field pour l'onboarding
+                $pdo->prepare("UPDATE forms SET deadline_field = ? WHERE id = ?")->execute(['date_prise_poste', $onb]);
+            }
+            // Outboarding : alerter 5 jours et 2 jours avant le départ
+            $ob = $pdo->query("SELECT id FROM forms WHERE slug = 'outboarding' LIMIT 1")->fetchColumn();
+            if ($ob) {
+                $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, 1)");
+                $stmt_ar->execute([$ob, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
+                $stmt_ar->execute([$ob, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);
+                // Mettre à jour le deadline_field pour l'outboarding
+                $pdo->prepare("UPDATE forms SET deadline_field = ? WHERE id = ?")->execute(['date_depart', $ob]);
+            }
+        }
+    } catch (PDOException $e) {
+        // Ignorer si déjà fait
+    }
+    
     // Migration des données existantes : peupler la colonne status à partir de closed_at
     try {
         // Les soumissions avec closed_at commençant par REFUSED: sont refusees
@@ -391,6 +453,54 @@ function generate_token(): string {
 
 function h(string $val): string {
     return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Genere automatiquement un field_name a partir d'un libelle
+ * Ex: "Date de prise de poste" → "date_de_prise_de_poste"
+ * Ex: "Type d'arrivée" → "type_arrivee"
+ */
+function generate_field_name(string $label): string {
+    // Minuscules
+    $name = mb_strtolower($label, 'UTF-8');
+    // Supprimer les accents
+    $name = transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $name);
+    if ($name === false) {
+        // Fallback manuel si intl pas dispo
+        $name = str_replace(
+            ['à','â','ä','é','è','ê','ë','ï','î','ô','ö','ù','û','ü','ç','œ','æ','ÿ'],
+            ['a','a','a','e','e','e','e','i','i','o','o','u','u','u','c','oe','ae','y'],
+            $name
+        );
+    }
+    // Remplacer tout ce qui n'est pas alphanumérique par un underscore
+    $name = preg_replace('/[^a-z0-9]+/', '_', $name);
+    // Nettoyer les underscores en double et en bordure
+    $name = trim($name, '_');
+    $name = preg_replace('/_+/', '_', $name);
+    return $name ?: 'champ';
+}
+
+/**
+ * Convertit une liste d'options (une par ligne) en JSON array
+ * Ex: "Option A\nOption B" → '["Option A","Option B"]'
+ * Si c'est déjà du JSON valide, le retourne tel quel
+ */
+function parse_options_input(string $input): ?string {
+    $input = trim($input);
+    if (empty($input)) return null;
+    
+    // Vérifier si c'est déjà du JSON valide
+    $decoded = json_decode($input, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+        return $input;
+    }
+    
+    // Traiter comme une liste une option par ligne
+    $lines = array_filter(array_map('trim', explode("\n", $input)));
+    if (empty($lines)) return null;
+    
+    return json_encode($lines, JSON_UNESCAPED_UNICODE);
 }
 
 // ── FOOTER ────────────────────────────────────────────────────

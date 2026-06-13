@@ -1,5 +1,57 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [2.5.0] — 2026-06-13
+
+### Fonctionnalités majeures
+
+- **Refonte UX du form builder (`admin_forms.php`)** : Amélioration majeure pour rendre la création de formulaires accessible aux non-techniques. Auto-génération du nom technique (`field_name`) à partir du libellé (ex: "Date de prise de poste" → `date_de_prise_de_poste`) via `generate_field_name()`. Saisie des options de sélecteur simplifiée : une option par ligne au lieu du JSON (via `parse_options_input()`). Suggestions des groupes de cartes existants sous forme de liste déroulante. Icônes par type de champ (📝📅📋☑). Étoile rouge pour les champs obligatoires. Diagramme visuel du circuit de validation (flowchart CSS horizontal avec boîtes connectées par des flèches, destinataires affichés dans chaque étape). Bouton "👁 Prévisualiser le formulaire" pour voir le rendu final.
+
+- **Prévisualisation du formulaire (`form_preview.php`)** : Nouvelle page permettant aux administrateurs de voir exactement comment un formulaire apparaîtra pour l'agent. Affiche le formulaire en mode lecture seule avec les champs désactivés, le circuit de validation en diagramme horizontal, et un bandeau "Mode prévisualisation" bien visible.
+
+- **Page de détail soumission (`submission_view.php`)** : Nouvelle page dédiée offrant une vue complète et visuelle d'une soumission. Comprend : barre de progression avec pourcentage, diagramme workflow horizontal (boîtes colorées : vert=validé, orange=en cours, gris=à venir, rouge=refusé), carte deadline avec code couleur urgence, données du formulaire regroupées par section, historique des validations avec commentaires, actions admin (régénération de token, annulation). Accessible depuis le dashboard (lien "voir") et depuis "Mes demandes".
+
+- **Refonte de "Mes demandes" (`my_submissions.php`)** : Amélioration visuelle majeure. Barres de progression par soumission (pourcentage + ratio d'étapes), timeline compacte avec code couleur, badges deadline (🚨 J+, ⚠️ J-2, 📅 J-5), lien "👁 Voir le détail" vers la page de détail, cartes cliquables, mise en page moderne.
+
+- **Page d'accueil par rôle (`index.php`)** : Refonte complète de la page d'accueil pour s'adapter au rôle de l'utilisateur. Pour les agents : statistiques personnelles, formulaires disponibles sous forme de cartes cliquables, accès rapide (Mes demandes, Mes validations, Documentation). Pour les admins : statistiques globales, tokens bloqués, liens d'administration rapide (Dashboard, Monitoring, Formulaires, Alertes, Paramètres). Design moderne avec hero banner et nav tiles.
+
+- **Graphique camembert CSS dans le monitoring** : Ajout d'un diagramme en anneau (donut chart) en CSS pur (`conic-gradient`) dans la page monitoring, montrant la répartition des soumissions par statut (validées / en cours / refusées) avec légende et pourcentages.
+
+### Fonctionnalités
+
+- **Fonction `generate_field_name()`** : Nouvelle fonction dans `helpers.php` qui convertit un libellé français en identifiant technique snake_case, avec suppression des accents (via `transliterator_transliterate` ou fallback manuel).
+
+- **Fonction `parse_options_input()`** : Nouvelle fonction dans `helpers.php` qui accepte les options de sélecteur soit en JSON, soit une par ligne (format beaucoup plus accessible pour les non-techniques).
+
+- **Lien "voir" dans le dashboard** : Chaque ligne du dashboard de supervision a désormais un lien "voir" à côté du bouton "détail", ouvrant la page de détail complète de la soumission.
+
+---
+
+## [2.4.0] — 2026-06-13
+
+### Fonctionnalités majeures
+
+- **Système d'alerte paramétrable** : Nouveau système complet permettant de configurer des alertes automatiques basées sur la proximité d'une date cible (deadline). Si un onboarding est prévu pour le 20/06 et que le 15/06 toutes les étapes ne sont pas encore faites, une alerte email est envoyée. Comprend : table `alert_rules` (règles par formulaire, nombre de jours avant la deadline, condition de déclenchement, destinataires), table `alert_log` (historique des alertes envoyées, évitement des doublons), script CLI `alert_check.php` (à planifier via Task Scheduler), et interface d'administration complète `admin_alerts.php`.
+
+- **Champ date limite par formulaire** : Nouvelle colonne `deadline_field` sur la table `forms` permettant d'associer un champ de type date du formulaire comme date cible pour les alertes. Pour l'onboarding, c'est `date_prise_poste` ; pour l'outboarding, c'est `date_depart`. Configurable depuis la page d'administration des alertes.
+
+- **Page admin_alerts.php** : Interface d'administration des règles d'alerte avec : configuration du champ date limite par formulaire, création/modification/suppression de règles (J-N jours avant la deadline, condition « étapes incomplètes », destinataires parmi : administrateurs, agent, validateurs en cours, admin+agent, admin+validateurs, ou email personnalisé), activation/désactivation individuelle, historique des alertes envoyées (50 dernières), purge des logs > 90 jours, statut du script `alert_check.php` (dernière exécution, alerte si > 24h).
+
+- **Script alert_check.php** : Script CLI qui vérifie les soumissions en cours, calcule la distance à la date cible, évalue les conditions (étapes incomplètes), détermine les destinataires, envoie les emails d'alerte avec un tableau récapitulatif des étapes, et trace chaque envoi dans `alert_log`. Les doublons sont évités (une seule alerte par règle + soumission + jour). Planification recommandée : toutes les 6h via Windows Task Scheduler.
+
+- **Intégration monitoring** : La page `monitoring.php` affiche désormais une section « Alertes actives » avec les soumissions en cours proches de leur date cible (code couleur : rouge si dépassé, orange si J-2 ou moins, jaune si J-5 ou moins), le compteur d'alertes actives dans les statistiques globales, l'historique des dernières alertes envoyées, et le statut du script `alert_check.php` dans la section scripts automatisés.
+
+### Fonctionnalités
+
+- **Colonne « Date cible » dynamique dans le dashboard** : Le tableau du dashboard affiche désormais la date cible (deadline) de chaque soumission au lieu du champ en dur `date_prise_poste`. La date est colorée en rouge si la deadline est dépassée ou imminente (J-2 ou moins), en orange si proche (J-5 ou moins). La valeur est résolue dynamiquement via le `deadline_field` configuré sur le formulaire.
+
+- **Lien « 🔔 Alertes » dans le bandeau et le dashboard** : Accès direct à la page de configuration des alertes depuis le dashboard et les bandeaux de navigation.
+
+- **Seed des règles d'alerte par défaut** : À l'installation, deux règles sont créées pour chaque formulaire (J-5 et J-2 avant la deadline), et le `deadline_field` est automatiquement configuré (`date_prise_poste` pour l'onboarding, `date_depart` pour l'outboarding).
+
+- **Email d'alerte riche** : L'email d'alerte contient un bandeau coloré selon l'urgence (rouge si dépassé, orange si J-2, bleu si J-5+), les informations de l'agent, la date cible, le nombre de jours restants, l'avancement (validées/total), et un tableau détaillé des étapes avec leur statut.
+
+---
+
 ## [2.3.0] — 2026-06-13
 
 ### Fonctionnalités majeures
