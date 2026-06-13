@@ -1,6 +1,7 @@
 # Dépendances PHP
 /vendor/
-/composer.lock
+/PHPMailer/
+composer.lock
 
 # Base de données SQLite
 /db/

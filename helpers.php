@@ -329,40 +329,51 @@ function db_migrate(PDO $pdo): void {
         // Ignorer si déjà présent
     }
     
-    // Seed default form_fields for the "onboarding" form if empty
-    $ff_count = $pdo->query("SELECT COUNT(*) FROM form_fields")->fetchColumn();
-    if ($ff_count == 0) {
-        // Find the onboarding form id
-        $ob = $pdo->query("SELECT id FROM forms WHERE slug = 'onboarding' LIMIT 1")->fetchColumn();
-        if ($ob) {
-            $fid = (int)$ob;
-            $defaults = [
-                ['Identité de l\'agent',  'Nom',                            'text',    'nom',               null,                                                           1, 1],
-                ['Identité de l\'agent',  'Prénom',                         'text',    'prenom',            null,                                                           1, 2],
-                ['Identité de l\'agent',  'Date de naissance',              'date',    'date_naissance',    null,                                                           1, 3],
-                ['Identité de l\'agent',  'Date de prise de poste',         'date',    'date_prise_poste',  null,                                                           1, 4],
-                ['Identité de l\'agent',  'Corps / Grade',                  'select',  'corps_grade',       '["Attaché d\'administration","Secrétaire administratif","Adjoint administratif","Inspecteur du travail","Contrôleur du travail","Technicien","Ingénieur","Autre"]', 1, 5],
-                ['Identité de l\'agent',  'Type d\'arrivée',                'select',  'type_arrivee',      '["Mutation","Primo-recrutement","Détachement","Stage","Alternance"]', 1, 6],
-                ['Identité de l\'agent',  'Service / Affectation',          'text',    'affectation',       null,                                                           1, 7],
-                ['Identité de l\'agent',  'Quotité',                        'select',  'quotite',           '["100%","80%","50%"]',                                         1, 8],
-                ['Informatique (IT)',     'Type de poste',                  'select',  'type_poste',        '["Fixe","Portable"]',                                          1, 9],
-                ['Informatique (IT)',     'Double écran',                   'checkbox','it_double_ecran',   null,                                                           0, 10],
-                ['Informatique (IT)',     'Accès RPVN',                     'checkbox','it_acces_rpvn',    null,                                                           0, 11],
-                ['Informatique (IT)',     'Téléphone professionnel',        'checkbox','it_telephone_pro', null,                                                           0, 12],
-                ['Informatique (IT)',     'Applicatifs métier',             'textarea','it_applicatifs',   null,                                                           0, 13],
-                ['Ressources Humaines',   'Dossier administratif à constituer','checkbox','rh_dossier_admin',null,                                                          0, 14],
-                ['Ressources Humaines',   'Affiliation mutuelle MGEN',      'checkbox','rh_mutuelle',      null,                                                           0, 15],
-                ['Ressources Humaines',   'Visite médicale à planifier',    'checkbox','rh_visite_medicale',null,                                                          0, 16],
-                ['Ressources Humaines',   'Habilitation sécurité requise',  'checkbox','rh_habilitation',  null,                                                           0, 17],
-                ['Logistique',            'Bâtiment / Bureau',              'text',    'log_batiment_bureau',null,                                                          1, 18],
-                ['Logistique',            'Badge d\'accès',                 'checkbox','log_badge_acces',  null,                                                           0, 19],
-                ['Logistique',            'Véhicule de service',            'checkbox','log_vehicule_service',null,                                                         0, 20],
-                ['Logistique',            'EPI à préparer',                 'checkbox','log_epi_requis',   null,                                                           0, 21],
-            ];
-            $stmt = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            foreach ($defaults as $row) {
-                $stmt->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $fid]);
-            }
+    // Seed formulaire onboarding s'il n'existe pas
+    $onb_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'onboarding'")->fetchColumn();
+    if ($onb_count == 0) {
+        $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
+            ->execute(['onboarding', 'Onboarding agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
+        $onboarding_id = (int)$pdo->lastInsertId();
+
+        $onboarding_fields = [
+            ['Identité de l\'agent',  'Nom',                            'text',    'nom',               null,                                                           1, 1],
+            ['Identité de l\'agent',  'Prénom',                         'text',    'prenom',            null,                                                           1, 2],
+            ['Identité de l\'agent',  'Date de naissance',              'date',    'date_naissance',    null,                                                           1, 3],
+            ['Identité de l\'agent',  'Date de prise de poste',         'date',    'date_prise_poste',  null,                                                           1, 4],
+            ['Identité de l\'agent',  'Corps / Grade',                  'select',  'corps_grade',       '["Attaché d\'administration","Secrétaire administratif","Adjoint administratif","Inspecteur du travail","Contrôleur du travail","Technicien","Ingénieur","Autre"]', 1, 5],
+            ['Identité de l\'agent',  'Type d\'arrivée',                'select',  'type_arrivee',      '["Mutation","Primo-recrutement","Détachement","Stage","Alternance"]', 1, 6],
+            ['Identité de l\'agent',  'Service / Affectation',          'text',    'affectation',       null,                                                           1, 7],
+            ['Identité de l\'agent',  'Quotité',                        'select',  'quotite',           '["100%","80%","50%"]',                                         1, 8],
+            ['Informatique (IT)',     'Type de poste',                  'select',  'type_poste',        '["Fixe","Portable"]',                                          1, 9],
+            ['Informatique (IT)',     'Double écran',                   'checkbox','it_double_ecran',   null,                                                           0, 10],
+            ['Informatique (IT)',     'Accès RPVN',                     'checkbox','it_acces_rpvn',    null,                                                           0, 11],
+            ['Informatique (IT)',     'Téléphone professionnel',        'checkbox','it_telephone_pro', null,                                                           0, 12],
+            ['Informatique (IT)',     'Applicatifs métier',             'textarea','it_applicatifs',   null,                                                           0, 13],
+            ['Ressources Humaines',   'Dossier administratif à constituer','checkbox','rh_dossier_admin',null,                                                          0, 14],
+            ['Ressources Humaines',   'Affiliation mutuelle MGEN',      'checkbox','rh_mutuelle',      null,                                                           0, 15],
+            ['Ressources Humaines',   'Visite médicale à planifier',    'checkbox','rh_visite_medicale',null,                                                          0, 16],
+            ['Ressources Humaines',   'Habilitation sécurité requise',  'checkbox','rh_habilitation',  null,                                                           0, 17],
+            ['Logistique',            'Bâtiment / Bureau',              'text',    'log_batiment_bureau',null,                                                          1, 18],
+            ['Logistique',            'Badge d\'accès',                 'checkbox','log_badge_acces',  null,                                                           0, 19],
+            ['Logistique',            'Véhicule de service',            'checkbox','log_vehicule_service',null,                                                         0, 20],
+            ['Logistique',            'EPI à préparer',                 'checkbox','log_epi_requis',   null,                                                           0, 21],
+        ];
+        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($onboarding_fields as $row) {
+            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $onboarding_id]);
+        }
+
+        // Etapes par defaut pour l'onboarding
+        $steps_data = [
+            ['Responsable direct', 1],
+            ['Service informatique', 2],
+            ['Ressources humaines', 3],
+            ['Logistique', 4],
+        ];
+        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+        foreach ($steps_data as $sd) {
+            $stmt_step->execute([$onboarding_id, $sd[0], $sd[1]]);
         }
     }
 
@@ -1059,7 +1070,7 @@ function export_csv(PDO $pdo, array $options = []): void {
 
     // En-tête fixe
     $headers = array_merge(['ID', 'Formulaire', 'Agent', 'Statut', 'Soumis le', 'Clôturé le'], $all_keys);
-    fputcsv($out, $headers, ';');
+    fputcsv($out, $headers, ';', '"', '\\');
 
     foreach ($rows as $row) {
         $data = json_decode($row['data'], true) ?: [];
@@ -1078,7 +1089,7 @@ function export_csv(PDO $pdo, array $options = []): void {
             elseif (is_array($val)) $val = json_encode($val, JSON_UNESCAPED_UNICODE);
             $line[] = $val;
         }
-        fputcsv($out, $line, ';');
+        fputcsv($out, $line, ';', '"', '\\');
     }
     fclose($out);
     exit;
