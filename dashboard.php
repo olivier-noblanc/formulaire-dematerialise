@@ -26,16 +26,23 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 // Régénération de token (admin)
 $regen_msg = '';
 if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && is_admin_user()) {
-    if (!verify_csrf()) die('Token CSRF invalide.');
+    if (!verify_csrf()) {
+        if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide']); }
+        die('Token CSRF invalide.');
+    }
     $token_id = (int)($_POST['token_id'] ?? 0);
     $result = regenerate_token($token_id);
     $regen_msg = $result['message'];
+    if (TEST_MODE) { test_json_response(['action' => 'regenerate_token', 'result' => $result]); }
 }
 
 // Annulation de soumission (admin ou agent)
 $cancel_msg = '';
 if (isset($_POST['action']) && $_POST['action'] === 'cancel_submission') {
-    if (!verify_csrf()) die('Token CSRF invalide.');
+    if (!verify_csrf()) {
+        if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide']); }
+        die('Token CSRF invalide.');
+    }
     $sub_id = (int)($_POST['submission_id'] ?? 0);
     $actor = get_auth_user();
     // Vérifier que l'utilisateur est admin ou le propriétaire de la soumission
@@ -45,6 +52,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'cancel_submission') {
     if (is_admin_user() || $sub_owner === $actor) {
         $result = cancel_submission($sub_id, $actor);
         $cancel_msg = $result['message'];
+        if (TEST_MODE) { test_json_response(['action' => 'cancel_submission', 'result' => $result, 'submission_id' => $sub_id]); }
     }
 }
 

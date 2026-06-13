@@ -9,7 +9,11 @@ $form = $pdo->prepare("SELECT * FROM forms WHERE slug = ? AND actif = 1");
 $form->execute([$slug]);
 $form = $form->fetch(PDO::FETCH_ASSOC);
 
-if (!$form) { http_response_code(404); die('<p>Formulaire introuvable.</p>'); }
+if (!$form) {
+    http_response_code(404);
+    if (TEST_MODE) { test_json_response(['error' => 'Formulaire introuvable', 'slug' => $slug]); }
+    die('<p>Formulaire introuvable.</p>');
+}
 
 $submitted_by = get_auth_user();
 $field_errors = [];
@@ -22,6 +26,7 @@ $form_fields = $fields_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf()) {
+        if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide', 'http_code' => 403]); }
         die('Token CSRF invalide. Veuillez réessayer.');
     }
 
@@ -59,7 +64,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         send_mail($submitted_by, $confirm_subject, $confirm_body);
 
         $success = true;
+
+        // Mode test : renvoyer JSON au lieu du HTML
+        if (TEST_MODE) {
+            // Récupérer les tokens générés
+            $tok_stmt = $pdo->prepare("SELECT t.id, t.step_id, t.email, t.token, t.sent_at, st.label as step_label, st.ordre FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.submission_id = ? ORDER BY st.ordre");
+            $tok_stmt->execute([$submission_id]);
+            $generated_tokens = $tok_stmt->fetchAll(PDO::FETCH_ASSOC);
+            test_json_response([
+                'success'        => true,
+                'submission_id'  => $submission_id,
+                'form_slug'      => $slug,
+                'form_label'     => $form['label'],
+                'submitted_by'   => $submitted_by,
+                'data'           => $data,
+                'tokens'         => $generated_tokens,
+                'mails_count'    => count($GLOBALS['_test_mails']),
+            ]);
+        }
+    } elseif (TEST_MODE) {
+        // Erreurs de validation en mode test
+        test_json_response(['error' => 'Erreurs de validation', 'field_errors' => $field_errors]);
     }
+}
+
+// Mode test : GET renvoie les métadonnées du formulaire en JSON
+if (TEST_MODE && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Content-Type: application/json; charset=utf-8');
+    $fields_list = [];
+    foreach ($form_fields as $f) {
+        $fields_list[] = [
+            'field_name' => $f['field_name'],
+            'label'      => $f['label'],
+            'field_type' => $f['field_type'],
+            'required'   => (bool)$f['required'],
+            'options'    => $f['options'] ? json_decode($f['options'], true) : null,
+            'card_group' => $f['card_group'],
+        ];
+    }
+    echo json_encode([
+        '_test_mode' => true,
+        'form'       => ['id' => $form['id'], 'slug' => $form['slug'], 'label' => $form['label'], 'description' => $form['description']],
+        'fields'     => $fields_list,
+        'csrf_token' => generate_csrf_token(),
+        'submitted_by' => $submitted_by,
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit;
 }
 
 // Regrouper les champs par card_group pour le rendu visuel

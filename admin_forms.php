@@ -4,6 +4,7 @@ require_once __DIR__ . '/helpers.php';
 
 // Vérification des droits d'accès
 if (!is_admin_user() && !is_super_admin()) {
+    if (TEST_MODE) { test_json_response(['error' => 'Accès refusé', 'redirect' => 'admin_access.php']); }
     header('Location: admin_access.php');
     exit;
 }
@@ -24,6 +25,7 @@ $edit_field_id = (int)($_GET['edit_field'] ?? 0);
 $action = $_POST['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf()) {
+    if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide']); }
     die('Token CSRF invalide. Veuillez réessayer.');
 }
 

@@ -1,6 +1,29 @@
 <?php
 require_once __DIR__ . '/config.php';
 session_start();
+
+// ── TEST MODE ──────────────────────────────────────────────────
+// Activé par le header HTTP X-Test-Mode: 1
+// Permet les tests automatisés via curl sans SMTP, sans CSRF, avec
+// identification par header X-Test-User au lieu de AUTH_USER (IIS).
+define('TEST_MODE', !empty($_SERVER['HTTP_X_TEST_MODE']));
+
+// En mode test, supprimer les warnings PHP qui corrompent le JSON
+if (TEST_MODE) {
+    error_reporting(E_ERROR | E_PARSE);
+    ini_set('display_errors', '0');
+}
+
+// File d'attente des mails interceptés en mode test (acces global)
+$GLOBALS['_test_mails'] = [];
+
+// Base de données test séparée pour ne pas polluer la vraie DB
+if (TEST_MODE) {
+    $test_db_path = __DIR__ . '/db/workflow_test.db';
+    // Définir DB_PATH avant que config.php ne soit déjà chargé — on override via constante
+    // Comme DB_PATH est déjà définie, on ne peut pas la redéfinir. On utilise un flag global.
+    $GLOBALS['_test_db_path'] = $test_db_path;
+}
 // Tentative d'inclusion de vendor/autoload.php, mais ignorée si non présente
 require_once __DIR__ . '/PHPMailer/Exception.php';
 require_once __DIR__ . '/PHPMailer/PHPMailer.php';
@@ -9,6 +32,21 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 // ── UTILITAIRES ──────────────────────────────────────────────
 function get_auth_user(): string {
+    // Mode test : utiliser le header X-Test-User
+    if (TEST_MODE) {
+        $test_user = $_SERVER['HTTP_X_TEST_USER'] ?? '';
+        if (!empty($test_user)) {
+            // Si contient un @, c'est déjà un email
+            if (strpos($test_user, '@') !== false) {
+                return strtolower($test_user);
+            }
+            // Sinon, transformer en email DREETS
+            return strtolower($test_user) . '@dreets.gouv.fr';
+        }
+        // Fallback : utilisateur test par défaut
+        return 'test.agent@dreets.gouv.fr';
+    }
+
     $auth_user = $_SERVER['AUTH_USER'] ?? '';
     if (empty($auth_user)) {
         http_response_code(401);
@@ -76,6 +114,8 @@ function csrf_field(): string {
 }
 
 function verify_csrf(): bool {
+    // Mode test : bypass CSRF
+    if (TEST_MODE) return true;
     $token = $_POST['csrf_token'] ?? '';
     return !empty($token) && hash_equals($_SESSION['csrf_token'] ?? '', $token);
 }
@@ -83,6 +123,19 @@ function verify_csrf(): bool {
 // ── PDO ──────────────────────────────────────────────────────
 function get_pdo(): PDO {
     static $pdo = null;
+    static $pdo_test = null;
+
+    // Mode test : utiliser la DB de test séparée
+    if (TEST_MODE) {
+        if ($pdo_test === null) {
+            $test_db_path = $GLOBALS['_test_db_path'] ?? __DIR__ . '/db/workflow_test.db';
+            $pdo_test = new PDO('sqlite:' . $test_db_path);
+            $pdo_test->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            db_migrate($pdo_test);
+        }
+        return $pdo_test;
+    }
+
     if ($pdo === null) {
         $pdo = new PDO('sqlite:' . DB_PATH);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -539,6 +592,17 @@ function set_setting(string $key, string $value, string $updated_by = ''): void 
 
 // ── MAIL ─────────────────────────────────────────────────────
 function send_mail(string $to, string $subject, string $body): bool {
+    // Mode test : intercepter les mails sans les envoyer
+    if (TEST_MODE) {
+        $GLOBALS['_test_mails'][] = [
+            'to'      => $to,
+            'subject' => $subject,
+            'body'    => $body,
+            'time'    => date('Y-m-d H:i:s'),
+        ];
+        return true;
+    }
+
     $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();
@@ -574,7 +638,8 @@ function build_mail_html(array $submission, string $step_label, string $token): 
 
     $lignes = '';
     foreach ($data as $k => $v) {
-        if (empty($v) || $v === '0') continue;
+        if (empty($v) || $v === '0' || $k === 'validations') continue;
+        if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE);
         $label  = ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k)));
         $valeur = $v === '1' ? '✓' : h((string)$v);
         $lignes .= "<tr><td style='padding:5px 8px;font-weight:bold;color:#555;'>{$label}</td><td style='padding:5px 8px;'>{$valeur}</td></tr>";
@@ -1026,6 +1091,34 @@ function get_audit_logs(int $limit = 100, string $action_filter = ''): array {
  * @param PDO   $pdo     Connexion base de données
  * @param array $options Filtres optionnels ['form_id' => int, 'status' => string]
  */
+/**
+ * Récupère les mails interceptés en mode test
+ */
+function get_test_mails(): array {
+    return $GLOBALS['_test_mails'] ?? [];
+}
+
+/**
+ * Réinitialise la file d'attente des mails test
+ */
+function reset_test_mails(): void {
+    $GLOBALS['_test_mails'] = [];
+}
+
+/**
+ * Réponse JSON pour le mode test (à appeler dans les pages au lieu de die/redirect)
+ * En mode test, les pages doivent appeler test_json_response() avant tout die()/exit()/header('Location:')
+ * pour renvoyer un JSON structuré exploitable par les tests.
+ */
+function test_json_response(array $data): void {
+    if (!TEST_MODE) return;
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(array_merge(['_test_mode' => true], $data), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit;
+}
+
+// ── EXPORT CSV ───────────────────────────────────────────────
+
 function export_csv(PDO $pdo, array $options = []): void {
     $where = ['1=1'];
     $params = [];

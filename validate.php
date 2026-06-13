@@ -5,6 +5,7 @@ require_once __DIR__ . '/helpers.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérification CSRF
     if (!verify_csrf()) {
+        if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide', 'http_code' => 403]); }
         die('Token CSRF invalide. Veuillez réessayer.');
     }
 
@@ -15,6 +16,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($token && in_array($action, ['valider', 'refuser'])) {
         $result = validate_token($token, $action, $comment);
         
+        // Mode test : renvoyer JSON
+        if (TEST_MODE) {
+            test_json_response([
+                'action'  => $action,
+                'result'  => $result,
+                'token'   => substr($token, 0, 8) . '...',
+                'comment' => $comment,
+            ]);
+        }
+        
         if ($result['status'] === 'ok') {
             $success = true;
         } else {
@@ -24,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      ($result['status'] === 'expired' ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
         }
     } else {
+        if (TEST_MODE) { test_json_response(['error' => 'Données invalides', 'token' => $token, 'action' => $action]); }
         $error = 'Données invalides.';
     }
 }
@@ -60,6 +72,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     } else {
         $result = ['status' => 'invalid'];
+    }
+
+    // Mode test : GET renvoie JSON au lieu du HTML
+    if (TEST_MODE) {
+        $response = [
+            '_test_mode' => true,
+            'token_hash' => substr($token, 0, 8) . '...',
+            'result'     => $result['status'],
+        ];
+        if (isset($data)) {
+            $response['step_label']  = $data['step_label'] ?? '';
+            $response['form_label']  = $data['form_label'] ?? '';
+            $response['submission_id'] = $data['submission_id'] ?? null;
+            $response['csrf_token']  = generate_csrf_token();
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
     }
 }
 ?>
