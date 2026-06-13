@@ -106,16 +106,15 @@ $changelog = parse_changelog(__DIR__ . '/CHANGELOG.md');
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Journal des modifications — DREETS</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <?php require_once __DIR__ . '/style.php'; ?>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; padding: 2rem 1rem; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin: -2rem -1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-    .bandeau a { color: #b3c8f0; font-size: .8rem; text-decoration: none; }
-    .bandeau a:hover { text-decoration: underline; }
-    .container { max-width: 900px; margin: 0 auto; }
+    /* Overrides */
+    body { padding: 2rem 1rem; }
+    .bandeau { margin: -2rem -1rem 2rem; }
+    .container { max-width: 900px; padding: 0; }
+    h1 { font-size: 1.8rem; margin-bottom: .5rem; }
 
-    h1 { font-size: 1.8rem; color: #003189; margin-bottom: .5rem; }
+    /* Page-specific */
     .subtitle { font-size: .9rem; color: #666; margin-bottom: 2rem; }
     .current-version { display: inline-block; background: #003189; color: #fff; padding: .3rem .8rem; border-radius: 3px; font-size: .85rem; font-weight: bold; margin-bottom: 1.5rem; }
 

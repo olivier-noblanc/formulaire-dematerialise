@@ -332,53 +332,18 @@ if ($form_id > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestion des formulaires — DREETS Workflow</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+    <?php require_once __DIR__ . '/style.php'; ?>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; }
-        .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2rem; }
-        h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
-        .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
-        .btn { padding: .6rem 1.2rem; border: none; border-radius: 3px; font-size: .9rem; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-primary { background: #003189; color: #fff; }
-        .btn-primary:hover { background: #002270; }
-        .btn-secondary { background: #f0f0f0; color: #333; }
-        .btn-secondary:hover { background: #e0e0e0; }
-        .btn-danger { background: #c0392b; color: #fff; }
-        .btn-danger:hover { background: #a93226; }
-        .msg-success { background: #e8f5e9; border: 1px solid #27ae60; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #1a6b3c; }
-        .msg-error { background: #ffebee; border: 1px solid #c0392b; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #c0392b; }
-        .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
-        label { font-size: .82rem; font-weight: bold; color: #444; }
-        input[type="text"], input[type="email"], input[type="number"], textarea, select {
-            padding: .6rem; border: 1px solid #aaa; border-radius: 3px;
-            font-size: .9rem; font-family: inherit; background: #fff; color: #1e1e1e;
-        }
-        input:focus, textarea:focus, select:focus { outline: 2px solid #003189; border-color: #003189; }
-        table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 1rem; }
-        th, td { padding: .75rem; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #003189; color: #fff; font-weight: normal; }
-        tr:nth-child(even) { background: #f7f7fb; }
-        .actions { display: flex; gap: .5rem; }
-        .action-btn { padding: .3rem .6rem; border: none; border-radius: 3px; font-size: .8rem; cursor: pointer; }
-        .toggle-btn { background: #1a6b3c; color: #fff; }
-        .delete-btn { background: #c0392b; color: #fff; }
-        .form-section { margin-bottom: 2rem; }
+        /* Overrides */
+        .container { max-width: 1200px; }
+
+        /* Page-specific */
         .step-list { margin-top: 1rem; }
         .step-item { padding: .75rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: .5rem; background: #f9f9ff; }
         .recipient-list { margin-top: .5rem; }
         .recipient-item { padding: .25rem 0; border-bottom: 1px dashed #ccc; }
         .recipient-item:last-child { border-bottom: none; }
-        .form-actions { display: flex; gap: .5rem; margin-top: .5rem; }
         .form-actions a { text-decoration: none; }
-        .section-title { font-size: 1.2rem; color: #003189; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 2px solid #003189; }
-        .form-selector { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-        .form-selector select { padding: .6rem; border: 1px solid #aaa; border-radius: 3px; font-size: 1rem; font-family: inherit; }
-        .form-selector button { padding: .6rem 1.2rem; border: none; border-radius: 3px; background: #003189; color: #fff; cursor: pointer; }
-        .form-selector button:hover { background: #002270; }
-        .form-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .form-section-header h2 { margin: 0; }
-        .form-section-header a { text-decoration: none; }
         .step-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
         .step-row div { flex: 1; }
         .step-row .step-label { font-weight: bold; }

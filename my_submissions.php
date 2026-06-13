@@ -102,57 +102,19 @@ foreach ($submissions as $s) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mes demandes — DREETS</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <?php require_once __DIR__ . '/style.php'; ?>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; padding: 0; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-    .container { max-width: 900px; margin: 0 auto; padding: 0 1rem 2rem; }
-    h1 { font-size: 1.5rem; color: #003189; margin-bottom: .25rem; }
-    .subtitle { font-size: .85rem; color: #555; margin-bottom: 2rem; }
-    .stats { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-    .stat { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: .75rem 1.25rem; min-width: 120px; font-size: .9rem; }
-    .stat strong { display: block; font-size: 1.8rem; color: #003189; }
-    .stat.en-cours strong { color: #b45309; }
-    .stat.valide strong { color: #1a6b3c; }
-    .stat.refuse strong { color: #c0392b; }
+    /* Overrides */
+    body { padding: 0; }
+    .container { max-width: 900px; }
+    h1 { font-size: 1.5rem; margin-bottom: .25rem; }
 
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    /* Page-specific */
+    .subtitle { font-size: .85rem; color: #555; margin-bottom: 2rem; }
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem; }
     .card-title { font-size: 1.1rem; font-weight: bold; color: #003189; }
     .card-date { font-size: .8rem; color: #888; margin-top: .25rem; }
-
-    .badge { display: inline-block; padding: .25rem .75rem; border-radius: 3px; font-size: .8rem; font-weight: bold; }
-    .badge-en-cours { background: #fff3e0; color: #b45309; }
-    .badge-valide { background: #e8f5e9; color: #1a6b3c; }
-    .badge-refuse { background: #fde8e8; color: #c0392b; }
-
-    .timeline { display: flex; align-items: flex-start; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; overflow-x: auto; }
-    .step-item { display: flex; flex-direction: column; align-items: center; min-width: 100px; max-width: 160px; flex: 1; text-align: center; position: relative; padding: 0 .5rem; }
-    .step-item:not(:last-child)::after {
-      content: ''; position: absolute; top: 16px; right: -50%; width: 100%; height: 3px; z-index: 0;
-    }
-    .step-item.step-validated:not(:last-child)::after { background: #1a6b3c; }
-    .step-item.step-current:not(:last-child)::after { background: #b45309; }
-    .step-item.step-upcoming:not(:last-child)::after { background: #ccc; }
-
-    .step-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: bold; z-index: 1; margin-bottom: .5rem; }
-    .step-validated .step-icon { background: #1a6b3c; color: #fff; }
-    .step-current .step-icon { background: #b45309; color: #fff; }
-    .step-upcoming .step-icon { background: #ccc; color: #666; }
-
-    .step-label { font-size: .78rem; font-weight: bold; color: #333; margin-bottom: .25rem; line-height: 1.3; }
-    .step-detail { font-size: .72rem; color: #888; line-height: 1.4; }
-
     .card-actions { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-    .btn { padding: .5rem 1rem; border: none; border-radius: 3px; font-size: .85rem; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
-    .btn-primary { background: #003189; color: #fff; }
-    .btn-primary:hover { background: #002270; }
-    .btn-secondary { background: #f0f0f0; color: #333; }
-    .btn-secondary:hover { background: #e0e0e0; }
-
-    .empty-state { text-align: center; padding: 3rem 1rem; color: #888; }
-    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-    .empty-state p { margin-bottom: 1.5rem; }
   </style>
 </head>
 <body>

@@ -22,22 +22,18 @@ try {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Documentation — DREETS Workflow</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <?php require_once __DIR__ . '/style.php'; ?>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; padding: 2rem 1rem; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-    .bandeau a { color: #b3c8f0; font-size: .8rem; text-decoration: none; }
-    .bandeau a:hover { text-decoration: underline; }
+    /* Overrides */
+    body { padding: 2rem 1rem; }
+    .container { max-width: 900px; padding: 0; }
+    h1 { font-size: 1.8rem; margin-bottom: .5rem; }
+    h2 { font-size: 1.3rem; }
+    .card h2 { text-transform: uppercase; letter-spacing: .05em; font-size: 1rem; }
+
+    /* Page-specific */
     .bandeau-left { display: flex; align-items: center; gap: 1rem; }
     .bandeau-right { display: flex; align-items: center; gap: 1rem; font-size: .8rem; }
-    .container { max-width: 900px; margin: 0 auto; }
-    h1 { font-size: 1.8rem; color: #003189; margin-bottom: .5rem; }
-    h2 { font-size: 1.3rem; color: #003189; margin-bottom: 1rem; border-bottom: 2px solid #003189; padding-bottom: .5rem; }
-    h3 { font-size: 1.1rem; color: #003189; margin-bottom: .75rem; }
-    .subtitle { color: #555; margin-bottom: 2rem; font-size: .95rem; }
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .card h2 { text-transform: uppercase; letter-spacing: .05em; font-size: 1rem; }
     p, li { line-height: 1.7; margin-bottom: .5rem; }
     ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
     .toc { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 2rem; }
@@ -51,12 +47,6 @@ try {
     .step-row { display: flex; align-items: flex-start; margin-bottom: 1rem; }
     .step-text { flex: 1; }
     .step-text p { margin-bottom: .25rem; }
-    .info-box { background: #e8eaf6; border-left: 4px solid #003189; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
-    .info-box p { margin-bottom: .25rem; }
-    .warn-box { background: #fff3e0; border-left: 4px solid #b45309; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
-    .warn-box p { margin-bottom: .25rem; }
-    .success-box { background: #e8f5e9; border-left: 4px solid #27ae60; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
-    .success-box p { margin-bottom: .25rem; }
     details { margin-bottom: 1rem; }
     details summary { cursor: pointer; font-weight: bold; color: #003189; padding: .75rem 1rem; background: #f0f0f8; border: 1px solid #ddd; border-radius: 4px; list-style: none; display: flex; align-items: center; gap: .5rem; }
     details summary::before { content: "▸"; font-size: 1rem; transition: transform .2s; display: inline-block; }

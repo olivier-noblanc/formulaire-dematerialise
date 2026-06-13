@@ -66,25 +66,17 @@ function get_tokens_status(int $sub_id): array {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Supervision workflow — DREETS</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <?php require_once __DIR__ . '/style.php'; ?>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2rem; }
-    h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
-    .toolbar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    /* Overrides */
+    .container { max-width: 1200px; }
+    .toolbar { gap: 1rem; margin-bottom: 1.5rem; }
+
+    /* Page-specific */
     .filtres { display: flex; gap: .5rem; }
     .filtres a, .btn-admin { padding: .4rem 1rem; border: 1px solid #003189; border-radius: 3px; text-decoration: none; font-size: .85rem; color: #003189; }
     .filtres a.actif, .btn-admin { background: #003189; color: #fff; }
-    select.form-filter { padding: .4rem .75rem; border: 1px solid #aaa; border-radius: 3px; font-size: .85rem; font-family: inherit; }
-    .stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .stat { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: .75rem 1.25rem; min-width: 130px; font-size: .9rem; }
-    .stat strong { display: block; font-size: 1.8rem; color: #003189; }
-    table { width: 100%; border-collapse: collapse; background: #fff; font-size: .875rem; }
-    thead { background: #003189; color: #fff; }
-    thead th { padding: .65rem .75rem; text-align: left; font-weight: normal; white-space: nowrap; }
     tbody tr:nth-child(4n+1), tbody tr:nth-child(4n+2) { background: #f7f7fb; }
-    tbody td { padding: .55rem .75rem; vertical-align: middle; border-bottom: 1px solid #eee; }
     .token-grid { display: flex; flex-wrap: wrap; gap: .35rem; }
     .token-badge { font-size: .75rem; padding: .2rem .5rem; border-radius: 3px; white-space: nowrap; }
     .token-ok   { background: #e8f5e9; color: #1a6b3c; }
@@ -95,10 +87,6 @@ function get_tokens_status(int $sub_id): array {
     .detail-row.open { display: table-row; }
     .detail-content { padding: 1rem; background: #f0f0f8; font-size: .82rem; line-height: 1.9; }
     .ordre-label { font-size: .7rem; background: #003189; color: #fff; padding: .1rem .4rem; border-radius: 2px; margin-right: .25rem; }
-    .pagination { display: flex; justify-content: center; align-items: center; gap: .75rem; margin-top: 1.5rem; font-size: .9rem; }
-    .pagination a, .pagination span { padding: .4rem .75rem; border: 1px solid #003189; border-radius: 3px; text-decoration: none; color: #003189; }
-    .pagination .current { background: #003189; color: #fff; border-color: #003189; }
-    .pagination .disabled { color: #aaa; border-color: #ddd; pointer-events: none; }
   </style>
 </head>
 <body>

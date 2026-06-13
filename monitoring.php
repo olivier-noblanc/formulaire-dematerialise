@@ -111,58 +111,13 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Monitoring — DREETS Workflow</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <?php require_once __DIR__ . '/style.php'; ?>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2rem; }
-    h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
-    h2 { font-size: 1.1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1rem; }
+    /* Overrides */
+    .container { max-width: 1200px; }
+    .grid-2 { gap: 1.5rem; margin-bottom: 2rem; }
 
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-
-    .stat-card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.25rem; text-align: center; }
-    .stat-card .stat-value { font-size: 2rem; font-weight: bold; color: #003189; }
-    .stat-card .stat-label { font-size: .85rem; color: #555; margin-top: .25rem; }
-    .stat-card.success .stat-value { color: #1a6b3c; }
-    .stat-card.danger .stat-value { color: #c0392b; }
-    .stat-card.warning .stat-value { color: #b45309; }
-
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
-
-    .health-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: .5rem; vertical-align: middle; }
-    .health-ok { background: #1a6b3c; }
-    .health-err { background: #c0392b; }
-    .health-warn { background: #b45309; }
-    .health-unknown { background: #999; }
-
-    .btn { padding: .5rem 1rem; border: none; border-radius: 3px; font-size: .85rem; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
-    .btn-primary { background: #003189; color: #fff; }
-    .btn-primary:hover { background: #002270; }
-    .btn-secondary { background: #f0f0f0; color: #333; }
-    .btn-secondary:hover { background: #e0e0e0; }
-    .btn-danger { background: #c0392b; color: #fff; }
-    .btn-danger:hover { background: #a93226; }
-
-    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-    thead { background: #003189; color: #fff; }
-    thead th { padding: .55rem .75rem; text-align: left; font-weight: normal; }
-    tbody td { padding: .5rem .75rem; border-bottom: 1px solid #eee; vertical-align: middle; }
-    tbody tr:hover { background: #f0f0f8; }
-
-    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 3px; font-size: .78rem; font-weight: bold; }
-    .badge-ok { background: #e8f5e9; color: #1a6b3c; }
-    .badge-warn { background: #fff3e0; color: #b45309; }
-    .badge-err { background: #fde8e8; color: #c0392b; }
-    .badge-info { background: #e3f2fd; color: #1565c0; }
-
-    .empty-state { text-align: center; padding: 2rem; color: #888; font-style: italic; }
-
-    select.form-filter { padding: .4rem .75rem; border: 1px solid #aaa; border-radius: 3px; font-size: .85rem; font-family: inherit; }
-
-    .toolbar { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
-
+    /* Page-specific */
     @media (max-width: 768px) {
       .grid-2 { grid-template-columns: 1fr; }
     }

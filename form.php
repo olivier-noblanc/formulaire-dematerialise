@@ -135,38 +135,20 @@ HTML;
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= h($form['label']) ?> — DREETS</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <?php require_once __DIR__ . '/style.php'; ?>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; padding: 2rem 1rem; }
-    .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-    .container { max-width: 780px; margin: 0 auto; }
-    h1 { font-size: 1.5rem; color: #003189; margin-bottom: .25rem; }
+    /* Overrides */
+    body { padding: 2rem 1rem; }
+    .container { max-width: 780px; padding: 0; }
+    h1 { font-size: 1.5rem; margin-bottom: .25rem; }
+
+    /* Page-specific */
     .agent-info { font-size: .85rem; color: #555; margin-bottom: 2rem; }
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
     fieldset.card { border: 1px solid #ddd; }
     legend { font-size: 1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: .05em; width: 100%; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .field { display: flex; flex-direction: column; gap: .35rem; }
     .field.full { grid-column: 1 / -1; }
-    label { font-size: .85rem; font-weight: bold; color: #333; }
-    .req { color: #c0392b; margin-left: 2px; }
-    input[type="text"], input[type="date"], select, textarea {
-      width: 100%; padding: .5rem .75rem; border: 1px solid #aaa;
-      border-radius: 3px; font-size: .95rem; font-family: inherit; background: #fff; color: #1e1e1e;
-    }
-    input:focus, select:focus, textarea:focus { outline: 2px solid #003189; outline-offset: 1px; border-color: #003189; }
-    textarea { resize: vertical; min-height: 80px; }
-    .checkboxes { display: flex; flex-direction: column; gap: .5rem; margin-top: .25rem; }
-    .checkbox-item { display: flex; align-items: center; gap: .5rem; font-size: .9rem; }
-    input[type="checkbox"] { width: 18px; height: 18px; accent-color: #003189; cursor: pointer; flex-shrink: 0; }
-    .errors { background: #fde8e8; border: 1px solid #c0392b; border-radius: 3px; padding: 1rem; margin-bottom: 1.5rem; color: #c0392b; }
-    .success { background: #e8f5e9; border: 1px solid #27ae60; border-radius: 3px; padding: 1.5rem; color: #1a6b3c; text-align: center; }
-    .success strong { display: block; font-size: 1.2rem; margin-bottom: .5rem; }
     .btn-submit { background: #003189; color: #fff; border: none; padding: .75rem 2.5rem; font-size: 1rem; font-family: inherit; border-radius: 3px; cursor: pointer; display: block; margin: 0 auto; }
     .btn-submit:hover { background: #002270; }
-    .field-error { border-color: #c0392b !important; background: #fff5f5; }
-    .error-hint { color: #c0392b; font-size: .78rem; }
-    .hint { font-size: .75rem; color: #888; }
     .no-fields { text-align: center; padding: 2rem; color: #888; font-style: italic; }
     @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
   </style>
