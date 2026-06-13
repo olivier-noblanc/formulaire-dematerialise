@@ -23,6 +23,31 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     export_csv($pdo, $options);
 }
 
+// Régénération de token (admin)
+$regen_msg = '';
+if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && is_admin_user()) {
+    if (!verify_csrf()) die('Token CSRF invalide.');
+    $token_id = (int)($_POST['token_id'] ?? 0);
+    $result = regenerate_token($token_id);
+    $regen_msg = $result['message'];
+}
+
+// Annulation de soumission (admin ou agent)
+$cancel_msg = '';
+if (isset($_POST['action']) && $_POST['action'] === 'cancel_submission') {
+    if (!verify_csrf()) die('Token CSRF invalide.');
+    $sub_id = (int)($_POST['submission_id'] ?? 0);
+    $actor = get_auth_user();
+    // Vérifier que l'utilisateur est admin ou le propriétaire de la soumission
+    $sub_stmt = $pdo->prepare("SELECT submitted_by FROM submissions WHERE id = ?");
+    $sub_stmt->execute([$sub_id]);
+    $sub_owner = $sub_stmt->fetchColumn();
+    if (is_admin_user() || $sub_owner === $actor) {
+        $result = cancel_submission($sub_id, $actor);
+        $cancel_msg = $result['message'];
+    }
+}
+
 $where = ['1=1'];
 $params = [];
 if ($filtre === 'en_cours') { $where[] = 's.status = ?'; $params[] = 'en_cours'; }
@@ -90,9 +115,12 @@ function get_tokens_status(int $sub_id): array {
   </style>
 </head>
 <body>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
+<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
 <div class="container">
   <h1>Supervision — Workflows en cours</h1>
+
+  <?php if ($regen_msg): ?><div class="msg-info"><?= h($regen_msg) ?></div><?php endif; ?>
+  <?php if ($cancel_msg): ?><div class="msg-info"><?= h($cancel_msg) ?></div><?php endif; ?>
 
   <div class="stats">
     <div class="stat"><strong><?= $total ?></strong>Total</div>
@@ -195,6 +223,30 @@ function get_tokens_status(int $sub_id): array {
               <strong><?= h(ucfirst(str_replace('_',' ',preg_replace('/^[a-z]+_/','',$k)))) ?> :</strong>
               <?= $v==='1'?'✓':h($v) ?> &nbsp;
             <?php endforeach; ?>
+
+            <?php if ($status === 'en_cours'): ?>
+              <hr style="margin:1rem 0;">
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start;">
+                <?php if (is_admin_user()): ?>
+                  <?php foreach ($tokens as $t): ?>
+                    <?php if (!$t['done_at']): ?>
+                      <form method="POST" style="display:inline;" onsubmit="return confirm('Régénérer le lien de validation pour <?= h($t['email']) ?> ?');">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="action" value="regenerate_token">
+                        <input type="hidden" name="token_id" value="<?= (int)$t['id'] ?>">
+                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Relancer <?= h($t['email']) ?></button>
+                      </form>
+                    <?php endif; ?>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+                <form method="POST" style="display:inline;" onsubmit="return confirm('Annuler cette soumission ? Cette action est irréversible.');">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="cancel_submission">
+                  <input type="hidden" name="submission_id" value="<?= (int)$row['id'] ?>">
+                  <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;">🗑 Annuler la soumission</button>
+                </form>
+              </div>
+            <?php endif; ?>
           </div>
         </td>
       </tr>

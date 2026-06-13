@@ -1,5 +1,23 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [2.3.0] — 2026-06-13
+
+### Fonctionnalités majeures
+
+- **Dashboard validateur (`my_validations.php`)** : Nouvelle page dédiée aux validateurs leur permettant de voir toutes leurs tâches de validation en attente et leur historique de validations. Comprend : vue des tokens en attente avec données du formulaire et progression du circuit (mini-workflow), détection des tokens expirés, historique des validations passées avec délai de traitement, onglets En attente / Historique, et lien direct vers la page de validation. Accessible depuis le bandeau de toutes les pages via le lien « ✅ Mes validations ».
+
+- **Progression du workflow dans validate.php** : Quand un validateur clique sur un lien de validation, il voit désormais la progression complète du circuit (étapes validées, en cours, à venir) avant de prendre sa décision. Un lien « ← Mes validations » permet de revenir au dashboard validateur.
+
+- **Régénération de token par l'admin** : Depuis le dashboard de supervision, un administrateur peut régénérer un lien de validation expiré ou perdu pour un validateur. L'ancien token est invalidé, un nouveau est créé avec une nouvelle date d'expiration, et un email de renvoi est envoyé au validateur. L'action est protégée par CSRF et tracée dans l'audit log.
+
+- **Annulation de soumission** : Un agent ou un administrateur peut annuler une soumission en cours depuis le dashboard. La soumission est fermée avec le statut « refusé », tous les tokens en attente sont clôturés, et l'agent est notifié par email. L'action est protégée par confirmation JavaScript et CSRF.
+
+### Refactoring
+
+- **CSS partagé via `style.php`** : Tout le CSS commun (reset, bandeau, cards, boutons, formulaires, tables, badges, stats, timeline, etc.) est désormais dans un fichier `style.php` inclus via `require_once`. Chaque page ne contient plus que son CSS spécifique dans un second bloc `<style>`. Cela élimine la duplication de ~200 lignes de CSS par page et facilite la maintenance.
+
+---
+
 ## [2.2.0] — 2026-06-13
 
 ### Fonctionnalités majeures

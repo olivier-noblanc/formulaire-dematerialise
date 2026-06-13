@@ -90,6 +90,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     .validation-details { background: #f0f0f8; padding: 1.5rem; border-radius: 4px; margin-bottom: 1.5rem; }
     .validation-details h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #003189; }
     .validation-details p { margin-bottom: .5rem; }
+
+    /* Workflow progression */
+    .wf-progression { margin-bottom: 1.5rem; }
+    .wf-progression h3 { font-size: .9rem; color: #003189; margin-bottom: .75rem; }
+    .wf-steps { display: flex; flex-direction: column; gap: .35rem; }
+    .wf-prog-step { display: flex; align-items: center; gap: .5rem; font-size: .85rem; padding: .4rem .6rem; border-radius: 3px; }
+    .wf-prog-done { background: #e8f5e9; color: #1a6b3c; }
+    .wf-prog-current { background: #fff3e0; color: #b45309; font-weight: bold; border: 1px dashed #b45309; }
+    .wf-prog-upcoming { background: #f5f5f5; color: #999; }
+    .wf-prog-icon { font-size: .9rem; flex-shrink: 0; }
+
+    .back-link { display: inline-block; margin-bottom: 1rem; font-size: .85rem; color: #003189; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -130,10 +143,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $data = $result['data'] ?? [];
     $d   = json_decode($data['data'] ?? '{}', true);
     $nom = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
+
+    // Récupérer toutes les étapes du workflow pour afficher la progression
+    $wf_steps = $pdo->prepare("
+        SELECT st.id, st.label, st.ordre,
+               GROUP_CONCAT(t2.done_at, '|') as dones,
+               GROUP_CONCAT(t2.email, '|') as emails
+        FROM steps st
+        LEFT JOIN tokens t2 ON t2.step_id = st.id AND t2.submission_id = ?
+        WHERE st.form_id = ? AND st.actif = 1
+        GROUP BY st.id
+        ORDER BY st.ordre, st.id
+    ");
+    $wf_steps->execute([$data['submission_id'] ?? 0, $data['form_id'] ?? 0]);
+    $all_wf_steps = $wf_steps->fetchAll(PDO::FETCH_ASSOC);
   ?>
+  <a href="my_validations.php" class="back-link">← Mes validations</a>
   <span class="badge"><?= h($data['step_label']) ?></span>
   <h1>Action requise</h1>
   
+  <!-- Progression du workflow -->
+  <?php if (!empty($all_wf_steps)): ?>
+  <div class="wf-progression">
+    <h3>Progression du circuit</h3>
+    <div class="wf-steps">
+      <?php foreach ($all_wf_steps as $ws):
+          $dones_arr = array_filter(explode('|', $ws['dones'] ?? ''), fn($x) => !empty($x));
+          $all_done = count($dones_arr) > 0 && count(array_filter(explode('|', $ws['dones'] ?? ''))) === count(array_filter(explode('|', $ws['emails'] ?? '')));
+          $is_current = ($ws['id'] == ($data['step_id'] ?? 0));
+
+          if ($all_done) { $cls = 'wf-prog-done'; $icon = '✓'; }
+          elseif ($is_current) { $cls = 'wf-prog-current'; $icon = '⏳'; }
+          else { $cls = 'wf-prog-upcoming'; $icon = '○'; }
+      ?>
+        <div class="wf-prog-step <?= $cls ?>">
+          <span class="wf-prog-icon"><?= $icon ?></span>
+          <span>Étape <?= (int)$ws['ordre'] ?> — <?= h($ws['label']) ?><?= $is_current ? ' (votre tour)' : '' ?><?= $all_done ? ' — validée' : '' ?></span>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <!-- Affichage des détails du formulaire -->
   <div class="validation-details">
     <h2>Détails du formulaire</h2>

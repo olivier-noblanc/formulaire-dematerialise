@@ -973,3 +973,136 @@ function export_csv(PDO $pdo, array $options = []): void {
     fclose($out);
     exit;
 }
+
+// ── TOKEN REGENERATION ───────────────────────────────────────
+
+/**
+ * Régénère un token expiré pour un validateur (admin uniquement)
+ * Invalide l'ancien token et crée un nouveau avec une nouvelle date d'expiration
+ *
+ * @param int $old_token_id ID de l'ancien token
+ * @return array ['success' => bool, 'message' => string]
+ */
+function regenerate_token(int $old_token_id): array {
+    $pdo = get_pdo();
+
+    // Récupérer l'ancien token
+    $stmt = $pdo->prepare("
+        SELECT t.*, s.status as sub_status
+        FROM tokens t
+        JOIN submissions s ON s.id = t.submission_id
+        WHERE t.id = ?
+    ");
+    $stmt->execute([$old_token_id]);
+    $old = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$old) {
+        return ['success' => false, 'message' => 'Token introuvable.'];
+    }
+    if ($old['done_at']) {
+        return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
+    }
+    if ($old['sub_status'] !== 'en_cours') {
+        return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
+    }
+
+    // Marquer l'ancien token comme traité (invalidé)
+    $pdo->prepare("UPDATE tokens SET done_at = ? WHERE id = ?")
+        ->execute([date('Y-m-d H:i:s'), $old_token_id]);
+
+    // Créer un nouveau token
+    $new_token = generate_token();
+    $expire_days = (int)get_setting('token_expire_days', '30');
+    $expires_at = date('Y-m-d H:i:s', strtotime("+{$expire_days} days"));
+    $now = date('Y-m-d H:i:s');
+
+    $pdo->prepare("INSERT INTO tokens (submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
+        ->execute([$old['submission_id'], $old['step_id'], $old['email'], $new_token, $now, $expires_at]);
+
+    // Envoyer le nouveau lien par email
+    $sub_stmt = $pdo->prepare("
+        SELECT s.*, f.label as form_label FROM submissions s
+        JOIN forms f ON f.id = s.form_id WHERE s.id = ?
+    ");
+    $sub_stmt->execute([$old['submission_id']]);
+    $submission = $sub_stmt->fetch(PDO::FETCH_ASSOC);
+
+    $step_stmt = $pdo->prepare("SELECT label FROM steps WHERE id = ?");
+    $step_stmt->execute([$old['step_id']]);
+    $step = $step_stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($submission && $step) {
+        $subject = '[Renvoi] ' . ($submission['form_label'] ?? '') . ' — ' . ($step['label'] ?? '');
+        $mail_sent = send_mail($old['email'], $subject, build_mail_html($submission, $step['label'], $new_token));
+    }
+
+    app_log('token_regenerate', 'token:' . $old_token_id, 'Token régénéré pour ' . $old['email'] . ', nouveau token créé');
+
+    return [
+        'success' => true,
+        'message' => 'Nouveau lien de validation envoyé à ' . $old['email'],
+    ];
+}
+
+// ── SUBMISSION CANCEL ────────────────────────────────────────
+
+/**
+ * Annule une soumission en cours
+ *
+ * @param int $submission_id ID de la soumission
+ * @param string $cancelled_by Email de l'utilisateur qui annule
+ * @return array ['success' => bool, 'message' => string]
+ */
+function cancel_submission(int $submission_id, string $cancelled_by = ''): array {
+    $pdo = get_pdo();
+
+    $stmt = $pdo->prepare("SELECT s.*, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.id = ?");
+    $stmt->execute([$submission_id]);
+    $submission = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$submission) {
+        return ['success' => false, 'message' => 'Soumission introuvable.'];
+    }
+    if ($submission['status'] !== 'en_cours') {
+        return ['success' => false, 'message' => 'Seules les soumissions en cours peuvent être annulées.'];
+    }
+
+    // Fermer la soumission avec le statut 'refuse' (annulé)
+    $now = date('Y-m-d H:i:s');
+    $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'refuse' WHERE id = ?")
+        ->execute([$now, $submission_id]);
+
+    // Marquer tous les tokens non traités comme done (annulés)
+    $pdo->prepare("UPDATE tokens SET done_at = ? WHERE submission_id = ? AND done_at IS NULL")
+        ->execute([$now, $submission_id]);
+
+    // Ajouter l'annulation dans les validations
+    $data = json_decode($submission['data'], true) ?: [];
+    if (!isset($data['validations'])) $data['validations'] = [];
+    $data['validations'][] = [
+        'step_label' => 'Annulation',
+        'email' => $cancelled_by ?: 'system',
+        'action' => 'refuser',
+        'commentaire' => 'Soumission annulée',
+        'date' => $now,
+    ];
+    $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
+        ->execute([json_encode($data, JSON_UNESCAPED_UNICODE), $submission_id]);
+
+    // Notifier l'agent
+    $agent_email = $submission['submitted_by'] ?? '';
+    if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
+        $subject = 'Demande annulée — ' . ($submission['form_label'] ?? 'Workflow DREETS');
+        $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
+  <h2 style="color:#b45309;">Demande annulée</h2>
+  <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été annulée.</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS</p>
+</body></html>';
+        send_mail($agent_email, $subject, $body);
+    }
+
+    app_log('submission_cancel', 'submission:' . $submission_id, 'Soumission annulée', $cancelled_by);
+
+    return ['success' => true, 'message' => 'Soumission annulée avec succès.'];
+}

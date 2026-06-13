@@ -154,7 +154,7 @@ HTML;
   </style>
 </head>
 <body>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_submissions.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📋 Mes demandes</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a><?php if (is_admin_user()): ?> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a><?php endif; ?></span></div>
+<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="my_submissions.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📋 Mes demandes</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a><?php if (is_admin_user()): ?> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a><?php endif; ?></span></div>
 <div class="container">
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p class="agent-info"><?= h($form['description']) ?></p><?php endif; ?>
