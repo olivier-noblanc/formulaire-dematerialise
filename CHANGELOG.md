@@ -24,6 +24,12 @@
 
 - **Lien "voir" dans le dashboard** : Chaque ligne du dashboard de supervision a désormais un lien "voir" à côté du bouton "détail", ouvrant la page de détail complète de la soumission.
 
+- **Infrastructure de test automatisé** : Ajout d'un mode test complet activé par le header HTTP `X-Test-Mode: 1`. En mode test : l'authentification utilise le header `X-Test-User` au lieu de `AUTH_USER` (IIS), le CSRF est bypassé, les emails sont interceptés dans une file d'attente au lieu d'être envoyés, la base de données utilise `workflow_test.db` séparée, les réponses POST sont en JSON au lieu de redirections. API de test (`test_api.php`) avec actions : mails, tokens, submissions, cleanup, seeding, stats. Suite de tests HTTP (`test_http.php`) — 12 phases de tests via curl contre un serveur PHP dédié. Suite de tests CLI existante (`test_all.php`) — 47 tests en subprocess isolation.
+
+- **Captures d'écran de l'application** : 17 captures d'écran haute résolution (1440×900, 2x DPI) ajoutées dans `docs/screenshots/` pour la documentation. Couvrent toutes les vues : agent (accueil, formulaires, suivi, détail), validateur (validations, décision), admin (dashboard, monitoring, form builder, alertes, paramètres, accès, aperçu, docs, changelog).
+
+- **Documentation technique refondue** : Réécriture complète de `AGENT.md` (guide technique IA) et `README.md` avec captures d'écran intégrées, tables de référence, diagramme workflow, section mode test détaillée.
+
 ---
 
 ## [2.4.0] — 2026-06-13
