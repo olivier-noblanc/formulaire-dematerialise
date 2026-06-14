@@ -87,3 +87,23 @@ Stage Summary:
 - HTML5 validation: 6 input types auto-detected
 - No more cron dependency: first login triggers scheduled tasks
 - Form IDs are now non-guessable UUIDs in URLs
+
+---
+Task ID: v4.2.0-error-pages
+Agent: Super Z (main)
+Task: Replace all ugly die() error pages with visually appealing HTML error pages
+
+Work Log:
+- Created render_error_page() function in helpers.php with SVG icons per error code (403=lock, 404=magnifier, 400=warning, 401=key, 500=crash)
+- Added error page CSS in style.php (.error-page, .error-card, .error-code, .error-illustration, .error-hint, .error-actions, .error-stamp)
+- Each error page includes: bandeau DREETS, SVG illustration, big HTTP code, title, descriptive message, "Que faire ?" hint box, "Retour à l'accueil" button, footer
+- Replaced 403/404/400 die() in form_tracking.php (2), download.php (3), form.php (1), form_preview.php (1), submission_view.php (1), router.php (1)
+- Replaced 13 CSRF die() calls across: form.php, admin_alerts.php, admin_forms.php, dashboard.php (3x), backup.php, submission_view.php, validate.php, admin_settings.php, my_validations.php, rgpd.php, admin_access.php
+- Updated 401 auth page in helpers.php to match new visual design (was old .error-box style with emoji lock)
+- Updated CHANGELOG.md with new "Interface" section
+
+Stage Summary:
+- All error states now render as full, visually polished HTML pages matching DREETS design system
+- render_error_page() is reusable for any HTTP error code
+- 13 files modified
+- Zero JavaScript, zero framework — pure PHP + CSS + inline SVG
