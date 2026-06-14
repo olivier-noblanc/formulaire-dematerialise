@@ -143,3 +143,31 @@ Stage Summary:
 - Migration v9 handles existing databases cleanly
 - Beautiful error pages replace all plain-text die() calls
 - 20+ files modified
+
+---
+Task ID: v4.3.0-testing-bugfix
+Agent: Super Z (main)
+Task: Install PHP, test the UUID migration, fix bugs found, update MD files, commit and push
+
+Work Log:
+- Installed PHP 8.3.7 from source (compiled with SQLite3, PDO, session, ctype, json, tokenizer, fileinfo)
+- PHP binary at /home/z/my-project/bin/php/bin/php
+- Created PHPMailer stubs for testing (real PHPMailer is gitignored)
+- Ran PHP syntax check on all 33 PHP files → 0 errors
+- Ran test_all.php → found 3 bugs:
+  1. Column `hint` missing in CREATE TABLE form_fields (was only in ALTER TABLE legacy migration)
+  2. generate_field_name() crashed without mbstring/intl extensions (no fallback)
+  3. test_all.php broken with UUIDs (unquoted UUIDs in SQL, generate_uuid() in SQLite, integer IDs in page tests)
+- Fixed hint column in CREATE TABLE form_fields (helpers.php line 377)
+- Fixed generate_field_name() with function_exists() checks and manual accent fallback (helpers.php line 1362-1377)
+- Rewrote test_all.php completely for UUID compatibility (prepared statements, proper UUID handling, updated test expectations)
+- Ran updated test_all.php → 51/51 tests pass
+- Updated CHANGELOG.md with bug fixes section and fixed int→string in function signatures
+- Updated worklog.md
+
+Stage Summary:
+- PHP 8.3.7 compiled and installed
+- 3 bugs fixed (hint column, mbstring fallback, test UUID compatibility)
+- 51/51 tests pass
+- CHANGELOG.md updated with corrections section
+- Ready for commit and push

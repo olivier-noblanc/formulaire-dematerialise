@@ -1,0 +1,79 @@
+{
+    "sqlite": {
+        "source_type": "archive",
+        "filename": "sqlite-autoconf-3450200.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "ad56cfe252ea0a86c22812c79f207d265ae4533d"
+    },
+    "micro": {
+        "source_type": "git",
+        "dirname": "micro",
+        "move_path": "php-src/sapi/micro",
+        "lock_as": 1,
+        "hash": "fb6d497b6f4cf138ee3851a30c905d64b7b19aed"
+    },
+    "frankenphp": {
+        "source_type": "archive",
+        "filename": "php-frankenphp-caddy-v1.12.4-0-g8c9e331.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "9cc419721d95c0df8e3518e54aec9d42816cc872"
+    },
+    "attr": {
+        "source_type": "archive",
+        "filename": "attr-2.5.2.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "3240f840239bdac86eb4a35856c86e06ca76e6ef"
+    },
+    "libacl": {
+        "source_type": "archive",
+        "filename": "acl-2.3.2.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "5de165db26d8f03cebf26fd70cff294e0af925df"
+    },
+    "brotli": {
+        "source_type": "archive",
+        "filename": "google-brotli-v1.2.0-0-g028fb5a.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "da59cfe8b228985193c7e18689109b91c09a5691"
+    },
+    "watcher": {
+        "source_type": "archive",
+        "filename": "e-dant-watcher-release-0.14.5-0-g06f84a1.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "89ba560e26de9b107de9aede4ab60592ec46618d"
+    },
+    "php-src": {
+        "source_type": "archive",
+        "filename": "php-8.3.31.tar.xz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "53d4f0205ff3fac220ec87b2b788ab9786e9234c"
+    },
+    "zlib": {
+        "source_type": "archive",
+        "filename": "zlib-1.3.2.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "0097186c2635358f2239c95d559796238c6640d4"
+    },
+    "openssl": {
+        "source_type": "archive",
+        "filename": "openssl-3.6.3.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "72142e828396004a60af4a8458f30216a7906cbb"
+    },
+    "libssh2": {
+        "source_type": "archive",
+        "filename": "libssh2-1.11.1.tar.gz",
+        "move_path": null,
+        "lock_as": 1,
+        "hash": "61c721696f08bf91d23dd59b766bac65e9a78b04"
+    }
+}

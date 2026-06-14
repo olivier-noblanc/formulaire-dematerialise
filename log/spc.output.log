@@ -1,0 +1,152 @@
+[18:28:01] [D] scanning directory phar:///home/z/my-project/spc/src/SPC/builder/extension
+[18:28:01] [D] scanning directory phar:///home/z/my-project/spc/src/SPC/doctor/item
+[18:28:01] [D] Setting env: PATH=/home/z/my-project/buildroot/bin:/home/z/.venv/bin:/app/.venv/bin:/home/z/.npm-global/bin:/home/z/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun-node-fallback-bin
+[18:28:01] [D] Setting env: PATH=/home/z/my-project/pkgroot/x86_64-linux/bin:/home/z/my-project/buildroot/bin:/home/z/.venv/bin:/app/.venv/bin:/home/z/.npm-global/bin:/home/z/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun-node-fallback-bin
+[18:28:01] [D] Setting env: PKG_CONFIG_PATH=/home/z/my-project/buildroot/lib/pkgconfig
+[18:28:01] [D] Setting env: SPC_CONCURRENCY=4
+[18:28:01] [D] Setting env: SPC_SKIP_PHP_VERSION_CHECK=no
+[18:28:01] [D] Setting env: SPC_SKIP_DOCTOR_CHECK_ITEMS=
+[18:28:01] [D] Setting env: SPC_CMD_VAR_FRANKENPHP_XCADDY_MODULES=--with github.com/dunglas/mercure/caddy --with github.com/dunglas/vulcain/caddy --with github.com/dunglas/caddy-cbrotli
+[18:28:01] [D] Setting env: PHP_BUILD_PROVIDER=static-php-cli 2.8.5
+[18:28:01] [D] Setting env: SPC_LIBC=musl
+[18:28:01] [D] Setting env: CC=
+[18:28:01] [D] Setting env: CXX=
+[18:28:01] [D] Setting env: AR=
+[18:28:01] [D] Setting env: LD=
+[18:28:01] [D] Setting env: SPC_DEFAULT_C_FLAGS=-fPIC -Os
+[18:28:01] [D] Setting env: SPC_DEFAULT_CXX_FLAGS=-fPIC -Os
+[18:28:01] [D] Setting env: SPC_DEFAULT_LD_FLAGS=
+[18:28:01] [D] Setting env: UPX_EXEC=/home/z/my-project/pkgroot/x86_64-linux/bin/upx
+[18:28:01] [D] Setting env: SPC_MICRO_PATCHES=cli_checks,disable_huge_page
+[18:28:01] [D] Setting env: SPC_CMD_PREFIX_PHP_BUILDCONF=./buildconf --force
+[18:28:01] [D] Setting env: SPC_CMD_PREFIX_PHP_CONFIGURE=./configure --prefix= --with-valgrind=no --disable-shared --enable-static --disable-all --disable-phpdbg --with-pic
+[18:28:01] [D] Setting env: SPC_CMD_VAR_PHP_EMBED_TYPE=static
+[18:28:01] [D] Setting env: SPC_CMD_VAR_PHP_MAKE_EXTRA_CFLAGS=-g -fstack-protector-strong -fno-ident -fPIE 
+[18:28:01] [D] Setting env: SPC_CMD_VAR_PHP_MAKE_EXTRA_LDFLAGS=
+[18:28:01] [D] Setting env: OPENSSLDIR=
+[18:28:01] [D] Setting env: SPC_LINUX_DEFAULT_CC=x86_64-linux-musl-gcc
+[18:28:01] [D] Setting env: SPC_LINUX_DEFAULT_CXX=x86_64-linux-musl-g++
+[18:28:01] [D] Setting env: SPC_LINUX_DEFAULT_AR=x86_64-linux-musl-ar
+[18:28:01] [D] Setting env: SPC_LINUX_DEFAULT_LD=x86_64-linux-musl-ld
+[18:28:01] [D] Setting env: PATH=/usr/local/musl/bin:/home/z/my-project/pkgroot/x86_64-linux/bin:/home/z/my-project/buildroot/bin:/home/z/.venv/bin:/app/.venv/bin:/home/z/.npm-global/bin:/home/z/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun-node-fallback-bin
+[18:28:01] [D] Setting env: PATH=/usr/local/musl/x86_64-linux-musl/bin:/usr/local/musl/bin:/home/z/my-project/pkgroot/x86_64-linux/bin:/home/z/my-project/buildroot/bin:/home/z/.venv/bin:/app/.venv/bin:/home/z/.npm-global/bin:/home/z/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun-node-fallback-bin
+[18:28:01] [D] Setting env: SPC_LD_LIBRARY_PATH=/usr/local/musl/lib:/usr/local/musl/x86_64-linux-musl/lib
+[18:28:01] [D] Setting env: SPC_LIBRARY_PATH=/usr/local/musl/lib:/usr/local/musl/x86_64-linux-musl/lib
+[18:28:01] [D] Setting env: SPC_TOOLCHAIN=SPC\toolchain\MuslToolchain
+[18:28:01] [D] Setting env: CC=x86_64-linux-musl-gcc
+[18:28:01] [D] Setting env: CXX=x86_64-linux-musl-g++
+[18:28:01] [D] Setting env: AR=x86_64-linux-musl-ar
+[18:28:01] [D] Setting env: LD=x86_64-linux-musl-ld
+[18:28:01] [D] Setting env: SPC_CMD_VAR_PHP_MAKE_EXTRA_CFLAGS=-g -fstack-protector-strong -fno-ident -fPIE -fPIC -Os
+[18:28:01] [D] Setting env: SPC_SKIP_TOOLCHAIN_CHECK=yes
+[18:28:01] [D] argv: /home/z/my-project/spc download --with-php=8.3 --for-extensions=sqlite3,pdo,pdo_sqlite,mbstring,json,ctype,fileinfo,openssl,curl
+[18:28:01] [D] Setting env: SPC_DOWNLOAD_RETRIES=0
+[18:28:01] [D] Making new directory : /home/z/my-project/downloads
+[18:28:01] [I] [1/29] Downloading source sqlite
+[18:28:01] [D] Lock file does not exist: /home/z/my-project/downloads/.lock.json, initializing empty lock file.
+[18:28:01] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:28:01] [D] Downloading https://www.sqlite.org/2024/sqlite-autoconf-3450200.tar.gz
+[18:28:01] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/sqlite-autoconf-3450200.tar.gz"   "https://www.sqlite.org/2024/sqlite-autoconf-3450200.tar.gz"
+[18:28:04] [D] Locking sqlite-autoconf-3450200.tar.gz
+[18:28:04] [I] [2/29] Downloading source micro
+[18:28:04] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:28:04] [D] cloning micro source
+[18:28:04] [D] [PASSTHRU] git clone -q --quiet --config core.autocrlf=false --branch "master"  --recursive "https://github.com/static-php/phpmicro" "/home/z/my-project/downloads/micro"
+[18:28:05] [D] Locking git source micro
+[18:28:05] [I] [3/29] Downloading source frankenphp
+[18:28:05] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:28:05] [D] finding frankenphp source from github releases tarball
+[18:28:05] [D] no github token found, skip
+[18:28:05] [D] Running command (no output) : curl -sfSL    "https://api.github.com/repos/php/frankenphp/releases"
+[18:28:06] [D] no github token found, skip
+[18:28:06] [D] Running command (no output) : curl -sfSL  -I  "https://api.github.com/repos/php/frankenphp/tarball/v1.12.4"
+[18:28:07] [D] Downloading https://api.github.com/repos/php/frankenphp/tarball/v1.12.4
+[18:28:07] [D] no github token found, skip
+[18:28:07] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/php-frankenphp-caddy-v1.12.4-0-g8c9e331.tar.gz"   "https://api.github.com/repos/php/frankenphp/tarball/v1.12.4"
+[18:28:10] [D] Locking php-frankenphp-caddy-v1.12.4-0-g8c9e331.tar.gz
+[18:28:10] [I] [4/29] Downloading source attr
+[18:28:10] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:28:10] [D] Downloading https://download.savannah.nongnu.org/releases/attr/attr-2.5.2.tar.gz
+[18:28:10] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/attr-2.5.2.tar.gz"   "https://download.savannah.nongnu.org/releases/attr/attr-2.5.2.tar.gz"
+[18:30:21] [W] Download failed: Download failed: Direct command run failed with code: 28
+[18:30:21] [N] Trying to download alternative sources for attr
+[18:30:21] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:30:21] [D] Downloading https://mirror.souseiseki.middlendian.com/nongnu/attr/attr-2.5.2.tar.gz
+[18:30:21] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/attr-2.5.2.tar.gz"   "https://mirror.souseiseki.middlendian.com/nongnu/attr/attr-2.5.2.tar.gz"
+[18:30:22] [D] Locking attr-2.5.2.tar.gz
+[18:30:22] [I] [5/29] Downloading source libacl
+[18:30:22] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:30:22] [D] Downloading https://download.savannah.nongnu.org/releases/acl/acl-2.3.2.tar.gz
+[18:30:22] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/acl-2.3.2.tar.gz"   "https://download.savannah.nongnu.org/releases/acl/acl-2.3.2.tar.gz"
+[18:32:32] [W] Download failed: Download failed: Direct command run failed with code: 28
+[18:32:32] [N] Trying to download alternative sources for libacl
+[18:32:32] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:32] [D] Downloading https://mirror.souseiseki.middlendian.com/nongnu/acl/acl-2.3.2.tar.gz
+[18:32:32] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/acl-2.3.2.tar.gz"   "https://mirror.souseiseki.middlendian.com/nongnu/acl/acl-2.3.2.tar.gz"
+[18:32:33] [D] Locking acl-2.3.2.tar.gz
+[18:32:33] [I] [6/29] Downloading source brotli
+[18:32:33] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:33] [D] finding brotli source from github tags tarball
+[18:32:33] [D] no github token found, skip
+[18:32:33] [D] Running command (no output) : curl -sfSL    "https://api.github.com/repos/google/brotli/tags"
+[18:32:34] [D] no github token found, skip
+[18:32:34] [D] Running command (no output) : curl -sfSL  -I  "https://api.github.com/repos/google/brotli/tarball/refs/tags/v1.2.0"
+[18:32:34] [D] Downloading https://api.github.com/repos/google/brotli/tarball/refs/tags/v1.2.0
+[18:32:34] [D] no github token found, skip
+[18:32:34] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/google-brotli-v1.2.0-0-g028fb5a.tar.gz"   "https://api.github.com/repos/google/brotli/tarball/refs/tags/v1.2.0"
+[18:32:35] [D] Locking google-brotli-v1.2.0-0-g028fb5a.tar.gz
+[18:32:35] [I] [7/29] Downloading source watcher
+[18:32:35] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:35] [D] finding watcher source from github releases tarball
+[18:32:35] [D] no github token found, skip
+[18:32:35] [D] Running command (no output) : curl -sfSL    "https://api.github.com/repos/e-dant/watcher/releases"
+[18:32:37] [D] no github token found, skip
+[18:32:37] [D] Running command (no output) : curl -sfSL  -I  "https://api.github.com/repos/e-dant/watcher/tarball/0.14.5"
+[18:32:37] [D] Downloading https://api.github.com/repos/e-dant/watcher/tarball/0.14.5
+[18:32:37] [D] no github token found, skip
+[18:32:37] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/e-dant-watcher-release-0.14.5-0-g06f84a1.tar.gz"   "https://api.github.com/repos/e-dant/watcher/tarball/0.14.5"
+[18:32:38] [D] Locking e-dant-watcher-release-0.14.5-0-g06f84a1.tar.gz
+[18:32:38] [I] [8/29] Downloading source php-src
+[18:32:38] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:38] [D] scanning directory phar:///home/z/my-project/spc/src/SPC/store/source
+[18:32:38] [D] scanning directory phar:///home/z/my-project/spc/src/SPC/store/pkg
+[18:32:38] [D] Running command (no output) : curl -sfSL    "https://www.php.net/releases/index.php?json&version=8.3"
+[18:32:38] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:38] [D] Downloading https://www.php.net/distributions/php-8.3.31.tar.xz
+[18:32:38] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/php-8.3.31.tar.xz"   "https://www.php.net/distributions/php-8.3.31.tar.xz"
+[18:32:41] [D] Locking php-8.3.31.tar.xz
+[18:32:41] [I] [9/29] Downloading source zlib
+[18:32:41] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:41] [D] finding zlib from github releases assets
+[18:32:41] [D] no github token found, skip
+[18:32:41] [D] Running command (no output) : curl -sfSL    "https://api.github.com/repos/madler/zlib/releases"
+[18:32:41] [D] Found zlib 1.3.2 releases assets
+[18:32:41] [D] Downloading https://api.github.com/repos/madler/zlib/releases/assets/357391855
+[18:32:41] [D] no github token found, skip
+[18:32:41] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/zlib-1.3.2.tar.gz"  "-HAccept: application/octet-stream" "https://api.github.com/repos/madler/zlib/releases/assets/357391855"
+[18:32:42] [D] Locking zlib-1.3.2.tar.gz
+[18:32:42] [I] [10/29] Downloading source openssl
+[18:32:42] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:42] [D] finding openssl from github releases assets
+[18:32:42] [D] no github token found, skip
+[18:32:42] [D] Running command (no output) : curl -sfSL    "https://api.github.com/repos/openssl/openssl/releases"
+[18:32:43] [D] Found OpenSSL 4.0.1 releases assets
+[18:32:43] [D] Found OpenSSL 3.6.3 releases assets
+[18:32:43] [D] Downloading https://api.github.com/repos/openssl/openssl/releases/assets/442672919
+[18:32:43] [D] no github token found, skip
+[18:32:43] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/openssl-3.6.3.tar.gz"  "-HAccept: application/octet-stream" "https://api.github.com/repos/openssl/openssl/releases/assets/442672919"
+[18:32:50] [D] Locking openssl-3.6.3.tar.gz
+[18:32:50] [I] [11/29] Downloading source libssh2
+[18:32:50] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:50] [D] finding libssh2 from github releases assets
+[18:32:50] [D] no github token found, skip
+[18:32:50] [D] Running command (no output) : curl -sfSL    "https://api.github.com/repos/libssh2/libssh2/releases"
+[18:32:51] [D] Found 1.11.1 releases assets
+[18:32:51] [D] Downloading https://api.github.com/repos/libssh2/libssh2/releases/assets/199453879
+[18:32:51] [D] no github token found, skip
+[18:32:51] [D] [PASSTHRU] curl -sfSL  -o "/home/z/my-project/downloads/libssh2-1.11.1.tar.gz"  "-HAccept: application/octet-stream" "https://api.github.com/repos/libssh2/libssh2/releases/assets/199453879"
+[18:32:52] [D] Locking libssh2-1.11.1.tar.gz
+[18:32:52] [I] [12/29] Downloading source libiconv
+[18:32:52] [D] [EXEC] /lib/ld-musl-x86_64.so.1 2>&1
+[18:32:52] [D] finding libiconv source from file list
+[18:32:52] [D] Running command (no output) : curl -sfSL    "https://ftp.gnu.org/gnu/libiconv/"
