@@ -32,6 +32,8 @@
 - **Colonne `hint` manquante dans `form_fields`** : Le `CREATE TABLE` initial de `form_fields` ne contenait pas la colonne `hint`, qui était ajoutée via `ALTER TABLE` en legacy. Cela causait un crash lors de l'initialisation d'une base neuve. La colonne est désormais dans la définition de la table.
 - **`generate_field_name()` crashait sans `mbstring`/`intl`** : La fonction appelait `mb_strtolower()` et `transliterator_transliterate()` sans vérifier la disponibilité des extensions. Ajout de fallbacks via `strtolower()` et remplacement manuel des caractères accentués.
 - **`test_all.php` inutilisable avec les UUIDs** : Les requêtes SQL du test utilisaient les UUIDs sans quotes (`WHERE form_id=$onboarding_id`), `generate_uuid()` était appelé dans le SQL comme fonction SQLite, et les tests de pages utilisaient des IDs entiers (`'1'`). Réécriture complète du fichier de test avec prepared statements et UUIDs corrects.
+- **Onboarding et outboarding sans recipients** : Les formulaires onboarding et outboarding étaient seedés avec des étapes mais sans destinataires (`step_recipients`) ni propriétaires (`form_owners`). Le workflow ne pouvait donc pas démarrer pour ces deux formulaires. Ajout des recipients par défaut (responsable.direct, informatique, rh, logistique) et des owners.
+- **4 screenshots manquants dans la documentation** : Les captures d'écran disponibles (`04_form_outboarding`, `09_admin_access`, `16_submission_view`, `17_form_preview`) n'étaient pas intégrées dans `docs.php`. Ajout dans les sections Guide de l'agent, Guide du validateur et Guide de l'administrateur.
 
 ## [4.2.0] — 2026-06-14
 

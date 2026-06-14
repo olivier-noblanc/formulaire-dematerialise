@@ -507,16 +507,27 @@ function db_migrate(PDO $pdo): void {
         }
 
         // Etapes par defaut pour l'outboarding
-        $steps_data = [
-            ['Responsable direct', 1],
-            ['Service informatique', 2],
-            ['Ressources humaines', 3],
-            ['Logistique', 4],
-        ];
+        $ob_step1_id = generate_uuid();
+        $ob_step2_id = generate_uuid();
+        $ob_step3_id = generate_uuid();
+        $ob_step4_id = generate_uuid();
         $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
-        foreach ($steps_data as $sd) {
-            $stmt_step->execute([generate_uuid(), $outboarding_id, $sd[0], $sd[1]]);
-        }
+        $stmt_step->execute([$ob_step1_id, $outboarding_id, 'Responsable direct', 1]);
+        $stmt_step->execute([$ob_step2_id, $outboarding_id, 'Service informatique', 2]);
+        $stmt_step->execute([$ob_step3_id, $outboarding_id, 'Ressources humaines', 3]);
+        $stmt_step->execute([$ob_step4_id, $outboarding_id, 'Logistique', 4]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $ob_step1_id, 'responsable.direct@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $ob_step2_id, 'informatique@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $ob_step3_id, 'rh@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $ob_step4_id, 'logistique@dreets.gouv.fr']);
+
+        // Owners du formulaire
+        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)");
+        $stmt_fo->execute([generate_uuid(), $outboarding_id, 'responsable.direct@dreets.gouv.fr']);
+        $stmt_fo->execute([generate_uuid(), $outboarding_id, 'rh@dreets.gouv.fr']);
     }
     
     // Insertion des paramètres par défaut si la table settings est vide
@@ -584,16 +595,27 @@ function db_migrate(PDO $pdo): void {
         }
 
         // Etapes par defaut pour l'onboarding
-        $steps_data = [
-            ['Responsable direct', 1],
-            ['Service informatique', 2],
-            ['Ressources humaines', 3],
-            ['Logistique', 4],
-        ];
+        $onb_step1_id = generate_uuid();
+        $onb_step2_id = generate_uuid();
+        $onb_step3_id = generate_uuid();
+        $onb_step4_id = generate_uuid();
         $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
-        foreach ($steps_data as $sd) {
-            $stmt_step->execute([generate_uuid(), $onboarding_id, $sd[0], $sd[1]]);
-        }
+        $stmt_step->execute([$onb_step1_id, $onboarding_id, 'Responsable direct', 1]);
+        $stmt_step->execute([$onb_step2_id, $onboarding_id, 'Service informatique', 2]);
+        $stmt_step->execute([$onb_step3_id, $onboarding_id, 'Ressources humaines', 3]);
+        $stmt_step->execute([$onb_step4_id, $onboarding_id, 'Logistique', 4]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $onb_step1_id, 'responsable.direct@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $onb_step2_id, 'informatique@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $onb_step3_id, 'rh@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $onb_step4_id, 'logistique@dreets.gouv.fr']);
+
+        // Owners du formulaire
+        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)");
+        $stmt_fo->execute([generate_uuid(), $onboarding_id, 'responsable.direct@dreets.gouv.fr']);
+        $stmt_fo->execute([generate_uuid(), $onboarding_id, 'rh@dreets.gouv.fr']);
     }
 
     // Seed formulaire "Demande de sortie hors plages" s'il n'existe pas

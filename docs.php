@@ -351,6 +351,9 @@ try {
     <img src="docs/screenshots/03_form_onboarding.png" alt="Formulaire d'onboarding — sections à remplir par l'agent" class="screenshot">
     <p class="screenshot-caption">Exemple de formulaire d'arrivée d'un agent (onboarding) — sections Identité, IT, RH, Logistique</p>
 
+    <img src="docs/screenshots/04_form_outboarding.png" alt="Formulaire d'outboarding — restitution du matériel et formalités de fin de contrat" class="screenshot">
+    <p class="screenshot-caption">Formulaire de départ d'un agent (outboarding) — restitution du matériel et formalités de fin de contrat</p>
+
     <!-- ── Après l'envoi ── -->
     <h3>✅ Que se passe-t-il après l'envoi ?</h3>
 
@@ -587,6 +590,9 @@ try {
     <img src="docs/screenshots/15_validate.png" alt="Page de validation — boutons Valider et Refuser" class="screenshot">
     <p class="screenshot-caption">Page de validation — le validateur peut valider ou refuser l'étape avec un commentaire</p>
 
+    <img src="docs/screenshots/16_submission_view.png" alt="Vue détaillée d'une soumission — progression du workflow, délégation et historique" class="screenshot">
+    <p class="screenshot-caption">Vue détaillée d'une soumission — progression du workflow, options de délégation et historique des validations</p>
+
     <!-- ── Après la validation ── -->
     <h3>➡️ Que se passe-t-il après ?</h3>
 
@@ -688,6 +694,9 @@ try {
       </div>
     </div>
 
+    <img src="docs/screenshots/09_admin_access.png" alt="Gestion des accès administrateur — demande et approbation" class="screenshot">
+    <p class="screenshot-caption">Gestion des accès administrateur — workflow de demande et d'approbation par le super administrateur</p>
+
     <img src="docs/screenshots/02_index_admin.png" alt="Page d'accueil administrateur — accès au back office" class="screenshot">
     <p class="screenshot-caption">Page d'accueil vue par un administrateur — accès direct au back office et aux outils de gestion</p>
 
@@ -755,6 +764,9 @@ try {
 
     <img src="docs/screenshots/10_admin_forms.png" alt="Page d'administration des formulaires — gestion des formulaires et champs" class="screenshot">
     <p class="screenshot-caption">Administration des formulaires — créer, modifier et configurer les champs et le circuit de validation</p>
+
+    <img src="docs/screenshots/17_form_preview.png" alt="Prévisualisation du formulaire — vue telle que les agents la verront" class="screenshot">
+    <p class="screenshot-caption">Prévisualisation du formulaire — l'administrateur peut visualiser le formulaire tel que le verront les agents avant publication</p>
 
     <!-- ── Gestion des étapes et destinataires ── -->
     <h3>🔄 Gestion des étapes et destinataires</h3>
