@@ -1,0 +1,252 @@
+     1→     1→/home/z/my-project/formulaire-dematerialise/submission_view.php:319:      $dl_icon = $days_remaining < 0 ? '🚨' : ($days_remaining <= 2 ? '⚠️' : '📅');
+     2→     2→/home/z/my-project/formulaire-dematerialise/submission_view.php:352:                      <span class="wf-check">✓</span>
+     3→     3→/home/z/my-project/formulaire-dematerialise/submission_view.php:354:                      <span class="wf-pending" aria-hidden="true">⏳</span>
+     4→     4→/home/z/my-project/formulaire-dematerialise/submission_view.php:381:            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📧</span> Rappeler <?= h($tok['email']) ?></button>
+     5→     5→/home/z/my-project/formulaire-dematerialise/submission_view.php:387:            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">🔄</span> Régénérer <?= h($tok['email']) ?></button>
+     6→     6→/home/z/my-project/formulaire-dematerialise/submission_view.php:403:      <strong style="font-size:.85rem;color:#003189;"><span aria-hidden="true">🔄</span> Déléguer ma validation :</strong>
+     7→     7→/home/z/my-project/formulaire-dematerialise/submission_view.php:414:        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;background:#6c3483;color:#fff;"><span aria-hidden="true">🔄</span> Déléguer</button>
+     8→     8→/home/z/my-project/formulaire-dematerialise/submission_view.php:423:    <h2><span aria-hidden="true">📋</span> Données du formulaire</h2>
+     9→     9→/home/z/my-project/formulaire-dematerialise/submission_view.php:441:          $display_val = $v === '1' ? '✓ Oui' : ($v === '0' ? 'Non' : h((string)$v));
+    10→    10→/home/z/my-project/formulaire-dematerialise/submission_view.php:459:    <h2><span aria-hidden="true">📝</span> Historique des validations</h2>
+    11→    11→/home/z/my-project/formulaire-dematerialise/submission_view.php:462:      $icon = $is_valid ? '✅' : '❌';
+    12→    12→/home/z/my-project/formulaire-dematerialise/submission_view.php:510:    <h2><span aria-hidden="true">🔔</span> Historique des relances (<?= $total_relances ?> au total)</h2>
+    13→    13→/home/z/my-project/formulaire-dematerialise/submission_view.php:515:            <span style="font-size:1.1rem;" aria-hidden="true">⏳</span>
+    14→    14→/home/z/my-project/formulaire-dematerialise/submission_view.php:531:        <div class="val-icon" aria-hidden="true">🔔</div>
+    15→    15→/home/z/my-project/formulaire-dematerialise/submission_view.php:545:        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;"><span aria-hidden="true">📧</span> Rappeler tous les validateurs en attente</button>
+    16→    16→/home/z/my-project/formulaire-dematerialise/submission_view.php:558:    <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($attachments) ?>)</h2>
+    17→    17→/home/z/my-project/formulaire-dematerialise/submission_view.php:595:    <h2><span aria-hidden="true">🔄</span> Délégations</h2>
+    18→    18→/home/z/my-project/formulaire-dematerialise/submission_view.php:598:      <div class="val-icon" aria-hidden="true">🔄</div>
+    19→    19→/home/z/my-project/formulaire-dematerialise/submission_view.php:616:    <h2><span aria-hidden="true">⚙</span> Actions</h2>
+    20→    20→/home/z/my-project/formulaire-dematerialise/submission_view.php:617:    <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($sub_id) ?>&from=<?= urlencode('submission_view.php?id=' . $sub_id) ?>" class="btn btn-danger" style="text-decoration:none;"><span aria-hidden="true">🗑</span> Annuler la soumission</a>
+    21→    21→/home/z/my-project/formulaire-dematerialise/my_validations.php:139:  <h1>✅ Mes validations</h1>
+    22→    22→/home/z/my-project/formulaire-dematerialise/my_validations.php:163:    <a href="?tab=pending" class="tab <?= $active_tab === 'pending' ? 'active' : '' ?>">⏳ En attente <?= $pending_count > 0 ? '<span class="tab-count warn">' . $pending_count . '</span>' : '' ?></a>
+    23→    23→/home/z/my-project/formulaire-dematerialise/my_validations.php:164:    <a href="?tab=done" class="tab <?= $active_tab === 'done' ? 'active' : '' ?>">✓ Historique (<?= $done_count ?>)</a>
+    24→    24→/home/z/my-project/formulaire-dematerialise/my_validations.php:172:        <div class="empty-icon">🎉</div>
+    25→    25→/home/z/my-project/formulaire-dematerialise/my_validations.php:210:            <span class="badge badge-warn">⏳ En attente de votre validation</span>
+    26→    26→/home/z/my-project/formulaire-dematerialise/my_validations.php:224:                    $icon = '✓';
+    27→    27→/home/z/my-project/formulaire-dematerialise/my_validations.php:227:                    $icon = '⏳';
+    28→    28→/home/z/my-project/formulaire-dematerialise/my_validations.php:243:                $display = $v === '1' ? '✓ Oui' : h((string)$v);
+    29→    29→/home/z/my-project/formulaire-dematerialise/my_validations.php:255:            <a href="validate.php?token=<?= urlencode($tk['token']) ?>" class="btn btn-primary">✓ Valider / Refuser</a>
+    30→    30→/home/z/my-project/formulaire-dematerialise/my_validations.php:261:            <summary class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;cursor:pointer;display:inline;">🔄 Déléguer</summary>
+    31→    31→/home/z/my-project/formulaire-dematerialise/my_validations.php:282:        <div class="empty-icon">📋</div>
+    32→    32→/home/z/my-project/formulaire-dematerialise/my_submissions.php:75:                    $detail_parts[] = h($tok['email']) . ' ✓';
+    33→    33→/home/z/my-project/formulaire-dematerialise/my_submissions.php:78:                    $detail_parts[] = h($tok['email']) . ' ⏳';
+    34→    34→/home/z/my-project/formulaire-dematerialise/my_submissions.php:175:  <h1>📋 Mes demandes</h1>
+    35→    35→/home/z/my-project/formulaire-dematerialise/my_submissions.php:207:      <div class="empty-icon">📝</div>
+    36→    36→/home/z/my-project/formulaire-dematerialise/my_submissions.php:239:                if ($dl_days < 0) $deadline_badge = '<span class="deadline-badge overdue">🚨 J+' . abs($dl_days) . '</span>';
+    37→    37→/home/z/my-project/formulaire-dematerialise/my_submissions.php:240:                elseif ($dl_days <= 2) $deadline_badge = '<span class="deadline-badge urgent">⚠️ J-' . $dl_days . '</span>';
+    38→    38→/home/z/my-project/formulaire-dematerialise/my_submissions.php:241:                elseif ($dl_days <= 5) $deadline_badge = '<span class="deadline-badge ok">📅 J-' . $dl_days . '</span>';
+    39→    39→/home/z/my-project/formulaire-dematerialise/my_submissions.php:272:            $icon = $ws['step_status'] === 'validated' ? '✓' : ($ws['step_status'] === 'current' ? '⏳' : '○');
+    40→    40→/home/z/my-project/formulaire-dematerialise/index.php:113:      <div class="qs-icon">✅</div>
+    41→    41→/home/z/my-project/formulaire-dematerialise/index.php:123:      <div class="qs-icon">📊</div>
+    42→    42→/home/z/my-project/formulaire-dematerialise/index.php:128:      <div class="qs-icon">⏳</div>
+    43→    43→/home/z/my-project/formulaire-dematerialise/index.php:133:      <div class="qs-icon">✓</div>
+    44→    44→/home/z/my-project/formulaire-dematerialise/index.php:139:      <div class="qs-icon">🚨</div>
+    45→    45→/home/z/my-project/formulaire-dematerialise/index.php:148:      <div class="qs-icon">📋</div>
+    46→    46→/home/z/my-project/formulaire-dematerialise/index.php:153:      <div class="qs-icon">⏳</div>
+    47→    47→/home/z/my-project/formulaire-dematerialise/index.php:158:      <div class="qs-icon">✓</div>
+    48→    48→/home/z/my-project/formulaire-dematerialise/index.php:166:  <h2 class="section-title">📝 Nouvelle demande</h2>
+    49→    49→/home/z/my-project/formulaire-dematerialise/index.php:184:  <h2 class="section-title">🧭 Accès rapide</h2>
+    50→    50→/home/z/my-project/formulaire-dematerialise/index.php:187:      <span class="nt-icon">📋</span>
+    51→    51→/home/z/my-project/formulaire-dematerialise/index.php:194:      <span class="nt-icon">✅</span>
+    52→    52→/home/z/my-project/formulaire-dematerialise/index.php:201:      <span class="nt-icon">📖</span>
+    53→    53→/home/z/my-project/formulaire-dematerialise/index.php:210:      <span class="nt-icon">📊</span>
+    54→    54→/home/z/my-project/formulaire-dematerialise/index.php:220:      <span class="nt-icon">📊</span>
+    55→    55→/home/z/my-project/formulaire-dematerialise/index.php:227:      <span class="nt-icon">🖥</span>
+    56→    56→/home/z/my-project/formulaire-dematerialise/index.php:234:      <span class="nt-icon">⚙</span>
+    57→    57→/home/z/my-project/formulaire-dematerialise/index.php:241:      <span class="nt-icon">🔔</span>
+    58→    58→/home/z/my-project/formulaire-dematerialise/index.php:255:      <span class="nt-icon">💾</span>
+    59→    59→/home/z/my-project/formulaire-dematerialise/index.php:262:      <span class="nt-icon">📊</span>
+    60→    60→/home/z/my-project/formulaire-dematerialise/index.php:269:      <span class="nt-icon">🔐</span>
+    61→    61→/home/z/my-project/formulaire-dematerialise/index.php:277:      <span class="nt-icon">🏥</span>
+    62→    62→/home/z/my-project/formulaire-dematerialise/test_e2e.php:9: * ⚠️  SÉCURITÉ : Ce script force le mode TEST pour intercepter tous les
+    63→    63→/home/z/my-project/formulaire-dematerialise/test_e2e.php:21:// ⚠️  MODE TEST OBLIGATOIRE — Intercepte send_mail() pour
+    64→    64→/home/z/my-project/formulaire-dematerialise/test_e2e.php:43:            echo "  ✅ $name\n";
+    65→    65→/home/z/my-project/formulaire-dematerialise/test_e2e.php:46:            echo "  ❌ $name — $result\n";
+    66→    66→/home/z/my-project/formulaire-dematerialise/test_e2e.php:1058:echo "\n📊 Résumé des données de test créées :\n";
+    67→    67→/home/z/my-project/formulaire-dematerialise/backup.php:423:    'backup' => ['href' => 'backup.php', 'label' => 'Sauvegarde', 'icon' => '💾'],
+    68→    68→/home/z/my-project/formulaire-dematerialise/backup.php:424:    'health' => ['href' => 'health.php', 'label' => 'Santé', 'icon' => '🏥'],
+    69→    69→/home/z/my-project/formulaire-dematerialise/backup.php:429:    <h1>💾 Sauvegarde et restauration</h1>
+    70→    70→/home/z/my-project/formulaire-dematerialise/backup.php:447:        <h2>📊 Statistiques de la base de données</h2>
+    71→    71→/home/z/my-project/formulaire-dematerialise/backup.php:461:                <span class="info-value"><?= $db_stats['file_exists'] ? '✅ Oui' : '❌ Non' ?></span>
+    72→    72→/home/z/my-project/formulaire-dematerialise/backup.php:539:            ⚠️ La sauvegarde reflète l'état de la base au moment du téléchargement. Les connexions actives
+    73→    73→/home/z/my-project/formulaire-dematerialise/backup.php:545:            <button type="submit" class="btn btn-primary">💾 Télécharger la sauvegarde</button>
+    74→    74→/home/z/my-project/formulaire-dematerialise/backup.php:553:        <h2>🔄 Restaurer la base de données</h2>
+    75→    75→/home/z/my-project/formulaire-dematerialise/backup.php:559:            <p><strong>⚠️ Attention — Action irréversible</strong></p>
+    76→    76→/home/z/my-project/formulaire-dematerialise/backup.php:570:            <button type="submit" class="btn btn-danger">🔄 Restaurer la base de données</button>
+    77→    77→/home/z/my-project/formulaire-dematerialise/backup.php:578:        <h2>🗑️ Purger les anciennes données</h2>
+    78→    78→/home/z/my-project/formulaire-dematerialise/backup.php:587:                <h3>⚠️ Récapitulatif de la purge — données clôturées depuis plus de <?= (int)$purge_preview['months'] ?> mois</h3>
+    79→    79→/home/z/my-project/formulaire-dematerialise/backup.php:610:                        <button type="submit" class="btn btn-danger">✅ Confirmer la purge</button>
+    80→    80→/home/z/my-project/formulaire-dematerialise/backup.php:615:                        ✅ Aucune donnée à purger pour cette période. Toutes les soumissions clôturées sont récentes.
+    81→    81→/home/z/my-project/formulaire-dematerialise/form.php:105:  <h2 style="color:#003189;">✓ Demande enregistrée</h2>
+    82→    82→/home/z/my-project/formulaire-dematerialise/form.php:295:      <p><strong>⚠ Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
+    83→    83→/home/z/my-project/formulaire-dematerialise/form.php:303:      <strong><span aria-hidden="true">✓</span> Demande enregistrée</strong>
+    84→    84→/home/z/my-project/formulaire-dematerialise/test_http.php:32:        echo green("  ✓ $name") . "\n";
+    85→    85→/home/z/my-project/formulaire-dematerialise/docs.php:194:    <h2>🚀 Guide de démarrage rapide</h2>
+    86→    86→/home/z/my-project/formulaire-dematerialise/docs.php:200:        <span class="qs-icon">📝</span>
+    87→    87→/home/z/my-project/formulaire-dematerialise/docs.php:207:        <span class="qs-icon">📧</span>
+    88→    88→/home/z/my-project/formulaire-dematerialise/docs.php:214:        <span class="qs-icon">📊</span>
+    89→    89→/home/z/my-project/formulaire-dematerialise/docs.php:225:          <div class="wf-box done">✓ Étape 1</div>
+    90→    90→/home/z/my-project/formulaire-dematerialise/docs.php:230:          <div class="wf-box current">⏳ Étape 2</div>
+    91→    91→/home/z/my-project/formulaire-dematerialise/docs.php:274:    <h3>📝 Accéder à un formulaire</h3>
+    92→    92→/home/z/my-project/formulaire-dematerialise/docs.php:302:    <h3>✍️ Remplir le formulaire</h3>
+    93→    93→/home/z/my-project/formulaire-dematerialise/docs.php:338:      <p><strong>⚠ Champs obligatoires</strong> — Les champs marqués d'une astérisque rouge (*) doivent obligatoirement être remplis. Si vous oubliez un champ obligatoire, le formulaire vous le signalera.</p>
+    94→    94→/home/z/my-project/formulaire-dematerialise/docs.php:352:    <h3>✅ Que se passe-t-il après l'envoi ?</h3>
+    95→    95→/home/z/my-project/formulaire-dematerialise/docs.php:355:      <p><strong>✓ Demande enregistrée !</strong> — Votre demande est bien prise en compte. Le système se charge de tout.</p>
+    96→    96→/home/z/my-project/formulaire-dematerialise/docs.php:386:    <h3>📊 Suivre l'avancement de mes demandes</h3>
+    97→    97→/home/z/my-project/formulaire-dematerialise/docs.php:399:          <span class="progress-step-indicator"><span class="progress-dot green"></span> IT ✓</span>
+    98→    98→/home/z/my-project/formulaire-dematerialise/docs.php:400:          <span class="progress-step-indicator"><span class="progress-dot amber"></span> RH ⏳</span>
+    99→    99→/home/z/my-project/formulaire-dematerialise/docs.php:455:    <h3>❌ Annuler une demande</h3>
+   100→   100→/home/z/my-project/formulaire-dematerialise/docs.php:479:      <p><strong>⚠ Attention :</strong> L'annulation est irréversible. Vous ne pourrez pas rouvrir la demande. Si vous voulez soumettre à nouveau, il faudra remplir un nouveau formulaire.</p>
+   101→   101→/home/z/my-project/formulaire-dematerialise/docs.php:503:    <h3>📧 Je reçois un email de validation</h3>
+   102→   102→/home/z/my-project/formulaire-dematerialise/docs.php:529:        <span class="email-btn">✓ Marquer comme effectué</span>
+   103→   103→/home/z/my-project/formulaire-dematerialise/docs.php:556:        <p><strong>Prenez le temps de vérifier</strong> — Les cases cochées sont marquées ✓. Si vous avez des questions, contactez l'agent qui a soumis la demande.</p>
+   104→   104→/home/z/my-project/formulaire-dematerialise/docs.php:561:    <h3>✅ Valider ou ❌ Refuser</h3>
+   105→   105→/home/z/my-project/formulaire-dematerialise/docs.php:568:        <p><strong>✅ Valider</strong> — Confirme que l'étape est traitée. Le système passe automatiquement à l'étape suivante et envoie un email au validateur suivant.</p>
+   106→   106→/home/z/my-project/formulaire-dematerialise/docs.php:574:        <p><strong>❌ Refuser</strong> — Bloque la demande. Elle est immédiatement clôturée avec le statut « Refusé ». Les étapes suivantes ne seront pas déclenchées.</p>
+   107→   107→/home/z/my-project/formulaire-dematerialise/docs.php:581:      <p><strong>⚠ Important :</strong> Le lien de validation est à <strong>usage unique</strong>. Une fois que vous avez cliqué sur Valider ou Refuser, le lien ne fonctionne plus. Si vous voyez « Déjà validé », cela signifie que l'action a déjà été effectuée (par vous ou par un collègue partageant la même adresse email).</p>
+   108→   108→/home/z/my-project/formulaire-dematerialise/docs.php:591:    <h3>➡️ Que se passe-t-il après ?</h3>
+   109→   109→/home/z/my-project/formulaire-dematerialise/docs.php:613:    <h3>🔄 Déléguer ma validation</h3>
+   110→   110→/home/z/my-project/formulaire-dematerialise/docs.php:653:    <h3>📋 Suivre mes validations</h3>
+   111→   111→/home/z/my-project/formulaire-dematerialise/docs.php:698:    <h3>📊 Tableau de bord (Dashboard)</h3>
+   112→   112→/home/z/my-project/formulaire-dematerialise/docs.php:726:    <h3>📝 Gestion des formulaires</h3>
+   113→   113→/home/z/my-project/formulaire-dematerialise/docs.php:760:    <h4>📋 Référence des types de champs</h4>
+   114→   114→/home/z/my-project/formulaire-dematerialise/docs.php:765:        <tr><td>📝 Texte court</td><td><code>text</code></td><td>Champ texte simple sur une ligne (nom, prénom, numéro…)</td></tr>
+   115→   115→/home/z/my-project/formulaire-dematerialise/docs.php:766:        <tr><td>📅 Date</td><td><code>date</code></td><td>Sélecteur de date (jj/mm/aaaa) — date de naissance, prise de poste…</td></tr>
+   116→   116→/home/z/my-project/formulaire-dematerialise/docs.php:767:        <tr><td>📋 Liste déroulante</td><td><code>select</code></td><td>Choix unique parmi une liste prédéfinie (corps/grade, type de poste…)</td></tr>
+   117→   117→/home/z/my-project/formulaire-dematerialise/docs.php:768:        <tr><td>☑️ Case à cocher</td><td><code>checkbox</code></td><td>Choix multiples à cocher (options IT, actions RH…)</td></tr>
+   118→   118→/home/z/my-project/formulaire-dematerialise/docs.php:770:        <tr><td>📎 Fichier / Pièce jointe</td><td><code>file</code></td><td>Téléversement de fichier (stockage sécurisé en BDD, accès par lien sécurisé)</td></tr>
+   119→   119→/home/z/my-project/formulaire-dematerialise/docs.php:781:    <h3>🔄 Gestion des étapes et destinataires</h3>
+   120→   120→/home/z/my-project/formulaire-dematerialise/docs.php:957:    <h3>💾 Sauvegarde et restauration</h3>
+   121→   121→/home/z/my-project/formulaire-dematerialise/docs.php:975:      <p><strong>⚠ Attention :</strong> La restauration remplace toutes les données actuelles. Effectuez toujours une sauvegarde avant de restaurer. La restauration est irréversible.</p>
+   122→   122→/home/z/my-project/formulaire-dematerialise/docs.php:983:    <h3>⚙️ Configuration des paramètres</h3>
+   123→   123→/home/z/my-project/formulaire-dematerialise/docs.php:996:      <p><strong>⚠ Accès restreint :</strong> La page de paramètres est réservée au <strong>super administrateur</strong>.</p>
+   124→   124→/home/z/my-project/formulaire-dematerialise/docs.php:1019:        <tr><td>Voir le tableau de bord</td><td>✓</td><td>✓</td></tr>
+   125→   125→/home/z/my-project/formulaire-dematerialise/docs.php:1020:        <tr><td>Gérer les formulaires et étapes</td><td>✓</td><td>✓</td></tr>
+   126→   126→/home/z/my-project/formulaire-dematerialise/docs.php:1021:        <tr><td>Consulter les statistiques</td><td>✓</td><td>✓</td></tr>
+   127→   127→/home/z/my-project/formulaire-dematerialise/docs.php:1022:        <tr><td>Accéder au monitoring</td><td>✓</td><td>✓</td></tr>
+   128→   128→/home/z/my-project/formulaire-dematerialise/docs.php:1023:        <tr><td>Configurer les alertes</td><td>✓</td><td>✓</td></tr>
+   129→   129→/home/z/my-project/formulaire-dematerialise/docs.php:1024:        <tr><td>Sauvegarder et restaurer</td><td>✓</td><td>✓</td></tr>
+   130→   130→/home/z/my-project/formulaire-dematerialise/docs.php:1025:        <tr><td>Gérer la conformité RGPD</td><td>✓</td><td>✓</td></tr>
+   131→   131→/home/z/my-project/formulaire-dematerialise/docs.php:1026:        <tr><td>Approuver / refuser les demandes d'accès</td><td></td><td>✓</td></tr>
+   132→   132→/home/z/my-project/formulaire-dematerialise/docs.php:1027:        <tr><td>Gérer la liste des administrateurs</td><td></td><td>✓</td></tr>
+   133→   133→/home/z/my-project/formulaire-dematerialise/docs.php:1028:        <tr><td>Configurer les paramètres SMTP</td><td></td><td>✓</td></tr>
+   134→   134→/home/z/my-project/formulaire-dematerialise/docs.php:1029:        <tr><td>Configurer les webhooks</td><td></td><td>✓</td></tr>
+   135→   135→/home/z/my-project/formulaire-dematerialise/docs.php:1047:        <strong>📝 Formulaires dynamiques configurables</strong>
+   136→   136→/home/z/my-project/formulaire-dematerialise/docs.php:1051:        <strong>🔄 Circuit de validation séquentiel et parallèle</strong>
+   137→   137→/home/z/my-project/formulaire-dematerialise/docs.php:1055:        <strong>🔐 Tokens cryptographiques à usage unique</strong>
+   138→   138→/home/z/my-project/formulaire-dematerialise/docs.php:1059:        <strong>📎 Pièces jointes sécurisées</strong>
+   139→   139→/home/z/my-project/formulaire-dematerialise/docs.php:1063:        <strong>🔔 Relances automatiques et manuelles</strong>
+   140→   140→/home/z/my-project/formulaire-dematerialise/docs.php:1067:        <strong>🔄 Délégation de validation</strong>
+   141→   141→/home/z/my-project/formulaire-dematerialise/docs.php:1079:        <strong>📋 Journal d'audit complet</strong>
+   142→   142→/home/z/my-project/formulaire-dematerialise/docs.php:1095:        <strong>💾 Sauvegarde et restauration</strong>
+   143→   143→/home/z/my-project/formulaire-dematerialise/docs.php:1103:        <strong>🛡️ Zéro JavaScript (sécurité maximale)</strong>
+   144→   144→/home/z/my-project/formulaire-dematerialise/docs.php:1120:      <li>✅ Remplir et soumettre un formulaire</li>
+   145→   145→/home/z/my-project/formulaire-dematerialise/docs.php:1121:      <li>✅ Suivre l'avancement de <strong>ses propres</strong> demandes (page « Mes demandes »)</li>
+   146→   146→/home/z/my-project/formulaire-dematerialise/docs.php:1122:      <li>✅ Annuler une de ses demandes en cours</li>
+   147→   147→/home/z/my-project/formulaire-dematerialise/docs.php:1123:      <li>✅ Consulter les détails de ses demandes</li>
+   148→   148→/home/z/my-project/formulaire-dematerialise/docs.php:1124:      <li>❌ Ne peut pas voir les demandes des autres agents</li>
+   149→   149→/home/z/my-project/formulaire-dematerialise/docs.php:1125:      <li>❌ Ne peut pas configurer les formulaires ni les étapes</li>
+   150→   150→/home/z/my-project/formulaire-dematerialise/docs.php:1131:      <li>✅ Valider ou refuser une demande (via le lien email)</li>
+   151→   151→/home/z/my-project/formulaire-dematerialise/docs.php:1132:      <li>✅ Consulter les détails d'une demande à valider</li>
+   152→   152→/home/z/my-project/formulaire-dematerialise/docs.php:1133:      <li>✅ Déléguer sa validation à un autre validateur</li>
+   153→   153→/home/z/my-project/formulaire-dematerialise/docs.php:1134:      <li>✅ Suivre ses validations en attente et passées (page « Mes validations »)</li>
+   154→   154→/home/z/my-project/formulaire-dematerialise/docs.php:1135:      <li>✅ Ajouter un commentaire lors de la validation ou du refus</li>
+   155→   155→/home/z/my-project/formulaire-dematerialise/docs.php:1136:      <li>❌ Ne peut pas modifier une demande déjà soumise</li>
+   156→   156→/home/z/my-project/formulaire-dematerialise/docs.php:1137:      <li>❌ Ne peut pas accéder au tableau de bord administrateur</li>
+   157→   157→/home/z/my-project/formulaire-dematerialise/docs.php:1143:      <li>✅ Tout ce que peut faire un agent + un validateur</li>
+   158→   158→/home/z/my-project/formulaire-dematerialise/docs.php:1144:      <li>✅ Voir le tableau de bord (toutes les demandes)</li>
+   159→   159→/home/z/my-project/formulaire-dematerialise/docs.php:1145:      <li>✅ Créer, modifier et désactiver des formulaires</li>
+   160→   160→/home/z/my-project/formulaire-dematerialise/docs.php:1146:      <li>✅ Configurer les étapes et les destinataires</li>
+   161→   161→/home/z/my-project/formulaire-dematerialise/docs.php:1147:      <li>✅ Configurer les alertes de deadline</li>
+   162→   162→/home/z/my-project/formulaire-dematerialise/docs.php:1148:      <li>✅ Consulter les statistiques et le monitoring</li>
+   163→   163→/home/z/my-project/formulaire-dematerialise/docs.php:1149:      <li>✅ Gérer la conformité RGPD (export, suppression)</li>
+   164→   164→/home/z/my-project/formulaire-dematerialise/docs.php:1150:      <li>✅ Sauvegarder et restaurer la base de données</li>
+   165→   165→/home/z/my-project/formulaire-dematerialise/docs.php:1151:      <li>✅ Relancer manuellement un validateur</li>
+   166→   166→/home/z/my-project/formulaire-dematerialise/docs.php:1152:      <li>✅ Annuler n'importe quelle demande en cours</li>
+   167→   167→/home/z/my-project/formulaire-dematerialise/docs.php:1153:      <li>❌ Ne peut pas gérer les administrateurs</li>
+   168→   168→/home/z/my-project/formulaire-dematerialise/docs.php:1154:      <li>❌ Ne peut pas modifier les paramètres SMTP et webhooks</li>
+   169→   169→/home/z/my-project/formulaire-dematerialise/docs.php:1160:      <li>✅ Tout ce que peut faire un administrateur</li>
+   170→   170→/home/z/my-project/formulaire-dematerialise/docs.php:1161:      <li>✅ Approuver ou refuser les demandes d'accès administrateur</li>
+   171→   171→/home/z/my-project/formulaire-dematerialise/docs.php:1162:      <li>✅ Gérer la liste des administrateurs (ajouter, supprimer)</li>
+   172→   172→/home/z/my-project/formulaire-dematerialise/docs.php:1163:      <li>✅ Configurer les paramètres SMTP (serveur, port, expéditeur)</li>
+   173→   173→/home/z/my-project/formulaire-dematerialise/docs.php:1164:      <li>✅ Configurer les webhooks (URL, événements)</li>
+   174→   174→/home/z/my-project/formulaire-dematerialise/docs.php:1179:        <tr><td>Soumettre un formulaire</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   175→   175→/home/z/my-project/formulaire-dematerialise/docs.php:1180:        <tr><td>Suivre ses demandes</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   176→   176→/home/z/my-project/formulaire-dematerialise/docs.php:1181:        <tr><td>Annuler sa demande</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   177→   177→/home/z/my-project/formulaire-dematerialise/docs.php:1182:        <tr><td>Valider / refuser</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   178→   178→/home/z/my-project/formulaire-dematerialise/docs.php:1183:        <tr><td>Déléguer une validation</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   179→   179→/home/z/my-project/formulaire-dematerialise/docs.php:1184:        <tr><td>Tableau de bord (toutes les demandes)</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   180→   180→/home/z/my-project/formulaire-dematerialise/docs.php:1185:        <tr><td>Créer / modifier des formulaires</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   181→   181→/home/z/my-project/formulaire-dematerialise/docs.php:1186:        <tr><td>Configurer les alertes</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   182→   182→/home/z/my-project/formulaire-dematerialise/docs.php:1187:        <tr><td>Statistiques / monitoring</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   183→   183→/home/z/my-project/formulaire-dematerialise/docs.php:1188:        <tr><td>Conformité RGPD</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   184→   184→/home/z/my-project/formulaire-dematerialise/docs.php:1189:        <tr><td>Sauvegarde / restauration</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   185→   185→/home/z/my-project/formulaire-dematerialise/docs.php:1190:        <tr><td>Gérer les administrateurs</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
+   186→   186→/home/z/my-project/formulaire-dematerialise/docs.php:1191:        <tr><td>Paramètres SMTP / webhooks</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
+   187→   187→/home/z/my-project/formulaire-dematerialise/docs.php:1462:      <summary>🖥️ Prérequis de déploiement et installation (pour l'équipe IT)</summary>
+   188→   188→/home/z/my-project/formulaire-dematerialise/helpers.php:534:        // ⚠️  Ces adresses sont des VALEURS PAR DÉFAUT destinées à être remplacées
+   189→   189→/home/z/my-project/formulaire-dematerialise/helpers.php:1563:        'mes_demandes'    => ['href' => 'my_submissions.php','label' => 'Mes demandes',   'icon' => '📋'],
+   190→   190→/home/z/my-project/formulaire-dematerialise/helpers.php:1564:        'mes_validations' => ['href' => 'my_validations.php','label' => 'Mes validations', 'icon' => '✅'],
+   191→   191→/home/z/my-project/formulaire-dematerialise/helpers.php:1565:        'docs'            => ['href' => 'docs.php',          'label' => 'Documentation',   'icon' => '📖'],
+   192→   192→/home/z/my-project/formulaire-dematerialise/helpers.php:1570:        'dashboard'  => ['href' => 'dashboard.php',      'label' => 'Tableau de bord', 'icon' => '📊'],
+   193→   193→/home/z/my-project/formulaire-dematerialise/helpers.php:1571:        'settings'   => ['href' => 'admin_settings.php', 'label' => 'Paramètres',      'icon' => '⚙'],
+   194→   194→/home/z/my-project/formulaire-dematerialise/helpers.php:1829: * ⚠️ Attention : certains serveurs SMTP acceptent tous les RCPT TO (catch-all).
+   195→   195→/home/z/my-project/formulaire-dematerialise/helpers.php:2086:        $valeur = $v === '1' ? '✓' : h((string)$v);
+   196→   196→/home/z/my-project/formulaire-dematerialise/helpers.php:2096:    ✓ Marquer comme effectué
+   197→   197→/home/z/my-project/formulaire-dematerialise/helpers.php:2209:  <h2 style="color:#1a6b3c;">✓ Demande validée</h2>
+   198→   198→/home/z/my-project/formulaire-dematerialise/helpers.php:2995:    if (strpos($mime_type, 'word') !== false || strpos($mime_type, 'document') !== false) return '📝';
+   199→   199→/home/z/my-project/formulaire-dematerialise/helpers.php:2996:    if (strpos($mime_type, 'sheet') !== false || strpos($mime_type, 'excel') !== false) return '📊';
+   200→   200→/home/z/my-project/formulaire-dematerialise/helpers.php:3000:    return '📎';
+   201→   201→/home/z/my-project/formulaire-dematerialise/helpers.php:3090:        <strong>🔄 Délégation :</strong> Cette validation vous a été déléguée par <strong>' . h($tok['email']) . '</strong>.
+   202→   202→/home/z/my-project/formulaire-dematerialise/helpers.php:3101:  <h2 style="color:#003189;">🔄 Délégation confirmée</h2>
+   203→   203→/home/z/my-project/formulaire-dematerialise/install.php:531:            <div class="step-icon"><?= $step > 1 ? '✓' : '1' ?></div>
+   204→   204→/home/z/my-project/formulaire-dematerialise/install.php:535:            <div class="step-icon"><?= $step > 2 ? '✓' : '2' ?></div>
+   205→   205→/home/z/my-project/formulaire-dematerialise/install.php:566:                <div class="check-icon"><?= $check['ok'] ? '✓' : '✗' ?></div>
+   206→   206→/home/z/my-project/formulaire-dematerialise/install.php:586:        ⚠ Certains prérequis ne sont pas satisfaits. Corrigez les problèmes ci-dessus puis rechargez cette page.
+   207→   207→/home/z/my-project/formulaire-dematerialise/install.php:670:            <button type="submit" class="btn btn-test" <?= empty($default_admin_email) ? 'disabled' : '' ?>>📧 Envoyer un email de test</button>
+   208→   208→/home/z/my-project/formulaire-dematerialise/install.php:715:        ⚠ En cliquant sur « Installer », le fichier <strong>config.php</strong> sera créé dans le répertoire
+   209→   209→/home/z/my-project/formulaire-dematerialise/install.php:724:            <button type="submit" class="btn btn-primary">✓ Installer</button>
+   210→   210→/home/z/my-project/formulaire-dematerialise/changelog.php:93:    if (strpos($lower, 'majeure') !== false)     return ['icon' => '🚀', 'cls' => 'section-major'];
+   211→   211→/home/z/my-project/formulaire-dematerialise/changelog.php:165:  <h1>📋 Journal des modifications</h1>
+   212→   212→/home/z/my-project/formulaire-dematerialise/changelog.php:171:      <div class="empty-icon">📝</div>
+   213→   213→/home/z/my-project/formulaire-dematerialise/admin_forms.php:34:    'text'     => '📝 Texte',
+   214→   214→/home/z/my-project/formulaire-dematerialise/admin_forms.php:35:    'date'     => '📅 Date',
+   215→   215→/home/z/my-project/formulaire-dematerialise/admin_forms.php:36:    'select'   => '📋 Sélecteur',
+   216→   216→/home/z/my-project/formulaire-dematerialise/admin_forms.php:38:    'textarea' => '📝 Zone de texte',
+   217→   217→/home/z/my-project/formulaire-dematerialise/admin_forms.php:39:    'file'     => '📎 Fichier',
+   218→   218→/home/z/my-project/formulaire-dematerialise/admin_forms.php:44:        'text'     => '📝',
+   219→   219→/home/z/my-project/formulaire-dematerialise/admin_forms.php:45:        'date'     => '📅',
+   220→   220→/home/z/my-project/formulaire-dematerialise/admin_forms.php:46:        'select'   => '📋',
+   221→   221→/home/z/my-project/formulaire-dematerialise/admin_forms.php:47:        'checkbox' => '☑️',
+   222→   222→/home/z/my-project/formulaire-dematerialise/admin_forms.php:48:        'textarea' => '📝',
+   223→   223→/home/z/my-project/formulaire-dematerialise/admin_forms.php:49:        'file'     => '📎',
+   224→   224→/home/z/my-project/formulaire-dematerialise/admin_forms.php:738:    <h1>⚙ Gestion des formulaires</h1>
+   225→   225→/home/z/my-project/formulaire-dematerialise/admin_forms.php:768:                <h2>📋 Créer un nouveau formulaire</h2>
+   226→   226→/home/z/my-project/formulaire-dematerialise/admin_forms.php:804:                    <h2>📋 Informations du formulaire</h2>
+   227→   227→/home/z/my-project/formulaire-dematerialise/admin_forms.php:809:                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📋 Dupliquer</button>
+   228→   228→/home/z/my-project/formulaire-dematerialise/admin_forms.php:993:                    <h2>📧 Destinataires par étape</h2>
+   229→   229→/home/z/my-project/formulaire-dematerialise/admin_forms.php:1048:                                                    📧 <?= h($recipient['email']) ?>
+   230→   230→/home/z/my-project/formulaire-dematerialise/admin_forms.php:1075:                    <h2>📝 Champs du formulaire</h2>
+   231→   231→/home/z/my-project/formulaire-dematerialise/admin_forms.php:1212:                            <div class="empty-icon">📝</div>
+   232→   232→/home/z/my-project/formulaire-dematerialise/admin_forms.php:1324:                    <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>" class="btn btn-secondary">📊 Ouvrir le tableau de suivi</a>
+   233→   233→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:207:    'alerts'    => ['href' => 'admin_alerts.php', 'label' => 'Alertes', 'icon' => '🔔'],
+   234→   234→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:208:    'monitoring'=> ['href' => 'monitoring.php',   'label' => 'Monitoring', 'icon' => '🖥'],
+   235→   235→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:210:    'rgpd'      => ['href' => 'rgpd.php',          'label' => 'RGPD', 'icon' => '🔐'],
+   236→   236→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:214:  <h1>🔔 Alertes paramétrables</h1>
+   237→   237→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:235:          <span class="badge badge-warn" style="margin-left:.5rem;">⚠ Dernière exécution il y a plus de 24h</span>
+   238→   238→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:237:          <span class="badge badge-ok" style="margin-left:.5rem;">✓ Script actif</span>
+   239→   239→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:259:    <h2>📋 Champ date limite par formulaire</h2>
+   240→   240→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:286:            ✓ Champ date limite : <strong><?= h($f['deadline_field']) ?></strong>
+   241→   241→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:290:            ⚠ Aucun champ date limite configuré — les alertes ne se déclencheront pas pour ce formulaire.
+   242→   242→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:327:            <span class="notify-badge">📧 <?= h(notify_who_label($r['notify_who'])) ?></span>
+   243→   243→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:405:              <option value="<?= h($f['id']) ?>"><?= h($f['label']) ?><?= empty($f['deadline_field']) ? ' (⚠ pas de champ date)' : '' ?></option>
+   244→   244→/home/z/my-project/formulaire-dematerialise/admin_alerts.php:454:        <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .6rem;">🗑 Purger > 90j</button>
+   245→   245→/home/z/my-project/formulaire-dematerialise/stats.php:114:    'monitoring'=> ['href' => 'monitoring.php',    'label' => 'Monitoring', 'icon' => '🖥'],
+   246→   246→/home/z/my-project/formulaire-dematerialise/stats.php:118:  <h1>📊 Statistiques</h1>
+   247→   247→/home/z/my-project/formulaire-dematerialise/form_preview.php:78:  <div class="preview-banner">👁 Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="admin_forms.php?form_id=<?= urlencode($form['id']) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;">⚙ Retour à l'édition</a></div>
+   248→   248→/home/z/my-project/formulaire-dematerialise/test_all.php:15:// ⚠️  MODE TEST OBLIGATOIRE — Intercepte send_mail() pour
+   249→   249→/home/z/my-project/formulaire-dematerialise/test_all.php:37:            echo "  ✅ $name\n";
+   250→   250→/home/z/my-project/formulaire-dematerialise/test_all.php:40:            echo "  ❌ $name — $result\n";
+   251→   251→
+   252→   252→[Showing results with pagination = limit: 250]

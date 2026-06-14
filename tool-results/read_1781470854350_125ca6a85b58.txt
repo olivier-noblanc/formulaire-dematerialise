@@ -1,0 +1,556 @@
+     1→# AGENT.md — Guide Technique pour Agent IA
+     2→
+     3→> Documentation technique complète du projet **Formulaire Dématérialisé DREETS BFC**.
+     4→> Version 4.1.0 — Dernière mise à jour : 14/06/2026
+     5→
+     6→---
+     7→
+     8→## Sommaire
+     9→
+    10→1. [Contexte & Philosophie](#contexte--philosophie)
+    11→2. [Architecture & Fichiers](#architecture--fichiers)
+    12→3. [Captures d'écran de l'application](#captures-décran-de-lapplication)
+    13→4. [Schéma SQLite](#schéma-sqlite)
+    14→5. [Moteur Workflow](#moteur-workflow)
+    15→6. [Système d'authentification](#système-dauthentification)
+    16→7. [Système d'alertes](#système-dalertes)
+    17→8. [Mode Test (X-Test-Mode)](#mode-test-x-test-mode)
+    18→9. [Conventions de code](#conventions-de-code)
+    19→10. [Interdictions absolues](#interdictions-absolues)
+    20→11. [Tâches courantes](#tâches-courantes)
+    21→12. [Scripts CLI](#scripts-cli)
+    22→13. [Points d'attention](#points-dattention)
+    23→
+    24→---
+    25→
+    26→## Contexte & Philosophie
+    27→
+    28→### Contexte métier
+    29→
+    30→Application PHP de gestion de workflows de validation de formulaires pour la **DREETS** (Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités) — administration publique française, région Bourgogne-Franche-Comté.
+    31→
+    32→Hébergée sur **Windows Server 2025 bare metal**, **IIS**, **PHP 8 FastCGI**, **SQLite**.
+    33→Auth Windows (Kerberos) fournie par IIS — `$_SERVER['AUTH_USER']` = `DOMAINE\login`.
+    34→
+    35→### Répertoire de base : `C:\inetpub\wwwroot\workflow\`
+    36→
+    37→Tous les fichiers PHP sont dans ce répertoire racine. Il n'y a aucun sous-dossier de code.
+    38→
+    39→### Philosophie — à respecter absolument
+    40→
+    41→| Principe | Description |
+    42→|---|---|
+    43→| **Zéro framework PHP** | Pas de Laravel, Symfony, Slim. PHP procédural pur. |
+    44→| **Zéro JavaScript** | Aucun JavaScript depuis la v3.0.0. Toutes les interactions sont côté serveur (PHP POST/GET, CSS). Les onglets utilisent des paramètres GET, les confirmations passent par une page dédiée, les toggles sont des liens directs. |
+    45→| **Zéro CDN** | Aucune ressource externe. Tout est local. |
+    46→| **Zéro dépendance inutile** | PHPMailer est la seule dépendance. Ne pas en ajouter. |
+    47→| **Future-proof** | Le code doit tourner sans modification dans 10 ans. Éviter toute API ou syntaxe susceptible d'être dépréciée. |
+    48→| **KISS** | Chaque fichier fait une chose. Pas d'abstraction inutile. |
+    49→| **CSS partagé** | `style.php` via `require_once`. Pas de fichier `.css` séparé. Chaque page ajoute son CSS spécifique dans un second `<style>`. |
+    50→
+    51→---
+    52→
+    53→## Architecture & Fichiers
+    54→
+    55→### Fichiers clés (23 fichiers applicatifs)
+    56→
+    57→| Fichier | Rôle | Ligne guide |
+    58→|---|---|---|
+    59→| `config.php` | Constantes globales + `APP_VERSION`. **Fichier protégé** — ne jamais écraser lors d'une mise à jour. | ~17 lignes |
+    60→| `helpers.php` | Moteur de l'application : DB, workflow, auth, CSRF, mail, audit, export CSV, test mode. | ~1323 lignes |
+    61→| `style.php` | CSS partagé inclus via `require_once`. Reset, bandeau, cards, boutons, formulaires, tables, badges, stats, timeline, workflow diagram, responsive. | ~173 lignes |
+    62→| `router.php` | Routeur simple pour le serveur PHP intégré (développement uniquement). | ~27 lignes |
+    63→| `index.php` | Page d'accueil adaptée au rôle (agent / admin). Hero banner, formulaires en cartes, statistiques, liens rapides. | ~250 lignes |
+    64→| `form.php` | Formulaire dynamique — rendu depuis `form_fields`. Groupé par `card_group`, validation, soumission POST. | ~274 lignes |
+    65→| `form_preview.php` | Prévisualisation admin d'un formulaire (lecture seule + circuit de validation visible). | ~100 lignes |
+    66→| `validate.php` | Validation par token. GET = affichage décision, POST = exécution `validate_token()`. | ~249 lignes |
+    67→| `submission_view.php` | Détail complet d'une soumission : barre de progression, diagramme workflow, deadline, données, historique, actions admin. | ~200 lignes |
+    68→| `my_submissions.php` | « Mes demandes » agent : timeline, barres de progression, badges deadline. | ~180 lignes |
+    69→| `my_validations.php` | Dashboard validateur : tokens en attente, historique, tokens expirés. | ~180 lignes |
+    70→| `dashboard.php` | Supervision admin : filtres, pagination, export CSV, deadline colorée, régénération token, annulation. | ~314 lignes |
+    71→| `monitoring.php` | Observabilité : métriques, tokens bloqués, SMTP health, donut CSS, alertes, audit. | ~300 lignes |
+    72→| `admin_access.php` | Gestion des accès admin : demande, approbation, révocation. | ~150 lignes |
+    73→| `admin_forms.php` | Form builder CRUD : formulaires, champs, étapes, destinataires, auto-génération field_name, circuit diagram. | ~350 lignes |
+    74→| `admin_alerts.php` | Configuration alertes (J-N, condition, destinataires), champ deadline, historique. | ~300 lignes |
+    75→| `admin_settings.php` | Configuration SMTP, délai de relance, plafond de relances. | ~180 lignes |
+    76→| `docs.php` | Documentation utilisateur : guides agent/validateur/admin, FAQ, architecture. | ~400 lignes |
+    77→| `changelog.php` | Journal des versions — parse `CHANGELOG.md` et affiche formaté. | ~100 lignes |
+    78→| `install.php` | Assistant d'installation première — vérification prérequis, configuration SMTP/admin, génération config.php. Fichier standalone (ne dépend pas de config.php ni helpers.php). | ~741 lignes |
+    79→| `backup.php` | Sauvegarde et restauration de la base SQLite, purge des anciennes données, statistiques DB. Admin uniquement. | ~647 lignes |
+    80→| `confirm_action.php` | Page de confirmation serveur pour les actions destructrices (remplace les confirm() JavaScript). | ~150 lignes |
+    81→| `form_tracking.php` | Tableau de suivi propriétaire — soumissions d'un formulaire avec colonnes clés, avancement, filtres, export CSV. | ~250 lignes |
+    82→| `alert_check.php` | Script CLI : vérifie les deadlines, envoie les alertes configurées. Planifier toutes les 6h. | ~319 lignes |
+    83→| `remind.php` | Script CLI de relance automatique. Planifier toutes les 12h. | ~55 lignes |
+    84→| `update.ps1` | Script PowerShell de mise à jour automatique (télécharge, sauvegarde, préserve config.php). | ~80 lignes |
+    85→
+    86→### Fichiers de test (3 fichiers)
+    87→
+    88→| Fichier | Rôle |
+    89→|---|---|
+    90→| `test_all.php` | Suite de tests CLI — 47 tests en subprocess isolation (DB, helpers, workflow, pages, sécurité, fonctions avancées). |
+    91→| `test_api.php` | API de test accessible uniquement avec le header `X-Test-Mode: 1`. Actions : mails, tokens, submissions, cleanup, seeding, stats. |
+    92→| `test_http.php` | Suite de tests HTTP — démarre le serveur PHP, exécute 12 phases de tests via curl avec le header de test. |
+    93→
+    94→### Navigation entre pages
+    95→
+    96→```
+    97→index.php ──→ form.php?f=slug        (agent : remplir un formulaire)
+    98→          ├──→ my_submissions.php     (agent : suivi de ses demandes)
+    99→          │       └──→ submission_view.php
+   100→          ├──→ my_validations.php     (validateur : tokens en attente)
+   101→          ├──→ form_tracking.php?form_id=N  (owner : tableau de suivi propriétaire)
+   102→          ├──→ dashboard.php          (admin : supervision)
+   103→          │       ├──→ submission_view.php
+   104→          │       └──→ admin_alerts.php
+   105→          ├──→ admin_forms.php        (admin : form builder)
+   106→          │       ├──→ form_preview.php?form_id=N
+   107→          │       └──→ form_tracking.php?form_id=N
+   108→          ├──→ admin_settings.php     (admin : SMTP & relances)
+   109→          ├──→ monitoring.php         (admin : observabilité)
+   110→          ├──→ admin_access.php       (admin : gestion accès)
+   111→          └──→ docs.php               (tous : documentation)
+   112→
+   113→validate.php?t=TOKEN                  (validateur : lien email à usage unique)
+   114→```
+   115→
+   116→**Important** : Il n'existe pas de dossier `admin/`. Ne jamais générer de liens `href="admin/"`.
+   117→
+   118→---
+   119→
+   120→## Captures d'écran de l'application
+   121→
+   122→> Les captures ci-dessous montrent l'application réelle avec des données de démonstration.
+   123→> Chemin des fichiers : `docs/screenshots/`
+   124→
+   125→### Vue Agent
+   126→
+   127→| Page | Capture | Description |
+   128→|---|---|---|
+   129→| **Accueil agent** | ![Accueil agent](docs/screenshots/01_index_agent.png) | Hero banner, formulaires disponibles en cartes, statistiques personnelles, liens rapides |
+   130→| **Formulaire onboarding** | ![Onboarding](docs/screenshots/03_form_onboarding.png) | Formulaire dynamique groupé par sections (Identité, IT, RH, Logistique), champs text/date/select/checkbox/textarea |
+   131→| **Formulaire outboarding** | ![Outboarding](docs/screenshots/04_form_outboarding.png) | Formulaire de départ — restitution matériel, révocation accès, formalités RH/logistique |
+   132→| **Mes demandes** | ![Mes demandes](docs/screenshots/05_my_submissions.png) | Timeline visuelle, barres de progression, badges deadline (🚨⚠️📅), liens vers le détail |
+   133→| **Détail demande** | ![Détail](docs/screenshots/16_submission_view.png) | Barre de progression, diagramme workflow, deadline, données, historique validations, actions admin |
+   134→
+   135→### Vue Validateur
+   136→
+   137→| Page | Capture | Description |
+   138→|---|---|---|
+   139→| **Mes validations** | ![Mes validations](docs/screenshots/06_my_validations.png) | Tokens en attente, historique des validations, tokens expirés, mini-workflow par token |
+   140→| **Page de validation** | ![Validation](docs/screenshots/15_validate.png) | Progression du circuit, formulaire de décision (valider/refuser avec motif) |
+   141→
+   142→### Vue Admin
+   143→
+   144→| Page | Capture | Description |
+   145→|---|---|---|
+   146→| **Accueil admin** | ![Accueil admin](docs/screenshots/02_index_admin.png) | Statistiques globales, tokens bloqués, liens d'administration rapide |
+   147→| **Dashboard** | ![Dashboard](docs/screenshots/07_dashboard.png) | Supervision : filtres, pagination, deadline colorée, export CSV, régénération token, annulation |
+   148→| **Monitoring** | ![Monitoring](docs/screenshots/08_monitoring.png) | Métriques, tokens bloqués, SMTP health, donut CSS, alertes actives, audit log |
+   149→| **Form builder** | ![Form builder](docs/screenshots/10_admin_forms.png) | CRUD formulaires/champs/étapes, auto-génération field_name, circuit diagram |
+   150→| **Aperçu formulaire** | ![Aperçu](docs/screenshots/17_form_preview.png) | Rendu lecture seule + circuit de validation visible |
+   151→| **Alertes** | ![Alertes](docs/screenshots/11_admin_alerts.png) | Règles J-N, conditions, destinataires, historique des alertes |
+   152→| **Paramètres** | ![Paramètres](docs/screenshots/12_admin_settings.png) | Configuration SMTP, délai/plafond de relance |
+   153→| **Accès admin** | ![Accès](docs/screenshots/09_admin_access.png) | Demande, approbation, révocation des accès admin |
+   154→
+   155→### Pages transversales
+   156→
+   157→| Page | Capture | Description |
+   158→|---|---|---|
+   159→| **Documentation** | ![Docs](docs/screenshots/13_docs.png) | Guides agent/validateur/admin, FAQ, architecture technique |
+   160→| **Journal des versions** | ![Changelog](docs/screenshots/14_changelog.png) | CHANGELOG.md parsé et affiché avec icônes et couleurs |
+   161→
+   162→---
+   163→
+   164→## Schéma SQLite
+   165→
+   166→### 14 tables
+   167→
+   168→```
+   169→forms           (id, slug, label, description, actif, deadline_field, created_at)
+   170→steps           (id, form_id, label, ordre, actif)
+   171→step_recipients (id, step_id, email)
+   172→submissions     (id, form_id, data JSON, submitted_by, submitted_at, closed_at, status)
+   173→tokens          (id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count)
+   174→form_fields     (id, form_id, label, field_type, field_name, options, required, ordre, card_group)
+   175→admins          (id, email, added_at)
+   176→admin_requests  (id, email, requested_at, status, token)
+   177→settings        (key, value, updated_at, updated_by)
+   178→audit_log       (id, action, target, detail, actor, ip, created_at)
+   179→alert_rules     (id, form_id, days_before, condition_type, notify_who, label, actif, created_at)
+   180→alert_log       (id, rule_id, submission_id, sent_at, message)
+   181→form_owners     (id, form_id, email, added_at)
+   182→```
+   183→
+   184→### Colonnes ajoutées par ALTER TABLE (migration automatique au démarrage)
+   185→
+   186→| Colonne | Table | Version | Défaut |
+   187→|---|---|---|---|
+   188→| `status` | `submissions` | v1.1.0 | `'en_cours'` |
+   189→| `expires_at` | `tokens` | v1.1.0 | `NULL` |
+   190→| `relance_count` | `tokens` | v2.0.0 | `0` |
+   191→| `deadline_field` | `forms` | v2.4.0 | `''` |
+   192→
+   193→### Types de champs (`form_fields.field_type`)
+   194→
+   195→| Type | Rendu HTML | Stockage |
+   196→|---|---|---|
+   197→| `text` | `<input type="text">` | Chaîne brute |
+   198→| `date` | `<input type="date">` | Format YYYY-MM-DD |
+   199→| `select` | `<select>` avec `<option>` | Valeur sélectionnée |
+   200→| `checkbox` | `<input type="checkbox">` | `"on"` si coché, absent sinon |
+   201→| `textarea` | `<textarea>` | Texte multiligne |
+   202→
+   203→### Relations clés
+   204→
+   205→```
+   206→forms ──1:N── steps ──1:N── step_recipients
+   207→  │                         (email du validateur)
+   208→  └──1:N── form_fields
+   209→              (card_group pour groupement visuel)
+   210→
+   211→submissions ──1:N── tokens ──N:1── steps
+   212→  (data = JSON des réponses)   (token = lien unique)
+   213→```
+   214→
+   215→---
+   216→
+   217→## Moteur Workflow
+   218→
+   219→Le cœur de l'application repose sur deux fonctions dans `helpers.php` :
+   220→
+   221→### `advance_workflow(int $submission_id)`
+   222→
+   223→Appelée après chaque validation pour déclencher l'étape suivante.
+   224→
+   225→**Algorithme** :
+   226→1. Récupère toutes les étapes actives du formulaire, triées par `ordre ASC`
+   227→2. Groupe par `ordre` : même `ordre` = étapes parallèles (toutes doivent être validées)
+   228→3. Cherche le premier groupe sans tokens générés → génère les tokens et envoie les mails
+   229→4. Si le groupe précédent n'est pas entièrement `done` → attend (ne rien faire)
+   230→5. Si tous les groupes sont `done` → met `closed_at` sur la soumission + notifie l'agent par email
+   231→
+   232→**Exemple de workflow à 4 étapes** :
+   233→```
+   234→Étape 1 (ordre=1) : Responsable direct     → séquentiel
+   235→Étape 2 (ordre=2) : Service informatique    → séquentiel
+   236→Étape 3 (ordre=3) : RH + Logistique (ordre=3) → PARALLÈLE (2 validateurs simultanés)
+   237→Étape 4 (ordre=4) : Direction               → séquentiel
+   238→```
+   239→
+   240→### `validate_token(string $token)` → `['status' => 'ok|invalid|already_done|closed', 'data' => [...]]`
+   241→
+   242→Appelée quand un validateur clique sur le lien email.
+   243→
+   244→**Processus** :
+   245→1. Vérifie le token en base (existe, pas expiré, pas déjà traité)
+   246→2. Si la soumission est déjà fermée → retourne `'closed'`
+   247→3. Met à jour `done_at` sur le token
+   248→4. En cas de refus : ferme la soumission (`status='refuse'`), notifie l'agent
+   249→5. Appelle `advance_workflow()` pour déclencher l'étape suivante si nécessaire
+   250→6. Retourne le statut et les données de la soumission
+   251→
+   252→---
+   253→
+   254→## Système d'authentification
+   255→
+   256→### `get_auth_user()` dans `helpers.php`
+   257→
+   258→```
+   259→$_SERVER['AUTH_USER'] = "DREETS\dupont"
+   260→                           ↓
+   261→              get_auth_user() = "dupont@dreets.gouv.fr"
+   262→```
+   263→
+   264→**Logique** :
+   265→1. Si `AUTH_USER` est vide → affiche une page 401 stylisée (plus d'exception fatale)
+   266→2. Si contient `\` (format Windows `DOMAINE\login`) → extrait le login et ajoute `@dreets.gouv.fr`
+   267→3. Sinon → suppose que c'est déjà un email, passe en minuscules
+   268→
+   269→### Hiérarchie des rôles
+   270→
+   271→| Fonction | Vérification | Utilisation |
+   272→|---|---|---|
+   273→| `is_super_admin()` | `email === ADMIN_EMAIL` (config.php) | Accès total, suppression admin |
+   274→| `is_admin_user()` | `email IN admins` (table SQLite) | Dashboard, form builder, paramètres, monitoring |
+   275→| `is_form_owner($form_id)` | `email IN form_owners` pour ce formulaire | Tableau de suivi propriétaire (form_tracking.php) |
+   276→
+   277→### Flux de demande admin
+   278→
+   279→```
+   280→Agent demande l'accès admin (admin_access.php)
+   281→  → admin_request créée dans la table
+   282→  → Email envoyé au super admin avec lien d'approbation
+   283→  → Lien = page de confirmation POST (pas d'effet de bord au GET)
+   284→  → Si approuvé → email ajouté à la table `admins`
+   285→```
+   286→
+   287→---
+   288→
+   289→## Système d'alertes
+   290→
+   291→### Architecture à 3 composants
+   292→
+   293→1. **`admin_alerts.php`** — Interface de configuration
+   294→   - Champ date limite par formulaire (`deadline_field` sur `forms`)
+   295→   - Règles : J-N jours avant la deadline, condition (étapes incomplètes), destinataires
+   296→   - 6 cibles : admin, agent, validateurs en cours, admin+agent, admin+validateurs, email personnalisé
+   297→   - Activation/désactivation, historique des alertes
+   298→
+   299→2. **`alert_check.php`** — Script CLI (planifier toutes les 6h)
+   300→   - Parcourt les soumissions `en_cours`
+   301→   - Calcule la distance à la date cible via `deadline_field`
+   302→   - Évalue les conditions (étapes incomplètes)
+   303→   - Envoie les emails d'alerte avec tableau récapitulatif
+   304→   - Trace dans `alert_log` — déduplication : 1 alerte par règle + soumission + jour
+   305→
+   306→3. **Intégration monitoring** — `monitoring.php`
+   307→   - Section « Alertes actives » avec code couleur urgence
+   308→   - Compteur dans les statistiques globales
+   309→   - Historique des dernières alertes
+   310→   - Alerte si `alert_check.php` n'a pas tourné depuis > 24h
+   311→
+   312→---
+   313→
+   314→## Mode Test (X-Test-Mode)
+   315→
+   316→Le mode test permet de faire des tests automatisés via curl ou un navigateur headless sans modifier l'application.
+   317→
+   318→### Activation
+   319→
+   320→Header HTTP : `X-Test-Mode: 1`
+   321→
+   322→### Comportement modifié en mode test
+   323→
+   324→| Comportement | Normal | Mode test |
+   325→|---|---|---|
+   326→| Authentification | `$_SERVER['AUTH_USER']` (IIS) | `$_SERVER['HTTP_X_TEST_USER']` |
+   327→| CSRF | Vérification obligatoire | Bypass automatique |
+   328→| Emails | Envoi réel via SMTP | Interceptés dans `$GLOBALS['_test_mails']` |
+   329→| Base de données | `db/workflow.db` | `db/workflow_test.db` (séparée) |
+   330→| Erreurs | Display + warning PHP | `E_ERROR | E_PARSE` uniquement |
+   331→| Réponses | Redirections HTML | JSON pour les actions POST (erreurs, confirmations) |
+   332→
+   333→### Fonction `test_json_response(array $data)`
+   334→
+   335→Appelée dans les pages pour retourner du JSON au lieu de `die()` ou `header('Location: ...)` en mode test. Permet aux tests automatisés de vérifier le résultat sans parser du HTML.
+   336→
+   337→### API de test : `test_api.php`
+   338→
+   339→Accessible uniquement avec `X-Test-Mode: 1`. Actions disponibles :
+   340→
+   341→| Action | Description |
+   342→|---|---|
+   343→| `mails` | Liste les emails interceptés |
+   344→| `reset_mails` | Vide la file d'attente |
+   345→| `tokens` | Liste les tokens de validation |
+   346→| `submission` | Détail d'une soumission |
+   347→| `submissions` | Liste toutes les soumissions |
+   348→| `cleanup` | Supprime les données de test |
+   349→| `full_cleanup` | Réinitialise complète |
+   350→| `forms` | Liste les formulaires |
+   351→| `steps` | Liste les étapes |
+   352→| `add_admin` | Ajoute un admin |
+   353→| `remove_admin` | Supprime un admin |
+   354→| `add_recipient` | Ajoute un destinataire |
+   355→| `stats` | Statistiques globales |
+   356→
+   357→### Suite de tests HTTP : `test_http.php`
+   358→
+   359→Démarre le serveur PHP intégré et exécute 12 phases de tests via curl :
+   360→0. Vérification serveur & mode test
+   361→1. Configuration du workflow (destinataires + admin)
+   362→2. Agent remplit le formulaire onboarding
+   363→3. Validation étape 1 (Responsable direct)
+   364→4. Refus étape 2 (Service informatique)
+   365→5. Workflow complet bout-en-bout (4 étapes validées)
+   366→6. Tokens déjà traités / invalides
+   367→7. Validation des champs obligatoires
+   368→8. Annulation de soumission
+   369→9. Régénération de token
+   370→10. Contrôle d'accès admin
+   371→11. Rendu des pages HTML
+   372→12. Vérification finale des statistiques
+   373→
+   374→---
+   375→
+   376→## Conventions de code
+   377→
+   378→### Nommage
+   379→
+   380→- Fonctions : `snake_case` (ex: `get_auth_user()`, `advance_workflow()`)
+   381→- Variables : `snake_case` (ex: `$form_fields`, `$submitted_by`)
+   382→- Tables SQLite : `snake_case` (ex: `form_fields`, `step_recipients`)
+   383→- Clés de settings : `snake_case` (ex: `delai_relance_h`, `relance_max`)
+   384→
+   385→### Structure
+   386→
+   387→- Pas de classes, pas d'objets (sauf PDO et PHPMailer)
+   388→- Pas de namespaces, pas d'autoloading
+   389→- `require_once __DIR__ . '/fichier.php'` exclusivement
+   390→- Chaque page suit le même modèle :
+   391→
+   392→```php
+   393→<?php
+   394→require_once __DIR__ . '/helpers.php';
+   395→// ... logique métier ...
+   396→?>
+   397→<!DOCTYPE html>
+   398→<html lang="fr">
+   399→<head>
+   400→    <meta charset="UTF-8">
+   401→    <title>Titre — DREETS</title>
+   402→    <?php require_once __DIR__ . '/style.php'; ?>
+   403→    <style>
+   404→        /* CSS spécifique à cette page */
+   405→    </style>
+   406→</head>
+   407→<body>
+   408→    <?php include __DIR__ . '/bandeau.php'; /* ou bandeau inline */ ?>
+   409→    <div class="container">
+   410→        <!-- contenu -->
+   411→    </div>
+   412→</body>
+   413→</html>
+   414→```
+   415→
+   416→### Sécurité
+   417→
+   418→- Toujours échapper les sorties HTML avec `h()` (wrapper de `htmlspecialchars`)
+   419→- Toujours utiliser des requêtes préparées PDO — jamais d'interpolation SQL
+   420→- CSRF sur tous les formulaires POST via `csrf_field()` / `verify_csrf()`
+   421→- Tokens cryptographiques via `random_bytes(32)`
+   422→- Validation des emails via `filter_var(FILTER_VALIDATE_EMAIL)`
+   423→
+   424→### CSS
+   425→
+   426→- CSS commun dans `style.php` inclus via `require_once`
+   427→- Pas de fichier `.css` séparé — la philosophie est « zéro fichier statique »
+   428→- Chaque page ajoute son CSS spécifique dans un second bloc `<style>`
+   429→- Design Marianne (administration française) : bleu #003189, gris, blanc
+   430→
+   431→---
+   432→
+   433→## Interdictions absolues
+   434→
+   435→| Interdiction | Raison |
+   436→|---|---|
+   437→| Créer des sous-dossiers de code | Architecture plate — tous les fichiers à la racine |
+   438→| Générer des liens `href="admin/"` | Ce dossier n'existe pas |
+   439→| Utiliser `__DIR__ . '/../'` | Pas de niveau supérieur |
+   440→| Introduire du routing (.htaccess, front controller) | Chaque page est un point d'entrée direct |
+   441→| Introduire du templating (Twig, Blade) | PHP natif est le moteur de template |
+   442→| Introduire un ORM (Eloquent, Doctrine) | PDO + requêtes préparées suffisent |
+   443→| Modifier le schéma sans MAJ `init_db()` | La migration doit être automatique |
+   444→| Ajouter des dépendances sans validation | PHPMailer est la seule tolérée |
+   445→| Utiliser `$_GET`/`$_POST` sans validation | Toujours valider et échapper |
+   446→| Exposer `alert_check.php`, `remind.php` via le web | Scripts CLI uniquement |
+   447→| Écraser `config.php` lors d'une mise à jour | Fichier protégé |
+   448→| Dupliquer le CSS commun | Utiliser `require_once __DIR__ . '/style.php'` |
+   449→| Utiliser du JavaScript (y compris inline) | L'application est 100% sans JS depuis la v3.0.0. Toutes les interactions sont gérées côté serveur. |
+   450→| Créer un fichier `style.css` | Le CSS passe par `style.php` uniquement |
+   451→
+   452→---
+   453→
+   454→## Tâches courantes
+   455→
+   456→### Ajouter un nouveau formulaire
+   457→
+   458→1. En back office (`admin_forms.php`), créer le formulaire (slug, libellé, description)
+   459→2. Ajouter les champs — le nom technique est auto-généré à partir du libellé via `generate_field_name()`
+   460→3. Configurer les étapes de validation et les destinataires
+   461→4. Le formulaire est automatiquement disponible sur la page d'accueil des agents
+   462→5. **Aucune modification de code nécessaire** — tout est dynamique via `form_fields`
+   463→
+   464→### Ajouter une section à un formulaire existant
+   465→
+   466→1. En back office, ajouter les champs dans le formulaire
+   467→2. Utiliser un `card_group` existant ou nouveau pour le regroupement visuel
+   468→3. Les données sont stockées en JSON — aucune migration SQLite nécessaire
+   469→4. Les mails et le dashboard affichent automatiquement les nouveaux champs
+   470→
+   471→### Ajouter un type de champ
+   472→
+   473→1. Ajouter le type dans le sélecteur de `admin_forms.php`
+   474→2. Ajouter le rendu dans la fonction `render_field()` de `form.php`
+   475→3. Le stockage en JSON est agnostique du type — pas de migration nécessaire
+   476→
+   477→### Modifier le workflow
+   478→
+   479→1. Le workflow est entièrement piloté par les tables `steps` et `step_recipients`
+   480→2. Même `ordre` = étapes parallèles, `ordre` différent = séquentiel
+   481→3. Les modifications n'affectent que les nouvelles soumissions
+   482→
+   483→---
+   484→
+   485→## Scripts CLI
+   486→
+   487→| Script | Fréquence | Rôle | Sortie |
+   488→|---|---|---|---|
+   489→| `remind.php` | Toutes les 12h | Relance les validateurs qui n'ont pas répondu | Nombre de relances envoyées/bloquées |
+   490→| `alert_check.php` | Toutes les 6h | Vérifie les deadlines et envoie les alertes | Nombre d'alertes envoyées |
+   491→
+   492→Les deux scripts :
+   493→- Utilisent `set_setting()` pour tracer leur dernière exécution
+   494→- Tracent leurs actions dans l'audit log via `app_log()`
+   495→- Sont surveillés par `monitoring.php` (alerte si pas exécuté depuis > 24h)
+   496→
+   497→### Planification Windows Task Scheduler
+   498→
+   499→```
+   500→php C:\inetpub\wwwroot\workflow\remind.php
+   501→php C:\inetpub\wwwroot\workflow\alert_check.php
+   502→```
+   503→
+   504→---
+   505→
+   506→## Nouvelles pages v3.0.0
+   507→
+   508→### install.php — Assistant d'installation
+   509→
+   510→Page standalone accessible uniquement si `config.php` n'existe pas. Guide l'administrateur en 3 étapes :
+   511→1. Vérification des prérequis (PHP 8+, SQLite3, intl, PHPMailer, permissions)
+   512→2. Configuration (BASE_URL, SMTP, ADMIN_EMAIL) avec test d'envoi d'email
+   513→3. Confirmation et génération de config.php
+   514→
+   515→**Important** : Cette page NE dépend PAS de `helpers.php` ni `config.php`. Elle est entièrement autonome avec des fonctions utilitaires préfixées `inst_`.
+   516→
+   517→### backup.php — Sauvegarde et restauration
+   518→
+   519→Page d'administration (super admin uniquement) avec :
+   520→- Téléchargement de la base SQLite (nom : `workflow_backup_YYYYMMDD_HHMMSS.db`)
+   521→- Restauration depuis un fichier uploadé (validation du header SQLite, sauvegarde préalable automatique, rollback en cas de corruption)
+   522→- Purge des données anciennes (soumissions clôturées de plus de N mois, processus en 2 étapes)
+   523→- Statistiques de la base (taille, lignes par table, pages SQLite)
+   524→
+   525→### confirm_action.php — Confirmation serveur
+   526→
+   527→Remplace les `confirm()` JavaScript. Reçoit l'action via GET, affiche un récapitulatif et un formulaire de confirmation. Actions supportées : `cancel_submission`, `regenerate_token`, `delete_rule`, `delete_alert_log`, `remove_admin`, `remove_owner`.
+   528→
+   529→### form_tracking.php — Tableau de suivi propriétaire
+   530→
+   531→Page accessible uniquement aux propriétaires d'un formulaire (ou administrateurs). Affiche :
+   532→- Toutes les soumissions du formulaire avec colonnes clés (nom, type, date, etc.)
+   533→- Barre d'avancement du workflow par soumission
+   534→- Filtres par statut (en cours, validé, refusé)
+   535→- Pagination (25 par page)
+   536→- Export CSV complet
+   537→- Statistiques rapides (total, en cours, validé, refusé)
+   538→- Liste des propriétaires du formulaire
+   539→
+   540→Accès via `form_tracking.php?form_id=N`. Vérifie `is_form_owner()` ou `is_admin_user()`.
+   541→
+   542→---
+   543→
+   544→## Points d'attention
+   545→
+   546→| Point | Détail |
+   547→|---|---|
+   548→| **SQLite et concurrence** | `PRAGMA journal_mode=WAL` activé — lectures simultanées OK. Écritures séquentielles. Suffisant pour < 100 soumissions/jour. |
+   549→| **Tokens** | `random_bytes(32)` — cryptographiquement sûrs, non rejouables, avec expiration configurable. |
+   550→| **Auth AD** | `AUTH_USER` peut être vide si IIS n'est pas configuré en Windows Auth → page 401 stylisée au lieu d'une erreur fatale. |
+   551→| **SMTP sans TLS** | Configuré pour un SMTP intranet sans authentification. Si TLS/auth requis, configurer via `admin_settings.php`. |
+   552→| **Config protégée** | `config.php` n'est jamais écrasé par `update.ps1` — le déploiement préserve la configuration locale. |
+   553→| **fputcsv()** | PHP 8.4+ exige un 5e paramètre. `export_csv()` utilise `fputcsv($f, $row, ';', '"', '\\')`. |
+   554→| **PHP built-in server** | Instable avec cette application (crash après 1-2 requêtes). Utiliser le mode test + subprocess pour les tests automatisés. |
+   555→| **Zéro JS** | L'application est 100% sans JavaScript depuis la v3.0.0. Toutes les interactions sont côté serveur (confirmations via confirm_action.php, onglets via GET, toggles via liens). |
+   556→
