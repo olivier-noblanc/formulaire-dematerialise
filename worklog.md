@@ -239,3 +239,24 @@ Stage Summary:
 - admin_settings.php now has comprehensive email security section with test tool
 - No regressions (51/51 unit tests pass)
 - Version bumped to 4.4.0
+---
+Task ID: 2
+Agent: main
+Task: Auto-generate slugs, hide slug from UI, fix version in footer/docs
+
+Work Log:
+- Added generate_slug() function in helpers.php: auto-generates unique slug from label using generate_field_name(), adds numeric suffix if slug already exists, supports exclude_form_id for updates
+- Removed slug input field from admin_forms.php "create form" form — only label and description visible
+- Removed slug input field from admin_forms.php "update form" form — slug shown as read-only hint text
+- Updated add_form handler: slug auto-generated from label instead of POST input
+- Updated update_form handler: slug auto-regenerated from label with exclude_form_id
+- Updated duplicate_form handler: slug auto-generated from "Label (copie)" instead of slug + "-copie"
+- Updated docs.php: removed slug references from user-facing documentation, replaced with "identifiant technique généré automatiquement"
+- Fixed docs.php version fallback from '4.3.1' to '4.4.0'
+- All 51 unit tests pass
+- generate_slug() tested: basic generation, accent handling, uniqueness, exclude_form_id
+
+Stage Summary:
+- Slugs are now fully hidden from users — auto-generated from label
+- Version display fixed in docs.php
+- No regressions (51/51 tests pass)
