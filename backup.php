@@ -26,7 +26,7 @@ $db_tables = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens',
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf()) {
-        die('Token CSRF invalide. Veuillez réessayer.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
 
     $action = $_POST['action'] ?? '';
@@ -422,7 +422,11 @@ $purge_preview = $purge_preview ?? null;
     <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
     <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
     <span>
-        <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a>
+        <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
+        <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a>
+        <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔐 RGPD</a>
+        <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🏥 Santé</a>
+        <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
         <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
     </span>
 </div>

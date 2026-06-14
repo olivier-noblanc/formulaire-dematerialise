@@ -106,7 +106,7 @@ foreach ($rules as $rule) {
             if ($sent) {
                 // Logger l'alerte
                 $message = "Alerte J-{$rule['days_before']} envoyee a {$recipient} pour {$nom_agent}";
-                $pdo->prepare("INSERT INTO alert_log (rule_id, submission_id, sent_at, message) VALUES (?, ?, datetime('now'), ?)")
+                $pdo->prepare("INSERT INTO alert_log (id, rule_id, submission_id, sent_at, message) VALUES (generate_uuid(), ?, ?, datetime('now'), ?)")
                     ->execute([$rule['id'], $sub['id'], $message]);
                 $nb_alerts++;
                 echo "[{$now->format('Y-m-d H:i:s')}] Alerte J-{$rule['days_before']} -> {$recipient} | {$nom_agent} | Deadline: {$deadline_formatted}\n";
@@ -156,7 +156,7 @@ function parse_date(string $date_str): ?DateTimeImmutable {
 /**
  * Verifie si une soumission a des etapes incompletes
  */
-function has_incomplete_steps(PDO $pdo, int $submission_id): bool {
+function has_incomplete_steps(PDO $pdo, string $submission_id): bool {
     // Compter les tokens non traites
     $stmt = $pdo->prepare("
         SELECT COUNT(*) FROM tokens
@@ -170,7 +170,7 @@ function has_incomplete_steps(PDO $pdo, int $submission_id): bool {
         SELECT s.form_id FROM submissions s WHERE s.id = ?
     ");
     $sub_stmt->execute([$submission_id]);
-    $form_id = (int)$sub_stmt->fetchColumn();
+    $form_id = $sub_stmt->fetchColumn();
 
     $total_steps = $pdo->prepare("SELECT COUNT(DISTINCT ordre) FROM steps WHERE form_id = ? AND actif = 1");
     $total_steps->execute([$form_id]);

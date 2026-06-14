@@ -43,6 +43,13 @@ $actions_config = [
         'param_label' => 'admin',
         'danger'      => true,
     ],
+    'remove_owner' => [
+        'label'       => 'Retirer un propriétaire de formulaire',
+        'description' => 'Voulez-vous vraiment retirer ce propriétaire',
+        'params'      => ['id', 'form_id'],
+        'param_label' => 'propriétaire',
+        'danger'      => true,
+    ],
 ];
 
 // Vérifier que l'action est supportée
@@ -67,11 +74,11 @@ $detail_text = '';
 
 switch ($action) {
     case 'cancel_submission':
-        $sub_id = (int)$_GET['submission_id'];
-        $detail_text = '#' . $sub_id . ' ?';
+        $sub_id = trim($_GET['submission_id']);
+        $detail_text = '#' . h($sub_id) . ' ?';
         break;
     case 'regenerate_token':
-        $token_id = (int)$_GET['token_id'];
+        $token_id = trim($_GET['token_id']);
         // Récupérer l'email associé au token
         $pdo = get_pdo();
         $tok_stmt = $pdo->prepare("SELECT t.email, st.label as step_label FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.id = ?");
@@ -80,25 +87,33 @@ switch ($action) {
         if ($tok_info) {
             $detail_text = h($tok_info['email']) . ' (étape : ' . h($tok_info['step_label']) . ') ?';
         } else {
-            $detail_text = 'token #' . $token_id . ' ?';
+            $detail_text = 'token #' . h($token_id) . ' ?';
         }
         break;
     case 'delete_rule':
-        $rule_id = (int)$_GET['rule_id'];
+        $rule_id = trim($_GET['rule_id']);
         // Récupérer le nom de la règle
         $pdo = get_pdo();
         $rule_stmt = $pdo->prepare("SELECT label FROM alert_rules WHERE id = ?");
         $rule_stmt->execute([$rule_id]);
         $rule_label = $rule_stmt->fetchColumn();
-        $detail_text = $rule_label ? '"' . h($rule_label) . '" ( #' . $rule_id . ') ?' : '#' . $rule_id . ' ?';
+        $detail_text = $rule_label ? '"' . h($rule_label) . '" ( #' . h($rule_id) . ') ?' : '#' . h($rule_id) . ' ?';
         break;
     case 'delete_alert_log':
-        $log_id = (int)$_GET['log_id'];
-        $detail_text = '#' . $log_id . ' ?';
+        $log_id = trim($_GET['log_id']);
+        $detail_text = '#' . h($log_id) . ' ?';
         break;
     case 'remove_admin':
         $email = $_GET['email'];
         $detail_text = h($email) . ' ?';
+        break;
+    case 'remove_owner':
+        $owner_id = trim($_GET['id']);
+        $pdo = get_pdo();
+        $ow_stmt = $pdo->prepare("SELECT email FROM form_owners WHERE id = ?");
+        $ow_stmt->execute([$owner_id]);
+        $ow_email = $ow_stmt->fetchColumn();
+        $detail_text = $ow_email ? h($ow_email) . ' ?' : '#' . h($owner_id) . ' ?';
         break;
 }
 
@@ -112,7 +127,7 @@ $post_url = $from ?: 'index.php';
 if ($from && strpos($from, '?') === false) {
     // Ajouter les paramètres de contexte si nécessaire
     if ($action === 'cancel_submission' && isset($_GET['submission_id'])) {
-        $post_url = 'submission_view.php?id=' . (int)$_GET['submission_id'];
+        $post_url = 'submission_view.php?id=' . urlencode($_GET['submission_id']);
         if (empty($from)) {
             $post_url = 'dashboard.php';
         }
@@ -121,6 +136,11 @@ if ($from && strpos($from, '?') === false) {
 // Si from contient déjà des paramètres (comme submission_view.php?id=5), on l'utilise tel quel
 if (!empty($from)) {
     $post_url = $from;
+}
+// Cas spécifique remove_owner : rediriger vers admin_forms.php
+if ($action === 'remove_owner' && isset($_GET['form_id'])) {
+    $post_url = 'admin_forms.php?form_id=' . urlencode($_GET['form_id']) . '#owners';
+    $cancel_url = $post_url;
 }
 ?>
 <!DOCTYPE html>

@@ -181,6 +181,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* ── Visually hidden (screen readers only) ────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
+/* ── Error pages (403, 404, 400, 401…) ─────────────────────── */
+.error-page { display: flex; min-height: calc(100vh - 120px); align-items: center; justify-content: center; padding: 2rem 1rem; }
+.error-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 3rem 2.5rem; max-width: 560px; width: 100%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,.06); }
+.error-card .error-code { font-size: 5rem; font-weight: 900; line-height: 1; margin-bottom: .25rem; letter-spacing: -2px; }
+.error-card .error-code.code-403 { color: #c0392b; }
+.error-card .error-code.code-404 { color: #003189; }
+.error-card .error-code.code-400 { color: #b45309; }
+.error-card .error-code.code-401 { color: #003189; }
+.error-card .error-code.code-500 { color: #c0392b; }
+.error-card .error-illustration { margin-bottom: 1.25rem; }
+.error-card .error-illustration svg { width: 100px; height: 100px; }
+.error-card h1 { font-size: 1.35rem; color: #1e1e1e; margin-bottom: .75rem; border: none; padding: 0; }
+.error-card .error-message { color: #555; font-size: .95rem; line-height: 1.6; margin-bottom: 1.25rem; }
+.error-card .error-hint { font-size: .85rem; color: #666; background: #f5f5fe; border: 1px solid #e0e0f0; border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: left; line-height: 1.55; }
+.error-card .error-hint strong { color: #333; display: block; margin-bottom: .35rem; }
+.error-card .error-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+.error-card .error-stamp { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; font-size: .75rem; color: #aaa; }
+
 /* ── Print ──────────────────────────────────────────────────── */
 @media print {
   /* Hide non-essential elements */

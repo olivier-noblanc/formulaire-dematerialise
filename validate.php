@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérification CSRF
     if (!verify_csrf()) {
         if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide', 'http_code' => 403]); }
-        die('Token CSRF invalide. Veuillez réessayer.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
 
     $token = trim($_POST['token'] ?? '');
@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         GROUP BY st.id
         ORDER BY st.ordre, st.id
     ");
-    $wf_steps->execute([$data['submission_id'] ?? 0, $data['form_id'] ?? 0]);
+    $wf_steps->execute([$data['submission_id'] ?? '', $data['form_id'] ?? '']);
     $all_wf_steps = $wf_steps->fetchAll(PDO::FETCH_ASSOC);
   ?>
   <a href="my_validations.php" class="back-link">← Mes validations</a>
@@ -228,13 +228,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
   <!-- Pièces jointes -->
   <?php
-    $attachments = get_attachments((int)($data['submission_id'] ?? 0));
+    $attachments = get_attachments($data['submission_id'] ?? '');
     if (!empty($attachments)):
   ?>
   <div class="validation-details">
     <h2>📎 Pièces jointes (<?= count($attachments) ?>)</h2>
     <?php foreach ($attachments as $att): ?>
-      <p><?= get_file_icon($att['mime_type']) ?> <a href="download.php?id=<?= (int)$att['id'] ?>" style="color:#003189;text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#888;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
+      <p><?= get_file_icon($att['mime_type']) ?> <a href="download.php?id=<?= urlencode($att['id']) ?>" style="color:#003189;text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#888;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>

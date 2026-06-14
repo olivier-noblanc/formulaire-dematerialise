@@ -1,5 +1,148 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [4.3.0] — 2026-06-14
+
+### Sécurité — Majeure
+
+- **Zéro ID entier dans toute l'application** : Toutes les clés primaires et étrangères de la base de données sont désormais des UUID (TEXT) au lieu d'entiers auto-incrémentés. Plus aucune table n'utilise `INTEGER PRIMARY KEY AUTOINCREMENT`. Les 15 tables d'entités utilisent `id TEXT PRIMARY KEY NOT NULL` avec des UUID v4 générés par `generate_uuid()`. Les colonnes `uuid` de la table `forms` ont été supprimées (l'`id` EST l'UUID). Cela rend impossible la devinette ou l'énumération d'identifiants dans les URLs.
+
+- **URLs entièrement en UUID** : Tous les paramètres d'URL (`?id=`, `?form_id=`, `?submission_id=`, `?token_id=`, `?step_id=`, `?rule_id=`, etc.) utilisent désormais des UUID non devinables au lieu d'entiers séquentiels. Plus d'attaque IDOR possible par énumération.
+
+### Architecture
+
+- **Suppression complète de `lastInsertId()`** : Les 29 appels à `$pdo->lastInsertId()` ont été remplacés par des UUIDs pré-générés avant chaque INSERT. Chaque INSERT inclut désormais explicitement la colonne `id` avec la valeur UUID.
+
+- **Migration v9** : Migration complète des bases existantes — recréation de toutes les tables avec clés TEXT, mapping des anciens IDs entiers vers les nouveaux UUIDs, préservation de toutes les données et relations.
+
+- **Signatures de fonctions** : Tous les paramètres d'ID sont passés de `int` à `string` (`int $form_id` → `string $form_id`). Suppression de tous les casts `(int)` sur les variables d'ID dans tout le codebase.
+
+### Pages d'erreur visuelles
+
+- **`render_error_page()`** : Nouvelle fonction réutilisable pour afficher des pages d'erreur HTML complètes et soignées (403, 404, 400, 401, 500). Chaque code a son icône SVG, son code HTTP en gros, un message descriptif, un encart « Que faire ? » et un bouton de retour. Remplace tous les appels `die()` avec texte brut (20+ remplacements à travers 13 fichiers). La page 401 (authentification) a été mise à jour pour matcher le même design.
+
+### Base de données
+
+- 15 tables migrées de `INTEGER PRIMARY KEY AUTOINCREMENT` vers `id TEXT PRIMARY KEY NOT NULL`
+- Toutes les colonnes FK migrées de `INTEGER` vers `TEXT`
+- Colonne `uuid` supprimée de la table `forms` (l'`id` est l'UUID)
+- Migration v9 : reconstruction complète avec mapping old_int → new_uuid
+
+### Corrections
+
+- **Colonne `hint` manquante dans `form_fields`** : Le `CREATE TABLE` initial de `form_fields` ne contenait pas la colonne `hint`, qui était ajoutée via `ALTER TABLE` en legacy. Cela causait un crash lors de l'initialisation d'une base neuve. La colonne est désormais dans la définition de la table.
+- **`generate_field_name()` crashait sans `mbstring`/`intl`** : La fonction appelait `mb_strtolower()` et `transliterator_transliterate()` sans vérifier la disponibilité des extensions. Ajout de fallbacks via `strtolower()` et remplacement manuel des caractères accentués.
+- **`test_all.php` inutilisable avec les UUIDs** : Les requêtes SQL du test utilisaient les UUIDs sans quotes (`WHERE form_id=$onboarding_id`), `generate_uuid()` était appelé dans le SQL comme fonction SQLite, et les tests de pages utilisaient des IDs entiers (`'1'`). Réécriture complète du fichier de test avec prepared statements et UUIDs corrects.
+
+## [4.2.0] — 2026-06-14
+
+### Sécurité
+
+- **UUID pour les formulaires** : Les formulaires sont désormais identifiés par un UUID v4 (RFC 4122) dans les URLs au lieu d'un identifiant entier prédictible. Les URLs de suivi propriétaire passent de `form_tracking.php?form_id=3` à `form_tracking.php?f=a1b2c3d4-e5f6-7890-abcd-ef1234567890`. Colonnes `uuid` ajoutée à la table `forms` (migration v7). Fonction `generate_uuid()` et `get_form_by_uuid()` ajoutées.
+
+- **Validation HTML5 native** : Les champs de formulaire utilisent désormais les types HTML5 appropriés (email, tel, number, time, url) détectés automatiquement à partir du nom du champ. Ajout de `pattern`, `maxlength`, `min/max`, `step` pour une validation côté navigateur sans JavaScript. Retrait de l'attribut `novalidate` qui désactivait la validation HTML5.
+
+### Architecture
+
+- **Lazy cron (pas de Task Scheduler)** : Les tâches planifiées (relances et alertes) sont désormais exécutées par le premier utilisateur qui se connecte, au lieu d'un cron externe. `run_lazy_cron()` est appelé automatiquement au premier accès PDO. La table `lazy_cron` (migration v8) trace la dernière exécution de chaque tâche. Le remind s'exécute toutes les heures, l'alert_check une fois par jour.
+
+- **Cloisonnement propriétaire** : Les tableaux de suivi (`form_tracking.php`) sont strictement isolés — seuls les owners du formulaire et les administrateurs peuvent y accéder. Les autres utilisateurs n'ont aucun moyen de voir les données ou les stats d'un formulaire dont ils ne sont pas propriétaires.
+
+### Interface
+
+- **Pages d'erreur visuelles** : Toutes les pages d'erreur (403 Accès refusé, 404 Introuvable, 400 Requête invalide, 401 Authentification requise) sont désormais des pages HTML complètes et soignées au lieu de texte brut. Nouvelle fonction `render_error_page()` dans helpers.php, avec icône SVG, code HTTP en gros, message descriptif, encart « Que faire ? » et bouton de retour. Style cohérent avec le design DREETS (bandeau, Marianne, palette #003189/#c0392b/#b45309). CSS dédié dans `style.php`. Les 13 appels `die()` avec messages CSRF affichent également une page 403 soignée au lieu d'un texte brut.
+
+### Base de données
+
+- Colonne `uuid TEXT UNIQUE` sur `forms` : identifiant non devinable pour les URLs publiques (migration v7).
+- Table `lazy_cron` : suivi de la dernière exécution des tâches planifiées (migration v8).
+
+## [4.1.0] — 2026-06-14
+
+### Fonctionnalités majeures
+
+- **Propriétaires de formulaire** : Nouveau concept de propriétaires (owners) par formulaire. Les owners peuvent accéder à un tableau de suivi dédié sans être administrateurs. Chaque formulaire peut avoir un ou plusieurs propriétaires, gérés depuis le form builder admin. Nouvelle table `form_owners` (migration version 6).
+
+- **Tableau de suivi propriétaire** : Nouvelle page `form_tracking.php` réservée aux propriétaires d'un formulaire. Affiche toutes les soumissions du formulaire avec colonnes clés, barre d'avancement, filtres par statut, pagination, export CSV. Accessible aussi aux administrateurs.
+
+- **Formulaires métier recalibrés** : Remplacement des formulaires "Demande de congé" et "Signalement" (déplacés vers d'autres applications) par les trois formulaires métier réels de la DREETS :
+  - **Demande de sortie hors plages fixes** : autorisation d'arrivée tardive, départ anticipé, pause prolongée (circuit Chef de service → DRH).
+  - **Remboursement d'avance de frais** : déplacement, hébergement, repas, fournitures (circuit Chef de service → Comptabilité → Agent financier).
+  - **Demande de matériel suite prescription médicale** : aménagement de poste, équipement ergonomique (circuit Médecin de prévention → Chef de service → DSI + Logistique parallèle → DRH).
+
+### Base de données
+
+- Table `form_owners` : relation formulaire ↔ propriétaires avec email et date d'ajout.
+- Migration version 6 : création automatique de la table `form_owners`.
+- Nouveaux formulaires seedés : `sortie_hors_plages`, `remboursement_avance_frais`, `materiel_prescription` (avec owners pré-configurés).
+
+### Fonctions
+
+- `is_form_owner(string $form_id, ?string $email)` : vérifie si un utilisateur est propriétaire d'un formulaire.
+- `get_form_owners(string $form_id)` : retourne la liste des propriétaires d'un formulaire.
+- `get_owned_forms(?string $email)` : retourne les formulaires dont un utilisateur est propriétaire.
+
+### Pages
+
+- `form_tracking.php` : tableau de suivi propriétaire avec filtres, pagination, export CSV.
+- `admin_forms.php` : nouvelle section "Propriétaires du formulaire" avec ajout/retrait d'owners.
+- `confirm_action.php` : support de l'action `remove_owner`.
+- `index.php` : liens dynamiques vers les tableaux de suivi des formulaires possédés.
+
+## [4.0.0] — 2026-06-14
+
+### Fonctionnalités majeures
+
+- **Pièces jointes en BLOB SQLite** : Les fichiers uploadés sont désormais stockés directement dans la base de données SQLite sous forme de BLOB, éliminant tout besoin de droits filesystem et garantissant le caractère mono-fichier de l'application. La compatibilité descendante avec les anciens fichiers sur disque est maintenue dans `download.php`.
+
+- **Conformité RGPD complète** : Nouvelle page `rgpd.php` dédiée à la conformité RGPD, incluant : mentions légales configurables, durée de conservation paramétrable, export des données d'un agent (droit d'accès art. 15), suppression/anonymisation des données (droit à l'effacement art. 17), purge automatique des données anciennes, statistiques de volume de données. Consentement RGPD obligatoire à la soumission des formulaires.
+
+- **Statistiques par période** : Nouvelle page `stats.php` avec tableaux de bord visuels : répartition des statuts (donut chart CSS), évolution par semaine/mois/année (barres empilées CSS), performance par formulaire, performance par validateur, volume de données. Aucun JavaScript requis — tous les graphiques sont en CSS pur.
+
+- **Health check** : Nouvelle page `health.php` accessible sans authentification, vérifiant : connectivité SQLite, version PHP, répertoire accessible en écriture, schéma de base initialisé, configuration SMTP. Retourne HTTP 200/503 et JSON pour les outils de monitoring (`?format=json`).
+
+- **Webhooks pour intégration SI** : Configuration d'URL webhook dans les paramètres admin. Notifications automatiques en POST JSON pour les événements `workflow_complete`, `submission_cancelled`, `token_validated`. Format structuré avec événement, timestamp et données. Bouton de test disponible.
+
+- **Historique des relances** : Section dédiée dans le détail de soumission affichant l'historique complet des relances avec dates, validateurs concernés et compteur. Bouton "Rappeler tous les validateurs en attente" pour les administrateurs.
+
+- **Versionnage du schéma de base** : Table `schema_version` pour suivre les migrations applicatives. Chaque migration est versionnée et idempotente, permettant les mises à jour automatiques et sans risque.
+
+### Fonctionnalités
+
+- **Recherche plein texte étendue** : La recherche du dashboard couvre désormais les noms de formulaires en plus des agents et des données JSON.
+
+- **Formulaires pré-configurés supplémentaires** : Trois nouveaux formulaires sont pré-chargés à l'installation : "Demande de congé" (circuit Chef de service → DRH), "Demande de matériel" (Chef de service → DSI), "Signalement interne" (RH + Encadrant en parallèle → Direction).
+
+- **Rate limiting** : Protection contre les abus avec limitation configurable par IP et par action. Appliqué notamment sur les exports et suppressions RGPD.
+
+- **Fonctions de sécurité** : `sanitize_input()` pour le nettoyage des entrées, `validate_email()` pour la validation d'emails, `rate_limit_check()` pour la limitation de débit.
+
+- **Documentation refondue** : Documentation complète et accessible aux non-techniciens avec guide de démarrage rapide (3 étapes), guides détaillés par rôle (agent, validateur, admin), FAQ étendue (18 questions), matrice des permissions, fiche fonctionnalités, et section RGPD.
+
+- **Navigation unifiée** : Tous les bandeaux de navigation incluent désormais des liens vers Statistiques, RGPD et Santé système.
+
+### Base de données
+
+- Table `schema_version` : suivi des versions de schéma de base de données.
+- Colonne `file_data BLOB` sur `attachments` : stockage des fichiers en base.
+- Colonne `rgpd_consent INTEGER` sur `submissions` : traçabilité du consentement RGPD.
+- Table `rate_limits` : suivi des tentatives pour le rate limiting.
+- Paramètres `legal_mentions`, `retention_months`, `webhook_url`, `webhook_events` dans la table `settings`.
+
+### Sécurité
+
+- Stockage BLOB des fichiers : plus d'accès filesystem requis, élimination des risques de path traversal.
+- Rate limiting sur les actions sensibles (export RGPD, suppression RGPD).
+- Fonctions de sanitisation des entrées utilisateur.
+- Consentement RGPD obligatoire avant soumission de formulaire.
+- Purge automatique des données anciennes configurable.
+
+### Technique
+
+- `APP_VERSION` passé à `4.0.0`.
+- Nouvelles fonctions dans `helpers.php` : `rgpd_export_user_data()`, `rgpd_delete_user_data()`, `rgpd_auto_purge()`, `rate_limit_check()`, `sanitize_input()`, `validate_email()`, `search_submissions()`, `get_stats_by_period()`, `get_global_stats()`, `send_webhook()`.
+- Webhook calls ajoutés dans `advance_workflow()`, `validate_token()`, `cancel_submission()`.
+- Nouveaux fichiers : `health.php`, `rgpd.php`, `stats.php`.
+
 ## [3.1.0] — 2026-06-14
 
 ### Fonctionnalités majeures

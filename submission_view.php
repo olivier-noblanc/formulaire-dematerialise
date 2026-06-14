@@ -3,9 +3,9 @@
 require_once __DIR__ . '/helpers.php';
 
 $pdo = get_pdo();
-$sub_id = (int)($_GET['id'] ?? 0);
+$sub_id = trim($_GET['id'] ?? '');
 
-if ($sub_id <= 0) {
+if (empty($sub_id)) {
     header('Location: dashboard.php');
     exit;
 }
@@ -21,7 +21,9 @@ $stmt->execute([$sub_id]);
 $sub = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$sub) {
-    die('Soumission introuvable.');
+    render_error_page(404, 'Soumission introuvable',
+        'La soumission demandée n\'existe pas ou a été supprimée.',
+        'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.');
 }
 
 $data = json_decode($sub['data'], true) ?: [];
@@ -50,7 +52,7 @@ $steps_stmt = $pdo->prepare("
     GROUP BY st.id
     ORDER BY st.ordre ASC, st.id ASC
 ");
-$steps_stmt->execute([(int)$sub['form_id']]);
+$steps_stmt->execute([$sub['form_id']]);
 $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupérer les tokens pour cette soumission
@@ -112,22 +114,36 @@ if (!empty($deadline_val)) {
 // Traitement des actions POST
 $action_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf()) die('Token CSRF invalide.');
+    if (!verify_csrf()) {
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
+    }
 
     $action = $_POST['action'] ?? '';
 
     if ($action === 'regenerate_token' && $is_admin) {
-        $token_id = (int)($_POST['token_id'] ?? 0);
+        $token_id = trim($_POST['token_id'] ?? '');
         $result = regenerate_token($token_id);
         $action_msg = $result['message'];
     }
     elseif ($action === 'remind_one' && $is_admin) {
-        $token_id = (int)($_POST['token_id'] ?? 0);
+        $token_id = trim($_POST['token_id'] ?? '');
         $result = remind_one($token_id);
         $action_msg = $result['message'];
     }
+    elseif ($action === 'remind_all' && $is_admin) {
+        $remind_results = [];
+        foreach ($all_tokens as $tok) {
+            if (empty($tok['done_at'])) {
+                $r = remind_one($tok['id']);
+                $remind_results[] = $r['message'];
+            }
+        }
+        $action_msg = count($remind_results) > 0 
+            ? count($remind_results) . ' rappel(s) envoyé(s)' 
+            : 'Aucun validateur en attente.';
+    }
     elseif ($action === 'delegate_token') {
-        $token_id = (int)($_POST['token_id'] ?? 0);
+        $token_id = trim($_POST['token_id'] ?? '');
         $delegate_to = trim($_POST['delegate_to'] ?? '');
         $delegate_reason = trim($_POST['delegate_reason'] ?? '');
         // Seul le validateur assigne ou un admin peut deleguer
@@ -144,14 +160,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     elseif ($action === 'cancel_submission') {
         $confirmed = !empty($_POST['confirmed']);
         if (!$confirmed) {
-            header('Location: confirm_action.php?action=cancel_submission&submission_id=' . $sub_id . '&from=submission_view.php?id=' . $sub_id);
+            header('Location: confirm_action.php?action=cancel_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('submission_view.php?id=' . $sub_id));
             exit;
         }
         if ($is_admin || $sub['submitted_by'] === $user) {
             $result = cancel_submission($sub_id, $user);
             $action_msg = $result['message'];
             // Rafraîchir les données
-            header('Location: submission_view.php?id=' . $sub_id);
+            header('Location: submission_view.php?id=' . urlencode($sub_id));
             exit;
         }
     }
@@ -370,13 +386,13 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
           <form method="POST" style="display:inline;">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="remind_one">
-            <input type="hidden" name="token_id" value="<?= (int)$tok['id'] ?>">
+            <input type="hidden" name="token_id" value="<?= h($tok['id']) ?>">
             <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📧 Rappeler <?= h($tok['email']) ?></button>
           </form>
           <form method="POST" style="display:inline;">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="regenerate_token">
-            <input type="hidden" name="token_id" value="<?= (int)$tok['id'] ?>">
+            <input type="hidden" name="token_id" value="<?= h($tok['id']) ?>">
             <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Régénérer <?= h($tok['email']) ?></button>
           </form>
         <?php endif; ?>
@@ -399,7 +415,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
         <input type="hidden" name="action" value="delegate_token">
         <select name="token_id" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;">
           <?php foreach ($my_pending_tokens as $mpt): ?>
-            <option value="<?= (int)$mpt['id'] ?>">Étape <?= (int)$mpt['ordre'] ?> — <?= h($mpt['email']) ?></option>
+            <option value="<?= h($mpt['id']) ?>">Étape <?= (int)$mpt['ordre'] ?> — <?= h($mpt['email']) ?></option>
           <?php endforeach; ?>
         </select>
         <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
@@ -419,7 +435,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
         // Regrouper les données par card_group si on a les infos
         $field_info = [];
         $fields_stmt2 = $pdo->prepare("SELECT field_name, label, card_group, field_type FROM form_fields WHERE form_id = ? ORDER BY ordre");
-        $fields_stmt2->execute([(int)$sub['form_id']]);
+        $fields_stmt2->execute([$sub['form_id']]);
         foreach ($fields_stmt2->fetchAll(PDO::FETCH_ASSOC) as $fi) {
             $field_info[$fi['field_name']] = $fi;
         }
@@ -473,6 +489,75 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
   </div>
   <?php endif; ?>
 
+  <!-- Historique des relances -->
+  <?php
+    // Récupérer l'historique des relances
+    $remind_logs = $pdo->prepare("
+        SELECT * FROM audit_log 
+        WHERE (action = 'manual_remind' OR action = 'auto_remind') 
+        AND target LIKE ?
+        ORDER BY created_at DESC
+    ");
+    $remind_logs->execute(['token:%']);
+    $all_remind_logs = $remind_logs->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Filtrer les relances pour cette soumission uniquement
+    $submission_reminds = array_filter($all_remind_logs, function($log) use ($all_tokens) {
+        foreach ($all_tokens as $tok) {
+            if ($log['target'] === 'token:' . $tok['id']) return true;
+        }
+        return false;
+    });
+    
+    // Calculer le total des relances
+    $total_relances = array_sum(array_column($all_tokens, 'relance_count'));
+    $pending_with_relance = array_filter($all_tokens, function($t) { return (int)$t['relance_count'] > 0 && empty($t['done_at']); });
+    
+    if ($total_relances > 0 || !empty($pending_with_relance)):
+  ?>
+  <div class="card">
+    <h2>🔔 Historique des relances (<?= $total_relances ?> au total)</h2>
+    <?php if (!empty($pending_with_relance)): ?>
+      <div style="margin-bottom:1rem;">
+        <?php foreach ($pending_with_relance as $pt): ?>
+          <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid #f0f0f0;">
+            <span style="font-size:1.1rem;">⏳</span>
+            <strong style="font-size:.85rem;"><?= h($pt['email']) ?></strong>
+            <span class="badge badge-warn"><?= (int)$pt['relance_count'] ?> rappel<?= (int)$pt['relance_count'] > 1 ? 's' : '' ?></span>
+            <?php if (!empty($pt['relance_at'])): ?>
+              <span style="font-size:.8rem;color:#888;">Dernier rappel : <?= h(date('d/m/Y à H:i', strtotime($pt['relance_at']))) ?></span>
+            <?php endif; ?>
+            <span style="font-size:.8rem;color:#888;">Expire le : <?= !empty($pt['expires_at']) ? h(date('d/m/Y', strtotime($pt['expires_at']))) : '—' ?></span>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+    
+    <?php if (!empty($submission_reminds)): ?>
+      <h3 style="font-size:.9rem;color:#555;margin-bottom:.75rem;">Détail des relances envoyées</h3>
+      <?php foreach ($submission_reminds as $sr): ?>
+      <div class="val-item">
+        <div class="val-icon">🔔</div>
+        <div class="val-content">
+          <div class="val-header"><?= h($sr['detail']) ?></div>
+          <div class="val-detail"><?= h(date('d/m/Y à H:i', strtotime($sr['created_at']))) ?> — par <?= h($sr['actor']) ?></div>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    <?php endif; ?>
+    
+    <?php if ($is_admin && $status === 'en_cours'): ?>
+    <div class="actions-bar">
+      <form method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="remind_all">
+        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;">📧 Rappeler tous les validateurs en attente</button>
+      </form>
+    </div>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
+
   <!-- Pièces jointes -->
   <?php
     $attachments = get_attachments($sub_id);
@@ -501,7 +586,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
           <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= format_file_size((int)$att['file_size']) ?></td>
           <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= h(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
           <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">
-            <a href="download.php?id=<?= (int)$att['id'] ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;">📥 Télécharger</a>
+            <a href="download.php?id=<?= urlencode($att['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;">📥 Télécharger</a>
           </td>
         </tr>
       <?php endforeach; ?>
@@ -538,7 +623,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
   <?php if ($status === 'en_cours' && ($is_admin || $sub['submitted_by'] === $user)): ?>
   <div class="card">
     <h2>⚙ Actions</h2>
-    <a href="confirm_action.php?action=cancel_submission&submission_id=<?= $sub_id ?>&from=submission_view.php?id=<?= $sub_id ?>" class="btn btn-danger" style="text-decoration:none;">🗑 Annuler la soumission</a>
+    <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($sub_id) ?>&from=<?= urlencode('submission_view.php?id=' . $sub_id) ?>" class="btn btn-danger" style="text-decoration:none;">🗑 Annuler la soumission</a>
   </div>
   <?php endif; ?>
 

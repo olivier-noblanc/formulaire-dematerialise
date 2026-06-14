@@ -9,8 +9,10 @@ $search = trim($_GET['search'] ?? '');
 // Traitement de la delegation
 $delegation_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delegate_token') {
-    if (!verify_csrf()) die('Token CSRF invalide.');
-    $token_id = (int)($_POST['token_id'] ?? 0);
+    if (!verify_csrf()) {
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
+    }
+    $token_id = trim($_POST['token_id'] ?? '');
     $delegate_to = trim($_POST['delegate_to'] ?? '');
     $delegate_reason = trim($_POST['delegate_reason'] ?? '');
     $result = delegate_token($token_id, $delegate_to, $delegate_reason);
@@ -269,7 +271,7 @@ function is_token_expired(array $token): bool {
             <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;padding:.75rem;background:#f8f8fc;border-radius:4px;border:1px solid #ddd;">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delegate_token">
-              <input type="hidden" name="token_id" value="<?= (int)$tk['token_id'] ?>">
+              <input type="hidden" name="token_id" value="<?= h($tk['token_id']) ?>">
               <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
               <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
               <button type="submit" style="font-size:.8rem;padding:.3rem .75rem;background:#6c3483;color:#fff;border:none;border-radius:3px;cursor:pointer;">Confirmer</button>

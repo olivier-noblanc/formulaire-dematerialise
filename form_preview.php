@@ -8,13 +8,17 @@ if (!is_admin_user() && !is_super_admin()) {
 }
 
 $pdo = get_pdo();
-$form_id = (int)($_GET['form_id'] ?? 0);
+$form_id = trim($_GET['form_id'] ?? '');
 
 $form = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
 $form->execute([$form_id]);
 $form = $form->fetch(PDO::FETCH_ASSOC);
 
-if (!$form) { http_response_code(404); die('Formulaire introuvable.'); }
+if (!$form) {
+    render_error_page(404, 'Formulaire introuvable',
+        'Le formulaire demandé n\'existe pas.',
+        'Retournez au tableau de bord pour voir les formulaires disponibles.');
+}
 
 // Charger les champs
 $fields_stmt = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre, id");
@@ -70,7 +74,7 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
 <div class="bandeau">
   <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
   <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-  <span><a href="admin_forms.php?form_id=<?= (int)$form['id'] ?>" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">⚙ Retour à l'édition</a></span>
+  <span><a href="admin_forms.php?form_id=<?= urlencode($form['id']) ?>" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">⚙ Retour à l'édition</a></span>
 </div>
 <div class="container">
   <div class="preview-banner">👁 Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées</div>
@@ -118,17 +122,18 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
                 $req = $cf['required'] ? ' <span class="req">*</span>' : '';
                 $req_attr = ($cf['required'] && $cf['field_type'] !== 'checkbox') ? ' required' : '';
                 $disabled = 'disabled';
+                $hint_html = !empty($cf['hint']) ? '<span class="hint">' . h($cf['hint']) . '</span>' : '';
               ?>
                 <?php if ($cf['field_type'] === 'date'): ?>
-                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><input type="date" <?= $disabled ?>><span class="hint">Format : JJ/MM/AAAA</span></div>
+                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><input type="date" <?= $disabled ?>><span class="hint">Format : JJ/MM/AAAA</span><?= $hint_html ?></div>
                 <?php elseif ($cf['field_type'] === 'select'):
                   $opts = json_decode($cf['options'] ?? '[]', true) ?: [];
                 ?>
-                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><select <?= $disabled ?>><option>— Sélectionner —</option><?php foreach ($opts as $o): ?><option><?= h($o) ?></option><?php endforeach; ?></select></div>
+                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><select <?= $disabled ?>><option>— Sélectionner —</option><?php foreach ($opts as $o): ?><option><?= h($o) ?></option><?php endforeach; ?></select><?= $hint_html ?></div>
                 <?php elseif ($cf['field_type'] === 'textarea'): ?>
-                  <div class="field full"><label><?= h($cf['label']) ?><?= $req ?></label><textarea <?= $disabled ?> rows="3"></textarea></div>
+                  <div class="field full"><label><?= h($cf['label']) ?><?= $req ?></label><textarea <?= $disabled ?> rows="3"></textarea><?= $hint_html ?></div>
                 <?php else: ?>
-                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><input type="text" <?= $disabled ?> placeholder="<?= h($cf['label']) ?>"></div>
+                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><input type="text" <?= $disabled ?> placeholder="<?= h($cf['label']) ?>"><?= $hint_html ?></div>
                 <?php endif; ?>
               <?php endforeach; ?>
             </div>

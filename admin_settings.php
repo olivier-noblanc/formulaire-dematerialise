@@ -16,7 +16,7 @@ $test_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérification CSRF
     if (!verify_csrf()) {
-        die('Token CSRF invalide. Veuillez réessayer.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
 
     $action = $_POST['action'] ?? '';
@@ -52,7 +52,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
         }
     }
-    elseif ($action === 'test_email') {
+    // Webhook settings
+    if (isset($_POST['webhook_url'])) {
+        $user = get_auth_user();
+        set_setting('webhook_url', trim($_POST['webhook_url']), $user);
+        app_log('settings_update', 'settings:webhook_url', 'URL webhook mise à jour');
+    }
+    if (isset($_POST['webhook_events'])) {
+        $user = get_auth_user();
+        set_setting('webhook_events', trim($_POST['webhook_events']), $user);
+        app_log('settings_update', 'settings:webhook_events', 'Événements webhook mis à jour');
+    }
+
+    if ($action === 'test_email') {
         $to = get_auth_user();
         $subject = 'Test email — Workflow DREETS';
         $body = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
@@ -66,6 +78,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $test_msg = 'Échec de l\'envoi de l\'email de test. Vérifiez la configuration SMTP et les logs.';
         }
+    }
+}
+
+// Test webhook
+if (isset($_GET['test_webhook'])) {
+    $webhook_url = get_setting('webhook_url', '');
+    if (empty($webhook_url)) {
+        $error_msg = 'Aucune URL webhook configurée.';
+    } else {
+        send_webhook('test', ['message' => 'Test webhook depuis Workflow DREETS', 'version' => APP_VERSION]);
+        $success_msg = 'Webhook de test envoyé à ' . h($webhook_url) . '.';
+        app_log('webhook_test', 'settings', 'Test webhook envoyé');
     }
 }
 
@@ -99,7 +123,7 @@ $relance_max      = get_setting('relance_max', '3');
 <div class="bandeau">
     <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
     <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
+    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a> <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔒 RGPD</a> <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🏥 Santé</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
 </div>
 <div class="container">
     <h1>⚙ Paramètres</h1>
@@ -196,6 +220,42 @@ $relance_max      = get_setting('relance_max', '3');
             <a href="dashboard.php" class="btn btn-secondary">Retour au tableau de bord</a>
         </div>
     </form>
+
+    <!-- Webhooks & Notifications -->
+    <div class="card">
+      <h2>🔗 Webhooks & Notifications SI</h2>
+      <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+        Configurez un webhook pour notifier votre système d'information des événements du workflow.
+        Les notifications sont envoyées en POST JSON sur l'URL configurée.
+      </p>
+      <form method="POST">
+        <?= csrf_field() ?>
+        <div class="field">
+          <label for="webhook_url">URL du webhook</label>
+          <input type="url" id="webhook_url" name="webhook_url" value="<?= h(get_setting('webhook_url', '')) ?>" placeholder="https://si.dreets.gouv.fr/api/webhook">
+          <span class="hint">URL recevant les notifications en POST JSON. Laissez vide pour désactiver.</span>
+        </div>
+        <div class="field">
+          <label for="webhook_events">Événements à notifier</label>
+          <input type="text" id="webhook_events" name="webhook_events" value="<?= h(get_setting('webhook_events', 'workflow_complete,submission_cancelled')) ?>" placeholder="workflow_complete,submission_cancelled,token_validated">
+          <span class="hint">Séparés par des virgules. Événements disponibles : <code>workflow_complete</code>, <code>submission_cancelled</code>, <code>token_validated</code>, <code>all</code></span>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+          <?php if (!empty(get_setting('webhook_url', ''))): ?>
+            <a href="?test_webhook=1" class="btn btn-test">Tester le webhook</a>
+          <?php endif; ?>
+        </div>
+      </form>
+      <div style="margin-top:1rem;padding:1rem;background:#f5f5fe;border-radius:4px;font-size:.8rem;">
+        <strong>Format de la notification :</strong>
+        <pre style="margin:.5rem 0 0;white-space:pre-wrap;color:#555;">{
+  "event": "workflow_complete",
+  "timestamp": "2025-01-15T10:30:00+01:00",
+  "data": { "submission_id": 42, "form_label": "Onboarding", "submitted_by": "agent@dreets.gouv.fr" }
+}</pre>
+      </div>
+    </div>
 
     <!-- Test email -->
     <div class="card" style="margin-top:1.5rem;">

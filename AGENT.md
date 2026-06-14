@@ -1,7 +1,7 @@
 # AGENT.md — Guide Technique pour Agent IA
 
 > Documentation technique complète du projet **Formulaire Dématérialisé DREETS BFC**.
-> Version 3.0.0 — Dernière mise à jour : 13/06/2026
+> Version 4.1.0 — Dernière mise à jour : 14/06/2026
 
 ---
 
@@ -78,6 +78,7 @@ Tous les fichiers PHP sont dans ce répertoire racine. Il n'y a aucun sous-dossi
 | `install.php` | Assistant d'installation première — vérification prérequis, configuration SMTP/admin, génération config.php. Fichier standalone (ne dépend pas de config.php ni helpers.php). | ~741 lignes |
 | `backup.php` | Sauvegarde et restauration de la base SQLite, purge des anciennes données, statistiques DB. Admin uniquement. | ~647 lignes |
 | `confirm_action.php` | Page de confirmation serveur pour les actions destructrices (remplace les confirm() JavaScript). | ~150 lignes |
+| `form_tracking.php` | Tableau de suivi propriétaire — soumissions d'un formulaire avec colonnes clés, avancement, filtres, export CSV. | ~250 lignes |
 | `alert_check.php` | Script CLI : vérifie les deadlines, envoie les alertes configurées. Planifier toutes les 6h. | ~319 lignes |
 | `remind.php` | Script CLI de relance automatique. Planifier toutes les 12h. | ~55 lignes |
 | `update.ps1` | Script PowerShell de mise à jour automatique (télécharge, sauvegarde, préserve config.php). | ~80 lignes |
@@ -97,11 +98,13 @@ index.php ──→ form.php?f=slug        (agent : remplir un formulaire)
           ├──→ my_submissions.php     (agent : suivi de ses demandes)
           │       └──→ submission_view.php
           ├──→ my_validations.php     (validateur : tokens en attente)
+          ├──→ form_tracking.php?form_id=N  (owner : tableau de suivi propriétaire)
           ├──→ dashboard.php          (admin : supervision)
           │       ├──→ submission_view.php
           │       └──→ admin_alerts.php
           ├──→ admin_forms.php        (admin : form builder)
-          │       └──→ form_preview.php?form_id=N
+          │       ├──→ form_preview.php?form_id=N
+          │       └──→ form_tracking.php?form_id=N
           ├──→ admin_settings.php     (admin : SMTP & relances)
           ├──→ monitoring.php         (admin : observabilité)
           ├──→ admin_access.php       (admin : gestion accès)
@@ -160,7 +163,7 @@ validate.php?t=TOKEN                  (validateur : lien email à usage unique)
 
 ## Schéma SQLite
 
-### 13 tables
+### 14 tables
 
 ```
 forms           (id, slug, label, description, actif, deadline_field, created_at)
@@ -175,6 +178,7 @@ settings        (key, value, updated_at, updated_by)
 audit_log       (id, action, target, detail, actor, ip, created_at)
 alert_rules     (id, form_id, days_before, condition_type, notify_who, label, actif, created_at)
 alert_log       (id, rule_id, submission_id, sent_at, message)
+form_owners     (id, form_id, email, added_at)
 ```
 
 ### Colonnes ajoutées par ALTER TABLE (migration automatique au démarrage)
@@ -268,6 +272,7 @@ $_SERVER['AUTH_USER'] = "DREETS\dupont"
 |---|---|---|
 | `is_super_admin()` | `email === ADMIN_EMAIL` (config.php) | Accès total, suppression admin |
 | `is_admin_user()` | `email IN admins` (table SQLite) | Dashboard, form builder, paramètres, monitoring |
+| `is_form_owner($form_id)` | `email IN form_owners` pour ce formulaire | Tableau de suivi propriétaire (form_tracking.php) |
 
 ### Flux de demande admin
 
@@ -519,7 +524,20 @@ Page d'administration (super admin uniquement) avec :
 
 ### confirm_action.php — Confirmation serveur
 
-Remplace les `confirm()` JavaScript. Reçoit l'action via GET, affiche un récapitulatif et un formulaire de confirmation. Actions supportées : `cancel_submission`, `regenerate_token`, `delete_rule`, `delete_alert_log`, `remove_admin`.
+Remplace les `confirm()` JavaScript. Reçoit l'action via GET, affiche un récapitulatif et un formulaire de confirmation. Actions supportées : `cancel_submission`, `regenerate_token`, `delete_rule`, `delete_alert_log`, `remove_admin`, `remove_owner`.
+
+### form_tracking.php — Tableau de suivi propriétaire
+
+Page accessible uniquement aux propriétaires d'un formulaire (ou administrateurs). Affiche :
+- Toutes les soumissions du formulaire avec colonnes clés (nom, type, date, etc.)
+- Barre d'avancement du workflow par soumission
+- Filtres par statut (en cours, validé, refusé)
+- Pagination (25 par page)
+- Export CSV complet
+- Statistiques rapides (total, en cours, validé, refusé)
+- Liste des propriétaires du formulaire
+
+Accès via `form_tracking.php?form_id=N`. Vérifie `is_form_owner()` ou `is_admin_user()`.
 
 ---
 

@@ -14,20 +14,20 @@ $error_msg = '';
 // Traitement du POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf()) {
-        die('Token CSRF invalide. Veuillez réessayer.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
 
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add_rule') {
-        $form_id = (int)($_POST['form_id'] ?? 0);
+        $form_id = trim($_POST['form_id'] ?? '');
         $days_before = (int)($_POST['days_before'] ?? 5);
         $condition_type = trim($_POST['condition_type'] ?? 'steps_incomplete');
         $notify_who = trim($_POST['notify_who'] ?? 'admin');
         $label = trim($_POST['label'] ?? '');
         $custom_email = trim($_POST['custom_email'] ?? '');
 
-        if ($form_id <= 0) {
+        if (empty($form_id)) {
             $error_msg = 'Veuillez sélectionner un formulaire.';
         } elseif ($days_before < 0) {
             $error_msg = 'Le nombre de jours doit être positif ou zéro.';
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (empty($error_msg)) {
                 try {
-                    $pdo->prepare("INSERT INTO alert_rules (form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, 1)")
+                    $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (generate_uuid(), ?, ?, ?, ?, ?, 1)")
                         ->execute([$form_id, $days_before, $condition_type, $notify_who, $label]);
                     app_log('alert_rule_create', 'form:' . $form_id, 'Règle d\'alerte créée : ' . $label);
                     $success_msg = 'Règle d\'alerte créée avec succès.';
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     elseif ($action === 'update_rule') {
-        $rule_id = (int)($_POST['rule_id'] ?? 0);
+        $rule_id = trim($_POST['rule_id'] ?? '');
         $days_before = (int)($_POST['days_before'] ?? 5);
         $condition_type = trim($_POST['condition_type'] ?? 'steps_incomplete');
         $notify_who = trim($_POST['notify_who'] ?? 'admin');
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     elseif ($action === 'delete_rule') {
-        $rule_id = (int)($_POST['rule_id'] ?? 0);
+        $rule_id = trim($_POST['rule_id'] ?? '');
         try {
             $pdo->prepare("DELETE FROM alert_rules WHERE id = ?")->execute([$rule_id]);
             app_log('alert_rule_delete', 'rule:' . $rule_id, 'Règle d\'alerte supprimée');
@@ -100,10 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     elseif ($action === 'update_deadline_field') {
-        $form_id = (int)($_POST['form_id'] ?? 0);
+        $form_id = trim($_POST['form_id'] ?? '');
         $deadline_field = trim($_POST['deadline_field'] ?? '');
 
-        if ($form_id > 0) {
+        if (!empty($form_id)) {
             try {
                 $pdo->prepare("UPDATE forms SET deadline_field = ? WHERE id = ?")
                     ->execute([$deadline_field, $form_id]);
@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Regle en cours de modification (via GET param)
-$edit_rule_id = (int)($_GET['edit_rule'] ?? 0);
+$edit_rule_id = trim($_GET['edit_rule'] ?? '');
 
 // Recuperer les donnees
 $forms = $pdo->query("SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
@@ -207,7 +207,9 @@ function notify_who_label(string $val): string {
   <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
   <span>
     <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
+    <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a>
     <a href="monitoring.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🖥 Monitoring</a>
+    <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔐 RGPD</a>
     <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
     <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
   </span>
@@ -271,7 +273,7 @@ function notify_who_label(string $val): string {
         <form method="POST" style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="update_deadline_field">
-          <input type="hidden" name="form_id" value="<?= (int)$f['id'] ?>">
+          <input type="hidden" name="form_id" value="<?= h($f['id']) ?>">
           <strong style="min-width:150px;"><?= h($f['label']) ?></strong>
           <select name="deadline_field" style="flex:1;">
             <option value="">— Aucun champ date —</option>
@@ -314,11 +316,11 @@ function notify_who_label(string $val): string {
               <?= h($r['label']) ?>
             </h3>
             <div class="rule-actions">
-              <a href="?edit_rule=<?= (int)$r['id'] ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>
+              <a href="?edit_rule=<?= urlencode($r['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>
               <form method="POST" style="display:inline;">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete_rule">
-                <input type="hidden" name="rule_id" value="<?= (int)$r['id'] ?>">
+                <input type="hidden" name="rule_id" value="<?= h($r['id']) ?>">
                 <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;">Supprimer</button>
               </form>
             </div>
@@ -335,12 +337,12 @@ function notify_who_label(string $val): string {
           </div>
 
           <!-- Formulaire de modification -->
-          <?php if (($edit_rule_id ?? 0) === (int)$r['id']): ?>
+          <?php if (($edit_rule_id ?? '') === $r['id']): ?>
           <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;">
             <form method="POST">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="update_rule">
-              <input type="hidden" name="rule_id" value="<?= (int)$r['id'] ?>">
+              <input type="hidden" name="rule_id" value="<?= h($r['id']) ?>">
               <div class="grid-2">
                 <div class="field">
                   <label>Libellé</label>
@@ -404,7 +406,7 @@ function notify_who_label(string $val): string {
           <select name="form_id" required>
             <option value="">— Sélectionner —</option>
             <?php foreach ($forms as $f): ?>
-              <option value="<?= (int)$f['id'] ?>"><?= h($f['label']) ?><?= empty($f['deadline_field']) ? ' (⚠ pas de champ date)' : '' ?></option>
+              <option value="<?= h($f['id']) ?>"><?= h($f['label']) ?><?= empty($f['deadline_field']) ? ' (⚠ pas de champ date)' : '' ?></option>
             <?php endforeach; ?>
           </select>
         </div>

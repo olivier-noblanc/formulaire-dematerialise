@@ -6,6 +6,10 @@ $user = get_auth_user();
 $pdo = get_pdo();
 $is_admin = is_admin_user();
 
+// Récupérer les formulaires dont l'utilisateur est propriétaire
+$owned_forms = get_owned_forms($user);
+$has_owned = !empty($owned_forms);
+
 // Récupérer les formulaires actifs
 $active_forms = $pdo->query("SELECT id, slug, label, description FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -99,6 +103,11 @@ if ($is_admin) {
   <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
   <span>
     <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a>
+    <?php if ($is_admin): ?>
+    <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Stats</a>
+    <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">🔐 RGPD</a>
+    <?php endif; ?>
+    <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">🏥 Santé</a>
   </span>
 </div>
 <div class="container" id="main-content">
@@ -206,6 +215,17 @@ if ($is_admin) {
         <div class="nt-desc">Guides et aide pour utiliser la plateforme</div>
       </div>
     </a>
+    <?php if ($has_owned): ?>
+    <?php foreach ($owned_forms as $of): ?>
+    <a href="form_tracking.php?f=<?= urlencode($of['id']) ?>" class="nav-tile">
+      <span class="nt-icon">📊</span>
+      <div>
+        <div class="nt-label">Suivi : <?= h($of['label']) ?></div>
+        <div class="nt-desc">Tableau de suivi propriétaire</div>
+      </div>
+    </a>
+    <?php endforeach; ?>
+    <?php endif; ?>
     <?php if ($is_admin): ?>
     <a href="dashboard.php" class="nav-tile">
       <span class="nt-icon">📊</span>
@@ -249,7 +269,28 @@ if ($is_admin) {
         <div class="nt-desc">Sauvegarder et restaurer la base de données</div>
       </div>
     </a>
+    <a href="stats.php" class="nav-tile">
+      <span class="nt-icon">📊</span>
+      <div>
+        <div class="nt-label">Statistiques</div>
+        <div class="nt-desc">Tableaux de bord et métriques d'utilisation</div>
+      </div>
+    </a>
+    <a href="rgpd.php" class="nav-tile">
+      <span class="nt-icon">🔐</span>
+      <div>
+        <div class="nt-label">RGPD</div>
+        <div class="nt-desc">Conformité et gestion des données personnelles</div>
+      </div>
+    </a>
     <?php endif; ?>
+    <a href="health.php" class="nav-tile">
+      <span class="nt-icon">🏥</span>
+      <div>
+        <div class="nt-label">Santé système</div>
+        <div class="nt-desc">Vérifier l'état des services et de l'infrastructure</div>
+      </div>
+    </a>
   </div>
 </div>
 <?= render_footer() ?>

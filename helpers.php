@@ -52,27 +52,27 @@ function get_auth_user(): string {
         http_response_code(401);
         die('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Authentification requise — DREETS</title>
-<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e;display:flex;min-height:100vh;align-items:center;justify-content:center}
-.error-box{background:#fff;border:1px solid #ddd;border-radius:6px;padding:2.5rem;max-width:520px;width:90%;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-.error-icon{font-size:3rem;margin-bottom:1rem}
-h1{font-size:1.3rem;color:#003189;margin-bottom:.75rem}
-p{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:.75rem}
-.hint{font-size:.85rem;color:#888;background:#f5f5f5;border-radius:4px;padding:.75rem;margin-top:1rem;text-align:left}
-.hint strong{color:#333}
-</style></head><body>
-<div class="error-box">
-<div class="error-icon">🔒</div>
-<h1>Authentification requise</h1>
-<p>Cette application nécessite une authentification Windows (IIS) pour fonctionner.</p>
-<p>La variable d\'environnement <strong>AUTH_USER</strong> n\'est pas disponible, ce qui indique que l\'authentification Windows n\'est pas configurée ou n\'a pas pu être établie.</p>
-<div class="hint">
-<strong>Que faire ?</strong><br>
-• Vérifiez que vous accédez à l\'application via le réseau interne DREETS.<br>
-• Vérifiez que l\'authentification Windows est activée dans IIS (Anonymous Authentication doit être désactivé).<br>
-• Contactez votre administrateur réseau si le problème persiste.
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>D</text></svg>">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e}.bandeau{background:#003189;color:#fff;padding:.75rem 2rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.error-page{display:flex;min-height:calc(100vh - 120px);align-items:center;justify-content:center;padding:2rem 1rem}.error-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:3rem 2.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}.error-card .error-code{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.25rem;letter-spacing:-2px;color:#003189}.error-card .error-illustration{margin-bottom:1.25rem}.error-card .error-illustration svg{width:100px;height:100px}.error-card h1{font-size:1.35rem;color:#1e1e1e;margin-bottom:.75rem;border:none;padding:0}.error-card .error-message{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:1.25rem}.error-card .error-hint{font-size:.85rem;color:#666;background:#f5f5fe;border:1px solid #e0e0f0;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;text-align:left;line-height:1.55}.error-card .error-hint strong{color:#333;display:block;margin-bottom:.35rem}.error-card .error-stamp{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;font-size:.75rem;color:#aaa}</style></head><body>
+<div class="bandeau">
+  <strong>DREETS</strong> — Direction Régionale de l\'Économie, de l\'Emploi, du Travail et des Solidarités
 </div>
-</div></body></html>');
+<div class="error-page">
+  <div class="error-card">
+    <div class="error-illustration"><svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#003189" stroke-width="5" fill="#e8eaf6"/><rect x="38" y="42" width="24" height="22" rx="3" fill="#003189"/><path d="M42 42V36 a8 8 0 0 1 16 0v6" stroke="#003189" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="50" cy="52" r="2.5" fill="#e8eaf6"/></svg></div>
+    <div class="error-code">401</div>
+    <h1>Authentification requise</h1>
+    <p class="error-message">Cette application nécessite une authentification Windows (IIS) pour fonctionner.<br>La variable d\'environnement <strong>AUTH_USER</strong> n\'est pas disponible, ce qui indique que l\'authentification Windows n\'est pas configurée ou n\'a pas pu être établie.</p>
+    <div class="error-hint">
+      <strong>Que faire ?</strong>
+      • Vérifiez que vous accédez à l\'application via le réseau interne DREETS.<br>
+      • Vérifiez que l\'authentification Windows est activée dans IIS (Anonymous Authentication doit être désactivé).<br>
+      • Contactez votre administrateur réseau si le problème persiste.
+    </div>
+    <div class="error-stamp">Formulaire Dématérialisé — DREETS</div>
+  </div>
+</div>
+</body></html>');
     }
     
     // Si l'utilisateur est au format DOMAINE\login, on extrait le login et on le transforme en email
@@ -99,6 +99,97 @@ function is_admin_user(): bool {
 function is_super_admin(): bool {
     $auth_user = get_auth_user();
     return $auth_user === ADMIN_EMAIL;
+}
+
+// Vérifie si l'utilisateur est propriétaire d'un formulaire donné
+function is_form_owner(string $form_id, ?string $email = null): bool {
+    if ($email === null) {
+        $email = get_auth_user();
+    }
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT 1 FROM form_owners WHERE form_id = ? AND email = ?");
+    $stmt->execute([$form_id, $email]);
+    return $stmt->fetch() !== false;
+}
+
+// Récupère la liste des propriétaires d'un formulaire
+function get_form_owners(string $form_id): array {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT email, added_at FROM form_owners WHERE form_id = ? ORDER BY email");
+    $stmt->execute([$form_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Récupère les formulaires dont l'utilisateur est propriétaire
+function get_owned_forms(?string $email = null): array {
+    if ($email === null) {
+        $email = get_auth_user();
+    }
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT f.id, f.slug, f.label, f.description FROM forms f INNER JOIN form_owners fo ON fo.form_id = f.id WHERE fo.email = ? AND f.actif = 1 ORDER BY f.label");
+    $stmt->execute([$email]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ── LAZY CRON ────────────────────────────────────────────────
+// Pas de cron sur le serveur. Le premier utilisateur qui se connecte
+// dans la journée/heure déclenche les tâches planifiées.
+
+/**
+ * Execute les tâches planifiées si nécessaire.
+ * Appelé automatiquement à chaque connexion (depuis get_pdo).
+ * 
+ * Fréquences :
+ * - daily  : alert_check (1x/jour)
+ * - hourly : remind (1x/heure)
+ */
+function run_lazy_cron(): void {
+    $pdo = get_pdo();
+    $now = time();
+    
+    $tasks = [
+        'remind'      => ['interval' => 3600,      'file' => __DIR__ . '/remind.php'],
+        'alert_check' => ['interval' => 86400,     'file' => __DIR__ . '/alert_check.php'],
+    ];
+    
+    foreach ($tasks as $key => $task) {
+        // Vérifier la dernière exécution
+        $stmt = $pdo->prepare("SELECT last_run FROM lazy_cron WHERE task_key = ?");
+        $stmt->execute([$key]);
+        $last_run = $stmt->fetchColumn();
+        
+        $should_run = false;
+        if ($last_run === false || $last_run === null) {
+            $should_run = true;
+        } else {
+            $last_ts = strtotime($last_run);
+            if (($now - $last_ts) >= $task['interval']) {
+                $should_run = true;
+            }
+        }
+        
+        if ($should_run) {
+            // Verrouillage : éviter les exécutions concurrentes
+            try {
+                $pdo->prepare("INSERT OR REPLACE INTO lazy_cron (task_key, last_run, run_count) VALUES (?, ?, COALESCE((SELECT run_count FROM lazy_cron WHERE task_key = ?), 0) + 1)")
+                    ->execute([$key, date('Y-m-d H:i:s', $now), $key]);
+            } catch (PDOException $e) {
+                continue; // Un autre processus est en cours
+            }
+            
+            // Exécuter la tâche dans un bloc try/catch pour ne pas casser la page
+            try {
+                // Les scripts remind.php et alert_check.php sont conçus pour être
+                // appelés en CLI. On les inclut directement avec output buffering.
+                ob_start();
+                require $task['file'];
+                ob_end_clean();
+            } catch (\Throwable $e) {
+                // Ne pas faire échouer la page utilisateur
+                error_log("Lazy cron error ({$key}): " . $e->getMessage());
+            }
+        }
+    }
 }
 
 // ── CSRF ─────────────────────────────────────────────────────
@@ -142,8 +233,33 @@ function get_pdo(): PDO {
         
         // Appel à la migration de base de données au premier accès
         db_migrate($pdo);
+        
+        // Exécuter les tâches planifiées (lazy cron) au premier accès
+        run_lazy_cron();
     }
     return $pdo;
+}
+
+/**
+ * Genere un UUID v4 (RFC 4122 compliant)
+ * Utilise random_bytes() pour la securite cryptographique
+ */
+function generate_uuid(): string {
+    $data = random_bytes(16);
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // version 4
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // variant RFC 4122
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
+/**
+ * Recupere un formulaire par son UUID
+ */
+function get_form_by_uuid(string $uuid): ?array {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
+    $stmt->execute([$uuid]);
+    $form = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $form ?: null;
 }
 
 /**
@@ -154,10 +270,18 @@ function db_migrate(PDO $pdo): void {
     // Activer le mode WAL pour améliorer la concurrence
     $pdo->exec('PRAGMA journal_mode=WAL');
     
+    // ── Schema versioning ─────────────────────────────────────
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+        $current_version = (int)$pdo->query("SELECT MAX(version) FROM schema_version")->fetchColumn();
+    } catch (PDOException $e) {
+        $current_version = 0;
+    }
+    
     // Création des tables avec CREATE TABLE IF NOT EXISTS
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS forms (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY NOT NULL,
             slug TEXT UNIQUE NOT NULL,
             label TEXT NOT NULL,
             description TEXT,
@@ -168,8 +292,8 @@ function db_migrate(PDO $pdo): void {
     
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS steps (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            form_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            form_id TEXT NOT NULL,
             label TEXT NOT NULL,
             ordre INTEGER NOT NULL,
             actif INTEGER DEFAULT 1,
@@ -179,8 +303,8 @@ function db_migrate(PDO $pdo): void {
     
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS step_recipients (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            step_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            step_id TEXT NOT NULL,
             email TEXT NOT NULL,
             FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
         )
@@ -188,8 +312,8 @@ function db_migrate(PDO $pdo): void {
     
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS submissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            form_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            form_id TEXT NOT NULL,
             data TEXT NOT NULL, -- JSON
             submitted_by TEXT NOT NULL,
             submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -201,9 +325,9 @@ function db_migrate(PDO $pdo): void {
     
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            submission_id INTEGER NOT NULL,
-            step_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            submission_id TEXT NOT NULL,
+            step_id TEXT NOT NULL,
             email TEXT NOT NULL,
             token TEXT UNIQUE NOT NULL,
             sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -217,7 +341,7 @@ function db_migrate(PDO $pdo): void {
     
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS admins (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY NOT NULL,
             email TEXT UNIQUE NOT NULL,
             added_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -225,7 +349,7 @@ function db_migrate(PDO $pdo): void {
     
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS admin_requests (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY NOT NULL,
             email TEXT UNIQUE NOT NULL,
             requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             status TEXT NOT NULL DEFAULT 'pending',
@@ -244,12 +368,13 @@ function db_migrate(PDO $pdo): void {
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS form_fields (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            form_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            form_id TEXT NOT NULL,
             label TEXT NOT NULL,
             field_type TEXT NOT NULL DEFAULT 'text',
             field_name TEXT NOT NULL,
             options TEXT,
+            hint TEXT DEFAULT '',
             required INTEGER DEFAULT 0,
             ordre INTEGER DEFAULT 0,
             card_group TEXT DEFAULT 'Général',
@@ -260,7 +385,7 @@ function db_migrate(PDO $pdo): void {
     // Table d'audit log — tracabilite de toutes les actions admin
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS audit_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY NOT NULL,
             action TEXT NOT NULL,
             target TEXT,
             detail TEXT,
@@ -273,8 +398,8 @@ function db_migrate(PDO $pdo): void {
     // Table des regles d'alerte — alertes parametrables avant deadline
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS alert_rules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            form_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            form_id TEXT NOT NULL,
             days_before INTEGER NOT NULL DEFAULT 5,
             condition_type TEXT NOT NULL DEFAULT 'steps_incomplete',
             notify_who TEXT NOT NULL DEFAULT 'admin',
@@ -288,9 +413,9 @@ function db_migrate(PDO $pdo): void {
     // Table de log des alertes envoyees — eviter les doublons
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS alert_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            rule_id INTEGER NOT NULL,
-            submission_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            rule_id TEXT NOT NULL,
+            submission_id TEXT NOT NULL,
             sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             message TEXT,
             FOREIGN KEY (rule_id) REFERENCES alert_rules(id) ON DELETE CASCADE,
@@ -301,8 +426,8 @@ function db_migrate(PDO $pdo): void {
     // Table des pieces jointes — fichiers uploades avec les soumissions
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS attachments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            submission_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            submission_id TEXT NOT NULL,
             field_name TEXT NOT NULL,
             original_name TEXT NOT NULL,
             stored_name TEXT NOT NULL,
@@ -316,30 +441,42 @@ function db_migrate(PDO $pdo): void {
     // Table des delegations — transfert de validation a un autre validateur
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS delegations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            token_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY NOT NULL,
+            token_id TEXT NOT NULL,
             from_email TEXT NOT NULL,
             to_email TEXT NOT NULL,
             reason TEXT,
             delegated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            new_token_id INTEGER,
+            new_token_id TEXT,
             FOREIGN KEY (token_id) REFERENCES tokens(id) ON DELETE CASCADE
+        )
+    ");
+
+    // Table des proprietaires de formulaire — qui peut voir le tableau de suivi
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS form_owners (
+            id TEXT PRIMARY KEY NOT NULL,
+            form_id TEXT NOT NULL,
+            email TEXT NOT NULL,
+            added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(form_id, email),
+            FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
         )
     ");
     
     // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
     $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
     if ($count_stmt->fetchColumn() == 0) {
-        $pdo->prepare("INSERT INTO admins (email, added_at) VALUES (?, ?)")
-            ->execute([ADMIN_EMAIL, date('Y-m-d H:i:s')]);
+        $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
+            ->execute([generate_uuid(), ADMIN_EMAIL, date('Y-m-d H:i:s')]);
     }
 
     // Seed formulaire outboarding si la table forms est vide ou ne contient que l'onboarding
     $ob_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'outboarding'")->fetchColumn();
     if ($ob_count == 0) {
-        $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
-            ->execute(['outboarding', 'Outboarding agent', 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat']);
-        $outboarding_id = (int)$pdo->lastInsertId();
+        $outboarding_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$outboarding_id, 'outboarding', 'Outboarding agent', 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat']);
 
         $outboarding_fields = [
             ['Identité de l\'agent',    'Nom',                                    'text',     'nom',                  null,                                                                                                   1, 1],
@@ -364,9 +501,9 @@ function db_migrate(PDO $pdo): void {
             ['Logistique',              'Restitution EPI',                        'checkbox', 'log_restitution_epi',  null,                                                                                                   0, 20],
             ['Logistique',              'Libération bureau / local',              'text',     'log_bureau',           null,                                                                                                   0, 21],
         ];
-        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         foreach ($outboarding_fields as $row) {
-            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $outboarding_id]);
+            $stmt_ob->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $outboarding_id]);
         }
 
         // Etapes par defaut pour l'outboarding
@@ -376,9 +513,9 @@ function db_migrate(PDO $pdo): void {
             ['Ressources humaines', 3],
             ['Logistique', 4],
         ];
-        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
         foreach ($steps_data as $sd) {
-            $stmt_step->execute([$outboarding_id, $sd[0], $sd[1]]);
+            $stmt_step->execute([generate_uuid(), $outboarding_id, $sd[0], $sd[1]]);
         }
     }
     
@@ -414,9 +551,9 @@ function db_migrate(PDO $pdo): void {
     // Seed formulaire onboarding s'il n'existe pas
     $onb_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'onboarding'")->fetchColumn();
     if ($onb_count == 0) {
-        $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
-            ->execute(['onboarding', 'Onboarding agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
-        $onboarding_id = (int)$pdo->lastInsertId();
+        $onboarding_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$onboarding_id, 'onboarding', 'Onboarding agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
 
         $onboarding_fields = [
             ['Identité de l\'agent',  'Nom',                            'text',    'nom',               null,                                                           1, 1],
@@ -441,9 +578,9 @@ function db_migrate(PDO $pdo): void {
             ['Logistique',            'Véhicule de service',            'checkbox','log_vehicule_service',null,                                                         0, 20],
             ['Logistique',            'EPI à préparer',                 'checkbox','log_epi_requis',   null,                                                           0, 21],
         ];
-        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         foreach ($onboarding_fields as $row) {
-            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $onboarding_id]);
+            $stmt_ob->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $onboarding_id]);
         }
 
         // Etapes par defaut pour l'onboarding
@@ -453,51 +590,711 @@ function db_migrate(PDO $pdo): void {
             ['Ressources humaines', 3],
             ['Logistique', 4],
         ];
-        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
         foreach ($steps_data as $sd) {
-            $stmt_step->execute([$onboarding_id, $sd[0], $sd[1]]);
+            $stmt_step->execute([generate_uuid(), $onboarding_id, $sd[0], $sd[1]]);
         }
     }
 
-    // Ajout de colonnes futures avec gestion d'erreur si déjà présentes
-    try {
-        $pdo->exec("ALTER TABLE submissions ADD COLUMN closed_at DATETIME");
-    } catch (PDOException $e) {
-        // Ignorer si la colonne existe déjà
+    // Seed formulaire "Demande de sortie hors plages" s'il n'existe pas
+    $sortie_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'sortie_hors_plages'")->fetchColumn();
+    if ($sortie_count == 0) {
+        $sortie_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$sortie_id, 'sortie_hors_plages', 'Demande de sortie hors plages fixes', 'Demande d\'autorisation de sortie en dehors des plages horaires fixes — arrivée tardive, départ anticipé, pause prolongée']);
+
+        $sortie_fields = [
+            ['Agent',                  'Prénom',              'text',     'prenom',          null,                                                                                                   '', 1, 1],
+            ['Agent',                  'Nom',                 'text',     'nom',             null,                                                                                                   '', 1, 2],
+            ['Agent',                  'Email',               'text',     'email',           null,                                                                                                   '', 1, 3],
+            ['Agent',                  'Service / Affectation', 'text',   'service',         null,                                                                                                   '', 1, 4],
+            ['Détails de la sortie',   'Type de sortie',      'select',   'type_sortie',     '["Arrivée tardive","Départ anticipé","Pause déjeuner prolongée","Absence partielle","Autre"]',   '', 1, 5],
+            ['Détails de la sortie',   'Date concernée',      'date',     'date_sortie',     null,                                                                                                   '', 1, 6],
+            ['Détails de la sortie',   'Heure de début',      'text',     'heure_debut',     null,                                                                                                   'Format HH:MM', 1, 7],
+            ['Détails de la sortie',   'Heure de fin',        'text',     'heure_fin',       null,                                                                                                   'Format HH:MM', 1, 8],
+            ['Détails de la sortie',   'Motif',               'textarea', 'motif',           null,                                                                                                   '', 1, 9],
+        ];
+        $stmt_so = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($sortie_fields as $row) {
+            $stmt_so->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $sortie_id]);
+        }
+
+        // Etapes : Chef de service (ordre 1) → DRH (ordre 2)
+        $sortie_step1_id = generate_uuid();
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
+        $stmt_step->execute([$sortie_step1_id, $sortie_id, 'Chef de service', 1]);
+        $sortie_step2_id = generate_uuid();
+        $stmt_step->execute([$sortie_step2_id, $sortie_id, 'DRH', 2]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $sortie_step1_id, 'chef.service@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $sortie_step2_id, 'drh@dreets.gouv.fr']);
+
+        // Owners du formulaire
+        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)");
+        $stmt_fo->execute([generate_uuid(), $sortie_id, 'chef.service@dreets.gouv.fr']);
+        $stmt_fo->execute([generate_uuid(), $sortie_id, 'drh@dreets.gouv.fr']);
+    }
+
+    // Seed formulaire "Remboursement d'avance de frais" s'il n'existe pas
+    $remboursement_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'remboursement_avance_frais'")->fetchColumn();
+    if ($remboursement_count == 0) {
+        $remboursement_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$remboursement_id, 'remboursement_avance_frais', 'Remboursement d\'avance de frais', 'Demande de remboursement d\'une avance de frais engagée dans le cadre professionnel — déplacement, fourniture, représentation']);
+
+        $remboursement_fields = [
+            ['Agent',                  'Prénom',              'text',     'prenom',                  null,                                                                                                   '', 1, 1],
+            ['Agent',                  'Nom',                 'text',     'nom',                     null,                                                                                                   '', 1, 2],
+            ['Agent',                  'Email',               'text',     'email',                   null,                                                                                                   '', 1, 3],
+            ['Agent',                  'Service / Affectation', 'text',   'service',                 null,                                                                                                   '', 1, 4],
+            ['Détails de la dépense',  'Nature de la dépense', 'select',  'nature_depense',          '["Déplacement professionnel","Hébergement","Repas / Représentation","Fournitures bureautiques","Frais postaux","Autre"]', '', 1, 5],
+            ['Détails de la dépense',  'Montant',             'text',     'montant',                 null,                                                                                                   'En euros TTC', 1, 6],
+            ['Détails de la dépense',  'Date de la dépense',  'date',     'date_depense',            null,                                                                                                   '', 1, 7],
+            ['Détails de la dépense',  'Justification',       'textarea', 'justification',           null,                                                                                                   '', 1, 8],
+            ['Détails de la dépense',  'Justificatif (description)', 'text', 'justificatif_desc',  null,                                                                                            'Description du justificatif joint', 0, 9],
+        ];
+        $stmt_rb = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($remboursement_fields as $row) {
+            $stmt_rb->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $remboursement_id]);
+        }
+
+        // Etapes : Chef de service (ordre 1) → Comptabilité (ordre 2) → Agent financier (ordre 3)
+        $remboursement_step1_id = generate_uuid();
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
+        $stmt_step->execute([$remboursement_step1_id, $remboursement_id, 'Chef de service', 1]);
+        $remboursement_step2_id = generate_uuid();
+        $stmt_step->execute([$remboursement_step2_id, $remboursement_id, 'Comptabilité', 2]);
+        $remboursement_step3_id = generate_uuid();
+        $stmt_step->execute([$remboursement_step3_id, $remboursement_id, 'Agent financier', 3]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $remboursement_step1_id, 'chef.service@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $remboursement_step2_id, 'comptabilite@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $remboursement_step3_id, 'agent.financier@dreets.gouv.fr']);
+
+        // Owners du formulaire
+        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)");
+        $stmt_fo->execute([generate_uuid(), $remboursement_id, 'comptabilite@dreets.gouv.fr']);
+        $stmt_fo->execute([generate_uuid(), $remboursement_id, 'agent.financier@dreets.gouv.fr']);
+    }
+
+    // Seed formulaire "Demande de matériel suite prescription médicale" s'il n'existe pas
+    $materiel_med_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'materiel_prescription'")->fetchColumn();
+    if ($materiel_med_count == 0) {
+        $materiel_med_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$materiel_med_id, 'materiel_prescription', 'Demande de matériel (prescription médicale)', 'Demande de matériel suite à une prescription médicale — aménagement de poste, équipement ergonomique, matériel spécifique']);
+
+        $materiel_med_fields = [
+            ['Agent',                          'Prénom',                    'text',     'prenom',                  null,                                                                                                   '', 1, 1],
+            ['Agent',                          'Nom',                       'text',     'nom',                     null,                                                                                                   '', 1, 2],
+            ['Agent',                          'Email',                     'text',     'email',                   null,                                                                                                   '', 1, 3],
+            ['Agent',                          'Service / Affectation',      'text',     'service',                 null,                                                                                                   '', 1, 4],
+            ['Agent',                          'Bureau / Lieu de travail',   'text',     'bureau',                  null,                                                                                                   '', 1, 5],
+            ['Prescription médicale',          'Nature du handicap / besoin', 'select',  'nature_besoin',          '["Trou musculosquelettique","Trouble visuel","Trouble auditif","Maladie chronique","Grossesse","Autre"]', '', 1, 6],
+            ['Prescription médicale',          'Date de la prescription',    'date',     'date_prescription',       null,                                                                                                   '', 1, 7],
+            ['Prescription médicale',          'Médecin prescripteur',       'text',     'medecin_prescripteur',    null,                                                                                                   '', 0, 8],
+            ['Matériel demandé',               'Type de matériel',           'select',   'type_materiel',           '["Fauteuil ergonomique","Repose-pieds","Écran agrandi","Clavier adapté","Souris ergonomique","Plan de travail réglable","Éclairage spécifique","Autre"]', '', 1, 9],
+            ['Matériel demandé',               'Description détaillée',      'textarea', 'description_materiel',   null,                                                                                                   '', 1, 10],
+            ['Matériel demandé',               'Urgence',                    'select',   'urgence',                 '["Normale","Urgente — aménagement imminent","Très urgente — arrêt de travail risque"]',                                     '', 1, 11],
+            ['Matériel demandé',               'Justification médicale',     'textarea', 'justification_medicale',  null,                                                                                                   '', 1, 12],
+        ];
+        $stmt_mm = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($materiel_med_fields as $row) {
+            $stmt_mm->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $materiel_med_id]);
+        }
+
+        // Etapes : Médecin de prévention (ordre 1) → Chef de service (ordre 2) → DSI + Logistique (parallèle, ordre 3) → DRH (ordre 4)
+        $materiel_med_step1_id = generate_uuid();
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
+        $stmt_step->execute([$materiel_med_step1_id, $materiel_med_id, 'Médecin de prévention', 1]);
+        $materiel_med_step2_id = generate_uuid();
+        $stmt_step->execute([$materiel_med_step2_id, $materiel_med_id, 'Chef de service', 2]);
+        $materiel_med_step3_dsi_id = generate_uuid();
+        $stmt_step->execute([$materiel_med_step3_dsi_id, $materiel_med_id, 'DSI', 3]);
+        $materiel_med_step3_log_id = generate_uuid();
+        $stmt_step->execute([$materiel_med_step3_log_id, $materiel_med_id, 'Logistique', 3]);
+        $materiel_med_step4_id = generate_uuid();
+        $stmt_step->execute([$materiel_med_step4_id, $materiel_med_id, 'DRH', 4]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $materiel_med_step1_id, 'medecin.prevention@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $materiel_med_step2_id, 'chef.service@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $materiel_med_step3_dsi_id, 'dsi@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $materiel_med_step3_log_id, 'logistique@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $materiel_med_step4_id, 'drh@dreets.gouv.fr']);
+
+        // Owners du formulaire — suivi du matériel médical
+        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)");
+        $stmt_fo->execute([generate_uuid(), $materiel_med_id, 'medecin.prevention@dreets.gouv.fr']);
+        $stmt_fo->execute([generate_uuid(), $materiel_med_id, 'logistique@dreets.gouv.fr']);
+        $stmt_fo->execute([generate_uuid(), $materiel_med_id, 'drh@dreets.gouv.fr']);
+    }
+
+    // Seed formulaire "Demande de mutation" s'il n'existe pas
+    $mutation_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'mutation'")->fetchColumn();
+    if ($mutation_count == 0) {
+        $mutation_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$mutation_id, 'mutation', 'Demande de mutation', 'Formulaire de demande de mutation interne — mobilité entre services ou directions au sein de la DREETS']);
+
+        $mutation_fields = [
+            ['Agent',                  'Prénom',              'text',     'prenom',           null,                                                                                    '', 1, 1],
+            ['Agent',                  'Nom',                 'text',     'nom',              null,                                                                                    '', 1, 2],
+            ['Agent',                  'Email',               'text',     'email',            null,                                                                                    '', 1, 3],
+            ['Agent',                  'Corps / Grade',       'text',     'corps_grade',      null,                                                                                    '', 1, 4],
+            ['Agent',                  'Service actuel',      'text',     'service_actuel',   null,                                                                                    '', 1, 5],
+            ['Agent',                  'Quotité',             'select',   'quotite',          '["100%","80%","60%","50%"]',                                                            '', 1, 6],
+            ['Mutation demandée',      'Service demandé',     'text',     'service_demande',  null,                                                                                    '', 1, 7],
+            ['Mutation demandée',      'Direction demandée',  'text',     'direction_demandee',null,                                                                                   '', 1, 8],
+            ['Mutation demandée',      'Motif',               'textarea', 'motif',            null,                                                                                    '', 1, 9],
+            ['Mutation demandée',      'Date souhaitée',      'date',     'date_souhaitee',   null,                                                                                    '', 1, 10],
+        ];
+        $stmt_mu = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($mutation_fields as $row) {
+            $stmt_mu->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $mutation_id]);
+        }
+
+        // Etapes : Chef de service actuel (ordre 1) → Chef service demandé (ordre 2) → DRH (ordre 3)
+        $mutation_step1_id = generate_uuid();
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
+        $stmt_step->execute([$mutation_step1_id, $mutation_id, 'Chef de service actuel', 1]);
+        $mutation_step2_id = generate_uuid();
+        $stmt_step->execute([$mutation_step2_id, $mutation_id, 'Chef service demandé', 2]);
+        $mutation_step3_id = generate_uuid();
+        $stmt_step->execute([$mutation_step3_id, $mutation_id, 'DRH', 3]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $mutation_step1_id, 'chef.service@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $mutation_step2_id, 'chef.service.demande@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $mutation_step3_id, 'drh@dreets.gouv.fr']);
+    }
+
+    // Seed formulaire "Demande de formation" s'il n'existe pas
+    $formation_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'formation'")->fetchColumn();
+    if ($formation_count == 0) {
+        $formation_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formation_id, 'formation', 'Demande de formation', 'Formulaire de demande de formation continue — plan de formation, DIF/CPF, stage inter ou intra']);
+
+        $formation_fields = [
+            ['Agent',                  'Prénom',              'text',     'prenom',             null,                                                                                               '', 1, 1],
+            ['Agent',                  'Nom',                 'text',     'nom',                null,                                                                                               '', 1, 2],
+            ['Agent',                  'Email',               'text',     'email',              null,                                                                                               '', 1, 3],
+            ['Agent',                  'Service',             'text',     'service',            null,                                                                                               '', 1, 4],
+            ['Agent',                  'Poste',               'text',     'poste',              null,                                                                                               '', 1, 5],
+            ['Formation demandée',     'Intitulé formation',  'text',     'intitule_formation', null,                                                                                               '', 1, 6],
+            ['Formation demandée',     'Organisme',           'text',     'organisme',          null,                                                                                               '', 1, 7],
+            ['Formation demandée',     'Date début',          'date',     'date_debut',         null,                                                                                               '', 1, 8],
+            ['Formation demandée',     'Date fin',            'date',     'date_fin',           null,                                                                                               '', 1, 9],
+            ['Formation demandée',     'Lieu',                'text',     'lieu',               null,                                                                                               '', 1, 10],
+            ['Formation demandée',     'Coût estimé',         'text',     'cout_estime',        null,                                                                                               'en euros TTC', 1, 11],
+            ['Formation demandée',     'Heures DIF',          'text',     'heures_dif',         null,                                                                                               'nombre d\'heures au titre du DIF/CPF', 1, 12],
+            ['Justification',          'Objectif',            'textarea', 'objectif',           null,                                                                                               '', 1, 13],
+            ['Justification',          'Impact métier',       'textarea', 'impact_metier',      null,                                                                                               '', 1, 14],
+            ['Justification',          'Avis du chef',        'select',   'avis_chef',          '["Favorable","Défavorable","Réservé"]',                                                             '', 1, 15],
+        ];
+        $stmt_fo = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($formation_fields as $row) {
+            $stmt_fo->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $formation_id]);
+        }
+
+        // Etapes : Chef de service (ordre 1) → Formation (ordre 2) → DRH (ordre 3)
+        $formation_step1_id = generate_uuid();
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
+        $stmt_step->execute([$formation_step1_id, $formation_id, 'Chef de service', 1]);
+        $formation_step2_id = generate_uuid();
+        $stmt_step->execute([$formation_step2_id, $formation_id, 'Formation', 2]);
+        $formation_step3_id = generate_uuid();
+        $stmt_step->execute([$formation_step3_id, $formation_id, 'DRH', 3]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $formation_step1_id, 'chef.service@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $formation_step2_id, 'formation@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $formation_step3_id, 'drh@dreets.gouv.fr']);
+    }
+
+    // Seed formulaire "Demande d'accès SI" s'il n'existe pas
+    $acces_si_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'acces_si'")->fetchColumn();
+    if ($acces_si_count == 0) {
+        $acces_si_id = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$acces_si_id, 'acces_si', 'Demande d\'accès SI', 'Formulaire de demande d\'accès aux systèmes d\'information — création, modification ou suppression de comptes et droits']);
+
+        $acces_si_fields = [
+            ['Agent',                  'Prénom',              'text',     'prenom',             null,                                                                                               '', 1, 1],
+            ['Agent',                  'Nom',                 'text',     'nom',                null,                                                                                               '', 1, 2],
+            ['Agent',                  'Email',               'text',     'email',              null,                                                                                               '', 1, 3],
+            ['Agent',                  'Service',             'text',     'service',            null,                                                                                               '', 1, 4],
+            ['Agent',                  'Fonction',            'text',     'fonction',           null,                                                                                               '', 1, 5],
+            ['Agent',                  'Date de prise de poste','date',  'date_prise_poste',   null,                                                                                               '', 1, 6],
+            ['Accès demandés',         'Type d\'accès',       'select',   'type_acces',         '["Nouvel accès","Modification","Suppression"]',                                                     '', 1, 7],
+            ['Accès demandés',         'Systèmes',            'textarea', 'systemes',           null,                                                                                               'Ex : APB, ENLAP, RPVN, MESSAGERIE, RÉSEAU, APPLICATIONS MÉTIER', 1, 8],
+            ['Accès demandés',         'Justification',       'textarea', 'justification',      null,                                                                                               '', 1, 9],
+            ['Accès demandés',         'Urgence',             'select',   'urgence',            '["Normale","Urgente - sous 48h"]',                                                                  '', 1, 10],
+            ['Matériel',               'Poste de travail',    'select',   'poste_travail',      '["Poste fixe","Portable","Aucun"]',                                                                 '', 1, 11],
+            ['Matériel',               'Téléphone',           'select',   'telephone',          '["Fixe","Mobile","Aucun"]',                                                                         '', 1, 12],
+            ['Matériel',               'Périphériques',       'text',     'peripheriques',      null,                                                                                               'Ex : écran supplémentaire, clavier, souris, imprimante', 1, 13],
+        ];
+        $stmt_si = $pdo->prepare("INSERT INTO form_fields (id, card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($acces_si_fields as $row) {
+            $stmt_si->execute([generate_uuid(), $row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $acces_si_id]);
+        }
+
+        // Etapes : Chef de service (ordre 1) → DSI (ordre 2) → RSSI (ordre 3)
+        $acces_si_step1_id = generate_uuid();
+        $stmt_step = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)");
+        $stmt_step->execute([$acces_si_step1_id, $acces_si_id, 'Chef de service', 1]);
+        $acces_si_step2_id = generate_uuid();
+        $stmt_step->execute([$acces_si_step2_id, $acces_si_id, 'DSI', 2]);
+        $acces_si_step3_id = generate_uuid();
+        $stmt_step->execute([$acces_si_step3_id, $acces_si_id, 'RSSI', 3]);
+
+        // Destinataires des étapes
+        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+        $stmt_sr->execute([generate_uuid(), $acces_si_step1_id, 'chef.service@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $acces_si_step2_id, 'dsi@dreets.gouv.fr']);
+        $stmt_sr->execute([generate_uuid(), $acces_si_step3_id, 'rssi@dreets.gouv.fr']);
+    }
+
+    // ── Legacy migrations (unversioned — always run for backward compat) ──
+    try { $pdo->exec("ALTER TABLE submissions ADD COLUMN closed_at DATETIME"); } catch (PDOException $e) {}
+    try { $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_at DATETIME"); } catch (PDOException $e) {}
+    try { $pdo->exec("ALTER TABLE submissions ADD COLUMN status TEXT DEFAULT 'en_cours'"); } catch (PDOException $e) {}
+    try { $pdo->exec("ALTER TABLE tokens ADD COLUMN expires_at DATETIME"); } catch (PDOException $e) {}
+    try { $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_count INTEGER DEFAULT 0"); } catch (PDOException $e) {}
+    try { $pdo->exec("ALTER TABLE forms ADD COLUMN deadline_field TEXT DEFAULT ''"); } catch (PDOException $e) {}
+    try { $pdo->exec("ALTER TABLE form_fields ADD COLUMN hint TEXT DEFAULT ''"); } catch (PDOException $e) {}
+    
+    // ── Versioned migrations ───────────────────────────────────
+    // Version 1: add file_data BLOB column to attachments
+    if ($current_version < 1) {
+        try {
+            $pdo->exec("ALTER TABLE attachments ADD COLUMN file_data BLOB");
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([1]);
+            $current_version = 1;
+        } catch (PDOException $e) {
+            // Column already exists — mark as migrated
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([1]); } catch (PDOException $e2) {}
+        }
     }
     
-    try {
-        $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_at DATETIME");
-    } catch (PDOException $e) {
-        // Ignorer si la colonne existe déjà
+    // Version 2: add rgpd_consent column to submissions
+    if ($current_version < 2) {
+        try {
+            $pdo->exec("ALTER TABLE submissions ADD COLUMN rgpd_consent INTEGER DEFAULT 0");
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([2]);
+            $current_version = 2;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([2]); } catch (PDOException $e2) {}
+        }
     }
     
-    // Ajout de la colonne status à submissions si elle n'existe pas
-    try {
-        $pdo->exec("ALTER TABLE submissions ADD COLUMN status TEXT DEFAULT 'en_cours'");
-    } catch (PDOException $e) {
-        // Ignorer si la colonne existe déjà
+    // Version 3: add legal_mentions and retention_months settings
+    if ($current_version < 3) {
+        try {
+            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\\'un droit d\\'accès, de rectification et d\\'effacement de vos données. Contact : CIL DREETS. Durée de conservation : 24 mois après clôture.', datetime('now'))");
+            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('retention_months', '24', datetime('now'))");
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([3]);
+            $current_version = 3;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([3]); } catch (PDOException $e2) {}
+        }
     }
     
-    // Ajout de la colonne expires_at à tokens si elle n'existe pas
-    try {
-        $pdo->exec("ALTER TABLE tokens ADD COLUMN expires_at DATETIME");
-    } catch (PDOException $e) {
-        // Ignorer si la colonne existe déjà
+    // Version 4: add webhook_url and webhook_events settings
+    if ($current_version < 4) {
+        try {
+            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('webhook_url', '', datetime('now'))");
+            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('webhook_events', 'workflow_complete,submission_cancelled', datetime('now'))");
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([4]);
+            $current_version = 4;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([4]); } catch (PDOException $e2) {}
+        }
     }
     
-    // Ajout de la colonne relance_count à tokens si elle n'existe pas
-    try {
-        $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_count INTEGER DEFAULT 0");
-    } catch (PDOException $e) {
-        // Ignorer si la colonne existe déjà
+    // Version 5: add rate limiting table
+    if ($current_version < 5) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS rate_limits (
+                id TEXT PRIMARY KEY NOT NULL,
+                action_key TEXT NOT NULL,
+                ip TEXT NOT NULL,
+                attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([5]);
+            $current_version = 5;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([5]); } catch (PDOException $e2) {}
+        }
     }
-    
-    // Ajout de la colonne deadline_field à forms si elle n'existe pas
-    try {
-        $pdo->exec("ALTER TABLE forms ADD COLUMN deadline_field TEXT DEFAULT ''");
-    } catch (PDOException $e) {
-        // Ignorer si la colonne existe déjà
+
+    // Version 6: add form_owners table
+    if ($current_version < 6) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS form_owners (
+                id TEXT PRIMARY KEY NOT NULL,
+                form_id TEXT NOT NULL,
+                email TEXT NOT NULL,
+                added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(form_id, email),
+                FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+            )");
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([6]);
+            $current_version = 6;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([6]); } catch (PDOException $e2) {}
+        }
+    }
+
+    // Version 7: add uuid column to forms + generate for existing rows
+    if ($current_version < 7) {
+        try {
+            try { $pdo->exec("ALTER TABLE forms ADD COLUMN uuid TEXT"); } catch (PDOException $e) {}
+            // Generate UUIDs for existing forms that don't have one
+            $forms_without_uuid = $pdo->query("SELECT id FROM forms WHERE uuid IS NULL OR uuid = ''")->fetchAll(PDO::FETCH_COLUMN);
+            $stmt_upd = $pdo->prepare("UPDATE forms SET uuid = ? WHERE id = ?");
+            foreach ($forms_without_uuid as $fid) {
+                $stmt_upd->execute([generate_uuid(), $fid]);
+            }
+            // Make uuid unique and not null
+            try { $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_forms_uuid ON forms(uuid)"); } catch (PDOException $e) {}
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([7]);
+            $current_version = 7;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([7]); } catch (PDOException $e2) {}
+        }
+    }
+
+    // Version 8: add lazy_cron tracking table
+    if ($current_version < 8) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS lazy_cron (
+                task_key TEXT PRIMARY KEY,
+                last_run DATETIME NOT NULL,
+                run_count INTEGER DEFAULT 0
+            )");
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([8]);
+            $current_version = 8;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([8]); } catch (PDOException $e2) {}
+        }
+    }
+
+    // Version 9: migrate all INTEGER PKs and FKs to TEXT (UUID)
+    if ($current_version < 9) {
+        try {
+            $pdo->exec("PRAGMA foreign_keys = OFF");
+
+            // ── ÉTAPE 1 : Construire la mapping old_int_id → uuid pour forms ──
+            // AVANT de dropper la table forms, on lit la correspondance id (int) → uuid
+            $form_id_map = []; // old_int_id => uuid
+            $old_forms = $pdo->query("SELECT id, uuid FROM forms")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($old_forms as $frow) {
+                $form_id_map[$frow['id']] = $frow['uuid'];
+            }
+
+            // ── ÉTAPE 2 : Migrer forms ──
+            $pdo->exec("CREATE TABLE forms_new (
+                id TEXT PRIMARY KEY NOT NULL,
+                slug TEXT UNIQUE NOT NULL,
+                label TEXT NOT NULL,
+                description TEXT,
+                actif INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                deadline_field TEXT DEFAULT ''
+            )");
+            $pdo->exec("INSERT INTO forms_new (id, slug, label, description, actif, created_at, deadline_field)
+                SELECT uuid, slug, label, description, actif, created_at, deadline_field FROM forms");
+            $pdo->exec("DROP TABLE forms");
+            $pdo->exec("ALTER TABLE forms_new RENAME TO forms");
+
+            // ── ÉTAPE 3 : Migrer steps ──
+            $old_steps = $pdo->query("SELECT * FROM steps")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE steps");
+            $pdo->exec("CREATE TABLE steps (
+                id TEXT PRIMARY KEY NOT NULL,
+                form_id TEXT NOT NULL,
+                label TEXT NOT NULL,
+                ordre INTEGER NOT NULL,
+                actif INTEGER DEFAULT 1,
+                FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+            )");
+            $step_id_map = []; // old_int_id => new_uuid_id
+            $stmt_ins = $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, ?)");
+            foreach ($old_steps as $row) {
+                $new_id = generate_uuid();
+                $new_form_id = $form_id_map[$row['form_id']] ?? $row['form_id'];
+                $stmt_ins->execute([$new_id, $new_form_id, $row['label'], $row['ordre'], $row['actif']]);
+                $step_id_map[$row['id']] = $new_id;
+            }
+
+            // ── ÉTAPE 4 : Migrer step_recipients ──
+            $old_sr = $pdo->query("SELECT * FROM step_recipients")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE step_recipients");
+            $pdo->exec("CREATE TABLE step_recipients (
+                id TEXT PRIMARY KEY NOT NULL,
+                step_id TEXT NOT NULL,
+                email TEXT NOT NULL,
+                FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+            foreach ($old_sr as $row) {
+                $new_step_id = $step_id_map[$row['step_id']] ?? $row['step_id'];
+                $stmt_ins->execute([generate_uuid(), $new_step_id, $row['email']]);
+            }
+
+            // ── ÉTAPE 5 : Migrer submissions ──
+            $old_subs = $pdo->query("SELECT * FROM submissions")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE submissions");
+            $pdo->exec("CREATE TABLE submissions (
+                id TEXT PRIMARY KEY NOT NULL,
+                form_id TEXT NOT NULL,
+                data TEXT NOT NULL,
+                submitted_by TEXT NOT NULL,
+                submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                closed_at DATETIME,
+                status TEXT DEFAULT 'en_cours',
+                rgpd_consent INTEGER DEFAULT 0,
+                FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+            )");
+            $sub_id_map = [];
+            $stmt_ins = $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, closed_at, status, rgpd_consent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($old_subs as $row) {
+                $new_id = generate_uuid();
+                $new_form_id = $form_id_map[$row['form_id']] ?? $row['form_id'];
+                $stmt_ins->execute([$new_id, $new_form_id, $row['data'], $row['submitted_by'], $row['submitted_at'], $row['closed_at'], $row['status'], $row['rgpd_consent'] ?? 0]);
+                $sub_id_map[$row['id']] = $new_id;
+            }
+
+            // ── ÉTAPE 6 : Migrer tokens ──
+            $old_tokens = $pdo->query("SELECT * FROM tokens")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE tokens");
+            $pdo->exec("CREATE TABLE tokens (
+                id TEXT PRIMARY KEY NOT NULL,
+                submission_id TEXT NOT NULL,
+                step_id TEXT NOT NULL,
+                email TEXT NOT NULL,
+                token TEXT UNIQUE NOT NULL,
+                sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                done_at DATETIME,
+                relance_at DATETIME,
+                expires_at DATETIME,
+                relance_count INTEGER DEFAULT 0,
+                FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+                FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
+            )");
+            $token_id_map = [];
+            $stmt_ins = $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($old_tokens as $row) {
+                $new_id = generate_uuid();
+                $new_sub_id = $sub_id_map[$row['submission_id']] ?? $row['submission_id'];
+                $new_step_id = $step_id_map[$row['step_id']] ?? $row['step_id'];
+                $stmt_ins->execute([$new_id, $new_sub_id, $new_step_id, $row['email'], $row['token'], $row['sent_at'], $row['done_at'], $row['relance_at'], $row['expires_at'], $row['relance_count'] ?? 0]);
+                $token_id_map[$row['id']] = $new_id;
+            }
+
+            // ── ÉTAPE 7 : Migrer form_fields ──
+            $old_ff = $pdo->query("SELECT * FROM form_fields")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE form_fields");
+            $pdo->exec("CREATE TABLE form_fields (
+                id TEXT PRIMARY KEY NOT NULL,
+                form_id TEXT NOT NULL,
+                label TEXT NOT NULL,
+                field_type TEXT NOT NULL DEFAULT 'text',
+                field_name TEXT NOT NULL,
+                options TEXT,
+                required INTEGER DEFAULT 0,
+                ordre INTEGER DEFAULT 0,
+                card_group TEXT DEFAULT 'Général',
+                hint TEXT DEFAULT '',
+                FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, required, ordre, card_group, hint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($old_ff as $row) {
+                $new_form_id = $form_id_map[$row['form_id']] ?? $row['form_id'];
+                $stmt_ins->execute([generate_uuid(), $new_form_id, $row['label'], $row['field_type'], $row['field_name'], $row['options'], $row['required'], $row['ordre'], $row['card_group'], $row['hint'] ?? '']);
+            }
+
+            // ── ÉTAPE 8 : Migrer admins ──
+            $old_admins = $pdo->query("SELECT * FROM admins")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE admins");
+            $pdo->exec("CREATE TABLE admins (
+                id TEXT PRIMARY KEY NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                added_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)");
+            foreach ($old_admins as $row) {
+                $stmt_ins->execute([generate_uuid(), $row['email'], $row['added_at']]);
+            }
+
+            // ── ÉTAPE 9 : Migrer admin_requests ──
+            $old_ar = $pdo->query("SELECT * FROM admin_requests")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE admin_requests");
+            $pdo->exec("CREATE TABLE admin_requests (
+                id TEXT PRIMARY KEY NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                status TEXT NOT NULL DEFAULT 'pending',
+                token TEXT UNIQUE NOT NULL
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, ?, ?)");
+            foreach ($old_ar as $row) {
+                $stmt_ins->execute([generate_uuid(), $row['email'], $row['requested_at'], $row['status'], $row['token']]);
+            }
+
+            // ── ÉTAPE 10 : Migrer audit_log ──
+            $old_al = $pdo->query("SELECT * FROM audit_log")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE audit_log");
+            $pdo->exec("CREATE TABLE audit_log (
+                id TEXT PRIMARY KEY NOT NULL,
+                action TEXT NOT NULL,
+                target TEXT,
+                detail TEXT,
+                actor TEXT NOT NULL,
+                ip TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            foreach ($old_al as $row) {
+                $stmt_ins->execute([generate_uuid(), $row['action'], $row['target'], $row['detail'], $row['actor'], $row['ip'], $row['created_at']]);
+            }
+
+            // ── ÉTAPE 11 : Migrer alert_rules ──
+            $old_arules = $pdo->query("SELECT * FROM alert_rules")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE alert_rules");
+            $pdo->exec("CREATE TABLE alert_rules (
+                id TEXT PRIMARY KEY NOT NULL,
+                form_id TEXT NOT NULL,
+                days_before INTEGER NOT NULL DEFAULT 5,
+                condition_type TEXT NOT NULL DEFAULT 'steps_incomplete',
+                notify_who TEXT NOT NULL DEFAULT 'admin',
+                label TEXT NOT NULL,
+                actif INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+            )");
+            $arule_id_map = [];
+            $stmt_ins = $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($old_arules as $row) {
+                $new_id = generate_uuid();
+                $new_form_id = $form_id_map[$row['form_id']] ?? $row['form_id'];
+                $stmt_ins->execute([$new_id, $new_form_id, $row['days_before'], $row['condition_type'], $row['notify_who'], $row['label'], $row['actif'], $row['created_at']]);
+                $arule_id_map[$row['id']] = $new_id;
+            }
+
+            // ── ÉTAPE 12 : Migrer alert_log ──
+            $old_alog = $pdo->query("SELECT * FROM alert_log")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE alert_log");
+            $pdo->exec("CREATE TABLE alert_log (
+                id TEXT PRIMARY KEY NOT NULL,
+                rule_id TEXT NOT NULL,
+                submission_id TEXT NOT NULL,
+                sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                message TEXT,
+                FOREIGN KEY (rule_id) REFERENCES alert_rules(id) ON DELETE CASCADE,
+                FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO alert_log (id, rule_id, submission_id, sent_at, message) VALUES (?, ?, ?, ?, ?)");
+            foreach ($old_alog as $row) {
+                $new_rule_id = $arule_id_map[$row['rule_id']] ?? $row['rule_id'];
+                $new_sub_id = $sub_id_map[$row['submission_id']] ?? $row['submission_id'];
+                $stmt_ins->execute([generate_uuid(), $new_rule_id, $new_sub_id, $row['sent_at'], $row['message']]);
+            }
+
+            // ── ÉTAPE 13 : Migrer attachments ──
+            $old_att = $pdo->query("SELECT * FROM attachments")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE attachments");
+            $pdo->exec("CREATE TABLE attachments (
+                id TEXT PRIMARY KEY NOT NULL,
+                submission_id TEXT NOT NULL,
+                field_name TEXT NOT NULL,
+                original_name TEXT NOT NULL,
+                stored_name TEXT NOT NULL,
+                mime_type TEXT NOT NULL,
+                file_size INTEGER NOT NULL DEFAULT 0,
+                file_data BLOB,
+                uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($old_att as $row) {
+                $new_sub_id = $sub_id_map[$row['submission_id']] ?? $row['submission_id'];
+                $stmt_ins->execute([generate_uuid(), $new_sub_id, $row['field_name'], $row['original_name'], $row['stored_name'], $row['mime_type'], $row['file_size'], $row['file_data'], $row['uploaded_at']]);
+            }
+
+            // ── ÉTAPE 14 : Migrer delegations ──
+            $old_deleg = $pdo->query("SELECT * FROM delegations")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE delegations");
+            $pdo->exec("CREATE TABLE delegations (
+                id TEXT PRIMARY KEY NOT NULL,
+                token_id TEXT NOT NULL,
+                from_email TEXT NOT NULL,
+                to_email TEXT NOT NULL,
+                reason TEXT,
+                delegated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                new_token_id TEXT,
+                FOREIGN KEY (token_id) REFERENCES tokens(id) ON DELETE CASCADE
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            foreach ($old_deleg as $row) {
+                $new_token_id = $token_id_map[$row['token_id']] ?? $row['token_id'];
+                $new_new_token_id = isset($row['new_token_id']) ? ($token_id_map[$row['new_token_id']] ?? $row['new_token_id']) : null;
+                $stmt_ins->execute([generate_uuid(), $new_token_id, $row['from_email'], $row['to_email'], $row['reason'], $row['delegated_at'], $new_new_token_id]);
+            }
+
+            // ── ÉTAPE 15 : Migrer form_owners ──
+            $old_fo = $pdo->query("SELECT * FROM form_owners")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE form_owners");
+            $pdo->exec("CREATE TABLE form_owners (
+                id TEXT PRIMARY KEY NOT NULL,
+                form_id TEXT NOT NULL,
+                email TEXT NOT NULL,
+                added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(form_id, email),
+                FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO form_owners (id, form_id, email, added_at) VALUES (?, ?, ?, ?)");
+            foreach ($old_fo as $row) {
+                $new_form_id = $form_id_map[$row['form_id']] ?? $row['form_id'];
+                $stmt_ins->execute([generate_uuid(), $new_form_id, $row['email'], $row['added_at']]);
+            }
+
+            // ── ÉTAPE 16 : Migrer rate_limits ──
+            $old_rl = $pdo->query("SELECT * FROM rate_limits")->fetchAll(PDO::FETCH_ASSOC);
+            $pdo->exec("DROP TABLE rate_limits");
+            $pdo->exec("CREATE TABLE rate_limits (
+                id TEXT PRIMARY KEY NOT NULL,
+                action_key TEXT NOT NULL,
+                ip TEXT NOT NULL,
+                attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $stmt_ins = $pdo->prepare("INSERT INTO rate_limits (id, action_key, ip, attempted_at) VALUES (?, ?, ?, ?)");
+            foreach ($old_rl as $row) {
+                $stmt_ins->execute([generate_uuid(), $row['action_key'], $row['ip'], $row['attempted_at']]);
+            }
+
+            // Ré-activer les FK
+            $pdo->exec("PRAGMA foreign_keys = ON");
+
+            // Vérification d'intégrité
+            $pdo->exec("PRAGMA integrity_check");
+
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([9]);
+            $current_version = 9;
+        } catch (PDOException $e) {
+            // Ré-activer les FK même en cas d'échec
+            try { $pdo->exec("PRAGMA foreign_keys = ON"); } catch (PDOException $e2) {}
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([9]); } catch (PDOException $e2) {}
+        }
     }
 
     // Seed des regles d'alerte par defaut si la table est vide
@@ -507,18 +1304,18 @@ function db_migrate(PDO $pdo): void {
             // Onboarding : alerter 5 jours et 2 jours avant la prise de poste
             $onb = $pdo->query("SELECT id FROM forms WHERE slug = 'onboarding' LIMIT 1")->fetchColumn();
             if ($onb) {
-                $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, 1)");
-                $stmt_ar->execute([$onb, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
-                $stmt_ar->execute([$onb, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);
+                $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, ?, 1)");
+                $stmt_ar->execute([generate_uuid(), $onb, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
+                $stmt_ar->execute([generate_uuid(), $onb, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);
                 // Mettre à jour le deadline_field pour l'onboarding
                 $pdo->prepare("UPDATE forms SET deadline_field = ? WHERE id = ?")->execute(['date_prise_poste', $onb]);
             }
             // Outboarding : alerter 5 jours et 2 jours avant le départ
             $ob = $pdo->query("SELECT id FROM forms WHERE slug = 'outboarding' LIMIT 1")->fetchColumn();
             if ($ob) {
-                $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, 1)");
-                $stmt_ar->execute([$ob, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
-                $stmt_ar->execute([$ob, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);
+                $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, ?, 1)");
+                $stmt_ar->execute([generate_uuid(), $ob, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
+                $stmt_ar->execute([generate_uuid(), $ob, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);
                 // Mettre à jour le deadline_field pour l'outboarding
                 $pdo->prepare("UPDATE forms SET deadline_field = ? WHERE id = ?")->execute(['date_depart', $ob]);
             }
@@ -526,6 +1323,15 @@ function db_migrate(PDO $pdo): void {
     } catch (PDOException $e) {
         // Ignorer si déjà fait
     }
+    
+    // Seed webhook settings if empty
+    try {
+        $webhook_check = $pdo->query("SELECT COUNT(*) FROM settings WHERE key IN ('webhook_url', 'webhook_events')")->fetchColumn();
+        if ($webhook_check < 2) {
+            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('webhook_url', '', datetime('now'))");
+            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('webhook_events', 'workflow_complete,submission_cancelled', datetime('now'))");
+        }
+    } catch (PDOException $e) {}
     
     // Migration des données existantes : peupler la colonne status à partir de closed_at
     try {
@@ -554,18 +1360,21 @@ function h(string $val): string {
  * Ex: "Type d'arrivée" → "type_arrivee"
  */
 function generate_field_name(string $label): string {
-    // Minuscules
-    $name = mb_strtolower($label, 'UTF-8');
+    // Minuscules (fallback si mbstring absent)
+    $name = function_exists('mb_strtolower') ? mb_strtolower($label, 'UTF-8') : strtolower($label);
     // Supprimer les accents
-    $name = transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $name);
-    if ($name === false) {
-        // Fallback manuel si intl pas dispo
-        $name = str_replace(
-            ['à','â','ä','é','è','ê','ë','ï','î','ô','ö','ù','û','ü','ç','œ','æ','ÿ'],
-            ['a','a','a','e','e','e','e','i','i','o','o','u','u','u','c','oe','ae','y'],
-            $name
-        );
+    if (function_exists('transliterator_transliterate')) {
+        $transliterated = transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $name);
+        if ($transliterated !== false) {
+            $name = $transliterated;
+        }
     }
+    // Fallback manuel si intl pas dispo ou a échoué
+    $name = str_replace(
+        ['à','â','ä','é','è','ê','ë','ï','î','ô','ö','ù','û','ü','ç','œ','æ','ÿ'],
+        ['a','a','a','e','e','e','e','i','i','o','o','u','u','u','c','oe','ae','y'],
+        $name
+    );
     // Remplacer tout ce qui n'est pas alphanumérique par un underscore
     $name = preg_replace('/[^a-z0-9]+/', '_', $name);
     // Nettoyer les underscores en double et en bordure
@@ -602,6 +1411,91 @@ function render_footer(): string {
   <a href="changelog.php" style="color:#003189;text-decoration:none;font-weight:bold;" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>
   — Formulaire Dématérialisé DREETS
 </footer>';
+}
+
+// ── ERROR PAGES ────────────────────────────────────────────────
+/**
+ * Affiche une page d'erreur HTML complète et arrête l'exécution.
+ *
+ * @param int    $code      Code HTTP (403, 404, 400, 401, 500…)
+ * @param string $title     Titre court (ex: "Accès refusé")
+ * @param string $message   Message descriptif
+ * @param string $hint      Conseil / marche à suivre (optionnel)
+ * @param string $back_url  URL du bouton de retour (défaut: index.php)
+ */
+function render_error_page(int $code, string $title, string $message, string $hint = '', string $back_url = 'index.php'): void {
+    http_response_code($code);
+
+    // Icônes SVG selon le code d'erreur
+    $icons = [
+        403 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#c0392b" stroke-width="5" fill="#fde8e8"/><rect x="38" y="28" width="24" height="28" rx="4" fill="#c0392b"/><circle cx="50" cy="30" r="2.5" fill="#fde8e8"/><path d="M50 42v8" stroke="#fde8e8" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="56" r="2" fill="#fde8e8"/><path d="M30 72 Q50 65 70 72" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+        404 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#003189" stroke-width="5" fill="#e8eaf6"/><path d="M30 70 L50 30 L70 70" stroke="#003189" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="38" y1="58" x2="62" y2="58" stroke="#003189" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="26" r="3" fill="#003189"/></svg>',
+        400 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#b45309" stroke-width="5" fill="#fff3e0"/><path d="M50 30v24" stroke="#b45309" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="66" r="3.5" fill="#b45309"/></svg>',
+        401 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#003189" stroke-width="5" fill="#e8eaf6"/><rect x="38" y="42" width="24" height="22" rx="3" fill="#003189"/><path d="M42 42V36 a8 8 0 0 1 16 0v6" stroke="#003189" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="50" cy="52" r="2.5" fill="#e8eaf6"/></svg>',
+        500 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#c0392b" stroke-width="5" fill="#fde8e8"/><path d="M32 38 Q40 32 50 38 Q60 44 68 38" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M32 56 Q40 50 50 56 Q60 62 68 56" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M35 72 Q50 64 65 72" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+    ];
+    $icon = $icons[$code] ?? $icons[500];
+
+    $hint_html = '';
+    if (!empty($hint)) {
+        $hint_html = '<div class="error-hint"><strong>Que faire ?</strong>' . nl2br(h($hint)) . '</div>';
+    }
+
+    $user = '';
+    if (function_exists('get_auth_user')) {
+        try { $user = get_auth_user(); } catch (\Throwable $e) { $user = ''; }
+    }
+
+    $bandeau_links = '';
+    if (!empty($user)) {
+        $bandeau_links = '<span>Connecté en tant que : <strong>' . h($user) . '</strong></span>
+    <span><a href="index.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">Accueil</a></span>';
+    }
+
+    // Charger le CSS partagé
+    $css = '';
+    $style_file = __DIR__ . '/style.php';
+    if (file_exists($style_file)) {
+        ob_start();
+        require $style_file;
+        $css = ob_get_clean();
+    }
+    // Si le require n'a rien produit (style.php est un fragment <style>…</style>), fallback minimal
+    if (empty(trim(strip_tags($css)))) {
+        $css = '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e}.bandeau{background:#003189;color:#fff;padding:.75rem 2rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.bandeau a{color:#b3c8f0;font-size:.8rem;text-decoration:none}.btn{padding:.5rem 1rem;border:none;border-radius:3px;font-size:.85rem;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-block}.btn-primary{background:#003189;color:#fff}.btn-primary:hover{background:#002270}.skip-link{position:absolute;left:-9999px;top:0;background:#003189;color:#fff;padding:.5rem 1rem;z-index:9999}.skip-link:focus{left:0}.error-page{display:flex;min-height:calc(100vh - 120px);align-items:center;justify-content:center;padding:2rem 1rem}.error-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:3rem 2.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}.error-card .error-code{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.25rem;letter-spacing:-2px}.error-card .error-code.code-403{color:#c0392b}.error-card .error-code.code-404{color:#003189}.error-card .error-code.code-400{color:#b45309}.error-card .error-code.code-401{color:#003189}.error-card .error-code.code-500{color:#c0392b}.error-card .error-illustration{margin-bottom:1.25rem}.error-card .error-illustration svg{width:100px;height:100px}.error-card h1{font-size:1.35rem;color:#1e1e1e;margin-bottom:.75rem;border:none;padding:0}.error-card .error-message{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:1.25rem}.error-card .error-hint{font-size:.85rem;color:#666;background:#f5f5fe;border:1px solid #e0e0f0;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;text-align:left;line-height:1.55}.error-card .error-hint strong{color:#333;display:block;margin-bottom:.35rem}.error-card .error-actions{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}.error-card .error-stamp{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;font-size:.75rem;color:#aaa}</style>';
+    }
+
+    die('<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>' . h($title) . ' — DREETS</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>D</text></svg>">
+  ' . $css . '
+</head>
+<body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<div class="bandeau">
+  <strong>DREETS</strong> — Direction Régionale de l\'Économie, de l\'Emploi, du Travail et des Solidarités
+  ' . $bandeau_links . '
+</div>
+<div class="error-page" id="main-content">
+  <div class="error-card">
+    <div class="error-illustration">' . $icon . '</div>
+    <div class="error-code code-' . $code . '">' . $code . '</div>
+    <h1>' . h($title) . '</h1>
+    <p class="error-message">' . $message . '</p>
+    ' . $hint_html . '
+    <div class="error-actions">
+      <a href="' . h($back_url) . '" class="btn btn-primary">Retour à l\'accueil</a>
+    </div>
+    <div class="error-stamp">Formulaire Dématérialisé — DREETS</div>
+  </div>
+</div>
+' . (function_exists('render_footer') ? render_footer() : '') . '
+</body>
+</html>');
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────
@@ -699,7 +1593,7 @@ function build_mail_html(array $submission, string $step_label, string $token): 
  *  - Génère les tokens pour tous les destinataires de l'étape courante
  *  - Si plus aucune étape → soumission close
  */
-function advance_workflow(int $submission_id): void {
+function advance_workflow(string $submission_id): void {
     $pdo = get_pdo();
 
     $sub = $pdo->prepare("
@@ -762,8 +1656,9 @@ function advance_workflow(int $submission_id): void {
                 $emails = explode('|', $step['emails']);
                 foreach ($emails as $email) {
                     $token = generate_token();
-                    $pdo->prepare("INSERT INTO tokens (submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?)")
-                        ->execute([$submission_id, $step['id'], $email, $token, $now, $expires_at]);
+                    $token_row_id = generate_uuid();
+                    $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)")
+                        ->execute([$token_row_id, $submission_id, $step['id'], $email, $token, $now, $expires_at]);
                     $subject = '[Action requise] ' . ($submission['form_label'] ?? '') . ' — ' . $step['label'];
                     $mail_sent = send_mail($email, $subject, build_mail_html($submission, $step['label'], $token));
                     if (!$mail_sent) {
@@ -801,6 +1696,9 @@ function advance_workflow(int $submission_id): void {
     }
 
     app_log('workflow_complete', 'submission:' . $submission_id, 'Formulaire ' . ($submission['form_label'] ?? '') . ' validé', $agent_email);
+
+    // Webhook notification
+    send_webhook('workflow_complete', ['submission_id' => $submission_id, 'form_label' => $submission['form_label'] ?? '', 'submitted_by' => $submission['submitted_by'] ?? '']);
 }
 
 /**
@@ -888,6 +1786,9 @@ function validate_token(string $token, string $action = 'valider', string $comme
     $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
         ->execute([$updated_data, $t['submission_id']]);
 
+    // Webhook notification
+    send_webhook('token_validated', ['submission_id' => $t['submission_id'], 'step_label' => $t['step_label'], 'email' => $t['email'], 'action' => $action]);
+
     $t['done_at'] = date('Y-m-d H:i:s');
     return ['status' => 'ok', 'data' => $t];
 }
@@ -897,7 +1798,7 @@ function validate_token(string $token, string $action = 'valider', string $comme
 /**
  * Vérifie si un formulaire a des soumissions actives (en_cours)
  */
-function has_active_submissions(int $form_id): int {
+function has_active_submissions(string $form_id): int {
     $pdo = get_pdo();
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = 'en_cours'");
     $stmt->execute([$form_id]);
@@ -907,7 +1808,7 @@ function has_active_submissions(int $form_id): int {
 /**
  * Vérifie si une étape a des soumissions actives (tokens en cours sur cette étape)
  */
-function has_active_step_submissions(int $step_id): int {
+function has_active_step_submissions(string $step_id): int {
     $pdo = get_pdo();
     $stmt = $pdo->prepare("
         SELECT COUNT(DISTINCT t.submission_id)
@@ -944,8 +1845,9 @@ function process_admin_request(string $email): bool {
     
     // Insère la demande dans la base de données
     try {
-        $stmt = $pdo->prepare("INSERT INTO admin_requests (email, requested_at, status, token) VALUES (?, ?, 'pending', ?)");
-        $stmt->execute([$email, date('Y-m-d H:i:s'), $token]);
+        $ar_id = generate_uuid();
+        $stmt = $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, 'pending', ?)");
+        $stmt->execute([$ar_id, $email, date('Y-m-d H:i:s'), $token]);
         
         app_log('admin_request', 'admin:' . $email, 'Demande d\'accès admin', $email);
 
@@ -989,8 +1891,8 @@ function approve_admin_request(string $email): bool {
         $stmt->execute([$email]);
         
         // Ajoute l'utilisateur comme administrateur
-        $stmt = $pdo->prepare("INSERT OR IGNORE INTO admins (email, added_at) VALUES (?, ?)");
-        $stmt->execute([$email, date('Y-m-d H:i:s')]);
+        $stmt = $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, ?)");
+        $stmt->execute([generate_uuid(), $email, date('Y-m-d H:i:s')]);
         
         // Envoie un email de confirmation
         $subject = 'Accès admin approuvé - Workflow DREETS';
@@ -1090,8 +1992,8 @@ function app_log(string $action, string $target = '', string $detail = '', strin
             $actor = get_auth_user();
         }
         $ip = $_SERVER['REMOTE_ADDR'] ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'CLI');
-        $pdo->prepare("INSERT INTO audit_log (action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))")
-            ->execute([$action, $target, $detail, $actor, $ip]);
+        $pdo->prepare("INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))")
+            ->execute([generate_uuid(), $action, $target, $detail, $actor, $ip]);
     } catch (Exception $e) {
         error_log('Audit log error: ' . $e->getMessage());
     }
@@ -1153,7 +2055,7 @@ function export_csv(PDO $pdo, array $options = []): void {
     $params = [];
     if (!empty($options['form_id'])) {
         $where[] = 's.form_id = ?';
-        $params[] = (int)$options['form_id'];
+        $params[] = $options['form_id'];
     }
     if (!empty($options['status'])) {
         $where[] = 's.status = ?';
@@ -1223,10 +2125,10 @@ function export_csv(PDO $pdo, array $options = []): void {
  * Régénère un token expiré pour un validateur (admin uniquement)
  * Invalide l'ancien token et crée un nouveau avec une nouvelle date d'expiration
  *
- * @param int $old_token_id ID de l'ancien token
+ * @param string $old_token_id ID de l'ancien token
  * @return array ['success' => bool, 'message' => string]
  */
-function regenerate_token(int $old_token_id): array {
+function regenerate_token(string $old_token_id): array {
     $pdo = get_pdo();
 
     // Récupérer l'ancien token
@@ -1259,8 +2161,9 @@ function regenerate_token(int $old_token_id): array {
     $expires_at = date('Y-m-d H:i:s', strtotime("+{$expire_days} days"));
     $now = date('Y-m-d H:i:s');
 
-    $pdo->prepare("INSERT INTO tokens (submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
-        ->execute([$old['submission_id'], $old['step_id'], $old['email'], $new_token, $now, $expires_at]);
+    $new_token_row_id = generate_uuid();
+    $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        ->execute([$new_token_row_id, $old['submission_id'], $old['step_id'], $old['email'], $new_token, $now, $expires_at]);
 
     // Envoyer le nouveau lien par email
     $sub_stmt = $pdo->prepare("
@@ -1292,11 +2195,11 @@ function regenerate_token(int $old_token_id): array {
 /**
  * Annule une soumission en cours
  *
- * @param int $submission_id ID de la soumission
+ * @param string $submission_id ID de la soumission
  * @param string $cancelled_by Email de l'utilisateur qui annule
  * @return array ['success' => bool, 'message' => string]
  */
-function cancel_submission(int $submission_id, string $cancelled_by = ''): array {
+function cancel_submission(string $submission_id, string $cancelled_by = ''): array {
     $pdo = get_pdo();
 
     $stmt = $pdo->prepare("SELECT s.*, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.id = ?");
@@ -1347,6 +2250,9 @@ function cancel_submission(int $submission_id, string $cancelled_by = ''): array
 
     app_log('submission_cancel', 'submission:' . $submission_id, 'Soumission annulée', $cancelled_by);
 
+    // Webhook notification
+    send_webhook('submission_cancelled', ['submission_id' => $submission_id, 'form_label' => $submission['form_label'] ?? '', 'cancelled_by' => $cancelled_by]);
+
     return ['success' => true, 'message' => 'Soumission annulée avec succès.'];
 }
 
@@ -1357,10 +2263,10 @@ function cancel_submission(int $submission_id, string $cancelled_by = ''): array
  * Contrairement a regenerate_token, celui-ci ne modifie pas le token existant
  * Il envoie simplement un email de rappel au validateur
  *
- * @param int $token_id ID du token
+ * @param string $token_id ID du token
  * @return array ['success' => bool, 'message' => string]
  */
-function remind_one(int $token_id): array {
+function remind_one(string $token_id): array {
     $pdo = get_pdo();
 
     // Récupérer le token avec les infos de la soumission
@@ -1467,11 +2373,11 @@ function get_max_file_size(): int {
  * Gère l'upload d'un fichier pour une soumission
  *
  * @param array $file Le tableau $_FILES['field_name']
- * @param int $submission_id ID de la soumission
+ * @param string $submission_id ID de la soumission
  * @param string $field_name Nom du champ
- * @return array ['success' => bool, 'message' => string, 'attachment_id' => int|null]
+ * @return array ['success' => bool, 'message' => string, 'attachment_id' => string|null]
  */
-function handle_file_upload(array $file, int $submission_id, string $field_name): array {
+function handle_file_upload(array $file, string $submission_id, string $field_name): array {
     // Vérifier les erreurs d'upload
     if ($file['error'] !== UPLOAD_ERR_OK) {
         $errors = [
@@ -1504,34 +2410,17 @@ function handle_file_upload(array $file, int $submission_id, string $field_name)
         return ['success' => false, 'message' => 'Type MIME non autorisé : ' . $mime_type . '.', 'attachment_id' => null];
     }
 
-    // Créer le répertoire d'upload si nécessaire
-    $upload_dir = __DIR__ . '/db/uploads';
-    if (!is_dir($upload_dir)) {
-        mkdir($upload_dir, 0750, true);
-    }
-    // Protéger le répertoire avec un .htaccess (Apache) et index.php vide
-    if (!file_exists($upload_dir . '/.htaccess')) {
-        file_put_contents($upload_dir . '/.htaccess', "Deny from all\n");
-    }
-    if (!file_exists($upload_dir . '/index.php')) {
-        file_put_contents($upload_dir . '/index.php', '<?php http_response_code(403);');
+    // Lire le contenu du fichier pour stockage BLOB
+    $file_content = file_get_contents($file['tmp_name']);
+    if ($file_content === false) {
+        return ['success' => false, 'message' => 'Erreur lors de la lecture du fichier.', 'attachment_id' => null];
     }
 
-    // Générer un nom de stockage unique
-    $stored_name = 'sub_' . $submission_id . '_' . bin2hex(random_bytes(16)) . '.' . $ext;
-    $stored_path = $upload_dir . '/' . $stored_name;
-
-    // Déplacer le fichier
-    if (!move_uploaded_file($file['tmp_name'], $stored_path)) {
-        return ['success' => false, 'message' => 'Erreur lors de l\'enregistrement du fichier.', 'attachment_id' => null];
-    }
-
-    // Enregistrer dans la base de données
+    // Enregistrer dans la base de données avec le contenu BLOB
     $pdo = get_pdo();
-    $pdo->prepare("INSERT INTO attachments (submission_id, field_name, original_name, stored_name, mime_type, file_size, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))")
-        ->execute([$submission_id, $field_name, $file['name'], $stored_name, $mime_type, $file['size']]);
-
-    $attachment_id = (int)$pdo->lastInsertId();
+    $attachment_id = generate_uuid();
+    $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, '', ?, ?, ?, datetime('now'))")
+        ->execute([$attachment_id, $submission_id, $field_name, $file['name'], $mime_type, $file['size'], $file_content]);
 
     app_log('file_upload', 'submission:' . $submission_id, 'Fichier uploadé : ' . $file['name'] . ' (' . $mime_type . ', ' . $file['size'] . ' octets)');
 
@@ -1541,10 +2430,10 @@ function handle_file_upload(array $file, int $submission_id, string $field_name)
 /**
  * Récupère les pièces jointes d'une soumission
  *
- * @param int $submission_id ID de la soumission
+ * @param string $submission_id ID de la soumission
  * @return array Liste des pièces jointes
  */
-function get_attachments(int $submission_id): array {
+function get_attachments(string $submission_id): array {
     $pdo = get_pdo();
     $stmt = $pdo->prepare("SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC");
     $stmt->execute([$submission_id]);
@@ -1555,10 +2444,10 @@ function get_attachments(int $submission_id): array {
  * Récupère une pièce jointe par son ID
  * Vérifie l'accès avant de retourner
  *
- * @param int $attachment_id ID de la pièce jointe
+ * @param string $attachment_id ID de la pièce jointe
  * @return array|null Données de la pièce jointe ou null
  */
-function get_attachment_by_id(int $attachment_id): ?array {
+function get_attachment_by_id(string $attachment_id): ?array {
     $pdo = get_pdo();
     $stmt = $pdo->prepare("SELECT * FROM attachments WHERE id = ?");
     $stmt->execute([$attachment_id]);
@@ -1598,12 +2487,12 @@ function get_file_icon(string $mime_type): string {
  * Délègue un token de validation à un autre validateur
  * L'ancien token est marqué comme traité (délégué) et un nouveau token est créé
  *
- * @param int $token_id ID du token à déléguer
+ * @param string $token_id ID du token à déléguer
  * @param string $to_email Email du délégataire
  * @param string $reason Motif de la délégation
  * @return array ['success' => bool, 'message' => string]
  */
-function delegate_token(int $token_id, string $to_email, string $reason = ''): array {
+function delegate_token(string $token_id, string $to_email, string $reason = ''): array {
     $pdo = get_pdo();
 
     // Récupérer le token
@@ -1653,14 +2542,16 @@ function delegate_token(int $token_id, string $to_email, string $reason = ''): a
     $expires_at = date('Y-m-d H:i:s', strtotime("+{$expire_days} days"));
     $now = date('Y-m-d H:i:s');
 
-    $pdo->prepare("INSERT INTO tokens (submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
-        ->execute([$tok['submission_id'], $tok['step_id'], $to_email, $new_token, $now, $expires_at]);
+    $new_token_row_id = generate_uuid();
+    $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        ->execute([$new_token_row_id, $tok['submission_id'], $tok['step_id'], $to_email, $new_token, $now, $expires_at]);
 
-    $new_token_id = (int)$pdo->lastInsertId();
+    $new_token_id = $new_token_row_id;
 
     // Enregistrer la délégation
-    $pdo->prepare("INSERT INTO delegations (token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, datetime('now'), ?)")
-        ->execute([$token_id, $tok['email'], $to_email, $reason, $new_token_id]);
+    $delegation_id = generate_uuid();
+    $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+        ->execute([$delegation_id, $token_id, $tok['email'], $to_email, $reason, $new_token_id]);
 
     // Envoyer l'email au délégataire
     $step_stmt = $pdo->prepare("SELECT label FROM steps WHERE id = ?");
@@ -1703,7 +2594,7 @@ function delegate_token(int $token_id, string $to_email, string $reason = ''): a
 /**
  * Récupère l'historique des délégations pour une soumission
  */
-function get_delegations(int $submission_id): array {
+function get_delegations(string $submission_id): array {
     $pdo = get_pdo();
     $stmt = $pdo->prepare("
         SELECT d.*, t.step_id, st.label as step_label
@@ -1715,4 +2606,332 @@ function get_delegations(int $submission_id): array {
     ");
     $stmt->execute([$submission_id]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ── RGPD COMPLIANCE ──────────────────────────────────────────
+
+/**
+ * Exporte toutes les données d'un agent au format JSON (droit d'accès RGPD)
+ */
+function rgpd_export_user_data(string $email): array {
+    $pdo = get_pdo();
+    $data = ['email' => $email, 'export_date' => date('c'), 'submissions' => [], 'validations' => []];
+    
+    // Soumissions de l'agent
+    $stmt = $pdo->prepare("SELECT s.*, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.submitted_by = ? ORDER BY s.submitted_at DESC");
+    $stmt->execute([$email]);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $data['submissions'][] = [
+            'id' => $row['id'],
+            'form' => $row['form_label'],
+            'status' => $row['status'],
+            'submitted_at' => $row['submitted_at'],
+            'closed_at' => $row['closed_at'],
+            'data' => json_decode($row['data'], true),
+        ];
+    }
+    
+    // Validations effectuées par cet agent
+    $stmt2 = $pdo->prepare("SELECT t.*, st.label as step_label, f.label as form_label FROM tokens t JOIN steps st ON st.id = t.step_id JOIN submissions s ON s.id = t.submission_id JOIN forms f ON f.id = s.form_id WHERE t.email = ? AND t.done_at IS NOT NULL ORDER BY t.done_at DESC");
+    $stmt2->execute([$email]);
+    $data['validations'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+    
+    return $data;
+}
+
+/**
+ * Supprime les données d'un agent (droit à l'effacement RGPD)
+ * Anonymise les soumissions et supprime les pièces jointes
+ */
+function rgpd_delete_user_data(string $email): bool {
+    $pdo = get_pdo();
+    
+    try {
+        // Anonymiser les soumissions de l'agent
+        $stmt = $pdo->prepare("SELECT id, data FROM submissions WHERE submitted_by = ?");
+        $stmt->execute([$email]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $data = json_decode($row['data'], true) ?: [];
+            // Anonymiser les champs personnels
+            foreach (['prenom', 'nom', 'email', 'telephone', 'mobile', 'adresse'] as $field) {
+                if (isset($data[$field])) $data[$field] = '[supprimé]';
+            }
+            $pdo->prepare("UPDATE submissions SET submitted_by = ?, data = ? WHERE id = ?")
+                ->execute(['[supprimé]', json_encode($data, JSON_UNESCAPED_UNICODE), $row['id']]);
+            // Supprimer les pièces jointes (BLOB)
+            $pdo->prepare("DELETE FROM attachments WHERE submission_id = ?")->execute([$row['id']]);
+        }
+        
+        // Anonymiser les tokens de l'agent
+        $pdo->prepare("UPDATE tokens SET email = '[supprimé]' WHERE email = ?")->execute([$email]);
+        
+        // Anonymiser les délégations
+        $pdo->prepare("UPDATE delegations SET from_email = '[supprimé]' WHERE from_email = ?")->execute([$email]);
+        $pdo->prepare("UPDATE delegations SET to_email = '[supprimé]' WHERE to_email = ?")->execute([$email]);
+        
+        // Supprimer les demandes admin
+        $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
+        
+        // Supprimer l'accès admin
+        $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
+        
+        app_log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
+        return true;
+    } catch (Exception $e) {
+        error_log('RGPD delete error: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Purge automatique des données anciennes (RGPD - conservation limitée)
+ * Supprime les soumissions clôturées de plus de X mois
+ */
+function rgpd_auto_purge(int $months = 24): int {
+    $pdo = get_pdo();
+    $cutoff = date('Y-m-d H:i:s', strtotime("-{$months} months"));
+    
+    // Supprimer les pièces jointes des anciennes soumissions
+    $stmt = $pdo->prepare("SELECT id FROM submissions WHERE status != 'en_cours' AND closed_at < ?");
+    $stmt->execute([$cutoff]);
+    $old_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    $count = 0;
+    foreach ($old_ids as $sid) {
+        $pdo->prepare("DELETE FROM attachments WHERE submission_id = ?")->execute([$sid]);
+        $pdo->prepare("DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)")->execute([$sid]);
+        $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$sid]);
+        $pdo->prepare("DELETE FROM alert_log WHERE submission_id = ?")->execute([$sid]);
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$sid]);
+        $count++;
+    }
+    
+    if ($count > 0) {
+        app_log('rgpd_purge', '', "Purge RGPD : {$count} soumissions de plus de {$months} mois supprimées");
+    }
+    
+    return $count;
+}
+
+// ── SECURITY HARDENING ──────────────────────────────────────
+
+/**
+ * Rate limiting par IP et par action
+ * Retourne true si l'action est autorisée, false si le rate limit est atteint
+ */
+function rate_limit_check(string $action = 'default', int $max_attempts = 10, int $window_seconds = 60): bool {
+    $pdo = get_pdo();
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $key = $action . ':' . $ip;
+    $now = time();
+    $window_start = date('Y-m-d H:i:s', $now - $window_seconds);
+    
+    // Create rate_limits table if not exists
+    static $table_created = false;
+    if (!$table_created) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS rate_limits (
+                id TEXT PRIMARY KEY NOT NULL,
+                action_key TEXT NOT NULL,
+                ip TEXT NOT NULL,
+                attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+        } catch (PDOException $e) {}
+        $table_created = true;
+    }
+    
+    // Count recent attempts
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM rate_limits WHERE action_key = ? AND ip = ? AND attempted_at > ?");
+    $stmt->execute([$action, $ip, $window_start]);
+    $count = (int)$stmt->fetchColumn();
+    
+    if ($count >= $max_attempts) {
+        app_log('rate_limit', 'action:' . $action, "Rate limit atteint pour IP {$ip} sur action {$action}");
+        return false;
+    }
+    
+    // Record this attempt
+    $pdo->prepare("INSERT INTO rate_limits (id, action_key, ip, attempted_at) VALUES (?, ?, ?, datetime('now'))")
+        ->execute([generate_uuid(), $action, $ip]);
+    
+    // Clean up old entries (keep last hour)
+    $pdo->exec("DELETE FROM rate_limits WHERE attempted_at < datetime('now', '-1 hour')");
+    
+    return true;
+}
+
+/**
+ * Sanitize input to prevent XSS and injection
+ */
+function sanitize_input(string $input): string {
+    $input = trim($input);
+    $input = stripslashes($input);
+    $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+    return $input;
+}
+
+/**
+ * Validate and sanitize email
+ */
+function validate_email(string $email): string {
+    $email = strtolower(trim($email));
+    return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
+}
+
+// ── FULL-TEXT SEARCH ────────────────────────────────────────
+
+/**
+ * Recherche plein texte dans les soumissions
+ * Cherche dans : submitted_by, data JSON, form_label
+ */
+function search_submissions(string $query, array $filters = []): array {
+    $pdo = get_pdo();
+    $query = trim($query);
+    if (empty($query)) return [];
+    
+    $where = ['1=1'];
+    $params = [];
+    
+    // Full-text search across multiple fields
+    $where[] = "(s.submitted_by LIKE ? OR s.data LIKE ? OR f.label LIKE ?)";
+    $search_term = '%' . $query . '%';
+    $params[] = $search_term;
+    $params[] = $search_term;
+    $params[] = $search_term;
+    
+    // Apply filters
+    if (!empty($filters['status'])) {
+        $where[] = 's.status = ?';
+        $params[] = $filters['status'];
+    }
+    if (!empty($filters['form_id'])) {
+        $where[] = 's.form_id = ?';
+        $params[] = $filters['form_id'];
+    }
+    
+    $where_sql = implode(' AND ', $where);
+    
+    $stmt = $pdo->prepare("
+        SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
+        FROM submissions s
+        JOIN forms f ON f.id = s.form_id
+        WHERE $where_sql
+        ORDER BY s.submitted_at DESC
+        LIMIT 100
+    ");
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ── STATISTICS ──────────────────────────────────────────────
+
+/**
+ * Statistiques par période
+ */
+function get_stats_by_period(string $period = 'month', int $limit = 12): array {
+    $pdo = get_pdo();
+    
+    switch ($period) {
+        case 'week':
+            $format = '%Y-W%W';
+            $interval = '-12 weeks';
+            break;
+        case 'year':
+            $format = '%Y';
+            $interval = '-5 years';
+            break;
+        default: // month
+            $format = '%Y-%m';
+            $interval = '-12 months';
+    }
+    
+    $stmt = $pdo->prepare("
+        SELECT 
+            strftime(?, s.submitted_at) as period,
+            COUNT(*) as total,
+            SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
+            SUM(CASE WHEN s.status = 'refuse' THEN 1 ELSE 0 END) as refuse,
+            SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
+            AVG(CASE WHEN s.status = 'valide' AND s.closed_at IS NOT NULL 
+                THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL) 
+                ELSE NULL END) as avg_processing_seconds
+        FROM submissions s
+        WHERE s.submitted_at >= datetime('now', ?)
+        GROUP BY strftime(?, s.submitted_at)
+        ORDER BY period DESC
+        LIMIT ?
+    ");
+    $stmt->execute([$format, $interval, $format, $limit]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Statistiques globales pour le dashboard
+ */
+function get_global_stats(): array {
+    $pdo = get_pdo();
+    
+    $stats = [
+        'total' => (int)$pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn(),
+        'en_cours' => (int)$pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'en_cours'")->fetchColumn(),
+        'valide' => (int)$pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'valide'")->fetchColumn(),
+        'refuse' => (int)$pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'refuse'")->fetchColumn(),
+        'avg_days' => 0,
+        'today' => (int)$pdo->query("SELECT COUNT(*) FROM submissions WHERE DATE(submitted_at) = DATE('now')")->fetchColumn(),
+        'this_week' => (int)$pdo->query("SELECT COUNT(*) FROM submissions WHERE submitted_at >= datetime('now', '-7 days')")->fetchColumn(),
+        'this_month' => (int)$pdo->query("SELECT COUNT(*) FROM submissions WHERE submitted_at >= datetime('now', '-30 days')")->fetchColumn(),
+        'tokens_pending' => (int)$pdo->query("SELECT COUNT(*) FROM tokens WHERE done_at IS NULL")->fetchColumn(),
+        'attachments_count' => (int)$pdo->query("SELECT COUNT(*) FROM attachments")->fetchColumn(),
+        'attachments_size' => (int)$pdo->query("SELECT COALESCE(SUM(file_size), 0) FROM attachments")->fetchColumn(),
+    ];
+    
+    // Average processing time
+    $avg_stmt = $pdo->query("
+        SELECT AVG(CAST(strftime('%s', closed_at) AS REAL) - CAST(strftime('%s', submitted_at) AS REAL))
+        FROM submissions WHERE status = 'valide' AND closed_at IS NOT NULL
+    ");
+    $stats['avg_days'] = round((float)($avg_stmt->fetchColumn() ?: 0) / 86400, 1);
+    
+    $stats['taux_validation'] = $stats['total'] > 0 ? round(($stats['valide'] / $stats['total']) * 100, 1) : 0;
+    
+    return $stats;
+}
+
+// ── WEBHOOK NOTIFICATIONS ───────────────────────────────────
+
+/**
+ * Envoie une notification webhook si configuré
+ */
+function send_webhook(string $event, array $data): void {
+    $webhook_url = get_setting('webhook_url', '');
+    $webhook_events = get_setting('webhook_events', '');
+    
+    if (empty($webhook_url)) return;
+    
+    // Check if this event is in the configured events list
+    $allowed_events = array_filter(array_map('trim', explode(',', $webhook_events)));
+    if (!empty($allowed_events) && !in_array($event, $allowed_events) && !in_array('all', $allowed_events)) {
+        return;
+    }
+    
+    $payload = json_encode([
+        'event' => $event,
+        'timestamp' => date('c'),
+        'data' => $data,
+    ], JSON_UNESCAPED_UNICODE);
+    
+    // Send async webhook via curl (non-blocking)
+    if (function_exists('curl_init')) {
+        $ch = curl_init($webhook_url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Webhook-Event: ' . $event],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5,
+            CURLOPT_CONNECTTIMEOUT => 3,
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+    }
 }

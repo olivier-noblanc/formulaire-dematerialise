@@ -45,7 +45,7 @@ switch ($action) {
         break;
 
     case 'tokens':
-        $submission_id = (int)($_GET['submission_id'] ?? 0);
+        $submission_id = trim($_GET['submission_id'] ?? '');
         if (!$submission_id) {
             echo json_encode(['error' => 'Paramètre submission_id requis']);
             break;
@@ -63,7 +63,7 @@ switch ($action) {
         break;
 
     case 'submission':
-        $submission_id = (int)($_GET['submission_id'] ?? 0);
+        $submission_id = trim($_GET['submission_id'] ?? '');
         if (!$submission_id) {
             echo json_encode(['error' => 'Paramètre submission_id requis']);
             break;
@@ -129,7 +129,7 @@ switch ($action) {
         break;
 
     case 'steps':
-        $form_id = (int)($_GET['form_id'] ?? 0);
+        $form_id = trim($_GET['form_id'] ?? '');
         if (!$form_id) {
             echo json_encode(['error' => 'Paramètre form_id requis']);
             break;
@@ -168,13 +168,13 @@ switch ($action) {
         break;
 
     case 'add_recipient':
-        $step_id = (int)($_GET['step_id'] ?? 0);
+        $step_id = trim($_GET['step_id'] ?? '');
         $email = trim($_GET['email'] ?? '');
         if (!$step_id || !$email) {
             echo json_encode(['error' => 'Paramètres step_id et email requis']);
             break;
         }
-        $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)")
+        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (generate_uuid(), ?, ?)")
             ->execute([$step_id, $email]);
         echo json_encode(['ok' => true, 'message' => "Destinataire $email ajouté à l'étape $step_id"]);
         break;

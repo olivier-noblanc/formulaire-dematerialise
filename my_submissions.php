@@ -33,7 +33,7 @@ $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Pour chaque soumission, récupérer les étapes du workflow avec leur statut
 foreach ($submissions as &$sub) {
-    $sid = (int)$sub['id'];
+    $sid = $sub['id'];
 
     $steps_stmt = $pdo->prepare("
         SELECT st.id as step_id, st.label as step_label, st.ordre,
@@ -44,7 +44,7 @@ foreach ($submissions as &$sub) {
         GROUP BY st.id
         ORDER BY st.ordre ASC, st.id ASC
     ");
-    $steps_stmt->execute([(int)$sub['form_id']]);
+    $steps_stmt->execute([$sub['form_id']]);
     $sub['workflow_steps'] = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $tokens_stmt = $pdo->prepare("
@@ -256,7 +256,7 @@ foreach ($submissions as $s) {
         $fill_cls = $pct === 100 ? 'complete' : ($pct > 0 ? 'in-progress' : 'in-progress');
     ?>
     <div class="sub-card">
-      <a href="submission_view.php?id=<?= (int)$sub['id'] ?>" style="text-decoration:none;color:inherit;">
+      <a href="submission_view.php?id=<?= urlencode($sub['id']) ?>" style="text-decoration:none;color:inherit;">
       <div class="sub-card-header">
         <div>
           <div class="sub-card-title"><?= h($sub['form_label']) ?> <?= $deadline_badge ?></div>
@@ -305,7 +305,7 @@ foreach ($submissions as $s) {
         <?php endif; ?>
 
         <div class="card-actions">
-          <a href="submission_view.php?id=<?= (int)$sub['id'] ?>" class="btn btn-primary" style="font-size:.85rem;">👁 Voir le détail</a>
+          <a href="submission_view.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-primary" style="font-size:.85rem;">👁 Voir le détail</a>
           <a href="form.php?f=<?= h($sub['form_slug']) ?>" class="btn btn-secondary" style="font-size:.85rem;">Nouvelle demande</a>
         </div>
       </div>

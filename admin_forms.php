@@ -13,20 +13,20 @@ if (!is_admin_user() && !is_super_admin()) {
 $forms = get_pdo()->query("SELECT id, label FROM forms ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupération de l'ID du formulaire sélectionné
-$form_id = (int)($_GET['form_id'] ?? 0);
+$form_id = trim($_GET['form_id'] ?? '');
 
 // Récupération de l'ID de l'étape à modifier
-$edit_step_id = (int)($_GET['edit_step'] ?? 0);
+$edit_step_id = trim($_GET['edit_step'] ?? '');
 
 // Récupération de l'ID du champ à modifier
-$edit_field_id = (int)($_GET['edit_field'] ?? 0);
+$edit_field_id = trim($_GET['edit_field'] ?? '');
 
 // Traitement des actions POST
 $action = $_POST['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf()) {
     if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide']); }
-    die('Token CSRF invalide. Veuillez réessayer.');
+    render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
 }
 
 // ── Field type helper ──────────────────────────────────────────
@@ -80,10 +80,11 @@ if ($action === 'add_form') {
     if (!empty($slug) && !empty($label)) {
         $pdo = get_pdo();
         try {
-            $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
-                ->execute([$slug, $label, $description]);
-            app_log('form_create', 'form:' . $pdo->lastInsertId(), "Formulaire '$label' créé");
-            header('Location: admin_forms.php?form_id=' . $pdo->lastInsertId());
+            $new_form_id = generate_uuid();
+            $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+                ->execute([$new_form_id, $slug, $label, $description]);
+            app_log('form_create', 'form:' . $new_form_id, "Formulaire '$label' créé");
+            header('Location: admin_forms.php?form_id=' . urlencode($new_form_id));
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de l\'ajout du formulaire : ' . $e->getMessage();
@@ -93,19 +94,19 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'update_form') {
-    $form_id = (int)($_POST['form_id'] ?? 0);
+    $form_id = trim($_POST['form_id'] ?? '');
     $slug = trim($_POST['slug'] ?? '');
     $label = trim($_POST['label'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $actif = isset($_POST['actif']) ? 1 : 0;
 
-    if ($form_id > 0 && !empty($slug) && !empty($label)) {
+    if (!empty($form_id) && !empty($slug) && !empty($label)) {
         $pdo = get_pdo();
         try {
             $pdo->prepare("UPDATE forms SET slug = ?, label = ?, description = ?, actif = ? WHERE id = ?")
                 ->execute([$slug, $label, $description, $actif, $form_id]);
             app_log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
-            header('Location: admin_forms.php?form_id=' . $form_id);
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id));
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de la mise à jour du formulaire : ' . $e->getMessage();
@@ -115,8 +116,8 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'delete_form') {
-    $form_id = (int)($_POST['form_id'] ?? 0);
-    if ($form_id > 0) {
+    $form_id = trim($_POST['form_id'] ?? '');
+    if (!empty($form_id)) {
         $pdo = get_pdo();
         $active_count = has_active_submissions($form_id);
         if ($active_count > 0) {
@@ -125,7 +126,7 @@ if ($action === 'add_form') {
             try {
                 $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$form_id]);
                 $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$form_id]);
-                app_log('form_delete', 'form:' . $form_id, "Formulaire #$form_id supprimé");
+                app_log('form_delete', 'form:' . $form_id, "Formulaire supprimé");
                 header('Location: admin_forms.php');
                 exit;
             } catch (PDOException $e) {
@@ -135,8 +136,8 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'duplicate_form') {
-    $source_id = (int)($_POST['source_form_id'] ?? 0);
-    if ($source_id > 0) {
+    $source_id = trim($_POST['source_form_id'] ?? '');
+    if (!empty($source_id)) {
         // Récupérer le formulaire source
         $src = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
         $src->execute([$source_id]);
@@ -145,51 +146,54 @@ if ($action === 'add_form') {
             // Créer le nouveau formulaire
             $new_slug = $src_form['slug'] . '-copie';
             $new_label = $src_form['label'] . ' (copie)';
-            $pdo->prepare("INSERT INTO forms (slug, label, description, actif, deadline_field) VALUES (?, ?, ?, 1, ?)")
-                ->execute([$new_slug, $new_label, $src_form['description'], $src_form['deadline_field']]);
-            $new_id = (int)$pdo->lastInsertId();
+            $new_id = generate_uuid();
+            $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)")
+                ->execute([$new_id, $new_slug, $new_label, $src_form['description'], $src_form['deadline_field']]);
             
             // Copier les champs
             $fields = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre");
             $fields->execute([$source_id]);
             foreach ($fields->fetchAll(PDO::FETCH_ASSOC) as $f) {
-                $pdo->prepare("INSERT INTO form_fields (form_id, label, field_type, field_name, options, required, ordre, card_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-                    ->execute([$new_id, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['required'], $f['ordre'], $f['card_group']]);
+                $new_field_id = generate_uuid();
+                $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                    ->execute([$new_field_id, $new_id, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group']]);
             }
             
             // Copier les étapes et destinataires
             $steps = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? ORDER BY ordre");
             $steps->execute([$source_id]);
             foreach ($steps->fetchAll(PDO::FETCH_ASSOC) as $s) {
-                $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, ?)")
-                    ->execute([$new_id, $s['label'], $s['ordre'], $s['actif']]);
-                $new_step_id = (int)$pdo->lastInsertId();
+                $new_step_id = generate_uuid();
+                $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, ?)")
+                    ->execute([$new_step_id, $new_id, $s['label'], $s['ordre'], $s['actif']]);
                 
                 $recips = $pdo->prepare("SELECT * FROM step_recipients WHERE step_id = ?");
                 $recips->execute([$s['id']]);
                 foreach ($recips->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                    $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)")
-                        ->execute([$new_step_id, $r['email']]);
+                    $new_recipient_id = generate_uuid();
+                    $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
+                        ->execute([$new_recipient_id, $new_step_id, $r['email']]);
                 }
             }
             
-            app_log('form_duplicate', 'form:' . $new_id, 'Formulaire dupliqué depuis #' . $source_id);
+            app_log('form_duplicate', 'form:' . $new_id, 'Formulaire dupliqué');
             $success_msg = 'Formulaire dupliqué avec succès.';
         }
     }
 
 } elseif ($action === 'add_step') {
-    $form_id = (int)($_POST['form_id'] ?? 0);
+    $form_id = trim($_POST['form_id'] ?? '');
     $label = trim($_POST['label'] ?? '');
     $ordre = (int)($_POST['ordre'] ?? 0);
 
-    if ($form_id > 0 && !empty($label) && $ordre > 0) {
+    if (!empty($form_id) && !empty($label) && $ordre > 0) {
         $pdo = get_pdo();
         try {
-            $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)")
-                ->execute([$form_id, $label, $ordre]);
+            $new_step_id = generate_uuid();
+            $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)")
+                ->execute([$new_step_id, $form_id, $label, $ordre]);
             app_log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
-            header('Location: admin_forms.php?form_id=' . $form_id);
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id));
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de l\'ajout de l\'étape : ' . $e->getMessage();
@@ -199,18 +203,18 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'update_step') {
-    $step_id = (int)($_POST['step_id'] ?? 0);
+    $step_id = trim($_POST['step_id'] ?? '');
     $label = trim($_POST['label'] ?? '');
     $ordre = (int)($_POST['ordre'] ?? 0);
     $actif = isset($_POST['actif']) ? 1 : 0;
 
-    if ($step_id > 0 && !empty($label) && $ordre > 0) {
+    if (!empty($step_id) && !empty($label) && $ordre > 0) {
         $pdo = get_pdo();
         try {
             $pdo->prepare("UPDATE steps SET label = ?, ordre = ?, actif = ? WHERE id = ?")
                 ->execute([$label, $ordre, $actif, $step_id]);
             app_log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
-            header('Location: admin_forms.php?form_id=' . $form_id);
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id));
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de la mise à jour de l\'étape : ' . $e->getMessage();
@@ -220,8 +224,8 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'delete_step') {
-    $step_id = (int)($_POST['step_id'] ?? 0);
-    if ($step_id > 0) {
+    $step_id = trim($_POST['step_id'] ?? '');
+    if (!empty($step_id)) {
         $pdo = get_pdo();
         $active_count = has_active_step_submissions($step_id);
         if ($active_count > 0) {
@@ -230,7 +234,7 @@ if ($action === 'add_form') {
             try {
                 $pdo->prepare("DELETE FROM step_recipients WHERE step_id = ?")->execute([$step_id]);
                 $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$step_id]);
-                header('Location: admin_forms.php?form_id=' . $form_id);
+                header('Location: admin_forms.php?form_id=' . urlencode($form_id));
                 exit;
             } catch (PDOException $e) {
                 $error_msg = 'Erreur lors de la suppression de l\'étape : ' . $e->getMessage();
@@ -239,19 +243,20 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'add_recipient') {
-    $step_id = (int)($_POST['step_id'] ?? 0);
+    $step_id = trim($_POST['step_id'] ?? '');
     $email = trim($_POST['email'] ?? '');
 
-    if ($step_id > 0 && !empty($email)) {
+    if (!empty($step_id) && !empty($email)) {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error_msg = 'L\'adresse email "' . h($email) . '" n\'est pas valide. Format attendu : prenom.nom@dreets.gouv.fr';
         } else {
             $pdo = get_pdo();
             try {
-                $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)")
-                    ->execute([$step_id, $email]);
+                $new_rcpt_id = generate_uuid();
+                $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
+                    ->execute([$new_rcpt_id, $step_id, $email]);
                 app_log('recipient_add', 'step:' . $step_id, "Destinataire $email ajouté");
-                header('Location: admin_forms.php?form_id=' . $form_id);
+                header('Location: admin_forms.php?form_id=' . urlencode($form_id));
                 exit;
             } catch (PDOException $e) {
                 $error_msg = 'Erreur lors de l\'ajout du destinataire : ' . $e->getMessage();
@@ -262,12 +267,12 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'delete_recipient') {
-    $recipient_id = (int)($_POST['recipient_id'] ?? 0);
-    if ($recipient_id > 0) {
+    $recipient_id = trim($_POST['recipient_id'] ?? '');
+    if (!empty($recipient_id)) {
         $pdo = get_pdo();
         try {
             $pdo->prepare("DELETE FROM step_recipients WHERE id = ?")->execute([$recipient_id]);
-            header('Location: admin_forms.php?form_id=' . $form_id);
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id));
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de la suppression du destinataire : ' . $e->getMessage();
@@ -275,7 +280,7 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'add_field') {
-    $form_id = (int)($_POST['form_id'] ?? 0);
+    $form_id = trim($_POST['form_id'] ?? '');
     $ff_label = trim($_POST['ff_label'] ?? '');
     $ff_field_name = trim($_POST['ff_field_name'] ?? '');
     $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
@@ -298,16 +303,18 @@ if ($action === 'add_form') {
         $ff_field_name = generate_field_name($ff_label);
     }
 
-    if ($form_id > 0 && !empty($ff_label) && !empty($ff_field_name)) {
+    if (!empty($form_id) && !empty($ff_label) && !empty($ff_field_name)) {
         $pdo = get_pdo();
         try {
             // Parse options: one per line → JSON
             $options_json = parse_options_input($ff_options_raw);
+            $ff_hint = trim($_POST['ff_hint'] ?? '');
 
-            $pdo->prepare("INSERT INTO form_fields (form_id, label, field_type, field_name, options, required, ordre, card_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-                ->execute([$form_id, $ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_required, $ff_ordre, $ff_card_group]);
+            $new_field_id = generate_uuid();
+            $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$new_field_id, $form_id, $ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_hint, $ff_required, $ff_ordre, $ff_card_group]);
             app_log('field_add', 'form:' . $form_id, "Champ '$ff_label' ajouté");
-            header('Location: admin_forms.php?form_id=' . $form_id . '#fields');
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id) . '#fields');
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de l\'ajout du champ : ' . $e->getMessage();
@@ -317,8 +324,8 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'update_field') {
-    $field_id = (int)($_POST['field_id'] ?? 0);
-    $form_id = (int)($_POST['form_id'] ?? 0);
+    $field_id = trim($_POST['field_id'] ?? '');
+    $form_id = trim($_POST['form_id'] ?? '');
     $ff_label = trim($_POST['ff_label'] ?? '');
     $ff_field_name = trim($_POST['ff_field_name'] ?? '');
     $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
@@ -341,16 +348,17 @@ if ($action === 'add_form') {
         $ff_field_name = generate_field_name($ff_label);
     }
 
-    if ($field_id > 0 && !empty($ff_label) && !empty($ff_field_name)) {
+    if (!empty($field_id) && !empty($ff_label) && !empty($ff_field_name)) {
         $pdo = get_pdo();
         try {
             // Parse options: one per line → JSON
             $options_json = parse_options_input($ff_options_raw);
+            $ff_hint = trim($_POST['ff_hint'] ?? '');
 
-            $pdo->prepare("UPDATE form_fields SET label = ?, field_type = ?, field_name = ?, options = ?, required = ?, ordre = ?, card_group = ? WHERE id = ?")
-                ->execute([$ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_required, $ff_ordre, $ff_card_group, $field_id]);
+            $pdo->prepare("UPDATE form_fields SET label = ?, field_type = ?, field_name = ?, options = ?, hint = ?, required = ?, ordre = ?, card_group = ? WHERE id = ?")
+                ->execute([$ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_hint, $ff_required, $ff_ordre, $ff_card_group, $field_id]);
             app_log('field_update', 'field:' . $field_id, "Champ '$ff_label' mis à jour");
-            header('Location: admin_forms.php?form_id=' . $form_id . '#fields');
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id) . '#fields');
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de la mise à jour du champ : ' . $e->getMessage();
@@ -360,16 +368,55 @@ if ($action === 'add_form') {
     }
 
 } elseif ($action === 'delete_field') {
-    $field_id = (int)($_POST['field_id'] ?? 0);
-    $form_id = (int)($_POST['form_id'] ?? 0);
-    if ($field_id > 0) {
+    $field_id = trim($_POST['field_id'] ?? '');
+    $form_id = trim($_POST['form_id'] ?? '');
+    if (!empty($field_id)) {
         $pdo = get_pdo();
         try {
             $pdo->prepare("DELETE FROM form_fields WHERE id = ?")->execute([$field_id]);
-            header('Location: admin_forms.php?form_id=' . $form_id . '#fields');
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id) . '#fields');
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de la suppression du champ : ' . $e->getMessage();
+        }
+    }
+
+} elseif ($action === 'add_owner') {
+    $form_id = trim($_POST['form_id'] ?? '');
+    $owner_email = trim($_POST['owner_email'] ?? '');
+
+    if (!empty($form_id) && !empty($owner_email)) {
+        if (!filter_var($owner_email, FILTER_VALIDATE_EMAIL)) {
+            $error_msg = 'L\'adresse email "' . h($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@dreets.gouv.fr';
+        } else {
+            $pdo = get_pdo();
+            try {
+                $new_owner_id = generate_uuid();
+                $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)")
+                    ->execute([$new_owner_id, $form_id, $owner_email]);
+                app_log('owner_add', 'form:' . $form_id, "Propriétaire $owner_email ajouté");
+                header('Location: admin_forms.php?form_id=' . urlencode($form_id) . '#owners');
+                exit;
+            } catch (PDOException $e) {
+                $error_msg = 'Erreur lors de l\'ajout du propriétaire : ' . $e->getMessage();
+            }
+        }
+    } else {
+        $error_msg = 'L\'email du propriétaire est requis.';
+    }
+
+} elseif ($action === 'delete_owner') {
+    $owner_id = trim($_POST['owner_id'] ?? '');
+    $form_id = trim($_POST['form_id'] ?? '');
+    if (!empty($owner_id) && !empty($form_id)) {
+        $pdo = get_pdo();
+        try {
+            $pdo->prepare("DELETE FROM form_owners WHERE id = ?")->execute([$owner_id]);
+            app_log('owner_remove', 'form:' . $form_id, "Propriétaire retiré");
+            header('Location: admin_forms.php?form_id=' . urlencode($form_id) . '#owners');
+            exit;
+        } catch (PDOException $e) {
+            $error_msg = 'Erreur lors de la suppression du propriétaire : ' . $e->getMessage();
         }
     }
 }
@@ -381,7 +428,7 @@ $steps = [];
 $form_fields = [];
 $existing_groups = [];
 
-if ($form_id > 0) {
+if (!empty($form_id)) {
     $pdo = get_pdo();
 
     $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
@@ -415,6 +462,9 @@ if ($form_id > 0) {
         $stmt = $pdo->prepare("SELECT DISTINCT card_group FROM form_fields WHERE form_id = ? ORDER BY card_group");
         $stmt->execute([$form_id]);
         $existing_groups = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Form owners
+        $owners = get_form_owners($form_id);
     }
 }
 
@@ -684,7 +734,7 @@ ksort($steps_by_ordre);
 <div class="bandeau">
     <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
     <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
+    <span><a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a> <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a> <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔐 RGPD</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
 </div>
 <div class="container">
     <h1>⚙ Gestion des formulaires</h1>
@@ -713,7 +763,7 @@ ksort($steps_by_ordre);
         <a href="admin_forms.php" class="btn btn-primary">＋ Nouveau formulaire</a>
     </div>
 
-    <?php if ($form_id <= 0): ?>
+    <?php if (empty($form_id)): ?>
         <!-- ── New form creation ──────────────────────────────── -->
         <div class="section-card">
             <div class="section-card-header">
@@ -760,7 +810,7 @@ ksort($steps_by_ordre);
                     <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="duplicate_form">
-                        <input type="hidden" name="source_form_id" value="<?= (int)$form['id'] ?>">
+                        <input type="hidden" name="source_form_id" value="<?= $form['id'] ?>">
                         <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📋 Dupliquer</button>
                     </form>
                     <form method="POST" style="display:inline;">
@@ -865,7 +915,7 @@ ksort($steps_by_ordre);
                     <?php if (!empty($steps)): ?>
                         <div style="margin-top:1.25rem;">
                             <?php foreach ($steps as $step): ?>
-                                <?php if ($edit_step_id === (int)$step['id']): ?>
+                                <?php if ($edit_step_id === $step['id']): ?>
                                     <!-- ── Edit step inline ──────────────────── -->
                                     <div class="step-card editing">
                                         <div class="step-info" style="width:100%;">
@@ -1051,7 +1101,7 @@ ksort($steps_by_ordre);
                             </thead>
                             <tbody>
                                 <?php foreach ($form_fields as $ff): ?>
-                                    <?php if ($edit_field_id === (int)$ff['id']): ?>
+                                    <?php if ($edit_field_id === $ff['id']): ?>
                                         <!-- ── Edit field inline ──────────────── -->
                                         <tr>
                                             <td colspan="7" style="background:#f0f4ff;padding:1rem;">
@@ -1100,6 +1150,10 @@ ksort($steps_by_ordre);
                                                         <div class="field">
                                                             <label>Options <span class="hint">(une par ligne, uniquement pour Sélecteur)</span></label>
                                                             <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"><?= h(options_to_lines($ff['options'] ?? '')) ?></textarea>
+                                                        </div>
+                                                        <div class="field">
+                                                            <label>Indication <span class="hint">(texte d'aide sous le champ)</span></label>
+                                                            <input type="text" name="ff_hint" value="<?= h($ff['hint'] ?? '') ?>" placeholder="ex : en euros TTC">
                                                         </div>
                                                     </div>
                                                     <div class="field" style="margin-top:.25rem;">
@@ -1214,6 +1268,10 @@ ksort($steps_by_ordre);
                                     <label>Options <span class="hint">(une par ligne, uniquement pour Sélecteur)</span></label>
                                     <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"></textarea>
                                 </div>
+                                <div class="field full-width">
+                                    <label>Indication <span class="hint">(texte d'aide sous le champ)</span></label>
+                                    <input type="text" name="ff_hint" placeholder="ex : en euros TTC">
+                                </div>
                             </div>
                             <div class="field" style="margin-top:.25rem;">
                                 <label class="checkbox-label">
@@ -1226,6 +1284,55 @@ ksort($steps_by_ordre);
                 </div>
             </div>
         <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ($form): ?>
+        <!-- Section Propriétaires du formulaire -->
+        <div class="section-card" id="owners">
+            <h2>👥 Propriétaires du formulaire</h2>
+            <p class="hint" style="margin-bottom:1rem;">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
+
+            <?php if (!empty($owners)): ?>
+                <table class="data-table" style="margin-bottom:1rem;">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Ajouté le</th>
+                            <th style="width:80px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($owners as $owner): ?>
+                        <tr>
+                            <td><?= h($owner['email']) ?></td>
+                            <td><?= h($owner['added_at']) ?></td>
+                            <td>
+                                <a href="confirm_action.php?action=remove_owner&id=<?= $owner['id'] ?>&form_id=<?= $form_id ?>" class="btn btn-sm btn-danger">Retirer</a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p style="color:#888;font-style:italic;margin-bottom:1rem;">Aucun propriétaire défini. Seuls les administrateurs peuvent voir le tableau de suivi.</p>
+            <?php endif; ?>
+
+            <form method="POST" action="admin_forms.php?form_id=<?= $form_id ?>#owners">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="add_owner">
+                <input type="hidden" name="form_id" value="<?= $form_id ?>">
+                <div style="display:flex;gap:.5rem;align-items:center;">
+                    <input type="email" name="owner_email" placeholder="prenom.nom@dreets.gouv.fr" required style="flex:1;">
+                    <button type="submit" class="btn btn-primary">Ajouter un propriétaire</button>
+                </div>
+            </form>
+
+            <?php if (!empty($owners)): ?>
+                <div style="margin-top:1rem;">
+                    <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>" class="btn btn-secondary">📊 Ouvrir le tableau de suivi</a>
+                </div>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 </div>
 <?= render_footer() ?>

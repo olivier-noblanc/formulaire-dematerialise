@@ -10,9 +10,10 @@ $form->execute([$slug]);
 $form = $form->fetch(PDO::FETCH_ASSOC);
 
 if (!$form) {
-    http_response_code(404);
     if (TEST_MODE) { test_json_response(['error' => 'Formulaire introuvable', 'slug' => $slug]); }
-    die('<p>Formulaire introuvable.</p>');
+    render_error_page(404, 'Formulaire introuvable',
+        'Le formulaire demandé n\'existe pas ou a été désactivé.',
+        'Vérifiez l\'adresse dans votre navigateur. Vous pouvez retourner à l\'accueil pour voir les formulaires disponibles.');
 }
 
 $submitted_by = get_auth_user();
@@ -32,7 +33,7 @@ $form_fields = $fields_stmt->fetchAll(PDO::FETCH_ASSOC);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf()) {
         if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide', 'http_code' => 403]); }
-        die('Token CSRF invalide. Veuillez réessayer.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
 
     // Validation dynamique des champs obligatoires
@@ -55,6 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Validation du consentement RGPD
+    if (empty($_POST['rgpd_consent'])) {
+        $field_errors['rgpd_consent'] = 'Vous devez accepter le traitement de vos données pour soumettre le formulaire.';
+    }
+
     if (empty($field_errors) && empty($file_errors)) {
         $now  = date('Y-m-d H:i:s');
         $data = [];
@@ -72,10 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $pdo->prepare("INSERT INTO submissions (form_id, data, submitted_by, submitted_at) VALUES (?,?,?,?)")
-            ->execute([$form['id'], json_encode($data, JSON_UNESCAPED_UNICODE), $submitted_by, $now]);
-
-        $submission_id = (int)$pdo->lastInsertId();
+        $rgpd_consent = !empty($_POST['rgpd_consent']) ? 1 : 0;
+        $submission_id = generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, rgpd_consent) VALUES (?,?,?,?,?,?)")
+            ->execute([$submission_id, $form['id'], json_encode($data, JSON_UNESCAPED_UNICODE), $submitted_by, $now, $rgpd_consent]);
 
         // Traiter les fichiers uploades
         foreach ($form_fields as $field) {
@@ -179,11 +185,34 @@ function render_field(array $field, mixed $posted_val, array $field_errors): str
         $error_html = '<span id="err-' . $name . '" class="error-hint">' . h($field_errors[$field['field_name']]) . '</span>';
     }
 
+    // Hint textuel depuis la base (colonne hint de form_fields)
+    $hint = !empty($field['hint']) ? '<span class="hint">' . h($field['hint']) . '</span>' : '';
+
+    // Détection automatique du type HTML5 basée sur le field_name
+    $fn_lower = mb_strtolower($field['field_name'], 'UTF-8');
+    $html5_type = 'text'; // défaut
+    $html5_extra = '';
+    
+    if (strpos($fn_lower, 'email') !== false || strpos($fn_lower, 'courriel') !== false || strpos($fn_lower, 'mel') !== false) {
+        $html5_type = 'email';
+        $html5_extra = ' pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"';
+    } elseif (strpos($fn_lower, 'tel') !== false || strpos($fn_lower, 'telephone') !== false || strpos($fn_lower, 'portable') !== false || strpos($fn_lower, 'mobile') !== false) {
+        $html5_type = 'tel';
+        $html5_extra = ' pattern="[0-9+\s\-.]{6,20}"';
+    } elseif (strpos($fn_lower, 'montant') !== false || strpos($fn_lower, 'cout') !== false || strpos($fn_lower, 'prix') !== false || strpos($fn_lower, 'salaire') !== false || strpos($fn_lower, 'nombre_jour') !== false || strpos($fn_lower, 'quantite') !== false) {
+        $html5_type = 'number';
+        $html5_extra = ' step="0.01" min="0"';
+    } elseif (strpos($fn_lower, 'heure') !== false) {
+        $html5_type = 'time';
+    } elseif (strpos($fn_lower, 'url') !== false || strpos($fn_lower, 'lien') !== false || strpos($fn_lower, 'site') !== false) {
+        $html5_type = 'url';
+    }
+
     switch ($field['field_type']) {
         case 'date':
             $val = h($posted_val ?? '');
             return <<<HTML
-<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="date" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"><span class="hint">Format : JJ/MM/AAAA</span>{$error_html}</div>
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="date" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"><span class="hint">Format : JJ/MM/AAAA</span>{$hint}{$error_html}</div>
 HTML;
 
         case 'select':
@@ -195,7 +224,7 @@ HTML;
                 $options_html .= '<option value="' . h($opt) . '"' . $sel . '>' . h($opt) . '</option>';
             }
             return <<<HTML
-<div class="field"><label for="{$name}">{$label}{$req_span}</label><select id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}">{$options_html}</select>{$error_html}</div>
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><select id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}">{$options_html}</select>{$hint}{$error_html}</div>
 HTML;
 
         case 'checkbox':
@@ -206,21 +235,23 @@ HTML;
 
         case 'textarea':
             $val = h($posted_val ?? '');
+            $maxlength = ' maxlength="5000"';
             return <<<HTML
-<div class="field full"><label for="{$name}">{$label}{$req_span}</label><textarea id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}">{$val}</textarea>{$error_html}</div>
+<div class="field full"><label for="{$name}">{$label}{$req_span}</label><textarea id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" placeholder=""{$maxlength}>{$val}</textarea>{$hint}{$error_html}</div>
 HTML;
 
         case 'file':
             $accept = implode(',', array_map(function($ext) { return '.' . $ext; }, get_allowed_extensions()));
             $max_size_mo = round(get_max_file_size() / 1048576, 0);
             return <<<HTML
-<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="file" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" accept="{$accept}"><span class="hint">Formats acceptés : PDF, images, Office, ZIP — Max {$max_size_mo} Mo</span>{$error_html}</div>
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="file" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" accept="{$accept}"><span class="hint">Formats acceptés : PDF, images, Office, ZIP — Max {$max_size_mo} Mo</span>{$hint}{$error_html}</div>
 HTML;
 
-        default: // text
+        default: // text — avec détection HTML5 automatique
             $val = h($posted_val ?? '');
+            $maxlength = ' maxlength="500"';
             return <<<HTML
-<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="text" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}">{$error_html}</div>
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="{$html5_type}" id="{$name}" name="{$name}"{$required_attr}{$aria_attr}{$html5_extra} class="{$error_class}" value="{$val}"{$maxlength}>{$hint}{$error_html}</div>
 HTML;
     }
 }
@@ -262,7 +293,7 @@ HTML;
     <div class="warn-box">
       <p><strong>⚠ Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
       <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
-      <p><a href="submission_view.php?id=<?= (int)$existing_submission['id'] ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
+      <p><a href="submission_view.php?id=<?= urlencode($existing_submission['id']) ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
     </div>
   <?php endif; ?>
 
@@ -276,7 +307,7 @@ HTML;
       <div class="errors"><strong>Veuillez corriger les champs suivants :</strong><ul><?php foreach ($field_errors as $fn => $fe): ?><li><?= h($field_labels[$fn] ?? $fn) ?> : <?= h($fe) ?></li><?php endforeach; ?><?php foreach ($file_errors as $fn => $fe): ?><li><?= h($field_labels[$fn] ?? $fn) ?> : <?= h($fe) ?></li><?php endforeach; ?></ul></div>
     <?php endif; ?>
 
-    <form method="POST" enctype="multipart/form-data" novalidate>
+    <form method="POST" enctype="multipart/form-data">
       <?= csrf_field() ?>
       <input type="hidden" name="MAX_FILE_SIZE" value="<?= get_max_file_size() ?>">
 
@@ -317,6 +348,15 @@ HTML;
       <?php endif; ?>
 
       <?php if (!empty($grouped)): ?>
+        <div class="card" style="background:#f8f8ff;border-color:#003189;">
+          <label class="checkbox-item" style="font-size:.85rem;line-height:1.5;">
+            <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true">
+            J'accepte le traitement de mes données personnelles dans le cadre de cette procédure.
+          </label>
+          <p style="font-size:.75rem;color:#888;margin-top:.5rem;margin-left:1.7rem;">
+            <?= h(get_setting('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Durée de conservation : 24 mois après clôture.')) ?>
+          </p>
+        </div>
         <button type="submit" class="btn-submit">Envoyer la déclaration</button>
       <?php endif; ?>
     </form>

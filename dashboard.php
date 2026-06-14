@@ -15,7 +15,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         $f_stmt = $pdo->prepare("SELECT id FROM forms WHERE slug = ?");
         $f_stmt->execute([$form_f]);
         $fid = $f_stmt->fetchColumn();
-        if ($fid) $options['form_id'] = (int)$fid;
+        if ($fid) $options['form_id'] = $fid;
     }
     if ($filtre !== 'tous') {
         $options['status'] = $filtre === 'en_cours' ? 'en_cours' : ($filtre === 'complet' ? 'valide' : '');
@@ -29,9 +29,9 @@ $regen_msg = '';
 if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && is_admin_user()) {
     if (!verify_csrf()) {
         if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide']); }
-        die('Token CSRF invalide.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
-    $token_id = (int)($_POST['token_id'] ?? 0);
+    $token_id = trim($_POST['token_id'] ?? '');
     $result = regenerate_token($token_id);
     $regen_msg = $result['message'];
     if (TEST_MODE) { test_json_response(['action' => 'regenerate_token', 'result' => $result]); }
@@ -41,9 +41,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && is_adm
 $remind_msg = '';
 if (isset($_POST['action']) && $_POST['action'] === 'remind_one' && is_admin_user()) {
     if (!verify_csrf()) {
-        die('Token CSRF invalide.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
-    $token_id = (int)($_POST['token_id'] ?? 0);
+    $token_id = trim($_POST['token_id'] ?? '');
     $result = remind_one($token_id);
     $remind_msg = $result['message'];
 }
@@ -53,12 +53,12 @@ $cancel_msg = '';
 if (isset($_POST['action']) && $_POST['action'] === 'cancel_submission') {
     if (!verify_csrf()) {
         if (TEST_MODE) { test_json_response(['error' => 'CSRF invalide']); }
-        die('Token CSRF invalide.');
+        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
     }
-    $sub_id = (int)($_POST['submission_id'] ?? 0);
+    $sub_id = trim($_POST['submission_id'] ?? '');
     $confirmed = !empty($_POST['confirmed']);
     if (!$confirmed) {
-        header('Location: confirm_action.php?action=cancel_submission&submission_id=' . $sub_id . '&from=dashboard.php');
+        header('Location: confirm_action.php?action=cancel_submission&submission_id=' . urlencode($sub_id) . '&from=dashboard.php');
         exit;
     }
     $actor = get_auth_user();
@@ -79,7 +79,8 @@ if ($filtre === 'en_cours') { $where[] = 's.status = ?'; $params[] = 'en_cours';
 if ($filtre === 'complet')  { $where[] = 's.status != ?'; $params[] = 'en_cours'; }
 if ($form_f) { $where[] = "f.slug = ?"; $params[] = $form_f; }
 if ($search) {
-    $where[] = "(s.submitted_by LIKE ? OR s.data LIKE ?)";
+    $where[] = "(s.submitted_by LIKE ? OR s.data LIKE ? OR f.label LIKE ?)";
+    $params[] = '%' . $search . '%';
     $params[] = '%' . $search . '%';
     $params[] = '%' . $search . '%';
 }
@@ -102,7 +103,7 @@ $total   = $pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn();
 $complet = $pdo->query("SELECT COUNT(*) FROM submissions WHERE status != 'en_cours'")->fetchColumn();
 
 // Statuts des tokens par soumission
-function get_tokens_status(int $sub_id): array {
+function get_tokens_status(string $sub_id): array {
     $rows = get_pdo()->prepare("
         SELECT t.email, t.done_at, st.label, st.ordre
         FROM tokens t
@@ -143,7 +144,7 @@ function get_tokens_status(int $sub_id): array {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_alerts.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔔 Alertes</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
+<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_alerts.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔔 Alertes</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a> <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🏥 Santé</a></span></div>
 <div class="container" id="main-content">
   <h1>Supervision — Workflows en cours</h1>
 
@@ -174,7 +175,7 @@ function get_tokens_status(int $sub_id): array {
       <button type="submit" class="btn-admin" style="padding:.3rem .8rem;font-size:.8rem;">OK</button>
     </form>
     <form method="GET" style="display:flex;gap:.5rem;align-items:center;">
-      <input type="text" name="search" value="<?= h($search) ?>" placeholder="Rechercher par agent..." style="padding:.4rem .75rem;border:1px solid #aaa;border-radius:3px;font-size:.85rem;font-family:inherit;">
+      <input type="text" name="search" value="<?= h($search) ?>" placeholder="Rechercher (agent, formulaire, données)..." style="padding:.4rem .75rem;border:1px solid #aaa;border-radius:3px;font-size:.85rem;font-family:inherit;">
       <input type="hidden" name="statut" value="<?= h($filtre) ?>">
       <input type="hidden" name="form" value="<?= h($form_f) ?>">
       <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">Rechercher</button>
@@ -186,6 +187,8 @@ function get_tokens_status(int $sub_id): array {
     <a href="admin_alerts.php" class="btn-admin" style="background:#b45309;">🔔 Alertes</a>
     <a href="admin_forms.php" class="btn-admin">⚙ Gestion formulaires</a>
     <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>&search=<?= h($search) ?>" class="btn-admin" style="background:#1a6b3c;">📥 Export CSV</a>
+    <a href="stats.php" class="btn-admin">📊 Statistiques</a>
+    <a href="rgpd.php" class="btn-admin">🔐 RGPD</a>
   </div>
 
   <table>
@@ -206,7 +209,7 @@ function get_tokens_status(int $sub_id): array {
     <?php else: ?>
       <?php foreach ($rows as $i => $row):
         $d      = json_decode($row['data'], true);
-        $tokens = get_tokens_status((int)$row['id']);
+        $tokens = get_tokens_status($row['id']);
         $nom    = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
         $status = $row['status'] ?? 'en_cours';
         $deadline_field = $row['deadline_field'] ?? '';
@@ -256,7 +259,7 @@ function get_tokens_status(int $sub_id): array {
               echo '<span style="color:#b45309;">En cours</span>';
           }
         ?></td>
-        <td><a href="submission_view.php?id=<?= (int)$row['id'] ?>" style="font-size:.8rem;color:#003189;text-decoration:underline;">voir</a></td>
+        <td><a href="submission_view.php?id=<?= urlencode($row['id']) ?>" style="font-size:.8rem;color:#003189;text-decoration:underline;">voir</a></td>
       </tr>
       <tr>
         <td colspan="7">
@@ -294,19 +297,19 @@ function get_tokens_status(int $sub_id): array {
                       <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="remind_one">
-                        <input type="hidden" name="token_id" value="<?= (int)$t['id'] ?>">
+                        <input type="hidden" name="token_id" value="<?= h($t['id']) ?>">
                         <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📧 Rappeler <?= h($t['email']) ?></button>
                       </form>
                       <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="regenerate_token">
-                        <input type="hidden" name="token_id" value="<?= (int)$t['id'] ?>">
+                        <input type="hidden" name="token_id" value="<?= h($t['id']) ?>">
                         <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Régénérer <?= h($t['email']) ?></button>
                       </form>
                     <?php endif; ?>
                   <?php endforeach; ?>
                 <?php endif; ?>
-                <a href="confirm_action.php?action=cancel_submission&submission_id=<?= (int)$row['id'] ?>&from=dashboard.php" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">🗑 Annuler</a>
+                <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($row['id']) ?>&from=dashboard.php" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">🗑 Annuler</a>
               </div>
             <?php endif; ?>
           </div>

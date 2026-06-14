@@ -22,5 +22,7 @@ if ($uri === '/' || $uri === '') {
 }
 
 // 404
-http_response_code(404);
-echo 'Not found';
+require_once __DIR__ . '/helpers.php';
+render_error_page(404, 'Page introuvable',
+    'La page que vous cherchez n\'existe pas sur ce serveur.',
+    'Vérifiez l\'adresse dans votre navigateur. Si vous avez suivi un lien, il est peut-être obsolète.');
