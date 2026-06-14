@@ -107,3 +107,39 @@ Stage Summary:
 - render_error_page() is reusable for any HTTP error code
 - 13 files modified
 - Zero JavaScript, zero framework — pure PHP + CSS + inline SVG
+
+---
+Task ID: v4.3.0-uuid-only-no-integer-ids
+Agent: Super Z (main)
+Task: Remove ALL integer IDs from the entire application and database, replace with UUIDs only
+
+Work Log:
+- Changed all 15 entity tables from `INTEGER PRIMARY KEY AUTOINCREMENT` to `id TEXT PRIMARY KEY NOT NULL`
+- Changed all FK columns from `INTEGER NOT NULL` to `TEXT NOT NULL` (form_id, step_id, submission_id, token_id, rule_id, etc.)
+- Removed `uuid` column from `forms` table (id IS the UUID now)
+- Replaced all 29 `lastInsertId()` calls with pre-generated UUIDs via `generate_uuid()`
+- All INSERT statements now include explicit `id` column with UUID value
+- Added migration v9 for existing databases: builds form_id_map before dropping tables, migrates all 15 tables with proper UUID mapping
+- Changed all function signatures from `int $form_id` etc. to `string $form_id` etc. (13 functions)
+- Removed all `(int)` casts on entity ID variables throughout codebase
+- Updated all PHP pages: admin_forms, submission_view, dashboard, form, form_tracking, download, form_preview, confirm_action, admin_alerts, my_submissions, my_validations, validate, alert_check, test_api, test_all, index
+- Changed all URL parameters from integer to UUID strings with `urlencode()` for safety
+- Changed all `$_GET`/`$_POST` ID reads from `(int)(... ?? 0)` to `trim(... ?? '')`
+- Changed all `> 0` / `<= 0` ID checks to `!empty()` / `empty()`
+- Updated `$form['uuid']` → `$form['id']` and `f.uuid` → `f.id` everywhere
+- Created render_error_page() function with SVG icons for 403/404/400/401/500
+- Added error page CSS in style.php
+- Replaced all die() with text messages to render_error_page() (20+ instances across 13 files)
+- Updated 401 auth page to match new visual design
+- Updated CHANGELOG.md for v4.3.0
+- Updated config.php version to 4.3.0
+
+Stage Summary:
+- Version bumped from 4.2.0 to 4.3.0
+- ZERO integer IDs remain in the database or code
+- ZERO lastInsertId() calls remain
+- ZERO (int) casts on entity ID variables
+- All URLs use non-guessable UUIDs
+- Migration v9 handles existing databases cleanly
+- Beautiful error pages replace all plain-text die() calls
+- 20+ files modified

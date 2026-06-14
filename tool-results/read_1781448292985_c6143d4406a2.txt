@@ -1,0 +1,302 @@
+     1→   501→   501→            ['Logistique',              'Restitution EPI',                        'checkbox', 'log_restitution_epi',  null,                                                                                                   0, 20],
+     2→   502→   502→            ['Logistique',              'Libération bureau / local',              'text',     'log_bureau',           null,                                                                                                   0, 21],
+     3→   503→   503→        ];
+     4→   504→   504→        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+     5→   505→   505→        foreach ($outboarding_fields as $row) {
+     6→   506→   506→            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $outboarding_id]);
+     7→   507→   507→        }
+     8→   508→   508→
+     9→   509→   509→        // Etapes par defaut pour l'outboarding
+    10→   510→   510→        $steps_data = [
+    11→   511→   511→            ['Responsable direct', 1],
+    12→   512→   512→            ['Service informatique', 2],
+    13→   513→   513→            ['Ressources humaines', 3],
+    14→   514→   514→            ['Logistique', 4],
+    15→   515→   515→        ];
+    16→   516→   516→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+    17→   517→   517→        foreach ($steps_data as $sd) {
+    18→   518→   518→            $stmt_step->execute([$outboarding_id, $sd[0], $sd[1]]);
+    19→   519→   519→        }
+    20→   520→   520→    }
+    21→   521→   521→    
+    22→   522→   522→    // Insertion des paramètres par défaut si la table settings est vide
+    23→   523→   523→    $settings_count = $pdo->query("SELECT COUNT(*) FROM settings")->fetchColumn();
+    24→   524→   524→    if ($settings_count == 0) {
+    25→   525→   525→        $defaults = [
+    26→   526→   526→            ['smtp_host', 'smtp.social.gouv.fr'],
+    27→   527→   527→            ['smtp_port', '25'],
+    28→   528→   528→            ['smtp_auth', '0'],
+    29→   529→   529→            ['smtp_secure', ''],
+    30→   530→   530→            ['smtp_user', ''],
+    31→   531→   531→            ['smtp_pass', ''],
+    32→   532→   532→            ['smtp_from', 'workflow@dreets.gouv.fr'],
+    33→   533→   533→            ['smtp_from_name', 'Workflow DREETS'],
+    34→   534→   534→            ['delai_relance_h', '48'],
+    35→   535→   535→            ['token_expire_days', '30'],
+    36→   536→   536→            ['relance_max', '3'],
+    37→   537→   537→        ];
+    38→   538→   538→        $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
+    39→   539→   539→        foreach ($defaults as $row) {
+    40→   540→   540→            $stmt->execute($row);
+    41→   541→   541→        }
+    42→   542→   542→    }
+    43→   543→   543→    
+    44→   544→   544→    // S'assurer que relance_max existe même si la table settings a déjà des entrés
+    45→   545→   545→    try {
+    46→   546→   546→        $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('relance_max', '3')")->execute();
+    47→   547→   547→    } catch (PDOException $e) {
+    48→   548→   548→        // Ignorer si déjà présent
+    49→   549→   549→    }
+    50→   550→   550→    
+    51→   551→   551→    // Seed formulaire onboarding s'il n'existe pas
+    52→   552→   552→    $onb_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'onboarding'")->fetchColumn();
+    53→   553→   553→    if ($onb_count == 0) {
+    54→   554→   554→        $pdo->prepare("INSERT INTO forms (uuid, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+    55→   555→   555→            ->execute([generate_uuid(), 'onboarding', 'Onboarding agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
+    56→   556→   556→        $onboarding_id = (int)$pdo->lastInsertId();
+    57→   557→   557→
+    58→   558→   558→        $onboarding_fields = [
+    59→   559→   559→            ['Identité de l\'agent',  'Nom',                            'text',    'nom',               null,                                                           1, 1],
+    60→   560→   560→            ['Identité de l\'agent',  'Prénom',                         'text',    'prenom',            null,                                                           1, 2],
+    61→   561→   561→            ['Identité de l\'agent',  'Date de naissance',              'date',    'date_naissance',    null,                                                           1, 3],
+    62→   562→   562→            ['Identité de l\'agent',  'Date de prise de poste',         'date',    'date_prise_poste',  null,                                                           1, 4],
+    63→   563→   563→            ['Identité de l\'agent',  'Corps / Grade',                  'select',  'corps_grade',       '["Attaché d\'administration","Secrétaire administratif","Adjoint administratif","Inspecteur du travail","Contrôleur du travail","Technicien","Ingénieur","Autre"]', 1, 5],
+    64→   564→   564→            ['Identité de l\'agent',  'Type d\'arrivée',                'select',  'type_arrivee',      '["Mutation","Primo-recrutement","Détachement","Stage","Alternance"]', 1, 6],
+    65→   565→   565→            ['Identité de l\'agent',  'Service / Affectation',          'text',    'affectation',       null,                                                           1, 7],
+    66→   566→   566→            ['Identité de l\'agent',  'Quotité',                        'select',  'quotite',           '["100%","80%","50%"]',                                         1, 8],
+    67→   567→   567→            ['Informatique (IT)',     'Type de poste',                  'select',  'type_poste',        '["Fixe","Portable"]',                                          1, 9],
+    68→   568→   568→            ['Informatique (IT)',     'Double écran',                   'checkbox','it_double_ecran',   null,                                                           0, 10],
+    69→   569→   569→            ['Informatique (IT)',     'Accès RPVN',                     'checkbox','it_acces_rpvn',    null,                                                           0, 11],
+    70→   570→   570→            ['Informatique (IT)',     'Téléphone professionnel',        'checkbox','it_telephone_pro', null,                                                           0, 12],
+    71→   571→   571→            ['Informatique (IT)',     'Applicatifs métier',             'textarea','it_applicatifs',   null,                                                           0, 13],
+    72→   572→   572→            ['Ressources Humaines',   'Dossier administratif à constituer','checkbox','rh_dossier_admin',null,                                                          0, 14],
+    73→   573→   573→            ['Ressources Humaines',   'Affiliation mutuelle MGEN',      'checkbox','rh_mutuelle',      null,                                                           0, 15],
+    74→   574→   574→            ['Ressources Humaines',   'Visite médicale à planifier',    'checkbox','rh_visite_medicale',null,                                                          0, 16],
+    75→   575→   575→            ['Ressources Humaines',   'Habilitation sécurité requise',  'checkbox','rh_habilitation',  null,                                                           0, 17],
+    76→   576→   576→            ['Logistique',            'Bâtiment / Bureau',              'text',    'log_batiment_bureau',null,                                                          1, 18],
+    77→   577→   577→            ['Logistique',            'Badge d\'accès',                 'checkbox','log_badge_acces',  null,                                                           0, 19],
+    78→   578→   578→            ['Logistique',            'Véhicule de service',            'checkbox','log_vehicule_service',null,                                                         0, 20],
+    79→   579→   579→            ['Logistique',            'EPI à préparer',                 'checkbox','log_epi_requis',   null,                                                           0, 21],
+    80→   580→   580→        ];
+    81→   581→   581→        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    82→   582→   582→        foreach ($onboarding_fields as $row) {
+    83→   583→   583→            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $onboarding_id]);
+    84→   584→   584→        }
+    85→   585→   585→
+    86→   586→   586→        // Etapes par defaut pour l'onboarding
+    87→   587→   587→        $steps_data = [
+    88→   588→   588→            ['Responsable direct', 1],
+    89→   589→   589→            ['Service informatique', 2],
+    90→   590→   590→            ['Ressources humaines', 3],
+    91→   591→   591→            ['Logistique', 4],
+    92→   592→   592→        ];
+    93→   593→   593→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+    94→   594→   594→        foreach ($steps_data as $sd) {
+    95→   595→   595→            $stmt_step->execute([$onboarding_id, $sd[0], $sd[1]]);
+    96→   596→   596→        }
+    97→   597→   597→    }
+    98→   598→   598→
+    99→   599→   599→    // Seed formulaire "Demande de sortie hors plages" s'il n'existe pas
+   100→   600→   600→    $sortie_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'sortie_hors_plages'")->fetchColumn();
+   101→   601→   601→    if ($sortie_count == 0) {
+   102→   602→   602→        $pdo->prepare("INSERT INTO forms (uuid, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+   103→   603→   603→            ->execute([generate_uuid(), 'sortie_hors_plages', 'Demande de sortie hors plages fixes', 'Demande d\'autorisation de sortie en dehors des plages horaires fixes — arrivée tardive, départ anticipé, pause prolongée']);
+   104→   604→   604→        $sortie_id = (int)$pdo->lastInsertId();
+   105→   605→   605→
+   106→   606→   606→        $sortie_fields = [
+   107→   607→   607→            ['Agent',                  'Prénom',              'text',     'prenom',          null,                                                                                                   '', 1, 1],
+   108→   608→   608→            ['Agent',                  'Nom',                 'text',     'nom',             null,                                                                                                   '', 1, 2],
+   109→   609→   609→            ['Agent',                  'Email',               'text',     'email',           null,                                                                                                   '', 1, 3],
+   110→   610→   610→            ['Agent',                  'Service / Affectation', 'text',   'service',         null,                                                                                                   '', 1, 4],
+   111→   611→   611→            ['Détails de la sortie',   'Type de sortie',      'select',   'type_sortie',     '["Arrivée tardive","Départ anticipé","Pause déjeuner prolongée","Absence partielle","Autre"]',   '', 1, 5],
+   112→   612→   612→            ['Détails de la sortie',   'Date concernée',      'date',     'date_sortie',     null,                                                                                                   '', 1, 6],
+   113→   613→   613→            ['Détails de la sortie',   'Heure de début',      'text',     'heure_debut',     null,                                                                                                   'Format HH:MM', 1, 7],
+   114→   614→   614→            ['Détails de la sortie',   'Heure de fin',        'text',     'heure_fin',       null,                                                                                                   'Format HH:MM', 1, 8],
+   115→   615→   615→            ['Détails de la sortie',   'Motif',               'textarea', 'motif',           null,                                                                                                   '', 1, 9],
+   116→   616→   616→        ];
+   117→   617→   617→        $stmt_so = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+   118→   618→   618→        foreach ($sortie_fields as $row) {
+   119→   619→   619→            $stmt_so->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $sortie_id]);
+   120→   620→   620→        }
+   121→   621→   621→
+   122→   622→   622→        // Etapes : Chef de service (ordre 1) → DRH (ordre 2)
+   123→   623→   623→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+   124→   624→   624→        $stmt_step->execute([$sortie_id, 'Chef de service', 1]);
+   125→   625→   625→        $sortie_step1_id = (int)$pdo->lastInsertId();
+   126→   626→   626→        $stmt_step->execute([$sortie_id, 'DRH', 2]);
+   127→   627→   627→        $sortie_step2_id = (int)$pdo->lastInsertId();
+   128→   628→   628→
+   129→   629→   629→        // Destinataires des étapes
+   130→   630→   630→        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)");
+   131→   631→   631→        $stmt_sr->execute([$sortie_step1_id, 'chef.service@dreets.gouv.fr']);
+   132→   632→   632→        $stmt_sr->execute([$sortie_step2_id, 'drh@dreets.gouv.fr']);
+   133→   633→   633→
+   134→   634→   634→        // Owners du formulaire
+   135→   635→   635→        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (form_id, email) VALUES (?, ?)");
+   136→   636→   636→        $stmt_fo->execute([$sortie_id, 'chef.service@dreets.gouv.fr']);
+   137→   637→   637→        $stmt_fo->execute([$sortie_id, 'drh@dreets.gouv.fr']);
+   138→   638→   638→    }
+   139→   639→   639→
+   140→   640→   640→    // Seed formulaire "Remboursement d'avance de frais" s'il n'existe pas
+   141→   641→   641→    $remboursement_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'remboursement_avance_frais'")->fetchColumn();
+   142→   642→   642→    if ($remboursement_count == 0) {
+   143→   643→   643→        $pdo->prepare("INSERT INTO forms (uuid, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+   144→   644→   644→            ->execute([generate_uuid(), 'remboursement_avance_frais', 'Remboursement d\'avance de frais', 'Demande de remboursement d\'une avance de frais engagée dans le cadre professionnel — déplacement, fourniture, représentation']);
+   145→   645→   645→        $remboursement_id = (int)$pdo->lastInsertId();
+   146→   646→   646→
+   147→   647→   647→        $remboursement_fields = [
+   148→   648→   648→            ['Agent',                  'Prénom',              'text',     'prenom',                  null,                                                                                                   '', 1, 1],
+   149→   649→   649→            ['Agent',                  'Nom',                 'text',     'nom',                     null,                                                                                                   '', 1, 2],
+   150→   650→   650→            ['Agent',                  'Email',               'text',     'email',                   null,                                                                                                   '', 1, 3],
+   151→   651→   651→            ['Agent',                  'Service / Affectation', 'text',   'service',                 null,                                                                                                   '', 1, 4],
+   152→   652→   652→            ['Détails de la dépense',  'Nature de la dépense', 'select',  'nature_depense',          '["Déplacement professionnel","Hébergement","Repas / Représentation","Fournitures bureautiques","Frais postaux","Autre"]', '', 1, 5],
+   153→   653→   653→            ['Détails de la dépense',  'Montant',             'text',     'montant',                 null,                                                                                                   'En euros TTC', 1, 6],
+   154→   654→   654→            ['Détails de la dépense',  'Date de la dépense',  'date',     'date_depense',            null,                                                                                                   '', 1, 7],
+   155→   655→   655→            ['Détails de la dépense',  'Justification',       'textarea', 'justification',           null,                                                                                                   '', 1, 8],
+   156→   656→   656→            ['Détails de la dépense',  'Justificatif (description)', 'text', 'justificatif_desc',  null,                                                                                            'Description du justificatif joint', 0, 9],
+   157→   657→   657→        ];
+   158→   658→   658→        $stmt_rb = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+   159→   659→   659→        foreach ($remboursement_fields as $row) {
+   160→   660→   660→            $stmt_rb->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $remboursement_id]);
+   161→   661→   661→        }
+   162→   662→   662→
+   163→   663→   663→        // Etapes : Chef de service (ordre 1) → Comptabilité (ordre 2) → Agent financier (ordre 3)
+   164→   664→   664→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+   165→   665→   665→        $stmt_step->execute([$remboursement_id, 'Chef de service', 1]);
+   166→   666→   666→        $remboursement_step1_id = (int)$pdo->lastInsertId();
+   167→   667→   667→        $stmt_step->execute([$remboursement_id, 'Comptabilité', 2]);
+   168→   668→   668→        $remboursement_step2_id = (int)$pdo->lastInsertId();
+   169→   669→   669→        $stmt_step->execute([$remboursement_id, 'Agent financier', 3]);
+   170→   670→   670→        $remboursement_step3_id = (int)$pdo->lastInsertId();
+   171→   671→   671→
+   172→   672→   672→        // Destinataires des étapes
+   173→   673→   673→        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)");
+   174→   674→   674→        $stmt_sr->execute([$remboursement_step1_id, 'chef.service@dreets.gouv.fr']);
+   175→   675→   675→        $stmt_sr->execute([$remboursement_step2_id, 'comptabilite@dreets.gouv.fr']);
+   176→   676→   676→        $stmt_sr->execute([$remboursement_step3_id, 'agent.financier@dreets.gouv.fr']);
+   177→   677→   677→
+   178→   678→   678→        // Owners du formulaire
+   179→   679→   679→        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (form_id, email) VALUES (?, ?)");
+   180→   680→   680→        $stmt_fo->execute([$remboursement_id, 'comptabilite@dreets.gouv.fr']);
+   181→   681→   681→        $stmt_fo->execute([$remboursement_id, 'agent.financier@dreets.gouv.fr']);
+   182→   682→   682→    }
+   183→   683→   683→
+   184→   684→   684→    // Seed formulaire "Demande de matériel suite prescription médicale" s'il n'existe pas
+   185→   685→   685→    $materiel_med_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'materiel_prescription'")->fetchColumn();
+   186→   686→   686→    if ($materiel_med_count == 0) {
+   187→   687→   687→        $pdo->prepare("INSERT INTO forms (uuid, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+   188→   688→   688→            ->execute([generate_uuid(), 'materiel_prescription', 'Demande de matériel (prescription médicale)', 'Demande de matériel suite à une prescription médicale — aménagement de poste, équipement ergonomique, matériel spécifique']);
+   189→   689→   689→        $materiel_med_id = (int)$pdo->lastInsertId();
+   190→   690→   690→
+   191→   691→   691→        $materiel_med_fields = [
+   192→   692→   692→            ['Agent',                          'Prénom',                    'text',     'prenom',                  null,                                                                                                   '', 1, 1],
+   193→   693→   693→            ['Agent',                          'Nom',                       'text',     'nom',                     null,                                                                                                   '', 1, 2],
+   194→   694→   694→            ['Agent',                          'Email',                     'text',     'email',                   null,                                                                                                   '', 1, 3],
+   195→   695→   695→            ['Agent',                          'Service / Affectation',      'text',     'service',                 null,                                                                                                   '', 1, 4],
+   196→   696→   696→            ['Agent',                          'Bureau / Lieu de travail',   'text',     'bureau',                  null,                                                                                                   '', 1, 5],
+   197→   697→   697→            ['Prescription médicale',          'Nature du handicap / besoin', 'select',  'nature_besoin',          '["Trou musculosquelettique","Trouble visuel","Trouble auditif","Maladie chronique","Grossesse","Autre"]', '', 1, 6],
+   198→   698→   698→            ['Prescription médicale',          'Date de la prescription',    'date',     'date_prescription',       null,                                                                                                   '', 1, 7],
+   199→   699→   699→            ['Prescription médicale',          'Médecin prescripteur',       'text',     'medecin_prescripteur',    null,                                                                                                   '', 0, 8],
+   200→   700→   700→            ['Matériel demandé',               'Type de matériel',           'select',   'type_materiel',           '["Fauteuil ergonomique","Repose-pieds","Écran agrandi","Clavier adapté","Souris ergonomique","Plan de travail réglable","Éclairage spécifique","Autre"]', '', 1, 9],
+   201→   701→   701→            ['Matériel demandé',               'Description détaillée',      'textarea', 'description_materiel',   null,                                                                                                   '', 1, 10],
+   202→   702→   702→            ['Matériel demandé',               'Urgence',                    'select',   'urgence',                 '["Normale","Urgente — aménagement imminent","Très urgente — arrêt de travail risque"]',                                     '', 1, 11],
+   203→   703→   703→            ['Matériel demandé',               'Justification médicale',     'textarea', 'justification_medicale',  null,                                                                                                   '', 1, 12],
+   204→   704→   704→        ];
+   205→   705→   705→        $stmt_mm = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+   206→   706→   706→        foreach ($materiel_med_fields as $row) {
+   207→   707→   707→            $stmt_mm->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $materiel_med_id]);
+   208→   708→   708→        }
+   209→   709→   709→
+   210→   710→   710→        // Etapes : Médecin de prévention (ordre 1) → Chef de service (ordre 2) → DSI + Logistique (parallèle, ordre 3) → DRH (ordre 4)
+   211→   711→   711→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+   212→   712→   712→        $stmt_step->execute([$materiel_med_id, 'Médecin de prévention', 1]);
+   213→   713→   713→        $materiel_med_step1_id = (int)$pdo->lastInsertId();
+   214→   714→   714→        $stmt_step->execute([$materiel_med_id, 'Chef de service', 2]);
+   215→   715→   715→        $materiel_med_step2_id = (int)$pdo->lastInsertId();
+   216→   716→   716→        $stmt_step->execute([$materiel_med_id, 'DSI', 3]);
+   217→   717→   717→        $materiel_med_step3_dsi_id = (int)$pdo->lastInsertId();
+   218→   718→   718→        $stmt_step->execute([$materiel_med_id, 'Logistique', 3]);
+   219→   719→   719→        $materiel_med_step3_log_id = (int)$pdo->lastInsertId();
+   220→   720→   720→        $stmt_step->execute([$materiel_med_id, 'DRH', 4]);
+   221→   721→   721→        $materiel_med_step4_id = (int)$pdo->lastInsertId();
+   222→   722→   722→
+   223→   723→   723→        // Destinataires des étapes
+   224→   724→   724→        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)");
+   225→   725→   725→        $stmt_sr->execute([$materiel_med_step1_id, 'medecin.prevention@dreets.gouv.fr']);
+   226→   726→   726→        $stmt_sr->execute([$materiel_med_step2_id, 'chef.service@dreets.gouv.fr']);
+   227→   727→   727→        $stmt_sr->execute([$materiel_med_step3_dsi_id, 'dsi@dreets.gouv.fr']);
+   228→   728→   728→        $stmt_sr->execute([$materiel_med_step3_log_id, 'logistique@dreets.gouv.fr']);
+   229→   729→   729→        $stmt_sr->execute([$materiel_med_step4_id, 'drh@dreets.gouv.fr']);
+   230→   730→   730→
+   231→   731→   731→        // Owners du formulaire — suivi du matériel médical
+   232→   732→   732→        $stmt_fo = $pdo->prepare("INSERT OR IGNORE INTO form_owners (form_id, email) VALUES (?, ?)");
+   233→   733→   733→        $stmt_fo->execute([$materiel_med_id, 'medecin.prevention@dreets.gouv.fr']);
+   234→   734→   734→        $stmt_fo->execute([$materiel_med_id, 'logistique@dreets.gouv.fr']);
+   235→   735→   735→        $stmt_fo->execute([$materiel_med_id, 'drh@dreets.gouv.fr']);
+   236→   736→   736→    }
+   237→   737→   737→
+   238→   738→   738→    // Seed formulaire "Demande de mutation" s'il n'existe pas
+   239→   739→   739→    $mutation_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'mutation'")->fetchColumn();
+   240→   740→   740→    if ($mutation_count == 0) {
+   241→   741→   741→        $pdo->prepare("INSERT INTO forms (uuid, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+   242→   742→   742→            ->execute([generate_uuid(), 'mutation', 'Demande de mutation', 'Formulaire de demande de mutation interne — mobilité entre services ou directions au sein de la DREETS']);
+   243→   743→   743→        $mutation_id = (int)$pdo->lastInsertId();
+   244→   744→   744→
+   245→   745→   745→        $mutation_fields = [
+   246→   746→   746→            ['Agent',                  'Prénom',              'text',     'prenom',           null,                                                                                    '', 1, 1],
+   247→   747→   747→            ['Agent',                  'Nom',                 'text',     'nom',              null,                                                                                    '', 1, 2],
+   248→   748→   748→            ['Agent',                  'Email',               'text',     'email',            null,                                                                                    '', 1, 3],
+   249→   749→   749→            ['Agent',                  'Corps / Grade',       'text',     'corps_grade',      null,                                                                                    '', 1, 4],
+   250→   750→   750→            ['Agent',                  'Service actuel',      'text',     'service_actuel',   null,                                                                                    '', 1, 5],
+   251→   751→   751→            ['Agent',                  'Quotité',             'select',   'quotite',          '["100%","80%","60%","50%"]',                                                            '', 1, 6],
+   252→   752→   752→            ['Mutation demandée',      'Service demandé',     'text',     'service_demande',  null,                                                                                    '', 1, 7],
+   253→   753→   753→            ['Mutation demandée',      'Direction demandée',  'text',     'direction_demandee',null,                                                                                   '', 1, 8],
+   254→   754→   754→            ['Mutation demandée',      'Motif',               'textarea', 'motif',            null,                                                                                    '', 1, 9],
+   255→   755→   755→            ['Mutation demandée',      'Date souhaitée',      'date',     'date_souhaitee',   null,                                                                                    '', 1, 10],
+   256→   756→   756→        ];
+   257→   757→   757→        $stmt_mu = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, hint, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+   258→   758→   758→        foreach ($mutation_fields as $row) {
+   259→   759→   759→            $stmt_mu->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7], $mutation_id]);
+   260→   760→   760→        }
+   261→   761→   761→
+   262→   762→   762→        // Etapes : Chef de service actuel (ordre 1) → Chef service demandé (ordre 2) → DRH (ordre 3)
+   263→   763→   763→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+   264→   764→   764→        $stmt_step->execute([$mutation_id, 'Chef de service actuel', 1]);
+   265→   765→   765→        $mutation_step1_id = (int)$pdo->lastInsertId();
+   266→   766→   766→        $stmt_step->execute([$mutation_id, 'Chef service demandé', 2]);
+   267→   767→   767→        $mutation_step2_id = (int)$pdo->lastInsertId();
+   268→   768→   768→        $stmt_step->execute([$mutation_id, 'DRH', 3]);
+   269→   769→   769→        $mutation_step3_id = (int)$pdo->lastInsertId();
+   270→   770→   770→
+   271→   771→   771→        // Destinataires des étapes
+   272→   772→   772→        $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)");
+   273→   773→   773→        $stmt_sr->execute([$mutation_step1_id, 'chef.service@dreets.gouv.fr']);
+   274→   774→   774→        $stmt_sr->execute([$mutation_step2_id, 'chef.service.demande@dreets.gouv.fr']);
+   275→   775→   775→        $stmt_sr->execute([$mutation_step3_id, 'drh@dreets.gouv.fr']);
+   276→   776→   776→    }
+   277→   777→   777→
+   278→   778→   778→    // Seed formulaire "Demande de formation" s'il n'existe pas
+   279→   779→   779→    $formation_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'formation'")->fetchColumn();
+   280→   780→   780→    if ($formation_count == 0) {
+   281→   781→   781→        $pdo->prepare("INSERT INTO forms (uuid, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+   282→   782→   782→            ->execute([generate_uuid(), 'formation', 'Demande de formation', 'Formulaire de demande de formation continue — plan de formation, DIF/CPF, stage inter ou intra']);
+   283→   783→   783→        $formation_id = (int)$pdo->lastInsertId();
+   284→   784→   784→
+   285→   785→   785→        $formation_fields = [
+   286→   786→   786→            ['Agent',                  'Prénom',              'text',     'prenom',             null,                                                                                               '', 1, 1],
+   287→   787→   787→            ['Agent',                  'Nom',                 'text',     'nom',                null,                                                                                               '', 1, 2],
+   288→   788→   788→            ['Agent',                  'Email',               'text',     'email',              null,                                                                                               '', 1, 3],
+   289→   789→   789→            ['Agent',                  'Service',             'text',     'service',            null,                                                                                               '', 1, 4],
+   290→   790→   790→            ['Agent',                  'Poste',               'text',     'poste',              null,                                                                                               '', 1, 5],
+   291→   791→   791→            ['Formation demandée',     'Intitulé formation',  'text',     'intitule_formation', null,                                                                                               '', 1, 6],
+   292→   792→   792→            ['Formation demandée',     'Organisme',           'text',     'organisme',          null,                                                                                               '', 1, 7],
+   293→   793→   793→            ['Formation demandée',     'Date début',          'date',     'date_debut',         null,                                                                                               '', 1, 8],
+   294→   794→   794→            ['Formation demandée',     'Date fin',            'date',     'date_fin',           null,                                                                                               '', 1, 9],
+   295→   795→   795→            ['Formation demandée',     'Lieu',                'text',     'lieu',               null,                                                                                               '', 1, 10],
+   296→   796→   796→            ['Formation demandée',     'Coût estimé',         'text',     'cout_estime',        null,                                                                                               'en euros TTC', 1, 11],
+   297→   797→   797→            ['Formation demandée',     'Heures DIF',          'text',     'heures_dif',         null,                                                                                               'nombre d\'heures au titre du DIF/CPF', 1, 12],
+   298→   798→   798→            ['Justification',          'Objectif',            'textarea', 'objectif',           null,                                                                                               '', 1, 13],
+   299→   799→   799→            ['Justification',          'Impact métier',       'textarea', 'impact_metier',      null,                                                                                               '', 1, 14],
+   300→   800→   800→            ['Justification',          'Avis du chef',        'select',   'avis_chef',          '["Favorable","Défavorable","Réservé"]',                                                             '', 1, 15],
+
+[showing lines 1-300 of 302; use offset=301 with limit to continue reading]
