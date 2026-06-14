@@ -56,3 +56,34 @@ Stage Summary:
 - Owner management integrated in admin_forms.php
 - confirm_action.php supports remove_owner
 - All changes follow zero-JS, zero-framework philosophy
+
+---
+Task ID: v4.2.0-uuid-html5-lazycron-isolation
+Agent: Super Z (main)
+Task: Add UUID for form IDs, HTML5 validation, lazy cron, and owner isolation
+
+Work Log:
+- Added uuid column to forms table with migration v7 (auto-generate for existing rows)
+- Created generate_uuid() function (RFC 4122 v4 compliant, uses random_bytes)
+- Created get_form_by_uuid() helper function
+- Updated all form seeds to include UUID on INSERT
+- Updated form_tracking.php to use ?f=UUID instead of ?form_id=INTEGER
+- Updated index.php and admin_forms.php links to use UUID
+- Updated get_owned_forms() to return uuid column
+- Added HTML5 type auto-detection in render_field(): email, tel, number, time, url
+- Added pattern, maxlength, min/max, step attributes for native HTML5 validation
+- Removed novalidate attribute from form tag
+- Added maxlength on textarea (5000) and text inputs (500)
+- Created lazy cron system: run_lazy_cron() called from get_pdo()
+- Added lazy_cron table (migration v8) for tracking task execution
+- remind.php runs hourly, alert_check.php runs daily
+- Verified owner isolation: form_tracking locked to owners+admins, dashboard/stats admin-only
+- Updated config.php to v4.2.0, CHANGELOG.md
+
+Stage Summary:
+- Version bumped from 4.1.0 to 4.2.0
+- 2 new DB migrations (v7: uuid, v8: lazy_cron)
+- 3 new functions (generate_uuid, get_form_by_uuid, run_lazy_cron)
+- HTML5 validation: 6 input types auto-detected
+- No more cron dependency: first login triggers scheduled tasks
+- Form IDs are now non-guessable UUIDs in URLs
