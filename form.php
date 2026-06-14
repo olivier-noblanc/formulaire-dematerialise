@@ -19,6 +19,11 @@ $submitted_by = get_auth_user();
 $field_errors = [];
 $success      = false;
 
+// Vérifier si l'agent a déjà une soumission en cours pour ce formulaire
+$existing_stmt = $pdo->prepare("SELECT id, submitted_at FROM submissions WHERE form_id = ? AND submitted_by = ? AND status = 'en_cours' ORDER BY submitted_at DESC LIMIT 1");
+$existing_stmt->execute([$form['id'], $submitted_by]);
+$existing_submission = $existing_stmt->fetch(PDO::FETCH_ASSOC);
+
 // Charger les champs dynamiques du formulaire, ordonnés par ordre
 $fields_stmt = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre, id");
 $fields_stmt->execute([$form['id']]);
@@ -204,11 +209,20 @@ HTML;
   </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="my_submissions.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📋 Mes demandes</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a><?php if (is_admin_user()): ?> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a><?php endif; ?></span></div>
-<div class="container">
+<div class="container" id="main-content">
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p class="agent-info"><?= h($form['description']) ?></p><?php endif; ?>
   <p class="agent-info">Formulaire rempli par : <strong><?= h($submitted_by) ?></strong></p>
+
+  <?php if ($existing_submission && !$success): ?>
+    <div class="warn-box">
+      <p><strong>⚠ Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
+      <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
+      <p><a href="submission_view.php?id=<?= (int)$existing_submission['id'] ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
+    </div>
+  <?php endif; ?>
 
   <?php if ($success): ?>
     <div class="success">
@@ -265,9 +279,7 @@ HTML;
     </form>
   <?php endif; ?>
 </div>
-<?php if (!empty($field_errors)): ?>
-<script>document.querySelector('.field-error')?.scrollIntoView({behavior:'smooth',block:'center'});</script>
-<?php endif; ?>
+
 <?= render_footer() ?>
 </body>
 </html>

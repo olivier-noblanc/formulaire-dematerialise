@@ -131,6 +131,50 @@ if ($action === 'add_form') {
         }
     }
 
+} elseif ($action === 'duplicate_form') {
+    $source_id = (int)($_POST['source_form_id'] ?? 0);
+    if ($source_id > 0) {
+        // Récupérer le formulaire source
+        $src = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
+        $src->execute([$source_id]);
+        $src_form = $src->fetch(PDO::FETCH_ASSOC);
+        if ($src_form) {
+            // Créer le nouveau formulaire
+            $new_slug = $src_form['slug'] . '-copie';
+            $new_label = $src_form['label'] . ' (copie)';
+            $pdo->prepare("INSERT INTO forms (slug, label, description, actif, deadline_field) VALUES (?, ?, ?, 1, ?)")
+                ->execute([$new_slug, $new_label, $src_form['description'], $src_form['deadline_field']]);
+            $new_id = (int)$pdo->lastInsertId();
+            
+            // Copier les champs
+            $fields = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre");
+            $fields->execute([$source_id]);
+            foreach ($fields->fetchAll(PDO::FETCH_ASSOC) as $f) {
+                $pdo->prepare("INSERT INTO form_fields (form_id, label, field_type, field_name, options, required, ordre, card_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                    ->execute([$new_id, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['required'], $f['ordre'], $f['card_group']]);
+            }
+            
+            // Copier les étapes et destinataires
+            $steps = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? ORDER BY ordre");
+            $steps->execute([$source_id]);
+            foreach ($steps->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, ?)")
+                    ->execute([$new_id, $s['label'], $s['ordre'], $s['actif']]);
+                $new_step_id = (int)$pdo->lastInsertId();
+                
+                $recips = $pdo->prepare("SELECT * FROM step_recipients WHERE step_id = ?");
+                $recips->execute([$s['id']]);
+                foreach ($recips->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $pdo->prepare("INSERT INTO step_recipients (step_id, email) VALUES (?, ?)")
+                        ->execute([$new_step_id, $r['email']]);
+                }
+            }
+            
+            app_log('form_duplicate', 'form:' . $new_id, 'Formulaire dupliqué depuis #' . $source_id);
+            $success_msg = 'Formulaire dupliqué avec succès.';
+        }
+    }
+
 } elseif ($action === 'add_step') {
     $form_id = (int)($_POST['form_id'] ?? 0);
     $label = trim($_POST['label'] ?? '');
@@ -652,14 +696,17 @@ ksort($steps_by_ordre);
 
     <!-- ── Form selector ──────────────────────────────────────── -->
     <div class="form-selector">
-        <select name="form_id" onchange="window.location.href='admin_forms.php?form_id='+this.value">
-            <option value="">— Sélectionner un formulaire —</option>
-            <?php foreach ($forms as $f): ?>
-                <option value="<?= $f['id'] ?>" <?= $form_id == $f['id'] ? 'selected' : '' ?>>
-                    <?= h($f['label']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+        <form method="GET" style="display:inline-flex;gap:.5rem;align-items:center;">
+            <select name="form_id">
+                <option value="">— Sélectionner un formulaire —</option>
+                <?php foreach ($forms as $f): ?>
+                    <option value="<?= $f['id'] ?>" <?= $form_id == $f['id'] ? 'selected' : '' ?>>
+                        <?= h($f['label']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;">OK</button>
+        </form>
         <a href="admin_forms.php" class="btn btn-primary">＋ Nouveau formulaire</a>
     </div>
 
@@ -707,7 +754,13 @@ ksort($steps_by_ordre);
             <div class="section-card">
                 <div class="section-card-header">
                     <h2>📋 Informations du formulaire</h2>
-                    <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce formulaire ?');">
+                    <form method="POST" style="display:inline;">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="action" value="duplicate_form">
+                        <input type="hidden" name="source_form_id" value="<?= (int)$form['id'] ?>">
+                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📋 Dupliquer</button>
+                    </form>
+                    <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="delete_form">
                         <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
@@ -857,7 +910,7 @@ ksort($steps_by_ordre);
                                                     <?php foreach ($step['recipients'] as $rcpt): ?>
                                                         <span class="recipient-chip">
                                                             <?= h($rcpt['email']) ?>
-                                                            <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce destinataire ?');">
+                                                            <form method="POST" style="display:inline;">
                                                                 <?= csrf_field() ?>
                                                                 <input type="hidden" name="action" value="delete_recipient">
                                                                 <input type="hidden" name="recipient_id" value="<?= $rcpt['id'] ?>">
@@ -872,7 +925,7 @@ ksort($steps_by_ordre);
                                         </div>
                                         <div class="step-actions">
                                             <a href="?form_id=<?= $form_id ?>&edit_step=<?= $step['id'] ?>" class="btn btn-secondary" style="font-size:.78rem;padding:.3rem .6rem;">Modifier</a>
-                                            <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette étape ?');">
+                                            <form method="POST" style="display:inline;">
                                                 <?= csrf_field() ?>
                                                 <input type="hidden" name="action" value="delete_step">
                                                 <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
@@ -898,14 +951,18 @@ ksort($steps_by_ordre);
                     <div class="step-recipient-picker">
                         <div class="field">
                             <label>Choisir une étape</label>
-                            <select name="step_id" onchange="window.location.href='admin_forms.php?form_id=<?= $form_id ?>&step_id='+this.value">
-                                <option value="">— Sélectionner une étape —</option>
-                                <?php foreach ($steps as $step): ?>
-                                    <option value="<?= $step['id'] ?>" <?= (isset($_GET['step_id']) && $_GET['step_id'] == $step['id']) ? 'selected' : '' ?>>
-                                        Étape <?= h($step['ordre']) ?> — <?= h($step['label']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <form method="GET" style="display:inline-flex;gap:.5rem;align-items:center;">
+                                <input type="hidden" name="form_id" value="<?= $form_id ?>">
+                                <select name="step_id">
+                                    <option value="">— Sélectionner une étape —</option>
+                                    <?php foreach ($steps as $step): ?>
+                                        <option value="<?= $step['id'] ?>" <?= (isset($_GET['step_id']) && $_GET['step_id'] == $step['id']) ? 'selected' : '' ?>>
+                                            Étape <?= h($step['ordre']) ?> — <?= h($step['label']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;">OK</button>
+                            </form>
                         </div>
 
                         <?php if (isset($_GET['step_id']) && !empty($_GET['step_id'])): ?>
@@ -944,7 +1001,7 @@ ksort($steps_by_ordre);
                                             <?php foreach ($selected_step['recipients'] as $recipient): ?>
                                                 <span class="recipient-chip" style="font-size:.82rem;padding:.3rem .7rem;">
                                                     📧 <?= h($recipient['email']) ?>
-                                                    <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce destinataire ?');">
+                                                    <form method="POST" style="display:inline;">
                                                         <?= csrf_field() ?>
                                                         <input type="hidden" name="action" value="delete_recipient">
                                                         <input type="hidden" name="recipient_id" value="<?= $recipient['id'] ?>">
@@ -1088,7 +1145,7 @@ ksort($steps_by_ordre);
                                             </td>
                                             <td class="actions">
                                                 <a href="?form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#fields" class="btn btn-secondary" style="font-size:.76rem;padding:.25rem .5rem;">Modifier</a>
-                                                <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce champ ?');">
+                                                <form method="POST" style="display:inline;">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="delete_field">
                                                     <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">

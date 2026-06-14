@@ -126,6 +126,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Regle en cours de modification (via GET param)
+$edit_rule_id = (int)($_GET['edit_rule'] ?? 0);
+
 // Recuperer les donnees
 $forms = $pdo->query("SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -311,8 +314,8 @@ function notify_who_label(string $val): string {
               <?= h($r['label']) ?>
             </h3>
             <div class="rule-actions">
-              <button type="button" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;" onclick="toggleEdit(<?= (int)$r['id'] ?>)">Modifier</button>
-              <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette règle d\'alerte ?');">
+              <a href="?edit_rule=<?= (int)$r['id'] ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>
+              <form method="POST" style="display:inline;">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete_rule">
                 <input type="hidden" name="rule_id" value="<?= (int)$r['id'] ?>">
@@ -331,8 +334,9 @@ function notify_who_label(string $val): string {
             <?php endif; ?>
           </div>
 
-          <!-- Formulaire de modification (caché par defaut) -->
-          <div id="edit-<?= (int)$r['id'] ?>" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;">
+          <!-- Formulaire de modification -->
+          <?php if (($edit_rule_id ?? 0) === (int)$r['id']): ?>
+          <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;">
             <form method="POST">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="update_rule">
@@ -356,29 +360,19 @@ function notify_who_label(string $val): string {
                 </div>
                 <div class="field">
                   <label>Notifier</label>
-                  <select name="notify_who" onchange="toggleCustomEmail(this)">
+                  <select name="notify_who">
                     <option value="admin" <?= $r['notify_who'] === 'admin' ? 'selected' : '' ?>>Administrateurs</option>
                     <option value="submitter" <?= $r['notify_who'] === 'submitter' ? 'selected' : '' ?>>Agent (demandeur)</option>
                     <option value="validators" <?= $r['notify_who'] === 'validators' ? 'selected' : '' ?>>Validateurs en cours</option>
                     <option value="admin+submitter" <?= $r['notify_who'] === 'admin+submitter' ? 'selected' : '' ?>>Admins + Agent</option>
                     <option value="admin+validators" <?= $r['notify_who'] === 'admin+validators' ? 'selected' : '' ?>>Admins + Validateurs</option>
-                    <option value="custom" <?= !in_array($r['notify_who'], ['admin','submitter','validators','admin+submitter','admin+validators']) && !filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL) ? 'selected' : '' ?>>Email personnalisé</option>
-                    <?php if (filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL)): ?>
-                      <option value="custom" selected>Email personnalisé : <?= h($r['notify_who']) ?></option>
-                    <?php endif; ?>
+                    <option value="custom" <?= !in_array($r['notify_who'], ['admin','submitter','validators','admin+submitter','admin+validators']) ? 'selected' : '' ?>>Email personnalisé</option>
                   </select>
                 </div>
-                <?php if (filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL)): ?>
                   <div class="field custom-email-field">
-                    <label>Email personnalisé</label>
-                    <input type="email" name="custom_email" value="<?= h($r['notify_who']) ?>" placeholder="email@exemple.fr">
+                    <label>Email personnalisé <span class="hint">(si "Email personnalisé" sélectionné ci-dessus)</span></label>
+                    <input type="email" name="custom_email" value="<?= filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL) ? h($r['notify_who']) : '' ?>" placeholder="email@exemple.fr">
                   </div>
-                <?php else: ?>
-                  <div class="field custom-email-field" style="display:none;">
-                    <label>Email personnalisé</label>
-                    <input type="email" name="custom_email" placeholder="email@exemple.fr">
-                  </div>
-                <?php endif; ?>
                 <div class="field">
                   <label class="checkbox-label">
                     <input type="checkbox" name="actif" value="1" <?= $r['actif'] ? 'checked' : '' ?>>
@@ -388,10 +382,11 @@ function notify_who_label(string $val): string {
               </div>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Enregistrer</button>
-                <button type="button" class="btn btn-secondary" onclick="toggleEdit(<?= (int)$r['id'] ?>)">Annuler</button>
+                <a href="admin_alerts.php" class="btn btn-secondary">Annuler</a>
               </div>
             </form>
           </div>
+          <?php endif; ?>
         </div>
       <?php endforeach; ?>
     <?php endif; ?>
@@ -430,7 +425,7 @@ function notify_who_label(string $val): string {
         </div>
         <div class="field">
           <label>Notifier</label>
-          <select name="notify_who" onchange="toggleCustomEmail(this)">
+          <select name="notify_who">
             <option value="admin">Administrateurs</option>
             <option value="submitter">Agent (demandeur)</option>
             <option value="validators">Validateurs en cours</option>
@@ -439,8 +434,8 @@ function notify_who_label(string $val): string {
             <option value="custom">Email personnalisé</option>
           </select>
         </div>
-        <div class="field custom-email-field" style="display:none;">
-          <label>Email personnalisé</label>
+        <div class="field custom-email-field">
+          <label>Email personnalisé <span class="hint">(si "Email personnalisé" sélectionné ci-dessus)</span></label>
           <input type="email" name="custom_email" placeholder="email@exemple.fr">
         </div>
       </div>
@@ -455,7 +450,7 @@ function notify_who_label(string $val): string {
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h2 style="margin:0;border:none;padding:0;">📬 Historique des alertes envoyées</h2>
-      <form method="POST" onsubmit="return confirm('Purger les logs d\'alerte de plus de 90 jours ?');">
+      <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="delete_alert_log">
         <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .6rem;">🗑 Purger > 90j</button>
@@ -484,20 +479,6 @@ function notify_who_label(string $val): string {
   </div>
 
 </div>
-<script>
-function toggleEdit(id) {
-  var el = document.getElementById('edit-' + id);
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-function toggleCustomEmail(sel) {
-  var customField = sel.closest('.grid-2').querySelector('.custom-email-field');
-  if (sel.value === 'custom') {
-    customField.style.display = '';
-  } else {
-    customField.style.display = 'none';
-  }
-}
-</script>
 <?= render_footer() ?>
 </body>
 </html>

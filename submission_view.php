@@ -122,6 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action_msg = $result['message'];
     }
     elseif ($action === 'cancel_submission') {
+        $confirmed = !empty($_POST['confirmed']);
+        if (!$confirmed) {
+            header('Location: confirm_action.php?action=cancel_submission&submission_id=' . $sub_id . '&from=submission_view.php?id=' . $sub_id);
+            exit;
+        }
         if ($is_admin || $sub['submitted_by'] === $user) {
             $result = cancel_submission($sub_id, $user);
             $action_msg = $result['message'];
@@ -231,6 +236,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
   </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <div class="bandeau">
   <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
   <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
@@ -242,7 +248,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
     <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
   </span>
 </div>
-<div class="container">
+<div class="container" id="main-content">
 
   <?php if ($is_admin): ?>
     <a href="dashboard.php" class="back-link">← Retour au dashboard</a>
@@ -338,7 +344,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
     <div class="actions-bar">
       <?php foreach ($all_tokens as $tok): ?>
         <?php if (empty($tok['done_at'])): ?>
-          <form method="POST" style="display:inline;" onsubmit="return confirm('Régénérer le lien pour <?= h($tok['email']) ?> ?');">
+          <form method="POST" style="display:inline;">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="regenerate_token">
             <input type="hidden" name="token_id" value="<?= (int)$tok['id'] ?>">
@@ -416,11 +422,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
   <?php if ($status === 'en_cours' && ($is_admin || $sub['submitted_by'] === $user)): ?>
   <div class="card">
     <h2>⚙ Actions</h2>
-    <form method="POST" onsubmit="return confirm('Annuler cette soumission ? Cette action est irréversible.');">
-      <?= csrf_field() ?>
-      <input type="hidden" name="action" value="cancel_submission">
-      <button type="submit" class="btn btn-danger">🗑 Annuler la soumission</button>
-    </form>
+    <a href="confirm_action.php?action=cancel_submission&submission_id=<?= $sub_id ?>&from=submission_view.php?id=<?= $sub_id ?>" class="btn btn-danger" style="text-decoration:none;">🗑 Annuler la soumission</a>
   </div>
   <?php endif; ?>
 

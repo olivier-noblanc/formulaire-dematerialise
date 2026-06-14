@@ -235,7 +235,7 @@ if (is_super_admin() || is_admin_user()) {
                             <td><?= h($admin['added_at']) ?></td>
                             <td>
                                 <?php if ($admin['email'] !== ADMIN_EMAIL): ?>
-                                    <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur ?');">
+                                    <form method="POST" style="display:inline;">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="remove_admin">
                                         <input type="hidden" name="email" value="<?= h($admin['email']) ?>">

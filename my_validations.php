@@ -41,6 +41,7 @@ $done_tokens = $done_stmt->fetchAll(PDO::FETCH_ASSOC);
 // Compteurs
 $pending_count = count($pending_tokens);
 $done_count = count($done_tokens);
+$active_tab = $_GET['tab'] ?? 'pending';
 
 // Vérifier si un token est expiré
 function is_token_expired(array $token): bool {
@@ -61,14 +62,11 @@ function is_token_expired(array $token): bool {
     .subtitle { font-size: .85rem; color: #555; margin-bottom: 2rem; }
 
     .tab-bar { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid #ddd; }
-    .tab { padding: .75rem 1.5rem; font-size: .9rem; font-weight: bold; color: #555; cursor: pointer; border: none; background: none; font-family: inherit; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab { padding: .75rem 1.5rem; font-size: .9rem; font-weight: bold; color: #555; cursor: pointer; border: none; background: none; font-family: inherit; border-bottom: 3px solid transparent; margin-bottom: -2px; text-decoration: none; display: inline-block; }
     .tab.active { color: #003189; border-bottom-color: #003189; }
-    .tab:hover { color: #003189; }
+    .tab:hover { color: #003189; text-decoration: none; }
     .tab .tab-count { background: #003189; color: #fff; font-size: .75rem; padding: .1rem .5rem; border-radius: 10px; margin-left: .5rem; }
     .tab-count.warn { background: #b45309; }
-
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
 
     .validation-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 1rem; overflow: hidden; transition: box-shadow .15s; }
     .validation-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
@@ -103,6 +101,7 @@ function is_token_expired(array $token): bool {
   </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <div class="bandeau">
   <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
   <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
@@ -114,7 +113,7 @@ function is_token_expired(array $token): bool {
     <?php endif; ?>
   </span>
 </div>
-<div class="container">
+<div class="container" id="main-content">
   <h1>✅ Mes validations</h1>
   <p class="subtitle">Tâches de validation qui vous sont assignées et historique de vos validations</p>
 
@@ -125,12 +124,13 @@ function is_token_expired(array $token): bool {
 
   <!-- Onglets -->
   <div class="tab-bar">
-    <button class="tab active" onclick="showTab('pending')">⏳ En attente <?= $pending_count > 0 ? '<span class="tab-count warn">' . $pending_count . '</span>' : '' ?></button>
-    <button class="tab" onclick="showTab('done')">✓ Historique (<?= $done_count ?>)</button>
+    <a href="?tab=pending" class="tab <?= $active_tab === 'pending' ? 'active' : '' ?>">⏳ En attente <?= $pending_count > 0 ? '<span class="tab-count warn">' . $pending_count . '</span>' : '' ?></a>
+    <a href="?tab=done" class="tab <?= $active_tab === 'done' ? 'active' : '' ?>">✓ Historique (<?= $done_count ?>)</a>
   </div>
 
   <!-- Onglet : En attente -->
-  <div id="tab-pending" class="tab-content active">
+  <?php if ($active_tab === 'pending'): ?>
+  <div id="tab-pending">
     <?php if (empty($pending_tokens)): ?>
       <div class="empty-state">
         <div class="empty-icon">🎉</div>
@@ -226,8 +226,9 @@ function is_token_expired(array $token): bool {
     <?php endif; ?>
   </div>
 
+  <?php else: ?>
   <!-- Onglet : Historique -->
-  <div id="tab-done" class="tab-content">
+  <div id="tab-done">
     <?php if (empty($done_tokens)): ?>
       <div class="empty-state">
         <div class="empty-icon">📋</div>
@@ -283,17 +284,9 @@ function is_token_expired(array $token): bool {
       <?php endforeach; ?>
     <?php endif; ?>
   </div>
+  <?php endif; ?>
 
 </div>
-
-<script>
-function showTab(name) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.closest('.tab').classList.add('active');
-}
-</script>
 <?= render_footer() ?>
 </body>
 </html>

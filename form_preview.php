@@ -97,7 +97,7 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
   </div>
   <?php endif; ?>
 
-  <form onsubmit="return false;">
+  <form>
     <?php if (empty($grouped)): ?>
       <p style="text-align:center;padding:2rem;color:#888;font-style:italic;">Aucun champ configuré pour ce formulaire.</p>
     <?php else: ?>
@@ -142,7 +142,7 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
           <?php endif; ?>
         </fieldset>
       <?php endforeach; ?>
-      <button type="button" class="btn-submit">Envoyer la déclaration (désactivé — prévisualisation)</button>
+      <button type="button" class="btn-submit" disabled>Envoyer la déclaration (désactivé — prévisualisation)</button>
     <?php endif; ?>
   </form>
 </div>

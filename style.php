@@ -169,4 +169,43 @@ select.form-filter { padding: .4rem .75rem; border: 1px solid #aaa; border-radiu
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ── Skip link (RGAA) ────────────────────────────────────── */
+.skip-link { position: absolute; left: -9999px; top: 0; background: #003189; color: #fff; padding: .5rem 1rem; z-index: 9999; font-size: .9rem; }
+.skip-link:focus { left: 0; }
+
+/* ── Focus visible (RGAA) ────────────────────────────────── */
+:focus-visible { outline: 3px solid #003189; outline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #003189; outline-offset: 2px; }
+
+/* ── Visually hidden (screen readers only) ────────────────── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ── Print ──────────────────────────────────────────────────── */
+@media print {
+  /* Hide non-essential elements */
+  .bandeau, footer, .btn, .form-actions, .actions-bar, .action-btn, .card-actions,
+  .toolbar, .filtres, .form-selector { display: none !important; }
+
+  /* Reset body for print */
+  body { background: #fff !important; color: #000 !important; }
+
+  /* Remove card borders and shadows */
+  .card, .section-card { border: none !important; box-shadow: none !important; }
+
+  /* Full-width container */
+  .container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+
+  /* Show URLs after links */
+  a[href]::after { content: " (" attr(href) ")"; font-size: .85em; color: #555; }
+  a[href^="#"]::after, a[href^="javascript"]::after { content: ""; }
+
+  /* Table borders for print */
+  table, th, td { border: 1px solid #999 !important; }
+  thead { background: #eee !important; color: #000 !important; }
+  th { background: #eee !important; color: #000 !important; }
+
+  /* Avoid page breaks inside cards */
+  .card, .section-card { page-break-inside: avoid; }
+}
 </style>

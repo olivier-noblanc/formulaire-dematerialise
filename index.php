@@ -93,6 +93,7 @@ if ($is_admin) {
   </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <div class="bandeau">
   <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
   <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
@@ -100,7 +101,7 @@ if ($is_admin) {
     <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a>
   </span>
 </div>
-<div class="container">
+<div class="container" id="main-content">
   <!-- Hero -->
   <div class="hero">
     <h1>Workflow DREETS BFC</h1>
@@ -239,6 +240,13 @@ if ($is_admin) {
       <div>
         <div class="nt-label">Paramètres</div>
         <div class="nt-desc">Configuration SMTP et workflow</div>
+      </div>
+    </a>
+    <a href="backup.php" class="nav-tile">
+      <span class="nt-icon">💾</span>
+      <div>
+        <div class="nt-label">Sauvegarde</div>
+        <div class="nt-desc">Sauvegarder et restaurer la base de données</div>
       </div>
     </a>
     <?php endif; ?>

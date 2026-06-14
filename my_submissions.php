@@ -154,6 +154,7 @@ foreach ($submissions as $s) {
   </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <div class="bandeau">
   <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
   <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
@@ -165,7 +166,7 @@ foreach ($submissions as $s) {
     <?php endif; ?>
   </span>
 </div>
-<div class="container">
+<div class="container" id="main-content">
   <h1>📋 Mes demandes</h1>
   <p class="subtitle">Suivi de toutes vos demandes de workflow en tant qu'agent</p>
 

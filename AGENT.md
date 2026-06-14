@@ -1,7 +1,7 @@
 # AGENT.md — Guide Technique pour Agent IA
 
 > Documentation technique complète du projet **Formulaire Dématérialisé DREETS BFC**.
-> Version 2.5.0 — Dernière mise à jour : 13/06/2026
+> Version 3.0.0 — Dernière mise à jour : 13/06/2026
 
 ---
 
@@ -41,7 +41,7 @@ Tous les fichiers PHP sont dans ce répertoire racine. Il n'y a aucun sous-dossi
 | Principe | Description |
 |---|---|
 | **Zéro framework PHP** | Pas de Laravel, Symfony, Slim. PHP procédural pur. |
-| **Zéro JS framework** | Pas de React, Vue, Alpine. HTML5 natif, JS minimal uniquement si strictement nécessaire. |
+| **Zéro JavaScript** | Aucun JavaScript depuis la v3.0.0. Toutes les interactions sont côté serveur (PHP POST/GET, CSS). Les onglets utilisent des paramètres GET, les confirmations passent par une page dédiée, les toggles sont des liens directs. |
 | **Zéro CDN** | Aucune ressource externe. Tout est local. |
 | **Zéro dépendance inutile** | PHPMailer est la seule dépendance. Ne pas en ajouter. |
 | **Future-proof** | Le code doit tourner sans modification dans 10 ans. Éviter toute API ou syntaxe susceptible d'être dépréciée. |
@@ -75,6 +75,9 @@ Tous les fichiers PHP sont dans ce répertoire racine. Il n'y a aucun sous-dossi
 | `admin_settings.php` | Configuration SMTP, délai de relance, plafond de relances. | ~180 lignes |
 | `docs.php` | Documentation utilisateur : guides agent/validateur/admin, FAQ, architecture. | ~400 lignes |
 | `changelog.php` | Journal des versions — parse `CHANGELOG.md` et affiche formaté. | ~100 lignes |
+| `install.php` | Assistant d'installation première — vérification prérequis, configuration SMTP/admin, génération config.php. Fichier standalone (ne dépend pas de config.php ni helpers.php). | ~741 lignes |
+| `backup.php` | Sauvegarde et restauration de la base SQLite, purge des anciennes données, statistiques DB. Admin uniquement. | ~647 lignes |
+| `confirm_action.php` | Page de confirmation serveur pour les actions destructrices (remplace les confirm() JavaScript). | ~150 lignes |
 | `alert_check.php` | Script CLI : vérifie les deadlines, envoie les alertes configurées. Planifier toutes les 6h. | ~319 lignes |
 | `remind.php` | Script CLI de relance automatique. Planifier toutes les 12h. | ~55 lignes |
 | `update.ps1` | Script PowerShell de mise à jour automatique (télécharge, sauvegarde, préserve config.php). | ~80 lignes |
@@ -438,7 +441,7 @@ require_once __DIR__ . '/helpers.php';
 | Exposer `alert_check.php`, `remind.php` via le web | Scripts CLI uniquement |
 | Écraser `config.php` lors d'une mise à jour | Fichier protégé |
 | Dupliquer le CSS commun | Utiliser `require_once __DIR__ . '/style.php'` |
-| Utiliser du JavaScript sauf nécessité | Confirms et toggles minimes uniquement |
+| Utiliser du JavaScript (y compris inline) | L'application est 100% sans JS depuis la v3.0.0. Toutes les interactions sont gérées côté serveur. |
 | Créer un fichier `style.css` | Le CSS passe par `style.php` uniquement |
 
 ---
@@ -495,6 +498,31 @@ php C:\inetpub\wwwroot\workflow\alert_check.php
 
 ---
 
+## Nouvelles pages v3.0.0
+
+### install.php — Assistant d'installation
+
+Page standalone accessible uniquement si `config.php` n'existe pas. Guide l'administrateur en 3 étapes :
+1. Vérification des prérequis (PHP 8+, SQLite3, intl, PHPMailer, permissions)
+2. Configuration (BASE_URL, SMTP, ADMIN_EMAIL) avec test d'envoi d'email
+3. Confirmation et génération de config.php
+
+**Important** : Cette page NE dépend PAS de `helpers.php` ni `config.php`. Elle est entièrement autonome avec des fonctions utilitaires préfixées `inst_`.
+
+### backup.php — Sauvegarde et restauration
+
+Page d'administration (super admin uniquement) avec :
+- Téléchargement de la base SQLite (nom : `workflow_backup_YYYYMMDD_HHMMSS.db`)
+- Restauration depuis un fichier uploadé (validation du header SQLite, sauvegarde préalable automatique, rollback en cas de corruption)
+- Purge des données anciennes (soumissions clôturées de plus de N mois, processus en 2 étapes)
+- Statistiques de la base (taille, lignes par table, pages SQLite)
+
+### confirm_action.php — Confirmation serveur
+
+Remplace les `confirm()` JavaScript. Reçoit l'action via GET, affiche un récapitulatif et un formulaire de confirmation. Actions supportées : `cancel_submission`, `regenerate_token`, `delete_rule`, `delete_alert_log`, `remove_admin`.
+
+---
+
 ## Points d'attention
 
 | Point | Détail |
@@ -506,4 +534,4 @@ php C:\inetpub\wwwroot\workflow\alert_check.php
 | **Config protégée** | `config.php` n'est jamais écrasé par `update.ps1` — le déploiement préserve la configuration locale. |
 | **fputcsv()** | PHP 8.4+ exige un 5e paramètre. `export_csv()` utilise `fputcsv($f, $row, ';', '"', '\\')`. |
 | **PHP built-in server** | Instable avec cette application (crash après 1-2 requêtes). Utiliser le mode test + subprocess pour les tests automatisés. |
-| **Zéro JS** | Le projet ne dépend pas de JavaScript. Les rares usages (toggle, confirm) sont du JS natif inline minimal. |
+| **Zéro JS** | L'application est 100% sans JavaScript depuis la v3.0.0. Toutes les interactions sont côté serveur (confirmations via confirm_action.php, onglets via GET, toggles via liens). |

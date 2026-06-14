@@ -4,6 +4,7 @@ require_once __DIR__ . '/helpers.php';
 $pdo    = get_pdo();
 $filtre = $_GET['statut'] ?? 'tous';
 $form_f = $_GET['form']   ?? '';
+$search = $_GET['search'] ?? '';
 $page   = max(1, (int)($_GET['page'] ?? 1));
 $per_page = 25;
 
@@ -44,6 +45,11 @@ if (isset($_POST['action']) && $_POST['action'] === 'cancel_submission') {
         die('Token CSRF invalide.');
     }
     $sub_id = (int)($_POST['submission_id'] ?? 0);
+    $confirmed = !empty($_POST['confirmed']);
+    if (!$confirmed) {
+        header('Location: confirm_action.php?action=cancel_submission&submission_id=' . $sub_id . '&from=dashboard.php');
+        exit;
+    }
     $actor = get_auth_user();
     // Vérifier que l'utilisateur est admin ou le propriétaire de la soumission
     $sub_stmt = $pdo->prepare("SELECT submitted_by FROM submissions WHERE id = ?");
@@ -61,6 +67,11 @@ $params = [];
 if ($filtre === 'en_cours') { $where[] = 's.status = ?'; $params[] = 'en_cours'; }
 if ($filtre === 'complet')  { $where[] = 's.status != ?'; $params[] = 'en_cours'; }
 if ($form_f) { $where[] = "f.slug = ?"; $params[] = $form_f; }
+if ($search) {
+    $where[] = "(s.submitted_by LIKE ? OR s.data LIKE ?)";
+    $params[] = '%' . $search . '%';
+    $params[] = '%' . $search . '%';
+}
 $where = implode(' AND ', $where);
 
 // Count total matching rows for pagination
@@ -115,16 +126,14 @@ function get_tokens_status(int $sub_id): array {
     .token-ok   { background: #e8f5e9; color: #1a6b3c; }
     .token-wait { background: #fff3e0; color: #b45309; }
     .token-pend { background: #f5f5f5; color: #888; }
-    .detail-btn { cursor: pointer; color: #003189; font-size: .8rem; text-decoration: underline; background: none; border: none; font-family: inherit; }
-    .detail-row { display: none; }
-    .detail-row.open { display: table-row; }
     .detail-content { padding: 1rem; background: #f0f0f8; font-size: .82rem; line-height: 1.9; }
     .ordre-label { font-size: .7rem; background: #003189; color: #fff; padding: .1rem .4rem; border-radius: 2px; margin-right: .25rem; }
   </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_alerts.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔔 Alertes</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span></div>
-<div class="container">
+<div class="container" id="main-content">
   <h1>Supervision — Workflows en cours</h1>
 
   <?php if ($regen_msg): ?><div class="msg-info"><?= h($regen_msg) ?></div><?php endif; ?>
@@ -138,20 +147,33 @@ function get_tokens_status(int $sub_id): array {
 
   <div class="toolbar">
     <div class="filtres">
-      <a href="?statut=tous&form=<?= h($form_f) ?>"     class="<?= $filtre==='tous'     ? 'actif':'' ?>">Tous</a>
-      <a href="?statut=en_cours&form=<?= h($form_f) ?>" class="<?= $filtre==='en_cours' ? 'actif':'' ?>">En cours</a>
-      <a href="?statut=complet&form=<?= h($form_f) ?>"  class="<?= $filtre==='complet'  ? 'actif':'' ?>">Clôturés</a>
+      <a href="?statut=tous&form=<?= h($form_f) ?>&search=<?= h($search) ?>"     class="<?= $filtre==='tous'     ? 'actif':'' ?>">Tous</a>
+      <a href="?statut=en_cours&form=<?= h($form_f) ?>&search=<?= h($search) ?>" class="<?= $filtre==='en_cours' ? 'actif':'' ?>">En cours</a>
+      <a href="?statut=complet&form=<?= h($form_f) ?>&search=<?= h($search) ?>"  class="<?= $filtre==='complet'  ? 'actif':'' ?>">Clôturés</a>
     </div>
-    <select class="form-filter" onchange="location='?statut=<?= h($filtre) ?>&form='+this.value">
-      <option value="">Tous les formulaires</option>
-      <?php foreach ($forms as $f): ?>
-        <option value="<?= h($f['slug']) ?>" <?= $form_f===$f['slug']?'selected':'' ?>><?= h($f['label']) ?></option>
-      <?php endforeach; ?>
-    </select>
+    <form method="GET" style="display:inline-flex;gap:.5rem;align-items:center;">
+      <input type="hidden" name="statut" value="<?= h($filtre) ?>">
+      <select name="form" class="form-filter">
+        <option value="">Tous les formulaires</option>
+        <?php foreach ($forms as $f): ?>
+          <option value="<?= h($f['slug']) ?>" <?= $form_f===$f['slug']?'selected':'' ?>><?= h($f['label']) ?></option>
+        <?php endforeach; ?>
+      </select>
+      <button type="submit" class="btn-admin" style="padding:.3rem .8rem;font-size:.8rem;">OK</button>
+    </form>
+    <form method="GET" style="display:flex;gap:.5rem;align-items:center;">
+      <input type="text" name="search" value="<?= h($search) ?>" placeholder="Rechercher par agent..." style="padding:.4rem .75rem;border:1px solid #aaa;border-radius:3px;font-size:.85rem;font-family:inherit;">
+      <input type="hidden" name="statut" value="<?= h($filtre) ?>">
+      <input type="hidden" name="form" value="<?= h($form_f) ?>">
+      <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">Rechercher</button>
+      <?php if ($search): ?>
+        <a href="?statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">✕ Effacer</a>
+      <?php endif; ?>
+    </form>
     <a href="monitoring.php" class="btn-admin">🖥 Monitoring</a>
     <a href="admin_alerts.php" class="btn-admin" style="background:#b45309;">🔔 Alertes</a>
     <a href="admin_forms.php" class="btn-admin">⚙ Gestion formulaires</a>
-    <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>" class="btn-admin" style="background:#1a6b3c;">📥 Export CSV</a>
+    <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>&search=<?= h($search) ?>" class="btn-admin" style="background:#1a6b3c;">📥 Export CSV</a>
   </div>
 
   <table>
@@ -222,9 +244,9 @@ function get_tokens_status(int $sub_id): array {
               echo '<span style="color:#b45309;">En cours</span>';
           }
         ?></td>
-        <td><button class="detail-btn" onclick="toggle(<?= $i ?>)">détail</button> <a href="submission_view.php?id=<?= (int)$row['id'] ?>" style="font-size:.8rem;color:#003189;text-decoration:underline;">voir</a></td>
+        <td><a href="submission_view.php?id=<?= (int)$row['id'] ?>" style="font-size:.8rem;color:#003189;text-decoration:underline;">voir</a></td>
       </tr>
-      <tr class="detail-row" id="det-<?= $i ?>">
+      <tr>
         <td colspan="7">
           <div class="detail-content">
             <?php if (isset($d['validations']) && is_array($d['validations'])): ?>
@@ -257,7 +279,7 @@ function get_tokens_status(int $sub_id): array {
                 <?php if (is_admin_user()): ?>
                   <?php foreach ($tokens as $t): ?>
                     <?php if (!$t['done_at']): ?>
-                      <form method="POST" style="display:inline;" onsubmit="return confirm('Régénérer le lien de validation pour <?= h($t['email']) ?> ?');">
+                      <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="regenerate_token">
                         <input type="hidden" name="token_id" value="<?= (int)$t['id'] ?>">
@@ -266,12 +288,7 @@ function get_tokens_status(int $sub_id): array {
                     <?php endif; ?>
                   <?php endforeach; ?>
                 <?php endif; ?>
-                <form method="POST" style="display:inline;" onsubmit="return confirm('Annuler cette soumission ? Cette action est irréversible.');">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="action" value="cancel_submission">
-                  <input type="hidden" name="submission_id" value="<?= (int)$row['id'] ?>">
-                  <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;">🗑 Annuler la soumission</button>
-                </form>
+                <a href="confirm_action.php?action=cancel_submission&submission_id=<?= (int)$row['id'] ?>&from=dashboard.php" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">🗑 Annuler</a>
               </div>
             <?php endif; ?>
           </div>
@@ -285,7 +302,7 @@ function get_tokens_status(int $sub_id): array {
   <?php if ($total_pages > 1): ?>
   <div class="pagination">
     <?php
-      $qs = http_build_query(['statut' => $filtre, 'form' => $form_f, 'page' => '']);
+      $qs = http_build_query(['statut' => $filtre, 'form' => $form_f, 'search' => $search, 'page' => '']);
       $base_url = '?' . $qs;
     ?>
     <?php if ($page > 1): ?>
@@ -305,9 +322,6 @@ function get_tokens_status(int $sub_id): array {
   <?php endif; ?>
 
 </div>
-<script>
-function toggle(i){document.getElementById('det-'+i).classList.toggle('open');}
-</script>
 <?= render_footer() ?>
 </body>
 </html>

@@ -1,5 +1,43 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [3.0.0] — 2026-06-14
+
+### Changement majeur
+
+- **Suppression complète du JavaScript** : Toutes les fonctionnalités JavaScript ont été remplacées par des alternatives PHP/CSS pures, conformément à la philosophie du projet. Les toggles de détail utilisent désormais des liens directs, les onglets utilisent des paramètres GET, les selects de filtrage ont des boutons de soumission, et les confirmations d'actions destructrices passent par une page de confirmation serveur. L'application est désormais 100% sans JavaScript.
+
+### Fonctionnalités majeures
+
+- **Assistant d'installation (`install.php`)** : Nouvelle page de première installation qui guide l'administrateur à travers la configuration initiale. Vérification automatique des prérequis (PHP 8+, SQLite3, intl, PHPMailer, permissions d'écriture), formulaire de configuration SMTP et administrateur avec test d'envoi d'email, génération automatique du fichier `config.php`. Accessible uniquement si `config.php` n'existe pas encore.
+
+- **Sauvegarde et restauration (`backup.php`)** : Nouvelle page d'administration permettant de télécharger une copie de la base SQLite, restaurer une base depuis un fichier (avec validation et sauvegarde préalable automatique), purger les anciennes données (soumissions clôturées de plus de 6/12/18/24 mois, avec prévisualisation du compte avant exécution), et consulter les statistiques de la base (taille, nombre de lignes par table, âge des données, pages SQLite). Processus de purge en deux étapes pour éviter les erreurs.
+
+- **Page de confirmation serveur (`confirm_action.php`)** : Nouvelle page remplaçant les boîtes de dialogue JavaScript `confirm()` pour les actions destructrices (annulation de soumission, régénération de token, suppression de règle, purge de logs, suppression d'administrateur). Affiche un récapitulatif de l'action et demande confirmation via un formulaire POST avant exécution.
+
+### Fonctionnalités
+
+- **Duplication de formulaires** : Nouveau bouton "📋 Dupliquer" dans le form builder permettant de copier un formulaire existant avec tous ses champs, étapes et destinataires. Le formulaire dupliqué reçoit le suffixe "(copie)" dans son libellé et "-copie" dans son slug.
+
+- **Prévention des doublons** : Lorsqu'un agent remplit un formulaire pour lequel il a déjà une soumission en cours, un avertissement s'affiche avec la date de la soumission existante et un lien pour la consulter. L'agent peut tout de même soumettre une nouvelle demande.
+
+- **Recherche dans le dashboard** : Nouveau champ de recherche dans le dashboard de supervision permettant de filtrer les soumissions par nom ou email d'agent. Le paramètre de recherche est préservé dans les filtres et la pagination.
+
+- **Styles d'impression** : Ajout de règles `@media print` dans le CSS partagé pour permettre l'impression propre des soumissions et du dashboard. Le bandeau, le footer, les boutons et les filtres sont masqués à l'impression. Les URLs des liens sont affichées après le texte du lien.
+
+### Accessibilité (RGAA)
+
+- **Lien d'évitement** : Ajout d'un lien "Aller au contenu principal" (skip link) sur toutes les pages, visible uniquement au focus clavier, permettant de sauter le bandeau de navigation.
+- **Focus visible** : Ajout d'un contour bleu de 3px (`:focus-visible`) sur tous les éléments interactifs (liens, boutons, champs, selects) pour une navigation clavier conforme RGAA.
+- **Classe `.sr-only`** : Ajout d'une classe utilitaire pour le contenu destiné uniquement aux lecteurs d'écran.
+
+### Nettoyage
+
+- Suppression de toutes les balises `<script>`, attributs `onclick`, `onsubmit`, `onchange` de l'ensemble des fichiers PHP (form.php, dashboard.php, my_validations.php, monitoring.php, submission_view.php, admin_forms.php, admin_alerts.php, admin_access.php, form_preview.php).
+- Remplacement des toggles JavaScript par des liens PHP directs.
+- Remplacement des onglets JavaScript par un système d'onglets basé sur les paramètres GET.
+- Remplacement des selects auto-soumis par des formulaires avec bouton de soumission.
+- Remplacement du toggle d'édition des règles d'alerte par un paramètre GET `?edit_rule=X`.
+
 ## [2.5.0] — 2026-06-13
 
 ### Fonctionnalités majeures

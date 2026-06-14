@@ -225,6 +225,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
     <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
     <a href="admin_alerts.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔔 Alertes</a>
     <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
+    <a href="backup.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">💾 Sauvegarde</a>
     <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
   </span>
 </div>
@@ -524,12 +525,13 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
     <div class="toolbar">
       <form method="GET" style="display:flex;gap:.5rem;align-items:center;">
         <label for="log_action" style="font-size:.85rem;font-weight:bold;">Filtrer par action :</label>
-        <select name="log_action" id="log_action" class="form-filter" onchange="this.form.submit()">
+        <select name="log_action" id="log_action" class="form-filter">
           <option value="">Toutes les actions</option>
           <?php foreach ($action_types as $at): ?>
             <option value="<?= h($at) ?>" <?= $action_filter === $at ? 'selected' : '' ?>><?= h($at) ?></option>
           <?php endforeach; ?>
         </select>
+        <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;">Filtrer</button>
       </form>
     </div>
     <?php if (empty($audit_logs)): ?>
