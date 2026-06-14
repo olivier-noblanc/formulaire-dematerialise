@@ -262,22 +262,46 @@ HTML;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= h($form['label']) ?> — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
-    body { padding: 2rem 1rem; }
-    .container { max-width: 780px; padding: 0; }
-    h1 { font-size: 1.5rem; margin-bottom: .25rem; }
+    .container { max-width: 800px; padding: 0; }
+    h1 { font-size: var(--text-2xl); margin-bottom: .25rem; }
 
     /* Page-specific */
-    .agent-info { font-size: .85rem; color: #555; margin-bottom: 2rem; }
-    fieldset.card { border: 1px solid #ddd; }
-    legend { font-size: 1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: .05em; width: 100%; }
+    .agent-info { font-size: var(--text-sm); color: var(--c-text-secondary); margin-bottom: 2rem; }
+    fieldset.card { border: 1px solid var(--c-border-light); box-shadow: var(--shadow-sm); }
+    legend {
+      font-size: var(--text-sm);
+      color: var(--c-primary-dark);
+      border-bottom: 2px solid var(--c-primary-50);
+      padding-bottom: var(--sp-sm);
+      margin-bottom: 1.25rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      width: 100%;
+      font-weight: 700;
+    }
     .field.full { grid-column: 1 / -1; }
-    .btn-submit { background: #003189; color: #fff; border: none; padding: .75rem 2.5rem; font-size: 1rem; font-family: inherit; border-radius: 3px; cursor: pointer; display: block; margin: 0 auto; }
-    .btn-submit:hover { background: #002270; }
-    .no-fields { text-align: center; padding: 2rem; color: #888; font-style: italic; }
+    .btn-submit {
+      background: var(--gradient-primary);
+      color: #fff;
+      border: none;
+      padding: .85rem 2.5rem;
+      font-size: var(--text-lg);
+      font-family: inherit;
+      font-weight: 700;
+      border-radius: var(--r-full);
+      cursor: pointer;
+      display: block;
+      margin: 0 auto;
+      box-shadow: var(--shadow-md), var(--shadow-colored);
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .btn-submit:hover { background: var(--gradient-primary-hover); box-shadow: var(--shadow-lg), var(--shadow-colored); }
+    .btn-submit:active { transform: scale(.97); }
+    .no-fields { text-align: center; padding: 2rem; color: var(--c-text-tertiary); font-style: italic; }
     @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
   </style>
 </head>

@@ -50,23 +50,23 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Prévisualisation — <?= h($form['label']) ?></title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 780px; }
     .preview-banner { background: #fff3e0; border: 2px dashed #b45309; border-radius: 6px; padding: 1rem 1.5rem; margin-bottom: 2rem; text-align: center; color: #b45309; font-weight: bold; }
-    fieldset.card { border: 1px solid #ddd; }
-    legend { font-size: 1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: .05em; width: 100%; }
+    fieldset.card { border: 1px solid var(--c-border); }
+    legend { font-size: 1rem; color: var(--c-primary-dark); border-bottom: 2px solid var(--c-primary-dark); padding-bottom: .5rem; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: .05em; width: 100%; }
     .field.full { grid-column: 1 / -1; }
-    .btn-submit { background: #ccc; color: #595959; border: none; padding: .75rem 2.5rem; font-size: 1rem; font-family: inherit; border-radius: 3px; cursor: not-allowed; display: block; margin: 0 auto; }
-    .workflow-preview { background: #f0f4ff; border: 1px solid #003189; border-radius: 6px; padding: 1.25rem; margin-bottom: 2rem; }
-    .workflow-preview h3 { color: #003189; margin-bottom: 1rem; font-size: 1rem; }
+    .btn-submit { background: var(--c-border); color: var(--c-text-secondary); border: none; padding: .75rem 2.5rem; font-size: 1rem; font-family: inherit; border-radius: var(--r-sm); cursor: not-allowed; display: block; margin: 0 auto; }
+    .workflow-preview { background: var(--c-primary-50); border: 1px solid var(--c-primary-dark); border-radius: var(--r-md); padding: 1.25rem; margin-bottom: 2rem; }
+    .workflow-preview h3 { color: var(--c-primary-dark); margin-bottom: 1rem; font-size: 1rem; }
     .wf-flow { display: flex; align-items: flex-start; gap: .5rem; overflow-x: auto; padding-bottom: .5rem; }
-    .wf-step-box { background: #003189; color: #fff; border-radius: 6px; padding: .75rem 1rem; min-width: 140px; text-align: center; flex-shrink: 0; }
+    .wf-step-box { background: var(--c-primary-dark); color: var(--c-text-inverse); border-radius: var(--r-md); padding: .75rem 1rem; min-width: 140px; text-align: center; flex-shrink: 0; }
     .wf-step-box .step-num { font-size: .75rem; opacity: .7; margin-bottom: .25rem; }
     .wf-step-box .step-title { font-weight: bold; font-size: .9rem; margin-bottom: .35rem; }
     .wf-step-box .step-emails { font-size: .7rem; opacity: .8; line-height: 1.4; }
-    .wf-arrow { color: #003189; font-size: 1.5rem; font-weight: bold; flex-shrink: 0; padding-top: .75rem; }
+    .wf-arrow { color: var(--c-primary-dark); font-size: 1.5rem; font-weight: bold; flex-shrink: 0; padding-top: .75rem; }
     @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
   </style>
 </head>

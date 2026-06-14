@@ -482,29 +482,29 @@ ksort($steps_by_ordre);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestion des formulaires — DREETS Workflow</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
     <?php require_once __DIR__ . '/style.php'; ?>
     <style>
         .container { max-width: 1200px; }
 
         /* ── Section cards with colored headers ──────────────── */
         .section-card {
-            background: #fff;
-            border: 1px solid #dde;
-            border-radius: 6px;
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: var(--r-md);
             margin-bottom: 1.5rem;
             overflow: hidden;
         }
         .section-card-header {
-            background: #003189;
-            color: #fff;
+            background: var(--c-primary-dark);
+            color: var(--c-text-inverse);
             padding: .75rem 1.25rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .section-card-header h2 {
-            color: #fff;
+            color: var(--c-text-inverse);
             border: none;
             margin: 0;
             padding: 0;
@@ -512,7 +512,7 @@ ksort($steps_by_ordre);
         }
         .section-card-header a,
         .section-card-header button {
-            color: #fff;
+            color: var(--c-text-inverse);
             text-decoration: none;
             font-size: .82rem;
             opacity: .85;
@@ -555,18 +555,18 @@ ksort($steps_by_ordre);
         .workflow-arrow::after {
             content: '→';
             font-size: 1.8rem;
-            color: #003189;
+            color: var(--c-primary-dark);
             font-weight: bold;
         }
         .workflow-box {
-            background: #003189;
-            color: #fff;
-            border-radius: 6px;
+            background: var(--c-primary-dark);
+            color: var(--c-text-inverse);
+            border-radius: var(--r-md);
             padding: .75rem 1rem;
             text-align: center;
             width: 100%;
             margin-bottom: .5rem;
-            box-shadow: 0 2px 6px rgba(0,49,137,.2);
+            box-shadow: var(--shadow-colored);
         }
         .workflow-box.inactive {
             background: #b0b0b0;
@@ -600,11 +600,11 @@ ksort($steps_by_ordre);
 
         /* ── Step list items ─────────────────────────────────── */
         .step-card {
-            border: 1px solid #dde;
-            border-radius: 5px;
+            border: 1px solid var(--c-border);
+            border-radius: var(--r-sm);
             padding: .75rem 1rem;
             margin-bottom: .75rem;
-            background: #fafaff;
+            background: var(--c-bg-warm);
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -612,10 +612,10 @@ ksort($steps_by_ordre);
         }
         .step-card.editing {
             background: #f0f4ff;
-            border-color: #003189;
+            border-color: var(--c-primary-dark);
         }
         .step-info { flex: 1; }
-        .step-info .step-label { font-weight: bold; color: #003189; }
+        .step-info .step-label { font-weight: bold; color: var(--c-primary-dark); }
         .step-info .step-meta { font-size: .82rem; color: #666; margin-top: .25rem; }
         .step-info .step-meta .badge-ok { margin-left: .5rem; }
         .step-actions { display: flex; gap: .4rem; flex-shrink: 0; }
@@ -647,8 +647,8 @@ ksort($steps_by_ordre);
         /* ── Field table improvements ────────────────────────── */
         .fields-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
         .fields-table thead th {
-            background: #003189;
-            color: #fff;
+            background: var(--c-primary-dark);
+            color: var(--c-text-inverse);
             padding: .55rem .6rem;
             text-align: left;
             font-weight: normal;
@@ -665,8 +665,8 @@ ksort($steps_by_ordre);
             align-items: center;
             gap: .3rem;
             background: #e8eaf6;
-            color: #003189;
-            border-radius: 3px;
+            color: var(--c-primary-dark);
+            border-radius: var(--r-sm);
             padding: .2rem .5rem;
             font-size: .78rem;
             font-weight: bold;
@@ -680,11 +680,11 @@ ksort($steps_by_ordre);
 
         /* ── Preview button ──────────────────────────────────── */
         .btn-preview {
-            background: #27ae60;
-            color: #fff;
+            background: var(--c-success);
+            color: var(--c-text-inverse);
             padding: .5rem 1rem;
             border: none;
-            border-radius: 3px;
+            border-radius: var(--r-sm);
             font-size: .85rem;
             font-family: inherit;
             cursor: pointer;
@@ -726,7 +726,7 @@ ksort($steps_by_ordre);
         }
         .add-sub-card h4 {
             font-size: .92rem;
-            color: #003189;
+            color: var(--c-primary-dark);
             margin-bottom: .75rem;
         }
     </style>

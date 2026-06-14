@@ -114,16 +114,16 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RGPD — DREETS Workflow</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 900px; }
-    .danger-zone { border: 2px solid #c0392b; background: #fff5f5; border-radius: 6px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .danger-zone { border: 2px solid var(--c-danger-dark); background: var(--c-danger-50); border-radius: var(--r-md); padding: 1.5rem; margin-bottom: 1.5rem; }
     .danger-zone h3 { color: #c0392b; margin-bottom: 1rem; }
     .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-    .stat-mini { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: .75rem 1rem; flex: 1; min-width: 140px; text-align: center; }
-    .stat-mini .val { font-size: 1.5rem; font-weight: bold; color: #003189; }
-    .stat-mini .lbl { font-size: .8rem; color: #595959; margin-top: .25rem; }
+    .stat-mini { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-sm); padding: .75rem 1rem; flex: 1; min-width: 140px; text-align: center; }
+    .stat-mini .val { font-size: 1.5rem; font-weight: bold; color: var(--c-primary-dark); }
+    .stat-mini .lbl { font-size: .8rem; color: var(--c-text-secondary); margin-top: .25rem; }
   </style>
 </head>
 <body>

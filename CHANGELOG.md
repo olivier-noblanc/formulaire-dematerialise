@@ -1,5 +1,31 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [5.0.0] — 2026-06-15
+
+### Design System 2026 — Refonte visuelle complète
+
+- **Nouveau design system "Glassmorphism Institutionnel"** : Refonte totale de l'identité visuelle de l'application. Palette indigo→violet graduel (#4F46E5 → #7C3AED), glassmorphism sur la barre de navigation (backdrop-filter), ombres multi-couches douces, boutons pill avec gradient, cartes bento avec barres d'accent colorées, typographie système moderne, transitions CSS fluides, animations d'entrée (fadeSlideIn).
+
+- **CSS Custom Properties (Design Tokens)** : Introduction de 60+ variables CSS (`--c-primary`, `--shadow-md`, `--r-lg`, `--text-base`, `--ease-out`, etc.) pour un theming cohérent et maintenable. Tous les fichiers PHP utilisent désormais ces tokens au lieu de valeurs codées en dur.
+
+- **Navigation glassmorphism** : Barre de navigation sticky avec gradient indigo→violet, backdrop-filter blur, liens en pill avec hover semi-transparent, badge amber animé pour les validations en attente, brand "DREETS" avec point d'accent coloré.
+
+- **Cartes bento** : Toutes les cartes statistiques, formulaires et tuiles de navigation utilisent désormais des bordures douces, ombres légères, barres d'accent colorées (::before), et micro-animations au survol (translateY, box-shadow).
+
+- **Boutons pill** : Tous les boutons sont désormais en border-radius full avec gradient, ombre colorée au survol, et animation de scale au clic.
+
+- **Badges pill** : Les badges de statut (Validé, En cours, Refusé) sont désormais en pill avec les nouvelles couleurs sémantiques (success-50/dark, warning-50/dark, danger-50/dark).
+
+- **Tables modernisées** : En-tête avec background primary-50, texte uppercase, espacement augmenté, bordures légères, hover sur les lignes.
+
+- **Favicon gradient** : Remplacement du favicon plat bleu #003189 par un favicon indigo→violet avec dégradé linéaire et coins arrondis (rx=20).
+
+- **Footer épuré** : Footer minimaliste avec les nouveaux tokens, séparateur point médian.
+
+- **Animations CSS** : Animation fadeSlideIn sur les cartes au chargement de page, softPulse sur les badges warning (validation en attente).
+
+- **22 fichiers mis à jour** : style.php (réécriture complète), helpers.php (nav, footer), index.php, dashboard.php, form.php, my_submissions.php, my_validations.php, admin_settings.php, admin_forms.php, admin_alerts.php, admin_access.php, monitoring.php, stats.php, health.php, backup.php, rgpd.php, docs.php, changelog.php, validate.php, confirm_action.php, submission_view.php, form_preview.php, form_tracking.php.
+
 ## [4.6.0] — 2026-06-15
 
 ### Accessibilité RGAA — Critique

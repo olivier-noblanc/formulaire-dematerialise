@@ -184,16 +184,16 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Soumission #<?= $sub_id ?> — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 1000px; }
-    .back-link { display: inline-block; margin-bottom: 1.5rem; font-size: .85rem; color: #003189; text-decoration: none; }
+    .back-link { display: inline-block; margin-bottom: 1.5rem; font-size: .85rem; color: var(--c-primary-dark); text-decoration: none; }
     .back-link:hover { text-decoration: underline; }
 
     /* Header */
     .sub-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
-    .sub-title { font-size: 1.4rem; color: #003189; margin-bottom: .25rem; }
+    .sub-title { font-size: 1.4rem; color: var(--c-primary-dark); margin-bottom: .25rem; }
     .sub-meta { font-size: .85rem; color: #888; line-height: 1.8; }
 
     /* Progress bar */
@@ -206,13 +206,13 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
     .progress-label { font-size: .85rem; color: #555; text-align: center; }
 
     /* Deadline */
-    .deadline-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+    .deadline-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
     .deadline-card.overdue { border-left: 5px solid #c0392b; background: #fff5f5; }
     .deadline-card.urgent { border-left: 5px solid #b45309; background: #fff8f0; }
     .deadline-card.ok { border-left: 5px solid #1a6b3c; }
     .deadline-card .dl-icon { font-size: 2rem; }
     .deadline-card .dl-text { flex: 1; }
-    .deadline-card .dl-date { font-size: 1.3rem; font-weight: bold; color: #003189; }
+    .deadline-card .dl-date { font-size: 1.3rem; font-weight: bold; color: var(--c-primary-dark); }
     .deadline-card .dl-remaining { font-size: .9rem; font-weight: bold; }
     .deadline-card .dl-remaining.overdue { color: #c0392b; }
     .deadline-card .dl-remaining.urgent { color: #b45309; }
@@ -241,14 +241,14 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
     .wf-step .wf-pending { color: #b45309; }
     .wf-step .wf-waiting { color: #999; }
     .wf-connector { display: flex; align-items: center; padding: 0 .25rem; flex-shrink: 0; }
-    .wf-connector .arrow { color: #003189; font-size: 1.5rem; font-weight: bold; }
+    .wf-connector .arrow { color: var(--c-primary-dark); font-size: 1.5rem; font-weight: bold; }
 
     /* Data cards */
     .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 1.5rem; }
     .data-item { padding: .5rem 0; border-bottom: 1px solid #f0f0f0; }
     .data-item .data-label { font-size: .8rem; color: #888; font-weight: bold; }
     .data-item .data-value { font-size: .9rem; color: #333; margin-top: .1rem; }
-    .data-group-title { grid-column: 1 / -1; font-size: .95rem; color: #003189; font-weight: bold; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-top: .75rem; }
+    .data-group-title { grid-column: 1 / -1; font-size: .95rem; color: var(--c-primary-dark); font-weight: bold; border-bottom: 2px solid var(--c-primary-dark); padding-bottom: .5rem; margin-top: .75rem; }
 
     /* Validation history */
     .val-item { display: flex; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid #f0f0f0; }

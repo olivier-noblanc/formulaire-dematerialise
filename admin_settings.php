@@ -182,16 +182,16 @@ $ldap_ext_available = function_exists('ldap_connect');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Paramètres — DREETS Workflow</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
     <?php require_once __DIR__ . '/style.php'; ?>
     <style>
         .container { max-width: 900px; }
-        .verify-result { margin-top:1rem; padding:1rem; border-radius:6px; font-size:.85rem; }
+        .verify-result { margin-top:1rem; padding:1rem; border-radius:var(--r-md); font-size:.85rem; }
         .verify-result.ok { background:#e8f5e9; border-left:4px solid #4caf50; }
         .verify-result.fail { background:#fbe9e7; border-left:4px solid #f44336; }
         .verify-result .detail { color:#555; margin-top:.3rem; }
-        .warning-box { background:#fff3e0; border-left:4px solid #ff9800; padding:1rem; border-radius:4px; margin-bottom:1rem; font-size:.9rem; }
-        .info-box { background:#e3f2fd; border-left:4px solid #2196f3; padding:1rem; border-radius:4px; margin-bottom:1rem; font-size:.9rem; }
+        .warning-box { background:var(--c-warning-50); border-left:4px solid var(--c-warning); padding:1rem; border-radius:var(--r-sm); margin-bottom:1rem; font-size:.9rem; }
+        .info-box { background:var(--c-info-50); border-left:4px solid var(--c-info); padding:1rem; border-radius:var(--r-sm); margin-bottom:1rem; font-size:.9rem; }
         .dry-run-badge { display:inline-block; background:#ff9800; color:#fff; padding:2px 8px; border-radius:10px; font-size:.75rem; font-weight:bold; margin-left:8px; }
         .card h2 .icon { margin-right:.5rem; }
     </style>

@@ -94,7 +94,7 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Santé système — DREETS Workflow</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     body { padding: 2rem 1rem; }
@@ -104,8 +104,8 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
     .check-icon { font-size: 1.5rem; flex-shrink: 0; }
     .check-content { flex: 1; }
     .check-label { font-weight: bold; font-size: .95rem; }
-    .check-detail { font-size: .8rem; color: #595959; margin-top: .15rem; }
-    .status-banner { padding: 1.5rem; text-align: center; border-radius: 6px; margin-bottom: 1.5rem; }
+    .check-detail { font-size: .8rem; color: var(--c-text-secondary); margin-top: .15rem; }
+    .status-banner { padding: 1.5rem; text-align: center; border-radius: var(--r-md); margin-bottom: 1.5rem; }
     .status-banner.healthy { background: #e8f5e9; border: 2px solid #1a6b3c; }
     .status-banner.unhealthy { background: #fde8e8; border: 2px solid #c0392b; }
     .status-banner h2 { border: none; padding: 0; margin: 0; font-size: 1.3rem; }

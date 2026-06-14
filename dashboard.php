@@ -125,25 +125,41 @@ function get_tokens_status(string $sub_id): array {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Supervision workflow — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
-    .container { max-width: 1200px; }
+    .container { max-width: 1240px; }
     .toolbar { gap: 1rem; margin-bottom: 1.5rem; }
 
     /* Page-specific */
     .filtres { display: flex; gap: .5rem; }
-    .filtres a, .btn-admin { padding: .4rem 1rem; border: 1px solid #003189; border-radius: 3px; text-decoration: none; font-size: .85rem; color: #003189; }
-    .filtres a.actif, .btn-admin { background: #003189; color: #fff; }
-    tbody tr:nth-child(4n+1), tbody tr:nth-child(4n+2) { background: #f7f7fb; }
+    .filtres a, .btn-admin {
+      padding: .4rem 1rem;
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-full);
+      text-decoration: none;
+      font-size: var(--text-sm);
+      color: var(--c-primary);
+      font-weight: 500;
+      background: var(--c-surface);
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .filtres a:hover, .btn-admin:hover { border-color: var(--c-primary-light); background: var(--c-primary-50); text-decoration: none; }
+    .filtres a.actif, .btn-admin {
+      background: var(--gradient-primary);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: var(--shadow-colored);
+    }
+    tbody tr:nth-child(4n+1), tbody tr:nth-child(4n+2) { background: var(--c-bg-warm); }
     .token-grid { display: flex; flex-wrap: wrap; gap: .35rem; }
-    .token-badge { font-size: .75rem; padding: .2rem .5rem; border-radius: 3px; white-space: nowrap; }
-    .token-ok   { background: #e8f5e9; color: #1a6b3c; }
-    .token-wait { background: #fff3e0; color: #b45309; }
-    .token-pend { background: #f5f5f5; color: #888; }
-    .detail-content { padding: 1rem; background: #f0f0f8; font-size: .82rem; line-height: 1.9; }
-    .ordre-label { font-size: .7rem; background: #003189; color: #fff; padding: .1rem .4rem; border-radius: 2px; margin-right: .25rem; }
+    .token-badge { font-size: var(--text-xs); padding: .2rem .5rem; border-radius: var(--r-full); white-space: nowrap; font-weight: 600; }
+    .token-ok   { background: var(--c-success-50); color: var(--c-success-dark); }
+    .token-wait { background: var(--c-warning-50); color: var(--c-warning-dark); }
+    .token-pend { background: var(--c-bg-warm); color: var(--c-text-tertiary); }
+    .detail-content { padding: 1.25rem; background: var(--c-bg-warm); font-size: var(--text-sm); line-height: 1.9; border-radius: var(--r-md); }
+    .ordre-label { font-size: .68rem; background: var(--gradient-primary); color: #fff; padding: .1rem .45rem; border-radius: var(--r-full); margin-right: .25rem; font-weight: 700; }
   </style>
 </head>
 <body>

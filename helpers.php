@@ -1597,11 +1597,11 @@ function render_nav(string $current_page = '', array $extra_admin_links = []): s
     }
 
     return '<nav class="bandeau" aria-label="Navigation principale">
-  <strong><a href="index.php" class="nav-brand">DREETS</a></strong>
+  <a href="index.php" class="nav-brand">DREETS<span class="brand-dot"></span></a>
   <span class="nav-main">' . $nav_links_html . '</span>
   <span class="nav-admin">
     ' . $admin_links_html . '
-    <span class="nav-user">Connecté : <strong>' . h($user) . '</strong></span>
+    <span class="nav-user">' . h($user) . '</span>
   </span>
 </nav>';
 }
@@ -1635,9 +1635,9 @@ function render_breadcrumb(array $breadcrumbs): string {
 
 // ── FOOTER ────────────────────────────────────────────────────
 function render_footer(): string {
-    return '<footer style="text-align:center;padding:1.5rem 1rem;font-size:.78rem;color:#595959;background:#f5f5fe;border-top:1px solid #eee;margin-top:2rem;">
-  <a href="changelog.php" style="color:#003189;text-decoration:none;font-weight:bold;" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>
-  — Formulaire Dématérialisé DREETS
+    return '<footer>
+  <a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>
+  <span style="margin:0 .35rem;">·</span> Formulaire Dématérialisé DREETS
 </footer>';
 }
 

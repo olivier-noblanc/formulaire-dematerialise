@@ -185,7 +185,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Monitoring — DREETS Workflow</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
@@ -196,7 +196,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
     .alert-row.urgent { background: #fde8e8 !important; }
     .alert-row.warning { background: #fff3e0 !important; }
     .alert-row.ok { background: #e8f5e9 !important; }
-    .days-remaining { font-weight: bold; padding: .2rem .6rem; border-radius: 3px; font-size: .85rem; }
+    .days-remaining { font-weight: bold; padding: .2rem .6rem; border-radius: var(--r-sm); font-size: .85rem; }
     .days-remaining.overdue { background: #c0392b; color: #fff; }
     .days-remaining.critical { background: #b45309; color: #fff; }
     .days-remaining.warning { background: #fff3e0; color: #b45309; }
@@ -210,11 +210,11 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
     .chart-row { display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
     .donut-chart { width: 160px; height: 160px; border-radius: 50%; position: relative; flex-shrink: 0; }
     .donut-chart .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: #fff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .donut-chart .donut-center .donut-value { font-size: 1.5rem; font-weight: bold; color: #003189; }
-    .donut-chart .donut-center .donut-label { font-size: .7rem; color: #595959; }
+    .donut-chart .donut-center .donut-value { font-size: 1.5rem; font-weight: bold; color: var(--c-primary-dark); }
+    .donut-chart .donut-center .donut-label { font-size: .7rem; color: var(--c-text-secondary); }
     .chart-legend { display: flex; flex-direction: column; gap: .5rem; }
     .legend-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
-    .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+    .legend-dot { width: 14px; height: 14px; border-radius: var(--r-sm); flex-shrink: 0; }
   </style>
 </head>
 <body>

@@ -110,61 +110,91 @@ foreach ($submissions as $s) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mes demandes — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     body { padding: 0; }
-    .container { max-width: 900px; }
-    h1 { font-size: 1.5rem; margin-bottom: .25rem; }
+    .container { max-width: 960px; }
+    h1 { font-size: var(--text-2xl); margin-bottom: .25rem; }
 
     /* Page-specific */
-    .subtitle { font-size: .85rem; color: #555; margin-bottom: 2rem; }
+    .subtitle { font-size: var(--text-sm); color: var(--c-text-secondary); margin-bottom: 2rem; }
 
     /* Stats */
-    .stats { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-    .stat { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: .75rem 1.25rem; min-width: 100px; text-align: center; }
-    .stat strong { display: block; font-size: 1.8rem; color: #003189; }
-    .stat.en-cours strong { color: #b45309; }
-    .stat.valide strong { color: #1a6b3c; }
-    .stat.refuse strong { color: #c0392b; }
-    .stat span { font-size: .8rem; color: #595959; }
+    .stats { display: flex; gap: var(--sp-md); margin-bottom: 2rem; flex-wrap: wrap; }
+    .stat {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border-light);
+      border-radius: var(--r-lg);
+      padding: .85rem 1.25rem;
+      min-width: 100px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    .stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient-primary); }
+    .stat strong { display: block; font-size: var(--text-3xl); color: var(--c-primary); font-weight: 800; letter-spacing: -.03em; }
+    .stat.en-cours strong { color: var(--c-warning-dark); }
+    .stat.en-cours::before { background: var(--c-warning); }
+    .stat.valide strong { color: var(--c-success-dark); }
+    .stat.valide::before { background: var(--c-success); }
+    .stat.refuse strong { color: var(--c-danger-dark); }
+    .stat.refuse::before { background: var(--c-danger); }
+    .stat span { font-size: var(--text-xs); color: var(--c-text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
 
     /* Card */
-    .sub-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; }
-    .sub-card-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: #f8f8fc; border-bottom: 1px solid #eee; cursor: pointer; }
-    .sub-card-header:hover { background: #f0f0f8; }
-    .sub-card-title { font-weight: bold; color: #003189; font-size: 1rem; }
-    .sub-card-date { font-size: .8rem; color: #595959; margin-top: .15rem; }
+    .sub-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border-light);
+      border-radius: var(--r-lg);
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .25s var(--ease-out);
+    }
+    .sub-card:hover { box-shadow: var(--shadow-md); }
+    .sub-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      background: var(--c-bg-warm);
+      border-bottom: 1px solid var(--c-border-light);
+    }
+    .sub-card-header:hover { background: var(--c-primary-50); }
+    .sub-card-title { font-weight: 700; color: var(--c-primary-dark); font-size: var(--text-base); }
+    .sub-card-date { font-size: var(--text-xs); color: var(--c-text-tertiary); margin-top: .15rem; }
     .sub-card-body { padding: 1.25rem; }
 
     /* Progress bar inline */
     .inline-progress { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
-    .inline-progress-bar { flex: 1; background: #e0e0e0; border-radius: 8px; height: 14px; overflow: hidden; }
-    .inline-progress-fill { height: 100%; border-radius: 8px; }
-    .inline-progress-fill.complete { background: #1a6b3c; }
-    .inline-progress-fill.in-progress { background: linear-gradient(90deg, #1a6b3c, #b45309); }
-    .inline-progress-text { font-size: .8rem; color: #555; white-space: nowrap; min-width: 80px; text-align: right; }
+    .inline-progress-bar { flex: 1; background: var(--c-border-light); border-radius: var(--r-full); height: 10px; overflow: hidden; }
+    .inline-progress-fill { height: 100%; border-radius: var(--r-full); transition: width .6s var(--ease-out); }
+    .inline-progress-fill.complete { background: var(--gradient-success); }
+    .inline-progress-fill.in-progress { background: var(--gradient-cool); }
+    .inline-progress-text { font-size: var(--text-xs); color: var(--c-text-tertiary); white-space: nowrap; min-width: 80px; text-align: right; }
 
     /* Timeline compact */
     .timeline-compact { display: flex; flex-direction: column; gap: .35rem; }
-    .tl-step { display: flex; align-items: center; gap: .5rem; font-size: .85rem; padding: .35rem .6rem; border-radius: 4px; }
-    .tl-step.done { background: #e8f5e9; color: #1a6b3c; }
-    .tl-step.active { background: #fff3e0; color: #b45309; font-weight: bold; border: 1px dashed #b45309; }
-    .tl-step.waiting { background: #f5f5f5; color: #999; }
-    .tl-icon { font-size: .85rem; flex-shrink: 0; }
+    .tl-step { display: flex; align-items: center; gap: .5rem; font-size: var(--text-sm); padding: .35rem .6rem; border-radius: var(--r-md); }
+    .tl-step.done { background: var(--c-success-50); color: var(--c-success-dark); }
+    .tl-step.active { background: var(--c-warning-50); color: var(--c-warning-dark); font-weight: 700; border: 1px dashed var(--c-warning); }
+    .tl-step.waiting { background: var(--c-bg-warm); color: var(--c-text-tertiary); }
+    .tl-icon { font-size: var(--text-sm); flex-shrink: 0; }
     .tl-label { flex: 1; }
-    .tl-detail { font-size: .75rem; color: #595959; }
+    .tl-detail { font-size: var(--text-xs); color: var(--c-text-tertiary); }
 
     /* Refusal box */
-    .refusal-box { background: #fde8e8; border-radius: 4px; padding: .75rem; font-size: .85rem; margin-top: .75rem; }
+    .refusal-box { background: var(--c-danger-50); border-radius: var(--r-md); padding: .75rem; font-size: var(--text-sm); margin-top: .75rem; }
 
     /* Deadline badge */
-    .deadline-badge { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; padding: .2rem .6rem; border-radius: 3px; margin-left: .5rem; }
-    .deadline-badge.overdue { background: #fde8e8; color: #c0392b; font-weight: bold; }
-    .deadline-badge.urgent { background: #fff3e0; color: #b45309; font-weight: bold; }
-    .deadline-badge.ok { background: #e8f5e9; color: #1a6b3c; }
+    .deadline-badge { display: inline-flex; align-items: center; gap: .35rem; font-size: var(--text-xs); padding: .2rem .6rem; border-radius: var(--r-full); margin-left: .5rem; font-weight: 600; }
+    .deadline-badge.overdue { background: var(--c-danger-50); color: var(--c-danger-dark); }
+    .deadline-badge.urgent { background: var(--c-warning-50); color: var(--c-warning-dark); }
+    .deadline-badge.ok { background: var(--c-success-50); color: var(--c-success-dark); }
 
-    .card-actions { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #eee; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    .card-actions { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--c-border-light); display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
   </style>
 </head>
 <body>

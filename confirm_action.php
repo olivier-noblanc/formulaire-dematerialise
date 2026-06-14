@@ -149,11 +149,11 @@ if ($action === 'remove_owner' && isset($_GET['form_id'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Confirmation — <?= h($config['label']) ?> — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 600px; }
-    .confirm-card { background: #fff; border: 2px solid #c0392b; border-radius: 8px; padding: 2rem; margin-top: 2rem; }
+    .confirm-card { background: var(--c-surface); border: 2px solid var(--c-danger-dark); border-radius: var(--r-md); padding: 2rem; margin-top: 2rem; }
     .confirm-card.danger { border-color: #c0392b; }
     .confirm-card.danger .confirm-icon { color: #c0392b; }
     .confirm-card.warning { border-color: #b45309; }
@@ -165,7 +165,7 @@ if ($action === 'remove_owner' && isset($_GET['form_id'])) {
     .confirm-message strong { color: #c0392b; }
     .confirm-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
     .confirm-actions .btn { padding: .65rem 1.5rem; font-size: .95rem; }
-    .confirm-warning { background: #fff3e0; border: 1px solid #b45309; border-radius: 4px; padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .85rem; color: #b45309; text-align: center; }
+    .confirm-warning { background: var(--c-warning-50); border: 1px solid var(--c-warning-dark); border-radius: var(--r-sm); padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .85rem; color: var(--c-warning-dark); text-align: center; }
   </style>
 </head>
 <body>

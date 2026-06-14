@@ -29,7 +29,7 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Aide et documentation — Formulaires dématérialisés DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
@@ -44,30 +44,30 @@ try {
     .bandeau-right { display: flex; align-items: center; gap: 1rem; font-size: .8rem; }
     p, li { line-height: 1.7; margin-bottom: .5rem; }
     ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
-    .toc { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 2rem; }
+    .toc { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-sm); padding: 1.5rem; margin-bottom: 2rem; }
     .toc h2 { margin-bottom: 1rem; font-size: 1rem; }
     .toc ol { counter-reset: toc; list-style: none; padding-left: 0; }
     .toc li { counter-increment: toc; margin-bottom: .4rem; }
-    .toc li::before { content: counter(toc) ". "; color: #003189; font-weight: bold; }
-    .toc a { color: #003189; text-decoration: none; }
+    .toc li::before { content: counter(toc) ". "; color: var(--c-primary-dark); font-weight: bold; }
+    .toc a { color: var(--c-primary-dark); text-decoration: none; }
     .toc a:hover { text-decoration: underline; }
 
     /* Step numbers */
-    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #003189; color: #fff; border-radius: 50%; font-size: .9rem; font-weight: bold; margin-right: .5rem; flex-shrink: 0; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--c-primary-dark); color: var(--c-text-inverse); border-radius: 50%; font-size: .9rem; font-weight: bold; margin-right: .5rem; flex-shrink: 0; }
     .step-row { display: flex; align-items: flex-start; margin-bottom: 1rem; }
     .step-text { flex: 1; }
     .step-text p { margin-bottom: .25rem; }
 
     /* Details / accordion */
     details { margin-bottom: 1rem; }
-    details summary { cursor: pointer; font-weight: bold; color: #003189; padding: .75rem 1rem; background: #f0f0f8; border: 1px solid #ddd; border-radius: 4px; list-style: none; display: flex; align-items: center; gap: .5rem; }
+    details summary { cursor: pointer; font-weight: bold; color: var(--c-primary-dark); padding: .75rem 1rem; background: var(--c-primary-50); border: 1px solid var(--c-border); border-radius: var(--r-sm); list-style: none; display: flex; align-items: center; gap: .5rem; }
     details summary::before { content: "▸"; font-size: 1rem; transition: transform .2s; display: inline-block; }
     details[open] summary::before { transform: rotate(90deg); }
     details summary:hover { background: #e8eaf6; }
-    details .detail-body { padding: 1rem 1.25rem; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; background: #fff; }
+    details .detail-body { padding: 1rem 1.25rem; border: 1px solid var(--c-border); border-top: none; border-radius: 0 0 var(--r-sm) var(--r-sm); background: var(--c-surface); }
 
     /* Role badges */
-    .role-badge { display: inline-block; padding: .2rem .6rem; border-radius: 3px; font-size: .8rem; font-weight: bold; margin-right: .25rem; }
+    .role-badge { display: inline-block; padding: .2rem .6rem; border-radius: var(--r-sm); font-size: .8rem; font-weight: bold; margin-right: .25rem; }
     .role-agent { background: #e3f2fd; color: #1565c0; }
     .role-validator { background: #fff3e0; color: #b45309; }
     .role-admin { background: #fce4ec; color: #c62828; }
@@ -75,11 +75,11 @@ try {
 
     /* Tables */
     .schema-table { width: 100%; border-collapse: collapse; font-size: .85rem; margin-bottom: 1rem; }
-    .schema-table th { background: #003189; color: #fff; padding: .5rem .75rem; text-align: left; font-weight: normal; }
+    .schema-table th { background: var(--c-primary-dark); color: var(--c-text-inverse); padding: .5rem .75rem; text-align: left; font-weight: normal; }
     .schema-table td { padding: .4rem .75rem; border-bottom: 1px solid #eee; }
     .schema-table tr:nth-child(even) { background: #f7f7fb; }
     .file-tree { font-family: "Marianne", Arial, sans-serif; font-size: .9rem; background: #f5f5fe; padding: 1rem 1.25rem; border-radius: 4px; margin-bottom: 1rem; line-height: 1.8; }
-    .file-tree .dir { font-weight: bold; color: #003189; }
+    .file-tree .dir { font-weight: bold; color: var(--c-primary-dark); }
     .file-tree .file { color: #333; }
 
     /* ═══ Quick Start Visual Guide ═══ */
@@ -87,10 +87,10 @@ try {
     .quickstart-step { flex: 1; min-width: 200px; max-width: 280px; background: #fff; border: 2px solid #e0e0f0; border-radius: 8px; padding: 1.5rem 1.25rem; text-align: center; position: relative; transition: transform .2s, box-shadow .2s; }
     .quickstart-step:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,49,137,.12); }
     .quickstart-step .qs-icon { font-size: 2.5rem; margin-bottom: .5rem; display: block; }
-    .quickstart-step .qs-num { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #003189; color: #fff; border-radius: 50%; font-size: 1.1rem; font-weight: bold; margin-bottom: .5rem; }
-    .quickstart-step h3 { font-size: 1rem; margin: .5rem 0 .25rem; color: #003189; }
+    .quickstart-step .qs-num { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: var(--c-primary-dark); color: var(--c-text-inverse); border-radius: 50%; font-size: 1.1rem; font-weight: bold; margin-bottom: .5rem; }
+    .quickstart-step h3 { font-size: 1rem; margin: .5rem 0 .25rem; color: var(--c-primary-dark); }
     .quickstart-step p { font-size: .88rem; color: #555; margin: 0; }
-    .quickstart-arrow { display: flex; align-items: center; font-size: 1.5rem; color: #003189; font-weight: bold; }
+    .quickstart-arrow { display: flex; align-items: center; font-size: 1.5rem; color: var(--c-primary-dark); font-weight: bold; }
 
     /* ═══ Tip / Astuce box ═══ */
     .tip-box { background: #fffde7; border-left: 4px solid #f9a825; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
@@ -100,7 +100,7 @@ try {
     /* ═══ Feature grid ═══ */
     .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin: 1rem 0; }
     .feature-item { background: #f8f8ff; border: 1px solid #e0e0f0; border-radius: 6px; padding: 1rem 1.25rem; }
-    .feature-item strong { color: #003189; display: block; margin-bottom: .25rem; }
+    .feature-item strong { color: var(--c-primary-dark); display: block; margin-bottom: .25rem; }
     .feature-item p { font-size: .88rem; color: #555; margin: 0; }
 
     /* ═══ Permission table ═══ */
@@ -115,15 +115,15 @@ try {
 
     /* ═══ RGPD box ═══ */
     .rgpd-box { background: #f0f4ff; border: 1px solid #c5cae9; border-radius: 6px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
-    .rgpd-box h3 { margin-top: 0; color: #003189; }
+    .rgpd-box h3 { margin-top: 0; color: var(--c-primary-dark); }
 
     /* ═══ Back-to-top button ═══ */
-    .back-to-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: #003189; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.5rem; font-weight: bold; box-shadow: 0 2px 8px rgba(0,49,137,.3); z-index: 1000; transition: background .2s; }
-    .back-to-top:hover { background: #00205a; }
-    .back-to-top:visited { color: #fff; }
+    .back-to-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: var(--c-primary-dark); color: var(--c-text-inverse); border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.5rem; font-weight: bold; box-shadow: var(--shadow-colored); z-index: 1000; transition: background .2s; }
+    .back-to-top:hover { background: var(--c-primary-darker); }
+    .back-to-top:visited { color: var(--c-text-inverse); }
 
     /* ═══ Version badge ═══ */
-    .version-badge { display: inline-block; background: #e8eaf6; color: #003189; font-size: .72rem; font-weight: bold; padding: .15rem .55rem; border-radius: 10px; vertical-align: middle; margin-left: .5rem; border: 1px solid #c5cae9; letter-spacing: .02em; }
+    .version-badge { display: inline-block; background: var(--c-primary-50); color: var(--c-primary-dark); font-size: .72rem; font-weight: bold; padding: .15rem .55rem; border-radius: var(--r-xl); vertical-align: middle; margin-left: .5rem; border: 1px solid var(--c-primary-light); letter-spacing: .02em; }
 
     /* ═══ Screenshot & Mockup styles ═══ */
     .screenshot { max-width: 100%; border: 1px solid #ddd; border-radius: 6px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
@@ -138,11 +138,11 @@ try {
     .wf-box.current { border: 2px dashed #b45309; background: #fff8e1; color: #b45309; }
     .wf-box.pending { border: 2px solid #bbb; background: #f5f5f5; color: #888; }
     .wf-label { font-size: .75rem; color: #666; }
-    .wf-arrow { font-size: 1.3rem; color: #003189; font-weight: bold; flex-shrink: 0; }
+    .wf-arrow { font-size: 1.3rem; color: var(--c-primary-dark); font-weight: bold; flex-shrink: 0; }
 
     /* ═══ Email mockup ═══ */
     .email-mockup { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin: 1rem 0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06); max-width: 520px; }
-    .email-header { background: #003189; color: #fff; padding: .75rem 1rem; font-weight: bold; font-size: .9rem; }
+    .email-header { background: var(--c-primary-dark); color: var(--c-text-inverse); padding: .75rem 1rem; font-weight: bold; font-size: .9rem; }
     .email-body { padding: 1rem; }
     .email-body table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-bottom: .75rem; }
     .email-body table td { padding: .3rem .5rem; border-bottom: 1px solid #eee; }
@@ -185,7 +185,7 @@ try {
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Documentation']]) ?>
   <h1>Aide et documentation</h1>
-  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '4.6.0' ?></span></p>
+  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '5.0.0' ?></span></p>
 
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- GUIDE DE DÉMARRAGE RAPIDE                                  -->

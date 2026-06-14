@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Validation — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
@@ -114,28 +114,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     /* Page-specific */
     .info { font-size: .95rem; color: #444; line-height: 1.7; margin-bottom: 1.5rem; }
-    .badge { display: inline-block; background: #003189; color: #fff; padding: .25rem .75rem; border-radius: 3px; font-size: .85rem; margin-bottom: 1rem; }
-    .btn { background: #27ae60; color: #fff; border: none; padding: .75rem 2rem; font-size: 1rem; font-family: inherit; border-radius: 3px; cursor: pointer; margin: 0 .5rem; }
+    .badge { display: inline-block; background: var(--c-primary-dark); color: var(--c-text-inverse); padding: .25rem .75rem; border-radius: var(--r-sm); font-size: .85rem; margin-bottom: 1rem; }
+    .btn { background: var(--c-success); color: var(--c-text-inverse); border: none; padding: .75rem 2rem; font-size: 1rem; font-family: inherit; border-radius: var(--r-sm); cursor: pointer; margin: 0 .5rem; }
     .btn-refuser { background: #c0392b; }
     .ok   { color: #1a6b3c; font-size: 1.1rem; }
     .ok::before { content: "✓ "; font-weight: bold; }
     .err  { color: #c0392b; }
     .submit-buttons { display: flex; justify-content: center; margin-top: 2rem; }
-    .validation-details { background: #f0f0f8; padding: 1.5rem; border-radius: 4px; margin-bottom: 1.5rem; }
-    .validation-details h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #003189; }
+    .validation-details { background: var(--c-primary-50); padding: 1.5rem; border-radius: var(--r-sm); margin-bottom: 1.5rem; }
+    .validation-details h2 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--c-primary-dark); }
     .validation-details p { margin-bottom: .5rem; }
 
     /* Workflow progression */
     .wf-progression { margin-bottom: 1.5rem; }
-    .wf-progression h3 { font-size: .9rem; color: #003189; margin-bottom: .75rem; }
+    .wf-progression h3 { font-size: .9rem; color: var(--c-primary-dark); margin-bottom: .75rem; }
     .wf-steps { display: flex; flex-direction: column; gap: .35rem; }
-    .wf-prog-step { display: flex; align-items: center; gap: .5rem; font-size: .85rem; padding: .4rem .6rem; border-radius: 3px; }
+    .wf-prog-step { display: flex; align-items: center; gap: .5rem; font-size: .85rem; padding: .4rem .6rem; border-radius: var(--r-sm); }
     .wf-prog-done { background: #e8f5e9; color: #1a6b3c; }
     .wf-prog-current { background: #fff3e0; color: #b45309; font-weight: bold; border: 1px dashed #b45309; }
     .wf-prog-upcoming { background: #f5f5f5; color: #999; }
     .wf-prog-icon { font-size: .9rem; flex-shrink: 0; }
 
-    .back-link { display: inline-block; margin-bottom: 1rem; font-size: .85rem; color: #003189; text-decoration: none; }
+    .back-link { display: inline-block; margin-bottom: 1rem; font-size: .85rem; color: var(--c-primary-dark); text-decoration: none; }
     .back-link:hover { text-decoration: underline; }
   </style>
 </head>
@@ -262,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   <div class="validation-details">
     <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($attachments) ?>)</h2>
     <?php foreach ($attachments as $att): ?>
-      <p><?= get_file_icon($att['mime_type']) ?> <a href="download.php?id=<?= urlencode($att['id']) ?>" style="color:#003189;text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
+      <p><?= get_file_icon($att['mime_type']) ?> <a href="download.php?id=<?= urlencode($att['id']) ?>" style="color:var(--c-primary-dark);text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>

@@ -65,28 +65,28 @@ $period_label = $period === 'week' ? 'semaine' : ($period === 'year' ? 'année' 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Statistiques — DREETS Workflow</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 1200px; }
     .period-tabs { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
-    .period-tabs a { padding: .5rem 1.25rem; border: 1px solid #003189; border-radius: 3px; text-decoration: none; font-size: .85rem; color: #003189; }
-    .period-tabs a.active { background: #003189; color: #fff; }
+    .period-tabs a { padding: .5rem 1.25rem; border: 1px solid var(--c-primary-dark); border-radius: var(--r-sm); text-decoration: none; font-size: .85rem; color: var(--c-primary-dark); }
+    .period-tabs a.active { background: var(--c-primary-dark); color: var(--c-text-inverse); }
 
     /* Bar chart */
     .bar-chart { margin-bottom: 1.5rem; }
     .bar-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
     .bar-label { width: 90px; text-align: right; font-size: .8rem; color: #555; flex-shrink: 0; white-space: nowrap; }
-    .bar-track { flex: 1; background: #f0f0f0; border-radius: 4px; height: 28px; position: relative; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: .5rem; font-size: .75rem; color: #fff; font-weight: bold; min-width: 20px; }
+    .bar-track { flex: 1; background: var(--c-border-light); border-radius: var(--r-sm); height: 28px; position: relative; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: var(--r-sm); display: flex; align-items: center; padding-left: .5rem; font-size: .75rem; color: var(--c-text-inverse); font-weight: bold; min-width: 20px; }
     .bar-fill.valide { background: #1a6b3c; }
     .bar-fill.en_cours { background: #b45309; }
     .bar-fill.refuse { background: #c0392b; }
-    .bar-fill.total { background: #003189; }
+    .bar-fill.total { background: var(--c-primary-dark); }
     .bar-value { font-size: .8rem; color: #555; width: 40px; text-align: right; flex-shrink: 0; }
 
     /* Stacked bar for period stats */
-    .stacked-bar { display: flex; height: 28px; border-radius: 4px; overflow: hidden; }
+    .stacked-bar { display: flex; height: 28px; border-radius: var(--r-sm); overflow: hidden; }
     .stacked-bar .segment-valide { background: #1a6b3c; }
     .stacked-bar .segment-en_cours { background: #b45309; }
     .stacked-bar .segment-refuse { background: #c0392b; }
@@ -95,11 +95,11 @@ $period_label = $period === 'week' ? 'semaine' : ($period === 'year' ? 'année' 
     .chart-row { display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
     .donut-chart { width: 160px; height: 160px; border-radius: 50%; position: relative; flex-shrink: 0; }
     .donut-chart .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: #fff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .donut-chart .donut-center .donut-value { font-size: 1.5rem; font-weight: bold; color: #003189; }
-    .donut-chart .donut-center .donut-label { font-size: .7rem; color: #595959; }
+    .donut-chart .donut-center .donut-value { font-size: 1.5rem; font-weight: bold; color: var(--c-primary-dark); }
+    .donut-chart .donut-center .donut-label { font-size: .7rem; color: var(--c-text-secondary); }
     .chart-legend { display: flex; flex-direction: column; gap: .5rem; }
     .legend-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
-    .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+    .legend-dot { width: 14px; height: 14px; border-radius: var(--r-sm); flex-shrink: 0; }
 
     @media (max-width: 768px) {
       .grid-2 { grid-template-columns: 1fr; }

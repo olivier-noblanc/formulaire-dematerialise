@@ -172,7 +172,7 @@ $fuuid = h($form['id']);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Suivi : <?= h($form['label']) ?> — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 1200px; }
@@ -181,36 +181,36 @@ $fuuid = h($form['id']);
 
     /* Stats bar */
     .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; margin-bottom: 1.5rem; }
-    .stat-chip { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: .75rem; text-align: center; }
-    .stat-chip .sc-value { font-size: 1.6rem; font-weight: bold; color: #003189; }
-    .stat-chip .sc-label { font-size: .75rem; color: #595959; margin-top: .15rem; }
+    .stat-chip { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: .75rem; text-align: center; }
+    .stat-chip .sc-value { font-size: 1.6rem; font-weight: bold; color: var(--c-primary-dark); }
+    .stat-chip .sc-label { font-size: .75rem; color: var(--c-text-secondary); margin-top: .15rem; }
     .stat-chip.warning .sc-value { color: #b45309; }
     .stat-chip.success .sc-value { color: #1a6b3c; }
     .stat-chip.danger .sc-value { color: #c0392b; }
 
     /* Filters */
     .filters { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
-    .filters a, .filters span { font-size: .85rem; padding: .4rem .75rem; border-radius: 4px; text-decoration: none; color: #666; border: 1px solid #ddd; }
-    .filters a:hover { background: #f0f4ff; border-color: #003189; color: #003189; }
-    .filters a.active { background: #003189; color: #fff; border-color: #003189; }
+    .filters a, .filters span { font-size: .85rem; padding: .4rem .75rem; border-radius: var(--r-sm); text-decoration: none; color: #666; border: 1px solid var(--c-border); }
+    .filters a:hover { background: var(--c-primary-50); border-color: var(--c-primary-dark); color: var(--c-primary-dark); }
+    .filters a.active { background: var(--c-primary-dark); color: var(--c-text-inverse); border-color: var(--c-primary-dark); }
 
     /* Table */
     .tracking-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-    .tracking-table th { background: #f8f9fa; padding: .6rem .75rem; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600; color: #333; white-space: nowrap; }
+    .tracking-table th { background: var(--c-bg-warm); padding: .6rem .75rem; text-align: left; border-bottom: 2px solid var(--c-border); font-weight: 600; color: var(--c-text); white-space: nowrap; }
     .tracking-table td { padding: .5rem .75rem; border-bottom: 1px solid #eee; vertical-align: top; }
     .tracking-table tr:hover { background: #f0f4ff; }
 
     /* Badges */
-    .badge { display: inline-block; padding: .15rem .5rem; border-radius: 3px; font-size: .75rem; font-weight: bold; }
+    .badge { display: inline-block; padding: .15rem .5rem; border-radius: var(--r-sm); font-size: .75rem; font-weight: bold; }
     .badge-en_cours { background: #fff3e0; color: #b45309; }
     .badge-valide { background: #e8f5e9; color: #1a6b3c; }
     .badge-refuse { background: #fde8e8; color: #c0392b; }
 
     /* Progress mini */
     .progress-mini { display: flex; align-items: center; gap: .4rem; }
-    .progress-mini-bar { width: 60px; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
-    .progress-mini-fill { height: 100%; border-radius: 3px; transition: width .3s; }
-    .progress-mini-text { font-size: .75rem; color: #595959; }
+    .progress-mini-bar { width: 60px; height: 6px; background: var(--c-border-light); border-radius: var(--r-sm); overflow: hidden; }
+    .progress-mini-fill { height: 100%; border-radius: var(--r-sm); transition: width .3s; }
+    .progress-mini-text { font-size: .75rem; color: var(--c-text-secondary); }
 
     /* Owners list */
     .owners-list { margin-bottom: 1rem; font-size: .8rem; color: #666; }
@@ -218,9 +218,9 @@ $fuuid = h($form['id']);
 
     /* Pagination */
     .pagination { display: flex; gap: .5rem; justify-content: center; margin-top: 1.5rem; }
-    .pagination a, .pagination span { padding: .4rem .75rem; border: 1px solid #ddd; border-radius: 4px; font-size: .85rem; text-decoration: none; color: #003189; }
-    .pagination span.current { background: #003189; color: #fff; border-color: #003189; }
-    .pagination a:hover { background: #f0f4ff; }
+    .pagination a, .pagination span { padding: .4rem .75rem; border: 1px solid var(--c-border); border-radius: var(--r-sm); font-size: .85rem; text-decoration: none; color: var(--c-primary-dark); }
+    .pagination span.current { background: var(--c-primary-dark); color: var(--c-text-inverse); border-color: var(--c-primary-dark); }
+    .pagination a:hover { background: var(--c-primary-50); }
   </style>
 </head>
 <body>
@@ -316,7 +316,7 @@ $fuuid = h($form['id']);
           <td><?= h($sub['data'][$kf['field_name']] ?? '') ?></td>
           <?php endforeach; ?>
           <td>
-            <a href="submission_view.php?id=<?= h($sub['id']) ?>" style="color:#003189;font-size:.85rem;">Voir →</a>
+            <a href="submission_view.php?id=<?= h($sub['id']) ?>" style="color:var(--c-primary-dark);font-size:.85rem;">Voir →</a>
           </td>
         </tr>
         <?php endforeach; ?>

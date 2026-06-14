@@ -181,22 +181,22 @@ function notify_who_label(string $val): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alertes — DREETS Workflow</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 1100px; }
-    .rule-card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.25rem; margin-bottom: 1rem; }
+    .rule-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-sm); padding: 1.25rem; margin-bottom: 1rem; }
     .rule-card.inactive { opacity: .6; }
     .rule-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
     .rule-header h3 { margin: 0; font-size: 1rem; }
     .rule-meta { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
     .rule-actions { display: flex; gap: .5rem; }
-    .days-badge { font-size: .85rem; font-weight: bold; background: #fff3e0; color: #b45309; padding: .25rem .75rem; border-radius: 3px; }
+    .days-badge { font-size: .85rem; font-weight: bold; background: var(--c-warning-50); color: var(--c-warning-dark); padding: .25rem .75rem; border-radius: var(--r-sm); }
     .days-badge.urgent { background: #fde8e8; color: #c0392b; }
     .days-badge.passed { background: #c0392b; color: #fff; }
-    .notify-badge { font-size: .8rem; background: #e3f2fd; color: #1565c0; padding: .2rem .6rem; border-radius: 3px; }
-    .cond-badge { font-size: .8rem; background: #e8eaf6; color: #003189; padding: .2rem .6rem; border-radius: 3px; }
-    .deadline-config { background: #f5f5fe; border: 1px solid #ddd; border-radius: 4px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .notify-badge { font-size: .8rem; background: var(--c-info-50); color: var(--c-info); padding: .2rem .6rem; border-radius: var(--r-sm); }
+    .cond-badge { font-size: .8rem; background: var(--c-primary-50); color: var(--c-primary-dark); padding: .2rem .6rem; border-radius: var(--r-sm); }
+    .deadline-config { background: var(--c-primary-50); border: 1px solid var(--c-border); border-radius: var(--r-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
     .deadline-config select { max-width: 300px; }
     .script-status { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; }
   </style>

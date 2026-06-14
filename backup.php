@@ -353,7 +353,7 @@ $purge_preview = $purge_preview ?? null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sauvegarde et restauration — DREETS Workflow</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
     <?php require_once __DIR__ . '/style.php'; ?>
     <style>
         .container { max-width: 900px; }
@@ -373,12 +373,12 @@ $purge_preview = $purge_preview ?? null;
 
         /* Zone de drop / upload */
         .upload-zone {
-            border: 2px dashed #aaa;
-            border-radius: 6px;
+            border: 2px dashed var(--c-border);
+            border-radius: var(--r-md);
             padding: 2rem;
             text-align: center;
             margin-bottom: 1rem;
-            background: #fafafa;
+            background: var(--c-bg-warm);
         }
         .upload-zone p { margin-bottom: .75rem; color: #666; font-size: .9rem; }
         .upload-zone input[type="file"] { font-size: .9rem; }
