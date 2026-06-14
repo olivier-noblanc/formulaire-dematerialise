@@ -1,0 +1,625 @@
+     1→<?php
+     2→// submission_view.php — Page de detail d'une soumission avec workflow visuel
+     3→require_once __DIR__ . '/helpers.php';
+     4→
+     5→$pdo = get_pdo();
+     6→$sub_id = trim($_GET['id'] ?? '');
+     7→
+     8→if (empty($sub_id)) {
+     9→    header('Location: dashboard.php');
+    10→    exit;
+    11→}
+    12→
+    13→// Récupérer la soumission
+    14→$stmt = $pdo->prepare("
+    15→    SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
+    16→    FROM submissions s
+    17→    JOIN forms f ON f.id = s.form_id
+    18→    WHERE s.id = ?
+    19→");
+    20→$stmt->execute([$sub_id]);
+    21→$sub = $stmt->fetch(PDO::FETCH_ASSOC);
+    22→
+    23→if (!$sub) {
+    24→    render_error_page(404, 'Soumission introuvable',
+    25→        'La soumission demandée n\'existe pas ou a été supprimée.',
+    26→        'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.');
+    27→}
+    28→
+    29→$data = json_decode($sub['data'], true) ?: [];
+    30→$status = $sub['status'] ?? 'en_cours';
+    31→$user = get_auth_user();
+    32→$is_admin = is_admin_user();
+    33→
+    34→// Vérifier l'accès : admin ou propriétaire
+    35→if (!$is_admin && $sub['submitted_by'] !== $user) {
+    36→    // Vérifier aussi si l'utilisateur est validateur sur cette soumission
+    37→    $validator_check = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?");
+    38→    $validator_check->execute([$sub_id, $user]);
+    39→    if (!$validator_check->fetch()) {
+    40→        header('Location: dashboard.php');
+    41→        exit;
+    42→    }
+    43→}
+    44→
+    45→// Récupérer toutes les étapes du workflow
+    46→$steps_stmt = $pdo->prepare("
+    47→    SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif,
+    48→           GROUP_CONCAT(sr.email, '|') as recipient_emails
+    49→    FROM steps st
+    50→    LEFT JOIN step_recipients sr ON sr.step_id = st.id
+    51→    WHERE st.form_id = ?
+    52→    GROUP BY st.id
+    53→    ORDER BY st.ordre ASC, st.id ASC
+    54→");
+    55→$steps_stmt->execute([$sub['form_id']]);
+    56→$workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
+    57→
+    58→// Récupérer les tokens pour cette soumission
+    59→$tokens_stmt = $pdo->prepare("
+    60→    SELECT t.id, t.step_id, t.email, t.token, t.done_at, t.sent_at, t.relance_count, t.expires_at,
+    61→           st.label as step_label, st.ordre
+    62→    FROM tokens t
+    63→    JOIN steps st ON st.id = t.step_id
+    64→    WHERE t.submission_id = ?
+    65→    ORDER BY st.ordre ASC, st.label ASC
+    66→");
+    67→$tokens_stmt->execute([$sub_id]);
+    68→$all_tokens = $tokens_stmt->fetchAll(PDO::FETCH_ASSOC);
+    69→
+    70→// Grouper tokens par step_id
+    71→$tokens_by_step = [];
+    72→foreach ($all_tokens as $tok) {
+    73→    $tokens_by_step[$tok['step_id']][] = $tok;
+    74→}
+    75→
+    76→// Déterminer le statut de chaque étape
+    77→foreach ($workflow_steps as &$ws) {
+    78→    $step_id = $ws['step_id'];
+    79→    if (!isset($tokens_by_step[$step_id]) || empty($tokens_by_step[$step_id])) {
+    80→        $ws['step_status'] = 'upcoming';
+    81→        $ws['tokens'] = [];
+    82→    } else {
+    83→        $ws['tokens'] = $tokens_by_step[$step_id];
+    84→        $all_done = true;
+    85→        foreach ($tokens_by_step[$step_id] as $tok) {
+    86→            if (empty($tok['done_at'])) $all_done = false;
+    87→        }
+    88→        $ws['step_status'] = $all_done ? 'validated' : 'current';
+    89→    }
+    90→}
+    91→unset($ws);
+    92→
+    93→// Calculer la progression
+    94→$total_steps = count($workflow_steps);
+    95→$done_steps = count(array_filter($workflow_steps, fn($s) => $s['step_status'] === 'validated'));
+    96→$progress_pct = $total_steps > 0 ? round(($done_steps / $total_steps) * 100) : 0;
+    97→
+    98→// Date limite
+    99→$deadline_field = $sub['deadline_field'] ?? '';
+   100→$deadline_val = $deadline_field ? ($data[$deadline_field] ?? '') : '';
+   101→$deadline_ts = null;
+   102→$days_remaining = null;
+   103→if (!empty($deadline_val)) {
+   104→    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($deadline_val))) {
+   105→        $deadline_ts = strtotime(trim($deadline_val));
+   106→    } elseif (preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', trim($deadline_val), $m)) {
+   107→        $deadline_ts = strtotime("{$m[3]}-{$m[2]}-{$m[1]}");
+   108→    }
+   109→    if ($deadline_ts) {
+   110→        $days_remaining = (int)(($deadline_ts - time()) / 86400);
+   111→    }
+   112→}
+   113→
+   114→// Traitement des actions POST
+   115→$action_msg = '';
+   116→if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+   117→    if (!verify_csrf()) {
+   118→        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
+   119→    }
+   120→
+   121→    $action = $_POST['action'] ?? '';
+   122→
+   123→    if ($action === 'regenerate_token' && $is_admin) {
+   124→        $token_id = trim($_POST['token_id'] ?? '');
+   125→        $result = regenerate_token($token_id);
+   126→        $action_msg = $result['message'];
+   127→    }
+   128→    elseif ($action === 'remind_one' && $is_admin) {
+   129→        $token_id = trim($_POST['token_id'] ?? '');
+   130→        $result = remind_one($token_id);
+   131→        $action_msg = $result['message'];
+   132→    }
+   133→    elseif ($action === 'remind_all' && $is_admin) {
+   134→        $remind_results = [];
+   135→        foreach ($all_tokens as $tok) {
+   136→            if (empty($tok['done_at'])) {
+   137→                $r = remind_one($tok['id']);
+   138→                $remind_results[] = $r['message'];
+   139→            }
+   140→        }
+   141→        $action_msg = count($remind_results) > 0 
+   142→            ? count($remind_results) . ' rappel(s) envoyé(s)' 
+   143→            : 'Aucun validateur en attente.';
+   144→    }
+   145→    elseif ($action === 'delegate_token') {
+   146→        $token_id = trim($_POST['token_id'] ?? '');
+   147→        $delegate_to = trim($_POST['delegate_to'] ?? '');
+   148→        $delegate_reason = trim($_POST['delegate_reason'] ?? '');
+   149→        // Seul le validateur assigne ou un admin peut deleguer
+   150→        $tok_check = $pdo->prepare("SELECT email FROM tokens WHERE id = ? AND done_at IS NULL");
+   151→        $tok_check->execute([$token_id]);
+   152→        $tok_email = $tok_check->fetchColumn();
+   153→        if ($tok_email && ($is_admin || $tok_email === $user)) {
+   154→            $result = delegate_token($token_id, $delegate_to, $delegate_reason);
+   155→            $action_msg = $result['message'];
+   156→        } else {
+   157→            $action_msg = 'Action non autorisée.';
+   158→        }
+   159→    }
+   160→    elseif ($action === 'cancel_submission') {
+   161→        $confirmed = !empty($_POST['confirmed']);
+   162→        if (!$confirmed) {
+   163→            header('Location: confirm_action.php?action=cancel_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('submission_view.php?id=' . $sub_id));
+   164→            exit;
+   165→        }
+   166→        if ($is_admin || $sub['submitted_by'] === $user) {
+   167→            $result = cancel_submission($sub_id, $user);
+   168→            $action_msg = $result['message'];
+   169→            // Rafraîchir les données
+   170→            header('Location: submission_view.php?id=' . urlencode($sub_id));
+   171→            exit;
+   172→        }
+   173→    }
+   174→}
+   175→
+   176→// Nom de l'agent
+   177→$nom_agent = h(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
+   178→$status_label = $status === 'valide' ? 'Validée' : ($status === 'refuse' ? 'Refusée / Annulée' : 'En cours');
+   179→$status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'badge-refuse' : 'badge-en-cours');
+   180→?>
+   181→<!DOCTYPE html>
+   182→<html lang="fr">
+   183→<head>
+   184→  <meta charset="UTF-8">
+   185→  <meta name="viewport" content="width=device-width, initial-scale=1">
+   186→  <title>Soumission #<?= $sub_id ?> — DREETS</title>
+   187→  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+   188→  <?php require_once __DIR__ . '/style.php'; ?>
+   189→  <style>
+   190→    .container { max-width: 1000px; }
+   191→    .back-link { display: inline-block; margin-bottom: 1.5rem; font-size: .85rem; color: #003189; text-decoration: none; }
+   192→    .back-link:hover { text-decoration: underline; }
+   193→
+   194→    /* Header */
+   195→    .sub-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+   196→    .sub-title { font-size: 1.4rem; color: #003189; margin-bottom: .25rem; }
+   197→    .sub-meta { font-size: .85rem; color: #888; line-height: 1.8; }
+   198→
+   199→    /* Progress bar */
+   200→    .progress-section { margin-bottom: 2rem; }
+   201→    .progress-bar-container { background: #e0e0e0; border-radius: 12px; height: 28px; overflow: hidden; position: relative; margin-bottom: .5rem; }
+   202→    .progress-bar-fill { height: 100%; border-radius: 12px; transition: width .3s; display: flex; align-items: center; justify-content: center; color: #fff; font-size: .8rem; font-weight: bold; }
+   203→    .progress-bar-fill.complete { background: #1a6b3c; }
+   204→    .progress-bar-fill.in-progress { background: linear-gradient(90deg, #1a6b3c <?= $progress_pct ?>%, #b45309 <?= $progress_pct ?>%); }
+   205→    .progress-bar-fill.not-started { background: #ccc; color: #666; }
+   206→    .progress-label { font-size: .85rem; color: #555; text-align: center; }
+   207→
+   208→    /* Deadline */
+   209→    .deadline-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+   210→    .deadline-card.overdue { border-left: 5px solid #c0392b; background: #fff5f5; }
+   211→    .deadline-card.urgent { border-left: 5px solid #b45309; background: #fff8f0; }
+   212→    .deadline-card.ok { border-left: 5px solid #1a6b3c; }
+   213→    .deadline-card .dl-icon { font-size: 2rem; }
+   214→    .deadline-card .dl-text { flex: 1; }
+   215→    .deadline-card .dl-date { font-size: 1.3rem; font-weight: bold; color: #003189; }
+   216→    .deadline-card .dl-remaining { font-size: .9rem; font-weight: bold; }
+   217→    .deadline-card .dl-remaining.overdue { color: #c0392b; }
+   218→    .deadline-card .dl-remaining.urgent { color: #b45309; }
+   219→    .deadline-card .dl-remaining.ok { color: #1a6b3c; }
+   220→
+   221→    /* Workflow diagram */
+   222→    .workflow-diagram { margin-bottom: 2rem; }
+   223→    .wf-flow { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding: 1rem 0; }
+   224→    .wf-step-group { display: flex; flex-direction: column; gap: .5rem; align-items: center; }
+   225→    .wf-step { border-radius: 10px; padding: 1rem 1.25rem; min-width: 180px; max-width: 220px; text-align: center; position: relative; }
+   226→    .wf-step.validated { background: #e8f5e9; border: 2px solid #1a6b3c; }
+   227→    .wf-step.current { background: #fff3e0; border: 2px dashed #b45309; }
+   228→    .wf-step.upcoming { background: #f5f5f5; border: 2px solid #ddd; }
+   229→    .wf-step.refused { background: #fde8e8; border: 2px solid #c0392b; }
+   230→    .wf-step .wf-ordre { font-size: .7rem; font-weight: bold; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem; }
+   231→    .wf-step.validated .wf-ordre { color: #1a6b3c; }
+   232→    .wf-step.current .wf-ordre { color: #b45309; }
+   233→    .wf-step.upcoming .wf-ordre { color: #999; }
+   234→    .wf-step .wf-label { font-weight: bold; font-size: .95rem; margin-bottom: .5rem; }
+   235→    .wf-step.validated .wf-label { color: #1a6b3c; }
+   236→    .wf-step.current .wf-label { color: #b45309; }
+   237→    .wf-step.upcoming .wf-label { color: #888; }
+   238→    .wf-step .wf-validators { font-size: .75rem; line-height: 1.5; }
+   239→    .wf-step .wf-validator-item { display: flex; align-items: center; justify-content: center; gap: .25rem; margin-bottom: .15rem; }
+   240→    .wf-step .wf-check { color: #1a6b3c; font-weight: bold; }
+   241→    .wf-step .wf-pending { color: #b45309; }
+   242→    .wf-step .wf-waiting { color: #999; }
+   243→    .wf-connector { display: flex; align-items: center; padding: 0 .25rem; flex-shrink: 0; }
+   244→    .wf-connector .arrow { color: #003189; font-size: 1.5rem; font-weight: bold; }
+   245→
+   246→    /* Data cards */
+   247→    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 1.5rem; }
+   248→    .data-item { padding: .5rem 0; border-bottom: 1px solid #f0f0f0; }
+   249→    .data-item .data-label { font-size: .8rem; color: #888; font-weight: bold; }
+   250→    .data-item .data-value { font-size: .9rem; color: #333; margin-top: .1rem; }
+   251→    .data-group-title { grid-column: 1 / -1; font-size: .95rem; color: #003189; font-weight: bold; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-top: .75rem; }
+   252→
+   253→    /* Validation history */
+   254→    .val-item { display: flex; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid #f0f0f0; }
+   255→    .val-item:last-child { border-bottom: none; }
+   256→    .val-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: .1rem; }
+   257→    .val-content { flex: 1; }
+   258→    .val-header { font-weight: bold; font-size: .9rem; }
+   259→    .val-detail { font-size: .8rem; color: #888; margin-top: .2rem; }
+   260→    .val-comment { font-size: .85rem; color: #555; background: #f5f5fe; padding: .5rem; border-radius: 3px; margin-top: .35rem; font-style: italic; }
+   261→
+   262→    /* Actions */
+   263→    .actions-bar { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
+   264→
+   265→    @media (max-width: 768px) {
+   266→      .data-grid { grid-template-columns: 1fr; }
+   267→      .wf-flow { flex-direction: column; align-items: stretch; }
+   268→      .wf-connector { justify-content: center; padding: .25rem 0; }
+   269→      .wf-connector .arrow { transform: rotate(90deg); }
+   270→      .wf-step { min-width: auto; max-width: none; }
+   271→    }
+   272→  </style>
+   273→</head>
+   274→<body>
+   275→<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+   276→<?= render_nav('mes_demandes') ?>
+   277→<?= render_breadcrumb([['Accueil', 'index.php'], ['Soumission']]) ?>
+   278→<main class="container" id="main-content">
+   279→
+   280→  <?php if ($is_admin): ?>
+   281→    <a href="dashboard.php" class="back-link">← Retour au dashboard</a>
+   282→  <?php else: ?>
+   283→    <a href="my_submissions.php" class="back-link">← Retour à mes demandes</a>
+   284→  <?php endif; ?>
+   285→
+   286→  <?php if ($action_msg): ?>
+   287→    <div class="msg-info"><?= h($action_msg) ?></div>
+   288→  <?php endif; ?>
+   289→
+   290→  <!-- Header -->
+   291→  <div class="sub-header">
+   292→    <div>
+   293→      <div class="sub-title">Soumission #<?= $sub_id ?> — <?= h($sub['form_label']) ?></div>
+   294→      <div class="sub-meta">
+   295→        Agent : <strong><?= $nom_agent ?: h($sub['submitted_by']) ?></strong><br>
+   296→        Soumis le : <strong><?= h(date('d/m/Y à H:i', strtotime($sub['submitted_at']))) ?></strong>
+   297→        <?php if (!empty($sub['closed_at'])): ?>
+   298→          <br>Clôturé le : <strong><?= h(date('d/m/Y à H:i', strtotime($sub['closed_at']))) ?></strong>
+   299→        <?php endif; ?>
+   300→      </div>
+   301→    </div>
+   302→    <span class="badge <?= $status_cls ?>" style="font-size:1rem;padding:.5rem 1.25rem;"><?= $status_label ?></span>
+   303→  </div>
+   304→
+   305→  <!-- Progression -->
+   306→  <div class="progress-section">
+   307→    <div class="progress-bar-container">
+   308→      <div class="progress-bar-fill <?= $progress_pct === 100 ? 'complete' : ($progress_pct > 0 ? 'in-progress' : 'not-started') ?>" style="width:<?= max($progress_pct, 8) ?>%;">
+   309→        <?= $progress_pct ?>%
+   310→      </div>
+   311→    </div>
+   312→    <div class="progress-label"><?= $done_steps ?> / <?= $total_steps ?> étapes validées</div>
+   313→  </div>
+   314→
+   315→  <!-- Deadline -->
+   316→  <?php if ($deadline_ts && $status === 'en_cours'): ?>
+   317→    <?php
+   318→      $dl_cls = $days_remaining < 0 ? 'overdue' : ($days_remaining <= 2 ? 'urgent' : 'ok');
+   319→      $dl_icon = $days_remaining < 0 ? '🚨' : ($days_remaining <= 2 ? '⚠️' : '📅');
+   320→      $dl_text = $days_remaining < 0 ? 'Date dépassée de ' . abs($days_remaining) . ' jour(s)' : ($days_remaining === 0 ? "C'est aujourd'hui !" : "Plus que {$days_remaining} jour(s)");
+   321→    ?>
+   322→    <div class="deadline-card <?= $dl_cls ?>">
+   323→      <div class="dl-icon"><span aria-hidden="true"><?= $dl_icon ?></span></div>
+   324→      <div class="dl-text">
+   325→        <div class="dl-date">Date cible : <?= h(date('d/m/Y', $deadline_ts)) ?></div>
+   326→        <div class="dl-remaining <?= $dl_cls ?>"><?= $dl_text ?></div>
+   327→      </div>
+   328→    </div>
+   329→  <?php endif; ?>
+   330→
+   331→  <!-- Workflow diagram -->
+   332→  <div class="card">
+   333→    <h2><span aria-hidden="true">🔀</span> Circuit de validation</h2>
+   334→    <div class="workflow-diagram">
+   335→      <div class="wf-flow">
+   336→        <?php foreach ($workflow_steps as $i => $ws):
+   337→          $step_cls = $ws['step_status'];
+   338→          // Si la soumission est refusee, les étapes en cours deviennent "refused"
+   339→          if ($status === 'refuse' && $ws['step_status'] === 'current') $step_cls = 'refused';
+   340→        ?>
+   341→          <?php if ($i > 0): ?>
+   342→            <div class="wf-connector"><span class="arrow">→</span></div>
+   343→          <?php endif; ?>
+   344→          <div class="wf-step <?= $step_cls ?>">
+   345→            <div class="wf-ordre">Étape <?= (int)$ws['ordre'] ?></div>
+   346→            <div class="wf-label"><?= h($ws['step_label']) ?></div>
+   347→            <div class="wf-validators">
+   348→              <?php if (!empty($ws['tokens'])): ?>
+   349→                <?php foreach ($ws['tokens'] as $tok): ?>
+   350→                  <div class="wf-validator-item">
+   351→                    <?php if (!empty($tok['done_at'])): ?>
+   352→                      <span class="wf-check" aria-hidden="true">✓</span>
+   353→                    <?php elseif ($ws['step_status'] === 'current'): ?>
+   354→                      <span class="wf-pending" aria-hidden="true">⏳</span>
+   355→                    <?php else: ?>
+   356→                      <span class="wf-waiting" aria-hidden="true">○</span>
+   357→                    <?php endif; ?>
+   358→                    <span><?= h($tok['email']) ?></span>
+   359→                    <?php if ((int)$tok['relance_count'] > 0 && empty($tok['done_at'])): ?>
+   360→                      <span style="color:#b45309;font-size:.7rem;margin-left:.25rem;">(<?= (int)$tok['relance_count'] ?> rappel<?= (int)$tok['relance_count'] > 1 ? 's' : '' ?>)</span>
+   361→                    <?php endif; ?>
+   362→                  </div>
+   363→                <?php endforeach; ?>
+   364→              <?php else: ?>
+   365→                <span class="wf-waiting">En attente de démarrage</span>
+   366→              <?php endif; ?>
+   367→            </div>
+   368→          </div>
+   369→        <?php endforeach; ?>
+   370→      </div>
+   371→    </div>
+   372→
+   373→    <?php if ($is_admin && $status === 'en_cours'): ?>
+   374→    <div class="actions-bar">
+   375→      <?php foreach ($all_tokens as $tok): ?>
+   376→        <?php if (empty($tok['done_at'])): ?>
+   377→          <form method="POST" style="display:inline;">
+   378→            <?= csrf_field() ?>
+   379→            <input type="hidden" name="action" value="remind_one">
+   380→            <input type="hidden" name="token_id" value="<?= h($tok['id']) ?>">
+   381→            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📧</span> Rappeler <?= h($tok['email']) ?></button>
+   382→          </form>
+   383→          <form method="POST" style="display:inline;">
+   384→            <?= csrf_field() ?>
+   385→            <input type="hidden" name="action" value="regenerate_token">
+   386→            <input type="hidden" name="token_id" value="<?= h($tok['id']) ?>">
+   387→            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">🔄</span> Régénérer <?= h($tok['email']) ?></button>
+   388→          </form>
+   389→        <?php endif; ?>
+   390→      <?php endforeach; ?>
+   391→    </div>
+   392→    <?php endif; ?>
+   393→
+   394→    <?php if ($status === 'en_cours'): ?>
+   395→    <!-- Formulaire de delegation (visible pour validateur ou admin) -->
+   396→    <?php
+   397→      $my_pending_tokens = array_filter($all_tokens, function($tok) use ($user, $is_admin) {
+   398→          return empty($tok['done_at']) && ($is_admin || $tok['email'] === $user);
+   399→      });
+   400→      if (!empty($my_pending_tokens)):
+   401→    ?>
+   402→    <div class="actions-bar" style="margin-top:0;">
+   403→      <strong style="font-size:.85rem;color:#003189;"><span aria-hidden="true">🔄</span> Déléguer ma validation :</strong>
+   404→      <form method="POST" style="display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+   405→        <?= csrf_field() ?>
+   406→        <input type="hidden" name="action" value="delegate_token">
+   407→        <select name="token_id" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;">
+   408→          <?php foreach ($my_pending_tokens as $mpt): ?>
+   409→            <option value="<?= h($mpt['id']) ?>">Étape <?= (int)$mpt['ordre'] ?> — <?= h($mpt['email']) ?></option>
+   410→          <?php endforeach; ?>
+   411→        </select>
+   412→        <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
+   413→        <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
+   414→        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;background:#6c3483;color:#fff;"><span aria-hidden="true">🔄</span> Déléguer</button>
+   415→      </form>
+   416→    </div>
+   417→    <?php endif; ?>
+   418→    <?php endif; ?>
+   419→  </div>
+   420→
+   421→  <!-- Données du formulaire -->
+   422→  <div class="card">
+   423→    <h2><span aria-hidden="true">📋</span> Données du formulaire</h2>
+   424→    <div class="data-grid">
+   425→      <?php
+   426→        // Regrouper les données par card_group si on a les infos
+   427→        $field_info = [];
+   428→        $fields_stmt2 = $pdo->prepare("SELECT field_name, label, card_group, field_type FROM form_fields WHERE form_id = ? ORDER BY ordre");
+   429→        $fields_stmt2->execute([$sub['form_id']]);
+   430→        foreach ($fields_stmt2->fetchAll(PDO::FETCH_ASSOC) as $fi) {
+   431→            $field_info[$fi['field_name']] = $fi;
+   432→        }
+   433→
+   434→        $current_group = '';
+   435→        foreach ($data as $k => $v):
+   436→          if ($k === 'validations') continue;
+   437→          if (empty($v) && $v !== '0') continue;
+   438→
+   439→          $group = isset($field_info[$k]) ? $field_info[$k]['card_group'] : '';
+   440→          $label = isset($field_info[$k]) ? $field_info[$k]['label'] : ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k)));
+   441→          $display_val = $v === '1' ? '✓ Oui' : ($v === '0' ? 'Non' : h((string)$v));
+   442→
+   443→          if ($group !== $current_group && !empty($group)):
+   444→            $current_group = $group;
+   445→      ?>
+   446→        <div class="data-group-title"><?= h($group) ?></div>
+   447→      <?php endif; ?>
+   448→        <div class="data-item">
+   449→          <div class="data-label"><?= h($label) ?></div>
+   450→          <div class="data-value"><?= $display_val ?></div>
+   451→        </div>
+   452→      <?php endforeach; ?>
+   453→    </div>
+   454→  </div>
+   455→
+   456→  <!-- Historique des validations -->
+   457→  <?php if (isset($data['validations']) && is_array($data['validations']) && !empty($data['validations'])): ?>
+   458→  <div class="card">
+   459→    <h2><span aria-hidden="true">📝</span> Historique des validations</h2>
+   460→    <?php foreach ($data['validations'] as $v):
+   461→      $is_valid = $v['action'] === 'valider';
+   462→      $icon = $is_valid ? '✅' : '❌';
+   463→    ?>
+   464→    <div class="val-item">
+   465→      <div class="val-icon"><span aria-hidden="true"><?= $icon ?></span></div>
+   466→      <div class="val-content">
+   467→        <div class="val-header">
+   468→          <?= h($v['step_label']) ?> — <?= h($v['email']) ?>
+   469→          <span style="color:<?= $is_valid ? '#1a6b3c' : '#c0392b' ?>;">
+   470→            <?= $is_valid ? 'Validé' : 'Refusé' ?>
+   471→          </span>
+   472→        </div>
+   473→        <div class="val-detail"><?= h($v['date']) ?></div>
+   474→        <?php if (!empty($v['commentaire'])): ?>
+   475→          <div class="val-comment"><span aria-hidden="true">💬</span> <?= h($v['commentaire']) ?></div>
+   476→        <?php endif; ?>
+   477→      </div>
+   478→    </div>
+   479→    <?php endforeach; ?>
+   480→  </div>
+   481→  <?php endif; ?>
+   482→
+   483→  <!-- Historique des relances -->
+   484→  <?php
+   485→    // Récupérer l'historique des relances
+   486→    $remind_logs = $pdo->prepare("
+   487→        SELECT * FROM audit_log 
+   488→        WHERE (action = 'manual_remind' OR action = 'auto_remind') 
+   489→        AND target LIKE ?
+   490→        ORDER BY created_at DESC
+   491→    ");
+   492→    $remind_logs->execute(['token:%']);
+   493→    $all_remind_logs = $remind_logs->fetchAll(PDO::FETCH_ASSOC);
+   494→    
+   495→    // Filtrer les relances pour cette soumission uniquement
+   496→    $submission_reminds = array_filter($all_remind_logs, function($log) use ($all_tokens) {
+   497→        foreach ($all_tokens as $tok) {
+   498→            if ($log['target'] === 'token:' . $tok['id']) return true;
+   499→        }
+   500→        return false;
+   501→    });
+   502→    
+   503→    // Calculer le total des relances
+   504→    $total_relances = array_sum(array_column($all_tokens, 'relance_count'));
+   505→    $pending_with_relance = array_filter($all_tokens, function($t) { return (int)$t['relance_count'] > 0 && empty($t['done_at']); });
+   506→    
+   507→    if ($total_relances > 0 || !empty($pending_with_relance)):
+   508→  ?>
+   509→  <div class="card">
+   510→    <h2><span aria-hidden="true">🔔</span> Historique des relances (<?= $total_relances ?> au total)</h2>
+   511→    <?php if (!empty($pending_with_relance)): ?>
+   512→      <div style="margin-bottom:1rem;">
+   513→        <?php foreach ($pending_with_relance as $pt): ?>
+   514→          <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid #f0f0f0;">
+   515→            <span style="font-size:1.1rem;" aria-hidden="true">⏳</span>
+   516→            <strong style="font-size:.85rem;"><?= h($pt['email']) ?></strong>
+   517→            <span class="badge badge-warn"><?= (int)$pt['relance_count'] ?> rappel<?= (int)$pt['relance_count'] > 1 ? 's' : '' ?></span>
+   518→            <?php if (!empty($pt['relance_at'])): ?>
+   519→              <span style="font-size:.8rem;color:#595959;">Dernier rappel : <?= h(date('d/m/Y à H:i', strtotime($pt['relance_at']))) ?></span>
+   520→            <?php endif; ?>
+   521→            <span style="font-size:.8rem;color:#595959;">Expire le : <?= !empty($pt['expires_at']) ? h(date('d/m/Y', strtotime($pt['expires_at']))) : '—' ?></span>
+   522→          </div>
+   523→        <?php endforeach; ?>
+   524→      </div>
+   525→    <?php endif; ?>
+   526→    
+   527→    <?php if (!empty($submission_reminds)): ?>
+   528→      <h3 style="font-size:.9rem;color:#555;margin-bottom:.75rem;">Détail des relances envoyées</h3>
+   529→      <?php foreach ($submission_reminds as $sr): ?>
+   530→      <div class="val-item">
+   531→        <div class="val-icon" aria-hidden="true">🔔</div>
+   532→        <div class="val-content">
+   533→          <div class="val-header"><?= h($sr['detail']) ?></div>
+   534→          <div class="val-detail"><?= h(date('d/m/Y à H:i', strtotime($sr['created_at']))) ?> — par <?= h($sr['actor']) ?></div>
+   535→        </div>
+   536→      </div>
+   537→      <?php endforeach; ?>
+   538→    <?php endif; ?>
+   539→    
+   540→    <?php if ($is_admin && $status === 'en_cours'): ?>
+   541→    <div class="actions-bar">
+   542→      <form method="POST">
+   543→        <?= csrf_field() ?>
+   544→        <input type="hidden" name="action" value="remind_all">
+   545→        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;"><span aria-hidden="true">📧</span> Rappeler tous les validateurs en attente</button>
+   546→      </form>
+   547→    </div>
+   548→    <?php endif; ?>
+   549→  </div>
+   550→  <?php endif; ?>
+   551→
+   552→  <!-- Pièces jointes -->
+   553→  <?php
+   554→    $attachments = get_attachments($sub_id);
+   555→    if (!empty($attachments)):
+   556→  ?>
+   557→  <div class="card">
+   558→    <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($attachments) ?>)</h2>
+   559→    <table style="width:100%;border-collapse:collapse;">
+   560→      <thead>
+   561→        <tr>
+   562→          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Fichier</th>
+   563→          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Type</th>
+   564→          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Taille</th>
+   565→          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Date</th>
+   566→          <th style="text-align:right;padding:.5rem;border-bottom:2px solid #003189;"></th>
+   567→        </tr>
+   568→      </thead>
+   569→      <tbody>
+   570→      <?php foreach ($attachments as $att): ?>
+   571→        <tr>
+   572→          <td style="padding:.5rem;border-bottom:1px solid #eee;">
+   573→            <?= get_file_icon($att['mime_type']) ?>
+   574→            <strong><?= h($att['original_name']) ?></strong>
+   575→          </td>
+   576→          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;color:#595959;"><?= h($att['mime_type']) ?></td>
+   577→          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= format_file_size((int)$att['file_size']) ?></td>
+   578→          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= h(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
+   579→          <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">
+   580→            <a href="download.php?id=<?= urlencode($att['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;"><span aria-hidden="true">📥</span> Télécharger</a>
+   581→          </td>
+   582→        </tr>
+   583→      <?php endforeach; ?>
+   584→      </tbody>
+   585→    </table>
+   586→  </div>
+   587→  <?php endif; ?>
+   588→
+   589→  <!-- Délégations -->
+   590→  <?php
+   591→    $delegations = get_delegations($sub_id);
+   592→    if (!empty($delegations)):
+   593→  ?>
+   594→  <div class="card">
+   595→    <h2><span aria-hidden="true">🔄</span> Délégations</h2>
+   596→    <?php foreach ($delegations as $dlg): ?>
+   597→    <div class="val-item">
+   598→      <div class="val-icon" aria-hidden="true">🔄</div>
+   599→      <div class="val-content">
+   600→        <div class="val-header">
+   601→          <?= h($dlg['step_label']) ?> : <?= h($dlg['from_email']) ?> → <?= h($dlg['to_email']) ?>
+   602→        </div>
+   603→        <div class="val-detail"><?= h(date('d/m/Y à H:i', strtotime($dlg['delegated_at']))) ?></div>
+   604→        <?php if (!empty($dlg['reason'])): ?>
+   605→          <div class="val-comment"><span aria-hidden="true">💬</span> Motif : <?= h($dlg['reason']) ?></div>
+   606→        <?php endif; ?>
+   607→      </div>
+   608→    </div>
+   609→    <?php endforeach; ?>
+   610→  </div>
+   611→  <?php endif; ?>
+   612→
+   613→  <!-- Actions -->
+   614→  <?php if ($status === 'en_cours' && ($is_admin || $sub['submitted_by'] === $user)): ?>
+   615→  <div class="card">
+   616→    <h2><span aria-hidden="true">⚙</span> Actions</h2>
+   617→    <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($sub_id) ?>&from=<?= urlencode('submission_view.php?id=' . $sub_id) ?>" class="btn btn-danger" style="text-decoration:none;"><span aria-hidden="true">🗑</span> Annuler la soumission</a>
+   618→  </div>
+   619→  <?php endif; ?>
+   620→
+   621→</main>
+   622→<?= render_footer() ?>
+   623→</body>
+   624→</html>
+   625→
