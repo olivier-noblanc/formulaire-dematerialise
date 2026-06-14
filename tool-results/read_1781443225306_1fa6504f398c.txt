@@ -1,0 +1,502 @@
+     1→   599→   599→    </div>
+     2→   600→   600→    <div class="step-row">
+     3→   601→   601→      <span class="step-num">2</span>
+     4→   602→   602→      <div class="step-text">
+     5→   603→   603→        <p><strong>Modifier un formulaire</strong> — Changez le libellé, la description ou désactivez-le.</p>
+     6→   604→   604→      </div>
+     7→   605→   605→    </div>
+     8→   606→   606→    <div class="step-row">
+     9→   607→   607→      <span class="step-num">3</span>
+    10→   608→   608→      <div class="step-text">
+    11→   609→   609→        <p><strong>Configurer les champs</strong> — Ajoutez, modifiez ou réorganisez les champs du formulaire (texte, liste déroulante, case à cocher, etc.).</p>
+    12→   610→   610→      </div>
+    13→   611→   611→    </div>
+    14→   612→   612→    <div class="step-row">
+    15→   613→   613→      <span class="step-num">4</span>
+    16→   614→   614→      <div class="step-text">
+    17→   615→   615→        <p><strong>Prévisualiser</strong> — Visualisez le formulaire tel que le verront les agents avant de le publier.</p>
+    18→   616→   616→      </div>
+    19→   617→   617→    </div>
+    20→   618→   618→
+    21→   619→   619→    <div class="info-box">
+    22→   620→   620→      <p><strong>Astuce :</strong> Pour qu'une étape nécessite la validation de <strong>tous</strong> ses destinataires, mettez-les dans la même étape. Pour qu'ils valident <strong>séquentiellement</strong>, créez des étapes distinctes avec des ordres croissants.</p>
+    23→   621→   621→    </div>
+    24→   622→   622→
+    25→   623→   623→    <!-- ── Gestion des étapes et destinataires ── -->
+    26→   624→   624→    <h3>🔄 Gestion des étapes et destinataires</h3>
+    27→   625→   625→
+    28→   626→   626→    <p>Pour chaque formulaire, vous définissez le <strong>circuit de validation</strong> :</p>
+    29→   627→   627→
+    30→   628→   628→    <div class="step-row">
+    31→   629→   629→      <span class="step-num">1</span>
+    32→   630→   630→      <div class="step-text">
+    33→   631→   631→        <p><strong>Ajoutez des étapes</strong> — Chaque étape a un libellé (ex : « Informatique », « RH », « Direction ») et un numéro d'ordre.</p>
+    34→   632→   632→      </div>
+    35→   633→   633→    </div>
+    36→   634→   634→    <div class="step-row">
+    37→   635→   635→      <span class="step-num">2</span>
+    38→   636→   636→      <div class="step-text">
+    39→   637→   637→        <p><strong>Ordre = séquence</strong> — L'ordre détermine la séquence du workflow :
+    40→   638→   638→          <ul>
+    41→   639→   639→            <li><strong>Ordres différents</strong> = étapes <strong>séquentielles</strong> (l'étape 2 ne démarre qu'après la validation de l'étape 1)</li>
+    42→   640→   640→            <li><strong>Même ordre</strong> = étapes <strong>parallèles</strong> (elles démarrent en même temps)</li>
+    43→   641→   641→          </ul>
+    44→   642→   642→        </p>
+    45→   643→   643→      </div>
+    46→   644→   644→    </div>
+    47→   645→   645→    <div class="step-row">
+    48→   646→   646→      <span class="step-num">3</span>
+    49→   647→   647→      <div class="step-text">
+    50→   648→   648→        <p><strong>Ajoutez des destinataires</strong> — Pour chaque étape, ajoutez les adresses email des validateurs. Plusieurs destinataires sur la même étape recevront tous une notification (validation parallèle).</p>
+    51→   649→   649→      </div>
+    52→   650→   650→    </div>
+    53→   651→   651→
+    54→   652→   652→    <div class="info-box">
+    55→   653→   653→      <p><strong>Exemple de circuit :</strong><br>
+    56→   654→   654→      Ordre 1 : « Informatique » → doit être validé en premier<br>
+    57→   655→   655→      Ordre 2 : « Ressources Humaines » + « Logistique » → démarrent en parallèle après l'ordre 1<br>
+    58→   656→   656→      Ordre 3 : « Direction » → démarre quand l'ordre 2 est entièrement validé</p>
+    59→   657→   657→    </div>
+    60→   658→   658→
+    61→   659→   659→    <div class="tip-box">
+    62→   660→   660→      <p>Modifier l'ordre des étapes n'affecte que les <em>nouvelles</em> soumissions. Les demandes déjà en cours conservent l'ordre qui était en vigueur au moment de leur création.</p>
+    63→   661→   661→    </div>
+    64→   662→   662→
+    65→   663→   663→    <!-- ── Alertes de deadline ── -->
+    66→   664→   664→    <h3>⏰ Configuration des alertes</h3>
+    67→   665→   665→
+    68→   666→   666→    <p>La page <strong>admin_alerts.php</strong> permet de configurer des <strong>alertes automatiques</strong> quand une demande approche d'une date limite :</p>
+    69→   667→   667→
+    70→   668→   668→    <div class="step-row">
+    71→   669→   669→      <span class="step-num">1</span>
+    72→   670→   670→      <div class="step-text">
+    73→   671→   671→        <p><strong>Créez une règle d'alerte</strong> — Choisissez le formulaire concerné, le nombre de jours avant la deadline, et qui doit être notifié (admin ou email personnalisé).</p>
+    74→   672→   672→      </div>
+    75→   673→   673→    </div>
+    76→   674→   674→    <div class="step-row">
+    77→   675→   675→      <span class="step-num">2</span>
+    78→   676→   676→      <div class="step-text">
+    79→   677→   677→        <p><strong>Le type de condition</strong> — Par exemple, « étapes incomplètes » déclenche l'alerte si des étapes ne sont pas encore validées.</p>
+    80→   678→   678→      </div>
+    81→   679→   679→    </div>
+    82→   680→   680→    <div class="step-row">
+    83→   681→   681→      <span class="step-num">3</span>
+    84→   682→   682→      <div class="step-text">
+    85→   683→   683→        <p><strong>Activez ou désactivez</strong> chaque règle indépendamment.</p>
+    86→   684→   684→      </div>
+    87→   685→   685→    </div>
+    88→   686→   686→
+    89→   687→   687→    <!-- ── Monitoring ── -->
+    90→   688→   688→    <h3>🔍 Monitoring et supervision</h3>
+    91→   689→   689→
+    92→   690→   690→    <p>La page <strong>monitoring.php</strong> vous donne une vue d'ensemble de l'état du système :</p>
+    93→   691→   691→    <ul>
+    94→   692→   692→      <li><strong>Temps moyen de traitement</strong> — Combien de temps prennent les demandes en moyenne</li>
+    95→   693→   693→      <li><strong>Taux de validation</strong> — Pourcentage de demandes validées / refusées / en cours</li>
+    96→   694→   694→      <li><strong>Tokens bloqués</strong> — Les validations en attente depuis trop longtemps</li>
+    97→   695→   695→      <li><strong>Tokens expirés</strong> — Les liens de validation qui ont dépassé leur date d'expiration</li>
+    98→   696→   696→      <li><strong>Alertes actives</strong> — Les demandes proches de leur deadline</li>
+    99→   697→   697→      <li><strong>Activité récente</strong> — Les dernières actions (validations, refus, créations)</li>
+   100→   698→   698→    </ul>
+   101→   699→   699→
+   102→   700→   700→    <div class="tip-box">
+   103→   701→   701→      <p>Consultez régulièrement la page de monitoring pour identifier les validateurs qui tardent à répondre et les relancer si nécessaire.</p>
+   104→   702→   702→    </div>
+   105→   703→   703→
+   106→   704→   704→    <!-- ── Statistiques ── -->
+   107→   705→   705→    <h3>📈 Statistiques et reporting</h3>
+   108→   706→   706→
+   109→   707→   707→    <p>La page <strong>stats.php</strong> fournit des statistiques détaillées :</p>
+   110→   708→   708→    <ul>
+   111→   709→   709→      <li><strong>Statistiques globales</strong> — Total, en cours, validés, refusés</li>
+   112→   710→   710→      <li><strong>Statistiques par période</strong> — Vue par semaine, mois ou année</li>
+   113→   711→   711→      <li><strong>Statistiques par formulaire</strong> — Nombre de demandes et temps moyen de traitement pour chaque formulaire</li>
+   114→   712→   712→      <li><strong>Statistiques par validateur</strong> — Nombre de validations, temps de réponse moyen</li>
+   115→   713→   713→      <li><strong>Graphique de répartition</strong> — Visualisation des statuts sous forme de graphique</li>
+   116→   714→   714→    </ul>
+   117→   715→   715→
+   118→   716→   716→    <!-- ── RGPD ── -->
+   119→   717→   717→    <h3>🔒 Conformité RGPD</h3>
+   120→   718→   718→
+   121→   719→   719→    <p>La page <strong>rgpd.php</strong> vous permet de gérer la conformité au Règlement Général sur la Protection des Données :</p>
+   122→   720→   720→
+   123→   721→   721→    <div class="step-row">
+   124→   722→   722→      <span class="step-num">1</span>
+   125→   723→   723→      <div class="step-text">
+   126→   724→   724→        <p><strong>Mentions légales</strong> — Modifiez le texte affiché aux utilisateurs en bas des formulaires. Ce texte doit informer les utilisateurs du traitement de leurs données.</p>
+   127→   725→   725→      </div>
+   128→   726→   726→    </div>
+   129→   727→   727→    <div class="step-row">
+   130→   728→   728→      <span class="step-num">2</span>
+   131→   729→   729→      <div class="step-text">
+   132→   730→   730→        <p><strong>Durée de conservation</strong> — Configurez le nombre de mois de conservation des données après clôture (par défaut : 24 mois).</p>
+   133→   731→   731→      </div>
+   134→   732→   732→    </div>
+   135→   733→   733→    <div class="step-row">
+   136→   734→   734→      <span class="step-num">3</span>
+   137→   735→   735→      <div class="step-text">
+   138→   736→   736→        <p><strong>Exporter les données d'un utilisateur</strong> — Saisissez une adresse email et téléchargez toutes les données associées au format JSON (droit d'accès RGPD).</p>
+   139→   737→   737→      </div>
+   140→   738→   738→    </div>
+   141→   739→   739→    <div class="step-row">
+   142→   740→   740→      <span class="step-num">4</span>
+   143→   741→   741→      <div class="step-text">
+   144→   742→   742→        <p><strong>Supprimer les données d'un utilisateur</strong> — Anonymisez les données d'une personne (droit d'effacement RGPD). Les données sont rendues anonymes, pas supprimées, pour préserver l'historique statistique.</p>
+   145→   743→   743→      </div>
+   146→   744→   744→    </div>
+   147→   745→   745→    <div class="step-row">
+   148→   746→   746→      <span class="step-num">5</span>
+   149→   747→   747→      <div class="step-text">
+   150→   748→   748→        <p><strong>Purge automatique</strong> — Les demandes clôturées depuis plus longtemps que la durée de conservation sont automatiquement supprimées par la purge.</p>
+   151→   749→   749→      </div>
+   152→   750→   750→    </div>
+   153→   751→   751→
+   154→   752→   752→    <!-- ── Webhooks ── -->
+   155→   753→   753→    <h3>🔗 Webhooks pour l'intégration SI</h3>
+   156→   754→   754→
+   157→   755→   755→    <p>Les webhooks permettent de <strong>connecter l'application à votre système d'information</strong>. Quand un événement se produit (validation, refus, annulation, workflow terminé), le système envoie automatiquement une notification à l'adresse configurée.</p>
+   158→   756→   756→
+   159→   757→   757→    <div class="step-row">
+   160→   758→   758→      <span class="step-num">1</span>
+   161→   759→   759→      <div class="step-text">
+   162→   760→   760→        <p><strong>Configurez l'URL du webhook</strong> — Dans les paramètres (<code>admin_settings.php</code>), renseignez l'URL qui recevra les notifications.</p>
+   163→   761→   761→      </div>
+   164→   762→   762→    </div>
+   165→   763→   763→    <div class="step-row">
+   166→   764→   764→      <span class="step-num">2</span>
+   167→   765→   765→      <div class="step-text">
+   168→   766→   766→        <p><strong>Choisissez les événements</strong> — Sélectionnez quels événements déclencheront l'envoi : workflow terminé, validation effectuée, demande annulée, etc.</p>
+   169→   767→   767→      </div>
+   170→   768→   768→    </div>
+   171→   769→   769→    <div class="step-row">
+   172→   770→   770→      <span class="step-num">3</span>
+   173→   771→   771→      <div class="step-text">
+   174→   772→   772→        <p><strong>Les notifications sont envoyées automatiquement</strong> — Chaque notification contient le type d'événement, l'horodatage et les données associées au format JSON.</p>
+   175→   773→   773→      </div>
+   176→   774→   774→    </div>
+   177→   775→   775→
+   178→   776→   776→    <div class="tip-box">
+   179→   777→   777→      <p>Les webhooks sont optionnels. Si vous n'avez pas de système d'information à connecter, vous pouvez ignorer cette fonctionnalité.</p>
+   180→   778→   778→    </div>
+   181→   779→   779→
+   182→   780→   780→    <!-- ── Health check ── -->
+   183→   781→   781→    <h3>💚 Health check (vérification de santé)</h3>
+   184→   782→   782→
+   185→   783→   783→    <p>La page <strong>health.php</strong> vérifie automatiquement l'état de santé de l'application :</p>
+   186→   784→   784→    <ul>
+   187→   785→   785→      <li><strong>Base de données</strong> — SQLite est-elle accessible ?</li>
+   188→   786→   786→      <li><strong>Version PHP</strong> — Est-elle compatible ?</li>
+   189→   787→   787→      <li><strong>Répertoire de données</strong> — Est-il accessible en écriture ?</li>
+   190→   788→   788→      <li><strong>Schéma de base</strong> — Toutes les tables sont-elles présentes ?</li>
+   191→   789→   789→      <li><strong>Configuration SMTP</strong> — L'envoi d'emails est-il configuré ?</li>
+   192→   790→   790→    </ul>
+   193→   791→   791→    <p>Cette page retourne un statut HTTP 200 si tout va bien, ou 503 si un problème est détecté. Elle peut être utilisée par les outils de supervision externes.</p>
+   194→   792→   792→
+   195→   793→   793→    <!-- ── Sauvegarde et restauration ── -->
+   196→   794→   794→    <h3>💾 Sauvegarde et restauration</h3>
+   197→   795→   795→
+   198→   796→   796→    <p>La page <strong>backup.php</strong> permet de sauvegarder et restaurer la base de données :</p>
+   199→   797→   797→
+   200→   798→   798→    <div class="step-row">
+   201→   799→   799→      <span class="step-num">1</span>
+   202→   800→   800→      <div class="step-text">
+   203→   801→   801→        <p><strong>Télécharger une sauvegarde</strong> — Crée une copie complète de la base de données au format .db que vous pouvez enregistrer sur votre poste.</p>
+   204→   802→   802→      </div>
+   205→   803→   803→    </div>
+   206→   804→   804→    <div class="step-row">
+   207→   805→   805→      <span class="step-num">2</span>
+   208→   806→   806→      <div class="step-text">
+   209→   807→   807→        <p><strong>Restaurer une sauvegarde</strong> — Importez un fichier .db précédemment sauvegardé pour remettre le système dans l'état correspondant.</p>
+   210→   808→   808→      </div>
+   211→   809→   809→    </div>
+   212→   810→   810→
+   213→   811→   811→    <div class="warn-box">
+   214→   812→   812→      <p><strong>⚠ Attention :</strong> La restauration remplace toutes les données actuelles. Effectuez toujours une sauvegarde avant de restaurer. La restauration est irréversible.</p>
+   215→   813→   813→    </div>
+   216→   814→   814→
+   217→   815→   815→    <div class="tip-box">
+   218→   816→   816→      <p>Prenez l'habitude de télécharger une sauvegarde régulièrement (par exemple chaque semaine). En cas de problème, vous pourrez toujours revenir à une version antérieure.</p>
+   219→   817→   817→    </div>
+   220→   818→   818→
+   221→   819→   819→    <!-- ── Paramètres SMTP ── -->
+   222→   820→   820→    <h3>⚙️ Configuration des paramètres</h3>
+   223→   821→   821→
+   224→   822→   822→    <p>La page <strong>admin_settings.php</strong> (réservée au super administrateur) permet de configurer :</p>
+   225→   823→   823→    <ul>
+   226→   824→   824→      <li><strong>Serveur SMTP</strong> — L'adresse du serveur d'envoi d'emails (ex : smtp.social.gouv.fr)</li>
+   227→   825→   825→      <li><strong>Port SMTP</strong> — Le port du serveur (ex : 25)</li>
+   228→   826→   826→      <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : workflow@dreets.gouv.fr)</li>
+   229→   827→   827→      <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : Workflow DREETS)</li>
+   230→   828→   828→      <li><strong>Délai de relance</strong> — Le nombre d'heures avant l'envoi d'un rappel automatique (ex : 48h)</li>
+   231→   829→   829→      <li><strong>URL du webhook</strong> — L'adresse pour les notifications automatiques</li>
+   232→   830→   830→      <li><strong>Événements webhook</strong> — Les événements à notifier</li>
+   233→   831→   831→    </ul>
+   234→   832→   832→    <div class="warn-box">
+   235→   833→   833→      <p><strong>⚠ Accès restreint :</strong> La page de paramètres est réservée au <strong>super administrateur</strong>.</p>
+   236→   834→   834→    </div>
+   237→   835→   835→
+   238→   836→   836→    <!-- ── Admin vs Super admin ── -->
+   239→   837→   837→    <h3>👑 Admin vs Super admin</h3>
+   240→   838→   838→    <table class="schema-table">
+   241→   839→   839→      <thead>
+   242→   840→   840→        <tr>
+   243→   841→   841→          <th>Fonctionnalité</th>
+   244→   842→   842→          <th><span class="role-badge role-admin">Admin</span></th>
+   245→   843→   843→          <th><span class="role-badge role-superadmin">Super admin</span></th>
+   246→   844→   844→        </tr>
+   247→   845→   845→      </thead>
+   248→   846→   846→      <tbody>
+   249→   847→   847→        <tr><td>Voir le tableau de bord</td><td>✓</td><td>✓</td></tr>
+   250→   848→   848→        <tr><td>Gérer les formulaires et étapes</td><td>✓</td><td>✓</td></tr>
+   251→   849→   849→        <tr><td>Consulter les statistiques</td><td>✓</td><td>✓</td></tr>
+   252→   850→   850→        <tr><td>Accéder au monitoring</td><td>✓</td><td>✓</td></tr>
+   253→   851→   851→        <tr><td>Configurer les alertes</td><td>✓</td><td>✓</td></tr>
+   254→   852→   852→        <tr><td>Sauvegarder et restaurer</td><td>✓</td><td>✓</td></tr>
+   255→   853→   853→        <tr><td>Gérer la conformité RGPD</td><td>✓</td><td>✓</td></tr>
+   256→   854→   854→        <tr><td>Approuver / refuser les demandes d'accès</td><td></td><td>✓</td></tr>
+   257→   855→   855→        <tr><td>Gérer la liste des administrateurs</td><td></td><td>✓</td></tr>
+   258→   856→   856→        <tr><td>Configurer les paramètres SMTP</td><td></td><td>✓</td></tr>
+   259→   857→   857→        <tr><td>Configurer les webhooks</td><td></td><td>✓</td></tr>
+   260→   858→   858→      </tbody>
+   261→   859→   859→    </table>
+   262→   860→   860→    <p>
+   263→   861→   861→      Le super administrateur est défini par son adresse email dans la configuration. Il s'agit généralement du premier administrateur, qui ne peut pas être supprimé.
+   264→   862→   862→    </p>
+   265→   863→   863→  </div>
+   266→   864→   864→
+   267→   865→   865→  <!-- ═══════════════════════════════════════════════════════════ -->
+   268→   866→   866→  <!-- 5. FONCTIONNALITÉS                                         -->
+   269→   867→   867→  <!-- ═══════════════════════════════════════════════════════════ -->
+   270→   868→   868→  <div class="card" id="fonctionnalites">
+   271→   869→   869→    <h2>5. Fonctionnalités de l'application</h2>
+   272→   870→   870→
+   273→   871→   871→    <p>Voici la liste complète des fonctionnalités de l'application :</p>
+   274→   872→   872→
+   275→   873→   873→    <div class="feature-grid">
+   276→   874→   874→      <div class="feature-item">
+   277→   875→   875→        <strong>📝 Formulaires dynamiques configurables</strong>
+   278→   876→   876→        <p>Créez et configurez vos formulaires sans coder. Champs texte, listes déroulantes, cases à cocher, pièces jointes.</p>
+   279→   877→   877→      </div>
+   280→   878→   878→      <div class="feature-item">
+   281→   879→   879→        <strong>🔄 Circuit de validation séquentiel et parallèle</strong>
+   282→   880→   880→        <p>Définissez l'ordre de validation : étape par étape ou plusieurs en même temps, selon les besoins de chaque formulaire.</p>
+   283→   881→   881→      </div>
+   284→   882→   882→      <div class="feature-item">
+   285→   883→   883→        <strong>🔐 Tokens cryptographiques à usage unique</strong>
+   286→   884→   884→        <p>Chaque lien de validation est unique et sécurisé. Une fois utilisé, il ne peut plus servir, garantissant l'intégrité du processus.</p>
+   287→   885→   885→      </div>
+   288→   886→   886→      <div class="feature-item">
+   289→   887→   887→        <strong>📎 Pièces jointes sécurisées</strong>
+   290→   888→   888→        <p>Les fichiers joints sont stockés de manière sécurisée en base de données. Seules les personnes autorisées peuvent les télécharger.</p>
+   291→   889→   889→      </div>
+   292→   890→   890→      <div class="feature-item">
+   293→   891→   891→        <strong>🔔 Relances automatiques et manuelles</strong>
+   294→   892→   892→        <p>Le système relance automatiquement les validateurs en attente. L'administrateur peut aussi relancer manuellement.</p>
+   295→   893→   893→      </div>
+   296→   894→   894→      <div class="feature-item">
+   297→   895→   895→        <strong>🔄 Délégation de validation</strong>
+   298→   896→   896→        <p>Un validateur peut transférer sa validation à un collègue. La délégation est tracée dans l'historique.</p>
+   299→   897→   897→      </div>
+   300→   898→   898→      <div class="feature-item">
+   301→   899→   899→        <strong>⏰ Alertes de deadline configurables</strong>
+   302→   900→   900→        <p>Recevez une alerte quand une demande approche de sa date limite. Configurable par formulaire et par destinataire.</p>
+   303→   901→   901→      </div>
+   304→   902→   902→      <div class="feature-item">
+   305→   903→   903→        <strong>📈 Statistiques et tableaux de bord</strong>
+   306→   904→   904→        <p>Suivez les performances : temps de traitement, taux de validation, répartition par période et par formulaire.</p>
+   307→   905→   905→      </div>
+   308→   906→   906→      <div class="feature-item">
+   309→   907→   907→        <strong>📋 Journal d'audit complet</strong>
+   310→   908→   908→        <p>Chaque action est enregistrée : qui a fait quoi et quand. Traçabilité totale pour la conformité et le contrôle.</p>
+   311→   909→   909→      </div>
+   312→   910→   910→      <div class="feature-item">
+   313→   911→   911→        <strong>🔒 Conformité RGPD</strong>
+   314→   912→   912→        <p>Export, suppression et purge automatique des données. Durée de conservation configurable. Droit d'accès et d'effacement garantis.</p>
+   315→   913→   913→      </div>
+   316→   914→   914→      <div class="feature-item">
+   317→   915→   915→        <strong>🔗 Webhooks pour intégration SI</strong>
+   318→   916→   916→        <p>Connectez l'application à votre système d'information. Notifications automatiques lors des événements clés.</p>
+   319→   917→   917→      </div>
+   320→   918→   918→      <div class="feature-item">
+   321→   919→   919→        <strong>💚 Health check pour monitoring</strong>
+   322→   920→   920→        <p>Vérifiez automatiquement l'état de l'application : base de données, configuration email, version PHP.</p>
+   323→   921→   921→      </div>
+   324→   922→   922→      <div class="feature-item">
+   325→   923→   923→        <strong>💾 Sauvegarde et restauration</strong>
+   326→   924→   924→        <p>Téléchargez une sauvegarde complète et restaurez-la en cas de besoin. Sécurisez vos données simplement.</p>
+   327→   925→   925→      </div>
+   328→   926→   926→      <div class="feature-item">
+   329→   927→   927→        <strong>🎨 Design Marianne / RGAA accessible</strong>
+   330→   928→   928→        <p>Interface conforme au système de design de l'État et aux normes d'accessibilité RGAA. Utilisable par tous.</p>
+   331→   929→   929→      </div>
+   332→   930→   930→      <div class="feature-item">
+   333→   931→   931→        <strong>🛡️ Zéro JavaScript (sécurité maximale)</strong>
+   334→   932→   932→        <p>L'application fonctionne entièrement sans JavaScript côté client. Sécurité renforcée, compatible avec les navigateurs les plus restrictifs.</p>
+   335→   933→   933→      </div>
+   336→   934→   934→    </div>
+   337→   935→   935→  </div>
+   338→   936→   936→
+   339→   937→   937→  <!-- ═══════════════════════════════════════════════════════════ -->
+   340→   938→   938→  <!-- 6. RÔLES ET PERMISSIONS                                    -->
+   341→   939→   939→  <!-- ═══════════════════════════════════════════════════════════ -->
+   342→   940→   940→  <div class="card" id="roles-permissions">
+   343→   941→   941→    <h2>6. Rôles et permissions</h2>
+   344→   942→   942→
+   345→   943→   943→    <p>L'application distingue quatre profils. Voici ce que chacun peut faire :</p>
+   346→   944→   944→
+   347→   945→   945→    <h3><span class="role-badge role-agent">Agent</span> L'agent</h3>
+   348→   946→   946→    <p>L'agent est la personne qui remplit et soumet un formulaire (par exemple, un agent qui déclare son arrivée).</p>
+   349→   947→   947→    <ul>
+   350→   948→   948→      <li>✅ Remplir et soumettre un formulaire</li>
+   351→   949→   949→      <li>✅ Suivre l'avancement de <strong>ses propres</strong> demandes (page « Mes demandes »)</li>
+   352→   950→   950→      <li>✅ Annuler une de ses demandes en cours</li>
+   353→   951→   951→      <li>✅ Consulter les détails de ses demandes</li>
+   354→   952→   952→      <li>❌ Ne peut pas voir les demandes des autres agents</li>
+   355→   953→   953→      <li>❌ Ne peut pas configurer les formulaires ni les étapes</li>
+   356→   954→   954→    </ul>
+   357→   955→   955→
+   358→   956→   956→    <h3><span class="role-badge role-validator">Validateur</span> Le validateur</h3>
+   359→   957→   957→    <p>Le validateur reçoit les demandes à traiter. Il n'a pas besoin d'être sur le réseau DREETS.</p>
+   360→   958→   958→    <ul>
+   361→   959→   959→      <li>✅ Valider ou refuser une demande (via le lien email)</li>
+   362→   960→   960→      <li>✅ Consulter les détails d'une demande à valider</li>
+   363→   961→   961→      <li>✅ Déléguer sa validation à un autre validateur</li>
+   364→   962→   962→      <li>✅ Suivre ses validations en attente et passées (page « Mes validations »)</li>
+   365→   963→   963→      <li>✅ Ajouter un commentaire lors de la validation ou du refus</li>
+   366→   964→   964→      <li>❌ Ne peut pas modifier une demande déjà soumise</li>
+   367→   965→   965→      <li>❌ Ne peut pas accéder au tableau de bord administrateur</li>
+   368→   966→   966→    </ul>
+   369→   967→   967→
+   370→   968→   968→    <h3><span class="role-badge role-admin">Admin</span> L'administrateur</h3>
+   371→   969→   969→    <p>L'administrateur configure et supervise l'application. Il a accès à toutes les fonctions de gestion.</p>
+   372→   970→   970→    <ul>
+   373→   971→   971→      <li>✅ Tout ce que peut faire un agent + un validateur</li>
+   374→   972→   972→      <li>✅ Voir le tableau de bord (toutes les demandes)</li>
+   375→   973→   973→      <li>✅ Créer, modifier et désactiver des formulaires</li>
+   376→   974→   974→      <li>✅ Configurer les étapes et les destinataires</li>
+   377→   975→   975→      <li>✅ Configurer les alertes de deadline</li>
+   378→   976→   976→      <li>✅ Consulter les statistiques et le monitoring</li>
+   379→   977→   977→      <li>✅ Gérer la conformité RGPD (export, suppression)</li>
+   380→   978→   978→      <li>✅ Sauvegarder et restaurer la base de données</li>
+   381→   979→   979→      <li>✅ Relancer manuellement un validateur</li>
+   382→   980→   980→      <li>✅ Annuler n'importe quelle demande en cours</li>
+   383→   981→   981→      <li>❌ Ne peut pas gérer les administrateurs</li>
+   384→   982→   982→      <li>❌ Ne peut pas modifier les paramètres SMTP et webhooks</li>
+   385→   983→   983→    </ul>
+   386→   984→   984→
+   387→   985→   985→    <h3><span class="role-badge role-superadmin">Super admin</span> Le super administrateur</h3>
+   388→   986→   986→    <p>Le super administrateur a tous les droits. Il y en a généralement un seul dans l'organisation.</p>
+   389→   987→   987→    <ul>
+   390→   988→   988→      <li>✅ Tout ce que peut faire un administrateur</li>
+   391→   989→   989→      <li>✅ Approuver ou refuser les demandes d'accès administrateur</li>
+   392→   990→   990→      <li>✅ Gérer la liste des administrateurs (ajouter, supprimer)</li>
+   393→   991→   991→      <li>✅ Configurer les paramètres SMTP (serveur, port, expéditeur)</li>
+   394→   992→   992→      <li>✅ Configurer les webhooks (URL, événements)</li>
+   395→   993→   993→    </ul>
+   396→   994→   994→
+   397→   995→   995→    <h3>Résumé des permissions</h3>
+   398→   996→   996→    <table class="perm-table">
+   399→   997→   997→      <thead>
+   400→   998→   998→        <tr>
+   401→   999→   999→          <th>Action</th>
+   402→  1000→  1000→          <th><span class="role-badge role-agent">Agent</span></th>
+   403→  1001→  1001→          <th><span class="role-badge role-validator">Validateur</span></th>
+   404→  1002→  1002→          <th><span class="role-badge role-admin">Admin</span></th>
+   405→  1003→  1003→          <th><span class="role-badge role-superadmin">Super admin</span></th>
+   406→  1004→  1004→        </tr>
+   407→  1005→  1005→      </thead>
+   408→  1006→  1006→      <tbody>
+   409→  1007→  1007→        <tr><td>Soumettre un formulaire</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   410→  1008→  1008→        <tr><td>Suivre ses demandes</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   411→  1009→  1009→        <tr><td>Annuler sa demande</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   412→  1010→  1010→        <tr><td>Valider / refuser</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   413→  1011→  1011→        <tr><td>Déléguer une validation</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   414→  1012→  1012→        <tr><td>Tableau de bord (toutes les demandes)</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   415→  1013→  1013→        <tr><td>Créer / modifier des formulaires</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   416→  1014→  1014→        <tr><td>Configurer les alertes</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   417→  1015→  1015→        <tr><td>Statistiques / monitoring</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   418→  1016→  1016→        <tr><td>Conformité RGPD</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   419→  1017→  1017→        <tr><td>Sauvegarde / restauration</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+   420→  1018→  1018→        <tr><td>Gérer les administrateurs</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
+   421→  1019→  1019→        <tr><td>Paramètres SMTP / webhooks</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
+   422→  1020→  1020→      </tbody>
+   423→  1021→  1021→    </table>
+   424→  1022→  1022→  </div>
+   425→  1023→  1023→
+   426→  1024→  1024→  <!-- ═══════════════════════════════════════════════════════════ -->
+   427→  1025→  1025→  <!-- 7. FAQ                                                     -->
+   428→  1026→  1026→  <!-- ═══════════════════════════════════════════════════════════ -->
+   429→  1027→  1027→  <div class="card" id="faq">
+   430→  1028→  1028→    <h2>7. FAQ — Questions fréquentes</h2>
+   431→  1029→  1029→
+   432→  1030→  1030→    <details>
+   433→  1031→  1031→      <summary>Je n'ai pas reçu l'email de validation</summary>
+   434→  1032→  1032→      <div class="detail-body">
+   435→  1033→  1033→        <p>Pas de panique ! Voici les vérifications à effectuer dans l'ordre :</p>
+   436→  1034→  1034→        <ol>
+   437→  1035→  1035→          <li><strong>Courrier indésirable (spam)</strong> — Regardez dans votre dossier spam ou courrier indésirable. C'est la cause la plus fréquente.</li>
+   438→  1036→  1036→          <li><strong>Adresse email</strong> — Vérifiez que votre adresse email est bien celle enregistrée comme destinataire de l'étape. Demandez à l'administrateur de vérifier.</li>
+   439→  1037→  1037→          <li><strong>Délai</strong> — L'email peut mettre quelques minutes à arriver. Attendez 15 minutes avant de conclure qu'il n'arrivera pas.</li>
+   440→  1038→  1038→          <li><strong>Relance automatique</strong> — Si l'email ne vous parvient pas, le système vous renverra un email après le délai configuré (48h par défaut).</li>
+   441→  1039→  1039→          <li><strong>Configuration SMTP</strong> — Si le problème persiste, l'administrateur peut vérifier les paramètres SMTP dans admin_settings.php.</li>
+   442→  1040→  1040→        </ol>
+   443→  1041→  1041→      </div>
+   444→  1042→  1042→    </details>
+   445→  1043→  1043→
+   446→  1044→  1044→    <details>
+   447→  1045→  1045→      <summary>Comment annuler ma demande ?</summary>
+   448→  1046→  1046→      <div class="detail-body">
+   449→  1047→  1047→        <p>Pour annuler une demande en cours :</p>
+   450→  1048→  1048→        <ol>
+   451→  1049→  1049→          <li>Rendez-vous sur la page <strong>« Mes demandes »</strong>.</li>
+   452→  1050→  1050→          <li>Trouvez la demande que vous souhaitez annuler.</li>
+   453→  1051→  1051→          <li>Cliquez sur le bouton <strong>« Annuler »</strong>.</li>
+   454→  1052→  1052→          <li>Confirmez l'annulation.</li>
+   455→  1053→  1053→        </ol>
+   456→  1054→  1054→        <p><strong>Attention :</strong> L'annulation est irréversible. La demande sera clôturée et les validateurs ne recevront plus de relances. Pour soumettre à nouveau, il faudra remplir un nouveau formulaire.</p>
+   457→  1055→  1055→      </div>
+   458→  1056→  1056→    </details>
+   459→  1057→  1057→
+   460→  1058→  1058→    <details>
+   461→  1059→  1059→      <summary>Puis-je déléguer ma validation ?</summary>
+   462→  1060→  1060→      <div class="detail-body">
+   463→  1061→  1061→        <p><strong>Oui !</strong> Si vous n'êtes pas la bonne personne pour valider, vous pouvez déléguer :</p>
+   464→  1062→  1062→        <ol>
+   465→  1063→  1063→          <li>Accédez à <strong>« Mes validations »</strong>.</li>
+   466→  1064→  1064→          <li>Trouvez la demande à déléguer et cliquez sur <strong>« Déléguer »</strong>.</li>
+   467→  1065→  1065→          <li>Entrez l'adresse email du collègue à qui vous déléguez.</li>
+   468→  1066→  1066→          <li>Ajoutez un motif (facultatif) et validez.</li>
+   469→  1067→  1067→        </ol>
+   470→  1068→  1068→        <p>Le système annule votre lien de validation et envoie un nouveau lien au délégataire. La délégation est enregistrée dans l'historique.</p>
+   471→  1069→  1069→      </div>
+   472→  1070→  1070→    </details>
+   473→  1071→  1071→
+   474→  1072→  1072→    <details>
+   475→  1073→  1073→      <summary>Combien de temps est conservée ma demande ?</summary>
+   476→  1074→  1074→      <div class="detail-body">
+   477→  1075→  1075→        <p>Les données sont conservées pendant la <strong>durée configurée par l'administrateur</strong> (par défaut : <strong>24 mois</strong> après la clôture de la demande).</p>
+   478→  1076→  1076→        <p>Après ce délai, les données sont automatiquement supprimées par la <strong>purge automatique RGPD</strong>. Cette purge s'exécute périodiquement pour garantir la conformité au RGPD.</p>
+   479→  1077→  1077→        <p>Vous pouvez demander la suppression anticipée de vos données en contactant l'administrateur ou le CIL DREETS.</p>
+   480→  1078→  1078→      </div>
+   481→  1079→  1079→    </details>
+   482→  1080→  1080→
+   483→  1081→  1081→    <details>
+   484→  1082→  1082→      <summary>Comment ajouter un nouveau formulaire ?</summary>
+   485→  1083→  1083→      <div class="detail-body">
+   486→  1084→  1084→        <p>Pour créer un nouveau formulaire (réservé aux administrateurs) :</p>
+   487→  1085→  1085→        <ol>
+   488→  1086→  1086→          <li>Accédez à <strong>admin_forms.php</strong>.</li>
+   489→  1087→  1087→          <li>Dans la section « Ajouter un formulaire », renseignez :
+   490→  1088→  1088→            <ul>
+   491→  1089→  1089→              <li><strong>Slug</strong> — Un identifiant court, sans espaces ni accents (ex : <code>demande_conge</code>). Il sera utilisé dans l'URL.</li>
+   492→  1090→  1090→              <li><strong>Libellé</strong> — Le titre affiché (ex : « Demande de congé »).</li>
+   493→  1091→  1091→              <li><strong>Description</strong> — Un texte explicatif affiché en haut du formulaire.</li>
+   494→  1092→  1092→            </ul>
+   495→  1093→  1093→          </li>
+   496→  1094→  1094→          <li>Cliquez sur <strong>Ajouter</strong>.</li>
+   497→  1095→  1095→          <li>Ajoutez les <strong>champs du formulaire</strong> (texte, liste, case à cocher…).</li>
+   498→  1096→  1096→          <li>Ajoutez les <strong>étapes de validation</strong> et les <strong>destinataires</strong> pour chaque étape.</li>
+   499→  1097→  1097→        </ol>
+   500→  1098→  1098→      </div>
+
+[showing lines 1-500 of 502; use offset=501 with limit to continue reading]
