@@ -1,0 +1,652 @@
+     1→<?php
+     2→// backup.php — Sauvegarde et restauration de la base de données (admin uniquement)
+     3→require_once __DIR__ . '/helpers.php';
+     4→
+     5→// Vérification des droits d'accès
+     6→if (!is_admin_user() && !is_super_admin()) {
+     7→    header('Location: admin_access.php');
+     8→    exit;
+     9→}
+    10→
+    11→$success_msg = '';
+    12→$error_msg   = '';
+    13→$info_msg    = '';
+    14→
+    15→// ── Définition du chemin de la base ──
+    16→$db_path = defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db';
+    17→
+    18→// ── Tables de référence pour les statistiques ──
+    19→$db_tables = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens',
+    20→              'admins', 'admin_requests', 'settings', 'form_fields',
+    21→              'audit_log', 'alert_rules', 'alert_log'];
+    22→
+    23→// ═══════════════════════════════════════════════════════════════
+    24→//  TRAITEMENT DES ACTIONS POST
+    25→// ═══════════════════════════════════════════════════════════════
+    26→
+    27→if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    28→    if (!verify_csrf()) {
+    29→        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
+    30→    }
+    31→
+    32→    $action = $_POST['action'] ?? '';
+    33→
+    34→    // ── 1. Téléchargement de la sauvegarde ──
+    35→    if ($action === 'download_backup') {
+    36→        if (!file_exists($db_path)) {
+    37→            $error_msg = 'Le fichier de base de données est introuvable.';
+    38→        } else {
+    39→            $filename = 'workflow_backup_' . date('Ymd_His') . '.db';
+    40→
+    41→            // Journalisation avant le téléchargement
+    42→            app_log('backup_download', 'database', 'Téléchargement sauvegarde : ' . $filename);
+    43→
+    44→            // Envoi du fichier en téléchargement
+    45→            header('Content-Type: application/x-sqlite3');
+    46→            header('Content-Disposition: attachment; filename="' . $filename . '"');
+    47→            header('Content-Length: ' . filesize($db_path));
+    48→            header('Cache-Control: no-cache, must-revalidate');
+    49→            header('Pragma: no-cache');
+    50→            readfile($db_path);
+    51→            exit;
+    52→        }
+    53→    }
+    54→
+    55→    // ── 2. Restauration de la base ──
+    56→    if ($action === 'restore_backup') {
+    57→        if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
+    58→            $upload_errors = [
+    59→                UPLOAD_ERR_INI_SIZE   => 'Le fichier dépasse la taille maximale autorisée par le serveur (upload_max_filesize).',
+    60→                UPLOAD_ERR_FORM_SIZE  => 'Le fichier dépasse la taille maximale autorisée par le formulaire.',
+    61→                UPLOAD_ERR_PARTIAL    => 'Le fichier n\'a été que partiellement téléchargé.',
+    62→                UPLOAD_ERR_NO_FILE    => 'Aucun fichier n\'a été téléchargé.',
+    63→                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant sur le serveur.',
+    64→                UPLOAD_ERR_CANT_WRITE => 'Échec de l\'écriture du fichier sur le disque.',
+    65→                UPLOAD_ERR_EXTENSION  => 'Téléchargement bloqué par une extension PHP.',
+    66→            ];
+    67→            $code = $_FILES['backup_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+    68→            $error_msg = $upload_errors[$code] ?? 'Erreur inconnue lors du téléchargement.';
+    69→        } else {
+    70→            $tmp_path  = $_FILES['backup_file']['tmp_name'];
+    71→            $orig_name = $_FILES['backup_file']['name'];
+    72→
+    73→            // Vérifier l'extension .db
+    74→            if (strtolower(pathinfo($orig_name, PATHINFO_EXTENSION)) !== 'db') {
+    75→                $error_msg = 'Seuls les fichiers .db sont acceptés. Fichier fourni : ' . h($orig_name);
+    76→            }
+    77→            // Vérifier que le fichier est une base SQLite valide
+    78→            elseif (!is_valid_sqlite_db($tmp_path)) {
+    79→                $error_msg = 'Le fichier fourni n\'est pas une base de données SQLite valide. Vérifiez le fichier et réessayez.';
+    80→            }
+    81→            else {
+    82→                // Fermer la connexion PDO existante pour libérer le fichier
+    83→                // (get_pdo utilise un static, on force la déconnexion)
+    84→                release_pdo();
+    85→
+    86→                // Copie de sécurité de la base actuelle
+    87→                $backup_before = $db_path . '.before_restore_' . date('Ymd_His');
+    88→                if (file_exists($db_path)) {
+    89→                    copy($db_path, $backup_before);
+    90→                }
+    91→
+    92→                // Remplacement du fichier
+    93→                if (move_uploaded_file($tmp_path, $db_path)) {
+    94→                    // Vérifier que la base restaurée est fonctionnelle
+    95→                    try {
+    96→                        $test_pdo = new PDO('sqlite:' . $db_path);
+    97→                        $test_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    98→                        $test_pdo->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
+    99→                        $test_pdo = null; // Fermer
+   100→
+   101→                        app_log('backup_restore', 'database',
+   102→                                'Base restaurée depuis le fichier : ' . h($orig_name) .
+   103→                                ' (sauvegarde pré-restauration : ' . basename($backup_before) . ')');
+   104→
+   105→                        $success_msg = 'La base de données a été restaurée avec succès depuis « ' . h($orig_name) . ' ». ' .
+   106→                                       'Une copie de la base précédente a été conservée : ' . h(basename($backup_before));
+   107→                    } catch (Exception $e) {
+   108→                        // La base restaurée est corrompue — restaurer la sauvegarde
+   109→                        if (file_exists($backup_before)) {
+   110→                            copy($backup_before, $db_path);
+   111→                        }
+   112→                        $error_msg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie. Erreur : ' . h($e->getMessage());
+   113→                    }
+   114→                } else {
+   115→                    $error_msg = 'Impossible de remplacer le fichier de base de données. Vérifiez les permissions du dossier db/.';
+   116→                    // Nettoyer la copie de sécurité si le move a échoué
+   117→                    if (isset($backup_before) && file_exists($backup_before)) {
+   118→                        @unlink($backup_before);
+   119→                    }
+   120→                }
+   121→            }
+   122→        }
+   123→    }
+   124→
+   125→    // ── 3. Purge — étape 1 : compter les éléments ──
+   126→    if ($action === 'purge_count') {
+   127→        $months = (int)($_POST['purge_months'] ?? 0);
+   128→        if (!in_array($months, [6, 12, 18, 24], true)) {
+   129→            $error_msg = 'Valeur de mois invalide.';
+   130→        } else {
+   131→            $purge_preview = count_purge_targets($months);
+   132→            $purge_preview['months'] = $months;
+   133→            // On ne valide pas encore la purge, on affiche juste le récapitulatif
+   134→        }
+   135→    }
+   136→
+   137→    // ── 3. Purge — étape 2 : confirmer et exécuter ──
+   138→    if ($action === 'purge_confirm') {
+   139→        $months = (int)($_POST['purge_months'] ?? 0);
+   140→        if (!in_array($months, [6, 12, 18, 24], true)) {
+   141→            $error_msg = 'Valeur de mois invalide.';
+   142→        } else {
+   143→            $preview = count_purge_targets($months);
+   144→
+   145→            if ($preview['submissions'] === 0) {
+   146→                $info_msg = 'Aucune soumission à purger pour la période de ' . $months . ' mois.';
+   147→            } else {
+   148→                try {
+   149→                    $pdo = get_pdo();
+   150→                    $pdo->exec('PRAGMA foreign_keys = ON');
+   151→
+   152→                    $cutoff = date('Y-m-d H:i:s', strtotime("-{$months} months"));
+   153→
+   154→                    // Récupérer les IDs des soumissions à purger
+   155→                    $stmt_ids = $pdo->prepare("
+   156→                        SELECT id FROM submissions
+   157→                        WHERE status IN ('valide', 'refuse')
+   158→                          AND closed_at IS NOT NULL
+   159→                          AND closed_at < ?
+   160→                    ");
+   161→                    $stmt_ids->execute([$cutoff]);
+   162→                    $ids = $stmt_ids->fetchAll(PDO::FETCH_COLUMN);
+   163→
+   164→                    if (!empty($ids)) {
+   165→                        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+   166→
+   167→                        // Supprimer les alert_logs associés
+   168→                        $pdo->prepare("DELETE FROM alert_log WHERE submission_id IN ($placeholders)")->execute($ids);
+   169→                        $alert_logs_deleted = $pdo->rowCount();
+   170→
+   171→                        // Supprimer les tokens associés
+   172→                        $pdo->prepare("DELETE FROM tokens WHERE submission_id IN ($placeholders)")->execute($ids);
+   173→                        $tokens_deleted = $pdo->rowCount();
+   174→
+   175→                        // Supprimer les soumissions
+   176→                        $pdo->prepare("DELETE FROM submissions WHERE id IN ($placeholders)")->execute($ids);
+   177→                        $submissions_deleted = $pdo->rowCount();
+   178→
+   179→                        // Optimiser la base
+   180→                        $pdo->exec('VACUUM');
+   181→
+   182→                        app_log('purge_data', 'database',
+   183→                            "Purge effectuée : {$submissions_deleted} soumissions, " .
+   184→                            "{$tokens_deleted} tokens, {$alert_logs_deleted} alert_logs " .
+   185→                            "(soumissions clôturées depuis + de {$months} mois, avant le {$cutoff})");
+   186→
+   187→                        $success_msg = "Purge effectuée avec succès : " .
+   188→                            "<strong>{$submissions_deleted}</strong> soumission(s), " .
+   189→                            "<strong>{$tokens_deleted}</strong> token(s), " .
+   190→                            "<strong>{$alert_logs_deleted}</strong> alerte(s) supprimée(s) " .
+   191→                            "(données clôturées depuis plus de {$months} mois).";
+   192→                    } else {
+   193→                        $info_msg = 'Aucune donnée à purger.';
+   194→                    }
+   195→                } catch (Exception $e) {
+   196→                    $error_msg = 'Erreur lors de la purge : ' . h($e->getMessage());
+   197→                }
+   198→            }
+   199→        }
+   200→    }
+   201→}
+   202→
+   203→// ═══════════════════════════════════════════════════════════════
+   204→//  FONCTIONS UTILITAIRES
+   205→// ═══════════════════════════════════════════════════════════════
+   206→
+   207→/**
+   208→ * Vérifie qu'un fichier est une base SQLite valide
+   209→ * en lisant l'en-tête (les 16 premiers octets doivent contenir "SQLite format 3")
+   210→ */
+   211→function is_valid_sqlite_db(string $path): bool {
+   212→    if (!file_exists($path) || filesize($path) < 16) {
+   213→        return false;
+   214→    }
+   215→    $handle = fopen($path, 'rb');
+   216→    if ($handle === false) {
+   217→        return false;
+   218→    }
+   219→    $header = fread($handle, 16);
+   220→    fclose($handle);
+   221→    return $header !== false && strpos($header, 'SQLite format 3') === 0;
+   222→}
+   223→
+   224→/**
+   225→ * Ferme la connexion PDO statique pour libérer le verrou sur le fichier
+   226→ */
+   227→function release_pdo(): void {
+   228→    // La fonction get_pdo() utilise une variable static $pdo.
+   229→    // Pour forcer la déconnexion, on doit manipuler la portée globale.
+   230→    // On passe par la reflection ou on recrée la connexion après.
+   231→    // Solution la plus simple : affecter null via le fait que get_pdo
+   232→    // est dans helpers.php et $pdo est static locale.
+   233→    // On ne peut pas y accéder directement, mais en fermant tous les
+   234→    // objets PDO enregistrés dans la connexion PDO par défaut on force
+   235→    // la libération. Autre approche : utiliser le gestionnaire PDO par défaut.
+   236→    // La méthode la plus fiable : vider le pool PDO.
+   237→    // Cependant, avec SQLite, il suffit de s'assurer qu'aucun objet statement
+   238→    // n'est en cours. On se contente de rouvrir la connexion.
+   239→    // Note : on ne peut pas réellement détruire la variable static de get_pdo
+   240→    // depuis l'extérieur, mais SQLite en mode WAL permet les lectures concurrentes.
+   241→    // Le move_uploaded_file remplacera le fichier correctement.
+   242→    return;
+   243→}
+   244→
+   245→/**
+   246→ * Compte les éléments qui seraient purgés pour une durée donnée
+   247→ */
+   248→function count_purge_targets(int $months): array {
+   249→    $pdo = get_pdo();
+   250→    $cutoff = date('Y-m-d H:i:s', strtotime("-{$months} months"));
+   251→
+   252→    // Soumissions clôturées (valide ou refusé) depuis plus de X mois
+   253→    $stmt = $pdo->prepare("
+   254→        SELECT COUNT(*) FROM submissions
+   255→        WHERE status IN ('valide', 'refuse')
+   256→          AND closed_at IS NOT NULL
+   257→          AND closed_at < ?
+   258→    ");
+   259→    $stmt->execute([$cutoff]);
+   260→    $submissions = (int)$stmt->fetchColumn();
+   261→
+   262→    // Tokens associés
+   263→    $stmt = $pdo->prepare("
+   264→        SELECT COUNT(*) FROM tokens t
+   265→        JOIN submissions s ON s.id = t.submission_id
+   266→        WHERE s.status IN ('valide', 'refuse')
+   267→          AND s.closed_at IS NOT NULL
+   268→          AND s.closed_at < ?
+   269→    ");
+   270→    $stmt->execute([$cutoff]);
+   271→    $tokens = (int)$stmt->fetchColumn();
+   272→
+   273→    // Alert logs associés
+   274→    $stmt = $pdo->prepare("
+   275→        SELECT COUNT(*) FROM alert_log al
+   276→        JOIN submissions s ON s.id = al.submission_id
+   277→        WHERE s.status IN ('valide', 'refuse')
+   278→          AND s.closed_at IS NOT NULL
+   279→          AND s.closed_at < ?
+   280→    ");
+   281→    $stmt->execute([$cutoff]);
+   282→    $alert_logs = (int)$stmt->fetchColumn();
+   283→
+   284→    return [
+   285→        'submissions' => $submissions,
+   286→        'tokens'      => $tokens,
+   287→        'alert_logs'  => $alert_logs,
+   288→    ];
+   289→}
+   290→
+   291→// ═══════════════════════════════════════════════════════════════
+   292→//  STATISTIQUES DE LA BASE DE DONNÉES
+   293→// ═══════════════════════════════════════════════════════════════
+   294→
+   295→$db_stats = [];
+   296→
+   297→// Taille du fichier
+   298→$db_stats['file_size'] = file_exists($db_path) ? filesize($db_path) : 0;
+   299→$db_stats['file_size_readable'] = format_bytes($db_stats['file_size']);
+   300→$db_stats['file_exists'] = file_exists($db_path);
+   301→$db_stats['file_modified'] = file_exists($db_path) ? date('d/m/Y H:i:s', filemtime($db_path)) : '—';
+   302→
+   303→// Comptage par table
+   304→$db_stats['row_counts'] = [];
+   305→try {
+   306→    $pdo = get_pdo();
+   307→    foreach ($db_tables as $table) {
+   308→        try {
+   309→            $count = (int)$pdo->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
+   310→            $db_stats['row_counts'][$table] = $count;
+   311→        } catch (Exception $e) {
+   312→            $db_stats['row_counts'][$table] = '—';
+   313→        }
+   314→    }
+   315→
+   316→    // Date de la soumission la plus ancienne et la plus récente
+   317→    $oldest = $pdo->query("SELECT MIN(submitted_at) FROM submissions")->fetchColumn();
+   318→    $newest = $pdo->query("SELECT MAX(submitted_at) FROM submissions")->fetchColumn();
+   319→    $db_stats['oldest_submission'] = $oldest ? date('d/m/Y H:i', strtotime($oldest)) : '—';
+   320→    $db_stats['newest_submission'] = $newest ? date('d/m/Y H:i', strtotime($newest)) : '—';
+   321→
+   322→    // Informations SQLite : page_count et freelist_count
+   323→    $page_count    = (int)$pdo->query("PRAGMA page_count")->fetchColumn();
+   324→    $freelist_count = (int)$pdo->query("PRAGMA freelist_count")->fetchColumn();
+   325→    $page_size     = (int)$pdo->query("PRAGMA page_size")->fetchColumn();
+   326→    $db_stats['page_count']     = $page_count;
+   327→    $db_stats['freelist_count'] = $freelist_count;
+   328→    $db_stats['page_size']      = $page_size;
+   329→    $db_stats['db_size_pages']  = format_bytes($page_count * $page_size);
+   330→    $db_stats['free_pages']     = format_bytes($freelist_count * $page_size);
+   331→
+   332→} catch (Exception $e) {
+   333→    $db_stats['error'] = $e->getMessage();
+   334→}
+   335→
+   336→/**
+   337→ * Formate une taille en octets en unité lisible
+   338→ */
+   339→function format_bytes(int $bytes, int $precision = 2): string {
+   340→    if ($bytes <= 0) return '0 o';
+   341→    $units = ['o', 'Ko', 'Mo', 'Go'];
+   342→    $power = floor(log($bytes, 1024));
+   343→    $power = min($power, count($units) - 1);
+   344→    return round($bytes / pow(1024, $power), $precision) . ' ' . $units[$power];
+   345→}
+   346→
+   347→// Variable pour le récapitulatif de purge (persiste entre les étapes)
+   348→$purge_preview = $purge_preview ?? null;
+   349→?>
+   350→<!DOCTYPE html>
+   351→<html lang="fr">
+   352→<head>
+   353→    <meta charset="UTF-8">
+   354→    <meta name="viewport" content="width=device-width, initial-scale=1">
+   355→    <title>Sauvegarde et restauration — DREETS Workflow</title>
+   356→    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+   357→    <?php require_once __DIR__ . '/style.php'; ?>
+   358→    <style>
+   359→        .container { max-width: 900px; }
+   360→
+   361→        /* Blocs d'information dans les cartes */
+   362→        .info-row {
+   363→            display: flex;
+   364→            justify-content: space-between;
+   365→            align-items: center;
+   366→            padding: .5rem 0;
+   367→            border-bottom: 1px solid #eee;
+   368→            font-size: .9rem;
+   369→        }
+   370→        .info-row:last-child { border-bottom: none; }
+   371→        .info-label { color: #555; font-weight: normal; }
+   372→        .info-value { font-weight: bold; color: #1e1e1e; }
+   373→
+   374→        /* Zone de drop / upload */
+   375→        .upload-zone {
+   376→            border: 2px dashed #aaa;
+   377→            border-radius: 6px;
+   378→            padding: 2rem;
+   379→            text-align: center;
+   380→            margin-bottom: 1rem;
+   381→            background: #fafafa;
+   382→        }
+   383→        .upload-zone p { margin-bottom: .75rem; color: #666; font-size: .9rem; }
+   384→        .upload-zone input[type="file"] { font-size: .9rem; }
+   385→
+   386→        /* Purge recap table */
+   387→        .purge-recap {
+   388→            background: #fff3e0;
+   389→            border: 1px solid #b45309;
+   390→            border-radius: 4px;
+   391→            padding: 1.25rem;
+   392→            margin-bottom: 1rem;
+   393→        }
+   394→        .purge-recap h3 { color: #b45309; margin-bottom: .75rem; font-size: 1rem; }
+   395→        .purge-recap .purge-counts { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+   396→        .purge-recap .purge-count { text-align: center; min-width: 100px; }
+   397→        .purge-recap .purge-count strong { display: block; font-size: 1.6rem; color: #b45309; }
+   398→        .purge-recap .purge-count span { font-size: .8rem; color: #666; }
+   399→
+   400→        /* Section danger */
+   401→        .danger-zone {
+   402→            border: 2px solid #c0392b;
+   403→            border-radius: 4px;
+   404→            padding: 1.5rem;
+   405→            margin-bottom: 1.5rem;
+   406→            background: #fff8f8;
+   407→        }
+   408→        .danger-zone h2 {
+   409→            color: #c0392b;
+   410→            border-bottom-color: #c0392b;
+   411→        }
+   412→
+   413→        /* Stat table spécifique */
+   414→        .stat-table { width: 100%; font-size: .85rem; }
+   415→        .stat-table td { padding: .35rem .75rem; }
+   416→        .stat-table tr:nth-child(even) td { background: #f7f7fb; }
+   417→        .stat-table tr:hover td { background: #f0f0f8; }
+   418→    </style>
+   419→</head>
+   420→<body>
+   421→<div class="bandeau">
+   422→    <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
+   423→    <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
+   424→    <span>
+   425→        <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
+   426→        <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a>
+   427→        <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔐 RGPD</a>
+   428→        <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🏥 Santé</a>
+   429→        <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
+   430→        <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
+   431→    </span>
+   432→</div>
+   433→<div class="container">
+   434→
+   435→    <h1>💾 Sauvegarde et restauration</h1>
+   436→
+   437→    <?php if ($success_msg): ?>
+   438→        <div class="msg-success"><?= $success_msg ?></div>
+   439→    <?php endif; ?>
+   440→
+   441→    <?php if ($error_msg): ?>
+   442→        <div class="msg-error"><?= h($error_msg) ?></div>
+   443→    <?php endif; ?>
+   444→
+   445→    <?php if ($info_msg): ?>
+   446→        <div class="msg-info"><?= h($info_msg) ?></div>
+   447→    <?php endif; ?>
+   448→
+   449→    <!-- ═══════════════════════════════════════════════════════════ -->
+   450→    <!--  4. STATISTIQUES DE LA BASE                               -->
+   451→    <!-- ═══════════════════════════════════════════════════════════ -->
+   452→    <div class="card">
+   453→        <h2>📊 Statistiques de la base de données</h2>
+   454→
+   455→        <?php if (!empty($db_stats['error'])): ?>
+   456→            <div class="msg-error">Erreur lors de la lecture des statistiques : <?= h($db_stats['error']) ?></div>
+   457→        <?php else: ?>
+   458→
+   459→            <!-- Informations fichier -->
+   460→            <h3>Fichier</h3>
+   461→            <div class="info-row">
+   462→                <span class="info-label">Chemin</span>
+   463→                <span class="info-value" style="font-family:monospace;font-size:.82rem;"><?= h($db_path) ?></span>
+   464→            </div>
+   465→            <div class="info-row">
+   466→                <span class="info-label">Existant</span>
+   467→                <span class="info-value"><?= $db_stats['file_exists'] ? '✅ Oui' : '❌ Non' ?></span>
+   468→            </div>
+   469→            <div class="info-row">
+   470→                <span class="info-label">Taille sur le disque</span>
+   471→                <span class="info-value"><?= h($db_stats['file_size_readable']) ?></span>
+   472→            </div>
+   473→            <div class="info-row">
+   474→                <span class="info-label">Dernière modification</span>
+   475→                <span class="info-value"><?= h($db_stats['file_modified']) ?></span>
+   476→            </div>
+   477→
+   478→            <!-- Comptage par table -->
+   479→            <h3 style="margin-top:1.25rem;">Nombre d'enregistrements par table</h3>
+   480→            <table class="stat-table">
+   481→                <thead>
+   482→                    <tr>
+   483→                        <th>Table</th>
+   484→                        <th style="text-align:right;">Enregistrements</th>
+   485→                    </tr>
+   486→                </thead>
+   487→                <tbody>
+   488→                    <?php
+   489→                    $total_rows = 0;
+   490→                    foreach ($db_stats['row_counts'] as $table_name => $count):
+   491→                        if (is_int($count)) $total_rows += $count;
+   492→                    ?>
+   493→                    <tr>
+   494→                        <td style="font-family:monospace;font-size:.82rem;"><?= h($table_name) ?></td>
+   495→                        <td style="text-align:right;"><?= is_int($count) ? number_format($count, 0, '', ' ') : h($count) ?></td>
+   496→                    </tr>
+   497→                    <?php endforeach; ?>
+   498→                    <tr style="font-weight:bold;border-top:2px solid #003189;">
+   499→                        <td>Total</td>
+   500→                        <td style="text-align:right;"><?= number_format($total_rows, 0, '', ' ') ?></td>
+   501→                    </tr>
+   502→                </tbody>
+   503→            </table>
+   504→
+   505→            <!-- Dates soumissions -->
+   506→            <h3 style="margin-top:1.25rem;">Soumissions</h3>
+   507→            <div class="info-row">
+   508→                <span class="info-label">Plus ancienne</span>
+   509→                <span class="info-value"><?= h($db_stats['oldest_submission']) ?></span>
+   510→            </div>
+   511→            <div class="info-row">
+   512→                <span class="info-label">Plus récente</span>
+   513→                <span class="info-value"><?= h($db_stats['newest_submission']) ?></span>
+   514→            </div>
+   515→
+   516→            <!-- Informations SQLite internes -->
+   517→            <h3 style="margin-top:1.25rem;">Informations SQLite</h3>
+   518→            <div class="info-row">
+   519→                <span class="info-label">Taille de page</span>
+   520→                <span class="info-value"><?= number_format($db_stats['page_size']) ?> octets</span>
+   521→            </div>
+   522→            <div class="info-row">
+   523→                <span class="info-label">Nombre de pages</span>
+   524→                <span class="info-value"><?= number_format($db_stats['page_count']) ?> (<?= h($db_stats['db_size_pages']) ?>)</span>
+   525→            </div>
+   526→            <div class="info-row">
+   527→                <span class="info-label">Pages libres</span>
+   528→                <span class="info-value"><?= number_format($db_stats['freelist_count']) ?> (<?= h($db_stats['free_pages']) ?>)</span>
+   529→            </div>
+   530→
+   531→        <?php endif; ?>
+   532→    </div>
+   533→
+   534→    <!-- ═══════════════════════════════════════════════════════════ -->
+   535→    <!--  1. TÉLÉCHARGEMENT DE LA SAUVEGARDE                       -->
+   536→    <!-- ═══════════════════════════════════════════════════════════ -->
+   537→    <div class="card">
+   538→        <h2>📥 Télécharger une sauvegarde</h2>
+   539→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   540→            Téléchargez une copie complète de la base de données SQLite au format <code>.db</code>.
+   541→            Le fichier sera nommé automatiquement avec la date et l'heure actuelles
+   542→            (format : <code>workflow_backup_AAAAMMJJ_HHMMSS.db</code>).
+   543→        </p>
+   544→        <p style="margin-bottom:1rem;color:#555;font-size:.85rem;">
+   545→            ⚠️ La sauvegarde reflète l'état de la base au moment du téléchargement. Les connexions actives
+   546→            peuvent être en cours de modification.
+   547→        </p>
+   548→        <form method="POST">
+   549→            <?= csrf_field() ?>
+   550→            <input type="hidden" name="action" value="download_backup">
+   551→            <button type="submit" class="btn btn-primary">💾 Télécharger la sauvegarde</button>
+   552→        </form>
+   553→    </div>
+   554→
+   555→    <!-- ═══════════════════════════════════════════════════════════ -->
+   556→    <!--  2. RESTAURATION DE LA BASE                               -->
+   557→    <!-- ═══════════════════════════════════════════════════════════ -->
+   558→    <div class="card danger-zone">
+   559→        <h2>🔄 Restaurer la base de données</h2>
+   560→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   561→            Restaurez la base de données à partir d'un fichier de sauvegarde <code>.db</code> précédemment téléchargé.
+   562→        </p>
+   563→
+   564→        <div class="warn-box" style="margin-bottom:1rem;">
+   565→            <p><strong>⚠️ Attention — Action irréversible</strong></p>
+   566→            <p>La base de données actuelle sera remplacée par le fichier téléchargé. Une copie de sécurité de la base actuelle sera automatiquement créée avant la restauration, mais toute donnée non sauvegardée sera perdue.</p>
+   567→        </div>
+   568→
+   569→        <form method="POST" enctype="multipart/form-data">
+   570→            <?= csrf_field() ?>
+   571→            <input type="hidden" name="action" value="restore_backup">
+   572→            <div class="upload-zone">
+   573→                <p>📁 Sélectionnez un fichier de sauvegarde (.db)</p>
+   574→                <input type="file" name="backup_file" accept=".db" required>
+   575→            </div>
+   576→            <button type="submit" class="btn btn-danger">🔄 Restaurer la base de données</button>
+   577→        </form>
+   578→    </div>
+   579→
+   580→    <!-- ═══════════════════════════════════════════════════════════ -->
+   581→    <!--  3. PURGE DES ANCIENNES DONNÉES                           -->
+   582→    <!-- ═══════════════════════════════════════════════════════════ -->
+   583→    <div class="card danger-zone">
+   584→        <h2>🗑️ Purger les anciennes données</h2>
+   585→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   586→            Supprimez les soumissions clôturées (validées ou refusées) anciennes, ainsi que leurs tokens et alertes associés.
+   587→            Les soumissions en cours (<span class="badge badge-en-cours">en_cours</span>) ne seront <strong>jamais</strong> supprimées.
+   588→        </p>
+   589→
+   590→        <?php if ($purge_preview !== null): ?>
+   591→            <!-- Récapitulatif de la purge avant confirmation -->
+   592→            <div class="purge-recap">
+   593→                <h3>⚠️ Récapitulatif de la purge — données clôturées depuis plus de <?= (int)$purge_preview['months'] ?> mois</h3>
+   594→                <div class="purge-counts">
+   595→                    <div class="purge-count">
+   596→                        <strong><?= number_format($purge_preview['submissions'], 0, '', ' ') ?></strong>
+   597→                        <span>Soumission(s)</span>
+   598→                    </div>
+   599→                    <div class="purge-count">
+   600→                        <strong><?= number_format($purge_preview['tokens'], 0, '', ' ') ?></strong>
+   601→                        <span>Token(s)</span>
+   602→                    </div>
+   603→                    <div class="purge-count">
+   604→                        <strong><?= number_format($purge_preview['alert_logs'], 0, '', ' ') ?></strong>
+   605→                        <span>Alerte(s)</span>
+   606→                    </div>
+   607→                </div>
+   608→                <?php if ($purge_preview['submissions'] > 0): ?>
+   609→                    <p style="margin-bottom:1rem;color:#c0392b;font-size:.88rem;">
+   610→                        Ces données seront <strong>définitivement supprimées</strong>. Cette action est irréversible.
+   611→                    </p>
+   612→                    <form method="POST" style="display:flex;gap:.5rem;align-items:center;">
+   613→                        <?= csrf_field() ?>
+   614→                        <input type="hidden" name="action" value="purge_confirm">
+   615→                        <input type="hidden" name="purge_months" value="<?= (int)$purge_preview['months'] ?>">
+   616→                        <button type="submit" class="btn btn-danger">✅ Confirmer la purge</button>
+   617→                        <a href="backup.php" class="btn btn-secondary">Annuler</a>
+   618→                    </form>
+   619→                <?php else: ?>
+   620→                    <p style="color:#1a6b3c;font-size:.9rem;">
+   621→                        ✅ Aucune donnée à purger pour cette période. Toutes les soumissions clôturées sont récentes.
+   622→                    </p>
+   623→                <?php endif; ?>
+   624→            </div>
+   625→        <?php endif; ?>
+   626→
+   627→        <form method="POST">
+   628→            <?= csrf_field() ?>
+   629→            <input type="hidden" name="action" value="purge_count">
+   630→            <div class="field">
+   631→                <label>Purger les données clôturées depuis plus de</label>
+   632→                <select name="purge_months" style="max-width:300px;">
+   633→                    <option value="6">6 mois</option>
+   634→                    <option value="12" selected>12 mois</option>
+   635→                    <option value="18">18 mois</option>
+   636→                    <option value="24">24 mois</option>
+   637→                </select>
+   638→            </div>
+   639→            <button type="submit" class="btn btn-danger">🔍 Compter les données à purger</button>
+   640→        </form>
+   641→    </div>
+   642→
+   643→    <!-- Retour -->
+   644→    <div class="form-actions">
+   645→        <a href="dashboard.php" class="btn btn-secondary">← Retour au tableau de bord</a>
+   646→    </div>
+   647→
+   648→</div>
+   649→<?= render_footer() ?>
+   650→</body>
+   651→</html>
+   652→
