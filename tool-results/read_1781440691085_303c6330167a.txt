@@ -1,0 +1,502 @@
+     1→<?php
+     2→require_once __DIR__ . '/config.php';
+     3→session_start();
+     4→
+     5→// ── TEST MODE ──────────────────────────────────────────────────
+     6→// Activé par le header HTTP X-Test-Mode: 1
+     7→// Permet les tests automatisés via curl sans SMTP, sans CSRF, avec
+     8→// identification par header X-Test-User au lieu de AUTH_USER (IIS).
+     9→define('TEST_MODE', !empty($_SERVER['HTTP_X_TEST_MODE']));
+    10→
+    11→// En mode test, supprimer les warnings PHP qui corrompent le JSON
+    12→if (TEST_MODE) {
+    13→    error_reporting(E_ERROR | E_PARSE);
+    14→    ini_set('display_errors', '0');
+    15→}
+    16→
+    17→// File d'attente des mails interceptés en mode test (acces global)
+    18→$GLOBALS['_test_mails'] = [];
+    19→
+    20→// Base de données test séparée pour ne pas polluer la vraie DB
+    21→if (TEST_MODE) {
+    22→    $test_db_path = __DIR__ . '/db/workflow_test.db';
+    23→    // Définir DB_PATH avant que config.php ne soit déjà chargé — on override via constante
+    24→    // Comme DB_PATH est déjà définie, on ne peut pas la redéfinir. On utilise un flag global.
+    25→    $GLOBALS['_test_db_path'] = $test_db_path;
+    26→}
+    27→// Tentative d'inclusion de vendor/autoload.php, mais ignorée si non présente
+    28→require_once __DIR__ . '/PHPMailer/Exception.php';
+    29→require_once __DIR__ . '/PHPMailer/PHPMailer.php';
+    30→require_once __DIR__ . '/PHPMailer/SMTP.php';
+    31→use PHPMailer\PHPMailer\PHPMailer;
+    32→
+    33→// ── UTILITAIRES ──────────────────────────────────────────────
+    34→function get_auth_user(): string {
+    35→    // Mode test : utiliser le header X-Test-User
+    36→    if (TEST_MODE) {
+    37→        $test_user = $_SERVER['HTTP_X_TEST_USER'] ?? '';
+    38→        if (!empty($test_user)) {
+    39→            // Si contient un @, c'est déjà un email
+    40→            if (strpos($test_user, '@') !== false) {
+    41→                return strtolower($test_user);
+    42→            }
+    43→            // Sinon, transformer en email DREETS
+    44→            return strtolower($test_user) . '@dreets.gouv.fr';
+    45→        }
+    46→        // Fallback : utilisateur test par défaut
+    47→        return 'test.agent@dreets.gouv.fr';
+    48→    }
+    49→
+    50→    $auth_user = $_SERVER['AUTH_USER'] ?? '';
+    51→    if (empty($auth_user)) {
+    52→        http_response_code(401);
+    53→        die('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    54→<title>Authentification requise — DREETS</title>
+    55→<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    56→body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e;display:flex;min-height:100vh;align-items:center;justify-content:center}
+    57→.error-box{background:#fff;border:1px solid #ddd;border-radius:6px;padding:2.5rem;max-width:520px;width:90%;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+    58→.error-icon{font-size:3rem;margin-bottom:1rem}
+    59→h1{font-size:1.3rem;color:#003189;margin-bottom:.75rem}
+    60→p{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:.75rem}
+    61→.hint{font-size:.85rem;color:#888;background:#f5f5f5;border-radius:4px;padding:.75rem;margin-top:1rem;text-align:left}
+    62→.hint strong{color:#333}
+    63→</style></head><body>
+    64→<div class="error-box">
+    65→<div class="error-icon">🔒</div>
+    66→<h1>Authentification requise</h1>
+    67→<p>Cette application nécessite une authentification Windows (IIS) pour fonctionner.</p>
+    68→<p>La variable d\'environnement <strong>AUTH_USER</strong> n\'est pas disponible, ce qui indique que l\'authentification Windows n\'est pas configurée ou n\'a pas pu être établie.</p>
+    69→<div class="hint">
+    70→<strong>Que faire ?</strong><br>
+    71→• Vérifiez que vous accédez à l\'application via le réseau interne DREETS.<br>
+    72→• Vérifiez que l\'authentification Windows est activée dans IIS (Anonymous Authentication doit être désactivé).<br>
+    73→• Contactez votre administrateur réseau si le problème persiste.
+    74→</div>
+    75→</div></body></html>');
+    76→    }
+    77→    
+    78→    // Si l'utilisateur est au format DOMAINE\login, on extrait le login et on le transforme en email
+    79→    if (strpos($auth_user, '\\') !== false) {
+    80→        $parts = explode('\\', $auth_user);
+    81→        $login = end($parts);
+    82→        return strtolower($login) . '@dreets.gouv.fr';
+    83→    }
+    84→    
+    85→    // Sinon, on suppose que c'est déjà un email
+    86→    return strtolower($auth_user);
+    87→}
+    88→
+    89→// Vérifie si l'utilisateur est administrateur
+    90→function is_admin_user(): bool {
+    91→    $auth_user = get_auth_user();
+    92→    $pdo = get_pdo();
+    93→    $stmt = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
+    94→    $stmt->execute([$auth_user]);
+    95→    return $stmt->fetch() !== false;
+    96→}
+    97→
+    98→// Vérifie si l'utilisateur est l'admin principal
+    99→function is_super_admin(): bool {
+   100→    $auth_user = get_auth_user();
+   101→    return $auth_user === ADMIN_EMAIL;
+   102→}
+   103→
+   104→// ── CSRF ─────────────────────────────────────────────────────
+   105→function generate_csrf_token(): string {
+   106→    if (empty($_SESSION['csrf_token'])) {
+   107→        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+   108→    }
+   109→    return $_SESSION['csrf_token'];
+   110→}
+   111→
+   112→function csrf_field(): string {
+   113→    return '<input type="hidden" name="csrf_token" value="' . h(generate_csrf_token()) . '">';
+   114→}
+   115→
+   116→function verify_csrf(): bool {
+   117→    // Mode test : bypass CSRF
+   118→    if (TEST_MODE) return true;
+   119→    $token = $_POST['csrf_token'] ?? '';
+   120→    return !empty($token) && hash_equals($_SESSION['csrf_token'] ?? '', $token);
+   121→}
+   122→
+   123→// ── PDO ──────────────────────────────────────────────────────
+   124→function get_pdo(): PDO {
+   125→    static $pdo = null;
+   126→    static $pdo_test = null;
+   127→
+   128→    // Mode test : utiliser la DB de test séparée
+   129→    if (TEST_MODE) {
+   130→        if ($pdo_test === null) {
+   131→            $test_db_path = $GLOBALS['_test_db_path'] ?? __DIR__ . '/db/workflow_test.db';
+   132→            $pdo_test = new PDO('sqlite:' . $test_db_path);
+   133→            $pdo_test->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   134→            db_migrate($pdo_test);
+   135→        }
+   136→        return $pdo_test;
+   137→    }
+   138→
+   139→    if ($pdo === null) {
+   140→        $pdo = new PDO('sqlite:' . DB_PATH);
+   141→        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   142→        
+   143→        // Appel à la migration de base de données au premier accès
+   144→        db_migrate($pdo);
+   145→    }
+   146→    return $pdo;
+   147→}
+   148→
+   149→/**
+   150→ * Migration automatique de la base de données
+   151→ * Crée les tables si elles n'existent pas et effectue les mises à jour nécessaires
+   152→ */
+   153→function db_migrate(PDO $pdo): void {
+   154→    // Activer le mode WAL pour améliorer la concurrence
+   155→    $pdo->exec('PRAGMA journal_mode=WAL');
+   156→    
+   157→    // Création des tables avec CREATE TABLE IF NOT EXISTS
+   158→    $pdo->exec("
+   159→        CREATE TABLE IF NOT EXISTS forms (
+   160→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   161→            slug TEXT UNIQUE NOT NULL,
+   162→            label TEXT NOT NULL,
+   163→            description TEXT,
+   164→            actif INTEGER DEFAULT 1,
+   165→            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+   166→        )
+   167→    ");
+   168→    
+   169→    $pdo->exec("
+   170→        CREATE TABLE IF NOT EXISTS steps (
+   171→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   172→            form_id INTEGER NOT NULL,
+   173→            label TEXT NOT NULL,
+   174→            ordre INTEGER NOT NULL,
+   175→            actif INTEGER DEFAULT 1,
+   176→            FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+   177→        )
+   178→    ");
+   179→    
+   180→    $pdo->exec("
+   181→        CREATE TABLE IF NOT EXISTS step_recipients (
+   182→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   183→            step_id INTEGER NOT NULL,
+   184→            email TEXT NOT NULL,
+   185→            FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
+   186→        )
+   187→    ");
+   188→    
+   189→    $pdo->exec("
+   190→        CREATE TABLE IF NOT EXISTS submissions (
+   191→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   192→            form_id INTEGER NOT NULL,
+   193→            data TEXT NOT NULL, -- JSON
+   194→            submitted_by TEXT NOT NULL,
+   195→            submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   196→            closed_at DATETIME,
+   197→            status TEXT DEFAULT 'en_cours',
+   198→            FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+   199→        )
+   200→    ");
+   201→    
+   202→    $pdo->exec("
+   203→        CREATE TABLE IF NOT EXISTS tokens (
+   204→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   205→            submission_id INTEGER NOT NULL,
+   206→            step_id INTEGER NOT NULL,
+   207→            email TEXT NOT NULL,
+   208→            token TEXT UNIQUE NOT NULL,
+   209→            sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   210→            done_at DATETIME,
+   211→            relance_at DATETIME,
+   212→            expires_at DATETIME,
+   213→            FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+   214→            FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
+   215→        )
+   216→    ");
+   217→    
+   218→    $pdo->exec("
+   219→        CREATE TABLE IF NOT EXISTS admins (
+   220→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   221→            email TEXT UNIQUE NOT NULL,
+   222→            added_at DATETIME DEFAULT CURRENT_TIMESTAMP
+   223→        )
+   224→    ");
+   225→    
+   226→    $pdo->exec("
+   227→        CREATE TABLE IF NOT EXISTS admin_requests (
+   228→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   229→            email TEXT UNIQUE NOT NULL,
+   230→            requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   231→            status TEXT NOT NULL DEFAULT 'pending',
+   232→            token TEXT UNIQUE NOT NULL
+   233→        )
+   234→    ");
+   235→    
+   236→    $pdo->exec("
+   237→        CREATE TABLE IF NOT EXISTS settings (
+   238→            key TEXT PRIMARY KEY,
+   239→            value TEXT NOT NULL,
+   240→            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   241→            updated_by TEXT
+   242→        )
+   243→    ");
+   244→
+   245→    $pdo->exec("
+   246→        CREATE TABLE IF NOT EXISTS form_fields (
+   247→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   248→            form_id INTEGER NOT NULL,
+   249→            label TEXT NOT NULL,
+   250→            field_type TEXT NOT NULL DEFAULT 'text',
+   251→            field_name TEXT NOT NULL,
+   252→            options TEXT,
+   253→            required INTEGER DEFAULT 0,
+   254→            ordre INTEGER DEFAULT 0,
+   255→            card_group TEXT DEFAULT 'Général',
+   256→            FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+   257→        )
+   258→    ");
+   259→
+   260→    // Table d'audit log — tracabilite de toutes les actions admin
+   261→    $pdo->exec("
+   262→        CREATE TABLE IF NOT EXISTS audit_log (
+   263→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   264→            action TEXT NOT NULL,
+   265→            target TEXT,
+   266→            detail TEXT,
+   267→            actor TEXT NOT NULL,
+   268→            ip TEXT,
+   269→            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+   270→        )
+   271→    ");
+   272→
+   273→    // Table des regles d'alerte — alertes parametrables avant deadline
+   274→    $pdo->exec("
+   275→        CREATE TABLE IF NOT EXISTS alert_rules (
+   276→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   277→            form_id INTEGER NOT NULL,
+   278→            days_before INTEGER NOT NULL DEFAULT 5,
+   279→            condition_type TEXT NOT NULL DEFAULT 'steps_incomplete',
+   280→            notify_who TEXT NOT NULL DEFAULT 'admin',
+   281→            label TEXT NOT NULL,
+   282→            actif INTEGER DEFAULT 1,
+   283→            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   284→            FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+   285→        )
+   286→    ");
+   287→
+   288→    // Table de log des alertes envoyees — eviter les doublons
+   289→    $pdo->exec("
+   290→        CREATE TABLE IF NOT EXISTS alert_log (
+   291→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   292→            rule_id INTEGER NOT NULL,
+   293→            submission_id INTEGER NOT NULL,
+   294→            sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   295→            message TEXT,
+   296→            FOREIGN KEY (rule_id) REFERENCES alert_rules(id) ON DELETE CASCADE,
+   297→            FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+   298→        )
+   299→    ");
+   300→
+   301→    // Table des pieces jointes — fichiers uploades avec les soumissions
+   302→    $pdo->exec("
+   303→        CREATE TABLE IF NOT EXISTS attachments (
+   304→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   305→            submission_id INTEGER NOT NULL,
+   306→            field_name TEXT NOT NULL,
+   307→            original_name TEXT NOT NULL,
+   308→            stored_name TEXT NOT NULL,
+   309→            mime_type TEXT NOT NULL,
+   310→            file_size INTEGER NOT NULL DEFAULT 0,
+   311→            uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   312→            FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+   313→        )
+   314→    ");
+   315→
+   316→    // Table des delegations — transfert de validation a un autre validateur
+   317→    $pdo->exec("
+   318→        CREATE TABLE IF NOT EXISTS delegations (
+   319→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+   320→            token_id INTEGER NOT NULL,
+   321→            from_email TEXT NOT NULL,
+   322→            to_email TEXT NOT NULL,
+   323→            reason TEXT,
+   324→            delegated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+   325→            new_token_id INTEGER,
+   326→            FOREIGN KEY (token_id) REFERENCES tokens(id) ON DELETE CASCADE
+   327→        )
+   328→    ");
+   329→    
+   330→    // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
+   331→    $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
+   332→    if ($count_stmt->fetchColumn() == 0) {
+   333→        $pdo->prepare("INSERT INTO admins (email, added_at) VALUES (?, ?)")
+   334→            ->execute([ADMIN_EMAIL, date('Y-m-d H:i:s')]);
+   335→    }
+   336→
+   337→    // Seed formulaire outboarding si la table forms est vide ou ne contient que l'onboarding
+   338→    $ob_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'outboarding'")->fetchColumn();
+   339→    if ($ob_count == 0) {
+   340→        $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
+   341→            ->execute(['outboarding', 'Outboarding agent', 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat']);
+   342→        $outboarding_id = (int)$pdo->lastInsertId();
+   343→
+   344→        $outboarding_fields = [
+   345→            ['Identité de l\'agent',    'Nom',                                    'text',     'nom',                  null,                                                                                                   1, 1],
+   346→            ['Identité de l\'agent',    'Prénom',                                 'text',     'prenom',               null,                                                                                                   1, 2],
+   347→            ['Identité de l\'agent',    'Date de départ',                         'date',     'date_depart',          null,                                                                                                   1, 3],
+   348→            ['Identité de l\'agent',    'Motif de départ',                        'select',   'motif_depart',         '["Démission","Retraite","Mutation","Fin de contrat","Licenciement","Autre"]',                  1, 4],
+   349→            ['Identité de l\'agent',    'Service / Affectation',                  'text',     'affectation',          null,                                                                                                   1, 5],
+   350→            ['Informatique (IT)',       'Restitution poste informatique',         'checkbox', 'it_restitution_poste', null,                                                                                                   0, 6],
+   351→            ['Informatique (IT)',       'Restitution téléphone pro',              'checkbox', 'it_restitution_tel',   null,                                                                                                   0, 7],
+   352→            ['Informatique (IT)',       'Révocation accès RPVN',                  'checkbox', 'it_revoq_rpvn',        null,                                                                                                   0, 8],
+   353→            ['Informatique (IT)',       'Révocation accès applicatifs métier',    'checkbox', 'it_revoq_applicatifs', null,                                                                                                   0, 9],
+   354→            ['Informatique (IT)',       'Révocation compte de messagerie',        'checkbox', 'it_revoq_messagerie',  null,                                                                                                   0, 10],
+   355→            ['Informatique (IT)',       'Transfert boîte mail (destinataire)',    'text',     'it_transfert_mail',    null,                                                                                                   0, 11],
+   356→            ['Ressources Humaines',     'Solde de tout compte',                   'checkbox', 'rh_solde_compte',      null,                                                                                                   0, 12],
+   357→            ['Ressources Humaines',     'Attestation employeur',                  'checkbox', 'rh_attestation',       null,                                                                                                   0, 13],
+   358→            ['Ressources Humaines',     'Certificat de travail',                  'checkbox', 'rh_certificat',        null,                                                                                                   0, 14],
+   359→            ['Ressources Humaines',     'Récupération solde congés',              'checkbox', 'rh_conges',            null,                                                                                                   0, 15],
+   360→            ['Ressources Humaines',     'Résiliation mutuelle MGEN',             'checkbox', 'rh_mutuelle',          null,                                                                                                   0, 16],
+   361→            ['Ressources Humaines',     'Observations RH',                        'textarea', 'rh_observations',      null,                                                                                                   0, 17],
+   362→            ['Logistique',              'Restitution badge d\'accès',             'checkbox', 'log_restitution_badge',null,                                                                                                   0, 18],
+   363→            ['Logistique',              'Restitution véhicule de service',        'checkbox', 'log_restitution_vehicule',null,                                                                                               0, 19],
+   364→            ['Logistique',              'Restitution EPI',                        'checkbox', 'log_restitution_epi',  null,                                                                                                   0, 20],
+   365→            ['Logistique',              'Libération bureau / local',              'text',     'log_bureau',           null,                                                                                                   0, 21],
+   366→        ];
+   367→        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+   368→        foreach ($outboarding_fields as $row) {
+   369→            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $outboarding_id]);
+   370→        }
+   371→
+   372→        // Etapes par defaut pour l'outboarding
+   373→        $steps_data = [
+   374→            ['Responsable direct', 1],
+   375→            ['Service informatique', 2],
+   376→            ['Ressources humaines', 3],
+   377→            ['Logistique', 4],
+   378→        ];
+   379→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+   380→        foreach ($steps_data as $sd) {
+   381→            $stmt_step->execute([$outboarding_id, $sd[0], $sd[1]]);
+   382→        }
+   383→    }
+   384→    
+   385→    // Insertion des paramètres par défaut si la table settings est vide
+   386→    $settings_count = $pdo->query("SELECT COUNT(*) FROM settings")->fetchColumn();
+   387→    if ($settings_count == 0) {
+   388→        $defaults = [
+   389→            ['smtp_host', 'smtp.social.gouv.fr'],
+   390→            ['smtp_port', '25'],
+   391→            ['smtp_auth', '0'],
+   392→            ['smtp_secure', ''],
+   393→            ['smtp_user', ''],
+   394→            ['smtp_pass', ''],
+   395→            ['smtp_from', 'workflow@dreets.gouv.fr'],
+   396→            ['smtp_from_name', 'Workflow DREETS'],
+   397→            ['delai_relance_h', '48'],
+   398→            ['token_expire_days', '30'],
+   399→            ['relance_max', '3'],
+   400→        ];
+   401→        $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
+   402→        foreach ($defaults as $row) {
+   403→            $stmt->execute($row);
+   404→        }
+   405→    }
+   406→    
+   407→    // S'assurer que relance_max existe même si la table settings a déjà des entrés
+   408→    try {
+   409→        $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('relance_max', '3')")->execute();
+   410→    } catch (PDOException $e) {
+   411→        // Ignorer si déjà présent
+   412→    }
+   413→    
+   414→    // Seed formulaire onboarding s'il n'existe pas
+   415→    $onb_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'onboarding'")->fetchColumn();
+   416→    if ($onb_count == 0) {
+   417→        $pdo->prepare("INSERT INTO forms (slug, label, description, actif, created_at) VALUES (?, ?, ?, 1, datetime('now'))")
+   418→            ->execute(['onboarding', 'Onboarding agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
+   419→        $onboarding_id = (int)$pdo->lastInsertId();
+   420→
+   421→        $onboarding_fields = [
+   422→            ['Identité de l\'agent',  'Nom',                            'text',    'nom',               null,                                                           1, 1],
+   423→            ['Identité de l\'agent',  'Prénom',                         'text',    'prenom',            null,                                                           1, 2],
+   424→            ['Identité de l\'agent',  'Date de naissance',              'date',    'date_naissance',    null,                                                           1, 3],
+   425→            ['Identité de l\'agent',  'Date de prise de poste',         'date',    'date_prise_poste',  null,                                                           1, 4],
+   426→            ['Identité de l\'agent',  'Corps / Grade',                  'select',  'corps_grade',       '["Attaché d\'administration","Secrétaire administratif","Adjoint administratif","Inspecteur du travail","Contrôleur du travail","Technicien","Ingénieur","Autre"]', 1, 5],
+   427→            ['Identité de l\'agent',  'Type d\'arrivée',                'select',  'type_arrivee',      '["Mutation","Primo-recrutement","Détachement","Stage","Alternance"]', 1, 6],
+   428→            ['Identité de l\'agent',  'Service / Affectation',          'text',    'affectation',       null,                                                           1, 7],
+   429→            ['Identité de l\'agent',  'Quotité',                        'select',  'quotite',           '["100%","80%","50%"]',                                         1, 8],
+   430→            ['Informatique (IT)',     'Type de poste',                  'select',  'type_poste',        '["Fixe","Portable"]',                                          1, 9],
+   431→            ['Informatique (IT)',     'Double écran',                   'checkbox','it_double_ecran',   null,                                                           0, 10],
+   432→            ['Informatique (IT)',     'Accès RPVN',                     'checkbox','it_acces_rpvn',    null,                                                           0, 11],
+   433→            ['Informatique (IT)',     'Téléphone professionnel',        'checkbox','it_telephone_pro', null,                                                           0, 12],
+   434→            ['Informatique (IT)',     'Applicatifs métier',             'textarea','it_applicatifs',   null,                                                           0, 13],
+   435→            ['Ressources Humaines',   'Dossier administratif à constituer','checkbox','rh_dossier_admin',null,                                                          0, 14],
+   436→            ['Ressources Humaines',   'Affiliation mutuelle MGEN',      'checkbox','rh_mutuelle',      null,                                                           0, 15],
+   437→            ['Ressources Humaines',   'Visite médicale à planifier',    'checkbox','rh_visite_medicale',null,                                                          0, 16],
+   438→            ['Ressources Humaines',   'Habilitation sécurité requise',  'checkbox','rh_habilitation',  null,                                                           0, 17],
+   439→            ['Logistique',            'Bâtiment / Bureau',              'text',    'log_batiment_bureau',null,                                                          1, 18],
+   440→            ['Logistique',            'Badge d\'accès',                 'checkbox','log_badge_acces',  null,                                                           0, 19],
+   441→            ['Logistique',            'Véhicule de service',            'checkbox','log_vehicule_service',null,                                                         0, 20],
+   442→            ['Logistique',            'EPI à préparer',                 'checkbox','log_epi_requis',   null,                                                           0, 21],
+   443→        ];
+   444→        $stmt_ob = $pdo->prepare("INSERT INTO form_fields (card_group, label, field_type, field_name, options, required, ordre, form_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+   445→        foreach ($onboarding_fields as $row) {
+   446→            $stmt_ob->execute([$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $onboarding_id]);
+   447→        }
+   448→
+   449→        // Etapes par defaut pour l'onboarding
+   450→        $steps_data = [
+   451→            ['Responsable direct', 1],
+   452→            ['Service informatique', 2],
+   453→            ['Ressources humaines', 3],
+   454→            ['Logistique', 4],
+   455→        ];
+   456→        $stmt_step = $pdo->prepare("INSERT INTO steps (form_id, label, ordre, actif) VALUES (?, ?, ?, 1)");
+   457→        foreach ($steps_data as $sd) {
+   458→            $stmt_step->execute([$onboarding_id, $sd[0], $sd[1]]);
+   459→        }
+   460→    }
+   461→
+   462→    // Ajout de colonnes futures avec gestion d'erreur si déjà présentes
+   463→    try {
+   464→        $pdo->exec("ALTER TABLE submissions ADD COLUMN closed_at DATETIME");
+   465→    } catch (PDOException $e) {
+   466→        // Ignorer si la colonne existe déjà
+   467→    }
+   468→    
+   469→    try {
+   470→        $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_at DATETIME");
+   471→    } catch (PDOException $e) {
+   472→        // Ignorer si la colonne existe déjà
+   473→    }
+   474→    
+   475→    // Ajout de la colonne status à submissions si elle n'existe pas
+   476→    try {
+   477→        $pdo->exec("ALTER TABLE submissions ADD COLUMN status TEXT DEFAULT 'en_cours'");
+   478→    } catch (PDOException $e) {
+   479→        // Ignorer si la colonne existe déjà
+   480→    }
+   481→    
+   482→    // Ajout de la colonne expires_at à tokens si elle n'existe pas
+   483→    try {
+   484→        $pdo->exec("ALTER TABLE tokens ADD COLUMN expires_at DATETIME");
+   485→    } catch (PDOException $e) {
+   486→        // Ignorer si la colonne existe déjà
+   487→    }
+   488→    
+   489→    // Ajout de la colonne relance_count à tokens si elle n'existe pas
+   490→    try {
+   491→        $pdo->exec("ALTER TABLE tokens ADD COLUMN relance_count INTEGER DEFAULT 0");
+   492→    } catch (PDOException $e) {
+   493→        // Ignorer si la colonne existe déjà
+   494→    }
+   495→    
+   496→    // Ajout de la colonne deadline_field à forms si elle n'existe pas
+   497→    try {
+   498→        $pdo->exec("ALTER TABLE forms ADD COLUMN deadline_field TEXT DEFAULT ''");
+   499→    } catch (PDOException $e) {
+   500→        // Ignorer si la colonne existe déjà
+
+[showing lines 1-500 of 1719; use offset=501 with limit to continue reading]

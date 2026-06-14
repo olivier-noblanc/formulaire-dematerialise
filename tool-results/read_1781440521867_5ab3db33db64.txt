@@ -1,0 +1,741 @@
+     1→<?php
+     2→/**
+     3→ * install.php — Assistant d'installation de premier lancement
+     4→ *
+     5→ * Ce fichier est entièrement autonome : il ne dépend ni de config.php
+     6→ * ni de helpers.php ni de style.php, car ces fichiers nécessitent
+     7→ * une configuration déjà en place. Il intègre son propre CSS inline
+     8→ * et sa propre gestion CSRF.
+     9→ *
+    10→ * Étapes :
+    11→ *   1. Vérification des prérequis (PHP ≥ 8.0, SQLite3, PDO SQLite, intl, écriture, PHPMailer)
+    12→ *   2. Formulaire de configuration (BASE_URL, SMTP, admin, délai)
+    13→ *   3. Confirmation et écriture de config.php
+    14→ */
+    15→
+    16→// ── Sécurité de base ──────────────────────────────────────────
+    17→session_start();
+    18→error_reporting(E_ERROR | E_PARSE);
+    19→ini_set('display_errors', '0');
+    20→
+    21→// ── Si config.php existe déjà, rediriger vers index.php ──────
+    22→if (file_exists(__DIR__ . '/config.php')) {
+    23→    header('Location: index.php');
+    24→    exit;
+    25→}
+    26→
+    27→// ── Fonctions utilitaires internes (standalone) ──────────────
+    28→
+    29→/**
+    30→ * Échappement HTML
+    31→ */
+    32→function inst_h(string $val): string {
+    33→    return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
+    34→}
+    35→
+    36→/**
+    37→ * Génération de token CSRF
+    38→ */
+    39→function inst_generate_csrf(): string {
+    40→    if (empty($_SESSION['inst_csrf_token'])) {
+    41→        $_SESSION['inst_csrf_token'] = bin2hex(random_bytes(32));
+    42→    }
+    43→    return $_SESSION['inst_csrf_token'];
+    44→}
+    45→
+    46→/**
+    47→ * Champ caché CSRF
+    48→ */
+    49→function inst_csrf_field(): string {
+    50→    return '<input type="hidden" name="csrf_token" value="' . inst_h(inst_generate_csrf()) . '">';
+    51→}
+    52→
+    53→/**
+    54→ * Vérification CSRF
+    55→ */
+    56→function inst_verify_csrf(): bool {
+    57→    $token = $_POST['csrf_token'] ?? '';
+    58→    return !empty($token) && hash_equals($_SESSION['inst_csrf_token'] ?? '', $token);
+    59→}
+    60→
+    61→/**
+    62→ * Vérification des prérequis
+    63→ * Retourne un tableau [clé => ['ok' => bool, 'label' => string, 'detail' => string]]
+    64→ */
+    65→function inst_check_prerequisites(): array {
+    66→    $checks = [];
+    67→
+    68→    // PHP >= 8.0
+    69→    $php_version = PHP_VERSION;
+    70→    $checks['php_version'] = [
+    71→        'ok'     => version_compare($php_version, '8.0.0', '>='),
+    72→        'label'  => 'PHP version >= 8.0',
+    73→        'detail' => 'Version détectée : ' . $php_version,
+    74→    ];
+    75→
+    76→    // Extension SQLite3
+    77→    $checks['sqlite3'] = [
+    78→        'ok'     => extension_loaded('sqlite3'),
+    79→        'label'  => 'Extension SQLite3',
+    80→        'detail' => extension_loaded('sqlite3') ? 'Chargée' : 'Non chargée',
+    81→    ];
+    82→
+    83→    // Pilote PDO SQLite
+    84→    $pdo_drivers = PDO::getAvailableDrivers();
+    85→    $checks['pdo_sqlite'] = [
+    86→        'ok'     => in_array('sqlite', $pdo_drivers, true),
+    87→        'label'  => 'Pilote PDO SQLite',
+    88→        'detail' => in_array('sqlite', $pdo_drivers, true) ? 'Disponible' : 'Non disponible (pilotes : ' . implode(', ', $pdo_drivers) . ')',
+    89→    ];
+    90→
+    91→    // Extension intl
+    92→    $checks['intl'] = [
+    93→        'ok'     => extension_loaded('intl'),
+    94→        'label'  => 'Extension intl (Transliterator)',
+    95→        'detail' => extension_loaded('intl') ? 'Chargée' : 'Non chargée — requise pour la translittération',
+    96→    ];
+    97→
+    98→    // Droit d'écriture sur le répertoire courant (pour créer db/)
+    99→    $writable = is_writable(__DIR__);
+   100→    $checks['writable'] = [
+   101→        'ok'     => $writable,
+   102→        'label'  => 'Droit d\'écriture sur le répertoire',
+   103→        'detail' => $writable ? __DIR__ : 'Le répertoire ' . __DIR__ . ' n\'est pas accessible en écriture',
+   104→    ];
+   105→
+   106→    // Répertoire PHPMailer
+   107→    $phpmailer_exists = is_dir(__DIR__ . '/PHPMailer');
+   108→    $checks['phpmailer'] = [
+   109→        'ok'     => $phpmailer_exists,
+   110→        'label'  => 'Répertoire PHPMailer',
+   111→        'detail' => $phpmailer_exists ? 'Présent' : 'Non trouvé — les fichiers PHPMailer/PHPMailer.php, SMTP.php et Exception.php sont requis',
+   112→    ];
+   113→
+   114→    return $checks;
+   115→}
+   116→
+   117→/**
+   118→ * Auto-détection de BASE_URL
+   119→ */
+   120→function inst_detect_base_url(): string {
+   121→    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+   122→    $hostname = $_SERVER['HTTP_HOST'] ?? 'localhost';
+   123→    $script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/workflow');
+   124→    // Normaliser : enlever le slash final sauf si c'est la racine
+   125→    $script_dir = rtrim($script_dir, '/');
+   126→    if ($script_dir === '' || $script_dir === '\\') {
+   127→        $script_dir = '/workflow';
+   128→    }
+   129→    return $protocol . '://' . $hostname . $script_dir;
+   130→}
+   131→
+   132→/**
+   133→ * Tentative d'envoi d'un email de test via PHPMailer
+   134→ * Retourne ['success' => bool, 'message' => string]
+   135→ */
+   136→function inst_test_smtp(string $host, int $port, string $from, string $from_name, string $to): array {
+   137→    // Vérifier que PHPMailer est disponible
+   138→    $pm_dir = __DIR__ . '/PHPMailer';
+   139→    if (!is_dir($pm_dir)) {
+   140→        return ['success' => false, 'message' => 'Le répertoire PHPMailer n\'existe pas. Impossible de tester l\'envoi.'];
+   141→    }
+   142→
+   143→    $pm_files = [
+   144→        $pm_dir . '/Exception.php',
+   145→        $pm_dir . '/PHPMailer.php',
+   146→        $pm_dir . '/SMTP.php',
+   147→    ];
+   148→    foreach ($pm_files as $f) {
+   149→        if (!file_exists($f)) {
+   150→            return ['success' => false, 'message' => 'Fichier manquant : ' . basename($f) . '. Impossible de tester l\'envoi.'];
+   151→        }
+   152→    }
+   153→
+   154→    require_once $pm_dir . '/Exception.php';
+   155→    require_once $pm_dir . '/PHPMailer.php';
+   156→    require_once $pm_dir . '/SMTP.php';
+   157→
+   158→    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+   159→    try {
+   160→        $mail->isSMTP();
+   161→        $mail->Host     = $host;
+   162→        $mail->Port     = $port;
+   163→        $mail->SMTPAuth = false;
+   164→        $mail->CharSet  = 'UTF-8';
+   165→        $mail->setFrom($from, $from_name);
+   166→        $mail->addAddress($to);
+   167→        $mail->isHTML(true);
+   168→        $mail->Subject = 'Test SMTP — Installation Workflow DREETS';
+   169→        $mail->Body    = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+   170→<body style="font-family:Arial,sans-serif;color:#222;">
+   171→  <h2 style="color:#003189;">Test d\'envoi d\'email</h2>
+   172→  <p>Cet email a été envoyé depuis l\'assistant d\'installation du Workflow DREETS.</p>
+   173→  <p>Date : ' . date('d/m/Y H:i:s') . '</p>
+   174→  <hr style="margin:1rem 0;border:none;border-top:1px solid #ddd;">
+   175→  <p style="font-size:.85rem;color:#888;">Si vous recevez cet email, la configuration SMTP est correcte.</p>
+   176→</body></html>';
+   177→        $mail->send();
+   178→        return ['success' => true, 'message' => 'Email de test envoyé avec succès à ' . $to];
+   179→    } catch (\PHPMailer\PHPMailer\Exception $e) {
+   180→        return ['success' => false, 'message' => 'Échec de l\'envoi : ' . $mail->ErrorInfo];
+   181→    } catch (\Exception $e) {
+   182→        return ['success' => false, 'message' => 'Erreur : ' . $e->getMessage()];
+   183→    }
+   184→}
+   185→
+   186→/**
+   187→ * Écrit le fichier config.php
+   188→ * Retourne ['success' => bool, 'message' => string]
+   189→ */
+   190→function inst_write_config(array $values): array {
+   191→    // Créer le répertoire db/ s'il n'existe pas
+   192→    $db_dir = __DIR__ . '/db';
+   193→    if (!is_dir($db_dir)) {
+   194→        if (!mkdir($db_dir, 0755, true)) {
+   195→            return ['success' => false, 'message' => 'Impossible de créer le répertoire ' . $db_dir];
+   196→        }
+   197→    }
+   198→
+   199→    // Vérifier que db/ est accessible en écriture
+   200→    if (!is_writable($db_dir)) {
+   201→        return ['success' => false, 'message' => 'Le répertoire ' . $db_dir . ' n\'est pas accessible en écriture.'];
+   202→    }
+   203→
+   204→    $config_content = "<?php\n"
+   205→        . "// Configuration générée par l'assistant d'installation — " . date('Y-m-d H:i:s') . "\n"
+   206→        . "\$protocol = isset(\$_SERVER['HTTPS']) && \$_SERVER['HTTPS'] === 'on' ? 'https' : 'http';\n"
+   207→        . "\$hostname = \$_SERVER['HTTP_HOST'] ?? 'localhost';\n"
+   208→        . "define('BASE_URL',       \$protocol . '://' . \$hostname . '" . addslashes($values['base_url_path']) . "');\n"
+   209→        . "define('DB_PATH',        __DIR__ . '/db/workflow.db');\n"
+   210→        . "define('SMTP_HOST',      '" . addslashes($values['smtp_host']) . "');\n"
+   211→        . "define('SMTP_PORT',      " . (int)$values['smtp_port'] . ");\n"
+   212→        . "define('SMTP_FROM',      '" . addslashes($values['smtp_from']) . "');\n"
+   213→        . "define('SMTP_FROM_NAME', '" . addslashes($values['smtp_from_name']) . "');\n"
+   214→        . "define('DELAI_RELANCE_H', " . (int)$values['delai_relance_h'] . ");\n"
+   215→        . "// Email de l'administrateur principal\n"
+   216→        . "define('ADMIN_EMAIL',    '" . addslashes($values['admin_email']) . "');\n"
+   217→        . "// Version de l'application — à mettre à jour à chaque release\n"
+   218→        . "define('APP_VERSION',    '3.0.0');\n"
+   219→        . "date_default_timezone_set('Europe/Paris');\n";
+   220→
+   221→    $config_path = __DIR__ . '/config.php';
+   222→    $result = file_put_contents($config_path, $config_content, LOCK_EX);
+   223→
+   224→    if ($result === false) {
+   225→        return ['success' => false, 'message' => 'Impossible d\'écrire le fichier ' . $config_path];
+   226→    }
+   227→
+   228→    return ['success' => true, 'message' => 'Fichier config.php créé avec succès.'];
+   229→}
+   230→
+   231→// ── Gestion des étapes ───────────────────────────────────────
+   232→$step = 1;
+   233→$messages = [];
+   234→$error_messages = [];
+   235→
+   236→// Déterminer l'étape depuis GET ou POST
+   237→if (isset($_GET['step']) && is_numeric($_GET['step'])) {
+   238→    $step = max(1, min(3, (int)$_GET['step']));
+   239→}
+   240→
+   241→// ── Traitement des actions POST ──────────────────────────────
+   242→if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+   243→    // Vérification CSRF
+   244→    if (!inst_verify_csrf()) {
+   245→        $error_messages[] = 'Token CSRF invalide. Veuillez réessayer.';
+   246→    } else {
+   247→        $action = $_POST['action'] ?? '';
+   248→
+   249→        // ── Action : Aller à l'étape 2 ──
+   250→        if ($action === 'to_step2') {
+   251→            $prereqs = inst_check_prerequisites();
+   252→            $all_ok = true;
+   253→            foreach ($prereqs as $check) {
+   254→                if (!$check['ok']) {
+   255→                    $all_ok = false;
+   256→                    break;
+   257→                }
+   258→            }
+   259→            if ($all_ok) {
+   260→                $step = 2;
+   261→            } else {
+   262→                $error_messages[] = 'Tous les prérequis doivent être satisfaits avant de continuer.';
+   263→                $step = 1;
+   264→            }
+   265→        }
+   266→
+   267→        // ── Action : Retour à l'étape 1 ──
+   268→        elseif ($action === 'back_step1') {
+   269→            $step = 1;
+   270→        }
+   271→
+   272→        // ── Action : Test SMTP ──
+   273→        elseif ($action === 'test_smtp') {
+   274→            $smtp_host    = trim($_POST['smtp_host'] ?? 'smtp.social.gouv.fr');
+   275→            $smtp_port    = (int)($_POST['smtp_port'] ?? 25);
+   276→            $smtp_from    = trim($_POST['smtp_from'] ?? 'workflow@dreets.gouv.fr');
+   277→            $smtp_from_name = trim($_POST['smtp_from_name'] ?? 'Workflow DREETS');
+   278→            $admin_email  = trim($_POST['admin_email'] ?? '');
+   279→
+   280→            if (empty($admin_email) || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
+   281→                $error_messages[] = 'L\'email administrateur est requis et doit être valide pour tester l\'envoi.';
+   282→            } else {
+   283→                $smtp_result = inst_test_smtp($smtp_host, $smtp_port, $smtp_from, $smtp_from_name, $admin_email);
+   284→                if ($smtp_result['success']) {
+   285→                    $messages[] = $smtp_result['message'];
+   286→                } else {
+   287→                    $error_messages[] = $smtp_result['message'];
+   288→                }
+   289→            }
+   290→            $step = 2;
+   291→        }
+   292→
+   293→        // ── Action : Générer la configuration (aller à étape 3) ──
+   294→        elseif ($action === 'generate_config') {
+   295→            $base_url     = trim($_POST['base_url'] ?? '');
+   296→            $smtp_host    = trim($_POST['smtp_host'] ?? '');
+   297→            $smtp_port    = trim($_POST['smtp_port'] ?? '25');
+   298→            $smtp_from    = trim($_POST['smtp_from'] ?? '');
+   299→            $smtp_from_name = trim($_POST['smtp_from_name'] ?? '');
+   300→            $admin_email  = trim($_POST['admin_email'] ?? '');
+   301→            $delai_relance_h = trim($_POST['delai_relance_h'] ?? '48');
+   302→
+   303→            // Validation
+   304→            $validation_errors = [];
+   305→            if (empty($base_url)) {
+   306→                $validation_errors[] = 'L\'URL de base est requise.';
+   307→            } elseif (!filter_var($base_url, FILTER_VALIDATE_URL)) {
+   308→                $validation_errors[] = 'L\'URL de base n\'est pas une URL valide.';
+   309→            }
+   310→            if (empty($smtp_host)) {
+   311→                $validation_errors[] = 'L\'hôte SMTP est requis.';
+   312→            }
+   313→            if (empty($smtp_port) || (int)$smtp_port < 1 || (int)$smtp_port > 65535) {
+   314→                $validation_errors[] = 'Le port SMTP doit être un nombre entre 1 et 65535.';
+   315→            }
+   316→            if (empty($smtp_from) || !filter_var($smtp_from, FILTER_VALIDATE_EMAIL)) {
+   317→                $validation_errors[] = 'L\'email expéditeur est requis et doit être valide.';
+   318→            }
+   319→            if (empty($smtp_from_name)) {
+   320→                $validation_errors[] = 'Le nom d\'expéditeur est requis.';
+   321→            }
+   322→            if (empty($admin_email) || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
+   323→                $validation_errors[] = 'L\'email administrateur est requis et doit être valide.';
+   324→            }
+   325→            if (empty($delai_relance_h) || (int)$delai_relance_h < 1) {
+   326→                $validation_errors[] = 'Le délai de relance doit être un nombre entier positif.';
+   327→            }
+   328→
+   329→            if (empty($validation_errors)) {
+   330→                // Extraire le chemin depuis l'URL pour le format config.php
+   331→                $parsed = parse_url($base_url);
+   332→                $base_url_path = $parsed['path'] ?? '/workflow';
+   333→                $_SESSION['inst_config'] = [
+   334→                    'base_url'        => $base_url,
+   335→                    'base_url_path'   => $base_url_path,
+   336→                    'smtp_host'       => $smtp_host,
+   337→                    'smtp_port'       => (int)$smtp_port,
+   338→                    'smtp_from'       => $smtp_from,
+   339→                    'smtp_from_name'  => $smtp_from_name,
+   340→                    'admin_email'     => $admin_email,
+   341→                    'delai_relance_h' => (int)$delai_relance_h,
+   342→                ];
+   343→                $step = 3;
+   344→            } else {
+   345→                $error_messages = $validation_errors;
+   346→                $step = 2;
+   347→            }
+   348→        }
+   349→
+   350→        // ── Action : Installer (écriture effective de config.php) ──
+   351→        elseif ($action === 'install') {
+   352→            $config = $_SESSION['inst_config'] ?? null;
+   353→            if ($config === null) {
+   354→                $error_messages[] = 'Session expirée. Veuillez recommencer la configuration.';
+   355→                $step = 1;
+   356→            } else {
+   357→                $write_result = inst_write_config($config);
+   358→                if ($write_result['success']) {
+   359→                    // Nettoyage de la session d'installation
+   360→                    unset($_SESSION['inst_csrf_token'], $_SESSION['inst_config']);
+   361→                    // Redirection vers index.php
+   362→                    header('Location: index.php');
+   363→                    exit;
+   364→                } else {
+   365→                    $error_messages[] = $write_result['message'];
+   366→                    $step = 3;
+   367→                }
+   368→            }
+   369→        }
+   370→
+   371→        // ── Action : Retour à l'étape 2 depuis l'étape 3 ──
+   372→        elseif ($action === 'back_step2') {
+   373→            $step = 2;
+   374→        }
+   375→
+   376→        else {
+   377→            $error_messages[] = 'Action non reconnue.';
+   378→        }
+   379→    }
+   380→}
+   381→
+   382→// ── Valeurs par défaut pour le formulaire (étape 2) ─────────
+   383→$saved_config = $_SESSION['inst_config'] ?? [];
+   384→$default_base_url      = $saved_config['base_url'] ?? inst_detect_base_url();
+   385→$default_smtp_host     = $saved_config['smtp_host'] ?? 'smtp.social.gouv.fr';
+   386→$default_smtp_port     = $saved_config['smtp_port'] ?? 25;
+   387→$default_smtp_from     = $saved_config['smtp_from'] ?? 'workflow@dreets.gouv.fr';
+   388→$default_smtp_from_name = $saved_config['smtp_from_name'] ?? 'Workflow DREETS';
+   389→$default_admin_email   = $saved_config['admin_email'] ?? '';
+   390→$default_delai_relance_h = $saved_config['delai_relance_h'] ?? 48;
+   391→
+   392→// Si on revient de l'étape 2 avec des valeurs POST, les utiliser
+   393→if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+   394→    $default_base_url      = trim($_POST['base_url'] ?? $default_base_url);
+   395→    $default_smtp_host     = trim($_POST['smtp_host'] ?? $default_smtp_host);
+   396→    $default_smtp_port     = trim($_POST['smtp_port'] ?? $default_smtp_port);
+   397→    $default_smtp_from     = trim($_POST['smtp_from'] ?? $default_smtp_from);
+   398→    $default_smtp_from_name = trim($_POST['smtp_from_name'] ?? $default_smtp_from_name);
+   399→    $default_admin_email   = trim($_POST['admin_email'] ?? $default_admin_email);
+   400→    $default_delai_relance_h = trim($_POST['delai_relance_h'] ?? $default_delai_relance_h);
+   401→}
+   402→
+   403→// ── Étape 1 : vérification des prérequis ────────────────────
+   404→$prerequisites = inst_check_prerequisites();
+   405→$all_prereqs_ok = true;
+   406→foreach ($prerequisites as $check) {
+   407→    if (!$check['ok']) {
+   408→        $all_prereqs_ok = false;
+   409→        break;
+   410→    }
+   411→}
+   412→
+   413→// ── Étape 3 : config à confirmer ────────────────────────────
+   414→$confirm_config = $_SESSION['inst_config'] ?? null;
+   415→?>
+   416→<!DOCTYPE html>
+   417→<html lang="fr">
+   418→<head>
+   419→    <meta charset="UTF-8">
+   420→    <meta name="viewport" content="width=device-width, initial-scale=1">
+   421→    <title>Installation — Workflow DREETS</title>
+   422→    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+   423→    <style>
+   424→        /* ── Reset & Base ──────────────────────────────────────── */
+   425→        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+   426→        html { scroll-behavior: smooth; }
+   427→        body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; min-height: 100vh; display: flex; flex-direction: column; }
+   428→
+   429→        /* ── Bandeau ──────────────────────────────────────────── */
+   430→        .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
+   431→        .bandeau a { color: #b3c8f0; font-size: .8rem; text-decoration: none; }
+   432→
+   433→        /* ── Container ────────────────────────────────────────── */
+   434→        .container { max-width: 800px; margin: 0 auto; padding: 0 1rem 2rem; width: 100%; flex: 1; }
+   435→
+   436→        /* ── Typography ───────────────────────────────────────── */
+   437→        h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
+   438→        h2 { font-size: 1.1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1rem; }
+   439→
+   440→        /* ── Cards ────────────────────────────────────────────── */
+   441→        .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
+   442→        .card h2 { font-size: 1.1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; }
+   443→
+   444→        /* ── Buttons ──────────────────────────────────────────── */
+   445→        .btn { padding: .5rem 1rem; border: none; border-radius: 3px; font-size: .85rem; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+   446→        .btn-primary { background: #003189; color: #fff; }
+   447→        .btn-primary:hover { background: #002270; }
+   448→        .btn-secondary { background: #f0f0f0; color: #333; }
+   449→        .btn-secondary:hover { background: #e0e0e0; }
+   450→        .btn-danger { background: #c0392b; color: #fff; }
+   451→        .btn-danger:hover { background: #a93226; }
+   452→        .btn-test { background: #27ae60; color: #fff; }
+   453→        .btn-test:hover { background: #219a52; }
+   454→        .btn:disabled { opacity: .55; cursor: not-allowed; }
+   455→
+   456→        /* ── Messages ─────────────────────────────────────────── */
+   457→        .msg-success { background: #e8f5e9; border: 1px solid #27ae60; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #1a6b3c; }
+   458→        .msg-error { background: #ffebee; border: 1px solid #c0392b; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #c0392b; }
+   459→        .msg-info { background: #e3f2fd; border: 1px solid #1976d2; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #1565c0; }
+   460→
+   461→        /* ── Form fields ──────────────────────────────────────── */
+   462→        .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
+   463→        label { font-size: .85rem; font-weight: bold; color: #444; }
+   464→        .hint { font-size: .75rem; color: #888; font-weight: normal; }
+   465→        .req { color: #c0392b; margin-left: 2px; }
+   466→        input[type="text"], input[type="date"], input[type="number"], input[type="password"], input[type="email"], select, textarea {
+   467→            width: 100%; padding: .5rem .75rem; border: 1px solid #aaa;
+   468→            border-radius: 3px; font-size: .9rem; font-family: inherit; background: #fff; color: #1e1e1e;
+   469→        }
+   470→        input:focus, select:focus, textarea:focus { outline: 2px solid #003189; outline-offset: 1px; border-color: #003189; }
+   471→        .field-error { border-color: #c0392b !important; background: #fff5f5; }
+   472→
+   473→        /* ── Form actions ─────────────────────────────────────── */
+   474→        .form-actions { display: flex; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+   475→
+   476→        /* ── Stepper ──────────────────────────────────────────── */
+   477→        .stepper { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; gap: 0; }
+   478→        .step-item { display: flex; flex-direction: column; align-items: center; min-width: 100px; max-width: 180px; flex: 1; text-align: center; position: relative; padding: 0 .5rem; }
+   479→        .step-item:not(:last-child)::after { content: ''; position: absolute; top: 18px; right: -50%; width: 100%; height: 3px; z-index: 0; }
+   480→        .step-item.step-done:not(:last-child)::after { background: #1a6b3c; }
+   481→        .step-item.step-active:not(:last-child)::after { background: #b45309; }
+   482→        .step-item.step-upcoming:not(:last-child)::after { background: #ccc; }
+   483→        .step-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .95rem; font-weight: bold; z-index: 1; margin-bottom: .5rem; }
+   484→        .step-done .step-icon { background: #1a6b3c; color: #fff; }
+   485→        .step-active .step-icon { background: #003189; color: #fff; }
+   486→        .step-upcoming .step-icon { background: #ccc; color: #666; }
+   487→        .step-label { font-size: .78rem; font-weight: bold; color: #333; margin-bottom: .15rem; line-height: 1.3; }
+   488→        .step-upcoming .step-label { color: #999; }
+   489→
+   490→        /* ── Prerequisite checks ──────────────────────────────── */
+   491→        .check-list { list-style: none; padding: 0; }
+   492→        .check-item { display: flex; align-items: flex-start; gap: .75rem; padding: .75rem 0; border-bottom: 1px solid #eee; font-size: .9rem; }
+   493→        .check-item:last-child { border-bottom: none; }
+   494→        .check-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: bold; flex-shrink: 0; margin-top: 1px; }
+   495→        .check-ok .check-icon { background: #1a6b3c; color: #fff; }
+   496→        .check-fail .check-icon { background: #c0392b; color: #fff; }
+   497→        .check-label { font-weight: bold; color: #333; }
+   498→        .check-detail { font-size: .8rem; color: #888; margin-top: .15rem; }
+   499→
+   500→        /* ── Config preview (step 3) ──────────────────────────── */
+   501→        .config-preview { background: #f7f7fb; border: 1px solid #ddd; border-radius: 4px; padding: 1.25rem; font-family: "Consolas", "Monaco", monospace; font-size: .82rem; line-height: 1.7; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+   502→        .config-preview .config-key { color: #003189; font-weight: bold; }
+   503→        .config-preview .config-val { color: #1a6b3c; }
+   504→
+   505→        /* ── Warning box ──────────────────────────────────────── */
+   506→        .warn-box { background: #fff3e0; border-left: 4px solid #b45309; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; font-size: .9rem; color: #7c4700; }
+   507→
+   508→        /* ── Footer ───────────────────────────────────────────── */
+   509→        .footer { text-align: center; padding: 1.5rem; font-size: .78rem; color: #999; margin-top: auto; border-top: 1px solid #eee; }
+   510→
+   511→        /* ── Responsive ───────────────────────────────────────── */
+   512→        @media (max-width: 600px) {
+   513→            .stepper { gap: 0; }
+   514→            .step-item { min-width: 70px; padding: 0 .25rem; }
+   515→            .step-label { font-size: .7rem; }
+   516→            .bandeau { padding: .5rem 1rem; font-size: .78rem; }
+   517→        }
+   518→    </style>
+   519→</head>
+   520→<body>
+   521→
+   522→<div class="bandeau">
+   523→    <strong>DREETS</strong> — Assistant d'installation
+   524→</div>
+   525→
+   526→<div class="container">
+   527→
+   528→    <!-- Stepper -->
+   529→    <div class="stepper">
+   530→        <div class="step-item <?= $step >= 1 ? ($step > 1 ? 'step-done' : 'step-active') : 'step-upcoming' ?>">
+   531→            <div class="step-icon"><?= $step > 1 ? '✓' : '1' ?></div>
+   532→            <div class="step-label">Prérequis</div>
+   533→        </div>
+   534→        <div class="step-item <?= $step >= 2 ? ($step > 2 ? 'step-done' : 'step-active') : 'step-upcoming' ?>">
+   535→            <div class="step-icon"><?= $step > 2 ? '✓' : '2' ?></div>
+   536→            <div class="step-label">Configuration</div>
+   537→        </div>
+   538→        <div class="step-item <?= $step >= 3 ? 'step-active' : 'step-upcoming' ?>">
+   539→            <div class="step-icon">3</div>
+   540→            <div class="step-label">Installation</div>
+   541→        </div>
+   542→    </div>
+   543→
+   544→    <h1>🔧 Installation du Workflow DREETS</h1>
+   545→
+   546→    <?php foreach ($messages as $msg): ?>
+   547→        <div class="msg-success"><?= inst_h($msg) ?></div>
+   548→    <?php endforeach; ?>
+   549→
+   550→    <?php foreach ($error_messages as $msg): ?>
+   551→        <div class="msg-error"><?= inst_h($msg) ?></div>
+   552→    <?php endforeach; ?>
+   553→
+   554→    <?php if ($step === 1): ?>
+   555→    <!-- ════════════════════════════════════════════════════════════
+   556→         ÉTAPE 1 : Vérification des prérequis
+   557→         ════════════════════════════════════════════════════════════ -->
+   558→    <div class="card">
+   559→        <h2>Étape 1 — Vérification des prérequis</h2>
+   560→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   561→            L'assistant vérifie que votre environnement répond aux exigences minimales pour faire fonctionner le Workflow DREETS.
+   562→        </p>
+   563→        <ul class="check-list">
+   564→            <?php foreach ($prerequisites as $key => $check): ?>
+   565→            <li class="check-item <?= $check['ok'] ? 'check-ok' : 'check-fail' ?>">
+   566→                <div class="check-icon"><?= $check['ok'] ? '✓' : '✗' ?></div>
+   567→                <div>
+   568→                    <div class="check-label"><?= inst_h($check['label']) ?></div>
+   569→                    <div class="check-detail"><?= inst_h($check['detail']) ?></div>
+   570→                </div>
+   571→            </li>
+   572→            <?php endforeach; ?>
+   573→        </ul>
+   574→    </div>
+   575→
+   576→    <?php if ($all_prereqs_ok): ?>
+   577→    <form method="POST">
+   578→        <?= inst_csrf_field() ?>
+   579→        <input type="hidden" name="action" value="to_step2">
+   580→        <div class="form-actions">
+   581→            <button type="submit" class="btn btn-primary">Continuer vers la configuration →</button>
+   582→        </div>
+   583→    </form>
+   584→    <?php else: ?>
+   585→    <div class="warn-box">
+   586→        ⚠ Certains prérequis ne sont pas satisfaits. Corrigez les problèmes ci-dessus puis rechargez cette page.
+   587→    </div>
+   588→    <form method="GET">
+   589→        <div class="form-actions">
+   590→            <button type="submit" class="btn btn-secondary">↻ Recharger la page</button>
+   591→        </div>
+   592→    </form>
+   593→    <?php endif; ?>
+   594→
+   595→    <?php elseif ($step === 2): ?>
+   596→    <!-- ════════════════════════════════════════════════════════════
+   597→         ÉTAPE 2 : Formulaire de configuration
+   598→         ════════════════════════════════════════════════════════════ -->
+   599→
+   600→    <div class="card">
+   601→        <h2>Étape 2 — Configuration de l'application</h2>
+   602→
+   603→        <form method="POST" id="config-form">
+   604→            <?= inst_csrf_field() ?>
+   605→            <input type="hidden" name="action" value="generate_config">
+   606→
+   607→            <!-- Base URL -->
+   608→            <div class="field">
+   609→                <label>URL de base <span class="req">*</span> <span class="hint">(auto-détectée, modifiable)</span></label>
+   610→                <input type="text" name="base_url" value="<?= inst_h($default_base_url) ?>" placeholder="https://serveur.intra/workflow">
+   611→            </div>
+   612→
+   613→            <!-- SMTP -->
+   614→            <div class="field">
+   615→                <label>Hôte SMTP <span class="req">*</span></label>
+   616→                <input type="text" name="smtp_host" value="<?= inst_h($default_smtp_host) ?>" placeholder="smtp.social.gouv.fr">
+   617→            </div>
+   618→
+   619→            <div class="field">
+   620→                <label>Port SMTP <span class="req">*</span></label>
+   621→                <input type="number" name="smtp_port" value="<?= inst_h((string)$default_smtp_port) ?>" min="1" max="65535">
+   622→            </div>
+   623→
+   624→            <div class="field">
+   625→                <label>Email expéditeur <span class="req">*</span></label>
+   626→                <input type="email" name="smtp_from" value="<?= inst_h($default_smtp_from) ?>" placeholder="workflow@dreets.gouv.fr">
+   627→            </div>
+   628→
+   629→            <div class="field">
+   630→                <label>Nom de l'expéditeur <span class="req">*</span></label>
+   631→                <input type="text" name="smtp_from_name" value="<?= inst_h($default_smtp_from_name) ?>" placeholder="Workflow DREETS">
+   632→            </div>
+   633→
+   634→            <!-- Admin -->
+   635→            <div class="field">
+   636→                <label>Email administrateur <span class="req">*</span> <span class="hint">(adresse de l'administrateur principal)</span></label>
+   637→                <input type="email" name="admin_email" value="<?= inst_h($default_admin_email) ?>" placeholder="prenom.nom@dreets.gouv.fr" required>
+   638→            </div>
+   639→
+   640→            <!-- Délai -->
+   641→            <div class="field">
+   642→                <label>Délai de relance (heures) <span class="hint">(délai avant envoi d'une relance automatique)</span></label>
+   643→                <input type="number" name="delai_relance_h" value="<?= inst_h((string)$default_delai_relance_h) ?>" min="1">
+   644→            </div>
+   645→
+   646→            <div class="form-actions">
+   647→                <button type="submit" class="btn btn-primary">Générer config.php →</button>
+   648→                <a href="install.php?step=1" class="btn btn-secondary">← Retour</a>
+   649→            </div>
+   650→        </form>
+   651→        </div>
+   652→
+   653→    <!-- Test SMTP (formulaire séparé) -->
+   654→    <div class="card" style="margin-top:1.5rem;">
+   655→        <h2>Test d'envoi SMTP</h2>
+   656→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   657→            Envoyer un email de test pour vérifier que la configuration SMTP est correcte avant de valider l'installation.
+   658→            L'email sera envoyé à l'adresse administrateur indiquée ci-dessus.
+   659→        </p>
+   660→        <form method="POST">
+   661→            <?= inst_csrf_field() ?>
+   662→            <input type="hidden" name="action" value="test_smtp">
+   663→            <input type="hidden" name="base_url" value="<?= inst_h($default_base_url) ?>">
+   664→            <input type="hidden" name="smtp_host" value="<?= inst_h($default_smtp_host) ?>">
+   665→            <input type="hidden" name="smtp_port" value="<?= inst_h((string)$default_smtp_port) ?>">
+   666→            <input type="hidden" name="smtp_from" value="<?= inst_h($default_smtp_from) ?>">
+   667→            <input type="hidden" name="smtp_from_name" value="<?= inst_h($default_smtp_from_name) ?>">
+   668→            <input type="hidden" name="admin_email" value="<?= inst_h($default_admin_email) ?>">
+   669→            <input type="hidden" name="delai_relance_h" value="<?= inst_h((string)$default_delai_relance_h) ?>">
+   670→            <button type="submit" class="btn btn-test" <?= empty($default_admin_email) ? 'disabled' : '' ?>>📧 Envoyer un email de test</button>
+   671→            <?php if (empty($default_admin_email)): ?>
+   672→                <span class="hint" style="margin-left:.5rem;">Renseignez l'email administrateur ci-dessus d'abord.</span>
+   673→            <?php endif; ?>
+   674→        </form>
+   675→    </div>
+   676→
+   677→    <?php elseif ($step === 3): ?>
+   678→    <!-- ════════════════════════════════════════════════════════════
+   679→         ÉTAPE 3 : Confirmation et installation
+   680→         ════════════════════════════════════════════════════════════ -->
+   681→
+   682→    <?php if ($confirm_config === null): ?>
+   683→    <div class="msg-error">
+   684→        Aucune configuration trouvée en session. Veuillez recommencer depuis l'étape 1.
+   685→    </div>
+   686→    <a href="install.php?step=1" class="btn btn-primary">← Recommencer</a>
+   687→
+   688→    <?php else: ?>
+   689→    <div class="card">
+   690→        <h2>Étape 3 — Confirmation de l'installation</h2>
+   691→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   692→            Vérifiez la configuration ci-dessous. Si tout est correct, cliquez sur « Installer » pour créer le fichier
+   693→            <strong>config.php</strong> et lancer l'application.
+   694→        </p>
+   695→
+   696→        <div class="config-preview"><?php
+   697→            $config_lines = [
+   698→                'BASE_URL'       => $confirm_config['base_url'],
+   699→                'DB_PATH'        => '__DIR__ . \'/db/workflow.db\'',
+   700→                'SMTP_HOST'      => $confirm_config['smtp_host'],
+   701→                'SMTP_PORT'      => (string)$confirm_config['smtp_port'],
+   702→                'SMTP_FROM'      => $confirm_config['smtp_from'],
+   703→                'SMTP_FROM_NAME' => $confirm_config['smtp_from_name'],
+   704→                'DELAI_RELANCE_H'=> (string)$confirm_config['delai_relance_h'],
+   705→                'ADMIN_EMAIL'    => $confirm_config['admin_email'],
+   706→                'APP_VERSION'    => '3.0.0',
+   707→            ];
+   708→            foreach ($config_lines as $key => $val):
+   709→                echo '<span class="config-key">' . inst_h($key) . '</span> = <span class="config-val">' . inst_h($val) . "</span>\n";
+   710→            endforeach;
+   711→        ?></div>
+   712→    </div>
+   713→
+   714→    <div class="warn-box">
+   715→        ⚠ En cliquant sur « Installer », le fichier <strong>config.php</strong> sera créé dans le répertoire
+   716→        <code><?= inst_h(__DIR__) ?></code> et le répertoire <strong>db/</strong> sera créé si nécessaire.
+   717→        L'application sera alors accessible via <a href="index.php" style="color:#7c4700;font-weight:bold;">index.php</a>.
+   718→    </div>
+   719→
+   720→    <form method="POST">
+   721→        <?= inst_csrf_field() ?>
+   722→        <input type="hidden" name="action" value="install">
+   723→        <div class="form-actions">
+   724→            <button type="submit" class="btn btn-primary">✓ Installer</button>
+   725→            <a href="install.php?step=2" class="btn btn-secondary">← Modifier la configuration</a>
+   726→        </div>
+   727→    </form>
+   728→
+   729→    <?php endif; ?>
+   730→
+   731→    <?php endif; ?>
+   732→
+   733→</div>
+   734→
+   735→<div class="footer">
+   736→    Workflow DREETS — Assistant d'installation · Version 3.0.0
+   737→</div>
+   738→
+   739→</body>
+   740→</html>
+   741→
