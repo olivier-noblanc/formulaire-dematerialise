@@ -44,17 +44,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (empty($field_errors)) {
+    // Validation des fichiers uploades
+    $file_errors = [];
+    foreach ($form_fields as $field) {
+        if ($field['field_type'] === 'file') {
+            $fname = $field['field_name'];
+            if ($field['required'] && empty($_FILES[$fname]['name'])) {
+                $file_errors[$fname] = 'Ce fichier est obligatoire';
+            }
+        }
+    }
+
+    if (empty($field_errors) && empty($file_errors)) {
         $now  = date('Y-m-d H:i:s');
         $data = [];
         foreach ($_POST as $k => $v) {
             $data[htmlspecialchars($k)] = is_array($v) ? implode(', ', $v) : trim($v);
         }
 
+        // Ajouter les noms de fichiers uploades dans les donnees
+        foreach ($form_fields as $field) {
+            if ($field['field_type'] === 'file') {
+                $fname = $field['field_name'];
+                if (!empty($_FILES[$fname]['name'])) {
+                    $data[$fname] = $_FILES[$fname]['name'];
+                }
+            }
+        }
+
         $pdo->prepare("INSERT INTO submissions (form_id, data, submitted_by, submitted_at) VALUES (?,?,?,?)")
             ->execute([$form['id'], json_encode($data, JSON_UNESCAPED_UNICODE), $submitted_by, $now]);
 
         $submission_id = (int)$pdo->lastInsertId();
+
+        // Traiter les fichiers uploades
+        foreach ($form_fields as $field) {
+            if ($field['field_type'] === 'file') {
+                $fname = $field['field_name'];
+                if (!empty($_FILES[$fname]['name']) && $_FILES[$fname]['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $upload_result = handle_file_upload($_FILES[$fname], $submission_id, $fname);
+                    if (!$upload_result['success']) {
+                        $file_errors[$fname] = $upload_result['message'];
+                    }
+                }
+            }
+        }
+
         advance_workflow($submission_id);
 
         // Envoyer un email de confirmation à l'agent
@@ -175,6 +210,13 @@ HTML;
 <div class="field full"><label for="{$name}">{$label}{$req_span}</label><textarea id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}">{$val}</textarea>{$error_html}</div>
 HTML;
 
+        case 'file':
+            $accept = implode(',', array_map(function($ext) { return '.' . $ext; }, get_allowed_extensions()));
+            $max_size_mo = round(get_max_file_size() / 1048576, 0);
+            return <<<HTML
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="file" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" accept="{$accept}"><span class="hint">Formats acceptés : PDF, images, Office, ZIP — Max {$max_size_mo} Mo</span>{$error_html}</div>
+HTML;
+
         default: // text
             $val = h($posted_val ?? '');
             return <<<HTML
@@ -230,12 +272,13 @@ HTML;
       Le workflow de validation a été déclenché automatiquement. Un email de confirmation vous a été envoyé.
     </div>
   <?php else: ?>
-    <?php if (!empty($field_errors)): ?>
-      <div class="errors"><strong>Veuillez corriger les champs suivants :</strong><ul><?php foreach ($field_errors as $fn => $fe): ?><li><?= h($field_labels[$fn] ?? $fn) ?> : <?= h($fe) ?></li><?php endforeach; ?></ul></div>
+    <?php if (!empty($field_errors) || !empty($file_errors)): ?>
+      <div class="errors"><strong>Veuillez corriger les champs suivants :</strong><ul><?php foreach ($field_errors as $fn => $fe): ?><li><?= h($field_labels[$fn] ?? $fn) ?> : <?= h($fe) ?></li><?php endforeach; ?><?php foreach ($file_errors as $fn => $fe): ?><li><?= h($field_labels[$fn] ?? $fn) ?> : <?= h($fe) ?></li><?php endforeach; ?></ul></div>
     <?php endif; ?>
 
-    <form method="POST" novalidate>
+    <form method="POST" enctype="multipart/form-data" novalidate>
       <?= csrf_field() ?>
+      <input type="hidden" name="MAX_FILE_SIZE" value="<?= get_max_file_size() ?>">
 
       <?php if (empty($grouped)): ?>
         <p class="no-fields">Aucun champ configuré pour ce formulaire. Contactez un administrateur.</p>

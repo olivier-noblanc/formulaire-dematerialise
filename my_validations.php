@@ -4,6 +4,18 @@ require_once __DIR__ . '/helpers.php';
 
 $user = get_auth_user();
 $pdo  = get_pdo();
+$search = trim($_GET['search'] ?? '');
+
+// Traitement de la delegation
+$delegation_msg = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delegate_token') {
+    if (!verify_csrf()) die('Token CSRF invalide.');
+    $token_id = (int)($_POST['token_id'] ?? 0);
+    $delegate_to = trim($_POST['delegate_to'] ?? '');
+    $delegate_reason = trim($_POST['delegate_reason'] ?? '');
+    $result = delegate_token($token_id, $delegate_to, $delegate_reason);
+    $delegation_msg = $result['message'];
+}
 
 // ── Tokens en attente pour cet utilisateur ──
 $pending_stmt = $pdo->prepare("
@@ -18,7 +30,24 @@ $pending_stmt = $pdo->prepare("
     WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
     ORDER BY t.sent_at DESC
 ");
-$pending_stmt->execute([$user]);
+if ($search) {
+    $pending_stmt = $pdo->prepare("
+        SELECT t.id as token_id, t.token, t.sent_at, t.expires_at, t.relance_count,
+               st.label as step_label, st.ordre,
+               s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
+               f.label as form_label, f.slug as form_slug
+        FROM tokens t
+        JOIN steps st ON st.id = t.step_id
+        JOIN submissions s ON s.id = t.submission_id
+        JOIN forms f ON f.id = s.form_id
+        WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
+          AND (f.label LIKE ? OR s.data LIKE ?)
+        ORDER BY t.sent_at DESC
+    ");
+    $pending_stmt->execute([$user, '%' . $search . '%', '%' . $search . '%']);
+} else {
+    $pending_stmt->execute([$user]);
+}
 $pending_tokens = $pending_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ── Tokens déjà traités par cet utilisateur (historique) ──
@@ -122,6 +151,20 @@ function is_token_expired(array $token): bool {
     <div class="stat success"><strong><?= $done_count ?></strong>Traitées</div>
   </div>
 
+  <!-- Barre de recherche -->
+  <?php if ($delegation_msg): ?>
+    <div class="msg-info"><?= h($delegation_msg) ?></div>
+  <?php endif; ?>
+
+  <form method="GET" style="display:flex;gap:.5rem;align-items:center;margin-bottom:1.5rem;">
+    <input type="text" name="search" value="<?= h($search) ?>" placeholder="Rechercher un formulaire..." style="padding:.4rem .75rem;border:1px solid #aaa;border-radius:3px;font-size:.85rem;font-family:inherit;flex:1;max-width:350px;">
+    <input type="hidden" name="tab" value="<?= h($active_tab) ?>">
+    <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">Rechercher</button>
+    <?php if ($search): ?>
+      <a href="?tab=<?= h($active_tab) ?>" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">✕ Effacer</a>
+    <?php endif; ?>
+  </form>
+
   <!-- Onglets -->
   <div class="tab-bar">
     <a href="?tab=pending" class="tab <?= $active_tab === 'pending' ? 'active' : '' ?>">⏳ En attente <?= $pending_count > 0 ? '<span class="tab-count warn">' . $pending_count . '</span>' : '' ?></a>
@@ -220,6 +263,18 @@ function is_token_expired(array $token): bool {
           <?php else: ?>
             <span style="font-size:.85rem;color:#c0392b;">Token expiré — contactez un administrateur pour régénérer</span>
           <?php endif; ?>
+          <!-- Bouton delegation -->
+          <details style="margin-left:.5rem;">
+            <summary class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;cursor:pointer;display:inline;">🔄 Déléguer</summary>
+            <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;padding:.75rem;background:#f8f8fc;border-radius:4px;border:1px solid #ddd;">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="delegate_token">
+              <input type="hidden" name="token_id" value="<?= (int)$tk['token_id'] ?>">
+              <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
+              <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
+              <button type="submit" style="font-size:.8rem;padding:.3rem .75rem;background:#6c3483;color:#fff;border:none;border-radius:3px;cursor:pointer;">Confirmer</button>
+            </form>
+          </details>
         </div>
       </div>
       <?php endforeach; ?>

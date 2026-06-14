@@ -297,6 +297,35 @@ function db_migrate(PDO $pdo): void {
             FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
         )
     ");
+
+    // Table des pieces jointes — fichiers uploades avec les soumissions
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS attachments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submission_id INTEGER NOT NULL,
+            field_name TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            stored_name TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            file_size INTEGER NOT NULL DEFAULT 0,
+            uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+        )
+    ");
+
+    // Table des delegations — transfert de validation a un autre validateur
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS delegations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token_id INTEGER NOT NULL,
+            from_email TEXT NOT NULL,
+            to_email TEXT NOT NULL,
+            reason TEXT,
+            delegated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            new_token_id INTEGER,
+            FOREIGN KEY (token_id) REFERENCES tokens(id) ON DELETE CASCADE
+        )
+    ");
     
     // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
     $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
@@ -1319,4 +1348,371 @@ function cancel_submission(int $submission_id, string $cancelled_by = ''): array
     app_log('submission_cancel', 'submission:' . $submission_id, 'Soumission annulée', $cancelled_by);
 
     return ['success' => true, 'message' => 'Soumission annulée avec succès.'];
+}
+
+// ── MANUAL REMINDER ──────────────────────────────────────────
+
+/**
+ * Envoie un rappel manuel pour un token en attente
+ * Contrairement a regenerate_token, celui-ci ne modifie pas le token existant
+ * Il envoie simplement un email de rappel au validateur
+ *
+ * @param int $token_id ID du token
+ * @return array ['success' => bool, 'message' => string]
+ */
+function remind_one(int $token_id): array {
+    $pdo = get_pdo();
+
+    // Récupérer le token avec les infos de la soumission
+    $stmt = $pdo->prepare("
+        SELECT t.*, s.data, s.status as sub_status, f.label as form_label
+        FROM tokens t
+        JOIN submissions s ON s.id = t.submission_id
+        JOIN forms f ON f.id = s.form_id
+        WHERE t.id = ?
+    ");
+    $stmt->execute([$token_id]);
+    $tok = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$tok) {
+        return ['success' => false, 'message' => 'Token introuvable.'];
+    }
+    if ($tok['done_at']) {
+        return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
+    }
+    if ($tok['sub_status'] !== 'en_cours') {
+        return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
+    }
+
+    // Récupérer le label de l'étape
+    $step_stmt = $pdo->prepare("SELECT label FROM steps WHERE id = ?");
+    $step_stmt->execute([$tok['step_id']]);
+    $step = $step_stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Incrémenter le compteur de relances
+    $new_count = (int)$tok['relance_count'] + 1;
+    $relance_max = (int)get_setting('relance_max', '3');
+
+    $pdo->prepare("UPDATE tokens SET relance_count = ?, relance_at = datetime('now') WHERE id = ?")
+        ->execute([$new_count, $token_id]);
+
+    // Construire l'email de rappel
+    $submission = [
+        'data' => $tok['data'],
+        'form_label' => $tok['form_label'],
+    ];
+    $subject = '[Rappel] ' . $tok['form_label'] . ' — ' . ($step['label'] ?? 'Validation requise');
+    if ($new_count > 1) {
+        $subject = '[Rappel ' . $new_count . '/' . $relance_max . '] ' . $tok['form_label'] . ' — ' . ($step['label'] ?? 'Validation requise');
+    }
+
+    $mail_body = build_mail_html($submission, $step['label'] ?? 'Validation', $tok['token']);
+    // Ajouter un message de rappel en haut du corps
+    $rappel_notice = '<div style="background:#fff3e0;border:1px solid #b45309;border-radius:4px;padding:12px;margin-bottom:16px;">
+        <strong>⏰ Rappel :</strong> Cette demande est toujours en attente de votre validation.
+        <br>Ceci est le rappel n°' . $new_count . ' sur un maximum de ' . $relance_max . '.
+    </div>';
+    $mail_body = str_replace('<h2 style="color:#003189;">', $rappel_notice . '<h2 style="color:#003189;">', $mail_body);
+
+    $mail_sent = send_mail($tok['email'], $subject, $mail_body);
+
+    app_log('manual_remind', 'token:' . $token_id, 'Rappel manuel envoyé à ' . $tok['email'] . ' (relance ' . $new_count . '/' . $relance_max . ')');
+
+    if ($mail_sent) {
+        return ['success' => true, 'message' => 'Rappel envoyé à ' . $tok['email'] . ' (relance ' . $new_count . '/' . $relance_max . ')'];
+    } else {
+        return ['success' => false, 'message' => 'Erreur lors de l\'envoi de l\'email à ' . $tok['email'] . '. Vérifiez la configuration SMTP.'];
+    }
+}
+
+// ── FILE ATTACHMENTS ─────────────────────────────────────────
+
+/**
+ * Types MIME autorises pour les pieces jointes
+ * Securise : pas d'executables, pas de scripts
+ */
+function get_allowed_mime_types(): array {
+    return [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'text/csv',
+        'application/zip',
+    ];
+}
+
+/**
+ * Extensions autorisees (verification supplementaire)
+ */
+function get_allowed_extensions(): array {
+    return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip'];
+}
+
+/**
+ * Taille maximale des fichiers en octets (10 Mo)
+ */
+function get_max_file_size(): int {
+    return 10 * 1024 * 1024;
+}
+
+/**
+ * Gère l'upload d'un fichier pour une soumission
+ *
+ * @param array $file Le tableau $_FILES['field_name']
+ * @param int $submission_id ID de la soumission
+ * @param string $field_name Nom du champ
+ * @return array ['success' => bool, 'message' => string, 'attachment_id' => int|null]
+ */
+function handle_file_upload(array $file, int $submission_id, string $field_name): array {
+    // Vérifier les erreurs d'upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $errors = [
+            UPLOAD_ERR_INI_SIZE   => 'Le fichier dépasse la taille maximale autorisée par le serveur.',
+            UPLOAD_ERR_FORM_SIZE  => 'Le fichier dépasse la taille maximale autorisée par le formulaire.',
+            UPLOAD_ERR_PARTIAL    => 'Le fichier n\'a été que partiellement téléchargé.',
+            UPLOAD_ERR_NO_FILE    => 'Aucun fichier n\'a été téléchargé.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant sur le serveur.',
+            UPLOAD_ERR_CANT_WRITE => 'Erreur d\'écriture sur le serveur.',
+        ];
+        return ['success' => false, 'message' => $errors[$file['error']] ?? 'Erreur inconnue lors de l\'upload.', 'attachment_id' => null];
+    }
+
+    // Vérifier la taille
+    if ($file['size'] > get_max_file_size()) {
+        return ['success' => false, 'message' => 'Le fichier dépasse la taille maximale autorisée (10 Mo).', 'attachment_id' => null];
+    }
+
+    // Vérifier l'extension
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, get_allowed_extensions())) {
+        return ['success' => false, 'message' => 'Type de fichier non autorisé. Extensions acceptées : ' . implode(', ', get_allowed_extensions()) . '.', 'attachment_id' => null];
+    }
+
+    // Vérifier le type MIME
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    if (!in_array($mime_type, get_allowed_mime_types())) {
+        return ['success' => false, 'message' => 'Type MIME non autorisé : ' . $mime_type . '.', 'attachment_id' => null];
+    }
+
+    // Créer le répertoire d'upload si nécessaire
+    $upload_dir = __DIR__ . '/db/uploads';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0750, true);
+    }
+    // Protéger le répertoire avec un .htaccess (Apache) et index.php vide
+    if (!file_exists($upload_dir . '/.htaccess')) {
+        file_put_contents($upload_dir . '/.htaccess', "Deny from all\n");
+    }
+    if (!file_exists($upload_dir . '/index.php')) {
+        file_put_contents($upload_dir . '/index.php', '<?php http_response_code(403);');
+    }
+
+    // Générer un nom de stockage unique
+    $stored_name = 'sub_' . $submission_id . '_' . bin2hex(random_bytes(16)) . '.' . $ext;
+    $stored_path = $upload_dir . '/' . $stored_name;
+
+    // Déplacer le fichier
+    if (!move_uploaded_file($file['tmp_name'], $stored_path)) {
+        return ['success' => false, 'message' => 'Erreur lors de l\'enregistrement du fichier.', 'attachment_id' => null];
+    }
+
+    // Enregistrer dans la base de données
+    $pdo = get_pdo();
+    $pdo->prepare("INSERT INTO attachments (submission_id, field_name, original_name, stored_name, mime_type, file_size, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))")
+        ->execute([$submission_id, $field_name, $file['name'], $stored_name, $mime_type, $file['size']]);
+
+    $attachment_id = (int)$pdo->lastInsertId();
+
+    app_log('file_upload', 'submission:' . $submission_id, 'Fichier uploadé : ' . $file['name'] . ' (' . $mime_type . ', ' . $file['size'] . ' octets)');
+
+    return ['success' => true, 'message' => 'Fichier ' . $file['name'] . ' enregistré.', 'attachment_id' => $attachment_id];
+}
+
+/**
+ * Récupère les pièces jointes d'une soumission
+ *
+ * @param int $submission_id ID de la soumission
+ * @return array Liste des pièces jointes
+ */
+function get_attachments(int $submission_id): array {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC");
+    $stmt->execute([$submission_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Récupère une pièce jointe par son ID
+ * Vérifie l'accès avant de retourner
+ *
+ * @param int $attachment_id ID de la pièce jointe
+ * @return array|null Données de la pièce jointe ou null
+ */
+function get_attachment_by_id(int $attachment_id): ?array {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("SELECT * FROM attachments WHERE id = ?");
+    $stmt->execute([$attachment_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $result ?: null;
+}
+
+/**
+ * Formate la taille d'un fichier en unités lisibles
+ */
+function format_file_size(int $bytes): string {
+    if ($bytes >= 1048576) {
+        return round($bytes / 1048576, 1) . ' Mo';
+    } elseif ($bytes >= 1024) {
+        return round($bytes / 1024, 1) . ' Ko';
+    }
+    return $bytes . ' octets';
+}
+
+/**
+ * Retourne l'icône correspondant au type de fichier
+ */
+function get_file_icon(string $mime_type): string {
+    if (strpos($mime_type, 'pdf') !== false) return '📄';
+    if (strpos($mime_type, 'image') !== false) return '🖼';
+    if (strpos($mime_type, 'word') !== false || strpos($mime_type, 'document') !== false) return '📝';
+    if (strpos($mime_type, 'sheet') !== false || strpos($mime_type, 'excel') !== false) return '📊';
+    if (strpos($mime_type, 'presentation') !== false || strpos($mime_type, 'powerpoint') !== false) return '📽';
+    if (strpos($mime_type, 'zip') !== false) return '📦';
+    if (strpos($mime_type, 'text') !== false) return '📃';
+    return '📎';
+}
+
+// ── DELEGATION ───────────────────────────────────────────────
+
+/**
+ * Délègue un token de validation à un autre validateur
+ * L'ancien token est marqué comme traité (délégué) et un nouveau token est créé
+ *
+ * @param int $token_id ID du token à déléguer
+ * @param string $to_email Email du délégataire
+ * @param string $reason Motif de la délégation
+ * @return array ['success' => bool, 'message' => string]
+ */
+function delegate_token(int $token_id, string $to_email, string $reason = ''): array {
+    $pdo = get_pdo();
+
+    // Récupérer le token
+    $stmt = $pdo->prepare("
+        SELECT t.*, s.status as sub_status, s.data, f.label as form_label
+        FROM tokens t
+        JOIN submissions s ON s.id = t.submission_id
+        JOIN forms f ON f.id = s.form_id
+        WHERE t.id = ?
+    ");
+    $stmt->execute([$token_id]);
+    $tok = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$tok) {
+        return ['success' => false, 'message' => 'Token introuvable.'];
+    }
+    if ($tok['done_at']) {
+        return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
+    }
+    if ($tok['sub_status'] !== 'en_cours') {
+        return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
+    }
+
+    // Valider l'email du délégataire
+    $to_email = strtolower(trim($to_email));
+    if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'message' => 'Adresse email invalide.'];
+    }
+    if ($to_email === $tok['email']) {
+        return ['success' => false, 'message' => 'Vous ne pouvez pas déléguer à vous-même.'];
+    }
+
+    // Vérifier qu'un token n'existe pas déjà pour cet email sur cette étape
+    $dup_check = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL");
+    $dup_check->execute([$tok['submission_id'], $tok['step_id'], $to_email]);
+    if ($dup_check->fetch()) {
+        return ['success' => false, 'message' => 'Un token de validation est déjà actif pour ' . $to_email . ' sur cette étape.'];
+    }
+
+    // Marquer l'ancien token comme traité (délégué)
+    $pdo->prepare("UPDATE tokens SET done_at = datetime('now') WHERE id = ?")
+        ->execute([$token_id]);
+
+    // Créer le nouveau token pour le délégataire
+    $new_token = generate_token();
+    $expire_days = (int)get_setting('token_expire_days', '30');
+    $expires_at = date('Y-m-d H:i:s', strtotime("+{$expire_days} days"));
+    $now = date('Y-m-d H:i:s');
+
+    $pdo->prepare("INSERT INTO tokens (submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
+        ->execute([$tok['submission_id'], $tok['step_id'], $to_email, $new_token, $now, $expires_at]);
+
+    $new_token_id = (int)$pdo->lastInsertId();
+
+    // Enregistrer la délégation
+    $pdo->prepare("INSERT INTO delegations (token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, datetime('now'), ?)")
+        ->execute([$token_id, $tok['email'], $to_email, $reason, $new_token_id]);
+
+    // Envoyer l'email au délégataire
+    $step_stmt = $pdo->prepare("SELECT label FROM steps WHERE id = ?");
+    $step_stmt->execute([$tok['step_id']]);
+    $step = $step_stmt->fetch(PDO::FETCH_ASSOC);
+
+    $submission = [
+        'data' => $tok['data'],
+        'form_label' => $tok['form_label'],
+    ];
+
+    $subject = '[Délégation] ' . $tok['form_label'] . ' — ' . ($step['label'] ?? 'Validation requise');
+    $mail_body = build_mail_html($submission, $step['label'] ?? 'Validation', $new_token);
+
+    // Ajouter un bloc de délégation en haut de l'email
+    $delegation_notice = '<div style="background:#e8eaf6;border:1px solid #003189;border-radius:4px;padding:12px;margin-bottom:16px;">
+        <strong>🔄 Délégation :</strong> Cette validation vous a été déléguée par <strong>' . h($tok['email']) . '</strong>.
+        ' . (!empty($reason) ? '<br><em>Motif : ' . h($reason) . '</em>' : '') . '
+    </div>';
+    $mail_body = str_replace('<h2 style="color:#003189;">', $delegation_notice . '<h2 style="color:#003189;">', $mail_body);
+
+    send_mail($to_email, $subject, $mail_body);
+
+    // Notifier le délégateur que sa délégation a été prise en compte
+    $confirm_subject = 'Délégation confirmée — ' . $tok['form_label'];
+    $confirm_body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
+  <h2 style="color:#003189;">🔄 Délégation confirmée</h2>
+  <p>Votre validation pour <strong>' . h($tok['form_label']) . '</strong> (étape ' . h($step['label'] ?? '') . ') a été déléguée à <strong>' . h($to_email) . '</strong>.</p>
+  <p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS — Ne pas répondre à cet email</p>
+</body></html>';
+    send_mail($tok['email'], $confirm_subject, $confirm_body);
+
+    app_log('token_delegate', 'token:' . $token_id, 'Token délégué de ' . $tok['email'] . ' à ' . $to_email . ($reason ? ' — Motif : ' . $reason : ''));
+
+    return ['success' => true, 'message' => 'Validation déléguée à ' . $to_email . '. Un email lui a été envoyé.'];
+}
+
+/**
+ * Récupère l'historique des délégations pour une soumission
+ */
+function get_delegations(int $submission_id): array {
+    $pdo = get_pdo();
+    $stmt = $pdo->prepare("
+        SELECT d.*, t.step_id, st.label as step_label
+        FROM delegations d
+        JOIN tokens t ON t.id = d.token_id
+        JOIN steps st ON st.id = t.step_id
+        WHERE t.submission_id = ?
+        ORDER BY d.delegated_at DESC
+    ");
+    $stmt->execute([$submission_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }

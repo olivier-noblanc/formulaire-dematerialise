@@ -4,17 +4,31 @@ require_once __DIR__ . '/helpers.php';
 
 $user = get_auth_user();
 $pdo  = get_pdo();
+$search = trim($_GET['search'] ?? '');
+$status_filter = $_GET['statut'] ?? 'tous';
 
 // Récupérer toutes les soumissions de l'agent
+$where = ['s.submitted_by = ?'];
+$params = [$user];
+if ($search) {
+    $where[] = "(f.label LIKE ? OR s.data LIKE ?)";
+    $params[] = '%' . $search . '%';
+    $params[] = '%' . $search . '%';
+}
+if ($status_filter === 'en_cours') { $where[] = "s.status = 'en_cours'"; }
+elseif ($status_filter === 'valide') { $where[] = "s.status = 'valide'"; }
+elseif ($status_filter === 'refuse') { $where[] = "s.status = 'refuse'"; }
+$where_sql = implode(' AND ', $where);
+
 $stmt = $pdo->prepare("
     SELECT s.id, s.form_id, s.data, s.submitted_at, s.status, s.closed_at,
            f.label as form_label, f.slug as form_slug, f.description as form_description, f.deadline_field
     FROM submissions s
     JOIN forms f ON f.id = s.form_id
-    WHERE s.submitted_by = ?
+    WHERE $where_sql
     ORDER BY s.submitted_at DESC
 ");
-$stmt->execute([$user]);
+$stmt->execute($params);
 $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Pour chaque soumission, récupérer les étapes du workflow avec leur statut
@@ -176,6 +190,24 @@ foreach ($submissions as $s) {
     <div class="stat en-cours"><strong><?= $en_cours_count ?></strong><span>En cours</span></div>
     <div class="stat valide"><strong><?= $valide_count ?></strong><span>Validées</span></div>
     <div class="stat refuse"><strong><?= $refuse_count ?></strong><span>Refusées</span></div>
+  </div>
+
+  <!-- Barre de recherche et filtre -->
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem;">
+    <form method="GET" style="display:flex;gap:.5rem;align-items:center;">
+      <input type="text" name="search" value="<?= h($search) ?>" placeholder="Rechercher..." style="padding:.4rem .75rem;border:1px solid #aaa;border-radius:3px;font-size:.85rem;font-family:inherit;width:250px;">
+      <input type="hidden" name="statut" value="<?= h($status_filter) ?>">
+      <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">Rechercher</button>
+      <?php if ($search): ?>
+        <a href="?statut=<?= h($status_filter) ?>" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">✕ Effacer</a>
+      <?php endif; ?>
+    </form>
+    <div style="display:flex;gap:.35rem;">
+      <a href="?statut=tous&search=<?= h($search) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;<?= $status_filter === 'tous' ? 'background:#003189;color:#fff;' : '' ?>">Tous</a>
+      <a href="?statut=en_cours&search=<?= h($search) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;<?= $status_filter === 'en_cours' ? 'background:#b45309;color:#fff;' : '' ?>">En cours</a>
+      <a href="?statut=valide&search=<?= h($search) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;<?= $status_filter === 'valide' ? 'background:#1a6b3c;color:#fff;' : '' ?>">Validées</a>
+      <a href="?statut=refuse&search=<?= h($search) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;<?= $status_filter === 'refuse' ? 'background:#c0392b;color:#fff;' : '' ?>">Refusées</a>
+    </div>
   </div>
   <?php endif; ?>
 

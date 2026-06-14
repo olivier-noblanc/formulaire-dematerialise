@@ -121,6 +121,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = regenerate_token($token_id);
         $action_msg = $result['message'];
     }
+    elseif ($action === 'remind_one' && $is_admin) {
+        $token_id = (int)($_POST['token_id'] ?? 0);
+        $result = remind_one($token_id);
+        $action_msg = $result['message'];
+    }
+    elseif ($action === 'delegate_token') {
+        $token_id = (int)($_POST['token_id'] ?? 0);
+        $delegate_to = trim($_POST['delegate_to'] ?? '');
+        $delegate_reason = trim($_POST['delegate_reason'] ?? '');
+        // Seul le validateur assigne ou un admin peut deleguer
+        $tok_check = $pdo->prepare("SELECT email FROM tokens WHERE id = ? AND done_at IS NULL");
+        $tok_check->execute([$token_id]);
+        $tok_email = $tok_check->fetchColumn();
+        if ($tok_email && ($is_admin || $tok_email === $user)) {
+            $result = delegate_token($token_id, $delegate_to, $delegate_reason);
+            $action_msg = $result['message'];
+        } else {
+            $action_msg = 'Action non autorisée.';
+        }
+    }
     elseif ($action === 'cancel_submission') {
         $confirmed = !empty($_POST['confirmed']);
         if (!$confirmed) {
@@ -329,6 +349,9 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
                       <span class="wf-waiting">○</span>
                     <?php endif; ?>
                     <span><?= h($tok['email']) ?></span>
+                    <?php if ((int)$tok['relance_count'] > 0 && empty($tok['done_at'])): ?>
+                      <span style="color:#b45309;font-size:.7rem;margin-left:.25rem;">(<?= (int)$tok['relance_count'] ?> rappel<?= (int)$tok['relance_count'] > 1 ? 's' : '' ?>)</span>
+                    <?php endif; ?>
                   </div>
                 <?php endforeach; ?>
               <?php else: ?>
@@ -346,13 +369,45 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
         <?php if (empty($tok['done_at'])): ?>
           <form method="POST" style="display:inline;">
             <?= csrf_field() ?>
+            <input type="hidden" name="action" value="remind_one">
+            <input type="hidden" name="token_id" value="<?= (int)$tok['id'] ?>">
+            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📧 Rappeler <?= h($tok['email']) ?></button>
+          </form>
+          <form method="POST" style="display:inline;">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="regenerate_token">
             <input type="hidden" name="token_id" value="<?= (int)$tok['id'] ?>">
-            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Relancer <?= h($tok['email']) ?></button>
+            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Régénérer <?= h($tok['email']) ?></button>
           </form>
         <?php endif; ?>
       <?php endforeach; ?>
     </div>
+    <?php endif; ?>
+
+    <?php if ($status === 'en_cours'): ?>
+    <!-- Formulaire de delegation (visible pour validateur ou admin) -->
+    <?php
+      $my_pending_tokens = array_filter($all_tokens, function($tok) use ($user, $is_admin) {
+          return empty($tok['done_at']) && ($is_admin || $tok['email'] === $user);
+      });
+      if (!empty($my_pending_tokens)):
+    ?>
+    <div class="actions-bar" style="margin-top:0;">
+      <strong style="font-size:.85rem;color:#003189;">🔄 Déléguer ma validation :</strong>
+      <form method="POST" style="display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="delegate_token">
+        <select name="token_id" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;">
+          <?php foreach ($my_pending_tokens as $mpt): ?>
+            <option value="<?= (int)$mpt['id'] ?>">Étape <?= (int)$mpt['ordre'] ?> — <?= h($mpt['email']) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
+        <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
+        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;background:#6c3483;color:#fff;">🔄 Déléguer</button>
+      </form>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
   </div>
 
@@ -411,6 +466,67 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
         <div class="val-detail"><?= h($v['date']) ?></div>
         <?php if (!empty($v['commentaire'])): ?>
           <div class="val-comment">💬 <?= h($v['commentaire']) ?></div>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
+  <!-- Pièces jointes -->
+  <?php
+    $attachments = get_attachments($sub_id);
+    if (!empty($attachments)):
+  ?>
+  <div class="card">
+    <h2>📎 Pièces jointes (<?= count($attachments) ?>)</h2>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Fichier</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Type</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Taille</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Date</th>
+          <th style="text-align:right;padding:.5rem;border-bottom:2px solid #003189;"></th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php foreach ($attachments as $att): ?>
+        <tr>
+          <td style="padding:.5rem;border-bottom:1px solid #eee;">
+            <?= get_file_icon($att['mime_type']) ?>
+            <strong><?= h($att['original_name']) ?></strong>
+          </td>
+          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;color:#888;"><?= h($att['mime_type']) ?></td>
+          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= format_file_size((int)$att['file_size']) ?></td>
+          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= h(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
+          <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">
+            <a href="download.php?id=<?= (int)$att['id'] ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;">📥 Télécharger</a>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
+
+  <!-- Délégations -->
+  <?php
+    $delegations = get_delegations($sub_id);
+    if (!empty($delegations)):
+  ?>
+  <div class="card">
+    <h2>🔄 Délégations</h2>
+    <?php foreach ($delegations as $dlg): ?>
+    <div class="val-item">
+      <div class="val-icon">🔄</div>
+      <div class="val-content">
+        <div class="val-header">
+          <?= h($dlg['step_label']) ?> : <?= h($dlg['from_email']) ?> → <?= h($dlg['to_email']) ?>
+        </div>
+        <div class="val-detail"><?= h(date('d/m/Y à H:i', strtotime($dlg['delegated_at']))) ?></div>
+        <?php if (!empty($dlg['reason'])): ?>
+          <div class="val-comment">💬 Motif : <?= h($dlg['reason']) ?></div>
         <?php endif; ?>
       </div>
     </div>

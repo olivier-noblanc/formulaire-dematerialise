@@ -221,9 +221,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <p><strong>Dossier :</strong> <?= $nom ?></p>
     <p><strong>Étape :</strong> <?= h($data['step_label']) ?></p>
     <?php foreach ($d as $k => $v): if (empty($v) || $v === '0') continue; ?>
+      <?php if ($k === 'validations' || $k === 'csrf_token') continue; ?>
       <p><strong><?= h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k)))) ?> :</strong> <?= $v === '1' ? '✓' : h((string)$v) ?></p>
     <?php endforeach; ?>
   </div>
+
+  <!-- Pièces jointes -->
+  <?php
+    $attachments = get_attachments((int)($data['submission_id'] ?? 0));
+    if (!empty($attachments)):
+  ?>
+  <div class="validation-details">
+    <h2>📎 Pièces jointes (<?= count($attachments) ?>)</h2>
+    <?php foreach ($attachments as $att): ?>
+      <p><?= get_file_icon($att['mime_type']) ?> <a href="download.php?id=<?= (int)$att['id'] ?>" style="color:#003189;text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#888;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
   
   <!-- Formulaire de validation/refus -->
   <form method="post">

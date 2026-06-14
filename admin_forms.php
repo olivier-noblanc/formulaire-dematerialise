@@ -36,6 +36,7 @@ $field_types = [
     'select'   => '📋 Sélecteur',
     'checkbox' => '☑ Case à cocher',
     'textarea' => '📝 Zone de texte',
+    'file'     => '📎 Fichier',
 ];
 
 function field_type_icon(string $type): string {
@@ -45,6 +46,7 @@ function field_type_icon(string $type): string {
         'select'   => '📋',
         'checkbox' => '☑️',
         'textarea' => '📝',
+        'file'     => '📎',
     ];
     return $icons[$type] ?? '📄';
 }
@@ -56,6 +58,7 @@ function field_type_label(string $type): string {
         'select'   => 'Sélecteur',
         'checkbox' => 'Case à cocher',
         'textarea' => 'Zone de texte',
+        'file'     => 'Fichier',
     ];
     return $labels[$type] ?? $type;
 }

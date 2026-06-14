@@ -1,5 +1,36 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [3.1.0] — 2026-06-14
+
+### Fonctionnalités majeures
+
+- **Pièces jointes** : Nouveau type de champ `file` permettant aux agents de joindre des fichiers (PDF, images, Office, ZIP) lors de la soumission d'un formulaire. Les fichiers sont stockés de manière sécurisée avec validation du type MIME et de l'extension, protection anti-traversal, et taille maximale de 10 Mo. Le téléchargement sécurisé passe par `download.php` avec contrôle d'accès (admin, propriétaire, validateur). Les pièces jointes sont visibles dans le détail de la soumission et lors de la validation.
+
+- **Délégation de validation** : Un validateur peut désormais déléguer sa validation à un autre agent lorsqu'il est absent ou indisponible. Le mécanisme crée un nouveau token pour le délégataire, marque l'ancien token comme traité, et envoie un email de notification aux deux parties. L'historique des délégations est visible dans le détail de la soumission. La délégation est accessible depuis `my_validations.php` et `submission_view.php`.
+
+- **Rappel manuel** : Nouveau bouton "📧 Rappeler" dans le dashboard admin et dans le détail de soumission permettant d'envoyer un email de rappel à un validateur en attente. Contrairement à la régénération de token, le rappel ne modifie pas le token existant — il envoie simplement un email avec le compteur de relances. Le nombre de relances maximum est configurable (3 par défaut).
+
+### Fonctionnalités
+
+- **Affichage du nombre de relances** : Le compteur de relances (`relance_count`) est désormais visible dans le diagramme de workflow de `submission_view.php`, à côté de l'email du validateur en attente.
+
+- **Recherche dans "Mes validations"** : Nouveau champ de recherche dans la page `my_validations.php` permettant de filtrer les validations en attente par nom de formulaire ou contenu des données.
+
+- **Recherche et filtres dans "Mes demandes"** : Nouveau champ de recherche et filtres par statut (Tous / En cours / Validées / Refusées) dans `my_validations.php` permettant aux agents de retrouver facilement leurs soumissions.
+
+### Base de données
+
+- Nouvelle table `attachments` : stockage des fichiers joints aux soumissions (nom original, nom stocké, type MIME, taille).
+- Nouvelle table `delegations` : traçabilité des délégations de validation (depuis/vers email, motif, token associé).
+- Protection du répertoire d'upload avec `.htaccess` et `index.php` vide.
+
+### Sécurité
+
+- Validation des fichiers uploadés : vérification du type MIME (via `finfo`), de l'extension, et de la taille.
+- Extension whitelist : PDF, JPG, PNG, GIF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, CSV, ZIP.
+- Protection anti-directory-traversal dans `download.php` avec `realpath()`.
+- Contrôle d'accès strict sur le téléchargement : admin, propriétaire de la soumission, ou validateur uniquement.
+
 ## [3.0.0] — 2026-06-14
 
 ### Changement majeur

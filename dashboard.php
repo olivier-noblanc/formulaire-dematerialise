@@ -37,6 +37,17 @@ if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && is_adm
     if (TEST_MODE) { test_json_response(['action' => 'regenerate_token', 'result' => $result]); }
 }
 
+// Rappel manuel (admin)
+$remind_msg = '';
+if (isset($_POST['action']) && $_POST['action'] === 'remind_one' && is_admin_user()) {
+    if (!verify_csrf()) {
+        die('Token CSRF invalide.');
+    }
+    $token_id = (int)($_POST['token_id'] ?? 0);
+    $result = remind_one($token_id);
+    $remind_msg = $result['message'];
+}
+
 // Annulation de soumission (admin ou agent)
 $cancel_msg = '';
 if (isset($_POST['action']) && $_POST['action'] === 'cancel_submission') {
@@ -137,6 +148,7 @@ function get_tokens_status(int $sub_id): array {
   <h1>Supervision — Workflows en cours</h1>
 
   <?php if ($regen_msg): ?><div class="msg-info"><?= h($regen_msg) ?></div><?php endif; ?>
+  <?php if ($remind_msg): ?><div class="msg-info"><?= h($remind_msg) ?></div><?php endif; ?>
   <?php if ($cancel_msg): ?><div class="msg-info"><?= h($cancel_msg) ?></div><?php endif; ?>
 
   <div class="stats">
@@ -281,9 +293,15 @@ function get_tokens_status(int $sub_id): array {
                     <?php if (!$t['done_at']): ?>
                       <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
+                        <input type="hidden" name="action" value="remind_one">
+                        <input type="hidden" name="token_id" value="<?= (int)$t['id'] ?>">
+                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📧 Rappeler <?= h($t['email']) ?></button>
+                      </form>
+                      <form method="POST" style="display:inline;">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="action" value="regenerate_token">
                         <input type="hidden" name="token_id" value="<?= (int)$t['id'] ?>">
-                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Relancer <?= h($t['email']) ?></button>
+                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Régénérer <?= h($t['email']) ?></button>
                       </form>
                     <?php endif; ?>
                   <?php endforeach; ?>
