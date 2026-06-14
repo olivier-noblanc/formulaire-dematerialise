@@ -3,6 +3,7 @@
 // A executer via Task Scheduler (ex: toutes les 6h)
 // Verifie si des soumissions en cours sont proches de leur date limite
 // et envoie des alertes si les etapes ne sont pas toutes completees
+defined('CLI_MAIL_ALLOWED') || define('CLI_MAIL_ALLOWED', true);
 require_once __DIR__ . '/helpers.php';
 
 $pdo = get_pdo();

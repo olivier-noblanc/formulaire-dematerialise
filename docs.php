@@ -117,6 +117,14 @@ try {
     .rgpd-box { background: #f0f4ff; border: 1px solid #c5cae9; border-radius: 6px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
     .rgpd-box h3 { margin-top: 0; color: #003189; }
 
+    /* ═══ Back-to-top button ═══ */
+    .back-to-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: #003189; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.5rem; font-weight: bold; box-shadow: 0 2px 8px rgba(0,49,137,.3); z-index: 1000; transition: background .2s; }
+    .back-to-top:hover { background: #00205a; }
+    .back-to-top:visited { color: #fff; }
+
+    /* ═══ Version badge ═══ */
+    .version-badge { display: inline-block; background: #e8eaf6; color: #003189; font-size: .72rem; font-weight: bold; padding: .15rem .55rem; border-radius: 10px; vertical-align: middle; margin-left: .5rem; border: 1px solid #c5cae9; letter-spacing: .02em; }
+
     /* ═══ Screenshot & Mockup styles ═══ */
     .screenshot { max-width: 100%; border: 1px solid #ddd; border-radius: 6px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .screenshot-caption { font-size: .8rem; color: #888; text-align: center; margin-top: .25rem; margin-bottom: 1.5rem; }
@@ -172,7 +180,7 @@ try {
     }
   </style>
 </head>
-<body>
+<body id="top">
 <div class="bandeau">
   <div class="bandeau-left">
     <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
@@ -191,7 +199,7 @@ try {
 
 <div class="container">
   <h1>Aide et documentation</h1>
-  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS</p>
+  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '4.4.0' ?></span></p>
 
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- GUIDE DE DÉMARRAGE RAPIDE                                  -->
@@ -736,7 +744,7 @@ try {
     <div class="step-row">
       <span class="step-num">1</span>
       <div class="step-text">
-        <p><strong>Créer un formulaire</strong> — Définissez un slug (identifiant court sans espaces ni accents, ex : <code>demande_conge</code>), un libellé affiché et une description.</p>
+        <p><strong>Créer un formulaire</strong> — Donnez un libellé (nom affiché) et une description. L'identifiant technique est généré automatiquement à partir du libellé.</p>
       </div>
     </div>
     <div class="step-row">
@@ -761,6 +769,21 @@ try {
     <div class="info-box">
       <p><strong>Astuce :</strong> Pour qu'une étape nécessite la validation de <strong>tous</strong> ses destinataires, mettez-les dans la même étape. Pour qu'ils valident <strong>séquentiellement</strong>, créez des étapes distinctes avec des ordres croissants.</p>
     </div>
+
+    <!-- ── Types de champs ── -->
+    <h4>📋 Référence des types de champs</h4>
+    <p>Les champs suivants sont disponibles lors de la configuration d'un formulaire :</p>
+    <table class="schema-table">
+      <thead><tr><th>Type</th><th>Code</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>📝 Texte court</td><td><code>text</code></td><td>Champ texte simple sur une ligne (nom, prénom, numéro…)</td></tr>
+        <tr><td>📅 Date</td><td><code>date</code></td><td>Sélecteur de date (jj/mm/aaaa) — date de naissance, prise de poste…</td></tr>
+        <tr><td>📋 Liste déroulante</td><td><code>select</code></td><td>Choix unique parmi une liste prédéfinie (corps/grade, type de poste…)</td></tr>
+        <tr><td>☑️ Case à cocher</td><td><code>checkbox</code></td><td>Choix multiples à cocher (options IT, actions RH…)</td></tr>
+        <tr><td>📄 Zone de texte</td><td><code>textarea</code></td><td>Champ texte multiligne pour les commentaires ou descriptions longues</td></tr>
+        <tr><td>📎 Fichier / Pièce jointe</td><td><code>file</code></td><td>Téléversement de fichier (stockage sécurisé en BDD, accès par lien sécurisé)</td></tr>
+      </tbody>
+    </table>
 
     <img src="docs/screenshots/10_admin_forms.png" alt="Page d'administration des formulaires — gestion des formulaires et champs" class="screenshot">
     <p class="screenshot-caption">Administration des formulaires — créer, modifier et configurer les champs et le circuit de validation</p>
@@ -989,6 +1012,12 @@ try {
 
     <img src="docs/screenshots/12_admin_settings.png" alt="Page des paramètres — configuration SMTP et relances" class="screenshot">
     <p class="screenshot-caption">Paramètres — configuration SMTP, délai de relance et webhooks (réservé au super admin)</p>
+
+    <img src="docs/screenshots/13_docs.png" alt="Page de documentation et d'aide en ligne" class="screenshot">
+    <p class="screenshot-caption">Page d'aide et documentation — guide complet accessible à tous les utilisateurs</p>
+
+    <img src="docs/screenshots/14_changelog.png" alt="Journal des modifications — historique des versions" class="screenshot">
+    <p class="screenshot-caption">Journal des modifications — historique des évolutions et corrections par version</p>
 
     <!-- ── Admin vs Super admin ── -->
     <h3>👑 Admin vs Super admin</h3>
@@ -1243,8 +1272,7 @@ try {
           <li>Accédez à <strong>admin_forms.php</strong>.</li>
           <li>Dans la section « Ajouter un formulaire », renseignez :
             <ul>
-              <li><strong>Slug</strong> — Un identifiant court, sans espaces ni accents (ex : <code>demande_conge</code>). Il sera utilisé dans l'URL.</li>
-              <li><strong>Libellé</strong> — Le titre affiché (ex : « Demande de congé »).</li>
+              <li><strong>Libellé</strong> — Le titre affiché (ex : « Demande de congé »). L'identifiant technique (slug) est généré automatiquement à partir du libellé.</li>
               <li><strong>Description</strong> — Un texte explicatif affiché en haut du formulaire.</li>
             </ul>
           </li>
@@ -1445,6 +1473,42 @@ try {
     </details>
 
     <details>
+      <summary>🖥️ Prérequis de déploiement et installation (pour l'équipe IT)</summary>
+      <div class="detail-body">
+        <p>Cette section est destinée au personnel technique chargé de déployer ou maintenir l'application.</p>
+        <h4>Prérequis système</h4>
+        <ul>
+          <li><strong>Serveur web</strong> — IIS 7+ sur Windows Server (authentification Windows intégrée activée)</li>
+          <li><strong>PHP 8+</strong> — Obligatoire pour le support UUID v4 (fonctions <code>random_bytes()</code>, <code>bin2hex()</code>). PHP 7.x n'est plus compatible.</li>
+          <li><strong>Extension PHP SQLite3</strong> — Activée par défaut, vérifiez avec <code>php -m | grep sqlite3</code></li>
+          <li><strong>Extension PHP OpenSSL</strong> — Requise pour la génération sécurisée des tokens</li>
+          <li><strong>Extension PHP mbstring</strong> — Recommandée pour le bon fonctionnement de PHPMailer</li>
+          <li><strong>Accès en écriture</strong> — Le répertoire <code>db/</code> doit être accessible en écriture par le compte du pool IIS (IIS_IUSRS)</li>
+        </ul>
+        <h4>Installation</h4>
+        <ol>
+          <li>Déployez les fichiers dans le répertoire web du serveur IIS (ex : <code>C:\inetpub\wwwroot\formulaire-dematerialise\</code>)</li>
+          <li>Configurez l'authentification Windows dans IIS (Anonymous = Disabled, Windows Authentication = Enabled)</li>
+          <li>Vérifiez les permissions du répertoire <code>db/</code> (accès en écriture pour IIS_IUSRS)</li>
+          <li>Renommez <code>config.example.php</code> en <code>config.php</code> et adaptez les constantes (SMTP, admin, URL de base)</li>
+          <li>La base de données SQLite est créée automatiquement au premier accès — aucune opération manuelle nécessaire</li>
+          <li>Accédez à <code>health.php</code> pour vérifier que tout fonctionne correctement</li>
+        </ol>
+        <h4>Tâches planifiées</h4>
+        <ul>
+          <li><strong>Relance automatique</strong> — Planifiez <code>php remind.php</code> toutes les 12h via le Planificateur de tâches Windows</li>
+          <li><strong>Vérification des alertes</strong> — Planifiez <code>php alert_check.php</code> toutes les 6h</li>
+          <li><strong>Purge RGPD</strong> — Planifiez <code>php rgpd_purge.php</code> une fois par jour (suppression des données expirées)</li>
+        </ul>
+        <h4>Sauvegardes</h4>
+        <p>Le fichier <code>db/workflow.db</code> contient toutes les données. Sauvegardez-le régulièrement. La page <code>backup.php</code> permet aussi de télécharger une copie depuis l'interface.</p>
+        <div class="tip-box">
+          <p>Après le déploiement, accédez à <code>health.php</code> pour vérifier que tous les prérequis sont satisfaits (PHP 8+, SQLite accessible, répertoire inscriptible, SMTP configuré).</p>
+        </div>
+      </div>
+    </details>
+
+    <details>
       <summary>Comment configurer l'envoi d'emails ?</summary>
       <div class="detail-body">
         <p>Les paramètres d'envoi d'emails peuvent être configurés de deux manières :</p>
@@ -1560,7 +1624,7 @@ try {
         <table class="schema-table">
           <thead><tr><th>Colonne</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td>id</td><td>INTEGER PK</td><td>Identifiant</td></tr>
+            <tr><td>id</td><td>TEXT PK (UUID v4)</td><td>Identifiant</td></tr>
             <tr><td>slug</td><td>TEXT UNIQUE</td><td>Identifiant URL (ex : onboarding)</td></tr>
             <tr><td>label</td><td>TEXT</td><td>Libellé du formulaire</td></tr>
             <tr><td>description</td><td>TEXT</td><td>Description affichée</td></tr>
@@ -1572,8 +1636,8 @@ try {
         <table class="schema-table">
           <thead><tr><th>Colonne</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td>id</td><td>INTEGER PK</td><td>Identifiant</td></tr>
-            <tr><td>form_id</td><td>INTEGER FK</td><td>Formulaire parent</td></tr>
+            <tr><td>id</td><td>TEXT PK (UUID v4)</td><td>Identifiant</td></tr>
+            <tr><td>form_id</td><td>TEXT FK (UUID v4)</td><td>Formulaire parent</td></tr>
             <tr><td>label</td><td>TEXT</td><td>Libellé de l'étape</td></tr>
             <tr><td>ordre</td><td>INTEGER</td><td>Numéro d'ordre (détermine la séquence)</td></tr>
             <tr><td>actif</td><td>INTEGER</td><td>1 = actif</td></tr>
@@ -1584,8 +1648,8 @@ try {
         <table class="schema-table">
           <thead><tr><th>Colonne</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td>id</td><td>INTEGER PK</td><td>Identifiant</td></tr>
-            <tr><td>step_id</td><td>INTEGER FK</td><td>Étape parent</td></tr>
+            <tr><td>id</td><td>TEXT PK (UUID v4)</td><td>Identifiant</td></tr>
+            <tr><td>step_id</td><td>TEXT FK (UUID v4)</td><td>Étape parent</td></tr>
             <tr><td>email</td><td>TEXT</td><td>Email du validateur</td></tr>
           </tbody>
         </table>
@@ -1594,12 +1658,13 @@ try {
         <table class="schema-table">
           <thead><tr><th>Colonne</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td>id</td><td>INTEGER PK</td><td>Identifiant</td></tr>
-            <tr><td>form_id</td><td>INTEGER FK</td><td>Formulaire utilisé</td></tr>
+            <tr><td>id</td><td>TEXT PK (UUID v4)</td><td>Identifiant</td></tr>
+            <tr><td>form_id</td><td>TEXT FK (UUID v4)</td><td>Formulaire utilisé</td></tr>
             <tr><td>data</td><td>TEXT (JSON)</td><td>Données du formulaire + historique des validations</td></tr>
             <tr><td>submitted_by</td><td>TEXT</td><td>Identifiant de l'agent (AUTH_USER)</td></tr>
             <tr><td>submitted_at</td><td>DATETIME</td><td>Date de soumission</td></tr>
             <tr><td>closed_at</td><td>DATETIME</td><td>Date de clôture (NULL si en cours)</td></tr>
+            <tr><td>rgpd_consent</td><td>INTEGER</td><td>1 = consentement RGPD recueilli</td></tr>
             <tr><td>status</td><td>TEXT</td><td>Statut : en_cours, valide, refuse</td></tr>
           </tbody>
         </table>
@@ -1608,9 +1673,9 @@ try {
         <table class="schema-table">
           <thead><tr><th>Colonne</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td>id</td><td>INTEGER PK</td><td>Identifiant</td></tr>
-            <tr><td>submission_id</td><td>INTEGER FK</td><td>Soumission liée</td></tr>
-            <tr><td>step_id</td><td>INTEGER FK</td><td>Étape liée</td></tr>
+            <tr><td>id</td><td>TEXT PK (UUID v4)</td><td>Identifiant</td></tr>
+            <tr><td>submission_id</td><td>TEXT FK (UUID v4)</td><td>Soumission liée</td></tr>
+            <tr><td>step_id</td><td>TEXT FK (UUID v4)</td><td>Étape liée</td></tr>
             <tr><td>email</td><td>TEXT</td><td>Email du validateur</td></tr>
             <tr><td>token</td><td>TEXT UNIQUE</td><td>Jeton unique (64 hex)</td></tr>
             <tr><td>sent_at</td><td>DATETIME</td><td>Date d'envoi de l'email</td></tr>
@@ -1630,9 +1695,10 @@ try {
             <tr><td>audit_log</td><td>action, target, detail, actor, created_at</td><td>Journal d'audit complet</td></tr>
             <tr><td>alert_rules</td><td>form_id, days_before, condition_type, notify_who</td><td>Règles d'alerte de deadline</td></tr>
             <tr><td>alert_log</td><td>rule_id, submission_id, sent_at</td><td>Historique des alertes envoyées</td></tr>
-            <tr><td>delegations</td><td>token_id, from_email, to_email, reason</td><td>Historique des délégations</td></tr>
-            <tr><td>form_fields</td><td>form_id, label, type, options, hint, required, ordre</td><td>Champs dynamiques des formulaires</td></tr>
-            <tr><td>attachments</td><td>submission_id, filename, mime_type, data (BLOB)</td><td>Pièces jointes sécurisées</td></tr>
+            <tr><td>delegations</td><td>id TEXT PK (UUID v4), token_id TEXT FK (UUID v4), from_email, to_email, reason, delegated_at</td><td>Historique des délégations</td></tr>
+            <tr><td>form_fields</td><td>id TEXT PK (UUID v4), form_id TEXT FK (UUID v4), label, type, options, hint, required, ordre</td><td>Champs dynamiques des formulaires</td></tr>
+            <tr><td>attachments</td><td>id TEXT PK (UUID v4), submission_id TEXT FK (UUID v4), filename, mime_type, data (BLOB)</td><td>Pièces jointes sécurisées</td></tr>
+            <tr><td>form_owners</td><td>id TEXT PK (UUID v4), form_id TEXT FK (UUID v4), email</td><td>Propriétaires de formulaires (droits de gestion déléguée)</td></tr>
           </tbody>
         </table>
       </div>
@@ -1659,7 +1725,7 @@ try {
           <thead><tr><th>Composant</th><th>Technologie</th></tr></thead>
           <tbody>
             <tr><td>Serveur web</td><td>IIS (Windows Server) avec authentification Windows</td></tr>
-            <tr><td>Langage</td><td>PHP 7.4+ (procédural, sans framework)</td></tr>
+            <tr><td>Langage</td><td>PHP 8+ (procédural, sans framework)</td></tr>
             <tr><td>Base de données</td><td>SQLite (fichier db/workflow.db, mode WAL)</td></tr>
             <tr><td>Envoi d'emails</td><td>PHPMailer via SMTP (pas d'auth SMTP)</td></tr>
             <tr><td>Relance automatique</td><td>remind.php — exécuté par le Planificateur de tâches Windows</td></tr>
@@ -1692,6 +1758,9 @@ try {
   </div>
 
 </div>
+
+<a href="#top" class="back-to-top" title="Retour en haut de page">↑</a>
+
 <?= render_footer() ?>
 </body>
 </html>

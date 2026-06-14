@@ -1,5 +1,81 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [4.4.0] — 2026-06-15
+
+### Sécurité email — Critique
+
+- **Mode Dry-Run (mail_dry_run)** : Nouveau paramètre activable dans l'administration qui intercepte **tous** les envois d'emails. En mode dry-run, `send_mail()` journalise chaque tentative d'envoi dans l'audit log sans contacter le serveur SMTP. Le workflow continue normalement (tokens créés, étapes avancées). **Activé par défaut** lors de la migration — un administrateur doit explicitement le désactiver pour autoriser les envois réels.
+
+- **Vérification LDAP / Active Directory** : Nouveau mode de vérification des adresses destinataires avant envoi. Si activé, le système se connecte à l'Active Directory en lecture seule (bind anonyme ou compte de service) et recherche l'adresse email dans l'annuaire. Si l'adresse est introuvable, l'envoi est bloqué et journalisé. Configuration complète dans la section admin : hôte LDAP, port, base DN, bind DN/mot de passe, filtre de recherche.
+
+- **Vérification SMTP (probe RCPT TO)** : Mode alternatif de vérification des adresses. Le système ouvre une connexion SMTP, envoie `HELO`, `MAIL FROM`, `RCPT TO` et vérifie si le serveur accepte le destinataire, puis se déconnecte proprement (`QUIT` avant `DATA`). Supporte STARTTLS. Attention : certains serveurs Exchange acceptent toutes les adresses en RCPT TO (mode catch-all), ce qui rend cette vérification moins fiable que LDAP.
+
+- **Blocage des emails non vérifiés** : Si la vérification est activée (LDAP ou SMTP) et qu'une adresse échoue, `send_mail()` retourne `false` et journalise l'événement dans l'audit log (`mail_blocked`). Cela empêche l'envoi à des adresses placeholder ou inexistantes.
+
+- **Audit log des emails** : Chaque appel à `send_mail()` est désormais journalisé dans l'audit log avec le type `mail_sent`, `mail_dry_run`, `mail_blocked` ou `mail_error`, incluant le destinataire, le sujet et le détail.
+
+- **Ordre de priorité dans send_mail()** : TEST_MODE → Dry-Run → Vérification email → Blocage CLI → Envoi réel PHPMailer. Chaque couche de protection est évaluée dans l'ordre.
+
+### Administration
+
+- **Section « Sécurité email »** dans admin_settings.php : Nouvelle interface de configuration avec :
+  - Toggle Dry-Run avec explication claire
+  - Sélecteur du mode de vérification (aucun / LDAP / SMTP)
+  - Configuration LDAP complète (hôte, port, base DN, bind DN, mot de passe, filtre)
+  - Information sur les limitations du mode SMTP
+  - Détection automatique de l'extension PHP LDAP
+  - Bouton de test de vérification email avec résultat détaillé
+
+- **Résumé de sécurité email** : Tableau de bord affichant le statut de chaque couche de protection (Dry-Run, vérification, PHPMailer stub/real, blocage CLI) et un score de sécurité sur 4.
+
+- **Badge Dry-Run** : Avertissement visuel en haut de la page quand le mode Dry-Run est actif.
+
+- **Slug auto-généré** : Le champ « Slug » n'est plus visible dans l'interface d'administration. L'identifiant technique est désormais généré automatiquement à partir du libellé du formulaire (ex: « Demande de congé » → `demande_de_conge`). Si un slug existe déjà, un suffixe numérique est ajouté automatiquement. En édition, le slug actuel est affiché en hint en lecture seule. La documentation a été mise à jour en conséquence.
+
+- **Version footer/docs** : Correction du fallback de version dans `docs.php` (était `4.3.1`, désormais `4.4.0`).
+
+### Base de données
+
+- **Migration v10** : Ajout des paramètres `mail_dry_run` (défaut : `1`), `email_verify_mode` (défaut : `none`), `ldap_host`, `ldap_port`, `ldap_base_dn`, `ldap_bind_dn`, `ldap_bind_pass`, `ldap_filter` dans la table `settings`.
+
+### Version
+
+- Passage de `4.3.1` à `4.4.0` (version mineure : nouvelle fonctionnalité de sécurité email).
+
+## [4.3.1] — 2026-06-15
+
+### Sécurité — Critique
+
+- **Protection contre l'envoi d'emails lors des tests** : Les scripts de test (`test_all.php`, `test_e2e.php`) forcent désormais le mode `TEST_MODE` pour intercepter tous les appels à `send_mail()`. Aucun email réel ne peut plus être envoyé pendant l'exécution des tests. Toutes les adresses de test utilisent le domaine `@e2e.test` (réservé RFC 2606, impossible qu'il soit réel).
+
+- **Garde-fou CLI pour `send_mail()`** : Ajout d'un blocage automatique de l'envoi d'emails en contexte CLI sauf si la constante `CLI_MAIL_ALLOWED` est définie. Les scripts légitimes `remind.php` et `alert_check.php` déclarent cette constante. Cela empêche tout envoi accidentel d'emails depuis un script de test ou une exécution CLI inattendue.
+
+### Tests
+
+- **80 tests E2E intensifs** (`test_e2e.php`) : Nouveau script de test end-to-end couvrant 15 catégories — soumission de formulaires, avancement du workflow complet, validation étape par étape, refus, annulation, délégation, cas limites de sécurité (tokens invalides/expirés, injection SQL, XSS, CSRF), uploads de fichiers (BLOB), formulaire outboarding, fonctions utilitaires, intégrité des données, conformité RGPD, relance/expiration des tokens, types de champs. Résultat : **80/80 tests passent**.
+
+- **51 tests unitaires** (`test_all.php`) : Mise à jour pour la compatibilité avec le mode TEST (authentification via `X-Test-User`, CSRF bypass testé via `hash_equals()`). Résultat : **51/51 tests passent**.
+
+- **Total : 131/131 tests passent**, zéro email réel envoyé.
+
+### Documentation
+
+- **Schéma de base de données corrigé** : La section technique de `docs.php` affichait `INTEGER PK` pour toutes les tables — désormais corrigé en `TEXT PK (UUID v4)` et `TEXT FK (UUID v4)` pour refléter la migration UUID. Ajout des tables `form_owners`, `delegations` et de la colonne `rgpd_consent`.
+
+- **Bouton retour en haut** : Ajout d'un bouton flottant « ↑ » en bas à droite (CSS pur, zéro JavaScript) pour remonter en haut de la page de documentation (1700+ lignes).
+
+- **Indicateur de version** : Affichage du badge `v4.3.0` en haut de la page de documentation.
+
+- **Captures d'écran manquantes** : Intégration de `13_docs.png` (page d'aide) et `14_changelog.png` (journal des modifications) qui existaient dans le dossier mais n'étaient pas affichées.
+
+- **Version PHP corrigée** : « PHP 7.4+ » → « PHP 8+ » dans la section architecture technique.
+
+- **Table des types de champs** : Ajout d'un tableau de référence des 6 types de champs disponibles (text, date, select, checkbox, textarea, file) dans le guide administrateur.
+
+- **FAQ déploiement IT** : Nouvelle entrée FAQ pour l'équipe technique avec les prérequis système, les étapes d'installation et les tâches planifiées.
+
+- **Avertissement sur les emails de seeding** : Commentaire dans `helpers.php` indiquant que les adresses email par défaut dans le seeding sont des valeurs à remplacer par l'administrateur.
+
 ## [4.3.0] — 2026-06-14
 
 ### Sécurité — Majeure

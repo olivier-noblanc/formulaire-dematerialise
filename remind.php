@@ -1,5 +1,6 @@
 <?php
 // remind.php — Windows Task Scheduler toutes les 12h
+defined('CLI_MAIL_ALLOWED') || define('CLI_MAIL_ALLOWED', true);
 require_once __DIR__ . '/helpers.php';
 
 $pdo  = get_pdo();

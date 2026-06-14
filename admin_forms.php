@@ -73,36 +73,37 @@ function options_to_lines(?string $json): string {
 // ── POST Handlers ──────────────────────────────────────────────
 
 if ($action === 'add_form') {
-    $slug = trim($_POST['slug'] ?? '');
     $label = trim($_POST['label'] ?? '');
     $description = trim($_POST['description'] ?? '');
 
-    if (!empty($slug) && !empty($label)) {
+    if (!empty($label)) {
         $pdo = get_pdo();
         try {
             $new_form_id = generate_uuid();
+            $slug = generate_slug($label);
             $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
                 ->execute([$new_form_id, $slug, $label, $description]);
-            app_log('form_create', 'form:' . $new_form_id, "Formulaire '$label' créé");
+            app_log('form_create', 'form:' . $new_form_id, "Formulaire '$label' créé (slug auto: $slug)");
             header('Location: admin_forms.php?form_id=' . urlencode($new_form_id));
             exit;
         } catch (PDOException $e) {
             $error_msg = 'Erreur lors de l\'ajout du formulaire : ' . $e->getMessage();
         }
     } else {
-        $error_msg = 'Le slug et le libellé sont requis.';
+        $error_msg = 'Le libellé est requis.';
     }
 
 } elseif ($action === 'update_form') {
     $form_id = trim($_POST['form_id'] ?? '');
-    $slug = trim($_POST['slug'] ?? '');
     $label = trim($_POST['label'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $actif = isset($_POST['actif']) ? 1 : 0;
 
-    if (!empty($form_id) && !empty($slug) && !empty($label)) {
+    if (!empty($form_id) && !empty($label)) {
         $pdo = get_pdo();
         try {
+            // Régénérer le slug à partir du libellé si le label a changé
+            $slug = generate_slug($label, $form_id);
             $pdo->prepare("UPDATE forms SET slug = ?, label = ?, description = ?, actif = ? WHERE id = ?")
                 ->execute([$slug, $label, $description, $actif, $form_id]);
             app_log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
@@ -112,7 +113,7 @@ if ($action === 'add_form') {
             $error_msg = 'Erreur lors de la mise à jour du formulaire : ' . $e->getMessage();
         }
     } else {
-        $error_msg = 'Le slug et le libellé sont requis.';
+        $error_msg = 'Le libellé est requis.';
     }
 
 } elseif ($action === 'delete_form') {
@@ -144,8 +145,8 @@ if ($action === 'add_form') {
         $src_form = $src->fetch(PDO::FETCH_ASSOC);
         if ($src_form) {
             // Créer le nouveau formulaire
-            $new_slug = $src_form['slug'] . '-copie';
             $new_label = $src_form['label'] . ' (copie)';
+            $new_slug = generate_slug($new_label);
             $new_id = generate_uuid();
             $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)")
                 ->execute([$new_id, $new_slug, $new_label, $src_form['description'], $src_form['deadline_field']]);
@@ -775,12 +776,9 @@ ksort($steps_by_ordre);
                     <input type="hidden" name="action" value="add_form">
                     <div class="form-grid">
                         <div class="field">
-                            <label>Slug (identifiant technique)<span class="req">*</span></label>
-                            <input type="text" name="slug" required placeholder="ex: onboarding">
-                        </div>
-                        <div class="field">
                             <label>Libellé (affiché dans l'interface)<span class="req">*</span></label>
-                            <input type="text" name="label" required placeholder="ex: Onboarding agent">
+                            <input type="text" name="label" required placeholder="ex: Onboarding agent" autofocus>
+                            <span class="hint">L'identifiant technique (slug) est généré automatiquement à partir du libellé.</span>
                         </div>
                         <div class="field full-width">
                             <label>Description</label>
@@ -827,12 +825,9 @@ ksort($steps_by_ordre);
                         <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
                         <div class="form-grid">
                             <div class="field">
-                                <label>Slug (identifiant technique)<span class="req">*</span></label>
-                                <input type="text" name="slug" value="<?= h($form['slug']) ?>" required>
-                            </div>
-                            <div class="field">
                                 <label>Libellé (affiché dans l'interface)<span class="req">*</span></label>
                                 <input type="text" name="label" value="<?= h($form['label']) ?>" required>
+                                <span class="hint">Identifiant technique : <code><?= h($form['slug']) ?></code> (généré automatiquement)</span>
                             </div>
                             <div class="field full-width">
                                 <label>Description</label>

@@ -518,6 +518,9 @@ function db_migrate(PDO $pdo): void {
         $stmt_step->execute([$ob_step4_id, $outboarding_id, 'Logistique', 4]);
 
         // Destinataires des étapes
+        // ⚠️  Ces adresses sont des VALEURS PAR DÉFAUT destinées à être remplacées
+        //     par l'administrateur via admin_forms.php. Elles ne sont pas vérifiées.
+        //     L'administrateur DOIT configurer les vrais destinataires avant utilisation.
         $stmt_sr = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
         $stmt_sr->execute([generate_uuid(), $ob_step1_id, 'responsable.direct@dreets.gouv.fr']);
         $stmt_sr->execute([generate_uuid(), $ob_step2_id, 'informatique@dreets.gouv.fr']);
@@ -1319,6 +1322,31 @@ function db_migrate(PDO $pdo): void {
         }
     }
 
+    // ── Migration v10 : Paramètres de vérification email ──────────
+    if ($current_version < 10) {
+        try {
+            $v10_settings = [
+                ['mail_dry_run',      '1'],  // Sécurité : dry-run activé par défaut
+                ['email_verify_mode', 'none'], // none | ldap | smtp
+                ['ldap_host',         ''],     // ex: ldap.dreets.gouv.fr
+                ['ldap_port',         '389'],
+                ['ldap_base_dn',      ''],     // ex: DC=dreets,DC=gouv,DC=fr
+                ['ldap_bind_dn',      ''],     // Compte de service lecture seule
+                ['ldap_bind_pass',    ''],
+                ['ldap_filter',       '(mail={email})'],
+            ];
+            $stmt_v10 = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))");
+            foreach ($v10_settings as $row) {
+                $stmt_v10->execute($row);
+            }
+
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([10]);
+            $current_version = 10;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([10]); } catch (PDOException $e2) {}
+        }
+    }
+
     // Seed des regles d'alerte par defaut si la table est vide
     try {
         $alert_count = $pdo->query("SELECT COUNT(*) FROM alert_rules")->fetchColumn();
@@ -1403,6 +1431,40 @@ function generate_field_name(string $label): string {
     $name = trim($name, '_');
     $name = preg_replace('/_+/', '_', $name);
     return $name ?: 'champ';
+}
+
+/**
+ * Génère automatiquement un slug unique à partir d'un libellé.
+ * Ex: "Onboarding agent" → "onboarding_agent"
+ * Ex: "Demande de congé" → "demande_de_conge"
+ * Si le slug existe déjà, ajoute un suffixe numérique : "onboarding_agent_2"
+ *
+ * Le slug n'est JAMAIS visible par l'utilisateur final — c'est un identifiant
+ * technique interne utilisé uniquement dans les URLs (form.php?f=onboarding).
+ */
+function generate_slug(string $label, ?string $exclude_form_id = null): string {
+    $base = generate_field_name($label);
+    if (empty($base)) $base = 'formulaire';
+
+    $pdo = get_pdo();
+    $slug = $base;
+    $suffix = 2;
+
+    while (true) {
+        $sql = "SELECT COUNT(*) FROM forms WHERE slug = ?";
+        $params = [$slug];
+        if ($exclude_form_id !== null) {
+            $sql .= " AND id != ?";
+            $params[] = $exclude_form_id;
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        if ((int)$stmt->fetchColumn() === 0) {
+            return $slug;
+        }
+        $slug = $base . '_' . $suffix;
+        $suffix++;
+    }
 }
 
 /**
@@ -1535,6 +1597,269 @@ function set_setting(string $key, string $value, string $updated_by = ''): void 
         ->execute([$key, $value, $updated_by]);
 }
 
+// ── VÉRIFICATION EMAIL ─────────────────────────────────────────
+
+/**
+ * Vérifie qu'une adresse email existe dans l'Active Directory via LDAP.
+ *
+ * Prérequis : extension PHP ldap activée, accès réseau vers le serveur AD.
+ * Connexion en lecture seule (bind anonyme ou compte de service dédié).
+ *
+ * @param string $email Adresse email à vérifier
+ * @return array ['ok' => bool, 'method' => string, 'detail' => string]
+ */
+function verify_email_ldap(string $email): array {
+    // Vérifier que l'extension LDAP est disponible
+    if (!function_exists('ldap_connect')) {
+        return ['ok' => false, 'method' => 'ldap', 'detail' => 'Extension PHP ldap non disponible'];
+    }
+
+    $host     = get_setting('ldap_host', '');
+    $port     = (int)get_setting('ldap_port', '389');
+    $base_dn  = get_setting('ldap_base_dn', '');
+    $bind_dn  = get_setting('ldap_bind_dn', '');
+    $bind_pass= get_setting('ldap_bind_pass', '');
+    $filter   = get_setting('ldap_filter', '(mail={email})');
+
+    if (empty($host) || empty($base_dn)) {
+        return ['ok' => false, 'method' => 'ldap', 'detail' => 'Configuration LDAP incomplète (hôte ou base DN manquant)'];
+    }
+
+    // Connexion LDAP
+    $ldap_uri = (strpos($host, '://') !== false) ? $host : 'ldap://' . $host;
+    $conn = @ldap_connect($ldap_uri, $port);
+    if (!$conn) {
+        return ['ok' => false, 'method' => 'ldap', 'detail' => 'Impossible de se connecter au serveur LDAP ' . $host];
+    }
+
+    ldap_set_option($conn, LDAP_OPT_PROTOCOL_VERSION, 3);
+    ldap_set_option($conn, LDAP_OPT_REFERRALS, 0);
+    ldap_set_option($conn, LDAP_OPT_NETWORK_TIMEOUT, 5);
+    ldap_set_option($conn, LDAP_OPT_TIMELIMIT, 5);
+
+    // Bind — anonyme si aucun bind_dn configuré, sinon avec le compte de service
+    if (!empty($bind_dn)) {
+        $bind = @ldap_bind($conn, $bind_dn, $bind_pass);
+    } else {
+        $bind = @ldap_bind($conn); // Bind anonyme
+    }
+
+    if (!$bind) {
+        $errno = ldap_errno($conn);
+        $error = ldap_err2str($errno);
+        @ldap_close($conn);
+        return ['ok' => false, 'method' => 'ldap', 'detail' => "Échec d'authentification LDAP (code $errno : $error)"];
+    }
+
+    // Recherche de l'email dans l'annuaire
+    $search_filter = str_replace('{email}', $email, $filter);
+    // Échapper les caractères spéciaux LDAP dans l'email pour la sécurité
+    $search_filter = str_replace($email, ldap_escape($email, '', LDAP_ESCAPE_FILTER), $search_filter);
+
+    $search = @ldap_search($conn, $base_dn, $search_filter, ['mail', 'cn', 'distinguishedName']);
+    if (!$search) {
+        $errno = ldap_errno($conn);
+        @ldap_close($conn);
+        return ['ok' => false, 'method' => 'ldap', 'detail' => "Erreur de recherche LDAP (code $errno)"];
+    }
+
+    $entries = ldap_get_entries($conn, $search);
+    @ldap_close($conn);
+
+    $count = (int)($entries['count'] ?? 0);
+    if ($count > 0) {
+        $cn = $entries[0]['cn'][0] ?? '(nom inconnu)';
+        return ['ok' => true, 'method' => 'ldap', 'detail' => "Trouvé dans l'AD : $cn"];
+    }
+
+    return ['ok' => false, 'method' => 'ldap', 'detail' => "Adresse $email introuvable dans l'annuaire Active Directory"];
+}
+
+/**
+ * Vérifie qu'une adresse email existe via une probe SMTP (RCPT TO).
+ *
+ * Ouvre une connexion SMTP au serveur configuré, envoie HELO/MAIL FROM/RCPT TO
+ * et vérifie si le serveur accepte le destinataire. Se déconnecte proprement
+ * sans envoyer de mail (QUIT avant DATA).
+ *
+ * ⚠️ Attention : certains serveurs SMTP acceptent tous les RCPT TO (catch-all).
+ *    Cette méthode est un indicateur, pas une garantie absolue.
+ *
+ * @param string $email Adresse email à vérifier
+ * @return array ['ok' => bool, 'method' => string, 'detail' => string]
+ */
+function verify_email_smtp(string $email): array {
+    $smtp_host = get_setting('smtp_host', SMTP_HOST);
+    $smtp_port = (int)get_setting('smtp_port', (string)SMTP_PORT);
+    $smtp_from = get_setting('smtp_from', SMTP_FROM);
+    $smtp_secure = get_setting('smtp_secure', '');
+
+    if (empty($smtp_host)) {
+        return ['ok' => false, 'method' => 'smtp', 'detail' => 'Aucun serveur SMTP configuré'];
+    }
+
+    // Vérifier que l'extension sockets est disponible
+    if (!function_exists('fsockopen')) {
+        return ['ok' => false, 'method' => 'smtp', 'detail' => 'Extension PHP sockets non disponible'];
+    }
+
+    // Connexion SMTP avec timeout
+    $timeout = 10;
+    $errno = 0;
+    $errstr = '';
+
+    // Pour TLS, on se connecte d'abord en clair puis on fait STARTTLS
+    $conn = @fsockopen($smtp_host, $smtp_port, $errno, $errstr, $timeout);
+    if (!$conn) {
+        return ['ok' => false, 'method' => 'smtp', 'detail' => "Impossible de se connecter à $smtp_host:$smtp_port ($errstr)"];
+    }
+
+    stream_set_timeout($conn, $timeout);
+
+    // Fonction utilitaire pour lire une réponse SMTP
+    $read_smtp = function() use ($conn): string {
+        $response = '';
+        while ($line = fgets($conn, 512)) {
+            $response .= $line;
+            // Les réponses multilignes ont un '-' après le code, la dernière ligne a un espace
+            if (isset($line[3]) && $line[3] === ' ') break;
+        }
+        return $response;
+    };
+
+    // Fonction utilitaire pour envoyer une commande SMTP
+    $send_smtp = function(string $cmd) use ($conn): void {
+        fwrite($conn, $cmd . "\r\n");
+    };
+
+    // Bannière de bienvenue
+    $banner = $read_smtp();
+    if (!str_starts_with($banner, '220')) {
+        fclose($conn);
+        return ['ok' => false, 'method' => 'smtp', 'detail' => 'Bannière SMTP invalide : ' . trim($banner)];
+    }
+
+    // HELO
+    $send_smtp('HELO ' . gethostname());
+    $resp = $read_smtp();
+    if (!str_starts_with($resp, '250')) {
+        fclose($conn);
+        return ['ok' => false, 'method' => 'smtp', 'detail' => 'HELO rejeté : ' . trim($resp)];
+    }
+
+    // STARTTLS si configuré
+    if ($smtp_secure === 'tls') {
+        $send_smtp('STARTTLS');
+        $resp = $read_smtp();
+        if (!str_starts_with($resp, '220')) {
+            fclose($conn);
+            return ['ok' => false, 'method' => 'smtp', 'detail' => 'STARTTLS rejeté : ' . trim($resp)];
+        }
+        if (!@stream_socket_enable_crypto($conn, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            fclose($conn);
+            return ['ok' => false, 'method' => 'smtp', 'detail' => 'Échec de la négociation TLS'];
+        }
+        // Retour au HELO après STARTTLS
+        $send_smtp('EHLO ' . gethostname());
+        $resp = $read_smtp();
+        if (!str_starts_with($resp, '250')) {
+            fclose($conn);
+            return ['ok' => false, 'method' => 'smtp', 'detail' => 'EHLO après STARTTLS rejeté : ' . trim($resp)];
+        }
+    }
+
+    // MAIL FROM
+    $send_smtp('MAIL FROM:<' . $smtp_from . '>');
+    $resp = $read_smtp();
+    if (!str_starts_with($resp, '250')) {
+        $send_smtp('QUIT');
+        $read_smtp();
+        fclose($conn);
+        return ['ok' => false, 'method' => 'smtp', 'detail' => 'MAIL FROM rejeté : ' . trim($resp)];
+    }
+
+    // RCPT TO — la vérification clé
+    $send_smtp('RCPT TO:<' . $email . '>');
+    $resp = $read_smtp();
+
+    // QUIT proprement
+    $send_smtp('QUIT');
+    $read_smtp();
+    fclose($conn);
+
+    $code = substr($resp, 0, 3);
+    if ($code === '250') {
+        return ['ok' => true, 'method' => 'smtp', 'detail' => 'Adresse acceptée par le serveur SMTP'];
+    }
+
+    if ($code === '251') {
+        // 251 = User not local; will forward to <forward-path>
+        return ['ok' => true, 'method' => 'smtp', 'detail' => 'Adresse acceptée (transfert) par le serveur SMTP'];
+    }
+
+    return ['ok' => false, 'method' => 'smtp', 'detail' => 'Adresse rejetée par le serveur SMTP : ' . trim($resp)];
+}
+
+/**
+ * Vérifie une adresse email selon le mode configuré (LDAP, SMTP ou aucun).
+ *
+ * @param string $email Adresse email à vérifier
+ * @return array ['ok' => bool, 'method' => string, 'detail' => string]
+ */
+function verify_email(string $email): array {
+    $mode = get_setting('email_verify_mode', 'none');
+
+    // Validation basique du format email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['ok' => false, 'method' => 'format', 'detail' => 'Format d\'email invalide : ' . $email];
+    }
+
+    if ($mode === 'none') {
+        return ['ok' => true, 'method' => 'none', 'detail' => 'Aucune vérification configurée'];
+    }
+
+    if ($mode === 'ldap') {
+        return verify_email_ldap($email);
+    }
+
+    if ($mode === 'smtp') {
+        return verify_email_smtp($email);
+    }
+
+    // Mode inconnu = pas de vérification
+    return ['ok' => true, 'method' => 'none', 'detail' => 'Mode de vérification inconnu : ' . $mode];
+}
+
+/**
+ * Teste la vérification email avec une adresse donnée (pour la page admin).
+ * Retourne le résultat détaillé pour affichage.
+ */
+function test_email_verification(string $email): array {
+    $mode = get_setting('email_verify_mode', 'none');
+
+    $results = [
+        'email' => $email,
+        'mode'  => $mode,
+        'format_valid' => filter_var($email, FILTER_VALIDATE_EMAIL) !== false,
+    ];
+
+    if ($mode === 'ldap') {
+        $results['ldap'] = verify_email_ldap($email);
+    } elseif ($mode === 'smtp') {
+        $results['smtp'] = verify_email_smtp($email);
+    } elseif ($mode === 'both') {
+        // Mode both : LDAP en priorité, SMTP en fallback
+        $ldap_result = verify_email_ldap($email);
+        $results['ldap'] = $ldap_result;
+        if (!$ldap_result['ok']) {
+            $results['smtp'] = verify_email_smtp($email);
+        }
+    }
+
+    $results['verify'] = verify_email($email);
+    return $results;
+}
+
 // ── MAIL ─────────────────────────────────────────────────────
 function send_mail(string $to, string $subject, string $body): bool {
     // Mode test : intercepter les mails sans les envoyer
@@ -1546,6 +1871,32 @@ function send_mail(string $to, string $subject, string $body): bool {
             'time'    => date('Y-m-d H:i:s'),
         ];
         return true;
+    }
+
+    // Mode dry-run : aucun email réel n'est envoyé, tout est journalisé
+    $dry_run = get_setting('mail_dry_run', '0') === '1';
+    if ($dry_run) {
+        error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
+        app_log('mail_dry_run', 'mail:' . $to, "Email intercepté (dry-run) — Sujet : $subject");
+        return true; // Retourne true pour ne pas bloquer le workflow
+    }
+
+    // Vérification de l'adresse email avant envoi
+    $verify_mode = get_setting('email_verify_mode', 'none');
+    if ($verify_mode !== 'none') {
+        $verification = verify_email($to);
+        if (!$verification['ok']) {
+            error_log("send_mail() BLOQUÉ — email non vérifié : $to — " . $verification['detail']);
+            app_log('mail_blocked', 'mail:' . $to, "Email bloqué (vérification échouée) — " . $verification['detail'] . " — Sujet : $subject");
+            return false;
+        }
+    }
+
+    // Sécurité CLI : ne jamais envoyer d'emails réels depuis un contexte CLI
+    // (scripts de test, remind.php, alert_check.php utilisent un envoi explicite)
+    if (php_sapi_name() === 'cli' && !defined('CLI_MAIL_ALLOWED')) {
+        error_log("send_mail() bloqué en CLI sans CLI_MAIL_ALLOWED (destinataire: $to)");
+        return false;
     }
 
     $mail = new PHPMailer(true);
@@ -1568,9 +1919,11 @@ function send_mail(string $to, string $subject, string $body): bool {
         $mail->Subject  = $subject;
         $mail->Body     = $body;
         $mail->send();
+        app_log('mail_sent', 'mail:' . $to, "Email envoyé — Sujet : $subject");
         return true;
     } catch (Exception $e) {
         error_log('Mail error: ' . $mail->ErrorInfo);
+        app_log('mail_error', 'mail:' . $to, "Échec envoi — " . $mail->ErrorInfo . " — Sujet : $subject");
         return false;
     }
 }
