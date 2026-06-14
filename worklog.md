@@ -29,3 +29,30 @@ Stage Summary:
 - Comprehensive non-tech documentation
 - All Claude-identified gaps addressed
 - All CTO roadmap P0/P1 items implemented
+
+---
+Task ID: v4.1.0-forms-owners-tracking
+Agent: Super Z (main)
+Task: Replace conge/signalement forms with real business forms, add form owners and tracking table
+
+Work Log:
+- Replaced seeded form "conge" with "sortie_hors_plages" (request to leave outside fixed time slots)
+- Replaced seeded form "signalement" with "remboursement_avance_frais" (expense advance reimbursement)
+- Replaced seeded form "materiel" with "materiel_prescription" (medical prescription equipment)
+- Added form_owners table with migration version 6
+- Added helper functions: is_form_owner(), get_form_owners(), get_owned_forms()
+- Added owner management UI in admin_forms.php (add/remove owners per form)
+- Added remove_owner action support in confirm_action.php
+- Created form_tracking.php (owner tracking table with filters, pagination, CSV export)
+- Updated index.php with dynamic links to form_tracking for owned forms
+- Updated CHANGELOG.md, AGENT.md, config.php version to 4.1.0
+
+Stage Summary:
+- Version bumped from 4.0.0 to 4.1.0
+- 3 new business forms seeded with realistic workflows and owners
+- New table form_owners (migration v6)
+- 3 new helper functions
+- 1 new page (form_tracking.php)
+- Owner management integrated in admin_forms.php
+- confirm_action.php supports remove_owner
+- All changes follow zero-JS, zero-framework philosophy
