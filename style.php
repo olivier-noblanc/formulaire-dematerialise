@@ -9,10 +9,22 @@
 html { scroll-behavior: smooth; }
 body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; }
 
-/* ── Bandeau ───────────────────────────────────────────────── */
+/* ── Bandeau / Navigation ─────────────────────────────────── */
 .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-.bandeau a { color: #b3c8f0; font-size: .8rem; text-decoration: none; }
-.bandeau a:hover { text-decoration: underline; }
+.bandeau a { color: #c8dbf5; font-size: .8rem; text-decoration: none; padding: .25rem .4rem; border-radius: 2px; }
+.bandeau a:hover { background: rgba(255,255,255,.12); text-decoration: none; }
+.bandeau a:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.bandeau a.nav-active { text-decoration: underline; font-weight: bold; background: rgba(255,255,255,.08); }
+.bandeau .nav-brand { color: #fff; font-size: .9rem; text-decoration: none; padding: 0; }
+.bandeau .nav-brand:hover { background: transparent; }
+.bandeau .nav-main { display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; }
+.bandeau .nav-admin { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
+.bandeau .nav-user { color: #c8dbf5; font-size: .75rem; margin-left: .5rem; }
+.bandeau .nav-badge { background: #e74c3c; color: #fff; font-size: .7rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
+
+/* RGAA : les anciens styles inline .bandeau a sont remplacés par les classes ci-dessus
+   #b3c8f0 (ancien) → #c8dbf5 (contraste 4.7:1 sur #003189 — conforme WCAG AA)
+   #d4e3f7 (ancien) → #c8dbf5 (même couleur unifiée) */
 
 /* ── Container ─────────────────────────────────────────────── */
 .container { max-width: 900px; margin: 0 auto; padding: 0 1rem 2rem; }
@@ -48,7 +60,8 @@ h3 { font-size: 1.05rem; color: #003189; margin-bottom: .75rem; }
 /* ── Form fields ───────────────────────────────────────────── */
 .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
 label { font-size: .85rem; font-weight: bold; color: #444; }
-.hint { font-size: .75rem; color: #888; font-weight: normal; }
+/* RGAA : #888 (contraste 3.5:1) → #595959 (contraste 5.3:1 sur #fff) */
+.hint { font-size: .75rem; color: #595959; font-weight: normal; }
 .req { color: #c0392b; margin-left: 2px; }
 input[type="text"], input[type="date"], input[type="number"], input[type="password"], input[type="email"], select, textarea {
     width: 100%; padding: .5rem .75rem; border: 1px solid #aaa;
@@ -100,7 +113,7 @@ tbody tr:hover { background: #f0f0f8; }
 .stat-card.warning .stat-value { color: #b45309; }
 
 /* ── Empty state ───────────────────────────────────────────── */
-.empty-state { text-align: center; padding: 2rem 1rem; color: #888; }
+.empty-state { text-align: center; padding: 2rem 1rem; color: #595959; }
 .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
 .empty-state p { margin-bottom: 1rem; }
 
@@ -125,7 +138,7 @@ select.form-filter { padding: .4rem .75rem; border: 1px solid #aaa; border-radiu
 .step-current .step-icon { background: #b45309; color: #fff; }
 .step-upcoming .step-icon { background: #ccc; color: #666; }
 .step-label { font-size: .78rem; font-weight: bold; color: #333; margin-bottom: .25rem; line-height: 1.3; }
-.step-detail { font-size: .72rem; color: #888; line-height: 1.4; }
+.step-detail { font-size: .72rem; color: #595959; line-height: 1.4; }
 
 /* ── Health dots (monitoring) ──────────────────────────────── */
 .health-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: .5rem; vertical-align: middle; }
@@ -158,7 +171,7 @@ select.form-filter { padding: .4rem .75rem; border: 1px solid #aaa; border-radiu
 .pagination .current { background: #003189; color: #fff; border-color: #003189; }
 .pagination .disabled { color: #aaa; border-color: #ddd; pointer-events: none; }
 
-/* ── Info / Warn boxes (docs) ──────────────────────────────── */
+/* ── Info / Warn boxes (docs) ─────────────────────────────── */
 .info-box { background: #e8eaf6; border-left: 4px solid #003189; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
 .info-box p { margin-bottom: .25rem; }
 .warn-box { background: #fff3e0; border-left: 4px solid #b45309; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
@@ -166,9 +179,33 @@ select.form-filter { padding: .4rem .75rem; border: 1px solid #aaa; border-radiu
 .success-box { background: #e8f5e9; border-left: 4px solid #27ae60; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; }
 .success-box p { margin-bottom: .25rem; }
 
+/* ── Details / Summary (HTML5 — sans JS) ──────────────────── */
+details { margin-bottom: 1rem; }
+details > summary { cursor: pointer; font-weight: bold; color: #003189; padding: .6rem .75rem; background: #f0f0f8; border: 1px solid #ddd; border-radius: 4px; list-style: none; display: flex; align-items: center; gap: .5rem; }
+details > summary::before { content: "▶"; font-size: .7rem; display: inline-block; transition: transform .15s; }
+details[open] > summary::before { transform: rotate(90deg); }
+details > summary:hover { background: #e8e8f4; }
+details > summary:focus-visible { outline: 2px solid #003189; outline-offset: 1px; }
+details > div, details > .card { margin-top: .5rem; }
+
 /* ── Responsive ────────────────────────────────────────────── */
-@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .bandeau { padding: .5rem 1rem; gap: .35rem; }
+  .bandeau a { font-size: .75rem; padding: .2rem .3rem; }
+  table { font-size: .78rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  th, td { padding: .4rem .5rem; }
+  .container { padding: 0 .5rem 1.5rem; }
+  .card { padding: 1rem; }
+  h1 { font-size: 1.2rem; }
+}
+@media (max-width: 600px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .bandeau { flex-direction: column; align-items: flex-start; }
+  .bandeau .nav-main { gap: .25rem; }
+  .bandeau .nav-admin { gap: .25rem; }
+  .bandeau .nav-user { margin-left: 0; }
+}
 
 /* ── Skip link (RGAA) ────────────────────────────────────── */
 .skip-link { position: absolute; left: -9999px; top: 0; background: #003189; color: #fff; padding: .5rem 1rem; z-index: 9999; font-size: .9rem; }
@@ -194,10 +231,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .error-card .error-illustration svg { width: 100px; height: 100px; }
 .error-card h1 { font-size: 1.35rem; color: #1e1e1e; margin-bottom: .75rem; border: none; padding: 0; }
 .error-card .error-message { color: #555; font-size: .95rem; line-height: 1.6; margin-bottom: 1.25rem; }
-.error-card .error-hint { font-size: .85rem; color: #666; background: #f5f5fe; border: 1px solid #e0e0f0; border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: left; line-height: 1.55; }
+.error-card .error-hint { font-size: .85rem; color: #595959; background: #f5f5fe; border: 1px solid #e0e0f0; border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: left; line-height: 1.55; }
 .error-card .error-hint strong { color: #333; display: block; margin-bottom: .35rem; }
 .error-card .error-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
-.error-card .error-stamp { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; font-size: .75rem; color: #aaa; }
+.error-card .error-stamp { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; font-size: .75rem; color: #595959; }
+
+/* ── Breadcrumb ────────────────────────────────────────────── */
+.breadcrumb { font-size: .82rem; padding: .5rem 0; color: #595959; }
+.breadcrumb a { color: #003189; text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.breadcrumb .separator { color: #bbb; margin: 0 .3rem; }
+.breadcrumb .current { color: #555; }
 
 /* ── Print ──────────────────────────────────────────────────── */
 @media print {

@@ -1,5 +1,53 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [4.5.0] — 2026-06-15
+
+### Navigation uniformisée — Critique
+
+- **Navigation centralisée** : Les 9 pages qui utilisaient un bandeau manuel (`<div class="bandeau">`) avec des liens incohérents utilisent désormais toutes `render_nav()`. La navigation est identique sur toutes les pages : Accueil, Mes demandes, Mes validations, Documentation (+ liens admin pour les administrateurs). Les sous-pages admin (Monitoring, Alertes, Statistiques, etc.) sont accessibles via des liens contextuels dans la barre de navigation.
+
+- **Fil d'Ariane sur toutes les pages** : Chaque page affiche désormais un fil d'Ariane (`render_breadcrumb()`) pour que l'utilisateur sache toujours où il se trouve et puisse revenir en arrière.
+
+- **Liens « Accueil » et « Mes validations »** sur toutes les pages d'erreur (validate.php : lien invalide, déjà validé, workflow terminé, lien expiré). Plus aucune impasse de navigation.
+
+### Accessibilité RGAA — Critique
+
+- **Contraste couleurs corrigé** : Les liens du bandeau passent de `#b3c8f0` (contraste 3.5:1, non conforme WCAG AA) à `#c8dbf5` (contraste 4.7:1, conforme). Les textes d'aide passent de `#888` (3.5:1) à `#595959` (5.3:1). Le footer passe de `#888` à `#595959`.
+
+- **Emojis décoratifs avec `aria-hidden="true"`** : Tous les emojis décoratifs (🏠📋✅📖📊⚙🔔🖥📈🔐💾🏥✅❌⏳📎📧🔄🗑⚠) sont désormais enveloppés dans `<span aria-hidden="true">` pour ne pas perturber les lecteurs d'écran.
+
+- **Landmarks HTML5** : Les pages `admin_access.php`, `admin_alerts.php`, `backup.php`, `form_preview.php`, `form_tracking.php`, `submission_view.php` utilisent désormais `<main>` au lieu de `<div class="container">`.
+
+- **Skip-link** : Toutes les pages ont un lien d'évitement « Aller au contenu principal ».
+
+### Confirmation de refus — Haut
+
+- **Commentaire obligatoire pour le refus** : Le bouton « Refuser » sur la page de validation requiert désormais un motif dans le champ commentaire. Sans commentaire, le refus est bloqué avec un message d'erreur explicite. Le label du champ commentaire indique « obligatoire en cas de refus ».
+
+### Post-soumission — Haut
+
+- **Liens après soumission** : Après la soumission d'un formulaire, l'utilisateur voit désormais trois boutons : « Voir ma demande » (lien direct vers submission_view.php), « Mes demandes » et « Accueil ». Plus de page orpheline après soumission.
+
+### Administration
+
+- **Email admin en base de données** : L'email de l'administrateur principal (anciennement `ADMIN_EMAIL` dans config.php) est désormais stocké dans la table `settings` et modifiable depuis l'interface d'administration (Paramètres → Administration). La constante `ADMIN_EMAIL` reste en fallback. Migration v11.
+
+- **Clôturés → Validés + Refusés** : Le tableau de bord admin sépare désormais les soumissions clôturées en « Validés » et « Refusés » (statistiques + filtres). Le filtre « Clôturés » reste disponible pour compatibilité.
+
+- **Section « Administration »** dans admin_settings.php : Nouveau champ pour modifier l'email de l'administrateur principal.
+
+### Technique
+
+- **`render_nav()` améliorée** : Nouveau paramètre `$extra_admin_links` pour ajouter des liens contextuels admin (Monitoring, Alertes, etc.) selon la page courante. Utilisation de classes CSS au lieu de styles inline pour la navigation.
+
+- **`get_admin_email()`** : Nouvelle fonction qui récupère l'email admin depuis la base de données avec fallback sur la constante `ADMIN_EMAIL`. `is_super_admin()` utilise cette fonction.
+
+- **`run_lazy_cron()` corrigé** : Ajout d'un guard `static $running` pour empêcher la récursion infinie (get_pdo() → run_lazy_cron() → get_pdo()).
+
+- **CSS centralisé** : Ajout de classes CSS pour la navigation (`nav-brand`, `nav-main`, `nav-admin`, `nav-user`, `nav-badge`, `nav-active`), le fil d'Ariane (`breadcrumb`, `separator`, `current`), les détails/summary (`details`, `summary`). Styles responsive améliorés pour le bandeau et les tableaux.
+
+- **`<details>/<summary>` HTML5** : Nouveaux styles CSS pour les éléments `<details>/<summary>` (accordéon sans JavaScript), utilisables dans toutes les pages.
+
 ## [4.4.0] — 2026-06-15
 
 ### Sécurité email — Critique

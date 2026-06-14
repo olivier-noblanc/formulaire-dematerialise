@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_settings') {
         $updated_by = get_auth_user();
         $settings = [
+            'admin_email'      => trim($_POST['admin_email'] ?? ''),
             'smtp_host'        => trim($_POST['smtp_host'] ?? ''),
             'smtp_port'        => trim($_POST['smtp_port'] ?? '25'),
             'smtp_auth'        => isset($_POST['smtp_auth']) ? '1' : '0',
@@ -41,6 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Conserver l'ancien mot de passe si le champ est vide
         if (empty($settings['smtp_pass'])) {
             $settings['smtp_pass'] = get_setting('smtp_pass', '');
+        }
+        // Valider l'email admin
+        if (!empty($settings['admin_email']) && !filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL)) {
+            $error_msg = 'L\'adresse email de l\'administrateur principal est invalide.';
+            unset($settings['admin_email']);
         }
 
         try {
@@ -191,12 +197,9 @@ $ldap_ext_available = function_exists('ldap_connect');
     </style>
 </head>
 <body>
-<div class="bandeau">
-    <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-    <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a> <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔒 RGPD</a> <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🏥 Santé</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
-</div>
-<div class="container">
+<?= render_nav('settings') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Paramètres']]) ?>
     <h1>⚙ Paramètres</h1>
 
     <?php if ($success_msg): ?>
@@ -382,6 +385,16 @@ $ldap_ext_available = function_exists('ldap_connect');
     <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="save_settings">
+
+        <div class="card">
+            <h2>Administration</h2>
+
+            <div class="field">
+                <label for="admin_email">Email de l'administrateur principal</label>
+                <input type="email" id="admin_email" name="admin_email" value="<?= h(get_admin_email()) ?>" placeholder="prenom.nom@dreets.gouv.fr" required>
+                <span class="hint">Cet utilisateur est super-administrateur et reçoit les demandes d'accès. Modifiable depuis la base de données si l'accès est perdu.</span>
+            </div>
+        </div>
 
         <div class="card">
             <h2>Configuration SMTP</h2>

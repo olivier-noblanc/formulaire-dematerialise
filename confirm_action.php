@@ -170,11 +170,9 @@ if ($action === 'remove_owner' && isset($_GET['form_id'])) {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-</div>
-<div class="container" id="main-content">
+<?= render_nav('') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Confirmation']]) ?>
 
   <div class="confirm-card <?= $config['danger'] ? 'danger' : 'warning' ?>">
     <div class="confirm-icon"><?= $config['danger'] ? '⚠️' : '🔄' ?></div>
@@ -204,7 +202,7 @@ if ($action === 'remove_owner' && isset($_GET['form_id'])) {
     </form>
   </div>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

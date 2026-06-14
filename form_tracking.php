@@ -225,15 +225,9 @@ $fuuid = h($form['id']);
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
-  <span>
-    <a href="index.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">Accueil</a>
-    <a href="form_tracking.php?f=<?= $fuuid ?>" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">Suivi</a>
-  </span>
-</div>
-<div class="container" id="main-content">
+<?= render_nav('') ?>
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Suivi : ' . $form['label']]]) ?>
+<main class="container" id="main-content">
 
   <h1>📊 Suivi : <?= h($form['label']) ?></h1>
   <p class="subtitle"><?= h($form['description']) ?></p>
@@ -349,7 +343,7 @@ $fuuid = h($form['id']);
     <?php endif; ?>
   <?php endif; ?>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

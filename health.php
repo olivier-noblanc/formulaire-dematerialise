@@ -114,7 +114,10 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
   </style>
 </head>
 <body>
-<div class="container">
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<?= render_nav('health') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Santé système']]) ?>
   <h1>Santé du système</h1>
 
   <div class="status-banner <?= $all_healthy ? 'healthy' : 'unhealthy' ?>">
@@ -137,6 +140,6 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
   <p style="text-align:center;margin-top:1.5rem;font-size:.8rem;color:#888;">
     Endpoint de monitoring : <code>health.php?format=json</code>
   </p>
-</div>
+</main>
 </body>
 </html>

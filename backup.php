@@ -418,19 +418,13 @@ $purge_preview = $purge_preview ?? null;
     </style>
 </head>
 <body>
-<div class="bandeau">
-    <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-    <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-    <span>
-        <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
-        <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a>
-        <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔐 RGPD</a>
-        <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🏥 Santé</a>
-        <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
-        <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
-    </span>
-</div>
-<div class="container">
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<?= render_nav('backup', [
+    'backup' => ['href' => 'backup.php', 'label' => 'Sauvegarde', 'icon' => '💾'],
+    'health' => ['href' => 'health.php', 'label' => 'Santé', 'icon' => '🏥'],
+]) ?>
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Sauvegarde']]) ?>
+<main class="container" id="main-content">
 
     <h1>💾 Sauvegarde et restauration</h1>
 
@@ -645,7 +639,7 @@ $purge_preview = $purge_preview ?? null;
         <a href="dashboard.php" class="btn btn-secondary">← Retour au tableau de bord</a>
     </div>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

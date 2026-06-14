@@ -283,8 +283,9 @@ HTML;
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="my_submissions.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📋 Mes demandes</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a><?php if (is_admin_user()): ?> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a><?php endif; ?></span></div>
-<div class="container" id="main-content">
+<?= render_nav('forms') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Mes demandes', 'my_submissions.php'], [$form_label ?? 'Formulaire']]) ?>
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p class="agent-info"><?= h($form['description']) ?></p><?php endif; ?>
   <p class="agent-info">Formulaire rempli par : <strong><?= h($submitted_by) ?></strong></p>
@@ -299,8 +300,13 @@ HTML;
 
   <?php if ($success): ?>
     <div class="success">
-      <strong>✓ Demande enregistrée</strong>
+      <strong><span aria-hidden="true">✓</span> Demande enregistrée</strong>
       Le workflow de validation a été déclenché automatiquement. Un email de confirmation vous a été envoyé.
+    </div>
+    <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+      <a href="submission_view.php?id=<?= urlencode($submission_id) ?>" class="btn btn-primary">Voir ma demande</a>
+      <a href="my_submissions.php" class="btn btn-secondary">Mes demandes</a>
+      <a href="index.php" class="btn btn-secondary">Accueil</a>
     </div>
   <?php else: ?>
     <?php if (!empty($field_errors) || !empty($file_errors)): ?>
@@ -361,7 +367,7 @@ HTML;
       <?php endif; ?>
     </form>
   <?php endif; ?>
-</div>
+</main>
 
 <?= render_footer() ?>
 </body>

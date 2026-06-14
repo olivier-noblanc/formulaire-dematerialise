@@ -202,19 +202,15 @@ function notify_who_label(string $val): string {
   </style>
 </head>
 <body>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-  <span>
-    <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
-    <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📈 Statistiques</a>
-    <a href="monitoring.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🖥 Monitoring</a>
-    <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔐 RGPD</a>
-    <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
-    <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
-  </span>
-</div>
-<div class="container">
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<?= render_nav('alerts', [
+    'alerts'    => ['href' => 'admin_alerts.php', 'label' => 'Alertes', 'icon' => '🔔'],
+    'monitoring'=> ['href' => 'monitoring.php',   'label' => 'Monitoring', 'icon' => '🖥'],
+    'stats'     => ['href' => 'stats.php',         'label' => 'Statistiques', 'icon' => '📈'],
+    'rgpd'      => ['href' => 'rgpd.php',          'label' => 'RGPD', 'icon' => '🔐'],
+]) ?>
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Alertes']]) ?>
+<main class="container" id="main-content">
   <h1>🔔 Alertes paramétrables</h1>
 
   <?php if ($success_msg): ?>
@@ -480,7 +476,7 @@ function notify_who_label(string $val): string {
     <?php endif; ?>
   </div>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

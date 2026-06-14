@@ -130,12 +130,10 @@ if (is_super_admin() || is_admin_user()) {
     </style>
 </head>
 <body>
-<div class="bandeau">
-    <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-    <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a></span>
-</div>
-<div class="container">
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<?= render_nav('') ?>
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Accès admin']]) ?>
+<main class="container" id="main-content">
     <h1>Accès au back office</h1>
     
     <?php if (isset($success_msg)): ?>
@@ -150,7 +148,7 @@ if (is_super_admin() || is_admin_user()) {
         <!-- Page de confirmation pour les liens email (securite : GET n'a plus d'effet de bord) -->
         <div class="card" style="border:2px solid <?= $confirm_data['action'] === 'approve' ? '#1a6b3c' : '#c0392b' ?>;">
             <h2 style="color:<?= $confirm_data['action'] === 'approve' ? '#1a6b3c' : '#c0392b' ?>;">
-                <?= $confirm_data['action'] === 'approve' ? '✅ Approuver' : '❌ Refuser' ?> la demande d'accès
+                <?= $confirm_data['action'] === 'approve' ? '<span aria-hidden="true">✅</span> Approuver' : '<span aria-hidden="true">❌</span> Refuser' ?> la demande d'accès
             </h2>
             <p style="margin-bottom:1rem;">
                 <strong><?= h($confirm_data['email']) ?></strong> a demandé l'accès admin le <?= h(date('d/m/Y à H:i', strtotime($confirm_data['requested_at']))) ?>.
@@ -234,7 +232,7 @@ if (is_super_admin() || is_admin_user()) {
                             <td><?= h($admin['email']) ?></td>
                             <td><?= h($admin['added_at']) ?></td>
                             <td>
-                                <?php if ($admin['email'] !== ADMIN_EMAIL): ?>
+                                <?php if ($admin['email'] !== get_admin_email()): ?>
                                     <form method="POST" style="display:inline;">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="remove_admin">
@@ -265,11 +263,11 @@ if (is_super_admin() || is_admin_user()) {
         
         <div class="card">
             <h2>Informations</h2>
-            <p><strong>Administrateur principal :</strong> <?= h(ADMIN_EMAIL) ?></p>
+            <p><strong>Administrateur principal :</strong> <?= h(get_admin_email()) ?></p>
             <p>Cette page affiche l'email de l'administrateur principal. Pour obtenir l'accès au back office, vous devez demander l'autorisation à cet administrateur.</p>
         </div>
     <?php endif; ?>
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

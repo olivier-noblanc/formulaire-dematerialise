@@ -71,13 +71,11 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
   </style>
 </head>
 <body>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-  <span><a href="admin_forms.php?form_id=<?= urlencode($form['id']) ?>" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">⚙ Retour à l'édition</a></span>
-</div>
-<div class="container">
-  <div class="preview-banner">👁 Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées</div>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<?= render_nav('forms') ?>
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Formulaires', 'admin_forms.php'], ['Prévisualisation']]) ?>
+<main class="container" id="main-content">
+  <div class="preview-banner">👁 Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="admin_forms.php?form_id=<?= urlencode($form['id']) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;">⚙ Retour à l'édition</a></div>
 
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= h($form['description']) ?></p><?php endif; ?>
@@ -150,7 +148,7 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
       <button type="button" class="btn-submit" disabled>Envoyer la déclaration (désactivé — prévisualisation)</button>
     <?php endif; ?>
   </form>
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

@@ -98,19 +98,8 @@ if ($is_admin) {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
-  <span>
-    <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a>
-    <?php if ($is_admin): ?>
-    <a href="stats.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Stats</a>
-    <a href="rgpd.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">🔐 RGPD</a>
-    <?php endif; ?>
-    <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">🏥 Santé</a>
-  </span>
-</div>
-<div class="container" id="main-content">
+<?= render_nav('accueil') ?>
+<main class="container" id="main-content">
   <!-- Hero -->
   <div class="hero">
     <h1>Workflow DREETS BFC</h1>
@@ -292,7 +281,7 @@ if ($is_admin) {
       </div>
     </a>
   </div>
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

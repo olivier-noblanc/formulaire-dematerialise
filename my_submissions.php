@@ -169,18 +169,9 @@ foreach ($submissions as $s) {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
-  <span>
-    <a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a>
-    <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
-    <?php if (is_admin_user()): ?>
-    <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
-    <?php endif; ?>
-  </span>
-</div>
-<div class="container" id="main-content">
+<?= render_nav('mes_demandes') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Mes demandes']]) ?>
   <h1>📋 Mes demandes</h1>
   <p class="subtitle">Suivi de toutes vos demandes de workflow en tant qu'agent</p>
 
@@ -312,7 +303,7 @@ foreach ($submissions as $s) {
     </div>
     <?php endforeach; ?>
   <?php endif; ?>
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

@@ -98,7 +98,16 @@ function is_admin_user(): bool {
 // Vérifie si l'utilisateur est l'admin principal
 function is_super_admin(): bool {
     $auth_user = get_auth_user();
-    return $auth_user === ADMIN_EMAIL;
+    return $auth_user === get_admin_email();
+}
+
+// Récupère l'email de l'admin principal (depuis settings DB, fallback ADMIN_EMAIL)
+function get_admin_email(): string {
+    try {
+        $email = get_setting('admin_email', '');
+        if (!empty($email)) return $email;
+    } catch (\Throwable $e) {}
+    return defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '';
 }
 
 // Vérifie si l'utilisateur est propriétaire d'un formulaire donné
@@ -144,6 +153,10 @@ function get_owned_forms(?string $email = null): array {
  * - hourly : remind (1x/heure)
  */
 function run_lazy_cron(): void {
+    static $running = false;
+    if ($running) return; // Éviter la récursion (get_pdo() appelle run_lazy_cron())
+    $running = true;
+
     $pdo = get_pdo();
     $now = time();
     
@@ -468,7 +481,7 @@ function db_migrate(PDO $pdo): void {
     $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
     if ($count_stmt->fetchColumn() == 0) {
         $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
-            ->execute([generate_uuid(), ADMIN_EMAIL, date('Y-m-d H:i:s')]);
+            ->execute([generate_uuid(), get_admin_email(), date('Y-m-d H:i:s')]);
     }
 
     // Seed formulaire outboarding si la table forms est vide ou ne contient que l'onboarding
@@ -1383,6 +1396,19 @@ function db_migrate(PDO $pdo): void {
         }
     } catch (PDOException $e) {}
     
+    // Version 11: admin_email en base (remplace le define ADMIN_EMAIL de config.php)
+    if ($current_version < 11) {
+        try {
+            // Insérer l'admin_email actuel s'il n'existe pas déjà en base
+            $admin_email_value = defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '';
+            $pdo->prepare("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('admin_email', ?, datetime('now'))")->execute([$admin_email_value]);
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([11]);
+            $current_version = 11;
+        } catch (PDOException $e) {
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([11]); } catch (PDOException $e2) {}
+        }
+    }
+    
     // Migration des données existantes : peupler la colonne status à partir de closed_at
     try {
         // Les soumissions avec closed_at commençant par REFUSED: sont refusees
@@ -1489,9 +1515,127 @@ function parse_options_input(string $input): ?string {
     return json_encode($lines, JSON_UNESCAPED_UNICODE);
 }
 
+// ── NAVIGATION PARTAGÉE ────────────────────────────────────────
+
+/**
+ * Génère le bandeau de navigation commun à toutes les pages.
+ *
+ * Structure : [Logo DREETS] [Liens principaux] [Utilisateur + admin]
+ *
+ * Liens principaux (toujours visibles) :
+ *   - Accueil
+ *   - Mes demandes
+ *   - Mes validations (avec badge compteur si > 0)
+ *   - Documentation
+ *
+ * Liens admin (si is_admin_user) :
+ *   - Tableau de bord
+ *   - Paramètres
+ *
+ * @param string $current_page  Identifiant de la page courante pour marquage actif
+ *                              (accueil|mes_demandes|mes_validations|docs|dashboard|forms|settings|stats|monitoring|alerts|rgpd|health|changelog|backup)
+ * @return string HTML du bandeau <nav>
+ */
+function render_nav(string $current_page = '', array $extra_admin_links = []): string {
+    $user = get_auth_user();
+    $is_admin = is_admin_user();
+
+    // Compteur de validations en attente pour le badge
+    $pending_count = 0;
+    try {
+        $pdo = get_pdo();
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM tokens t
+            JOIN submissions s ON s.id = t.submission_id
+            WHERE t.email = ? AND t.done_at IS NULL AND t.cancelled_at IS NULL
+              AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))
+              AND s.closed_at IS NULL
+        ");
+        $stmt->execute([$user]);
+        $pending_count = (int)$stmt->fetchColumn();
+    } catch (\Throwable $e) {
+        // Ignorer silencieusement
+    }
+
+    // Liens principaux — toujours visibles
+    $main_links = [
+        'accueil'         => ['href' => 'index.php',        'label' => 'Accueil',         'icon' => '🏠'],
+        'mes_demandes'    => ['href' => 'my_submissions.php','label' => 'Mes demandes',   'icon' => '📋'],
+        'mes_validations' => ['href' => 'my_validations.php','label' => 'Mes validations', 'icon' => '✅'],
+        'docs'            => ['href' => 'docs.php',          'label' => 'Documentation',   'icon' => '📖'],
+    ];
+
+    // Liens admin — toujours présents pour les admins
+    $admin_links = [
+        'dashboard'  => ['href' => 'dashboard.php',      'label' => 'Tableau de bord', 'icon' => '📊'],
+        'settings'   => ['href' => 'admin_settings.php', 'label' => 'Paramètres',      'icon' => '⚙'],
+    ];
+
+    // Liens admin supplémentaires (spécifiques à la page courante)
+    // $extra_admin_links format: ['key' => ['href' => '...', 'label' => '...', 'icon' => '...']]
+
+    $nav_links_html = '';
+    foreach ($main_links as $key => $link) {
+        $active = ($current_page === $key) ? ' class="nav-active"' : '';
+        $badge = '';
+        if ($key === 'mes_validations' && $pending_count > 0) {
+            $badge = ' <span class="nav-badge" aria-label="' . $pending_count . ' validation(s) en attente">' . $pending_count . '</span>';
+        }
+        $nav_links_html .= '<a href="' . $link['href'] . '"' . $active . '><span aria-hidden="true">' . $link['icon'] . '</span> ' . $link['label'] . $badge . '</a>';
+    }
+
+    $admin_links_html = '';
+    if ($is_admin) {
+        foreach ($admin_links as $key => $link) {
+            $active = ($current_page === $key) ? ' class="nav-active"' : '';
+            $admin_links_html .= '<a href="' . $link['href'] . '"' . $active . '><span aria-hidden="true">' . $link['icon'] . '</span> ' . $link['label'] . '</a>';
+        }
+        foreach ($extra_admin_links as $key => $link) {
+            $active = ($current_page === $key) ? ' class="nav-active"' : '';
+            $admin_links_html .= '<a href="' . $link['href'] . '"' . $active . '><span aria-hidden="true">' . $link['icon'] . '</span> ' . $link['label'] . '</a>';
+        }
+    }
+
+    return '<nav class="bandeau" aria-label="Navigation principale">
+  <strong><a href="index.php" class="nav-brand">DREETS</a></strong>
+  <span class="nav-main">' . $nav_links_html . '</span>
+  <span class="nav-admin">
+    ' . $admin_links_html . '
+    <span class="nav-user">Connecté : <strong>' . h($user) . '</strong></span>
+  </span>
+</nav>';
+}
+
+/**
+ * Génère un fil d'Ariane.
+ *
+ * @param array $breadcrumbs Tableau de [label, href] du plus haut au plus bas
+ *                           Le dernier élément est la page courante (sans lien)
+ * @return string HTML du fil d'Ariane
+ */
+function render_breadcrumb(array $breadcrumbs): string {
+    if (empty($breadcrumbs)) return '';
+
+    $items = [];
+    $total = count($breadcrumbs);
+    foreach ($breadcrumbs as $i => $crumb) {
+        $label = h($crumb[0]);
+        if ($i === $total - 1) {
+            // Dernier = page courante
+            $items[] = '<span aria-current="page" class="current">' . $label . '</span>';
+        } else {
+            $items[] = '<a href="' . h($crumb[1]) . '">' . $label . '</a>';
+        }
+    }
+
+    return '<nav aria-label="Fil d\'Ariane" class="breadcrumb">
+  ' . implode(' <span aria-hidden="true" class="separator">›</span> ', $items) . '
+</nav>';
+}
+
 // ── FOOTER ────────────────────────────────────────────────────
 function render_footer(): string {
-    return '<footer style="text-align:center;padding:1.5rem 1rem;font-size:.78rem;color:#888;background:#f5f5fe;border-top:1px solid #eee;margin-top:2rem;">
+    return '<footer style="text-align:center;padding:1.5rem 1rem;font-size:.78rem;color:#595959;background:#f5f5fe;border-top:1px solid #eee;margin-top:2rem;">
   <a href="changelog.php" style="color:#003189;text-decoration:none;font-weight:bold;" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>
   — Formulaire Dématérialisé DREETS
 </footer>';
@@ -2246,7 +2390,7 @@ function process_admin_request(string $email): bool {
 </body>
 </html>';
         
-        send_mail(ADMIN_EMAIL, $subject, $body);
+        send_mail(get_admin_email(), $subject, $body);
         return true;
     } catch (Exception $e) {
         error_log('Erreur lors de la demande d\'accès admin : ' . $e->getMessage());
@@ -2335,7 +2479,7 @@ function remove_admin(string $email): bool {
     $pdo = get_pdo();
     
     // Ne peut pas supprimer l'admin principal
-    if ($email === ADMIN_EMAIL) {
+    if ($email === get_admin_email()) {
         return false;
     }
     

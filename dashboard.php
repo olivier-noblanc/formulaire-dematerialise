@@ -18,7 +18,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         if ($fid) $options['form_id'] = $fid;
     }
     if ($filtre !== 'tous') {
-        $options['status'] = $filtre === 'en_cours' ? 'en_cours' : ($filtre === 'complet' ? 'valide' : '');
+        $options['status'] = $filtre === 'en_cours' ? 'en_cours' : ($filtre === 'valide' ? 'valide' : ($filtre === 'refuse' ? 'refuse' : ''));
     }
     app_log('export_csv', '', 'Export CSV des soumissions');
     export_csv($pdo, $options);
@@ -76,6 +76,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'cancel_submission') {
 $where = ['1=1'];
 $params = [];
 if ($filtre === 'en_cours') { $where[] = 's.status = ?'; $params[] = 'en_cours'; }
+if ($filtre === 'valide')   { $where[] = 's.status = ?'; $params[] = 'valide'; }
+if ($filtre === 'refuse')   { $where[] = 's.status = ?'; $params[] = 'refuse'; }
 if ($filtre === 'complet')  { $where[] = 's.status != ?'; $params[] = 'en_cours'; }
 if ($form_f) { $where[] = "f.slug = ?"; $params[] = $form_f; }
 if ($search) {
@@ -101,6 +103,8 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $forms   = $pdo->query("SELECT * FROM forms WHERE actif=1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
 $total   = $pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn();
 $complet = $pdo->query("SELECT COUNT(*) FROM submissions WHERE status != 'en_cours'")->fetchColumn();
+$valide  = $pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'valide'")->fetchColumn();
+$refuse  = $pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'refuse'")->fetchColumn();
 
 // Statuts des tokens par soumission
 function get_tokens_status(string $sub_id): array {
@@ -144,8 +148,9 @@ function get_tokens_status(string $sub_id): array {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau"><strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span> <span><a href="my_validations.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">✅ Mes validations</a> <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a> <a href="admin_alerts.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🔔 Alertes</a> <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a> <a href="health.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🏥 Santé</a></span></div>
-<div class="container" id="main-content">
+<?= render_nav('dashboard') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Tableau de bord']]) ?>
   <h1>Supervision — Workflows en cours</h1>
 
   <?php if ($regen_msg): ?><div class="msg-info"><?= h($regen_msg) ?></div><?php endif; ?>
@@ -154,15 +159,17 @@ function get_tokens_status(string $sub_id): array {
 
   <div class="stats">
     <div class="stat"><strong><?= $total ?></strong>Total</div>
-    <div class="stat"><strong style="color:#c0392b;"><?= $total - $complet ?></strong>En cours</div>
-    <div class="stat"><strong style="color:#1a6b3c;"><?= $complet ?></strong>Clôturés</div>
+    <div class="stat"><strong style="color:#b45309;"><?= $total - $complet ?></strong>En cours</div>
+    <div class="stat"><strong style="color:#1a6b3c;"><?= $valide ?></strong>Validés</div>
+    <div class="stat"><strong style="color:#c0392b;"><?= $refuse ?></strong>Refusés</div>
   </div>
 
   <div class="toolbar">
     <div class="filtres">
       <a href="?statut=tous&form=<?= h($form_f) ?>&search=<?= h($search) ?>"     class="<?= $filtre==='tous'     ? 'actif':'' ?>">Tous</a>
       <a href="?statut=en_cours&form=<?= h($form_f) ?>&search=<?= h($search) ?>" class="<?= $filtre==='en_cours' ? 'actif':'' ?>">En cours</a>
-      <a href="?statut=complet&form=<?= h($form_f) ?>&search=<?= h($search) ?>"  class="<?= $filtre==='complet'  ? 'actif':'' ?>">Clôturés</a>
+      <a href="?statut=valide&form=<?= h($form_f) ?>&search=<?= h($search) ?>"   class="<?= $filtre==='valide'   ? 'actif':'' ?>">Validés</a>
+      <a href="?statut=refuse&form=<?= h($form_f) ?>&search=<?= h($search) ?>"   class="<?= $filtre==='refuse'   ? 'actif':'' ?>">Refusés</a>
     </div>
     <form method="GET" style="display:inline-flex;gap:.5rem;align-items:center;">
       <input type="hidden" name="statut" value="<?= h($filtre) ?>">
@@ -342,7 +349,7 @@ function get_tokens_status(string $sub_id): array {
   </div>
   <?php endif; ?>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

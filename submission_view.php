@@ -273,18 +273,9 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
-  <span>
-    <?php if ($is_admin): ?>
-      <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
-    <?php endif; ?>
-    <a href="my_submissions.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;<?= $is_admin ? 'margin-left:8px;' : '' ?>">📋 Mes demandes</a>
-    <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
-  </span>
-</div>
-<div class="container" id="main-content">
+<?= render_nav('') ?>
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Soumission']]) ?>
+<main class="container" id="main-content">
 
   <?php if ($is_admin): ?>
     <a href="dashboard.php" class="back-link">← Retour au dashboard</a>
@@ -329,7 +320,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
       $dl_text = $days_remaining < 0 ? 'Date dépassée de ' . abs($days_remaining) . ' jour(s)' : ($days_remaining === 0 ? "C'est aujourd'hui !" : "Plus que {$days_remaining} jour(s)");
     ?>
     <div class="deadline-card <?= $dl_cls ?>">
-      <div class="dl-icon"><?= $dl_icon ?></div>
+      <div class="dl-icon"><span aria-hidden="true"><?= $dl_icon ?></span></div>
       <div class="dl-text">
         <div class="dl-date">Date cible : <?= h(date('d/m/Y', $deadline_ts)) ?></div>
         <div class="dl-remaining <?= $dl_cls ?>"><?= $dl_text ?></div>
@@ -339,7 +330,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
 
   <!-- Workflow diagram -->
   <div class="card">
-    <h2>🔀 Circuit de validation</h2>
+    <h2><span aria-hidden="true">🔀</span> Circuit de validation</h2>
     <div class="workflow-diagram">
       <div class="wf-flow">
         <?php foreach ($workflow_steps as $i => $ws):
@@ -360,7 +351,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
                     <?php if (!empty($tok['done_at'])): ?>
                       <span class="wf-check">✓</span>
                     <?php elseif ($ws['step_status'] === 'current'): ?>
-                      <span class="wf-pending">⏳</span>
+                      <span class="wf-pending" aria-hidden="true">⏳</span>
                     <?php else: ?>
                       <span class="wf-waiting">○</span>
                     <?php endif; ?>
@@ -387,13 +378,13 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="remind_one">
             <input type="hidden" name="token_id" value="<?= h($tok['id']) ?>">
-            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📧 Rappeler <?= h($tok['email']) ?></button>
+            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📧</span> Rappeler <?= h($tok['email']) ?></button>
           </form>
           <form method="POST" style="display:inline;">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="regenerate_token">
             <input type="hidden" name="token_id" value="<?= h($tok['id']) ?>">
-            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Régénérer <?= h($tok['email']) ?></button>
+            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">🔄</span> Régénérer <?= h($tok['email']) ?></button>
           </form>
         <?php endif; ?>
       <?php endforeach; ?>
@@ -409,7 +400,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
       if (!empty($my_pending_tokens)):
     ?>
     <div class="actions-bar" style="margin-top:0;">
-      <strong style="font-size:.85rem;color:#003189;">🔄 Déléguer ma validation :</strong>
+      <strong style="font-size:.85rem;color:#003189;"><span aria-hidden="true">🔄</span> Déléguer ma validation :</strong>
       <form method="POST" style="display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="delegate_token">
@@ -420,7 +411,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
         </select>
         <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
         <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
-        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;background:#6c3483;color:#fff;">🔄 Déléguer</button>
+        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;background:#6c3483;color:#fff;"><span aria-hidden="true">🔄</span> Déléguer</button>
       </form>
     </div>
     <?php endif; ?>
@@ -429,7 +420,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
 
   <!-- Données du formulaire -->
   <div class="card">
-    <h2>📋 Données du formulaire</h2>
+    <h2><span aria-hidden="true">📋</span> Données du formulaire</h2>
     <div class="data-grid">
       <?php
         // Regrouper les données par card_group si on a les infos
@@ -465,13 +456,13 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
   <!-- Historique des validations -->
   <?php if (isset($data['validations']) && is_array($data['validations']) && !empty($data['validations'])): ?>
   <div class="card">
-    <h2>📝 Historique des validations</h2>
+    <h2><span aria-hidden="true">📝</span> Historique des validations</h2>
     <?php foreach ($data['validations'] as $v):
       $is_valid = $v['action'] === 'valider';
       $icon = $is_valid ? '✅' : '❌';
     ?>
     <div class="val-item">
-      <div class="val-icon"><?= $icon ?></div>
+      <div class="val-icon"><span aria-hidden="true"><?= $icon ?></span></div>
       <div class="val-content">
         <div class="val-header">
           <?= h($v['step_label']) ?> — <?= h($v['email']) ?>
@@ -481,7 +472,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
         </div>
         <div class="val-detail"><?= h($v['date']) ?></div>
         <?php if (!empty($v['commentaire'])): ?>
-          <div class="val-comment">💬 <?= h($v['commentaire']) ?></div>
+          <div class="val-comment"><span aria-hidden="true">💬</span> <?= h($v['commentaire']) ?></div>
         <?php endif; ?>
       </div>
     </div>
@@ -516,12 +507,12 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
     if ($total_relances > 0 || !empty($pending_with_relance)):
   ?>
   <div class="card">
-    <h2>🔔 Historique des relances (<?= $total_relances ?> au total)</h2>
+    <h2><span aria-hidden="true">🔔</span> Historique des relances (<?= $total_relances ?> au total)</h2>
     <?php if (!empty($pending_with_relance)): ?>
       <div style="margin-bottom:1rem;">
         <?php foreach ($pending_with_relance as $pt): ?>
           <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid #f0f0f0;">
-            <span style="font-size:1.1rem;">⏳</span>
+            <span style="font-size:1.1rem;" aria-hidden="true">⏳</span>
             <strong style="font-size:.85rem;"><?= h($pt['email']) ?></strong>
             <span class="badge badge-warn"><?= (int)$pt['relance_count'] ?> rappel<?= (int)$pt['relance_count'] > 1 ? 's' : '' ?></span>
             <?php if (!empty($pt['relance_at'])): ?>
@@ -537,7 +528,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
       <h3 style="font-size:.9rem;color:#555;margin-bottom:.75rem;">Détail des relances envoyées</h3>
       <?php foreach ($submission_reminds as $sr): ?>
       <div class="val-item">
-        <div class="val-icon">🔔</div>
+        <div class="val-icon" aria-hidden="true">🔔</div>
         <div class="val-content">
           <div class="val-header"><?= h($sr['detail']) ?></div>
           <div class="val-detail"><?= h(date('d/m/Y à H:i', strtotime($sr['created_at']))) ?> — par <?= h($sr['actor']) ?></div>
@@ -551,7 +542,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
       <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="remind_all">
-        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;">📧 Rappeler tous les validateurs en attente</button>
+        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;"><span aria-hidden="true">📧</span> Rappeler tous les validateurs en attente</button>
       </form>
     </div>
     <?php endif; ?>
@@ -564,7 +555,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
     if (!empty($attachments)):
   ?>
   <div class="card">
-    <h2>📎 Pièces jointes (<?= count($attachments) ?>)</h2>
+    <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($attachments) ?>)</h2>
     <table style="width:100%;border-collapse:collapse;">
       <thead>
         <tr>
@@ -586,7 +577,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
           <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= format_file_size((int)$att['file_size']) ?></td>
           <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= h(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
           <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">
-            <a href="download.php?id=<?= urlencode($att['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;">📥 Télécharger</a>
+            <a href="download.php?id=<?= urlencode($att['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;"><span aria-hidden="true">📥</span> Télécharger</a>
           </td>
         </tr>
       <?php endforeach; ?>
@@ -601,17 +592,17 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
     if (!empty($delegations)):
   ?>
   <div class="card">
-    <h2>🔄 Délégations</h2>
+    <h2><span aria-hidden="true">🔄</span> Délégations</h2>
     <?php foreach ($delegations as $dlg): ?>
     <div class="val-item">
-      <div class="val-icon">🔄</div>
+      <div class="val-icon" aria-hidden="true">🔄</div>
       <div class="val-content">
         <div class="val-header">
           <?= h($dlg['step_label']) ?> : <?= h($dlg['from_email']) ?> → <?= h($dlg['to_email']) ?>
         </div>
         <div class="val-detail"><?= h(date('d/m/Y à H:i', strtotime($dlg['delegated_at']))) ?></div>
         <?php if (!empty($dlg['reason'])): ?>
-          <div class="val-comment">💬 Motif : <?= h($dlg['reason']) ?></div>
+          <div class="val-comment"><span aria-hidden="true">💬</span> Motif : <?= h($dlg['reason']) ?></div>
         <?php endif; ?>
       </div>
     </div>
@@ -622,12 +613,12 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
   <!-- Actions -->
   <?php if ($status === 'en_cours' && ($is_admin || $sub['submitted_by'] === $user)): ?>
   <div class="card">
-    <h2>⚙ Actions</h2>
-    <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($sub_id) ?>&from=<?= urlencode('submission_view.php?id=' . $sub_id) ?>" class="btn btn-danger" style="text-decoration:none;">🗑 Annuler la soumission</a>
+    <h2><span aria-hidden="true">⚙</span> Actions</h2>
+    <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($sub_id) ?>&from=<?= urlencode('submission_view.php?id=' . $sub_id) ?>" class="btn btn-danger" style="text-decoration:none;"><span aria-hidden="true">🗑</span> Annuler la soumission</a>
   </div>
   <?php endif; ?>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

@@ -133,18 +133,9 @@ function is_token_expired(array $token): bool {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h($user) ?></strong></span>
-  <span>
-    <a href="my_submissions.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📋 Mes demandes</a>
-    <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
-    <?php if (is_admin_user()): ?>
-    <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📊 Dashboard</a>
-    <?php endif; ?>
-  </span>
-</div>
-<div class="container" id="main-content">
+<?= render_nav('mes_validations') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Mes validations']]) ?>
   <h1>✅ Mes validations</h1>
   <p class="subtitle">Tâches de validation qui vous sont assignées et historique de vos validations</p>
 
@@ -343,7 +334,7 @@ function is_token_expired(array $token): bool {
   </div>
   <?php endif; ?>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

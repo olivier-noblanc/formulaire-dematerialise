@@ -109,17 +109,12 @@ $period_label = $period === 'week' ? 'semaine' : ($period === 'year' ? 'année' 
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span>Connecté en tant que : <strong><?= h(get_auth_user()) ?></strong></span>
-  <span>
-    <a href="dashboard.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📊 Dashboard</a>
-    <a href="monitoring.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">🖥 Monitoring</a>
-    <a href="admin_settings.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">⚙ Paramètres</a>
-    <a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;margin-left:8px;">📖 Documentation</a>
-  </span>
-</div>
-<div class="container" id="main-content">
+<?= render_nav('stats', [
+    'stats'     => ['href' => 'stats.php',        'label' => 'Statistiques', 'icon' => '📈'],
+    'monitoring'=> ['href' => 'monitoring.php',    'label' => 'Monitoring', 'icon' => '🖥'],
+]) ?>
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Statistiques']]) ?>
+<main class="container" id="main-content">
   <h1>📊 Statistiques</h1>
 
   <!-- Sélecteur de période -->
@@ -305,7 +300,7 @@ $period_label = $period === 'week' ? 'semaine' : ($period === 'year' ? 'année' 
     </div>
   </div>
 
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

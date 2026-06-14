@@ -13,7 +13,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = trim($_POST['action'] ?? '');
     $comment = trim($_POST['comment'] ?? '');
     
-    if ($token && in_array($action, ['valider', 'refuser'])) {
+    // Le refus nécessite un commentaire obligatoire
+    if ($action === 'refuser' && empty(trim($comment))) {
+        // Ne pas traiter — on affiche la page avec un message d'erreur
+        // L'utilisateur doit fournir un motif de refus
+    } elseif ($token && in_array($action, ['valider', 'refuser'])) {
         $result = validate_token($token, $action, $comment);
         
         // Mode test : renvoyer JSON
@@ -136,37 +140,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   </style>
 </head>
 <body>
-<div class="bandeau">
-    <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-    <span><a href="docs.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">📖 Documentation</a></span>
-</div>
-<div class="container"><div class="card">
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<?= render_nav('') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Mes validations', 'my_validations.php'], ['Validation']]) ?>
+<div class="card">
 
 <?php if (isset($success)): ?>
   <h1>Validation effectuée</h1>
   <p class="ok">Action effectuée avec succès.</p>
+  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+    <a href="my_validations.php" class="btn btn-secondary">Mes validations</a>
+    <a href="index.php" class="btn btn-secondary">Accueil</a>
+  </div>
 
 <?php elseif (isset($error)): ?>
   <h1>Erreur</h1>
   <p class="err"><?= h($error) ?></p>
+  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+    <a href="my_validations.php" class="btn btn-secondary">Mes validations</a>
+    <a href="index.php" class="btn btn-secondary">Accueil</a>
+  </div>
 
 <?php elseif ($result['status'] === 'invalid'): ?>
   <h1>Lien invalide</h1>
   <p class="err">Ce lien est introuvable ou expiré.</p>
+  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+    <a href="my_validations.php" class="btn btn-secondary">Mes validations</a>
+    <a href="index.php" class="btn btn-secondary">Accueil</a>
+  </div>
 
 <?php elseif ($result['status'] === 'already_done'): ?>
   <?php $data = $result['data'] ?? []; ?>
   <span class="badge"><?= h($data['step_label']) ?></span>
   <h1>Déjà validé</h1>
   <p class="info">Tâche validée le <?= h($data['done_at']) ?></p>
+  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+    <a href="my_validations.php" class="btn btn-secondary">Mes validations</a>
+    <a href="index.php" class="btn btn-secondary">Accueil</a>
+  </div>
 
 <?php elseif ($result['status'] === 'closed'): ?>
   <h1>Workflow terminé</h1>
   <p class="info">Ce dossier est déjà clôturé.</p>
+  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+    <a href="my_validations.php" class="btn btn-secondary">Mes validations</a>
+    <a href="index.php" class="btn btn-secondary">Accueil</a>
+  </div>
 
 <?php elseif ($result['status'] === 'expired'): ?>
   <h1>Lien expiré</h1>
   <p class="err">Ce lien de validation a expiré. Veuillez contacter l'expéditeur pour obtenir un nouveau lien.</p>
+  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+    <a href="my_validations.php" class="btn btn-secondary">Mes validations</a>
+    <a href="index.php" class="btn btn-secondary">Accueil</a>
+  </div>
 
 <?php elseif ($result['status'] === 'ok'): ?>
   <?php
@@ -245,18 +273,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <input type="hidden" name="token" value="<?= h($token) ?>">
     
     <div class="form-group">
-      <label for="comment">Commentaire (facultatif)</label>
+      <label for="comment">Commentaire <span class="hint">(obligatoire en cas de refus)</span></label>
       <textarea id="comment" name="comment" rows="4" placeholder="Ajoutez un commentaire si nécessaire..."></textarea>
     </div>
     
     <div class="submit-buttons">
-      <button type="submit" name="action" value="valider" class="btn">✅ Valider</button>
-      <button type="submit" name="action" value="refuser" class="btn btn-refuser">❌ Refuser</button>
+      <button type="submit" name="action" value="valider" class="btn"><span aria-hidden="true">✅</span> Valider</button>
+      <button type="submit" name="action" value="refuser" class="btn btn-refuser" formnovalidate><span aria-hidden="true">❌</span> Refuser</button>
     </div>
+    <?php if (isset($_POST['action']) && $_POST['action'] === 'refuser' && empty($comment)): ?>
+    <div class="msg-error" style="margin-top:1rem;">Veuillez saisir un motif de refus dans le champ commentaire avant de confirmer.</div>
+    <?php endif; ?>
   </form>
 <?php endif; ?>
 
-</div></div>
+</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

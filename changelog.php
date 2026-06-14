@@ -158,11 +158,10 @@ $changelog = parse_changelog(__DIR__ . '/CHANGELOG.md');
   </style>
 </head>
 <body>
-<div class="bandeau">
-  <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-  <span><a href="docs.php">📖 Documentation</a> <a href="dashboard.php">📊 Tableau de bord</a></span>
-</div>
-<div class="container">
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<?= render_nav('changelog') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Journal des modifications']]) ?>
   <h1>📋 Journal des modifications</h1>
   <p class="subtitle">Historique des évolutions et corrections du système de workflow</p>
   <div class="current-version">Version actuelle : v<?= h(APP_VERSION) ?></div>
@@ -205,7 +204,7 @@ $changelog = parse_changelog(__DIR__ . '/CHANGELOG.md');
     </div>
     <?php endforeach; ?>
   <?php endif; ?>
-</div>
+</main>
 <?= render_footer() ?>
 </body>
 </html>

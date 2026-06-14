@@ -181,23 +181,9 @@ try {
   </style>
 </head>
 <body id="top">
-<div class="bandeau">
-  <div class="bandeau-left">
-    <strong>DREETS</strong> — Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités
-    <span style="opacity:.7;">| Aide</span>
-  </div>
-  <div class="bandeau-right">
-    <?php if ($is_logged_in): ?>
-      <span>Connecté : <strong><?= h($user_email) ?></strong></span>
-      <?php if ($is_admin): ?>
-        <a href="admin_access.php">⚙ Back office</a>
-        <a href="admin_settings.php">⚙ Paramètres</a>
-      <?php endif; ?>
-    <?php endif; ?>
-  </div>
-</div>
-
-<div class="container">
+<?= render_nav('docs') ?>
+<main class="container" id="main-content">
+<?= render_breadcrumb([['Accueil', 'index.php'], ['Documentation']]) ?>
   <h1>Aide et documentation</h1>
   <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '4.4.0' ?></span></p>
 
