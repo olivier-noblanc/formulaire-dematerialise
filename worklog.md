@@ -211,3 +211,31 @@ Stage Summary:
 - docs.php significantly improved for non-tech usability
 - Database schema documentation now accurate (UUID v4)
 - Email safety: triple protection (TEST_MODE, @e2e.test domain, CLI guard)
+---
+Task ID: 1
+Agent: main
+Task: Add email verification system (LDAP + SMTP) and mail dry-run mode
+
+Work Log:
+- Read and analyzed helpers.php send_mail(), advance_workflow(), admin_settings.php, PHPMailer stubs
+- Added verify_email_ldap() function: LDAP/AD email verification with bind (anonymous or service account), search filter, proper error handling
+- Added verify_email_smtp() function: SMTP RCPT TO probe with HELO, MAIL FROM, RCPT TO, STARTTLS support, clean QUIT
+- Added verify_email() master function: routes to LDAP or SMTP based on email_verify_mode setting
+- Added test_email_verification() function for admin UI testing
+- Modified send_mail() to check: TEST_MODE → dry-run → email verification → CLI block → actual send
+- Added mail_dry_run mode: intercepts all emails, logs to audit_log, returns true (doesn't block workflow)
+- Added audit logging for all email events: mail_sent, mail_dry_run, mail_blocked, mail_error
+- Added schema migration v10 with 8 new settings (mail_dry_run default=1 for safety)
+- Completely rewrote admin_settings.php with: Security email section, LDAP config, SMTP info, email verification test, security dashboard
+- Updated APP_VERSION from 4.3.1 to 4.4.0
+- Updated CHANGELOG.md with v4.4.0 entry
+- All 51 existing unit tests pass
+- New functions tested in TEST_MODE: verify_email, verify_email_smtp, verify_email_ldap, dry-run all work correctly
+
+Stage Summary:
+- Email verification system fully implemented with LDAP and SMTP modes
+- mail_dry_run enabled by default (safety first)
+- Schema migrated to v10
+- admin_settings.php now has comprehensive email security section with test tool
+- No regressions (51/51 unit tests pass)
+- Version bumped to 4.4.0
