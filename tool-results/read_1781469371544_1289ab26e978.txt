@@ -1,0 +1,612 @@
+     1→<?php
+     2→// admin_settings.php — Page de configuration SMTP, vérification email et paramètres
+     3→require_once __DIR__ . '/helpers.php';
+     4→
+     5→// Vérification des droits d'accès
+     6→if (!is_admin_user() && !is_super_admin()) {
+     7→    header('Location: admin_access.php');
+     8→    exit;
+     9→}
+    10→
+    11→$success_msg = '';
+    12→$error_msg = '';
+    13→$test_msg = '';
+    14→$verify_result = null;
+    15→
+    16→// Traitement du POST
+    17→if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    18→    // Vérification CSRF
+    19→    if (!verify_csrf()) {
+    20→        render_error_page(403, 'Requête invalide', 'Le jeton de sécurité (CSRF) de votre session est invalide ou a expiré. Cela peut arriver si votre session a été inactive trop longtemps ou si la page est restée ouverte depuis longtemps.', 'Rechargez la page et réessayez. Si le problème persiste, fermez tous les onglets de l\'application et reconnectez-vous.');
+    21→    }
+    22→
+    23→    $action = $_POST['action'] ?? '';
+    24→
+    25→    if ($action === 'save_settings') {
+    26→        $updated_by = get_auth_user();
+    27→        $settings = [
+    28→            'smtp_host'        => trim($_POST['smtp_host'] ?? ''),
+    29→            'smtp_port'        => trim($_POST['smtp_port'] ?? '25'),
+    30→            'smtp_auth'        => isset($_POST['smtp_auth']) ? '1' : '0',
+    31→            'smtp_secure'      => trim($_POST['smtp_secure'] ?? ''),
+    32→            'smtp_user'        => trim($_POST['smtp_user'] ?? ''),
+    33→            'smtp_pass'        => trim($_POST['smtp_pass'] ?? ''),
+    34→            'smtp_from'        => trim($_POST['smtp_from'] ?? ''),
+    35→            'smtp_from_name'   => trim($_POST['smtp_from_name'] ?? ''),
+    36→            'delai_relance_h'  => trim($_POST['delai_relance_h'] ?? '48'),
+    37→            'token_expire_days'=> trim($_POST['token_expire_days'] ?? '30'),
+    38→            'relance_max'      => trim($_POST['relance_max'] ?? '3'),
+    39→        ];
+    40→
+    41→        // Conserver l'ancien mot de passe si le champ est vide
+    42→        if (empty($settings['smtp_pass'])) {
+    43→            $settings['smtp_pass'] = get_setting('smtp_pass', '');
+    44→        }
+    45→
+    46→        try {
+    47→            foreach ($settings as $key => $value) {
+    48→                set_setting($key, $value, $updated_by);
+    49→            }
+    50→            app_log('settings_update', 'settings', 'Paramètres mis à jour', $updated_by);
+    51→            $success_msg = 'Paramètres enregistrés avec succès.';
+    52→        } catch (Exception $e) {
+    53→            $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
+    54→        }
+    55→    }
+    56→
+    57→    if ($action === 'save_email_verify') {
+    58→        $updated_by = get_auth_user();
+    59→        $ev_settings = [
+    60→            'mail_dry_run'      => isset($_POST['mail_dry_run']) ? '1' : '0',
+    61→            'email_verify_mode' => trim($_POST['email_verify_mode'] ?? 'none'),
+    62→            'ldap_host'         => trim($_POST['ldap_host'] ?? ''),
+    63→            'ldap_port'         => trim($_POST['ldap_port'] ?? '389'),
+    64→            'ldap_base_dn'      => trim($_POST['ldap_base_dn'] ?? ''),
+    65→            'ldap_bind_dn'      => trim($_POST['ldap_bind_dn'] ?? ''),
+    66→            'ldap_filter'       => trim($_POST['ldap_filter'] ?? '(mail={email})'),
+    67→        ];
+    68→
+    69→        // Conserver l'ancien mot de passe LDAP si le champ est vide
+    70→        $ldap_bind_pass = trim($_POST['ldap_bind_pass'] ?? '');
+    71→        if (!empty($ldap_bind_pass)) {
+    72→            $ev_settings['ldap_bind_pass'] = $ldap_bind_pass;
+    73→        }
+    74→
+    75→        // Validation du mode de vérification
+    76→        $valid_modes = ['none', 'ldap', 'smtp'];
+    77→        if (!in_array($ev_settings['email_verify_mode'], $valid_modes)) {
+    78→            $ev_settings['email_verify_mode'] = 'none';
+    79→        }
+    80→
+    81→        // Si LDAP est choisi, vérifier que les champs obligatoires sont remplis
+    82→        if ($ev_settings['email_verify_mode'] === 'ldap' && (empty($ev_settings['ldap_host']) || empty($ev_settings['ldap_base_dn']))) {
+    83→            $error_msg = 'Le mode LDAP nécessite au minimum un hôte LDAP et un base DN.';
+    84→        }
+    85→
+    86→        try {
+    87→            foreach ($ev_settings as $key => $value) {
+    88→                set_setting($key, $value, $updated_by);
+    89→            }
+    90→            app_log('settings_update', 'settings:email_verify', 'Paramètres de vérification email mis à jour', $updated_by);
+    91→            if (empty($error_msg)) {
+    92→                $success_msg = 'Paramètres de vérification email enregistrés avec succès.';
+    93→            }
+    94→        } catch (Exception $e) {
+    95→            $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
+    96→        }
+    97→    }
+    98→
+    99→    // Webhook settings
+   100→    if (isset($_POST['webhook_url'])) {
+   101→        $user = get_auth_user();
+   102→        set_setting('webhook_url', trim($_POST['webhook_url']), $user);
+   103→        app_log('settings_update', 'settings:webhook_url', 'URL webhook mise à jour');
+   104→    }
+   105→    if (isset($_POST['webhook_events'])) {
+   106→        $user = get_auth_user();
+   107→        set_setting('webhook_events', trim($_POST['webhook_events']), $user);
+   108→        app_log('settings_update', 'settings:webhook_events', 'Événements webhook mis à jour');
+   109→    }
+   110→
+   111→    if ($action === 'test_email') {
+   112→        $to = get_auth_user();
+   113→        $subject = 'Test email — Workflow DREETS';
+   114→        $body = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+   115→<body style="font-family:Arial,sans-serif;color:#222;">
+   116→  <h2 style="color:#003189;">Test d\'envoi d\'email</h2>
+   117→  <p>Cet email a été envoyé depuis la page de paramètres du workflow.</p>
+   118→  <p>Date : ' . h(date('d/m/Y H:i:s')) . '</p>
+   119→</body></html>';
+   120→        if (send_mail($to, $subject, $body)) {
+   121→            $test_msg = 'Email de test envoyé avec succès à ' . h($to);
+   122→        } else {
+   123→            $test_msg = 'Échec de l\'envoi de l\'email de test. Vérifiez la configuration SMTP, le mode dry-run et les logs.';
+   124→        }
+   125→    }
+   126→
+   127→    if ($action === 'test_verify_email') {
+   128→        $test_addr = trim($_POST['verify_test_email'] ?? '');
+   129→        if (!empty($test_addr) && filter_var($test_addr, FILTER_VALIDATE_EMAIL)) {
+   130→            $verify_result = test_email_verification($test_addr);
+   131→            app_log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', get_auth_user());
+   132→        } else {
+   133→            $error_msg = 'Veuillez saisir une adresse email valide pour le test.';
+   134→        }
+   135→    }
+   136→}
+   137→
+   138→// Test webhook
+   139→if (isset($_GET['test_webhook'])) {
+   140→    $webhook_url = get_setting('webhook_url', '');
+   141→    if (empty($webhook_url)) {
+   142→        $error_msg = 'Aucune URL webhook configurée.';
+   143→    } else {
+   144→        send_webhook('test', ['message' => 'Test webhook depuis Workflow DREETS', 'version' => APP_VERSION]);
+   145→        $success_msg = 'Webhook de test envoyé à ' . h($webhook_url) . '.';
+   146→        app_log('webhook_test', 'settings', 'Test webhook envoyé');
+   147→    }
+   148→}
+   149→
+   150→// Lecture des paramètres actuels
+   151→$smtp_host        = get_setting('smtp_host', SMTP_HOST);
+   152→$smtp_port        = get_setting('smtp_port', (string)SMTP_PORT);
+   153→$smtp_auth        = get_setting('smtp_auth', '0');
+   154→$smtp_secure      = get_setting('smtp_secure', '');
+   155→$smtp_user        = get_setting('smtp_user', '');
+   156→$smtp_pass        = get_setting('smtp_pass', '');
+   157→$smtp_from        = get_setting('smtp_from', SMTP_FROM);
+   158→$smtp_from_name   = get_setting('smtp_from_name', SMTP_FROM_NAME);
+   159→$delai_relance_h  = get_setting('delai_relance_h', (string)DELAI_RELANCE_H);
+   160→$token_expire_days= get_setting('token_expire_days', '30');
+   161→$relance_max      = get_setting('relance_max', '3');
+   162→$mail_dry_run     = get_setting('mail_dry_run', '1');
+   163→$email_verify_mode= get_setting('email_verify_mode', 'none');
+   164→$ldap_host        = get_setting('ldap_host', '');
+   165→$ldap_port        = get_setting('ldap_port', '389');
+   166→$ldap_base_dn     = get_setting('ldap_base_dn', '');
+   167→$ldap_bind_dn     = get_setting('ldap_bind_dn', '');
+   168→$ldap_bind_pass   = get_setting('ldap_bind_pass', '');
+   169→$ldap_filter      = get_setting('ldap_filter', '(mail={email})');
+   170→
+   171→$ldap_ext_available = function_exists('ldap_connect');
+   172→?>
+   173→<!DOCTYPE html>
+   174→<html lang="fr">
+   175→<head>
+   176→    <meta charset="UTF-8">
+   177→    <meta name="viewport" content="width=device-width, initial-scale=1">
+   178→    <title>Paramètres — DREETS Workflow</title>
+   179→    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23003189'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>D</text></svg>">
+   180→    <?php require_once __DIR__ . '/style.php'; ?>
+   181→    <style>
+   182→        .container { max-width: 900px; }
+   183→        .verify-result { margin-top:1rem; padding:1rem; border-radius:6px; font-size:.85rem; }
+   184→        .verify-result.ok { background:#e8f5e9; border-left:4px solid #4caf50; }
+   185→        .verify-result.fail { background:#fbe9e7; border-left:4px solid #f44336; }
+   186→        .verify-result .detail { color:#555; margin-top:.3rem; }
+   187→        .warning-box { background:#fff3e0; border-left:4px solid #ff9800; padding:1rem; border-radius:4px; margin-bottom:1rem; font-size:.9rem; }
+   188→        .info-box { background:#e3f2fd; border-left:4px solid #2196f3; padding:1rem; border-radius:4px; margin-bottom:1rem; font-size:.9rem; }
+   189→        .dry-run-badge { display:inline-block; background:#ff9800; color:#fff; padding:2px 8px; border-radius:10px; font-size:.75rem; font-weight:bold; margin-left:8px; }
+   190→        .card h2 .icon { margin-right:.5rem; }
+   191→    </style>
+   192→</head>
+   193→<body>
+   194→<?= render_nav('settings') ?>
+   195→<main class="container" id="main-content">
+   196→<?= render_breadcrumb([['Accueil', 'index.php'], ['Paramètres']]) ?>
+   197→    <h1>⚙ Paramètres</h1>
+   198→
+   199→    <?php if ($success_msg): ?>
+   200→        <div class="msg-success"><?= h($success_msg) ?></div>
+   201→    <?php endif; ?>
+   202→
+   203→    <?php if ($error_msg): ?>
+   204→        <div class="msg-error"><?= h($error_msg) ?></div>
+   205→    <?php endif; ?>
+   206→
+   207→    <?php if ($test_msg): ?>
+   208→        <div class="msg-info"><?= h($test_msg) ?></div>
+   209→    <?php endif; ?>
+   210→
+   211→    <?php if ($mail_dry_run === '1'): ?>
+   212→        <div class="warning-box">
+   213→            <strong>Mode Dry-Run actif</strong> — Aucun email réel n'est envoyé. Tous les envois sont journalisés dans l'audit log mais ne quittent pas le serveur. Désactivez ce mode uniquement lorsque la configuration SMTP et les adresses destinataires sont vérifiées.
+   214→        </div>
+   215→    <?php endif; ?>
+   216→
+   217→    <!-- ═══════════════════════════════════════════════════════════ -->
+   218→    <!-- SECTION 1 : Sécurité email — Dry-Run + Vérification       -->
+   219→    <!-- ═══════════════════════════════════════════════════════════ -->
+   220→    <form method="POST">
+   221→        <?= csrf_field() ?>
+   222→        <input type="hidden" name="action" value="save_email_verify">
+   223→
+   224→        <div class="card">
+   225→            <h2><span class="icon">🛡️</span> Sécurité email</h2>
+   226→            <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   227→                Protégez contre l'envoi accidentel d'emails à des adresses non vérifiées.
+   228→                Le mode <strong>Dry-Run</strong> intercepte tous les envois (recommandé en phase de déploiement).
+   229→                La <strong>vérification des destinataires</strong> bloque les envois vers des adresses introuvables.
+   230→            </p>
+   231→
+   232→            <!-- Dry-Run -->
+   233→            <div class="field" style="background:#fff8e1;padding:1rem;border-radius:6px;border:1px solid #ffe082;">
+   234→                <label class="checkbox-label" style="font-weight:bold;font-size:1rem;">
+   235→                    <input type="checkbox" name="mail_dry_run" <?= $mail_dry_run === '1' ? 'checked' : '' ?>>
+   236→                    Mode Dry-Run (aucun email réel envoyé)
+   237→                </label>
+   238→                <p style="margin:.5rem 0 0;color:#666;font-size:.85rem;">
+   239→                    Quand activé, <code>send_mail()</code> journalise chaque envoi dans l'audit log sans contacter le serveur SMTP.
+   240→                    Idéal pour valider la configuration avant mise en production.
+   241→                    Le workflow continue normalement (les tokens sont créés, les étapes avancent).
+   242→                </p>
+   243→            </div>
+   244→
+   245→            <!-- Mode de vérification -->
+   246→            <div class="field" style="margin-top:1.5rem;">
+   247→                <label>Vérification des adresses destinataires</label>
+   248→                <select name="email_verify_mode" id="email_verify_mode" style="max-width:400px;">
+   249→                    <option value="none" <?= $email_verify_mode === 'none' ? 'selected' : '' ?>>Aucune vérification</option>
+   250→                    <option value="ldap" <?= $email_verify_mode === 'ldap' ? 'selected' : '' ?>>LDAP / Active Directory</option>
+   251→                    <option value="smtp" <?= $email_verify_mode === 'smtp' ? 'selected' : '' ?>>SMTP (probe RCPT TO)</option>
+   252→                </select>
+   253→                <span class="hint">
+   254→                    Avant chaque envoi, le système vérifie que l'adresse du destinataire existe.
+   255→                    <strong>LDAP</strong> = interrogation de l'AD (fiable, recommandé si disponible).
+   256→                    <strong>SMTP</strong> = probe du serveur mail (moins fiable, certains serveurs acceptent tout).
+   257→                </span>
+   258→            </div>
+   259→
+   260→            <!-- Configuration LDAP (affichée si mode ldap) -->
+   261→            <div id="ldap-config" style="margin-top:1.5rem;padding:1.5rem;background:#f5f5fe;border-radius:6px;<?= $email_verify_mode !== 'ldap' ? 'display:none;' : '' ?>">
+   262→                <h3 style="margin-top:0;color:#003189;">Configuration LDAP / Active Directory</h3>
+   263→
+   264→                <?php if (!$ldap_ext_available): ?>
+   265→                    <div class="warning-box" style="margin-bottom:1rem;">
+   266→                        <strong>Extension LDAP non détectée</strong> — L'extension PHP <code>ldap</code> n'est pas installée ou activée.
+   267→                        Contactez l'administrateur système pour l'activer (habituellement <code>extension=ldap</code> dans <code>php.ini</code>).
+   268→                        Sur IIS/Windows, l'extension est souvent présente mais désactivée par défaut.
+   269→                    </div>
+   270→                <?php else: ?>
+   271→                    <div class="info-box" style="margin-bottom:1rem;">
+   272→                        <strong>Extension LDAP disponible</strong> — La vérification Active Directory est opérationnelle.
+   273→                    </div>
+   274→                <?php endif; ?>
+   275→
+   276→                <div class="field">
+   277→                    <label>Hôte LDAP <span class="hint">(ex: ldap.dreets.gouv.fr ou votre contrôleur de domaine)</span></label>
+   278→                    <input type="text" name="ldap_host" value="<?= h($ldap_host) ?>" placeholder="ldap.dreets.gouv.fr">
+   279→                </div>
+   280→
+   281→                <div class="field">
+   282→                    <label>Port LDAP</label>
+   283→                    <input type="number" name="ldap_port" value="<?= h($ldap_port) ?>" min="1" max="65535" style="max-width:150px;">
+   284→                    <span class="hint">389 = standard, 636 = LDAPS (chiffré)</span>
+   285→                </div>
+   286→
+   287→                <div class="field">
+   288→                    <label>Base DN <span class="hint">(racine de la recherche dans l'annuaire)</span></label>
+   289→                    <input type="text" name="ldap_base_dn" value="<?= h($ldap_base_dn) ?>" placeholder="DC=dreets,DC=gouv,DC=fr">
+   290→                </div>
+   291→
+   292→                <div class="field">
+   293→                    <label>Bind DN <span class="hint">(compte de service en lecture seule — laisser vide pour bind anonyme)</span></label>
+   294→                    <input type="text" name="ldap_bind_dn" value="<?= h($ldap_bind_dn) ?>" placeholder="CN=svc_workflow,OU=ServiceAccounts,DC=dreets,DC=gouv,DC=fr">
+   295→                </div>
+   296→
+   297→                <div class="field">
+   298→                    <label>Mot de passe Bind <span class="hint">(laisser vide pour conserver l'actuel)</span></label>
+   299→                    <input type="password" name="ldap_bind_pass" placeholder="<?= $ldap_bind_pass ? '••••••••' : '' ?>">
+   300→                </div>
+   301→
+   302→                <div class="field">
+   303→                    <label>Filtre de recherche <span class="hint">({email} sera remplacé par l'adresse à vérifier)</span></label>
+   304→                    <input type="text" name="ldap_filter" value="<?= h($ldap_filter) ?>" placeholder="(mail={email})">
+   305→                </div>
+   306→            </div>
+   307→
+   308→            <!-- Info SMTP verification -->
+   309→            <div id="smtp-info" style="margin-top:1.5rem;padding:1.5rem;background:#f5f5fe;border-radius:6px;<?= $email_verify_mode !== 'smtp' ? 'display:none;' : '' ?>">
+   310→                <h3 style="margin-top:0;color:#003189;">Vérification SMTP (probe RCPT TO)</h3>
+   311→                <p style="color:#555;font-size:.9rem;">
+   312→                    Le système se connecte au serveur SMTP configuré ci-dessous, envoie les commandes
+   313→                    <code>HELO</code>, <code>MAIL FROM</code>, <code>RCPT TO</code> et vérifie si le serveur
+   314→                    accepte l'adresse destinataire. La connexion est refermée proprement avant d'envoyer
+   315→                    le contenu du mail (<code>QUIT</code> avant <code>DATA</code>).
+   316→                </p>
+   317→                <div class="warning-box" style="margin-top:1rem;">
+   318→                    <strong>Limitation</strong> — Certains serveurs SMTP (notamment Exchange) acceptent
+   319→                    toutes les adresses en <code>RCPT TO</code> (mode catch-all) et ne renvoient une erreur
+   320→                    qu'au moment du <code>DATA</code>. Dans ce cas, la vérification SMTP ne détectera pas
+   321→                    les adresses inexistantes. Préférez le mode LDAP si votre infrastructure le permet.
+   322→                </div>
+   323→            </div>
+   324→
+   325→            <div style="margin-top:1.5rem;">
+   326→                <button type="submit" class="btn btn-primary">Enregistrer la sécurité email</button>
+   327→            </div>
+   328→        </div>
+   329→    </form>
+   330→
+   331→    <!-- ═══════════════════════════════════════════════════════════ -->
+   332→    <!-- SECTION 2 : Test de vérification email                    -->
+   333→    <!-- ═══════════════════════════════════════════════════════════ -->
+   334→    <div class="card">
+   335→        <h2><span class="icon">🧪</span> Test de vérification email</h2>
+   336→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   337→            Testez la vérification d'une adresse email avec la configuration actuelle.
+   338→            Cela permet de vérifier que le LDAP ou la probe SMTP fonctionne correctement
+   339→            avant d'activer la vérification en production.
+   340→        </p>
+   341→        <form method="POST">
+   342→            <?= csrf_field() ?>
+   343→            <input type="hidden" name="action" value="test_verify_email">
+   344→            <div class="field">
+   345→                <label>Adresse email à tester</label>
+   346→                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+   347→                    <input type="email" name="verify_test_email" value="<?= h($_POST['verify_test_email'] ?? '') ?>" placeholder="agent@dreets.gouv.fr" style="max-width:350px;">
+   348→                    <button type="submit" class="btn btn-test">Vérifier cette adresse</button>
+   349→                </div>
+   350→            </div>
+   351→        </form>
+   352→
+   353→        <?php if ($verify_result !== null): ?>
+   354→            <?php $vr = $verify_result; ?>
+   355→            <div class="verify-result <?= $vr['verify']['ok'] ? 'ok' : 'fail' ?>">
+   356→                <strong><?= $vr['verify']['ok'] ? '✔ Adresse vérifiée' : '✘ Adresse NON vérifiée' ?></strong>
+   357→                <div class="detail">Mode : <code><?= h($vr['mode']) ?></code> — <?= h($vr['verify']['detail']) ?></div>
+   358→
+   359→                <?php if (isset($vr['format_valid'])): ?>
+   360→                    <div class="detail">Format email : <?= $vr['format_valid'] ? '✔ Valide' : '✘ Invalide' ?></div>
+   361→                <?php endif; ?>
+   362→
+   363→                <?php if (isset($vr['ldap'])): ?>
+   364→                    <div class="detail" style="margin-top:.5rem;font-weight:bold;">Résultat LDAP :</div>
+   365→                    <div class="detail">✔/✘ : <?= $vr['ldap']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= h($vr['ldap']['detail']) ?></div>
+   366→                <?php endif; ?>
+   367→
+   368→                <?php if (isset($vr['smtp'])): ?>
+   369→                    <div class="detail" style="margin-top:.5rem;font-weight:bold;">Résultat SMTP :</div>
+   370→                    <div class="detail">✔/✘ : <?= $vr['smtp']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= h($vr['smtp']['detail']) ?></div>
+   371→                <?php endif; ?>
+   372→            </div>
+   373→        <?php endif; ?>
+   374→    </div>
+   375→
+   376→    <!-- ═══════════════════════════════════════════════════════════ -->
+   377→    <!-- SECTION 3 : Configuration SMTP                            -->
+   378→    <!-- ═══════════════════════════════════════════════════════════ -->
+   379→    <form method="POST">
+   380→        <?= csrf_field() ?>
+   381→        <input type="hidden" name="action" value="save_settings">
+   382→
+   383→        <div class="card">
+   384→            <h2>Configuration SMTP</h2>
+   385→
+   386→            <div class="field">
+   387→                <label>SMTP Hôte</label>
+   388→                <input type="text" name="smtp_host" value="<?= h($smtp_host) ?>" placeholder="smtp.example.fr">
+   389→            </div>
+   390→
+   391→            <div class="field">
+   392→                <label>SMTP Port</label>
+   393→                <input type="number" name="smtp_port" value="<?= h($smtp_port) ?>" min="1" max="65535">
+   394→            </div>
+   395→
+   396→            <div class="field">
+   397→                <label class="checkbox-label">
+   398→                    <input type="checkbox" name="smtp_auth" <?= $smtp_auth === '1' ? 'checked' : '' ?>>
+   399→                    Authentification SMTP
+   400→                </label>
+   401→            </div>
+   402→
+   403→            <div class="field">
+   404→                <label>Chiffrement</label>
+   405→                <select name="smtp_secure">
+   406→                    <option value="" <?= $smtp_secure === '' ? 'selected' : '' ?>>Aucun</option>
+   407→                    <option value="tls" <?= $smtp_secure === 'tls' ? 'selected' : '' ?>>TLS</option>
+   408→                    <option value="ssl" <?= $smtp_secure === 'ssl' ? 'selected' : '' ?>>SSL</option>
+   409→                </select>
+   410→            </div>
+   411→
+   412→            <div class="field">
+   413→                <label>Utilisateur SMTP <span class="hint">(utilisé uniquement si l'authentification est activée)</span></label>
+   414→                <input type="text" name="smtp_user" value="<?= h($smtp_user) ?>" placeholder="utilisateur@exemple.fr">
+   415→            </div>
+   416→
+   417→            <div class="field">
+   418→                <label>Mot de passe SMTP <span class="hint">(laisser vide pour conserver l'actuel)</span></label>
+   419→                <input type="password" name="smtp_pass" placeholder="<?= $smtp_pass ? '••••••••' : '' ?>">
+   420→            </div>
+   421→
+   422→            <div class="field">
+   423→                <label>Email expéditeur</label>
+   424→                <input type="text" name="smtp_from" value="<?= h($smtp_from) ?>" placeholder="workflow@dreets.gouv.fr">
+   425→            </div>
+   426→
+   427→            <div class="field">
+   428→                <label>Nom expéditeur</label>
+   429→                <input type="text" name="smtp_from_name" value="<?= h($smtp_from_name) ?>" placeholder="Workflow DREETS">
+   430→            </div>
+   431→        </div>
+   432→
+   433→        <!-- Paramètres du workflow -->
+   434→        <div class="card">
+   435→            <h2>Paramètres du workflow</h2>
+   436→
+   437→            <div class="field">
+   438→                <label>Délai de relance en heures</label>
+   439→                <input type="number" name="delai_relance_h" value="<?= h($delai_relance_h) ?>" min="1">
+   440→            </div>
+   441→
+   442→            <div class="field">
+   443→                <label>Expiration des tokens en jours</label>
+   444→                <input type="number" name="token_expire_days" value="<?= h($token_expire_days) ?>" min="1">
+   445→            </div>
+   446→
+   447→            <div class="field">
+   448→                <label>Nombre maximum de relances par token <span class="hint">(0 = illimité)</span></label>
+   449→                <input type="number" name="relance_max" value="<?= h($relance_max) ?>" min="0">
+   450→            </div>
+   451→        </div>
+   452→
+   453→        <div class="form-actions">
+   454→            <button type="submit" class="btn btn-primary">Enregistrer les paramètres</button>
+   455→            <a href="dashboard.php" class="btn btn-secondary">Retour au tableau de bord</a>
+   456→        </div>
+   457→    </form>
+   458→
+   459→    <!-- ═══════════════════════════════════════════════════════════ -->
+   460→    <!-- SECTION 4 : Webhooks                                      -->
+   461→    <!-- ═══════════════════════════════════════════════════════════ -->
+   462→    <div class="card">
+   463→      <h2>🔗 Webhooks & Notifications SI</h2>
+   464→      <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+   465→        Configurez un webhook pour notifier votre système d'information des événements du workflow.
+   466→        Les notifications sont envoyées en POST JSON sur l'URL configurée.
+   467→      </p>
+   468→      <form method="POST">
+   469→        <?= csrf_field() ?>
+   470→        <div class="field">
+   471→          <label for="webhook_url">URL du webhook</label>
+   472→          <input type="url" id="webhook_url" name="webhook_url" value="<?= h(get_setting('webhook_url', '')) ?>" placeholder="https://si.dreets.gouv.fr/api/webhook">
+   473→          <span class="hint">URL recevant les notifications en POST JSON. Laissez vide pour désactiver.</span>
+   474→        </div>
+   475→        <div class="field">
+   476→          <label for="webhook_events">Événements à notifier</label>
+   477→          <input type="text" id="webhook_events" name="webhook_events" value="<?= h(get_setting('webhook_events', 'workflow_complete,submission_cancelled')) ?>" placeholder="workflow_complete,submission_cancelled,token_validated">
+   478→          <span class="hint">Séparés par des virgules. Événements disponibles : <code>workflow_complete</code>, <code>submission_cancelled</code>, <code>token_validated</code>, <code>all</code></span>
+   479→        </div>
+   480→        <div style="display:flex;gap:.5rem;align-items:center;">
+   481→          <button type="submit" class="btn btn-primary">Enregistrer</button>
+   482→          <?php if (!empty(get_setting('webhook_url', ''))): ?>
+   483→            <a href="?test_webhook=1" class="btn btn-test">Tester le webhook</a>
+   484→          <?php endif; ?>
+   485→        </div>
+   486→      </form>
+   487→      <div style="margin-top:1rem;padding:1rem;background:#f5f5fe;border-radius:4px;font-size:.8rem;">
+   488→        <strong>Format de la notification :</strong>
+   489→        <pre style="margin:.5rem 0 0;white-space:pre-wrap;color:#555;">{
+   490→  "event": "workflow_complete",
+   491→  "timestamp": "2025-01-15T10:30:00+01:00",
+   492→  "data": { "submission_id": 42, "form_label": "Onboarding", "submitted_by": "agent@dreets.gouv.fr" }
+   493→}</pre>
+   494→      </div>
+   495→    </div>
+   496→
+   497→    <!-- ═══════════════════════════════════════════════════════════ -->
+   498→    <!-- SECTION 5 : Test email                                    -->
+   499→    <!-- ═══════════════════════════════════════════════════════════ -->
+   500→    <div class="card" style="margin-top:1.5rem;">
+   501→        <h2>Test d'envoi d'email</h2>
+   502→        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">Envoyer un email de test à votre adresse (<?= h(get_auth_user()) ?>) pour vérifier la configuration SMTP.</p>
+   503→        <?php if ($mail_dry_run === '1'): ?>
+   504→            <div class="warning-box" style="margin-bottom:1rem;">
+   505→                <strong>Mode Dry-Run actif</strong> — L'email sera journalisé mais <strong>pas réellement envoyé</strong>.
+   506→                Désactivez le Dry-Run pour effectuer un envoi réel.
+   507→            </div>
+   508→        <?php endif; ?>
+   509→        <form method="POST">
+   510→            <?= csrf_field() ?>
+   511→            <input type="hidden" name="action" value="test_email">
+   512→            <button type="submit" class="btn btn-test">Envoyer un email de test</button>
+   513→        </form>
+   514→    </div>
+   515→
+   516→    <!-- ═══════════════════════════════════════════════════════════ -->
+   517→    <!-- SECTION 6 : Résumé de sécurité email                      -->
+   518→    <!-- ═══════════════════════════════════════════════════════════ -->
+   519→    <div class="card" style="margin-top:1.5rem;">
+   520→        <h2><span class="icon">📋</span> Résumé de sécurité email</h2>
+   521→        <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+   522→            <tr style="border-bottom:1px solid #eee;">
+   523→                <td style="padding:.5rem;font-weight:bold;">Mode Dry-Run</td>
+   524→                <td style="padding:.5rem;"><?= $mail_dry_run === '1' ? '<span style="color:#ff9800;font-weight:bold;">Activé</span> — Aucun email réel' : '<span style="color:#4caf50;font-weight:bold;">Désactivé</span> — Envois réels actifs' ?></td>
+   525→            </tr>
+   526→            <tr style="border-bottom:1px solid #eee;">
+   527→                <td style="padding:.5rem;font-weight:bold;">Vérification destinataires</td>
+   528→                <td style="padding:.5rem;">
+   529→                    <?php if ($email_verify_mode === 'none'): ?>
+   530→                        <span style="color:#f44336;">Désactivée</span>
+   531→                    <?php elseif ($email_verify_mode === 'ldap'): ?>
+   532→                        <span style="color:#4caf50;">LDAP / Active Directory</span>
+   533→                        <?php if (!empty($ldap_host)): ?> (<?= h($ldap_host) ?>)<?php endif; ?>
+   534→                    <?php elseif ($email_verify_mode === 'smtp'): ?>
+   535→                        <span style="color:#2196f3;">SMTP (probe RCPT TO)</span>
+   536→                    <?php endif; ?>
+   537→                </td>
+   538→            </tr>
+   539→            <tr style="border-bottom:1px solid #eee;">
+   540→                <td style="padding:.5rem;font-weight:bold;">Extension LDAP PHP</td>
+   541→                <td style="padding:.5rem;"><?= $ldap_ext_available ? '<span style="color:#4caf50;">Disponible</span>' : '<span style="color:#f44336;">Non disponible</span>' ?></td>
+   542→            </tr>
+   543→            <tr style="border-bottom:1px solid #eee;">
+   544→                <td style="padding:.5rem;font-weight:bold;">PHPMailer</td>
+   545→                <td style="padding:.5rem;">
+   546→                    <?php if (method_exists('PHPMailer\PHPMailer\PHPMailer', 'getSMTPInstance')): ?>
+   547→                        <span style="color:#4caf50;">Vraie bibliothèque</span>
+   548→                    <?php else: ?>
+   549→                        <span style="color:#ff9800;">Stub (aucun envoi réel possible)</span>
+   550→                    <?php endif; ?>
+   551→                </td>
+   552→            </tr>
+   553→            <tr>
+   554→                <td style="padding:.5rem;font-weight:bold;">Blocage CLI</td>
+   555→                <td style="padding:.5rem;"><span style="color:#4caf50;">Actif</span> — Les scripts CLI ne peuvent pas envoyer d'emails sans <code>CLI_MAIL_ALLOWED</code></td>
+   556→            </tr>
+   557→        </table>
+   558→
+   559→        <?php
+   560→        // Calcul du niveau de sécurité
+   561→        $security_score = 0;
+   562→        $security_items = [];
+   563→        if ($mail_dry_run === '1') { $security_score++; $security_items[] = 'Dry-Run activé'; }
+   564→        if ($email_verify_mode !== 'none') { $security_score++; $security_items[] = 'Vérification destinataires'; }
+   565→        if (!method_exists('PHPMailer\PHPMailer\PHPMailer', 'getSMTPInstance')) { $security_score++; $security_items[] = 'PHPMailer en mode stub'; }
+   566→        // CLI blocking is always on
+   567→        $security_score++;
+   568→        $security_items[] = 'Blocage CLI';
+   569→        ?>
+   570→        <div style="margin-top:1rem;padding:1rem;background:<?= $security_score >= 3 ? '#e8f5e9' : '#fff3e0' ?>;border-radius:6px;">
+   571→            <strong>Niveau de sécurité : <?= $security_score ?>/4</strong>
+   572→            <div style="margin-top:.3rem;color:#555;font-size:.85rem;">
+   573→                <?= implode(' · ', array_map(function($i) { return '✔ ' . $i; }, $security_items)) ?>
+   574→            </div>
+   575→            <?php if ($security_score < 3): ?>
+   576→                <div style="margin-top:.5rem;color:#e65100;font-size:.85rem;">
+   577→                    ⚠ Activez la vérification des destinataires et/ou le mode Dry-Run pour renforcer la sécurité.
+   578→                </div>
+   579→            <?php endif; ?>
+   580→        </div>
+   581→    </div>
+   582→</div>
+   583→
+   584→<!-- Toggle LDAP/SMTP config visibility -->
+   585→<script>
+   586→// Note : ce script minimal est le seul JS de la page — il gère uniquement
+   587→// l'affichage/masquage conditionnel des blocs LDAP/SMTP dans le formulaire admin.
+   588→// L'application fonctionne parfaitement sans JS (les sections sont toutes visibles
+   589→// par défaut et le serveur ignore les champs non pertinents).
+   590→document.addEventListener('DOMContentLoaded', function() {
+   591→    var sel = document.getElementById('email_verify_mode');
+   592→    var ldapBlock = document.getElementById('ldap-config');
+   593→    var smtpBlock = document.getElementById('smtp-info');
+   594→
+   595→    function toggle() {
+   596→        if (!sel) return;
+   597→        var val = sel.value;
+   598→        ldapBlock.style.display = (val === 'ldap') ? '' : 'none';
+   599→        smtpBlock.style.display = (val === 'smtp') ? '' : 'none';
+   600→    }
+   601→
+   602→    if (sel) {
+   603→        sel.addEventListener('change', toggle);
+   604→        toggle();
+   605→    }
+   606→});
+   607→</script>
+   608→
+   609→<?= render_footer() ?>
+   610→</body>
+   611→</html>
+   612→
