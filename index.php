@@ -54,35 +54,63 @@ if ($is_admin) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Accueil — DREETS Workflow</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 1080px; }
 
-    /* Hero — Gradient glass card */
+    /* Hero — Aurora mesh gradient */
     .hero {
-      background: var(--gradient-primary);
+      background: var(--gradient-mesh-hero);
       color: #fff;
-      border-radius: var(--r-xl);
-      padding: 2.5rem;
+      border-radius: var(--r-2xl);
+      padding: 3rem;
       margin-bottom: 2rem;
       position: relative;
       overflow: hidden;
-      box-shadow: var(--shadow-xl), 0 8px 32px rgba(79,70,229,.25);
+      box-shadow: var(--shadow-2xl), 0 0 60px rgba(30,64,175,.2);
     }
     .hero::before {
       content: '';
       position: absolute;
-      top: -50%; right: -20%;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(255,255,255,.1) 0%, transparent 70%);
+      top: -30%; right: -10%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,255,255,.08) 0%, transparent 60%);
       border-radius: 50%;
+      pointer-events: none;
     }
-    .hero h1 { color: #fff; font-size: var(--text-3xl); margin-bottom: .5rem; position: relative; letter-spacing: -.03em; }
-    .hero p { opacity: .88; font-size: var(--text-base); line-height: 1.7; position: relative; max-width: 600px; }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -20%; left: -5%;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(6,182,212,.15) 0%, transparent 60%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero h1 {
+      color: #fff;
+      font-size: var(--text-4xl);
+      margin-bottom: .5rem;
+      position: relative;
+      letter-spacing: -.04em;
+      font-weight: 900;
+    }
+    .hero p {
+      opacity: .9;
+      font-size: var(--text-lg);
+      line-height: 1.7;
+      position: relative;
+      max-width: 640px;
+    }
 
     /* Quick stats — Bento grid */
-    .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: var(--sp-4);
+      margin-bottom: 2rem;
+    }
     .qs-card {
       background: var(--c-surface);
       border: 1px solid var(--c-border-light);
@@ -92,13 +120,35 @@ if ($is_admin) {
       box-shadow: var(--shadow-sm);
       position: relative;
       overflow: hidden;
-      transition: transform .2s var(--ease-out), box-shadow .2s var(--ease-out);
+      transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
     }
-    .qs-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-    .qs-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient-primary); }
-    .qs-card .qs-icon { font-size: 1.6rem; margin-bottom: .4rem; }
-    .qs-card .qs-value { font-size: var(--text-3xl); font-weight: 800; color: var(--c-primary); letter-spacing: -.03em; }
-    .qs-card .qs-label { font-size: var(--text-xs); color: var(--c-text-tertiary); margin-top: .15rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+    .qs-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg), var(--shadow-glow);
+    }
+    .qs-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient-primary);
+    }
+    .qs-card .qs-icon { font-size: 1.5rem; margin-bottom: .3rem; opacity: .7; }
+    .qs-card .qs-value {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--c-primary);
+      letter-spacing: -.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .qs-card .qs-label {
+      font-size: var(--text-xs);
+      color: var(--c-text-tertiary);
+      margin-top: .15rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
     .qs-card.warning::before { background: var(--c-warning); }
     .qs-card.warning .qs-value { color: var(--c-warning-dark); }
     .qs-card.danger::before { background: var(--c-danger); }
@@ -106,8 +156,13 @@ if ($is_admin) {
     .qs-card.success::before { background: var(--c-success); }
     .qs-card.success .qs-value { color: var(--c-success-dark); }
 
-    /* Form cards — Clickable bento */
-    .form-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    /* Form cards — Clickable bento with hover glow */
+    .form-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
     .form-card {
       background: var(--c-surface);
       border: 1px solid var(--c-border-light);
@@ -117,32 +172,58 @@ if ($is_admin) {
       color: inherit;
       display: block;
       box-shadow: var(--shadow-sm);
-      transition: all .25s var(--ease-out);
+      transition: all .3s var(--ease-out);
       position: relative;
       overflow: hidden;
     }
-    .form-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient-primary); opacity: 0; transition: opacity .25s var(--ease-out); }
-    .form-card:hover { box-shadow: var(--shadow-lg), var(--shadow-glow); border-color: var(--c-primary-light); transform: translateY(-2px); }
+    .form-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity .3s var(--ease-out);
+    }
+    .form-card:hover {
+      box-shadow: var(--shadow-xl), var(--shadow-glow);
+      border-color: var(--c-primary-light);
+      transform: translateY(-3px);
+    }
     .form-card:hover::before { opacity: 1; }
-    .form-card .fc-title { font-size: var(--text-lg); font-weight: 700; color: var(--c-primary-dark); margin-bottom: .5rem; }
-    .form-card .fc-desc { font-size: var(--text-sm); color: var(--c-text-secondary); line-height: 1.6; margin-bottom: 1rem; }
+    .form-card .fc-title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--c-primary-dark);
+      margin-bottom: .5rem;
+    }
+    .form-card .fc-desc {
+      font-size: var(--text-sm);
+      color: var(--c-text-secondary);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
     .form-card .fc-btn {
       display: inline-flex;
       align-items: center;
-      gap: .35rem;
+      gap: .4rem;
       background: var(--gradient-primary);
       color: #fff;
-      padding: .5rem 1.25rem;
+      padding: .55rem 1.3rem;
       border-radius: var(--r-full);
       font-size: var(--text-sm);
       font-weight: 600;
       box-shadow: var(--shadow-colored);
       transition: all .2s var(--ease-out);
     }
-    .form-card:hover .fc-btn { background: var(--gradient-primary-hover); }
+    .form-card:hover .fc-btn { background: var(--gradient-primary-hover); transform: translateX(2px); }
 
-    /* Nav tiles — Icon + text */
-    .nav-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    /* Nav tiles — Elegant icon + text cards */
+    .nav-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
     .nav-tile {
       background: var(--c-surface);
       border: 1px solid var(--c-border-light);
@@ -154,14 +235,42 @@ if ($is_admin) {
       align-items: center;
       gap: 1rem;
       box-shadow: var(--shadow-xs);
-      transition: all .2s var(--ease-out);
+      transition: all .25s var(--ease-out);
     }
-    .nav-tile:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); border-color: var(--c-primary-light); text-decoration: none; }
-    .nav-tile .nt-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .nav-tile:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+      border-color: var(--c-primary-light);
+      text-decoration: none;
+    }
+    .nav-tile .nt-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      width: 40px; height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--c-primary-50);
+      border-radius: var(--r-md);
+      transition: background .2s var(--ease-out);
+    }
+    .nav-tile:hover .nt-icon { background: var(--c-primary-100); }
     .nav-tile .nt-label { font-weight: 700; color: var(--c-primary-dark); font-size: var(--text-sm); }
     .nav-tile .nt-desc { font-size: var(--text-xs); color: var(--c-text-tertiary); margin-top: .1rem; }
 
-    .section-title { font-size: var(--text-xl); color: var(--c-primary-dark); border-bottom: 2px solid var(--c-primary-50); padding-bottom: .5rem; margin-bottom: 1rem; }
+    .section-title {
+      font-size: var(--text-xl);
+      color: var(--c-primary-dark);
+      border-bottom: 2px solid var(--c-primary-50);
+      padding-bottom: .5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Brand icon in nav */
+    .brand-icon {
+      font-size: 1.1rem;
+      opacity: .8;
+    }
   </style>
 </head>
 <body>

@@ -1,5 +1,57 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [5.1.0] — 2026-06-15
+
+### Design System 2026 v2 — "Aurora Institutionnel"
+
+- **Refonte du design system** : Passage de "Glassmorphism Institutionnel" à "Aurora Institutionnel" — une identité visuelle plus moderne et distinctive qui mêle l'esthétique républicaine française aux tendances 2026.
+
+- **Palette bleu républicain** : Remplacement de la palette indigo→violet (#4F46E5 → #7C3AED) par un bleu républicain profond → bleu électrique (#1E40AF → #3B82F6), plus institutionnel et mieux adapté au contexte DREETS.
+
+- **Dark mode natif** : Support complet du mode sombre via `prefers-color-scheme: dark`. Toutes les couleurs, ombres, bordures et surfaces s'adaptent automatiquement. Les surfaces sombres utilisent des gris bleutés (#0F172A, #1E293B, #334155) pour une cohérence visuelle.
+
+- **Mesh gradients (aurora)** : Introduction de gradients multi-radiaux inspirés des aurores boréales pour le body (background-attachment: fixed) et le hero (gradient-mesh-hero). Effets de profondeur et d'immersion sans JavaScript.
+
+- **Micro-interactions améliorées** : Boutons avec translateY(-1px) au survol et scale(.97) au clic, cards avec ombre glow au survol, nav-tiles avec icône dans un carré arrondi, animations d'entrée plus fluides (fadeSlideIn .5s avec stagger .06s).
+
+- **Nouvelles animations CSS** : brandPulse (point d'accent du logo), badgePulse (badge de validation en attente), stepPulse (étape active du workflow), shimmer (pour les futurs skeletons). Animation fadeScaleIn ajoutée.
+
+- **Hero aurora** : Le hero de la page d'accueil utilise désormais un gradient mesh multi-radial avec pseudo-éléments décoratifs (cercles de lumière), titre en font-weight:900 et font-size:text-4xl, description en text-lg.
+
+- **Nav tiles améliorées** : Icônes dans des carrés arrondis avec fond primary-50, hover avec changement de fond en primary-100, espacement augmenté (gap 1rem, minmax 220px).
+
+- **Favicon mis à jour** : Gradient bleu républicain (#1E40AF → #3B82F6) sur les 20 pages PHP.
+
+- **color-mix()** : Utilisation de `color-mix(in srgb, ...)` pour les états hover des champs de formulaire (fusion dynamique primary 40% + border).
+
+- **font-variant-numeric: tabular-nums** : Chiffres statistiques alignés en tabulaire pour un rendu plus professionnel.
+
+- **backdrop-filter: saturate(1.4)** : Saturation renforcée sur la navigation et les messages pour un effet glass plus vibrants.
+
+- **Error codes en gradient text** : Les codes d'erreur (403, 404, etc.) utilisent désormais des gradients en background-clip: text pour un effet visuel moderne.
+
+- **Scrollbar personnalisée** : Scrollbar Webkit subtile avec thumb en couleur de bordure et track transparent.
+
+- **prefers-reduced-motion** : Support complet — toutes les animations et transitions sont désactivées si l'utilisateur préfère réduire les mouvements.
+
+- **::selection** : Couleur de sélection personnalisée (primary-100 sur primary-darker).
+
+- **Footer épuré** : Séparateurs avec opacité .4, mention "DREETS BFC" ajoutée.
+
+- **Variable --r-2xl** : Nouveau rayon 28px pour les cards hero et error.
+
+- **Variable --shadow-2xl** : Ombre très profonde pour les éléments flottants.
+
+- **Variable --gradient-aurora** : Gradient multi-couleur (5 stops) pour les futurs éléments décoratifs.
+
+- **Variable --gradient-mesh-1** : Gradient de fond pour le body avec 3 couches radiales.
+
+- **Token-wait animé** : Les tokens en attente dans le dashboard ont désormais une animation softPulse.
+
+- **Detail-content border-radius** : Bords arrondis uniquement en bas pour le contenu des details (cohérence visuelle avec le summary).
+
+- **21 fichiers modifiés** : style.php (réécriture complète), helpers.php (nav, footer), index.php, dashboard.php, config.php, et 20 fichiers PHP (favicon).
+
 ## [5.0.0] — 2026-06-15
 
 ### Design System 2026 — Refonte visuelle complète

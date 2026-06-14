@@ -1597,7 +1597,7 @@ function render_nav(string $current_page = '', array $extra_admin_links = []): s
     }
 
     return '<nav class="bandeau" aria-label="Navigation principale">
-  <a href="index.php" class="nav-brand">DREETS<span class="brand-dot"></span></a>
+  <a href="index.php" class="nav-brand"><span class="brand-icon" aria-hidden="true">&#9670;</span> DREETS<span class="brand-dot"></span></a>
   <span class="nav-main">' . $nav_links_html . '</span>
   <span class="nav-admin">
     ' . $admin_links_html . '
@@ -1637,7 +1637,8 @@ function render_breadcrumb(array $breadcrumbs): string {
 function render_footer(): string {
     return '<footer>
   <a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>
-  <span style="margin:0 .35rem;">·</span> Formulaire Dématérialisé DREETS
+  <span style="margin:0 .5rem;opacity:.4;">|</span> Formulaire Dématérialisé
+  <span style="margin:0 .5rem;opacity:.4;">|</span> DREETS BFC
 </footer>';
 }
 

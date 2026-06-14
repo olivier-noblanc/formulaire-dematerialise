@@ -125,7 +125,7 @@ function get_tokens_status(string $sub_id): array {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Supervision workflow — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234F46E5'/><stop offset='100%25' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
@@ -136,7 +136,7 @@ function get_tokens_status(string $sub_id): array {
     .filtres { display: flex; gap: .5rem; }
     .filtres a, .btn-admin {
       padding: .4rem 1rem;
-      border: 1px solid var(--c-border);
+      border: 1.5px solid var(--c-border);
       border-radius: var(--r-full);
       text-decoration: none;
       font-size: var(--text-sm);
@@ -145,7 +145,12 @@ function get_tokens_status(string $sub_id): array {
       background: var(--c-surface);
       transition: all var(--duration-fast) var(--ease-out);
     }
-    .filtres a:hover, .btn-admin:hover { border-color: var(--c-primary-light); background: var(--c-primary-50); text-decoration: none; }
+    .filtres a:hover, .btn-admin:hover {
+      border-color: var(--c-primary-light);
+      background: var(--c-primary-50);
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
     .filtres a.actif, .btn-admin {
       background: var(--gradient-primary);
       color: #fff;
@@ -154,12 +159,32 @@ function get_tokens_status(string $sub_id): array {
     }
     tbody tr:nth-child(4n+1), tbody tr:nth-child(4n+2) { background: var(--c-bg-warm); }
     .token-grid { display: flex; flex-wrap: wrap; gap: .35rem; }
-    .token-badge { font-size: var(--text-xs); padding: .2rem .5rem; border-radius: var(--r-full); white-space: nowrap; font-weight: 600; }
+    .token-badge {
+      font-size: var(--text-xs);
+      padding: .2rem .5rem;
+      border-radius: var(--r-full);
+      white-space: nowrap;
+      font-weight: 600;
+    }
     .token-ok   { background: var(--c-success-50); color: var(--c-success-dark); }
-    .token-wait { background: var(--c-warning-50); color: var(--c-warning-dark); }
+    .token-wait { background: var(--c-warning-50); color: var(--c-warning-dark); animation: softPulse 2.5s ease-in-out infinite; }
     .token-pend { background: var(--c-bg-warm); color: var(--c-text-tertiary); }
-    .detail-content { padding: 1.25rem; background: var(--c-bg-warm); font-size: var(--text-sm); line-height: 1.9; border-radius: var(--r-md); }
-    .ordre-label { font-size: .68rem; background: var(--gradient-primary); color: #fff; padding: .1rem .45rem; border-radius: var(--r-full); margin-right: .25rem; font-weight: 700; }
+    .detail-content {
+      padding: 1.25rem;
+      background: var(--c-bg-warm);
+      font-size: var(--text-sm);
+      line-height: 1.9;
+      border-radius: 0 0 var(--r-md) var(--r-md);
+    }
+    .ordre-label {
+      font-size: .68rem;
+      background: var(--gradient-primary);
+      color: #fff;
+      padding: .1rem .45rem;
+      border-radius: var(--r-full);
+      margin-right: .25rem;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
