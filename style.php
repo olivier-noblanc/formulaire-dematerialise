@@ -191,6 +191,7 @@ details > div, details > .card { margin-top: .5rem; }
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
   .bandeau { padding: .5rem 1rem; gap: .35rem; }
   .bandeau a { font-size: .75rem; padding: .2rem .3rem; }
   table { font-size: .78rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -198,13 +199,38 @@ details > div, details > .card { margin-top: .5rem; }
   .container { padding: 0 .5rem 1.5rem; }
   .card { padding: 1rem; }
   h1 { font-size: 1.2rem; }
+  .stats { gap: .5rem; }
+  .stat { min-width: 90px; padding: .5rem .75rem; }
+  .stat strong { font-size: 1.4rem; }
+  .form-actions { flex-direction: column; }
+  .form-actions .btn { width: 100%; text-align: center; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .filtres { flex-wrap: wrap; }
 }
 @media (max-width: 600px) {
   .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
   .bandeau { flex-direction: column; align-items: flex-start; }
-  .bandeau .nav-main { gap: .25rem; }
-  .bandeau .nav-admin { gap: .25rem; }
+  .bandeau .nav-main { gap: .25rem; flex-wrap: wrap; }
+  .bandeau .nav-admin { gap: .25rem; flex-wrap: wrap; }
   .bandeau .nav-user { margin-left: 0; }
+  h1 { font-size: 1.1rem; }
+  h2 { font-size: 1rem; }
+  .card { padding: .75rem; }
+  .btn { padding: .5rem .75rem; font-size: .82rem; }
+  .form-selector { flex-direction: column; align-items: stretch; }
+  .form-selector select, .form-selector button { width: 100%; }
+  .pagination { gap: .4rem; font-size: .82rem; }
+  .pagination a, .pagination span { padding: .3rem .5rem; font-size: .8rem; }
+  .timeline { flex-direction: column; align-items: stretch; }
+  .step-item { max-width: 100%; flex-direction: row; gap: .5rem; text-align: left; }
+  .step-item:not(:last-child)::after { display: none; }
+  .stat-card { padding: .75rem; }
+  .stat-card .stat-value { font-size: 1.5rem; }
+  input[type="text"], input[type="date"], input[type="number"], input[type="password"], input[type="email"], select, textarea {
+    font-size: 16px; /* Empêche le zoom automatique sur iOS */
+  }
+  .breadcrumb { font-size: .75rem; }
 }
 
 /* ── Skip link (RGAA) ────────────────────────────────────── */

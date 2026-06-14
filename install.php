@@ -172,7 +172,7 @@ function inst_test_smtp(string $host, int $port, string $from, string $from_name
   <p>Cet email a été envoyé depuis l\'assistant d\'installation du Workflow DREETS.</p>
   <p>Date : ' . date('d/m/Y H:i:s') . '</p>
   <hr style="margin:1rem 0;border:none;border-top:1px solid #ddd;">
-  <p style="font-size:.85rem;color:#888;">Si vous recevez cet email, la configuration SMTP est correcte.</p>
+  <p style="font-size:.85rem;color:#595959;">Si vous recevez cet email, la configuration SMTP est correcte.</p>
 </body></html>';
         $mail->send();
         return ['success' => true, 'message' => 'Email de test envoyé avec succès à ' . $to];
@@ -541,7 +541,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
         </div>
     </div>
 
-    <h1>🔧 Installation du Workflow DREETS</h1>
+    <h1><span aria-hidden="true">🔧</span> Installation du Workflow DREETS</h1>
 
     <?php foreach ($messages as $msg): ?>
         <div class="msg-success"><?= inst_h($msg) ?></div>
@@ -583,7 +583,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
     </form>
     <?php else: ?>
     <div class="warn-box">
-        ⚠ Certains prérequis ne sont pas satisfaits. Corrigez les problèmes ci-dessus puis rechargez cette page.
+        <span aria-hidden="true">⚠</span> Certains prérequis ne sont pas satisfaits. Corrigez les problèmes ci-dessus puis rechargez cette page.
     </div>
     <form method="GET">
         <div class="form-actions">
@@ -667,7 +667,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
             <input type="hidden" name="smtp_from_name" value="<?= inst_h($default_smtp_from_name) ?>">
             <input type="hidden" name="admin_email" value="<?= inst_h($default_admin_email) ?>">
             <input type="hidden" name="delai_relance_h" value="<?= inst_h((string)$default_delai_relance_h) ?>">
-            <button type="submit" class="btn btn-test" <?= empty($default_admin_email) ? 'disabled' : '' ?>>📧 Envoyer un email de test</button>
+            <button type="submit" class="btn btn-test" <?= empty($default_admin_email) ? 'disabled' : '' ?>><span aria-hidden="true">📧</span> Envoyer un email de test</button>
             <?php if (empty($default_admin_email)): ?>
                 <span class="hint" style="margin-left:.5rem;">Renseignez l'email administrateur ci-dessus d'abord.</span>
             <?php endif; ?>
@@ -712,7 +712,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
     </div>
 
     <div class="warn-box">
-        ⚠ En cliquant sur « Installer », le fichier <strong>config.php</strong> sera créé dans le répertoire
+        <span aria-hidden="true">⚠</span> En cliquant sur « Installer », le fichier <strong>config.php</strong> sera créé dans le répertoire
         <code><?= inst_h(__DIR__) ?></code> et le répertoire <strong>db/</strong> sera créé si nécessaire.
         L'application sera alors accessible via <a href="index.php" style="color:#7c4700;font-weight:bold;">index.php</a>.
     </div>

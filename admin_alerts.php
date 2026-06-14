@@ -211,7 +211,7 @@ function notify_who_label(string $val): string {
 ]) ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Alertes']]) ?>
 <main class="container" id="main-content">
-  <h1>🔔 Alertes paramétrables</h1>
+  <h1><span aria-hidden="true">🔔</span> Alertes paramétrables</h1>
 
   <?php if ($success_msg): ?>
     <div class="msg-success"><?= h($success_msg) ?></div>
@@ -232,12 +232,12 @@ function notify_who_label(string $val): string {
         <span class="health-dot <?= $check_ok ? 'health-ok' : 'health-warn' ?>"></span>
         Dernière exécution : <strong><?= h(date('d/m/Y à H:i', strtotime($last_alert_check))) ?></strong>
         <?php if (!$check_ok): ?>
-          <span class="badge badge-warn" style="margin-left:.5rem;">⚠ Dernière exécution il y a plus de 24h</span>
+          <span class="badge badge-warn" style="margin-left:.5rem;"><span aria-hidden="true">⚠</span> Dernière exécution il y a plus de 24h</span>
         <?php else: ?>
-          <span class="badge badge-ok" style="margin-left:.5rem;">✓ Script actif</span>
+          <span class="badge badge-ok" style="margin-left:.5rem;"><span aria-hidden="true">✓</span> Script actif</span>
         <?php endif; ?>
       </div>
-      <p style="font-size:.85rem;color:#888;">
+      <p style="font-size:.85rem;color:#595959;">
         Script : <strong>alert_check.php</strong> — À planifier via Task Scheduler (ex: toutes les 6h).
         <br>Le script vérifie les soumissions en cours et envoie des alertes si les étapes ne sont pas complétées à l'approche de la date cible.
       </p>
@@ -247,7 +247,7 @@ function notify_who_label(string $val): string {
         <span class="badge badge-info">Jamais exécuté</span>
         Le script <strong>alert_check.php</strong> n'a jamais été lancé.
       </div>
-      <p style="font-size:.85rem;color:#888;">
+      <p style="font-size:.85rem;color:#595959;">
         Planifiez-le via Windows Task Scheduler (ex: toutes les 6h) :<br>
         <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.8rem;">php <?= h(realpath(__DIR__ . '/alert_check.php')) ?></code>
       </p>
@@ -256,7 +256,7 @@ function notify_who_label(string $val): string {
 
   <!-- Configuration du champ date limite par formulaire -->
   <div class="card">
-    <h2>📋 Champ date limite par formulaire</h2>
+    <h2><span aria-hidden="true">📋</span> Champ date limite par formulaire</h2>
     <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
       Pour chaque formulaire, indiquez quel champ de type <strong>date</strong> représente la date cible (deadline).
       C'est cette date qui sera utilisée pour déclencher les alertes.
@@ -283,11 +283,11 @@ function notify_who_label(string $val): string {
         </form>
         <?php if (!empty($f['deadline_field'])): ?>
           <p style="font-size:.8rem;color:#1a6b3c;margin-top:.5rem;">
-            ✓ Champ date limite : <strong><?= h($f['deadline_field']) ?></strong>
+            <span aria-hidden="true">✓</span> Champ date limite : <strong><?= h($f['deadline_field']) ?></strong>
           </p>
         <?php else: ?>
           <p style="font-size:.8rem;color:#c0392b;margin-top:.5rem;">
-            ⚠ Aucun champ date limite configuré — les alertes ne se déclencheront pas pour ce formulaire.
+            <span aria-hidden="true">⚠</span> Aucun champ date limite configuré — les alertes ne se déclencheront pas pour ce formulaire.
           </p>
         <?php endif; ?>
       </div>
@@ -308,7 +308,7 @@ function notify_who_label(string $val): string {
         <div class="rule-card <?= $is_inactive ? 'inactive' : '' ?>">
           <div class="rule-header">
             <h3>
-              <span style="font-size:.8rem;color:#888;"><?= h($r['form_label']) ?></span> —
+              <span style="font-size:.8rem;color:#595959;"><?= h($r['form_label']) ?></span> —
               <?= h($r['label']) ?>
             </h3>
             <div class="rule-actions">
@@ -324,7 +324,7 @@ function notify_who_label(string $val): string {
           <div class="rule-meta">
             <span class="days-badge <?= $days_cls ?>"><?= $r['days_before'] == 0 ? 'Jour J' : 'J-' . (int)$r['days_before'] ?></span>
             <span class="cond-badge"><?= $r['condition_type'] === 'steps_incomplete' ? 'Étapes incomplètes' : h($r['condition_type']) ?></span>
-            <span class="notify-badge">📧 <?= h(notify_who_label($r['notify_who'])) ?></span>
+            <span class="notify-badge"><span aria-hidden="true">📧</span> <?= h(notify_who_label($r['notify_who'])) ?></span>
             <?php if ($is_inactive): ?>
               <span class="badge badge-err">Inactive</span>
             <?php else: ?>
@@ -402,7 +402,7 @@ function notify_who_label(string $val): string {
           <select name="form_id" required>
             <option value="">— Sélectionner —</option>
             <?php foreach ($forms as $f): ?>
-              <option value="<?= h($f['id']) ?>"><?= h($f['label']) ?><?= empty($f['deadline_field']) ? ' (⚠ pas de champ date)' : '' ?></option>
+              <option value="<?= h($f['id']) ?>"><?= h($f['label']) ?><?= empty($f['deadline_field']) ? ' (<span aria-hidden="true">⚠</span> pas de champ date)' : '' ?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -451,7 +451,7 @@ function notify_who_label(string $val): string {
       <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="delete_alert_log">
-        <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .6rem;">🗑 Purger > 90j</button>
+        <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .6rem;"><span aria-hidden="true">🗑</span> Purger > 90j</button>
       </form>
     </div>
 

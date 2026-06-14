@@ -71,7 +71,7 @@ if ($is_admin) {
     .qs-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
     .qs-card .qs-icon { font-size: 1.8rem; margin-bottom: .5rem; }
     .qs-card .qs-value { font-size: 2rem; font-weight: bold; color: #003189; }
-    .qs-card .qs-label { font-size: .8rem; color: #888; margin-top: .15rem; }
+    .qs-card .qs-label { font-size: .8rem; color: #595959; margin-top: .15rem; }
     .qs-card.warning .qs-value { color: #b45309; }
     .qs-card.danger .qs-value { color: #c0392b; }
     .qs-card.success .qs-value { color: #1a6b3c; }
@@ -91,7 +91,7 @@ if ($is_admin) {
     .nav-tile:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
     .nav-tile .nt-icon { font-size: 1.8rem; flex-shrink: 0; }
     .nav-tile .nt-label { font-weight: bold; color: #003189; font-size: .95rem; }
-    .nav-tile .nt-desc { font-size: .78rem; color: #888; margin-top: .15rem; }
+    .nav-tile .nt-desc { font-size: .78rem; color: #595959; margin-top: .15rem; }
 
     .section-title { font-size: 1.1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1rem; }
   </style>
@@ -110,7 +110,7 @@ if ($is_admin) {
   <?php if ($my_pending > 0): ?>
   <div class="quick-stats">
     <div class="qs-card warning">
-      <div class="qs-icon">✅</div>
+      <div class="qs-icon" aria-hidden="true">✅</div>
       <div class="qs-value"><?= $my_pending ?></div>
       <div class="qs-label">Validation(s) en attente</div>
     </div>
@@ -120,23 +120,23 @@ if ($is_admin) {
   <?php if ($is_admin): ?>
   <div class="quick-stats">
     <div class="qs-card">
-      <div class="qs-icon">📊</div>
+      <div class="qs-icon" aria-hidden="true">📊</div>
       <div class="qs-value"><?= $admin_stats['total'] ?></div>
       <div class="qs-label">Soumissions totales</div>
     </div>
     <div class="qs-card warning">
-      <div class="qs-icon">⏳</div>
+      <div class="qs-icon" aria-hidden="true">⏳</div>
       <div class="qs-value"><?= $admin_stats['en_cours'] ?></div>
       <div class="qs-label">En cours</div>
     </div>
     <div class="qs-card success">
-      <div class="qs-icon">✓</div>
+      <div class="qs-icon" aria-hidden="true">✓</div>
       <div class="qs-value"><?= $admin_stats['valide'] ?></div>
       <div class="qs-label">Validées</div>
     </div>
     <?php if ($admin_stats['bloques'] > 0): ?>
     <div class="qs-card danger">
-      <div class="qs-icon">🚨</div>
+      <div class="qs-icon" aria-hidden="true">🚨</div>
       <div class="qs-value"><?= $admin_stats['bloques'] ?></div>
       <div class="qs-label">Tokens bloqués</div>
     </div>
@@ -145,17 +145,17 @@ if ($is_admin) {
   <?php elseif ($my_total > 0): ?>
   <div class="quick-stats">
     <div class="qs-card">
-      <div class="qs-icon">📋</div>
+      <div class="qs-icon" aria-hidden="true">📋</div>
       <div class="qs-value"><?= $my_total ?></div>
       <div class="qs-label">Mes demandes</div>
     </div>
     <div class="qs-card warning">
-      <div class="qs-icon">⏳</div>
+      <div class="qs-icon" aria-hidden="true">⏳</div>
       <div class="qs-value"><?= $my_en_cours ?></div>
       <div class="qs-label">En cours</div>
     </div>
     <div class="qs-card success">
-      <div class="qs-icon">✓</div>
+      <div class="qs-icon" aria-hidden="true">✓</div>
       <div class="qs-value"><?= $my_valide ?></div>
       <div class="qs-label">Validées</div>
     </div>
@@ -163,9 +163,9 @@ if ($is_admin) {
   <?php endif; ?>
 
   <!-- Formulaires disponibles -->
-  <h2 class="section-title">📝 Nouvelle demande</h2>
+  <h2 class="section-title"><span aria-hidden="true">📝</span> Nouvelle demande</h2>
   <?php if (empty($active_forms)): ?>
-    <p style="color:#888;font-style:italic;margin-bottom:2rem;">Aucun formulaire disponible pour le moment.</p>
+    <p style="color:#595959;font-style:italic;margin-bottom:2rem;">Aucun formulaire disponible pour le moment.</p>
   <?php else: ?>
     <div class="form-cards">
       <?php foreach ($active_forms as $af): ?>
@@ -181,24 +181,24 @@ if ($is_admin) {
   <?php endif; ?>
 
   <!-- Navigation rapide -->
-  <h2 class="section-title">🧭 Accès rapide</h2>
+  <h2 class="section-title"><span aria-hidden="true">🧭</span> Accès rapide</h2>
   <div class="nav-tiles">
     <a href="my_submissions.php" class="nav-tile">
-      <span class="nt-icon">📋</span>
+      <span class="nt-icon" aria-hidden="true">📋</span>
       <div>
         <div class="nt-label">Mes demandes</div>
         <div class="nt-desc">Suivre l'avancement de mes soumissions</div>
       </div>
     </a>
     <a href="my_validations.php" class="nav-tile">
-      <span class="nt-icon">✅</span>
+      <span class="nt-icon" aria-hidden="true">✅</span>
       <div>
         <div class="nt-label">Mes validations</div>
         <div class="nt-desc">Voir les tâches de validation qui m'attendent</div>
       </div>
     </a>
     <a href="docs.php" class="nav-tile">
-      <span class="nt-icon">📖</span>
+      <span class="nt-icon" aria-hidden="true">📖</span>
       <div>
         <div class="nt-label">Documentation</div>
         <div class="nt-desc">Guides et aide pour utiliser la plateforme</div>
@@ -207,7 +207,7 @@ if ($is_admin) {
     <?php if ($has_owned): ?>
     <?php foreach ($owned_forms as $of): ?>
     <a href="form_tracking.php?f=<?= urlencode($of['id']) ?>" class="nav-tile">
-      <span class="nt-icon">📊</span>
+      <span class="nt-icon" aria-hidden="true">📊</span>
       <div>
         <div class="nt-label">Suivi : <?= h($of['label']) ?></div>
         <div class="nt-desc">Tableau de suivi propriétaire</div>
@@ -217,56 +217,56 @@ if ($is_admin) {
     <?php endif; ?>
     <?php if ($is_admin): ?>
     <a href="dashboard.php" class="nav-tile">
-      <span class="nt-icon">📊</span>
+      <span class="nt-icon" aria-hidden="true">📊</span>
       <div>
         <div class="nt-label">Dashboard admin</div>
         <div class="nt-desc">Superviser toutes les soumissions</div>
       </div>
     </a>
     <a href="monitoring.php" class="nav-tile">
-      <span class="nt-icon">🖥</span>
+      <span class="nt-icon" aria-hidden="true">🖥</span>
       <div>
         <div class="nt-label">Monitoring</div>
         <div class="nt-desc">Santé système, alertes, audit</div>
       </div>
     </a>
     <a href="admin_forms.php" class="nav-tile">
-      <span class="nt-icon">⚙</span>
+      <span class="nt-icon" aria-hidden="true">⚙</span>
       <div>
         <div class="nt-label">Gestion formulaires</div>
         <div class="nt-desc">Configurer formulaires, étapes et champs</div>
       </div>
     </a>
     <a href="admin_alerts.php" class="nav-tile">
-      <span class="nt-icon">🔔</span>
+      <span class="nt-icon" aria-hidden="true">🔔</span>
       <div>
         <div class="nt-label">Alertes</div>
         <div class="nt-desc">Configurer les règles d'alerte</div>
       </div>
     </a>
     <a href="admin_settings.php" class="nav-tile">
-      <span class="nt-icon">🔧</span>
+      <span class="nt-icon" aria-hidden="true">🔧</span>
       <div>
         <div class="nt-label">Paramètres</div>
         <div class="nt-desc">Configuration SMTP et workflow</div>
       </div>
     </a>
     <a href="backup.php" class="nav-tile">
-      <span class="nt-icon">💾</span>
+      <span class="nt-icon" aria-hidden="true">💾</span>
       <div>
         <div class="nt-label">Sauvegarde</div>
         <div class="nt-desc">Sauvegarder et restaurer la base de données</div>
       </div>
     </a>
     <a href="stats.php" class="nav-tile">
-      <span class="nt-icon">📊</span>
+      <span class="nt-icon" aria-hidden="true">📊</span>
       <div>
         <div class="nt-label">Statistiques</div>
         <div class="nt-desc">Tableaux de bord et métriques d'utilisation</div>
       </div>
     </a>
     <a href="rgpd.php" class="nav-tile">
-      <span class="nt-icon">🔐</span>
+      <span class="nt-icon" aria-hidden="true">🔐</span>
       <div>
         <div class="nt-label">RGPD</div>
         <div class="nt-desc">Conformité et gestion des données personnelles</div>
@@ -274,7 +274,7 @@ if ($is_admin) {
     </a>
     <?php endif; ?>
     <a href="health.php" class="nav-tile">
-      <span class="nt-icon">🏥</span>
+      <span class="nt-icon" aria-hidden="true">🏥</span>
       <div>
         <div class="nt-label">Santé système</div>
         <div class="nt-desc">Vérifier l'état des services et de l'infrastructure</div>

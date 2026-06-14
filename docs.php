@@ -185,33 +185,33 @@ try {
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Documentation']]) ?>
   <h1>Aide et documentation</h1>
-  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '4.4.0' ?></span></p>
+  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '4.6.0' ?></span></p>
 
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- GUIDE DE DÉMARRAGE RAPIDE                                  -->
   <!-- ═══════════════════════════════════════════════════════════ -->
   <div class="card" id="demarrage-rapide">
-    <h2>🚀 Guide de démarrage rapide</h2>
+    <h2><span aria-hidden="true">🚀</span> Guide de démarrage rapide</h2>
     <p>Bienvenue ! Voici comment fonctionne l'application en 3 étapes simples :</p>
 
     <div class="quickstart">
       <div class="quickstart-step">
         <span class="qs-num">1</span>
-        <span class="qs-icon">📝</span>
+        <span class="qs-icon" aria-hidden="true">📝</span>
         <h3>Je remplis le formulaire</h3>
         <p>Je me connecte, je choisis mon formulaire, je remplis les champs et j'envoie.</p>
       </div>
       <div class="quickstart-arrow">→</div>
       <div class="quickstart-step">
         <span class="qs-num">2</span>
-        <span class="qs-icon">📧</span>
+        <span class="qs-icon" aria-hidden="true">📧</span>
         <h3>Les validateurs reçoivent un email</h3>
         <p>Le système envoie automatiquement un email à chaque personne qui doit valider ma demande.</p>
       </div>
       <div class="quickstart-arrow">→</div>
       <div class="quickstart-step">
         <span class="qs-num">3</span>
-        <span class="qs-icon">📊</span>
+        <span class="qs-icon" aria-hidden="true">📊</span>
         <h3>Je suis l'avancement en temps réel</h3>
         <p>Depuis « Mes demandes », je vois qui a validé et où en est ma demande.</p>
       </div>
@@ -236,7 +236,7 @@ try {
           <div class="wf-label">Direction</div>
         </div>
       </div>
-      <p style="font-size:.78rem; color:#888; margin:.5rem 0 0;">Exemple : les étapes s'enchaînent automatiquement après chaque validation</p>
+      <p style="font-size:.78rem; color:#595959; margin:.5rem 0 0;">Exemple : les étapes s'enchaînent automatiquement après chaque validation</p>
     </div>
 
     <div class="tip-box">
@@ -271,7 +271,7 @@ try {
     <p>En tant qu'agent, vous pouvez <strong>remplir un formulaire</strong>, <strong>suivre l'avancement</strong> de vos demandes et <strong>annuler</strong> une demande en cours.</p>
 
     <!-- ── Accéder à un formulaire ── -->
-    <h3>📝 Accéder à un formulaire</h3>
+    <h3><span aria-hidden="true">📝</span> Accéder à un formulaire</h3>
 
     <div class="step-row">
       <span class="step-num">1</span>
@@ -299,7 +299,7 @@ try {
     <p class="screenshot-caption">Page d'accueil vue par un agent — les formulaires disponibles s'affichent directement</p>
 
     <!-- ── Remplir le formulaire ── -->
-    <h3>✍️ Remplir le formulaire</h3>
+    <h3><span aria-hidden="true">✍️</span> Remplir le formulaire</h3>
 
     <p>Le formulaire est découpé en plusieurs sections. Prenez votre temps pour les remplir :</p>
 
@@ -335,7 +335,7 @@ try {
     </div>
 
     <div class="warn-box">
-      <p><strong>⚠ Champs obligatoires</strong> — Les champs marqués d'une astérisque rouge (*) doivent obligatoirement être remplis. Si vous oubliez un champ obligatoire, le formulaire vous le signalera.</p>
+      <p><strong><span aria-hidden="true">⚠</span> Champs obligatoires</strong> — Les champs marqués d'une astérisque rouge (*) doivent obligatoirement être remplis. Si vous oubliez un champ obligatoire, le formulaire vous le signalera.</p>
     </div>
 
     <div class="tip-box">
@@ -349,7 +349,7 @@ try {
     <p class="screenshot-caption">Formulaire de départ d'un agent (outboarding) — restitution du matériel et formalités de fin de contrat</p>
 
     <!-- ── Après l'envoi ── -->
-    <h3>✅ Que se passe-t-il après l'envoi ?</h3>
+    <h3><span aria-hidden="true">✅</span> Que se passe-t-il après l'envoi ?</h3>
 
     <div class="success-box">
       <p><strong>✓ Demande enregistrée !</strong> — Votre demande est bien prise en compte. Le système se charge de tout.</p>
@@ -383,7 +383,7 @@ try {
     </div>
 
     <!-- ── Suivre l'avancement ── -->
-    <h3>📊 Suivre l'avancement de mes demandes</h3>
+    <h3><span aria-hidden="true">📊</span> Suivre l'avancement de mes demandes</h3>
 
     <p>Pour voir où en est votre demande, rendez-vous sur la page <strong>« Mes demandes »</strong> (<code>my_submissions.php</code>).</p>
 
@@ -427,7 +427,7 @@ try {
         <ul>
           <li style="color:#1a6b3c;"><strong>■ Vert</strong> = validé (étape terminée)</li>
           <li style="color:#b45309;"><strong>■ Orange</strong> = en attente (étape en cours)</li>
-          <li style="color:#888;"><strong>■ Gris</strong> = pas encore démarré</li>
+          <li style="color:#595959;"><strong>■ Gris</strong> = pas encore démarré</li>
         </ul>
       </div>
     </div>
@@ -452,7 +452,7 @@ try {
     <p class="screenshot-caption">Page « Mes demandes » — chaque soumission affiche son statut et son avancement</p>
 
     <!-- ── Annuler une demande ── -->
-    <h3>❌ Annuler une demande</h3>
+    <h3><span aria-hidden="true">❌</span> Annuler une demande</h3>
 
     <p>Vous pouvez annuler une demande tant qu'elle est <strong>en cours</strong> :</p>
 
@@ -476,11 +476,11 @@ try {
     </div>
 
     <div class="warn-box">
-      <p><strong>⚠ Attention :</strong> L'annulation est irréversible. Vous ne pourrez pas rouvrir la demande. Si vous voulez soumettre à nouveau, il faudra remplir un nouveau formulaire.</p>
+      <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> L'annulation est irréversible. Vous ne pourrez pas rouvrir la demande. Si vous voulez soumettre à nouveau, il faudra remplir un nouveau formulaire.</p>
     </div>
 
     <!-- ── Droits RGPD ── -->
-    <h3>🔒 Mes droits (RGPD)</h3>
+    <h3><span aria-hidden="true">🔒</span> Mes droits (RGPD)</h3>
 
     <p>Conformément au Règlement Général sur la Protection des Données, vous disposez de droits sur vos données :</p>
     <ul>
@@ -500,7 +500,7 @@ try {
     <p>En tant que validateur, vous recevez des demandes à traiter. Voici comment ça fonctionne, étape par étape.</p>
 
     <!-- ── Recevoir un email ── -->
-    <h3>📧 Je reçois un email de validation</h3>
+    <h3><span aria-hidden="true">📧</span> Je reçois un email de validation</h3>
 
     <p>Quand une demande nécessite votre intervention, vous recevez un email de <strong>workflow@dreets.gouv.fr</strong> avec l'objet :</p>
 
@@ -528,7 +528,7 @@ try {
         </table>
         <span class="email-btn">✓ Marquer comme effectué</span>
       </div>
-      <div class="email-footer">🔒 Lien à usage unique — Ce lien ne fonctionnera plus après validation ou refus.</div>
+      <div class="email-footer"><span aria-hidden="true">🔒</span> Lien à usage unique — Ce lien ne fonctionnera plus après validation ou refus.</div>
     </div>
 
     <div class="tip-box">
@@ -558,27 +558,27 @@ try {
     </div>
 
     <!-- ── Valider ou refuser ── -->
-    <h3>✅ Valider ou ❌ Refuser</h3>
+    <h3><span aria-hidden="true">✅</span> Valider ou <span aria-hidden="true">❌</span> Refuser</h3>
 
     <p>Vous avez deux options :</p>
 
     <div class="step-row">
       <span class="step-num">A</span>
       <div class="step-text">
-        <p><strong>✅ Valider</strong> — Confirme que l'étape est traitée. Le système passe automatiquement à l'étape suivante et envoie un email au validateur suivant.</p>
+        <p><strong><span aria-hidden="true">✅</span> Valider</strong> — Confirme que l'étape est traitée. Le système passe automatiquement à l'étape suivante et envoie un email au validateur suivant.</p>
       </div>
     </div>
     <div class="step-row">
       <span class="step-num">B</span>
       <div class="step-text">
-        <p><strong>❌ Refuser</strong> — Bloque la demande. Elle est immédiatement clôturée avec le statut « Refusé ». Les étapes suivantes ne seront pas déclenchées.</p>
+        <p><strong><span aria-hidden="true">❌</span> Refuser</strong> — Bloque la demande. Elle est immédiatement clôturée avec le statut « Refusé ». Les étapes suivantes ne seront pas déclenchées.</p>
       </div>
     </div>
 
     <p>Dans les deux cas, vous pouvez ajouter un <strong>commentaire</strong> (facultatif mais recommandé) pour expliquer votre décision.</p>
 
     <div class="warn-box">
-      <p><strong>⚠ Important :</strong> Le lien de validation est à <strong>usage unique</strong>. Une fois que vous avez cliqué sur Valider ou Refuser, le lien ne fonctionne plus. Si vous voyez « Déjà validé », cela signifie que l'action a déjà été effectuée (par vous ou par un collègue partageant la même adresse email).</p>
+      <p><strong><span aria-hidden="true">⚠</span> Important :</strong> Le lien de validation est à <strong>usage unique</strong>. Une fois que vous avez cliqué sur Valider ou Refuser, le lien ne fonctionne plus. Si vous voyez « Déjà validé », cela signifie que l'action a déjà été effectuée (par vous ou par un collègue partageant la même adresse email).</p>
     </div>
 
     <img src="docs/screenshots/15_validate.png" alt="Page de validation — boutons Valider et Refuser" class="screenshot">
@@ -588,7 +588,7 @@ try {
     <p class="screenshot-caption">Vue détaillée d'une soumission — progression du workflow, options de délégation et historique des validations</p>
 
     <!-- ── Après la validation ── -->
-    <h3>➡️ Que se passe-t-il après ?</h3>
+    <h3><span aria-hidden="true">➡️</span> Que se passe-t-il après ?</h3>
 
     <div class="step-row">
       <span class="step-num">1</span>
@@ -610,7 +610,7 @@ try {
     </div>
 
     <!-- ── Déléguer ── -->
-    <h3>🔄 Déléguer ma validation</h3>
+    <h3><span aria-hidden="true">🔄</span> Déléguer ma validation</h3>
 
     <p>Si vous n'êtes pas la bonne personne pour valider, vous pouvez <strong>déléguer</strong> la validation à un collègue :</p>
 
@@ -650,7 +650,7 @@ try {
     </div>
 
     <!-- ── Suivi des validations ── -->
-    <h3>📋 Suivre mes validations</h3>
+    <h3><span aria-hidden="true">📋</span> Suivre mes validations</h3>
 
     <p>La page <strong>« Mes validations »</strong> (<code>my_validations.php</code>) vous permet de :</p>
     <ul>
@@ -673,7 +673,7 @@ try {
     <p>En tant qu'administrateur, vous configurez les formulaires, supervisez les demandes et gérez la conformité RGPD.</p>
 
     <!-- ── Accès admin ── -->
-    <h3>🔑 Obtenir l'accès administrateur</h3>
+    <h3><span aria-hidden="true">🔑</span> Obtenir l'accès administrateur</h3>
 
     <div class="step-row">
       <span class="step-num">1</span>
@@ -695,7 +695,7 @@ try {
     <p class="screenshot-caption">Page d'accueil vue par un administrateur — accès direct au back office et aux outils de gestion</p>
 
     <!-- ── Tableau de bord ── -->
-    <h3>📊 Tableau de bord (Dashboard)</h3>
+    <h3><span aria-hidden="true">📊</span> Tableau de bord (Dashboard)</h3>
 
     <p>Le <strong>dashboard</strong> (<code>dashboard.php</code>) est votre centre de commande. Il affiche :</p>
 
@@ -706,7 +706,7 @@ try {
         <ul>
           <li style="color:#1a6b3c;">■ <strong>Vert</strong> = validé</li>
           <li style="color:#b45309;">■ <strong>Orange</strong> = en attente (étape courante)</li>
-          <li style="color:#888;">■ <strong>Gris</strong> = pas encore démarré</li>
+          <li style="color:#595959;">■ <strong>Gris</strong> = pas encore démarré</li>
         </ul>
       </li>
       <li><strong>Bouton « détail »</strong> — Affiche l'historique des validations et les données du formulaire</li>
@@ -723,7 +723,7 @@ try {
     <p class="screenshot-caption">Tableau de bord — vue d'ensemble des demandes avec filtres, badges de workflow et actions rapides</p>
 
     <!-- ── Gestion des formulaires ── -->
-    <h3>📝 Gestion des formulaires</h3>
+    <h3><span aria-hidden="true">📝</span> Gestion des formulaires</h3>
 
     <p>Depuis la page <strong>admin_forms.php</strong>, vous pouvez :</p>
 
@@ -757,17 +757,17 @@ try {
     </div>
 
     <!-- ── Types de champs ── -->
-    <h4>📋 Référence des types de champs</h4>
+    <h4><span aria-hidden="true">📋</span> Référence des types de champs</h4>
     <p>Les champs suivants sont disponibles lors de la configuration d'un formulaire :</p>
     <table class="schema-table">
       <thead><tr><th>Type</th><th>Code</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td>📝 Texte court</td><td><code>text</code></td><td>Champ texte simple sur une ligne (nom, prénom, numéro…)</td></tr>
-        <tr><td>📅 Date</td><td><code>date</code></td><td>Sélecteur de date (jj/mm/aaaa) — date de naissance, prise de poste…</td></tr>
-        <tr><td>📋 Liste déroulante</td><td><code>select</code></td><td>Choix unique parmi une liste prédéfinie (corps/grade, type de poste…)</td></tr>
-        <tr><td>☑️ Case à cocher</td><td><code>checkbox</code></td><td>Choix multiples à cocher (options IT, actions RH…)</td></tr>
-        <tr><td>📄 Zone de texte</td><td><code>textarea</code></td><td>Champ texte multiligne pour les commentaires ou descriptions longues</td></tr>
-        <tr><td>📎 Fichier / Pièce jointe</td><td><code>file</code></td><td>Téléversement de fichier (stockage sécurisé en BDD, accès par lien sécurisé)</td></tr>
+        <tr><td><span aria-hidden="true">📝</span> Texte court</td><td><code>text</code></td><td>Champ texte simple sur une ligne (nom, prénom, numéro…)</td></tr>
+        <tr><td><span aria-hidden="true">📅</span> Date</td><td><code>date</code></td><td>Sélecteur de date (jj/mm/aaaa) — date de naissance, prise de poste…</td></tr>
+        <tr><td><span aria-hidden="true">📋</span> Liste déroulante</td><td><code>select</code></td><td>Choix unique parmi une liste prédéfinie (corps/grade, type de poste…)</td></tr>
+        <tr><td><span aria-hidden="true">☑️</span> Case à cocher</td><td><code>checkbox</code></td><td>Choix multiples à cocher (options IT, actions RH…)</td></tr>
+        <tr><td><span aria-hidden="true">📄</span> Zone de texte</td><td><code>textarea</code></td><td>Champ texte multiligne pour les commentaires ou descriptions longues</td></tr>
+        <tr><td><span aria-hidden="true">📎</span> Fichier / Pièce jointe</td><td><code>file</code></td><td>Téléversement de fichier (stockage sécurisé en BDD, accès par lien sécurisé)</td></tr>
       </tbody>
     </table>
 
@@ -778,7 +778,7 @@ try {
     <p class="screenshot-caption">Prévisualisation du formulaire — l'administrateur peut visualiser le formulaire tel que le verront les agents avant publication</p>
 
     <!-- ── Gestion des étapes et destinataires ── -->
-    <h3>🔄 Gestion des étapes et destinataires</h3>
+    <h3><span aria-hidden="true">🔄</span> Gestion des étapes et destinataires</h3>
 
     <p>Pour chaque formulaire, vous définissez le <strong>circuit de validation</strong> :</p>
 
@@ -818,7 +818,7 @@ try {
     </div>
 
     <!-- ── Alertes de deadline ── -->
-    <h3>⏰ Configuration des alertes</h3>
+    <h3><span aria-hidden="true">⏰</span> Configuration des alertes</h3>
 
     <p>La page <strong>admin_alerts.php</strong> permet de configurer des <strong>alertes automatiques</strong> quand une demande approche d'une date limite :</p>
 
@@ -845,7 +845,7 @@ try {
     <p class="screenshot-caption">Configuration des alertes — définir des règles de notification avant les dates limites</p>
 
     <!-- ── Monitoring ── -->
-    <h3>🔍 Monitoring et supervision</h3>
+    <h3><span aria-hidden="true">🔍</span> Monitoring et supervision</h3>
 
     <p>La page <strong>monitoring.php</strong> vous donne une vue d'ensemble de l'état du système :</p>
     <ul>
@@ -865,7 +865,7 @@ try {
     <p class="screenshot-caption">Monitoring — temps moyen, taux de validation, tokens bloqués et activité récente</p>
 
     <!-- ── Statistiques ── -->
-    <h3>📈 Statistiques et reporting</h3>
+    <h3><span aria-hidden="true">📈</span> Statistiques et reporting</h3>
 
     <p>La page <strong>stats.php</strong> fournit des statistiques détaillées :</p>
     <ul>
@@ -877,7 +877,7 @@ try {
     </ul>
 
     <!-- ── RGPD ── -->
-    <h3>🔒 Conformité RGPD</h3>
+    <h3><span aria-hidden="true">🔒</span> Conformité RGPD</h3>
 
     <p>La page <strong>rgpd.php</strong> vous permet de gérer la conformité au Règlement Général sur la Protection des Données :</p>
 
@@ -913,7 +913,7 @@ try {
     </div>
 
     <!-- ── Webhooks ── -->
-    <h3>🔗 Webhooks pour l'intégration SI</h3>
+    <h3><span aria-hidden="true">🔗</span> Webhooks pour l'intégration SI</h3>
 
     <p>Les webhooks permettent de <strong>connecter l'application à votre système d'information</strong>. Quand un événement se produit (validation, refus, annulation, workflow terminé), le système envoie automatiquement une notification à l'adresse configurée.</p>
 
@@ -941,7 +941,7 @@ try {
     </div>
 
     <!-- ── Health check ── -->
-    <h3>💚 Health check (vérification de santé)</h3>
+    <h3><span aria-hidden="true">💚</span> Health check (vérification de santé)</h3>
 
     <p>La page <strong>health.php</strong> vérifie automatiquement l'état de santé de l'application :</p>
     <ul>
@@ -954,7 +954,7 @@ try {
     <p>Cette page retourne un statut HTTP 200 si tout va bien, ou 503 si un problème est détecté. Elle peut être utilisée par les outils de supervision externes.</p>
 
     <!-- ── Sauvegarde et restauration ── -->
-    <h3>💾 Sauvegarde et restauration</h3>
+    <h3><span aria-hidden="true">💾</span> Sauvegarde et restauration</h3>
 
     <p>La page <strong>backup.php</strong> permet de sauvegarder et restaurer la base de données :</p>
 
@@ -972,7 +972,7 @@ try {
     </div>
 
     <div class="warn-box">
-      <p><strong>⚠ Attention :</strong> La restauration remplace toutes les données actuelles. Effectuez toujours une sauvegarde avant de restaurer. La restauration est irréversible.</p>
+      <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> La restauration remplace toutes les données actuelles. Effectuez toujours une sauvegarde avant de restaurer. La restauration est irréversible.</p>
     </div>
 
     <div class="tip-box">
@@ -980,7 +980,7 @@ try {
     </div>
 
     <!-- ── Paramètres SMTP ── -->
-    <h3>⚙️ Configuration des paramètres</h3>
+    <h3><span aria-hidden="true">⚙️</span> Configuration des paramètres</h3>
 
     <p>La page <strong>admin_settings.php</strong> (réservée au super administrateur) permet de configurer :</p>
     <ul>
@@ -993,7 +993,7 @@ try {
       <li><strong>Événements webhook</strong> — Les événements à notifier</li>
     </ul>
     <div class="warn-box">
-      <p><strong>⚠ Accès restreint :</strong> La page de paramètres est réservée au <strong>super administrateur</strong>.</p>
+      <p><strong><span aria-hidden="true">⚠</span> Accès restreint :</strong> La page de paramètres est réservée au <strong>super administrateur</strong>.</p>
     </div>
 
     <img src="docs/screenshots/12_admin_settings.png" alt="Page des paramètres — configuration SMTP et relances" class="screenshot">
@@ -1006,7 +1006,7 @@ try {
     <p class="screenshot-caption">Journal des modifications — historique des évolutions et corrections par version</p>
 
     <!-- ── Admin vs Super admin ── -->
-    <h3>👑 Admin vs Super admin</h3>
+    <h3><span aria-hidden="true">👑</span> Admin vs Super admin</h3>
     <table class="schema-table">
       <thead>
         <tr>
@@ -1044,63 +1044,63 @@ try {
 
     <div class="feature-grid">
       <div class="feature-item">
-        <strong>📝 Formulaires dynamiques configurables</strong>
+        <strong><span aria-hidden="true">📝</span> Formulaires dynamiques configurables</strong>
         <p>Créez et configurez vos formulaires sans coder. Champs texte, listes déroulantes, cases à cocher, pièces jointes.</p>
       </div>
       <div class="feature-item">
-        <strong>🔄 Circuit de validation séquentiel et parallèle</strong>
+        <strong><span aria-hidden="true">🔄</span> Circuit de validation séquentiel et parallèle</strong>
         <p>Définissez l'ordre de validation : étape par étape ou plusieurs en même temps, selon les besoins de chaque formulaire.</p>
       </div>
       <div class="feature-item">
-        <strong>🔐 Tokens cryptographiques à usage unique</strong>
+        <strong><span aria-hidden="true">🔐</span> Tokens cryptographiques à usage unique</strong>
         <p>Chaque lien de validation est unique et sécurisé. Une fois utilisé, il ne peut plus servir, garantissant l'intégrité du processus.</p>
       </div>
       <div class="feature-item">
-        <strong>📎 Pièces jointes sécurisées</strong>
+        <strong><span aria-hidden="true">📎</span> Pièces jointes sécurisées</strong>
         <p>Les fichiers joints sont stockés de manière sécurisée en base de données. Seules les personnes autorisées peuvent les télécharger.</p>
       </div>
       <div class="feature-item">
-        <strong>🔔 Relances automatiques et manuelles</strong>
+        <strong><span aria-hidden="true">🔔</span> Relances automatiques et manuelles</strong>
         <p>Le système relance automatiquement les validateurs en attente. L'administrateur peut aussi relancer manuellement.</p>
       </div>
       <div class="feature-item">
-        <strong>🔄 Délégation de validation</strong>
+        <strong><span aria-hidden="true">🔄</span> Délégation de validation</strong>
         <p>Un validateur peut transférer sa validation à un collègue. La délégation est tracée dans l'historique.</p>
       </div>
       <div class="feature-item">
-        <strong>⏰ Alertes de deadline configurables</strong>
+        <strong><span aria-hidden="true">⏰</span> Alertes de deadline configurables</strong>
         <p>Recevez une alerte quand une demande approche de sa date limite. Configurable par formulaire et par destinataire.</p>
       </div>
       <div class="feature-item">
-        <strong>📈 Statistiques et tableaux de bord</strong>
+        <strong><span aria-hidden="true">📈</span> Statistiques et tableaux de bord</strong>
         <p>Suivez les performances : temps de traitement, taux de validation, répartition par période et par formulaire.</p>
       </div>
       <div class="feature-item">
-        <strong>📋 Journal d'audit complet</strong>
+        <strong><span aria-hidden="true">📋</span> Journal d'audit complet</strong>
         <p>Chaque action est enregistrée : qui a fait quoi et quand. Traçabilité totale pour la conformité et le contrôle.</p>
       </div>
       <div class="feature-item">
-        <strong>🔒 Conformité RGPD</strong>
+        <strong><span aria-hidden="true">🔒</span> Conformité RGPD</strong>
         <p>Export, suppression et purge automatique des données. Durée de conservation configurable. Droit d'accès et d'effacement garantis.</p>
       </div>
       <div class="feature-item">
-        <strong>🔗 Webhooks pour intégration SI</strong>
+        <strong><span aria-hidden="true">🔗</span> Webhooks pour intégration SI</strong>
         <p>Connectez l'application à votre système d'information. Notifications automatiques lors des événements clés.</p>
       </div>
       <div class="feature-item">
-        <strong>💚 Health check pour monitoring</strong>
+        <strong><span aria-hidden="true">💚</span> Health check pour monitoring</strong>
         <p>Vérifiez automatiquement l'état de l'application : base de données, configuration email, version PHP.</p>
       </div>
       <div class="feature-item">
-        <strong>💾 Sauvegarde et restauration</strong>
+        <strong><span aria-hidden="true">💾</span> Sauvegarde et restauration</strong>
         <p>Téléchargez une sauvegarde complète et restaurez-la en cas de besoin. Sécurisez vos données simplement.</p>
       </div>
       <div class="feature-item">
-        <strong>🎨 Design Marianne / RGAA accessible</strong>
+        <strong><span aria-hidden="true">🎨</span> Design Marianne / RGAA accessible</strong>
         <p>Interface conforme au système de design de l'État et aux normes d'accessibilité RGAA. Utilisable par tous.</p>
       </div>
       <div class="feature-item">
-        <strong>🛡️ Zéro JavaScript (sécurité maximale)</strong>
+        <strong><span aria-hidden="true">🛡️</span> Zéro JavaScript (sécurité maximale)</strong>
         <p>L'application fonctionne entièrement sans JavaScript côté client. Sécurité renforcée, compatible avec les navigateurs les plus restrictifs.</p>
       </div>
     </div>
@@ -1117,51 +1117,51 @@ try {
     <h3><span class="role-badge role-agent">Agent</span> L'agent</h3>
     <p>L'agent est la personne qui remplit et soumet un formulaire (par exemple, un agent qui déclare son arrivée).</p>
     <ul>
-      <li>✅ Remplir et soumettre un formulaire</li>
-      <li>✅ Suivre l'avancement de <strong>ses propres</strong> demandes (page « Mes demandes »)</li>
-      <li>✅ Annuler une de ses demandes en cours</li>
-      <li>✅ Consulter les détails de ses demandes</li>
-      <li>❌ Ne peut pas voir les demandes des autres agents</li>
-      <li>❌ Ne peut pas configurer les formulaires ni les étapes</li>
+      <li><span aria-hidden="true">✅</span> Remplir et soumettre un formulaire</li>
+      <li><span aria-hidden="true">✅</span> Suivre l'avancement de <strong>ses propres</strong> demandes (page « Mes demandes »)</li>
+      <li><span aria-hidden="true">✅</span> Annuler une de ses demandes en cours</li>
+      <li><span aria-hidden="true">✅</span> Consulter les détails de ses demandes</li>
+      <li><span aria-hidden="true">❌</span> Ne peut pas voir les demandes des autres agents</li>
+      <li><span aria-hidden="true">❌</span> Ne peut pas configurer les formulaires ni les étapes</li>
     </ul>
 
     <h3><span class="role-badge role-validator">Validateur</span> Le validateur</h3>
     <p>Le validateur reçoit les demandes à traiter. Il n'a pas besoin d'être sur le réseau DREETS.</p>
     <ul>
-      <li>✅ Valider ou refuser une demande (via le lien email)</li>
-      <li>✅ Consulter les détails d'une demande à valider</li>
-      <li>✅ Déléguer sa validation à un autre validateur</li>
-      <li>✅ Suivre ses validations en attente et passées (page « Mes validations »)</li>
-      <li>✅ Ajouter un commentaire lors de la validation ou du refus</li>
-      <li>❌ Ne peut pas modifier une demande déjà soumise</li>
-      <li>❌ Ne peut pas accéder au tableau de bord administrateur</li>
+      <li><span aria-hidden="true">✅</span> Valider ou refuser une demande (via le lien email)</li>
+      <li><span aria-hidden="true">✅</span> Consulter les détails d'une demande à valider</li>
+      <li><span aria-hidden="true">✅</span> Déléguer sa validation à un autre validateur</li>
+      <li><span aria-hidden="true">✅</span> Suivre ses validations en attente et passées (page « Mes validations »)</li>
+      <li><span aria-hidden="true">✅</span> Ajouter un commentaire lors de la validation ou du refus</li>
+      <li><span aria-hidden="true">❌</span> Ne peut pas modifier une demande déjà soumise</li>
+      <li><span aria-hidden="true">❌</span> Ne peut pas accéder au tableau de bord administrateur</li>
     </ul>
 
     <h3><span class="role-badge role-admin">Admin</span> L'administrateur</h3>
     <p>L'administrateur configure et supervise l'application. Il a accès à toutes les fonctions de gestion.</p>
     <ul>
-      <li>✅ Tout ce que peut faire un agent + un validateur</li>
-      <li>✅ Voir le tableau de bord (toutes les demandes)</li>
-      <li>✅ Créer, modifier et désactiver des formulaires</li>
-      <li>✅ Configurer les étapes et les destinataires</li>
-      <li>✅ Configurer les alertes de deadline</li>
-      <li>✅ Consulter les statistiques et le monitoring</li>
-      <li>✅ Gérer la conformité RGPD (export, suppression)</li>
-      <li>✅ Sauvegarder et restaurer la base de données</li>
-      <li>✅ Relancer manuellement un validateur</li>
-      <li>✅ Annuler n'importe quelle demande en cours</li>
-      <li>❌ Ne peut pas gérer les administrateurs</li>
-      <li>❌ Ne peut pas modifier les paramètres SMTP et webhooks</li>
+      <li><span aria-hidden="true">✅</span> Tout ce que peut faire un agent + un validateur</li>
+      <li><span aria-hidden="true">✅</span> Voir le tableau de bord (toutes les demandes)</li>
+      <li><span aria-hidden="true">✅</span> Créer, modifier et désactiver des formulaires</li>
+      <li><span aria-hidden="true">✅</span> Configurer les étapes et les destinataires</li>
+      <li><span aria-hidden="true">✅</span> Configurer les alertes de deadline</li>
+      <li><span aria-hidden="true">✅</span> Consulter les statistiques et le monitoring</li>
+      <li><span aria-hidden="true">✅</span> Gérer la conformité RGPD (export, suppression)</li>
+      <li><span aria-hidden="true">✅</span> Sauvegarder et restaurer la base de données</li>
+      <li><span aria-hidden="true">✅</span> Relancer manuellement un validateur</li>
+      <li><span aria-hidden="true">✅</span> Annuler n'importe quelle demande en cours</li>
+      <li><span aria-hidden="true">❌</span> Ne peut pas gérer les administrateurs</li>
+      <li><span aria-hidden="true">❌</span> Ne peut pas modifier les paramètres SMTP et webhooks</li>
     </ul>
 
     <h3><span class="role-badge role-superadmin">Super admin</span> Le super administrateur</h3>
     <p>Le super administrateur a tous les droits. Il y en a généralement un seul dans l'organisation.</p>
     <ul>
-      <li>✅ Tout ce que peut faire un administrateur</li>
-      <li>✅ Approuver ou refuser les demandes d'accès administrateur</li>
-      <li>✅ Gérer la liste des administrateurs (ajouter, supprimer)</li>
-      <li>✅ Configurer les paramètres SMTP (serveur, port, expéditeur)</li>
-      <li>✅ Configurer les webhooks (URL, événements)</li>
+      <li><span aria-hidden="true">✅</span> Tout ce que peut faire un administrateur</li>
+      <li><span aria-hidden="true">✅</span> Approuver ou refuser les demandes d'accès administrateur</li>
+      <li><span aria-hidden="true">✅</span> Gérer la liste des administrateurs (ajouter, supprimer)</li>
+      <li><span aria-hidden="true">✅</span> Configurer les paramètres SMTP (serveur, port, expéditeur)</li>
+      <li><span aria-hidden="true">✅</span> Configurer les webhooks (URL, événements)</li>
     </ul>
 
     <h3>Résumé des permissions</h3>
@@ -1459,7 +1459,7 @@ try {
     </details>
 
     <details>
-      <summary>🖥️ Prérequis de déploiement et installation (pour l'équipe IT)</summary>
+      <summary><span aria-hidden="true">🖥️</span> Prérequis de déploiement et installation (pour l'équipe IT)</summary>
       <div class="detail-body">
         <p>Cette section est destinée au personnel technique chargé de déployer ou maintenir l'application.</p>
         <h4>Prérequis système</h4>
@@ -1514,7 +1514,7 @@ try {
     <h2>8. RGPD et mentions légales</h2>
 
     <div class="rgpd-box">
-      <h3>📜 Mentions légales</h3>
+      <h3><span aria-hidden="true">📜</span> Mentions légales</h3>
       <?php if (!empty($legal_mentions)): ?>
         <p><?= nl2br(h($legal_mentions)) ?></p>
       <?php else: ?>
@@ -1522,7 +1522,7 @@ try {
       <?php endif; ?>
     </div>
 
-    <h3>🔒 Protection des données</h3>
+    <h3><span aria-hidden="true">🔒</span> Protection des données</h3>
 
     <p>L'application est conçue pour respecter le Règlement Général sur la Protection des Données (RGPD). Voici les mesures en place :</p>
 
@@ -1571,7 +1571,7 @@ try {
       <summary>Structure des fichiers</summary>
       <div class="detail-body">
         <div class="file-tree">
-          <span class="dir">📁 formulaire-dematerialise/</span><br>
+          <span class="dir"><span aria-hidden="true">📁</span> formulaire-dematerialise/</span><br>
           &nbsp;&nbsp;<span class="file">config.php</span> — Constantes de configuration (BDD, SMTP, admin)<br>
           &nbsp;&nbsp;<span class="file">helpers.php</span> — Fonctions utilitaires, moteur de workflow, envoi d'emails<br>
           &nbsp;&nbsp;<span class="file">index.php</span> — Redirection vers dashboard ou admin_access<br>
@@ -1597,8 +1597,8 @@ try {
           &nbsp;&nbsp;<span class="file">confirm_action.php</span> — Confirmation d'actions sensibles<br>
           &nbsp;&nbsp;<span class="file">docs.php</span> — Cette page de documentation<br>
           &nbsp;&nbsp;<span class="file">changelog.php</span> — Journal des modifications<br>
-          &nbsp;&nbsp;<span class="dir">📁 PHPMailer/</span> — Librairie d'envoi d'emails<br>
-          &nbsp;&nbsp;<span class="dir">📁 db/</span> — Base de données SQLite (workflow.db)
+          &nbsp;&nbsp;<span class="dir"><span aria-hidden="true">📁</span> PHPMailer/</span> — Librairie d'envoi d'emails<br>
+          &nbsp;&nbsp;<span class="dir"><span aria-hidden="true">📁</span> db/</span> — Base de données SQLite (workflow.db)
         </div>
       </div>
     </details>

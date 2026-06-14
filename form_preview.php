@@ -58,7 +58,7 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
     fieldset.card { border: 1px solid #ddd; }
     legend { font-size: 1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: .05em; width: 100%; }
     .field.full { grid-column: 1 / -1; }
-    .btn-submit { background: #ccc; color: #888; border: none; padding: .75rem 2.5rem; font-size: 1rem; font-family: inherit; border-radius: 3px; cursor: not-allowed; display: block; margin: 0 auto; }
+    .btn-submit { background: #ccc; color: #595959; border: none; padding: .75rem 2.5rem; font-size: 1rem; font-family: inherit; border-radius: 3px; cursor: not-allowed; display: block; margin: 0 auto; }
     .workflow-preview { background: #f0f4ff; border: 1px solid #003189; border-radius: 6px; padding: 1.25rem; margin-bottom: 2rem; }
     .workflow-preview h3 { color: #003189; margin-bottom: 1rem; font-size: 1rem; }
     .wf-flow { display: flex; align-items: flex-start; gap: .5rem; overflow-x: auto; padding-bottom: .5rem; }
@@ -75,7 +75,7 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
 <?= render_nav('forms') ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Formulaires', 'admin_forms.php'], ['Prévisualisation']]) ?>
 <main class="container" id="main-content">
-  <div class="preview-banner">👁 Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="admin_forms.php?form_id=<?= urlencode($form['id']) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;">⚙ Retour à l'édition</a></div>
+  <div class="preview-banner"><span aria-hidden="true">👁</span> Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="admin_forms.php?form_id=<?= urlencode($form['id']) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;"><span aria-hidden="true">⚙</span> Retour à l'édition</a></div>
 
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= h($form['description']) ?></p><?php endif; ?>
@@ -101,7 +101,7 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <form>
     <?php if (empty($grouped)): ?>
-      <p style="text-align:center;padding:2rem;color:#888;font-style:italic;">Aucun champ configuré pour ce formulaire.</p>
+      <p style="text-align:center;padding:2rem;color:#595959;font-style:italic;">Aucun champ configuré pour ce formulaire.</p>
     <?php else: ?>
       <?php foreach ($grouped as $card_title => $card_fields):
         // Séparer checkboxes des autres

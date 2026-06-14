@@ -141,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<?= render_nav('') ?>
+<?= render_nav('mes_validations') ?>
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Mes validations', 'my_validations.php'], ['Validation']]) ?>
 <div class="card">
@@ -230,8 +230,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
           $all_done = count($dones_arr) > 0 && count(array_filter(explode('|', $ws['dones'] ?? ''))) === count(array_filter(explode('|', $ws['emails'] ?? '')));
           $is_current = ($ws['id'] == ($data['step_id'] ?? 0));
 
-          if ($all_done) { $cls = 'wf-prog-done'; $icon = '✓'; }
-          elseif ($is_current) { $cls = 'wf-prog-current'; $icon = '⏳'; }
+          if ($all_done) { $cls = 'wf-prog-done'; $icon = '<span aria-hidden="true">✓</span>'; }
+          elseif ($is_current) { $cls = 'wf-prog-current'; $icon = '<span aria-hidden="true">⏳</span>'; }
           else { $cls = 'wf-prog-upcoming'; $icon = '○'; }
       ?>
         <div class="wf-prog-step <?= $cls ?>">
@@ -250,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <p><strong>Étape :</strong> <?= h($data['step_label']) ?></p>
     <?php foreach ($d as $k => $v): if (empty($v) || $v === '0') continue; ?>
       <?php if ($k === 'validations' || $k === 'csrf_token') continue; ?>
-      <p><strong><?= h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k)))) ?> :</strong> <?= $v === '1' ? '✓' : h((string)$v) ?></p>
+      <p><strong><?= h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k)))) ?> :</strong> <?= $v === '1' ? '<span aria-hidden="true">✓</span>' : h((string)$v) ?></p>
     <?php endforeach; ?>
   </div>
 
@@ -260,9 +260,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (!empty($attachments)):
   ?>
   <div class="validation-details">
-    <h2>📎 Pièces jointes (<?= count($attachments) ?>)</h2>
+    <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($attachments) ?>)</h2>
     <?php foreach ($attachments as $att): ?>
-      <p><?= get_file_icon($att['mime_type']) ?> <a href="download.php?id=<?= urlencode($att['id']) ?>" style="color:#003189;text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#888;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
+      <p><?= get_file_icon($att['mime_type']) ?> <a href="download.php?id=<?= urlencode($att['id']) ?>" style="color:#003189;text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>

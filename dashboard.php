@@ -190,12 +190,12 @@ function get_tokens_status(string $sub_id): array {
         <a href="?statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">✕ Effacer</a>
       <?php endif; ?>
     </form>
-    <a href="monitoring.php" class="btn-admin">🖥 Monitoring</a>
-    <a href="admin_alerts.php" class="btn-admin" style="background:#b45309;">🔔 Alertes</a>
-    <a href="admin_forms.php" class="btn-admin">⚙ Gestion formulaires</a>
-    <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>&search=<?= h($search) ?>" class="btn-admin" style="background:#1a6b3c;">📥 Export CSV</a>
-    <a href="stats.php" class="btn-admin">📊 Statistiques</a>
-    <a href="rgpd.php" class="btn-admin">🔐 RGPD</a>
+    <a href="monitoring.php" class="btn-admin"><span aria-hidden="true">🖥</span> Monitoring</a>
+    <a href="admin_alerts.php" class="btn-admin" style="background:#b45309;"><span aria-hidden="true">🔔</span> Alertes</a>
+    <a href="admin_forms.php" class="btn-admin"><span aria-hidden="true">⚙</span> Gestion formulaires</a>
+    <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>&search=<?= h($search) ?>" class="btn-admin" style="background:#1a6b3c;"><span aria-hidden="true">📥</span> Export CSV</a>
+    <a href="stats.php" class="btn-admin"><span aria-hidden="true">📊</span> Statistiques</a>
+    <a href="rgpd.php" class="btn-admin"><span aria-hidden="true">🔐</span> RGPD</a>
   </div>
 
   <table>
@@ -212,7 +212,7 @@ function get_tokens_status(string $sub_id): array {
     </thead>
     <tbody>
     <?php if (empty($rows)): ?>
-      <tr><td colspan="7" style="text-align:center;padding:2rem;color:#888;">Aucune soumission.</td></tr>
+      <tr><td colspan="7" style="text-align:center;padding:2rem;color:#595959;">Aucune soumission.</td></tr>
     <?php else: ?>
       <?php foreach ($rows as $i => $row):
         $d      = json_decode($row['data'], true);
@@ -259,9 +259,9 @@ function get_tokens_status(string $sub_id): array {
         <td style="white-space:nowrap;"><?= h(substr($row['submitted_at'],0,10)) ?></td>
         <td><?php
           if ($status === 'refuse') {
-              echo '<span style="color:#c0392b;font-weight:bold;">❌ Refusé</span>';
+              echo '<span style="color:#c0392b;font-weight:bold;"><span aria-hidden="true">❌</span> Refusé</span>';
           } elseif ($status === 'valide') {
-              echo '<span style="color:#1a6b3c;font-weight:bold;">✓ Validé</span>';
+              echo '<span style="color:#1a6b3c;font-weight:bold;"><span aria-hidden="true">✓</span> Validé</span>';
           } else {
               echo '<span style="color:#b45309;">En cours</span>';
           }
@@ -270,7 +270,9 @@ function get_tokens_status(string $sub_id): array {
       </tr>
       <tr>
         <td colspan="7">
-          <div class="detail-content">
+          <details>
+            <summary>Détails de la demande — <?= h($nom ?: $row['submitted_by']) ?> — <?= h($row['form_label']) ?></summary>
+            <div class="detail-content">
             <?php if (isset($d['validations']) && is_array($d['validations'])): ?>
               <h3 style="margin-top:0;margin-bottom:1rem;">Historique des validations</h3>
               <?php foreach ($d['validations'] as $validation): ?>
@@ -278,7 +280,7 @@ function get_tokens_status(string $sub_id): array {
                   <strong><?= h($validation['step_label']) ?></strong> -
                   <?= h($validation['email']) ?> -
                   <span style="<?= $validation['action'] === 'valider' ? 'color:#1a6b3c;' : 'color:#c0392b;' ?>">
-                    <?= $validation['action'] === 'valider' ? '✅ Validé' : '❌ Refusé' ?>
+                    <?= $validation['action'] === 'valider' ? '<span aria-hidden="true">✅</span> Validé' : '<span aria-hidden="true">❌</span> Refusé' ?>
                   </span>
                   <?php if (!empty($validation['commentaire'])): ?>
                     <br><em>Commentaire :</em> <?= h($validation['commentaire']) ?>
@@ -292,7 +294,7 @@ function get_tokens_status(string $sub_id): array {
             <?php foreach ($d as $k => $v): if (empty($v)||$v==='0') continue; ?>
               <?php if ($k === 'validations') continue; // Ne pas afficher les validations dans les détails ?>
               <strong><?= h(ucfirst(str_replace('_',' ',preg_replace('/^[a-z]+_/','',$k)))) ?> :</strong>
-              <?= $v==='1'?'✓':h($v) ?> &nbsp;
+              <?= $v==='1'?'<span aria-hidden="true">✓</span>':h($v) ?> &nbsp;
             <?php endforeach; ?>
 
             <?php if ($status === 'en_cours'): ?>
@@ -305,21 +307,22 @@ function get_tokens_status(string $sub_id): array {
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="remind_one">
                         <input type="hidden" name="token_id" value="<?= h($t['id']) ?>">
-                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📧 Rappeler <?= h($t['email']) ?></button>
+                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📧</span> Rappeler <?= h($t['email']) ?></button>
                       </form>
                       <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="regenerate_token">
                         <input type="hidden" name="token_id" value="<?= h($t['id']) ?>">
-                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">🔄 Régénérer <?= h($t['email']) ?></button>
+                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">🔄</span> Régénérer <?= h($t['email']) ?></button>
                       </form>
                     <?php endif; ?>
                   <?php endforeach; ?>
                 <?php endif; ?>
-                <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($row['id']) ?>&from=dashboard.php" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">🗑 Annuler</a>
+                <a href="confirm_action.php?action=cancel_submission&submission_id=<?= urlencode($row['id']) ?>&from=dashboard.php" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;"><span aria-hidden="true">🗑</span> Annuler</a>
               </div>
             <?php endif; ?>
-          </div>
+            </div>
+          </details>
         </td>
       </tr>
       <?php endforeach; ?>

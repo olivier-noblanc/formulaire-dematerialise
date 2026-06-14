@@ -170,7 +170,7 @@ if ($action === 'remove_owner' && isset($_GET['form_id'])) {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<?= render_nav('') ?>
+<?= render_nav('dashboard') ?>
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Confirmation']]) ?>
 

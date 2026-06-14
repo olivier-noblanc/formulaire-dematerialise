@@ -426,7 +426,7 @@ $purge_preview = $purge_preview ?? null;
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Sauvegarde']]) ?>
 <main class="container" id="main-content">
 
-    <h1>💾 Sauvegarde et restauration</h1>
+    <h1><span aria-hidden="true">💾</span> Sauvegarde et restauration</h1>
 
     <?php if ($success_msg): ?>
         <div class="msg-success"><?= $success_msg ?></div>
@@ -444,7 +444,7 @@ $purge_preview = $purge_preview ?? null;
     <!--  4. STATISTIQUES DE LA BASE                               -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card">
-        <h2>📊 Statistiques de la base de données</h2>
+        <h2><span aria-hidden="true">📊</span> Statistiques de la base de données</h2>
 
         <?php if (!empty($db_stats['error'])): ?>
             <div class="msg-error">Erreur lors de la lecture des statistiques : <?= h($db_stats['error']) ?></div>
@@ -458,7 +458,7 @@ $purge_preview = $purge_preview ?? null;
             </div>
             <div class="info-row">
                 <span class="info-label">Existant</span>
-                <span class="info-value"><?= $db_stats['file_exists'] ? '✅ Oui' : '❌ Non' ?></span>
+                <span class="info-value"><?= $db_stats['file_exists'] ? '<span aria-hidden="true">✅</span> Oui' : '<span aria-hidden="true">❌</span> Non' ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">Taille sur le disque</span>
@@ -529,20 +529,20 @@ $purge_preview = $purge_preview ?? null;
     <!--  1. TÉLÉCHARGEMENT DE LA SAUVEGARDE                       -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card">
-        <h2>📥 Télécharger une sauvegarde</h2>
+        <h2><span aria-hidden="true">📥</span> Télécharger une sauvegarde</h2>
         <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
             Téléchargez une copie complète de la base de données SQLite au format <code>.db</code>.
             Le fichier sera nommé automatiquement avec la date et l'heure actuelles
             (format : <code>workflow_backup_AAAAMMJJ_HHMMSS.db</code>).
         </p>
         <p style="margin-bottom:1rem;color:#555;font-size:.85rem;">
-            ⚠️ La sauvegarde reflète l'état de la base au moment du téléchargement. Les connexions actives
+            <span aria-hidden="true">⚠️</span> La sauvegarde reflète l'état de la base au moment du téléchargement. Les connexions actives
             peuvent être en cours de modification.
         </p>
         <form method="POST">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="download_backup">
-            <button type="submit" class="btn btn-primary">💾 Télécharger la sauvegarde</button>
+            <button type="submit" class="btn btn-primary"><span aria-hidden="true">💾</span> Télécharger la sauvegarde</button>
         </form>
     </div>
 
@@ -550,13 +550,13 @@ $purge_preview = $purge_preview ?? null;
     <!--  2. RESTAURATION DE LA BASE                               -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card danger-zone">
-        <h2>🔄 Restaurer la base de données</h2>
+        <h2><span aria-hidden="true">🔄</span> Restaurer la base de données</h2>
         <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
             Restaurez la base de données à partir d'un fichier de sauvegarde <code>.db</code> précédemment téléchargé.
         </p>
 
         <div class="warn-box" style="margin-bottom:1rem;">
-            <p><strong>⚠️ Attention — Action irréversible</strong></p>
+            <p><strong><span aria-hidden="true">⚠️</span> Attention — Action irréversible</strong></p>
             <p>La base de données actuelle sera remplacée par le fichier téléchargé. Une copie de sécurité de la base actuelle sera automatiquement créée avant la restauration, mais toute donnée non sauvegardée sera perdue.</p>
         </div>
 
@@ -564,10 +564,10 @@ $purge_preview = $purge_preview ?? null;
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="restore_backup">
             <div class="upload-zone">
-                <p>📁 Sélectionnez un fichier de sauvegarde (.db)</p>
+                <p><span aria-hidden="true">📁</span> Sélectionnez un fichier de sauvegarde (.db)</p>
                 <input type="file" name="backup_file" accept=".db" required>
             </div>
-            <button type="submit" class="btn btn-danger">🔄 Restaurer la base de données</button>
+            <button type="submit" class="btn btn-danger"><span aria-hidden="true">🔄</span> Restaurer la base de données</button>
         </form>
     </div>
 
@@ -575,7 +575,7 @@ $purge_preview = $purge_preview ?? null;
     <!--  3. PURGE DES ANCIENNES DONNÉES                           -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card danger-zone">
-        <h2>🗑️ Purger les anciennes données</h2>
+        <h2><span aria-hidden="true">🗑️</span> Purger les anciennes données</h2>
         <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
             Supprimez les soumissions clôturées (validées ou refusées) anciennes, ainsi que leurs tokens et alertes associés.
             Les soumissions en cours (<span class="badge badge-en-cours">en_cours</span>) ne seront <strong>jamais</strong> supprimées.
@@ -584,7 +584,7 @@ $purge_preview = $purge_preview ?? null;
         <?php if ($purge_preview !== null): ?>
             <!-- Récapitulatif de la purge avant confirmation -->
             <div class="purge-recap">
-                <h3>⚠️ Récapitulatif de la purge — données clôturées depuis plus de <?= (int)$purge_preview['months'] ?> mois</h3>
+                <h3><span aria-hidden="true">⚠️</span> Récapitulatif de la purge — données clôturées depuis plus de <?= (int)$purge_preview['months'] ?> mois</h3>
                 <div class="purge-counts">
                     <div class="purge-count">
                         <strong><?= number_format($purge_preview['submissions'], 0, '', ' ') ?></strong>
@@ -607,12 +607,12 @@ $purge_preview = $purge_preview ?? null;
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="purge_confirm">
                         <input type="hidden" name="purge_months" value="<?= (int)$purge_preview['months'] ?>">
-                        <button type="submit" class="btn btn-danger">✅ Confirmer la purge</button>
+                        <button type="submit" class="btn btn-danger"><span aria-hidden="true">✅</span> Confirmer la purge</button>
                         <a href="backup.php" class="btn btn-secondary">Annuler</a>
                     </form>
                 <?php else: ?>
                     <p style="color:#1a6b3c;font-size:.9rem;">
-                        ✅ Aucune donnée à purger pour cette période. Toutes les soumissions clôturées sont récentes.
+                        <span aria-hidden="true">✅</span> Aucune donnée à purger pour cette période. Toutes les soumissions clôturées sont récentes.
                     </p>
                 <?php endif; ?>
             </div>
@@ -630,7 +630,7 @@ $purge_preview = $purge_preview ?? null;
                     <option value="24">24 mois</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-danger">🔍 Compter les données à purger</button>
+            <button type="submit" class="btn btn-danger"><span aria-hidden="true">🔍</span> Compter les données à purger</button>
         </form>
     </div>
 

@@ -107,7 +107,7 @@ function is_token_expired(array $token): bool {
 
     .vc-header { padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: .5rem; }
     .vc-title { font-size: 1rem; font-weight: bold; color: #003189; }
-    .vc-meta { font-size: .8rem; color: #888; margin-top: .25rem; }
+    .vc-meta { font-size: .8rem; color: #595959; margin-top: .25rem; }
     .vc-body { padding: 0 1.25rem 1rem; }
 
     .vc-data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .5rem; margin-bottom: 1rem; font-size: .85rem; }
@@ -124,11 +124,11 @@ function is_token_expired(array $token): bool {
     .wf-step-mini { font-size: .75rem; padding: .15rem .5rem; border-radius: 3px; white-space: nowrap; }
     .wf-step-done { background: #e8f5e9; color: #1a6b3c; }
     .wf-step-current { background: #fff3e0; color: #b45309; font-weight: bold; }
-    .wf-step-upcoming { background: #f5f5f5; color: #888; }
+    .wf-step-upcoming { background: #f5f5f5; color: #595959; }
     .wf-arrow { color: #aaa; font-size: .7rem; }
 
     .done-info { font-size: .85rem; color: #555; }
-    .done-date { font-size: .8rem; color: #888; }
+    .done-date { font-size: .8rem; color: #595959; }
   </style>
 </head>
 <body>
@@ -136,7 +136,7 @@ function is_token_expired(array $token): bool {
 <?= render_nav('mes_validations') ?>
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Mes validations']]) ?>
-  <h1>✅ Mes validations</h1>
+  <h1><span aria-hidden="true">✅</span> Mes validations</h1>
   <p class="subtitle">Tâches de validation qui vous sont assignées et historique de vos validations</p>
 
   <div class="stats">
@@ -160,8 +160,8 @@ function is_token_expired(array $token): bool {
 
   <!-- Onglets -->
   <div class="tab-bar">
-    <a href="?tab=pending" class="tab <?= $active_tab === 'pending' ? 'active' : '' ?>">⏳ En attente <?= $pending_count > 0 ? '<span class="tab-count warn">' . $pending_count . '</span>' : '' ?></a>
-    <a href="?tab=done" class="tab <?= $active_tab === 'done' ? 'active' : '' ?>">✓ Historique (<?= $done_count ?>)</a>
+    <a href="?tab=pending" class="tab <?= $active_tab === 'pending' ? 'active' : '' ?>"><span aria-hidden="true">⏳</span> En attente <?= $pending_count > 0 ? '<span class="tab-count warn">' . $pending_count . '</span>' : '' ?></a>
+    <a href="?tab=done" class="tab <?= $active_tab === 'done' ? 'active' : '' ?>"><span aria-hidden="true">✓</span> Historique (<?= $done_count ?>)</a>
   </div>
 
   <!-- Onglet : En attente -->
@@ -169,7 +169,7 @@ function is_token_expired(array $token): bool {
   <div id="tab-pending">
     <?php if (empty($pending_tokens)): ?>
       <div class="empty-state">
-        <div class="empty-icon">🎉</div>
+        <div class="empty-icon" aria-hidden="true">🎉</div>
         <p>Aucune validation en attente — vous êtes à jour !</p>
       </div>
     <?php else: ?>
@@ -205,9 +205,9 @@ function is_token_expired(array $token): bool {
             </div>
           </div>
           <?php if ($expired): ?>
-            <span class="expired-badge">⏰ Expiré</span>
+            <span class="expired-badge"><span aria-hidden="true">⏰</span> Expiré</span>
           <?php else: ?>
-            <span class="badge badge-warn">⏳ En attente de votre validation</span>
+            <span class="badge badge-warn"><span aria-hidden="true">⏳</span> En attente de votre validation</span>
           <?php endif; ?>
         </div>
 
@@ -231,7 +231,7 @@ function is_token_expired(array $token): bool {
                 }
             ?>
               <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
-              <span class="wf-step-mini <?= $cls ?>"><?= $icon ?> <?= h($as['label']) ?></span>
+              <span class="wf-step-mini <?= $cls ?>" aria-hidden="true"><?= $icon ?> <?= h($as['label']) ?></span>
             <?php endforeach; ?>
           </div>
 
@@ -240,7 +240,7 @@ function is_token_expired(array $token): bool {
             <?php foreach ($data as $k => $v):
                 if (empty($v) || $v === '0' || $k === 'validations' || $k === 'csrf_token') continue;
                 $label = ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k)));
-                $display = $v === '1' ? '✓ Oui' : h((string)$v);
+                $display = $v === '1' ? '<span aria-hidden="true">✓</span> Oui' : h((string)$v);
             ?>
               <div class="vc-data-item">
                 <div class="vc-data-label"><?= h($label) ?></div>
@@ -252,13 +252,13 @@ function is_token_expired(array $token): bool {
 
         <div class="vc-actions">
           <?php if (!$expired): ?>
-            <a href="validate.php?token=<?= urlencode($tk['token']) ?>" class="btn btn-primary">✓ Valider / Refuser</a>
+            <a href="validate.php?token=<?= urlencode($tk['token']) ?>" class="btn btn-primary"><span aria-hidden="true">✓</span> Valider / Refuser</a>
           <?php else: ?>
             <span style="font-size:.85rem;color:#c0392b;">Token expiré — contactez un administrateur pour régénérer</span>
           <?php endif; ?>
           <!-- Bouton delegation -->
           <details style="margin-left:.5rem;">
-            <summary class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;cursor:pointer;display:inline;">🔄 Déléguer</summary>
+            <summary class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;cursor:pointer;display:inline;"><span aria-hidden="true">🔄</span> Déléguer</summary>
             <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;padding:.75rem;background:#f8f8fc;border-radius:4px;border:1px solid #ddd;">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delegate_token">
@@ -279,7 +279,7 @@ function is_token_expired(array $token): bool {
   <div id="tab-done">
     <?php if (empty($done_tokens)): ?>
       <div class="empty-state">
-        <div class="empty-icon">📋</div>
+        <div class="empty-icon" aria-hidden="true">📋</div>
         <p>Vous n'avez encore validé aucune demande.</p>
       </div>
     <?php else: ?>

@@ -131,7 +131,7 @@ if (is_super_admin() || is_admin_user()) {
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<?= render_nav('') ?>
+<?= render_nav('settings') ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Accès admin']]) ?>
 <main class="container" id="main-content">
     <h1>Accès au back office</h1>

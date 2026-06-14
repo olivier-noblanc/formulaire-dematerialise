@@ -211,7 +211,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
     .donut-chart { width: 160px; height: 160px; border-radius: 50%; position: relative; flex-shrink: 0; }
     .donut-chart .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: #fff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .donut-chart .donut-center .donut-value { font-size: 1.5rem; font-weight: bold; color: #003189; }
-    .donut-chart .donut-center .donut-label { font-size: .7rem; color: #888; }
+    .donut-chart .donut-center .donut-label { font-size: .7rem; color: #595959; }
     .chart-legend { display: flex; flex-direction: column; gap: .5rem; }
     .legend-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
     .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
@@ -228,7 +228,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
 ]) ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Monitoring']]) ?>
 <main class="container" id="main-content">
-  <h1>🖥 Monitoring & Observabilité</h1>
+  <h1><span aria-hidden="true">🖥</span> Monitoring & Observabilité</h1>
 
   <!-- Stats globales -->
   <div class="grid-3">
@@ -260,7 +260,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
 
   <!-- Graphique de répartition des statuts -->
   <div class="card">
-    <h2>📊 Répartition des soumissions</h2>
+    <h2><span aria-hidden="true">📊</span> Répartition des soumissions</h2>
     <?php
       // Calculer les proportions pour le donut chart
       $p_valide = $total_sub > 0 ? round(($valide_sub / $total_sub) * 100) : 0;
@@ -304,7 +304,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
   <div class="grid-2">
     <!-- Santé SMTP -->
     <div class="card">
-      <h2>📧 Santé SMTP</h2>
+      <h2><span aria-hidden="true">📧</span> Santé SMTP</h2>
       <p style="margin-bottom:1rem;">
         <?php if ($smtp_status === 'ok'): ?>
           <span class="health-dot health-ok"></span>
@@ -320,7 +320,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
           Cliquez sur le bouton pour tester la connexion SMTP.
         <?php endif; ?>
       </p>
-      <p style="font-size:.85rem;color:#888;margin-bottom:1rem;">
+      <p style="font-size:.85rem;color:#595959;margin-bottom:1rem;">
         Hôte : <strong><?= h(get_setting('smtp_host', SMTP_HOST)) ?></strong> |
         Port : <strong><?= h(get_setting('smtp_port', (string)SMTP_PORT)) ?></strong> |
         Chiffrement : <strong><?= h(get_setting('smtp_secure', '') ?: 'Aucun') ?></strong>
@@ -330,10 +330,10 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
 
     <!-- Scripts automatises -->
     <div class="card">
-      <h2>🤖 Scripts automatisés</h2>
+      <h2><span aria-hidden="true">🤖</span> Scripts automatisés</h2>
       <!-- Script de relance -->
       <div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #eee;">
-        <strong style="font-size:.9rem;">🔄 Script de relance (remind.php)</strong><br>
+        <strong style="font-size:.9rem;"><span aria-hidden="true">🔄</span> Script de relance (remind.php)</strong><br>
         <?php if ($last_remind): ?>
           <?php
             $remind_age = time() - strtotime($last_remind);
@@ -342,9 +342,9 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
           <span class="health-dot <?= $remind_ok ? 'health-ok' : 'health-warn' ?>" style="margin-top:.5rem;"></span>
           Dernière exécution : <strong><?= h(date('d/m/Y à H:i', strtotime($last_remind))) ?></strong>
           <?php if (!$remind_ok): ?>
-            <br><span class="badge badge-warn" style="margin-top:.25rem;">⚠ Il y a plus de 24h</span>
+            <br><span class="badge badge-warn" style="margin-top:.25rem;"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>
           <?php else: ?>
-            <br><span class="badge badge-ok" style="margin-top:.25rem;">✓ Actif</span>
+            <br><span class="badge badge-ok" style="margin-top:.25rem;"><span aria-hidden="true">✓</span> Actif</span>
           <?php endif; ?>
         <?php else: ?>
           <span class="health-dot health-unknown"></span>
@@ -353,7 +353,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
       </div>
       <!-- Script d'alerte -->
       <div>
-        <strong style="font-size:.9rem;">🔔 Script d'alerte (alert_check.php)</strong><br>
+        <strong style="font-size:.9rem;"><span aria-hidden="true">🔔</span> Script d'alerte (alert_check.php)</strong><br>
         <?php if ($last_alert_check): ?>
           <?php
             $alert_age = time() - strtotime($last_alert_check);
@@ -362,15 +362,15 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
           <span class="health-dot <?= $alert_ok ? 'health-ok' : 'health-warn' ?>" style="margin-top:.5rem;"></span>
           Dernière exécution : <strong><?= h(date('d/m/Y à H:i', strtotime($last_alert_check))) ?></strong>
           <?php if (!$alert_ok): ?>
-            <br><span class="badge badge-warn" style="margin-top:.25rem;">⚠ Il y a plus de 24h</span>
+            <br><span class="badge badge-warn" style="margin-top:.25rem;"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>
           <?php else: ?>
-            <br><span class="badge badge-ok" style="margin-top:.25rem;">✓ Actif</span>
+            <br><span class="badge badge-ok" style="margin-top:.25rem;"><span aria-hidden="true">✓</span> Actif</span>
           <?php endif; ?>
         <?php else: ?>
           <span class="health-dot health-unknown"></span>
           <span class="badge badge-info">Jamais exécuté</span>
         <?php endif; ?>
-        <p style="font-size:.8rem;color:#888;margin-top:.5rem;">
+        <p style="font-size:.8rem;color:#595959;margin-top:.5rem;">
           Délai relance : <strong><?= h(get_setting('delai_relance_h', '48')) ?>h</strong> |
           Max relances : <strong><?= h(get_setting('relance_max', '3')) ?></strong> |
           Expiration tokens : <strong><?= h(get_setting('token_expire_days', '30')) ?>j</strong>
@@ -382,7 +382,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
   <!-- Alertes actives : soumissions proches de la deadline -->
   <?php if (!empty($active_alerts)): ?>
   <div class="card">
-    <h2>🔔 Alertes actives — Soumissions proches de la date cible</h2>
+    <h2><span aria-hidden="true">🔔</span> Alertes actives — Soumissions proches de la date cible</h2>
     <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
       Les soumissions suivantes sont en cours et approchent ou dépassent leur date cible avec des étapes non complétées.
     </p>
@@ -408,7 +408,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
       </tbody>
     </table>
     <p style="margin-top:1rem;">
-      <a href="admin_alerts.php" class="btn btn-secondary" style="font-size:.85rem;">⚙ Configurer les règles d'alerte</a>
+      <a href="admin_alerts.php" class="btn btn-secondary" style="font-size:.85rem;"><span aria-hidden="true">⚙</span> Configurer les règles d'alerte</a>
     </p>
   </div>
   <?php endif; ?>
@@ -416,7 +416,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
   <!-- Dernieres alertes envoyees -->
   <?php if (!empty($recent_alerts)): ?>
   <div class="card">
-    <h2>📬 Dernières alertes envoyées</h2>
+    <h2><span aria-hidden="true">📬</span> Dernières alertes envoyées</h2>
     <table>
       <thead>
         <tr><th>Date</th><th>Règle</th><th>Formulaire</th><th>Message</th></tr>
@@ -437,7 +437,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
 
   <!-- Soumissions par formulaire -->
   <div class="card">
-    <h2>📊 Soumissions par formulaire</h2>
+    <h2><span aria-hidden="true">📊</span> Soumissions par formulaire</h2>
     <?php if (empty($by_form_stats) || (count($by_form_stats) === 1 && $by_form_stats[0]['total'] == 0)): ?>
       <p class="empty-state">Aucune soumission enregistrée.</p>
     <?php else: ?>
@@ -467,7 +467,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
 
   <!-- Activité récente (7 jours) -->
   <div class="card">
-    <h2>📈 Activité des 7 derniers jours</h2>
+    <h2><span aria-hidden="true">📈</span> Activité des 7 derniers jours</h2>
     <?php if (empty($daily_stats)): ?>
       <p class="empty-state">Aucune soumission ces 7 derniers jours.</p>
     <?php else: ?>
@@ -492,7 +492,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
 
   <!-- Tokens bloqués -->
   <div class="card">
-    <h2>🚨 Tokens bloqués (en attente depuis + de <?= $bloque_hours ?>h)</h2>
+    <h2><span aria-hidden="true">🚨</span> Tokens bloqués (en attente depuis + de <?= $bloque_hours ?>h)</h2>
     <?php if (empty($tokens_bloques)): ?>
       <p class="empty-state">Aucun token bloqué — tout est fluide !</p>
     <?php else: ?>
@@ -519,7 +519,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
 
   <!-- Journal d'audit -->
   <div class="card">
-    <h2>📝 Journal d'audit</h2>
+    <h2><span aria-hidden="true">📝</span> Journal d'audit</h2>
     <div class="toolbar">
       <form method="GET" style="display:flex;gap:.5rem;align-items:center;">
         <label for="log_action" style="font-size:.85rem;font-weight:bold;">Filtrer par action :</label>
@@ -547,7 +547,7 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
             <td style="font-size:.8rem;"><?= h($al['target']) ?></td>
             <td style="font-size:.8rem;"><?= h($al['detail']) ?></td>
             <td style="font-size:.8rem;"><?= h($al['actor']) ?></td>
-            <td style="font-size:.8rem;color:#888;"><?= h($al['ip']) ?></td>
+            <td style="font-size:.8rem;color:#595959;"><?= h($al['ip']) ?></td>
           </tr>
         <?php endforeach; ?>
         </tbody>

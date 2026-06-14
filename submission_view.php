@@ -273,7 +273,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<?= render_nav('') ?>
+<?= render_nav('mes_demandes') ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Soumission']]) ?>
 <main class="container" id="main-content">
 
@@ -349,11 +349,11 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
                 <?php foreach ($ws['tokens'] as $tok): ?>
                   <div class="wf-validator-item">
                     <?php if (!empty($tok['done_at'])): ?>
-                      <span class="wf-check">✓</span>
+                      <span class="wf-check" aria-hidden="true">✓</span>
                     <?php elseif ($ws['step_status'] === 'current'): ?>
                       <span class="wf-pending" aria-hidden="true">⏳</span>
                     <?php else: ?>
-                      <span class="wf-waiting">○</span>
+                      <span class="wf-waiting" aria-hidden="true">○</span>
                     <?php endif; ?>
                     <span><?= h($tok['email']) ?></span>
                     <?php if ((int)$tok['relance_count'] > 0 && empty($tok['done_at'])): ?>
@@ -516,9 +516,9 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
             <strong style="font-size:.85rem;"><?= h($pt['email']) ?></strong>
             <span class="badge badge-warn"><?= (int)$pt['relance_count'] ?> rappel<?= (int)$pt['relance_count'] > 1 ? 's' : '' ?></span>
             <?php if (!empty($pt['relance_at'])): ?>
-              <span style="font-size:.8rem;color:#888;">Dernier rappel : <?= h(date('d/m/Y à H:i', strtotime($pt['relance_at']))) ?></span>
+              <span style="font-size:.8rem;color:#595959;">Dernier rappel : <?= h(date('d/m/Y à H:i', strtotime($pt['relance_at']))) ?></span>
             <?php endif; ?>
-            <span style="font-size:.8rem;color:#888;">Expire le : <?= !empty($pt['expires_at']) ? h(date('d/m/Y', strtotime($pt['expires_at']))) : '—' ?></span>
+            <span style="font-size:.8rem;color:#595959;">Expire le : <?= !empty($pt['expires_at']) ? h(date('d/m/Y', strtotime($pt['expires_at']))) : '—' ?></span>
           </div>
         <?php endforeach; ?>
       </div>
@@ -573,7 +573,7 @@ $status_cls = $status === 'valide' ? 'badge-valide' : ($status === 'refuse' ? 'b
             <?= get_file_icon($att['mime_type']) ?>
             <strong><?= h($att['original_name']) ?></strong>
           </td>
-          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;color:#888;"><?= h($att['mime_type']) ?></td>
+          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;color:#595959;"><?= h($att['mime_type']) ?></td>
           <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= format_file_size((int)$att['file_size']) ?></td>
           <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;"><?= h(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
           <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">

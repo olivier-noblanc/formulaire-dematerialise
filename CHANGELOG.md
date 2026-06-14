@@ -1,5 +1,25 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [4.6.0] — 2026-06-15
+
+### Accessibilité RGAA — Critique
+
+- **`aria-hidden="true"` sur tous les emojis décoratifs** : Les 89 emojis décoratifs (📋✅❌📧🔄🗑⏳📎📊⚙🔔🖥🔐💾🏥📝🚀🧭✓🎉📅🚨⚠️📥👁🤖📬📈🧹📤📜📁🔍🔧) présents dans les 17 pages de l'application sont désormais enveloppés dans `<span aria-hidden="true">` pour ne pas perturber les lecteurs d'écran. Les seuls emojis fonctionnels (indicateurs de statut dans health.php) conservent leur accessibilité via `aria-label`.
+
+- **Contraste couleurs corrigé (`color:#888` → `color:#595959`)** : Les 14 instances restantes de `color:#888` (contraste 3.5:1 sur fond blanc, non conforme WCAG AA) ont été remplacées par `color:#595959` (contraste 7.0:1, conforme AAA). Fichers corrigés : form.php, docs.php, install.php, admin_forms.php, dashboard.php, submission_view.php, my_submissions.php, my_validations.php, monitoring.php, admin_alerts.php, form_tracking.php, form_preview.php, rgpd.php, stats.php, health.php.
+
+### Navigation — Haut
+
+- **Liens de navigation actifs corrigés** : Les 5 pages qui utilisaient `render_nav('')` (aucun lien actif dans le bandeau) utilisent désormais la clé de navigation correcte : validate.php → `mes_validations`, confirm_action.php → `dashboard`, submission_view.php → `mes_demandes`, admin_access.php → `settings`, form_tracking.php → `dashboard`. L'utilisateur voit toujours où il se trouve dans la navigation.
+
+### Interface — Moyen
+
+- **Dashboard : lignes de détail en `<details>/<summary>`** : Les lignes de détail du tableau de bord (historique des validations, données du formulaire, actions admin) sont désormais masquées par défaut et révélées au clic sur un résumé. Améliore la lisibilité et réduit la surcharge visuelle. Zéro JavaScript — utilise les éléments HTML5 natifs.
+
+- **Responsive mobile amélioré** : Ajout de 25 règles CSS responsive pour les écrans ≤768px et ≤600px : grilles adaptatives, formulaires pleine largeur, timeline verticale, inputs sans zoom iOS (font-size 16px), boutons empilés, pagination compacte, fil d'Ariane réduit, barre d'outils empilée.
+
+- **docs.php version fallback corrigé** : Le fallback de version dans docs.php passe de `4.4.0` à `4.6.0` (cohérent avec APP_VERSION dans config.php).
+
 ## [4.5.0] — 2026-06-15
 
 ### Navigation uniformisée — Critique

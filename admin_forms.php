@@ -31,24 +31,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf()) {
 
 // ── Field type helper ──────────────────────────────────────────
 $field_types = [
-    'text'     => '📝 Texte',
-    'date'     => '📅 Date',
-    'select'   => '📋 Sélecteur',
-    'checkbox' => '☑ Case à cocher',
-    'textarea' => '📝 Zone de texte',
-    'file'     => '📎 Fichier',
+    'text'     => '<span aria-hidden="true">📝</span> Texte',
+    'date'     => '<span aria-hidden="true">📅</span> Date',
+    'select'   => '<span aria-hidden="true">📋</span> Sélecteur',
+    'checkbox' => '<span aria-hidden="true">☑</span> Case à cocher',
+    'textarea' => '<span aria-hidden="true">📝</span> Zone de texte',
+    'file'     => '<span aria-hidden="true">📎</span> Fichier',
 ];
 
 function field_type_icon(string $type): string {
     $icons = [
-        'text'     => '📝',
-        'date'     => '📅',
-        'select'   => '📋',
-        'checkbox' => '☑️',
-        'textarea' => '📝',
-        'file'     => '📎',
+        'text'     => '<span aria-hidden="true">📝</span>',
+        'date'     => '<span aria-hidden="true">📅</span>',
+        'select'   => '<span aria-hidden="true">📋</span>',
+        'checkbox' => '<span aria-hidden="true">☑️</span>',
+        'textarea' => '<span aria-hidden="true">📝</span>',
+        'file'     => '<span aria-hidden="true">📎</span>',
     ];
-    return $icons[$type] ?? '📄';
+    return $icons[$type] ?? '<span aria-hidden="true">📄</span>';
 }
 
 function field_type_label(string $type): string {
@@ -735,7 +735,7 @@ ksort($steps_by_ordre);
 <?= render_nav('forms') ?>
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Tableau de bord', 'dashboard.php'], ['Gestion formulaires']]) ?>
-    <h1>⚙ Gestion des formulaires</h1>
+    <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
 
     <?php if (!empty($success_msg)): ?>
         <div class="msg-success"><?= h($success_msg) ?></div>
@@ -765,7 +765,7 @@ ksort($steps_by_ordre);
         <!-- ── New form creation ──────────────────────────────── -->
         <div class="section-card">
             <div class="section-card-header">
-                <h2>📋 Créer un nouveau formulaire</h2>
+                <h2><span aria-hidden="true">📋</span> Créer un nouveau formulaire</h2>
             </div>
             <div class="section-card-body">
                 <form method="POST">
@@ -792,7 +792,7 @@ ksort($steps_by_ordre);
         <?php if ($form): ?>
             <!-- ── Top action bar ──────────────────────────────── -->
             <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
-                <a href="form_preview.php?form_id=<?= $form_id ?>" class="btn-preview" target="_blank">👁 Prévisualiser le formulaire</a>
+                <a href="form_preview.php?form_id=<?= $form_id ?>" class="btn-preview" target="_blank"><span aria-hidden="true">👁</span> Prévisualiser le formulaire</a>
                 <a href="dashboard.php" class="btn btn-secondary">← Tableau de bord</a>
             </div>
 
@@ -801,12 +801,12 @@ ksort($steps_by_ordre);
             <!-- ══════════════════════════════════════════════════ -->
             <div class="section-card">
                 <div class="section-card-header">
-                    <h2>📋 Informations du formulaire</h2>
+                    <h2><span aria-hidden="true">📋</span> Informations du formulaire</h2>
                     <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="duplicate_form">
                         <input type="hidden" name="source_form_id" value="<?= $form['id'] ?>">
-                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;">📋 Dupliquer</button>
+                        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📋</span> Dupliquer</button>
                     </form>
                     <form method="POST" style="display:inline;">
                         <?= csrf_field() ?>
@@ -947,7 +947,7 @@ ksort($steps_by_ordre);
                                                 <?php if ($step['actif']): ?>
                                                     <span class="badge badge-ok">Actif</span>
                                                 <?php else: ?>
-                                                    <span class="badge" style="background:#eee;color:#888;">Inactif</span>
+                                                    <span class="badge" style="background:#eee;color:#595959;">Inactif</span>
                                                 <?php endif; ?>
                                             </div>
                                             <?php if (!empty($step['recipients'])): ?>
@@ -990,7 +990,7 @@ ksort($steps_by_ordre);
             <!-- ══════════════════════════════════════════════════ -->
             <div class="section-card">
                 <div class="section-card-header">
-                    <h2>📧 Destinataires par étape</h2>
+                    <h2><span aria-hidden="true">📧</span> Destinataires par étape</h2>
                 </div>
                 <div class="section-card-body">
                     <div class="step-recipient-picker">
@@ -1045,7 +1045,7 @@ ksort($steps_by_ordre);
                                         <div class="recipient-chips" style="gap:.5rem;">
                                             <?php foreach ($selected_step['recipients'] as $recipient): ?>
                                                 <span class="recipient-chip" style="font-size:.82rem;padding:.3rem .7rem;">
-                                                    📧 <?= h($recipient['email']) ?>
+                                                    <span aria-hidden="true">📧</span> <?= h($recipient['email']) ?>
                                                     <form method="POST" style="display:inline;">
                                                         <?= csrf_field() ?>
                                                         <input type="hidden" name="action" value="delete_recipient">
@@ -1057,11 +1057,11 @@ ksort($steps_by_ordre);
                                         </div>
                                     </div>
                                 <?php else: ?>
-                                    <p style="color:#888;margin-top:.75rem;">Aucun destinataire défini pour cette étape.</p>
+                                    <p style="color:#595959;margin-top:.75rem;">Aucun destinataire défini pour cette étape.</p>
                                 <?php endif; ?>
                             <?php endif; ?>
                         <?php else: ?>
-                            <p style="color:#888;margin-top:.5rem;">Sélectionnez une étape pour gérer ses destinataires.</p>
+                            <p style="color:#595959;margin-top:.5rem;">Sélectionnez une étape pour gérer ses destinataires.</p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -1072,8 +1072,8 @@ ksort($steps_by_ordre);
             <!-- ══════════════════════════════════════════════════ -->
             <div class="section-card" id="fields">
                 <div class="section-card-header">
-                    <h2>📝 Champs du formulaire</h2>
-                    <a href="form_preview.php?form_id=<?= $form_id ?>" class="btn-preview" target="_blank" style="font-size:.8rem;">👁 Prévisualiser</a>
+                    <h2><span aria-hidden="true">📝</span> Champs du formulaire</h2>
+                    <a href="form_preview.php?form_id=<?= $form_id ?>" class="btn-preview" target="_blank" style="font-size:.8rem;"><span aria-hidden="true">👁</span> Prévisualiser</a>
                 </div>
                 <div class="section-card-body">
                     <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Ces champs définissent le formulaire que les agents rempliront. <span class="required-star">*</span> = champ obligatoire.</p>
@@ -1209,7 +1209,7 @@ ksort($steps_by_ordre);
                         </table>
                     <?php else: ?>
                         <div class="empty-state">
-                            <div class="empty-icon">📝</div>
+                            <div class="empty-icon" aria-hidden="true">📝</div>
                             <p>Aucun champ défini pour ce formulaire.</p>
                         </div>
                     <?php endif; ?>
@@ -1306,7 +1306,7 @@ ksort($steps_by_ordre);
                     </tbody>
                 </table>
             <?php else: ?>
-                <p style="color:#888;font-style:italic;margin-bottom:1rem;">Aucun propriétaire défini. Seuls les administrateurs peuvent voir le tableau de suivi.</p>
+                <p style="color:#595959;font-style:italic;margin-bottom:1rem;">Aucun propriétaire défini. Seuls les administrateurs peuvent voir le tableau de suivi.</p>
             <?php endif; ?>
 
             <form method="POST" action="admin_forms.php?form_id=<?= $form_id ?>#owners">
@@ -1321,7 +1321,7 @@ ksort($steps_by_ordre);
 
             <?php if (!empty($owners)): ?>
                 <div style="margin-top:1rem;">
-                    <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>" class="btn btn-secondary">📊 Ouvrir le tableau de suivi</a>
+                    <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Ouvrir le tableau de suivi</a>
                 </div>
             <?php endif; ?>
         </div>

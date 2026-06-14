@@ -96,7 +96,7 @@ $period_label = $period === 'week' ? 'semaine' : ($period === 'year' ? 'année' 
     .donut-chart { width: 160px; height: 160px; border-radius: 50%; position: relative; flex-shrink: 0; }
     .donut-chart .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: #fff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .donut-chart .donut-center .donut-value { font-size: 1.5rem; font-weight: bold; color: #003189; }
-    .donut-chart .donut-center .donut-label { font-size: .7rem; color: #888; }
+    .donut-chart .donut-center .donut-label { font-size: .7rem; color: #595959; }
     .chart-legend { display: flex; flex-direction: column; gap: .5rem; }
     .legend-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
     .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
@@ -115,7 +115,7 @@ $period_label = $period === 'week' ? 'semaine' : ($period === 'year' ? 'année' 
 ]) ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Statistiques']]) ?>
 <main class="container" id="main-content">
-  <h1>📊 Statistiques</h1>
+  <h1><span aria-hidden="true">📊</span> Statistiques</h1>
 
   <!-- Sélecteur de période -->
   <div class="period-tabs">

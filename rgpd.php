@@ -123,7 +123,7 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
     .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
     .stat-mini { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: .75rem 1rem; flex: 1; min-width: 140px; text-align: center; }
     .stat-mini .val { font-size: 1.5rem; font-weight: bold; color: #003189; }
-    .stat-mini .lbl { font-size: .8rem; color: #888; margin-top: .25rem; }
+    .stat-mini .lbl { font-size: .8rem; color: #595959; margin-top: .25rem; }
   </style>
 </head>
 <body>
@@ -133,7 +133,7 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
 ]) ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['RGPD']]) ?>
 <main class="container" id="main-content">
-  <h1>🔐 Conformité RGPD</h1>
+  <h1><span aria-hidden="true">🔐</span> Conformité RGPD</h1>
 
   <?php if ($success_msg): ?><div class="msg-success"><?= h($success_msg) ?></div><?php endif; ?>
   <?php if ($error_msg): ?><div class="msg-error"><?= h($error_msg) ?></div><?php endif; ?>
@@ -149,13 +149,13 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
 
   <?php if ($old_submissions > 0): ?>
   <div class="warn-box" style="margin-bottom:1.5rem;">
-    <strong>⚠ <?= $old_submissions ?> soumission<?= $old_submissions > 1 ? 's' : '' ?></strong> clôturée<?= $old_submissions > 1 ? 's' : '' ?> depuis plus de <?= $retention_months ?> mois peuvent être purgées.
+    <strong><span aria-hidden="true">⚠</span> <?= $old_submissions ?> soumission<?= $old_submissions > 1 ? 's' : '' ?></strong> clôturée<?= $old_submissions > 1 ? 's' : '' ?> depuis plus de <?= $retention_months ?> mois peuvent être purgées.
   </div>
   <?php endif; ?>
 
   <!-- Mentions légales -->
   <div class="card">
-    <h2>📜 Mentions légales & Politique de conservation</h2>
+    <h2><span aria-hidden="true">📜</span> Mentions légales & Politique de conservation</h2>
     <form method="POST">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="update_legal">
@@ -175,7 +175,7 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
 
   <!-- Export des données -->
   <div class="card">
-    <h2>📤 Droit d'accès — Export des données</h2>
+    <h2><span aria-hidden="true">📤</span> Droit d'accès — Export des données</h2>
     <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
       Conformément à l'article 15 du RGPD, toute personne peut demander l'export de ses données personnelles.
       Saisissez l'adresse email de l'agent pour générer un export JSON complet.
@@ -187,13 +187,13 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
         <label for="export_email">Email de l'agent</label>
         <input type="email" id="export_email" name="export_email" placeholder="prenom.nom@dreets.gouv.fr" required>
       </div>
-      <button type="submit" class="btn btn-primary">📥 Exporter les données</button>
+      <button type="submit" class="btn btn-primary"><span aria-hidden="true">📥</span> Exporter les données</button>
     </form>
   </div>
 
   <!-- Suppression des données -->
   <div class="danger-zone">
-    <h3>🗑 Droit à l'effacement — Suppression des données</h3>
+    <h3><span aria-hidden="true">🗑</span> Droit à l'effacement — Suppression des données</h3>
     <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
       Conformément à l'article 17 du RGPD, toute personne peut demander la suppression de ses données personnelles.
       Les soumissions seront anonymisées (le statut et le workflow sont conservés pour traçabilité, mais les données personnelles sont remplacées).
@@ -209,13 +209,13 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
         <input type="checkbox" name="confirmed" value="1" required>
         Je confirme vouloir anonymiser toutes les données de cet agent. Cette action est irréversible.
       </label>
-      <button type="submit" class="btn btn-danger">🗑 Supprimer les données</button>
+      <button type="submit" class="btn btn-danger"><span aria-hidden="true">🗑</span> Supprimer les données</button>
     </form>
   </div>
 
   <!-- Purge automatique -->
   <div class="danger-zone">
-    <h3>🧹 Purge automatique des données anciennes</h3>
+    <h3><span aria-hidden="true">🧹</span> Purge automatique des données anciennes</h3>
     <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
       Supprime définitivement les soumissions clôturées de plus de <strong><?= $retention_months ?> mois</strong>,
       ainsi que leurs pièces jointes, tokens et alertes associées.
@@ -225,7 +225,7 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
         <strong><?= $old_submissions ?> soumission<?= $old_submissions > 1 ? 's' : '' ?></strong> éligible<?= $old_submissions > 1 ? 's' : '' ?> à la purge.
       </div>
     <?php else: ?>
-      <p style="color:#1a6b3c;font-size:.9rem;margin-bottom:1rem;">✓ Aucune soumission à purger actuellement.</p>
+      <p style="color:#1a6b3c;font-size:.9rem;margin-bottom:1rem;"><span aria-hidden="true">✓</span> Aucune soumission à purger actuellement.</p>
     <?php endif; ?>
     <form method="POST">
       <?= csrf_field() ?>
@@ -234,7 +234,7 @@ $db_size = file_exists(defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db
         <input type="checkbox" name="confirmed" value="1" required>
         Je confirme vouloir purger définitivement les soumissions anciennes. Cette action est irréversible.
       </label>
-      <button type="submit" class="btn btn-danger">🧹 Exécuter la purge</button>
+      <button type="submit" class="btn btn-danger"><span aria-hidden="true">🧹</span> Exécuter la purge</button>
     </form>
   </div>
 

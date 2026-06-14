@@ -292,7 +292,7 @@ HTML;
 
   <?php if ($existing_submission && !$success): ?>
     <div class="warn-box">
-      <p><strong>⚠ Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
+      <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
       <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
       <p><a href="submission_view.php?id=<?= urlencode($existing_submission['id']) ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
     </div>
@@ -359,7 +359,7 @@ HTML;
             <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true">
             J'accepte le traitement de mes données personnelles dans le cadre de cette procédure.
           </label>
-          <p style="font-size:.75rem;color:#888;margin-top:.5rem;margin-left:1.7rem;">
+          <p style="font-size:.75rem;color:#595959;margin-top:.5rem;margin-left:1.7rem;">
             <?= h(get_setting('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Durée de conservation : 24 mois après clôture.')) ?>
           </p>
         </div>

@@ -72,10 +72,10 @@ foreach ($submissions as &$sub) {
             $detail_parts = [];
             foreach ($tokens_by_step[$step_id] as $tok) {
                 if (!empty($tok['done_at'])) {
-                    $detail_parts[] = h($tok['email']) . ' ✓';
+                    $detail_parts[] = h($tok['email']) . ' <span aria-hidden="true">✓</span>';
                 } else {
                     $all_done = false;
-                    $detail_parts[] = h($tok['email']) . ' ⏳';
+                    $detail_parts[] = h($tok['email']) . ' <span aria-hidden="true">⏳</span>';
                 }
             }
             $ws['step_status'] = $all_done ? 'validated' : 'current';
@@ -127,14 +127,14 @@ foreach ($submissions as $s) {
     .stat.en-cours strong { color: #b45309; }
     .stat.valide strong { color: #1a6b3c; }
     .stat.refuse strong { color: #c0392b; }
-    .stat span { font-size: .8rem; color: #888; }
+    .stat span { font-size: .8rem; color: #595959; }
 
     /* Card */
     .sub-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; }
     .sub-card-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: #f8f8fc; border-bottom: 1px solid #eee; cursor: pointer; }
     .sub-card-header:hover { background: #f0f0f8; }
     .sub-card-title { font-weight: bold; color: #003189; font-size: 1rem; }
-    .sub-card-date { font-size: .8rem; color: #888; margin-top: .15rem; }
+    .sub-card-date { font-size: .8rem; color: #595959; margin-top: .15rem; }
     .sub-card-body { padding: 1.25rem; }
 
     /* Progress bar inline */
@@ -153,7 +153,7 @@ foreach ($submissions as $s) {
     .tl-step.waiting { background: #f5f5f5; color: #999; }
     .tl-icon { font-size: .85rem; flex-shrink: 0; }
     .tl-label { flex: 1; }
-    .tl-detail { font-size: .75rem; color: #888; }
+    .tl-detail { font-size: .75rem; color: #595959; }
 
     /* Refusal box */
     .refusal-box { background: #fde8e8; border-radius: 4px; padding: .75rem; font-size: .85rem; margin-top: .75rem; }
@@ -172,7 +172,7 @@ foreach ($submissions as $s) {
 <?= render_nav('mes_demandes') ?>
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Mes demandes']]) ?>
-  <h1>📋 Mes demandes</h1>
+  <h1><span aria-hidden="true">📋</span> Mes demandes</h1>
   <p class="subtitle">Suivi de toutes vos demandes de workflow en tant qu'agent</p>
 
   <?php if ($total_count > 0): ?>
@@ -204,7 +204,7 @@ foreach ($submissions as $s) {
 
   <?php if (empty($submissions)): ?>
     <div class="empty-state">
-      <div class="empty-icon">📝</div>
+      <div class="empty-icon" aria-hidden="true">📝</div>
       <p>Vous n'avez encore soumis aucune demande.</p>
       <?php
         $active_forms = $pdo->query("SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
@@ -236,9 +236,9 @@ foreach ($submissions as $s) {
             }
             if ($deadline_ts) {
                 $dl_days = (int)(($deadline_ts - time()) / 86400);
-                if ($dl_days < 0) $deadline_badge = '<span class="deadline-badge overdue">🚨 J+' . abs($dl_days) . '</span>';
-                elseif ($dl_days <= 2) $deadline_badge = '<span class="deadline-badge urgent">⚠️ J-' . $dl_days . '</span>';
-                elseif ($dl_days <= 5) $deadline_badge = '<span class="deadline-badge ok">📅 J-' . $dl_days . '</span>';
+                if ($dl_days < 0) $deadline_badge = '<span class="deadline-badge overdue"><span aria-hidden="true">🚨</span> J+' . abs($dl_days) . '</span>';
+                elseif ($dl_days <= 2) $deadline_badge = '<span class="deadline-badge urgent"><span aria-hidden="true">⚠️</span> J-' . $dl_days . '</span>';
+                elseif ($dl_days <= 5) $deadline_badge = '<span class="deadline-badge ok"><span aria-hidden="true">📅</span> J-' . $dl_days . '</span>';
             }
         }
 
@@ -272,7 +272,7 @@ foreach ($submissions as $s) {
             $icon = $ws['step_status'] === 'validated' ? '✓' : ($ws['step_status'] === 'current' ? '⏳' : '○');
           ?>
             <div class="tl-step <?= $cls ?>">
-              <span class="tl-icon"><?= $icon ?></span>
+              <span class="tl-icon" aria-hidden="true"><?= $icon ?></span>
               <span class="tl-label"><?= h($ws['step_label']) ?></span>
               <?php if (!empty($ws['step_detail'])): ?>
                 <span class="tl-detail"><?= $ws['step_detail'] ?></span>
@@ -296,7 +296,7 @@ foreach ($submissions as $s) {
         <?php endif; ?>
 
         <div class="card-actions">
-          <a href="submission_view.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-primary" style="font-size:.85rem;">👁 Voir le détail</a>
+          <a href="submission_view.php?id=<?= urlencode($sub['id']) ?>" class="btn btn-primary" style="font-size:.85rem;"><span aria-hidden="true">👁</span> Voir le détail</a>
           <a href="form.php?f=<?= h($sub['form_slug']) ?>" class="btn btn-secondary" style="font-size:.85rem;">Nouvelle demande</a>
         </div>
       </div>

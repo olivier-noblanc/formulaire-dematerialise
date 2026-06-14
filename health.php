@@ -104,7 +104,7 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
     .check-icon { font-size: 1.5rem; flex-shrink: 0; }
     .check-content { flex: 1; }
     .check-label { font-weight: bold; font-size: .95rem; }
-    .check-detail { font-size: .8rem; color: #888; margin-top: .15rem; }
+    .check-detail { font-size: .8rem; color: #595959; margin-top: .15rem; }
     .status-banner { padding: 1.5rem; text-align: center; border-radius: 6px; margin-bottom: 1.5rem; }
     .status-banner.healthy { background: #e8f5e9; border: 2px solid #1a6b3c; }
     .status-banner.unhealthy { background: #fde8e8; border: 2px solid #c0392b; }
@@ -121,14 +121,14 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
   <h1>Santé du système</h1>
 
   <div class="status-banner <?= $all_healthy ? 'healthy' : 'unhealthy' ?>">
-    <h2><?= $all_healthy ? '✓ Système opérationnel' : '⚠ Problème détecté' ?></h2>
+    <h2><?= $all_healthy ? '<span aria-hidden="true">✓</span> Système opérationnel' : '<span aria-hidden="true">⚠</span> Problème détecté' ?></h2>
     <p style="margin-top:.5rem;color:#555;">v<?= h(APP_VERSION) ?> — <?= h(date('d/m/Y à H:i')) ?></p>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden;">
     <?php foreach ($checks as $check): ?>
     <div class="check-item">
-      <div class="check-icon"><?= $check['ok'] ? '✅' : '❌' ?></div>
+      <div class="check-icon" aria-label="<?= $check['ok'] ? 'Succès' : 'Échec' ?>"><?= $check['ok'] ? '✅' : '❌' ?></div>
       <div class="check-content">
         <div class="check-label"><?= h($check['label']) ?></div>
         <div class="check-detail"><?= h($check['detail']) ?></div>
@@ -137,7 +137,7 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
     <?php endforeach; ?>
   </div>
 
-  <p style="text-align:center;margin-top:1.5rem;font-size:.8rem;color:#888;">
+  <p style="text-align:center;margin-top:1.5rem;font-size:.8rem;color:#595959;">
     Endpoint de monitoring : <code>health.php?format=json</code>
   </p>
 </main>

@@ -183,7 +183,7 @@ $fuuid = h($form['id']);
     .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; margin-bottom: 1.5rem; }
     .stat-chip { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: .75rem; text-align: center; }
     .stat-chip .sc-value { font-size: 1.6rem; font-weight: bold; color: #003189; }
-    .stat-chip .sc-label { font-size: .75rem; color: #888; margin-top: .15rem; }
+    .stat-chip .sc-label { font-size: .75rem; color: #595959; margin-top: .15rem; }
     .stat-chip.warning .sc-value { color: #b45309; }
     .stat-chip.success .sc-value { color: #1a6b3c; }
     .stat-chip.danger .sc-value { color: #c0392b; }
@@ -210,7 +210,7 @@ $fuuid = h($form['id']);
     .progress-mini { display: flex; align-items: center; gap: .4rem; }
     .progress-mini-bar { width: 60px; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
     .progress-mini-fill { height: 100%; border-radius: 3px; transition: width .3s; }
-    .progress-mini-text { font-size: .75rem; color: #888; }
+    .progress-mini-text { font-size: .75rem; color: #595959; }
 
     /* Owners list */
     .owners-list { margin-bottom: 1rem; font-size: .8rem; color: #666; }
@@ -225,11 +225,11 @@ $fuuid = h($form['id']);
 </head>
 <body>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<?= render_nav('') ?>
+<?= render_nav('dashboard') ?>
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Suivi : ' . $form['label']]]) ?>
 <main class="container" id="main-content">
 
-  <h1>📊 Suivi : <?= h($form['label']) ?></h1>
+  <h1><span aria-hidden="true">📊</span> Suivi : <?= h($form['label']) ?></h1>
   <p class="subtitle"><?= h($form['description']) ?></p>
 
   <?php if (!empty($owners)): ?>
@@ -273,7 +273,7 @@ $fuuid = h($form['id']);
 
   <!-- Tableau -->
   <?php if (empty($submissions)): ?>
-    <p style="color:#888;font-style:italic;">Aucune soumission pour ce formulaire.</p>
+    <p style="color:#595959;font-style:italic;">Aucune soumission pour ce formulaire.</p>
   <?php else: ?>
     <table class="tracking-table">
       <thead>
