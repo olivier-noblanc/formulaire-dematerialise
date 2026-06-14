@@ -171,3 +171,43 @@ Stage Summary:
 - 51/51 tests pass
 - CHANGELOG.md updated with corrections section
 - Ready for commit and push
+
+---
+Task ID: v4.3.1-e2e-testing-docs-improvements
+Agent: Super Z (main)
+Task: Intensive E2E testing, docs 10/10 improvements, and email safety fix
+
+Work Log:
+- Created test_e2e.php with 80 intensive end-to-end tests across 15 categories
+- Categories: preparation, form submission, workflow advancement, full workflow closure, refusal, cancellation, delegation, security edge cases, file uploads (BLOB), outboarding, utilities, data integrity, RGPD, token expiry, field types
+- CRITICAL FIX: test_e2e.php and test_all.php now force TEST_MODE to intercept ALL emails — no real emails are ever sent during testing
+- CRITICAL FIX: Added CLI mail guard in helpers.php send_mail() — blocks email sending from CLI unless CLI_MAIL_ALLOWED is defined
+- Added CLI_MAIL_ALLOWED to remind.php and alert_check.php (legitimate CLI email senders)
+- All test emails now use @e2e.test domain (RFC 2606 reserved, cannot be real)
+- Fixed delegate_token() call — takes token ID (not token string)
+- Fixed search_submissions() call — takes (query, filters) not (form_id, query)
+- Removed non-existent get_submission_progress() test, replaced with data validation test
+- Fixed CSRF test for TEST_MODE compatibility (hash_equals direct test)
+- Fixed admin/superadmin detection tests for TEST_MODE (X-Test-User header)
+- All 80/80 E2E tests pass
+- All 51/51 unit tests pass
+- Total: 131/131 tests pass with ZERO real email sends
+
+Docs improvements (docs.php) for 10/10 non-tech rating:
+- Added CSS-only back-to-top floating button (no JavaScript)
+- Added version badge (v4.3.0) next to subtitle
+- Fixed entire database schema section: INTEGER PK → TEXT PK (UUID v4) for all tables
+- Added rgpd_consent column to submissions schema
+- Added form_owners table to complementary tables
+- Added 2 missing screenshots (13_docs.png, 14_changelog.png)
+- Fixed PHP version: 7.4+ → 8+
+- Added field types reference table (text, date, select, checkbox, textarea, file)
+- Added IT deployment FAQ entry with prerequisites, installation steps, scheduled tasks
+- Added warning comment in helpers.php seeding about default email addresses
+
+Stage Summary:
+- 131/131 tests pass (51 unit + 80 E2E)
+- Zero real emails sent during testing (TEST_MODE forced + CLI guard)
+- docs.php significantly improved for non-tech usability
+- Database schema documentation now accurate (UUID v4)
+- Email safety: triple protection (TEST_MODE, @e2e.test domain, CLI guard)
