@@ -1,12 +1,16 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
-## [5.1.1] — 2026-06-15
+## [5.2.0] — 2026-06-15
 
 ### Fix — TypeError date argument dans `helpers.php:188`
 
 - **Correction du TypeError** : `strtotime($last_run)` peut retourner `false` lorsque la valeur `last_run` en base est une chaîne invalide ou vide. En PHP 8.0+, l'opération arithmétique `$now - $last_ts` lève alors un `TypeError` (int - bool). Ajout d'un test `$last_ts === false` qui déclenche la réexécution de la tâche au lieu de tenter le calcul.
 
 - **Cast défensif sur `time()`** : `$now = (int) time()` pour garantir un type int strict passé à `date()`.
+
+### Fix — Hero illisible (blanc sur fond transparent)
+
+- **Variable `--gradient-mesh-hero` manquante** : La page d'accueil utilise `var(--gradient-mesh-hero)` pour le fond du hero, mais cette variable CSS n'était jamais définie dans `style.php`. Le hero héritait d'un fond transparent, rendant le texte blanc totalement illisible. Ajout de la définition dans `:root` avec un gradient bleu républicain profond conforme au design system.
 
 ## [5.1.0] — 2026-06-15
 

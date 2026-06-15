@@ -130,6 +130,7 @@
   --gradient-primary-hover: linear-gradient(135deg, #00006F 0%, #000091 100%);
   --gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
   --gradient-surface: linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.7) 100%);
+  --gradient-mesh-hero: linear-gradient(135deg, #000091 0%, #1E40AF 30%, #3B82F6 70%, #000091 100%);
 
   /* Layout */
   --sidebar-width: 196px;
