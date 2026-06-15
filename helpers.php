@@ -793,7 +793,7 @@ function db_migrate(PDO $pdo): void {
             ['smtp_user', ''],
             ['smtp_pass', ''],
             ['smtp_from', 'workflow@dreets.gouv.fr'],
-            ['smtp_from_name', 'Workflow DREETS'],
+            ['smtp_from_name', 'FluxDREETS'],
             ['delai_relance_h', '48'],
             ['token_expire_days', '30'],
             ['relance_max', '3'],
@@ -1717,7 +1717,7 @@ function db_migrate(PDO $pdo): void {
                     ['smtp_user', ''],
                     ['smtp_pass', ''],
                     ['smtp_from', 'workflow@dreets.gouv.fr'],
-                    ['smtp_from_name', 'Workflow DREETS'],
+                    ['smtp_from_name', 'FluxDREETS'],
                     ['delai_relance_h', '48'],
                     ['token_expire_days', '30'],
                     ['relance_max', '3'],
@@ -1893,8 +1893,9 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
 
     // Liens admin — toujours présents pour les admins
     $admin_links = [
-        'dashboard'  => ['href' => 'dashboard.php',      'label' => 'Supervision',  'icon' => '📊'],
-        'settings'   => ['href' => 'admin_settings.php', 'label' => 'Paramètres',   'icon' => '⚙'],
+        'forms'      => ['href' => 'admin_forms.php',      'label' => 'Formulaires',   'icon' => '📝'],
+        'dashboard'  => ['href' => 'dashboard.php',        'label' => 'Supervision',   'icon' => '📊'],
+        'settings'   => ['href' => 'admin_settings.php',   'label' => 'Paramètres',    'icon' => '⚙'],
     ];
 
     // ── Build sidebar nav items ──────────────────────────────
@@ -1942,7 +1943,7 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
         . '<nav class="sidebar" aria-label="Navigation principale">'
         .   '<a href="index.php" class="sidebar-brand">'
         .     '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
-        .     '<span class="sidebar-brand-text">DREETS</span>'
+        .     '<span class="sidebar-brand-text">FluxDREETS</span>'
         .   '</a>'
         .   '<div class="sidebar-nav">'
         .     $nav_html
@@ -2569,13 +2570,13 @@ function advance_workflow(string $submission_id): void {
     // Notification de validation finale a l'agent
     $agent_email = $submission['submitted_by'] ?? '';
     if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-        $subject = 'Demande validée — ' . ($submission['form_label'] ?? 'Workflow DREETS');
+        $subject = 'Demande validée — ' . ($submission['form_label'] ?? 'FluxDREETS');
         $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#1a6b3c;">✓ Demande validée</h2>
   <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été <strong>validée</strong> par l\'ensemble des validateurs.</p>
   <p>Le processus de workflow est désormais terminé.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
 </body></html>';
         send_mail($agent_email, $subject, $body);
     }
@@ -2652,13 +2653,13 @@ function validate_token(string $token, string $action = 'valider', string $comme
         // Notifier l'agent du refus
         $agent_email = $t['submitted_by'] ?? '';
         if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-            $refuse_subject = 'Demande refusée — ' . ($t['form_label'] ?? 'Workflow DREETS');
+            $refuse_subject = 'Demande refusée — ' . ($t['form_label'] ?? 'FluxDREETS');
             $refuse_body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#c0392b;">Demande refusée</h2>
   <p>Votre demande <strong>' . h($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . h($t['step_label']) . '</strong>.</p>
   ' . (!empty($comment) ? '<p><strong>Motif :</strong> ' . h($comment) . '</p>' : '') . '
-  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
 </body></html>';
             send_mail($agent_email, $refuse_subject, $refuse_body);
         }
@@ -2742,7 +2743,7 @@ function process_admin_request(string $email): bool {
         // Envoie un email à l'admin principal pour approbation
         $approve_url = BASE_URL . '/admin_access.php?action=approve&token=' . $token;
         $reject_url = BASE_URL . '/admin_access.php?action=reject&token=' . $token;
-        $subject = 'Demande d\'accès admin - Workflow DREETS';
+        $subject = 'Demande d\'accès admin - FluxDREETS';
         $body = '
 <!DOCTYPE html>
 <html>
@@ -2783,7 +2784,7 @@ function approve_admin_request(string $email): bool {
         $stmt->execute([generate_uuid(), $email, date('Y-m-d H:i:s')]);
         
         // Envoie un email de confirmation
-        $subject = 'Accès admin approuvé - Workflow DREETS';
+        $subject = 'Accès admin approuvé - FluxDREETS';
         $body = '
 <!DOCTYPE html>
 <html>
@@ -2819,7 +2820,7 @@ function reject_admin_request(string $email): bool {
         $stmt->execute([$email]);
         
         // Envoie un email de refus
-        $subject = 'Demande d\'accès admin refusée - Workflow DREETS';
+        $subject = 'Demande d\'accès admin refusée - FluxDREETS';
         $body = '
 <!DOCTYPE html>
 <html>
@@ -3126,12 +3127,12 @@ function cancel_submission(string $submission_id, string $cancelled_by = ''): ar
     // Notifier l'agent
     $agent_email = $submission['submitted_by'] ?? '';
     if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-        $subject = 'Demande annulée — ' . ($submission['form_label'] ?? 'Workflow DREETS');
+        $subject = 'Demande annulée — ' . ($submission['form_label'] ?? 'FluxDREETS');
         $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#b45309;">Demande annulée</h2>
   <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été annulée.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS</p>
 </body></html>';
         send_mail($agent_email, $subject, $body);
     }
@@ -3470,7 +3471,7 @@ function delegate_token(string $token_id, string $to_email, string $reason = '')
   <h2 style="color:#003189;">🔄 Délégation confirmée</h2>
   <p>Votre validation pour <strong>' . h($tok['form_label']) . '</strong> (étape ' . h($step['label'] ?? '') . ') a été déléguée à <strong>' . h($to_email) . '</strong>.</p>
   <p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">Workflow DREETS — Ne pas répondre à cet email</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS — Ne pas répondre à cet email</p>
 </body></html>';
     send_mail($tok['email'], $confirm_subject, $confirm_body);
 

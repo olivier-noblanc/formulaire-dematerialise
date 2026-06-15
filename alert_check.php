@@ -314,6 +314,6 @@ function build_alert_html(array $sub, string $nom_agent, string $deadline_format
       Voir le tableau de bord
     </a>
   </div>
-  <p style="font-size:12px;color:#999;margin-top:16px;">Workflow DREETS — Alerte automatique (regle : ' . h($rule['label']) . ')</p>
+  <p style="font-size:12px;color:#999;margin-top:16px;">FluxDREETS — Alerte automatique (regle : ' . h($rule['label']) . ')</p>
 </body></html>';
 }

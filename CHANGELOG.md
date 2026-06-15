@@ -1,5 +1,16 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [5.6.0] — 2026-06-15
+
+### Feature — Nom de la solution + Raccourci Formulaires
+
+- **FluxDREETS** : L'application s'appelle désormais **FluxDREETS** (contraction de « Flux » = circuit de validation/workflow, et DREETS). Le nom remplace « Workflow DREETS » dans toute l'interface : sidebar brand, titres de pages, sujets d'emails, paramètres par défaut, prompt IA, page d'accueil, installateur, etc.
+- **Raccourci « 📝 Formulaires »** dans la sidebar (section Administration) : lien direct vers `admin_forms.php`, visible par tous les admins sur toutes les pages. Plus besoin de passer par le dashboard pour gérer les formulaires.
+
+### Fix — ensure_text_ids() autonome (v5.5.1)
+
+- `ensure_text_ids(PDO $pdo)` : vérifie et corrige automatiquement les tables INTEGER PK à chaque accès, indépendamment du schema_version.
+
 ## [5.5.1] — 2026-06-15
 
 ### Fix — Datatype mismatch : ensure_text_ids() autonome

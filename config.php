@@ -7,10 +7,10 @@ define('DB_PATH',        __DIR__ . '/db/workflow.db');
 define('SMTP_HOST',      'smtp.social.gouv.fr');
 define('SMTP_PORT',      25);
 define('SMTP_FROM',      'workflow@dreets.gouv.fr');
-define('SMTP_FROM_NAME', 'Workflow DREETS');
+define('SMTP_FROM_NAME', 'FluxDREETS');
 define('DELAI_RELANCE_H', 48);
 // Email de l'administrateur principal
 define('ADMIN_EMAIL',    'olivier.noblanc@dreets.gouv.fr');
 // Version de l'application — à mettre à jour à chaque release
-define('APP_VERSION',    '5.5.1');
+define('APP_VERSION',    '5.6.0');
 date_default_timezone_set('Europe/Paris');
