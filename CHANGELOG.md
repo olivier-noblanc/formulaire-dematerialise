@@ -14,7 +14,7 @@
 
 ### Fix — Images docs.php ne chargent pas
 
-- **Chemin relatif cassé** : Les 17 captures d'écran dans `docs.php` utilisaient des chemins relatifs (`docs/screenshots/...`) qui ne résolvaient pas correctement sur le serveur IIS (sous `/workflow/`). Remplacement par des chemins absolus via `BASE_URL` : `<?= BASE_URL ?>/docs/screenshots/...` → `http://host/workflow/docs/screenshots/...`.
+- **Chemin relatif cassé** : Les 17 captures d'écran dans `docs.php` utilisaient des chemins relatifs (`docs/screenshots/...`) qui ne résolvaient pas correctement sur le serveur IIS (sous `/workflow/`). Les chemins absolus via `BASE_URL` ne fonctionnaient pas non plus car IIS ne sert pas les fichiers statiques dans les sous-dossiers. Création de `screenshot.php` comme proxy PHP qui sert les images avec les bons headers MIME et un cache de 1 semaine. Les `src` utilisent désormais `screenshot.php?f=XX.png`.
 
 ## [5.1.0] — 2026-06-15
 
