@@ -158,7 +158,7 @@ function run_lazy_cron(): void {
     $running = true;
 
     $pdo = get_pdo();
-    $now = time();
+    $now = (int) time();
     
     $tasks = [
         'remind'      => ['interval' => 3600,      'file' => __DIR__ . '/remind.php'],
@@ -176,7 +176,10 @@ function run_lazy_cron(): void {
             $should_run = true;
         } else {
             $last_ts = strtotime($last_run);
-            if (($now - $last_ts) >= $task['interval']) {
+            if ($last_ts === false) {
+                // Date invalide en base → on relance la tâche
+                $should_run = true;
+            } elseif (($now - $last_ts) >= $task['interval']) {
                 $should_run = true;
             }
         }

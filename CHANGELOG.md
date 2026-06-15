@@ -1,5 +1,13 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [5.1.1] — 2026-06-15
+
+### Fix — TypeError date argument dans `helpers.php:188`
+
+- **Correction du TypeError** : `strtotime($last_run)` peut retourner `false` lorsque la valeur `last_run` en base est une chaîne invalide ou vide. En PHP 8.0+, l'opération arithmétique `$now - $last_ts` lève alors un `TypeError` (int - bool). Ajout d'un test `$last_ts === false` qui déclenche la réexécution de la tâche au lieu de tenter le calcul.
+
+- **Cast défensif sur `time()`** : `$now = (int) time()` pour garantir un type int strict passé à `date()`.
+
 ## [5.1.0] — 2026-06-15
 
 ### Design System 2026 v2 — "Aurora Institutionnel"
