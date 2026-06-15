@@ -1,12 +1,24 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
-## [5.4.1] — 2026-06-15
+## [5.5.0] — 2026-06-15
 
 ### Fix — TypeError run_lazy_cron
 
-- **`run_lazy_cron(PDO $pdo)`** : La fonction recevait son PDO via un appel récursif à `get_pdo()` (ligne 160), ce qui créait une situation instable lors du premier accès. Désormais, `$pdo` est passé en paramètre depuis `get_pdo()` après l'initialisation (ligne 258), éliminant tout risque de récursion.
-- **Try/catch global** : Ajout d'un bloc `try/catch (\Throwable)` englobant tout le `foreach` dans `run_lazy_cron()`. Toute erreur fatale dans le cron (y compris TypeError, Exception, Error) est désormais loguée via `error_log()` et ne casse plus la page utilisateur.
-- **Vérification `$last_run === ''`** : Ajout du cas chaîne vide dans la vérification d'absence de dernière exécution, pour les cas où la colonne `last_run` contiendrait une chaîne vide au lieu de `NULL`.
+- **`run_lazy_cron(PDO $pdo)`** : La fonction recevait son PDO via un appel récursif à `get_pdo()`, ce qui créait une situation instable lors du premier accès. Désormais, `$pdo` est passé en paramètre depuis `get_pdo()` après l'initialisation, éliminant tout risque de récursion.
+- **Try/catch global** : Ajout d'un bloc `try/catch (\Throwable)` englobant tout le `foreach` dans `run_lazy_cron()`. Toute erreur fatale dans le cron est désormais loguée via `error_log()` et ne casse plus la page utilisateur.
+- **Vérification `$last_run === ''`** : Ajout du cas chaîne vide dans la vérification d'absence de dernière exécution.
+
+### Fix — Datatype mismatch HY000 20 lors du peuplement
+
+- **Migration v11** : Vérification et correction automatique des colonnes `id INTEGER PRIMARY KEY` restantes dans toutes les tables (forms, steps, step_recipients, form_fields, admins, admin_requests, audit_log, submissions, tokens, alert_rules, alert_log, attachments, delegations, form_owners, rate_limits). Si une table a encore un PK INTEGER, elle est automatiquement recréée avec `id TEXT PRIMARY KEY` en copiant les données existantes. Cette migration corrige les bases où la migration v9 a échoué silencieusement ou n'a pas été appliquée.
+- **Diagnostic dans populate_samples** : En cas d'erreur PDOException lors du peuplement, le système vérifie automatiquement les colonnes INTEGER PK restantes et affiche un message de diagnostic indiquant quelles tables sont encore en INTEGER.
+- **Catch `\Throwable`** dans populate_samples pour attraper aussi les TypeError et autres erreurs non-PDO.
+
+## [5.4.1] — 2026-06-15
+
+### Fix — TypeError run_lazy_cron (premier fix)
+
+- Correction initiale du TypeError dans `run_lazy_cron()` — passage de PDO en paramètre, try/catch global.
 
 ## [5.4.0] — 2026-06-15
 

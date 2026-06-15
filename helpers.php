@@ -1387,6 +1387,210 @@ function db_migrate(PDO $pdo): void {
         }
     }
 
+    // ── Migration v11 : Vérification/correction des INTEGER PK restants ──
+    // Certaines bases ont pu échapper partiellement à la migration v9
+    // (ex: nouvelle installation puis restore d'un dump ancien, ou migration
+    // v9 qui a échoué silencieusement). On vérifie chaque table et on force
+    // la re-création en TEXT si un INTEGER PK est détecté.
+    if ($current_version < 11) {
+        try {
+            $pdo->exec("PRAGMA foreign_keys = OFF");
+
+            // Tables à vérifier : nom => [colonne_pk, définition complète CREATE]
+            $v11_tables = [
+                'forms' => "CREATE TABLE forms (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    slug TEXT UNIQUE NOT NULL,
+                    label TEXT NOT NULL,
+                    description TEXT,
+                    actif INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    deadline_field TEXT DEFAULT ''
+                )",
+                'steps' => "CREATE TABLE steps (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    form_id TEXT NOT NULL,
+                    label TEXT NOT NULL,
+                    ordre INTEGER NOT NULL,
+                    actif INTEGER DEFAULT 1,
+                    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+                )",
+                'step_recipients' => "CREATE TABLE step_recipients (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    step_id TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
+                )",
+                'form_fields' => "CREATE TABLE form_fields (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    form_id TEXT NOT NULL,
+                    label TEXT NOT NULL,
+                    field_type TEXT NOT NULL DEFAULT 'text',
+                    field_name TEXT NOT NULL,
+                    options TEXT,
+                    required INTEGER DEFAULT 0,
+                    ordre INTEGER DEFAULT 0,
+                    card_group TEXT DEFAULT 'Général',
+                    hint TEXT DEFAULT '',
+                    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+                )",
+                'admins' => "CREATE TABLE admins (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    added_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                'admin_requests' => "CREATE TABLE admin_requests (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    token TEXT UNIQUE NOT NULL
+                )",
+                'audit_log' => "CREATE TABLE audit_log (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    action TEXT NOT NULL,
+                    target TEXT,
+                    detail TEXT,
+                    actor TEXT NOT NULL,
+                    ip TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                'submissions' => "CREATE TABLE submissions (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    form_id TEXT NOT NULL,
+                    data TEXT NOT NULL,
+                    submitted_by TEXT NOT NULL,
+                    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    closed_at DATETIME,
+                    status TEXT DEFAULT 'en_cours',
+                    rgpd_consent INTEGER DEFAULT 0,
+                    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+                )",
+                'tokens' => "CREATE TABLE tokens (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    submission_id TEXT NOT NULL,
+                    step_id TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    token TEXT UNIQUE NOT NULL,
+                    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    done_at DATETIME,
+                    relance_at DATETIME,
+                    expires_at DATETIME,
+                    relance_count INTEGER DEFAULT 0,
+                    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+                    FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE
+                )",
+                'alert_rules' => "CREATE TABLE alert_rules (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    form_id TEXT NOT NULL,
+                    days_before INTEGER NOT NULL DEFAULT 5,
+                    condition_type TEXT NOT NULL DEFAULT 'steps_incomplete',
+                    notify_who TEXT NOT NULL DEFAULT 'admin',
+                    label TEXT NOT NULL,
+                    actif INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+                )",
+                'alert_log' => "CREATE TABLE alert_log (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    rule_id TEXT NOT NULL,
+                    submission_id TEXT NOT NULL,
+                    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    message TEXT,
+                    FOREIGN KEY (rule_id) REFERENCES alert_rules(id) ON DELETE CASCADE,
+                    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+                )",
+                'attachments' => "CREATE TABLE attachments (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    submission_id TEXT NOT NULL,
+                    field_name TEXT NOT NULL,
+                    original_name TEXT NOT NULL,
+                    stored_name TEXT NOT NULL,
+                    mime_type TEXT NOT NULL,
+                    file_size INTEGER NOT NULL DEFAULT 0,
+                    file_data BLOB,
+                    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+                )",
+                'delegations' => "CREATE TABLE delegations (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    token_id TEXT NOT NULL,
+                    from_email TEXT NOT NULL,
+                    to_email TEXT NOT NULL,
+                    reason TEXT,
+                    delegated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    new_token_id TEXT,
+                    FOREIGN KEY (token_id) REFERENCES tokens(id) ON DELETE CASCADE
+                )",
+                'form_owners' => "CREATE TABLE form_owners (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    form_id TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(form_id, email),
+                    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+                )",
+                'rate_limits' => "CREATE TABLE rate_limits (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    action_key TEXT NOT NULL,
+                    ip TEXT NOT NULL,
+                    attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+            ];
+
+            foreach ($v11_tables as $table_name => $create_sql) {
+                // Vérifier si le PK est INTEGER
+                $needs_fix = false;
+                try {
+                    $cols = $pdo->query("PRAGMA table_info({$table_name})")->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($cols as $col) {
+                        if ($col['pk'] == 1 && stripos($col['type'], 'INT') === 0) {
+                            $needs_fix = true;
+                            break;
+                        }
+                    }
+                } catch (PDOException $e) {
+                    // Table inexistante — sera créée par le CREATE TABLE IF NOT EXISTS initial
+                    continue;
+                }
+
+                if ($needs_fix) {
+                    // Construire la liste des colonnes communes entre l'ancienne et la nouvelle table
+                    $old_cols = array_column($cols, 'name');
+                    // Parser les colonnes de la nouvelle définition (simple extraction)
+                    preg_match_all('/^\s+(\w+)\s+/m', $create_sql, $m);
+                    $new_cols = $m[1] ?? [];
+
+                    // Colonnes à copier = intersection
+                    $copy_cols = array_intersect($old_cols, $new_cols);
+                    $copy_cols_str = implode(', ', $copy_cols);
+
+                    // Re-créer la table avec le bon schéma
+                    $tmp_name = "{$table_name}__v11tmp";
+                    $pdo->exec("DROP TABLE IF EXISTS {$tmp_name}");
+                    $pdo->exec(str_replace("CREATE TABLE {$table_name}", "CREATE TABLE {$tmp_name}", $create_sql));
+                    if (!empty($copy_cols_str)) {
+                        $pdo->exec("INSERT INTO {$tmp_name} ({$copy_cols_str}) SELECT {$copy_cols_str} FROM {$table_name}");
+                    }
+                    $pdo->exec("DROP TABLE {$table_name}");
+                    $pdo->exec("ALTER TABLE {$tmp_name} RENAME TO {$table_name}");
+
+                    error_log("Migration v11: {$table_name} re-créée avec id TEXT (was INTEGER PK)");
+                }
+            }
+
+            $pdo->exec("PRAGMA foreign_keys = ON");
+            $pdo->exec("PRAGMA integrity_check");
+
+            $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([11]);
+            $current_version = 11;
+        } catch (PDOException $e) {
+            try { $pdo->exec("PRAGMA foreign_keys = ON"); } catch (PDOException $e2) {}
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([11]); } catch (PDOException $e2) {}
+            error_log("Migration v11 error: " . $e->getMessage());
+        }
+    }
+
     // Seed des regles d'alerte par defaut si la table est vide
     try {
         $alert_count = $pdo->query("SELECT COUNT(*) FROM alert_rules")->fetchColumn();

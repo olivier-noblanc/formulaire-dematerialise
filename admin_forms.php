@@ -1052,7 +1052,25 @@ elseif ($action === 'populate_samples') {
         $success_msg = "$created formulaire(s) exemple(s) créé(s), $skipped ignoré(s) (déjà existant(s)).";
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
-        $error_msg = 'Erreur lors du peuplement : ' . $e->getMessage();
+        // Diagnostic : vérifier si une table a encore des colonnes INTEGER au lieu de TEXT
+        $diag = '';
+        try {
+            $tables_to_check = ['forms' => 'id', 'steps' => 'id', 'step_recipients' => 'id', 'form_fields' => 'id', 'admins' => 'id', 'submissions' => 'id', 'tokens' => 'id'];
+            foreach ($tables_to_check as $tbl => $col) {
+                $cols = $pdo->query("PRAGMA table_info({$tbl})")->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($cols as $c) {
+                    if ($c['name'] === $col && stripos($c['type'], 'INT') === 0) {
+                        $diag .= " [{$tbl}.{$col} est INTEGER au lieu de TEXT — migration v9 manquante ?]";
+                    }
+                }
+            }
+        } catch (PDOException $e2) {
+            $diag .= ' [diag échoué: ' . $e2->getMessage() . ']';
+        }
+        $error_msg = 'Erreur lors du peuplement : ' . $e->getMessage() . $diag;
+    } catch (\Throwable $e) {
+        if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
+        $error_msg = 'Erreur lors du peuplement : ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
     }
 }
 
