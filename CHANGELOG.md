@@ -1,5 +1,15 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [5.5.1] — 2026-06-15
+
+### Fix — Datatype mismatch : ensure_text_ids() autonome
+
+- **`ensure_text_ids(PDO $pdo)`** : Nouvelle fonction autonome qui vérifie à CHAQUE accès si des tables ont encore un `id INTEGER PRIMARY KEY` et les corrige automatiquement. Contrairement à la migration v11 (qui se marquait comme faite même en cas d'échec via `INSERT OR IGNORE`), cette fonction s'exécute indépendamment du numéro de version du schéma. Si les tables sont déjà en TEXT, elle ne fait rien (vérification instantanée via `PRAGMA table_info`).
+- **Appel dans `populate_samples`** : `ensure_text_ids($pdo)` est appelé explicitement avant le peuplement pour garantir que le schéma est correct.
+- **Migration v11 supprimée** : Remplacée par `ensure_text_ids()`. La v11 souffrait d'un bug critique : en cas d'échec, elle se marquait comme effectuée via `INSERT OR IGNORE INTO schema_version`, empêchant toute re-exécution.
+- **Regex corrigé** : L'extraction des noms de colonnes du CREATE TABLE filtre désormais sur les types SQL réels (`TEXT|INTEGER|DATETIME|BLOB|REAL`) au lieu de matcher n'importe quel mot (`FOREIGN`, `UNIQUE`, etc.).
+- **Diagnostic amélioré** : Le message d'erreur du peuplement liste toutes les tables en INTEGER et suggère de recharger la page.
+
 ## [5.5.0] — 2026-06-15
 
 ### Fix — TypeError run_lazy_cron

@@ -847,6 +847,10 @@ elseif ($action === 'import_form') {
 // ── Populate sample forms ──────────────────────────────────────
 elseif ($action === 'populate_samples') {
     $pdo = get_pdo();
+
+    // S'assurer que le schéma est correct avant le peuplement
+    ensure_text_ids($pdo);
+
     try {
         $pdo->beginTransaction();
 
@@ -1055,17 +1059,21 @@ elseif ($action === 'populate_samples') {
         // Diagnostic : vérifier si une table a encore des colonnes INTEGER au lieu de TEXT
         $diag = '';
         try {
-            $tables_to_check = ['forms' => 'id', 'steps' => 'id', 'step_recipients' => 'id', 'form_fields' => 'id', 'admins' => 'id', 'submissions' => 'id', 'tokens' => 'id'];
+            $tables_to_check = ['forms' => 'id', 'steps' => 'id', 'step_recipients' => 'id', 'form_fields' => 'id', 'admins' => 'id', 'submissions' => 'id', 'tokens' => 'id', 'audit_log' => 'id', 'alert_rules' => 'id', 'alert_log' => 'id', 'attachments' => 'id', 'delegations' => 'id', 'form_owners' => 'id', 'rate_limits' => 'id', 'admin_requests' => 'id'];
             foreach ($tables_to_check as $tbl => $col) {
-                $cols = $pdo->query("PRAGMA table_info({$tbl})")->fetchAll(PDO::FETCH_ASSOC);
+                $cols = @$pdo->query("PRAGMA table_info({$tbl})")->fetchAll(PDO::FETCH_ASSOC);
+                if (!$cols) continue;
                 foreach ($cols as $c) {
                     if ($c['name'] === $col && stripos($c['type'], 'INT') === 0) {
-                        $diag .= " [{$tbl}.{$col} est INTEGER au lieu de TEXT — migration v9 manquante ?]";
+                        $diag .= " [{$tbl}.{$col} INTEGER]";
                     }
                 }
             }
-        } catch (PDOException $e2) {
+        } catch (\Throwable $e2) {
             $diag .= ' [diag échoué: ' . $e2->getMessage() . ']';
+        }
+        if ($diag) {
+            $diag = ' — Schéma obsolète détecté :' . $diag . '. Rechargez la page puis réessayez (ensure_text_ids corrige automatiquement).';
         }
         $error_msg = 'Erreur lors du peuplement : ' . $e->getMessage() . $diag;
     } catch (\Throwable $e) {
