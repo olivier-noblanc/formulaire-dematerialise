@@ -1,2 +1,6 @@
 skills/
 node_modules/
+
+# Binaires et caches de compilation (spc / static-php)
+bin/
+downloads/
