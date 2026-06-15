@@ -25,6 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_settings') {
         $updated_by = get_auth_user();
         $settings = [
+            'app_name'         => trim($_POST['app_name'] ?? ''),
+            'app_favicon'      => trim($_POST['app_favicon'] ?? ''),
             'admin_email'      => trim($_POST['admin_email'] ?? ''),
             'smtp_host'        => trim($_POST['smtp_host'] ?? ''),
             'smtp_port'        => trim($_POST['smtp_port'] ?? '25'),
@@ -116,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'test_email') {
         $to = get_auth_user();
-        $subject = 'Test email — FluxDémat';
+        $subject = 'Test email — ' . get_app_name();
         $body = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;color:#222;">
   <h2 style="color:#003189;">Test d\'envoi d\'email</h2>
@@ -147,7 +149,7 @@ if (isset($_GET['test_webhook'])) {
     if (empty($webhook_url)) {
         $error_msg = 'Aucune URL webhook configurée.';
     } else {
-        send_webhook('test', ['message' => 'Test webhook depuis FluxDémat', 'version' => APP_VERSION]);
+        send_webhook('test', ['message' => 'Test webhook depuis ' . get_app_name(), 'version' => APP_VERSION]);
         $success_msg = 'Webhook de test envoyé à ' . h($webhook_url) . '.';
         app_log('webhook_test', 'settings', 'Test webhook envoyé');
     }
@@ -181,8 +183,8 @@ $ldap_ext_available = function_exists('ldap_connect');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Paramètres — FluxDémat</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
+    <title>Paramètres — <?= h(get_app_name()) ?></title>
+    <?= render_favicon() ?>
     <?php require_once __DIR__ . '/style.php'; ?>
     <style>
         .container { max-width: 900px; }
@@ -387,6 +389,22 @@ $ldap_ext_available = function_exists('ldap_connect');
         <input type="hidden" name="action" value="save_settings">
 
         <div class="card">
+            <h2>Identité de l'application</h2>
+
+            <div class="field">
+                <label for="app_name">Nom de l'application</label>
+                <input type="text" id="app_name" name="app_name" value="<?= h(get_setting('app_name', 'CircuitDémat')) ?>" placeholder="CircuitDémat">
+                <span class="hint">Ce nom est affiché dans la barre latérale, les titres de pages, les emails et le pied de page. Modifiable à tout moment.</span>
+            </div>
+
+            <div class="field">
+                <label for="app_favicon">Favicon (SVG)</label>
+                <textarea id="app_favicon" name="app_favicon" rows="3" placeholder="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>...</svg>" style="font-family:monospace;font-size:.8rem;"><?= h(get_setting('app_favicon', '')) ?></textarea>
+                <span class="hint">Code SVG du favicon. Laisser vide pour le favicon par défaut (losange bleu avec la première lettre du nom). Le contenu est inséré dans <code>data:image/svg+xml,</code> — ne pas mettre l'en-tête <code>&lt;?xml</code> ni échapper les caractères.</span>
+            </div>
+        </div>
+
+        <div class="card">
             <h2>Administration</h2>
 
             <div class="field">
@@ -442,7 +460,7 @@ $ldap_ext_available = function_exists('ldap_connect');
 
             <div class="field">
                 <label>Nom expéditeur</label>
-                <input type="text" name="smtp_from_name" value="<?= h($smtp_from_name) ?>" placeholder="FluxDémat">
+                <input type="text" name="smtp_from_name" value="<?= h($smtp_from_name) ?>" placeholder="CircuitDémat">
             </div>
         </div>
 

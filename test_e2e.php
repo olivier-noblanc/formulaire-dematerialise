@@ -1,6 +1,6 @@
 <?php
 /**
- * test_e2e.php — Tests End-to-End intensifs du FluxDémat v4.3.0
+ * test_e2e.php — Tests End-to-End intensifs du CircuitDémat v4.3.0
  * 
  * Simule des soumissions réelles de formulaires via la base de données,
  * teste le workflow complet de bout en bout, les cas limites,
@@ -55,7 +55,7 @@ function test(string $name, callable $fn): void {
 }
 
 echo "╔══════════════════════════════════════════════════════════╗\n";
-echo "║  Tests E2E intensifs — FluxDémat v4.3.0            ║\n";
+echo "║  Tests E2E intensifs — CircuitDémat v4.3.0            ║\n";
 echo "║  Soumissions réelles, workflow complet, cas limites     ║\n";
 echo "╚══════════════════════════════════════════════════════════╝\n\n";
 

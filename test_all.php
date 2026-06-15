@@ -1,6 +1,6 @@
 <?php
 /**
- * test_all.php — Script de test complet du FluxDémat v4.3.0
+ * test_all.php — Script de test complet du CircuitDémat v4.3.0
  * Lance tous les tests fonctionnels en mode CLI
  * Usage: php test_all.php
  *
@@ -55,7 +55,7 @@ function capture_output(callable $fn): string {
 }
 
 echo "╔══════════════════════════════════════════════════╗\n";
-echo "║  Tests fonctionnels — FluxDémat v4.3.0     ║\n";
+echo "║  Tests fonctionnels — CircuitDémat v4.3.0     ║\n";
 echo "╚══════════════════════════════════════════════════╝\n\n";
 
 // ═══════════════════════════════════════════════════

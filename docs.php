@@ -29,7 +29,7 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Aide et documentation — Formulaires dématérialisés DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
+  <?= render_favicon() ?>
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
@@ -185,7 +185,7 @@ try {
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Documentation']]) ?>
   <h1>Aide et documentation</h1>
-  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — FluxDémat <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '5.0.0' ?></span></p>
+  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — <?= h(get_app_name()) ?> <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '5.0.0' ?></span></p>
 
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- GUIDE DE DÉMARRAGE RAPIDE                                  -->
@@ -987,7 +987,7 @@ try {
       <li><strong>Serveur SMTP</strong> — L'adresse du serveur d'envoi d'emails (ex : smtp.social.gouv.fr)</li>
       <li><strong>Port SMTP</strong> — Le port du serveur (ex : 25)</li>
       <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : workflow@dreets.gouv.fr)</li>
-      <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : FluxDémat)</li>
+      <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : CircuitDémat)</li>
       <li><strong>Délai de relance</strong> — Le nombre d'heures avant l'envoi d'un rappel automatique (ex : 48h)</li>
       <li><strong>URL du webhook</strong> — L'adresse pour les notifications automatiques</li>
       <li><strong>Événements webhook</strong> — Les événements à notifier</li>

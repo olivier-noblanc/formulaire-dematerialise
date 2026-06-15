@@ -479,7 +479,7 @@ echo "\n" . bold("Phase 11 : Rendu des pages (HTML en mode non-test, JSON en mod
 // Index en mode test (renvoie le HTML mais ne doit pas planter)
 $r = http_request('GET', 'index.php', [], [], 'test.agent');
 assert_test('Index.php se charge', $r['http_code'] === 200, 'Code: ' . $r['http_code']);
-assert_test('Index contient FluxDémat', strpos($r['body'] ?? '', 'FluxDémat') !== false);
+assert_test('Index contient CircuitDémat', strpos($r['body'] ?? '', 'CircuitDémat') !== false);
 
 $r = http_request('GET', 'my_submissions.php', [], [], 'marie.martin');
 assert_test('Mes demandes se charge', $r['http_code'] === 200);

@@ -165,11 +165,11 @@ function inst_test_smtp(string $host, int $port, string $from, string $from_name
         $mail->setFrom($from, $from_name);
         $mail->addAddress($to);
         $mail->isHTML(true);
-        $mail->Subject = 'Test SMTP — Installation FluxDémat';
+        $mail->Subject = 'Test SMTP — Installation ' . get_app_name();
         $mail->Body    = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;color:#222;">
   <h2 style="color:#003189;">Test d\'envoi d\'email</h2>
-  <p>Cet email a été envoyé depuis l\'assistant d\'installation du FluxDémat.</p>
+  <p>Cet email a été envoyé depuis l\'assistant d\'installation de ' . get_app_name() . '.</p>
   <p>Date : ' . date('d/m/Y H:i:s') . '</p>
   <hr style="margin:1rem 0;border:none;border-top:1px solid #ddd;">
   <p style="font-size:.85rem;color:#595959;">Si vous recevez cet email, la configuration SMTP est correcte.</p>
@@ -274,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $smtp_host    = trim($_POST['smtp_host'] ?? 'smtp.social.gouv.fr');
             $smtp_port    = (int)($_POST['smtp_port'] ?? 25);
             $smtp_from    = trim($_POST['smtp_from'] ?? 'workflow@dreets.gouv.fr');
-            $smtp_from_name = trim($_POST['smtp_from_name'] ?? 'FluxDémat');
+            $smtp_from_name = trim($_POST['smtp_from_name'] ?? 'CircuitDémat');
             $admin_email  = trim($_POST['admin_email'] ?? '');
 
             if (empty($admin_email) || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
@@ -385,7 +385,7 @@ $default_base_url      = $saved_config['base_url'] ?? inst_detect_base_url();
 $default_smtp_host     = $saved_config['smtp_host'] ?? 'smtp.social.gouv.fr';
 $default_smtp_port     = $saved_config['smtp_port'] ?? 25;
 $default_smtp_from     = $saved_config['smtp_from'] ?? 'workflow@dreets.gouv.fr';
-$default_smtp_from_name = $saved_config['smtp_from_name'] ?? 'FluxDémat';
+$default_smtp_from_name = $saved_config['smtp_from_name'] ?? 'CircuitDémat';
 $default_admin_email   = $saved_config['admin_email'] ?? '';
 $default_delai_relance_h = $saved_config['delai_relance_h'] ?? 48;
 
@@ -418,8 +418,8 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Installation — FluxDémat</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
+    <title>Installation — <?= h(get_app_name()) ?></title>
+    <?= render_favicon() ?>
     <style>
         /* ── Reset & Base ──────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -541,7 +541,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
         </div>
     </div>
 
-    <h1><span aria-hidden="true">🔧</span> Installation du FluxDémat</h1>
+    <h1><span aria-hidden="true">🔧</span> Installation de <?= h(get_app_name()) ?></h1>
 
     <?php foreach ($messages as $msg): ?>
         <div class="msg-success"><?= inst_h($msg) ?></div>
@@ -558,7 +558,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
     <div class="card">
         <h2>Étape 1 — Vérification des prérequis</h2>
         <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
-            L'assistant vérifie que votre environnement répond aux exigences minimales pour faire fonctionner le FluxDémat.
+            L'assistant vérifie que votre environnement répond aux exigences minimales pour faire fonctionner <?= h(get_app_name()) ?>.
         </p>
         <ul class="check-list">
             <?php foreach ($prerequisites as $key => $check): ?>
@@ -628,7 +628,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
 
             <div class="field">
                 <label>Nom de l'expéditeur <span class="req">*</span></label>
-                <input type="text" name="smtp_from_name" value="<?= inst_h($default_smtp_from_name) ?>" placeholder="FluxDémat">
+                <input type="text" name="smtp_from_name" value="<?= inst_h($default_smtp_from_name) ?>" placeholder="CircuitDémat">
             </div>
 
             <!-- Admin -->
@@ -733,7 +733,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
 </div>
 
 <div class="footer">
-    FluxDémat — Assistant d'installation · Version 3.0.0
+    <?= h(get_app_name()) ?> — Assistant d'installation · Version 3.0.0
 </div>
 
 </body>

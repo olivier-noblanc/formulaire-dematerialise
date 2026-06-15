@@ -51,8 +51,8 @@ function get_auth_user(): string {
     if (empty($auth_user)) {
         http_response_code(401);
         die('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Authentification requise — FluxDémat</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>F</text></svg>">
+<title>Authentification requise — ' . h(get_app_name()) . '</title>
+' . render_favicon() . '
 <style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e}.bandeau{background:#003189;color:#fff;padding:.75rem 2rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.error-page{display:flex;min-height:calc(100vh - 120px);align-items:center;justify-content:center;padding:2rem 1rem}.error-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:3rem 2.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}.error-card .error-code{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.25rem;letter-spacing:-2px;color:#003189}.error-card .error-illustration{margin-bottom:1.25rem}.error-card .error-illustration svg{width:100px;height:100px}.error-card h1{font-size:1.35rem;color:#1e1e1e;margin-bottom:.75rem;border:none;padding:0}.error-card .error-message{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:1.25rem}.error-card .error-hint{font-size:.85rem;color:#666;background:#f5f5fe;border:1px solid #e0e0f0;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;text-align:left;line-height:1.55}.error-card .error-hint strong{color:#333;display:block;margin-bottom:.35rem}.error-card .error-stamp{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;font-size:.75rem;color:#aaa}</style></head><body>
 <div class="bandeau">
   <strong>DREETS</strong> — Direction Régionale de l\'Économie, de l\'Emploi, du Travail et des Solidarités
@@ -69,7 +69,7 @@ function get_auth_user(): string {
       • Vérifiez que l\'authentification Windows est activée dans IIS (Anonymous Authentication doit être désactivé).<br>
       • Contactez votre administrateur réseau si le problème persiste.
     </div>
-    <div class="error-stamp">FluxDémat</div>
+    <div class="error-stamp">' . h(get_app_name()) . '</div>
   </div>
 </div>
 </body></html>');
@@ -793,10 +793,12 @@ function db_migrate(PDO $pdo): void {
             ['smtp_user', ''],
             ['smtp_pass', ''],
             ['smtp_from', 'workflow@dreets.gouv.fr'],
-            ['smtp_from_name', 'FluxDémat'],
+            ['smtp_from_name', 'CircuitDémat'],
             ['delai_relance_h', '48'],
             ['token_expire_days', '30'],
             ['relance_max', '3'],
+            ['app_name', 'CircuitDémat'],
+            ['app_favicon', ''],
         ];
         $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
         foreach ($defaults as $row) {
@@ -1717,10 +1719,12 @@ function db_migrate(PDO $pdo): void {
                     ['smtp_user', ''],
                     ['smtp_pass', ''],
                     ['smtp_from', 'workflow@dreets.gouv.fr'],
-                    ['smtp_from_name', 'FluxDémat'],
+                    ['smtp_from_name', 'CircuitDémat'],
                     ['delai_relance_h', '48'],
                     ['token_expire_days', '30'],
                     ['relance_max', '3'],
+                    ['app_name', 'CircuitDémat'],
+                    ['app_favicon', ''],
                 ];
                 $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
                 foreach ($defaults as $row) {
@@ -1943,7 +1947,7 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
         . '<nav class="sidebar" aria-label="Navigation principale">'
         .   '<a href="index.php" class="sidebar-brand">'
         .     '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
-        .     '<span class="sidebar-brand-text">FluxDémat</span>'
+        .     '<span class="sidebar-brand-text">' . h(get_app_name()) . '</span>'
         .   '</a>'
         .   '<div class="sidebar-nav">'
         .     $nav_html
@@ -2004,7 +2008,7 @@ function render_footer(): string {
          . '</div><!-- /.app-layout -->'
          . '<footer>'
          . '<a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>'
-         . ' · FluxDémat'
+         . ' · ' . h(get_app_name())
          . '</footer>';
 }
 
@@ -2065,8 +2069,8 @@ function render_error_page(int $code, string $title, string $message, string $hi
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>' . h($title) . ' — FluxDémat</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>F</text></svg>">
+  <title>' . h($title) . ' — ' . h(get_app_name()) . '</title>
+  ' . render_favicon() . '
   ' . $css . '
 </head>
 <body>
@@ -2085,12 +2089,29 @@ function render_error_page(int $code, string $title, string $message, string $hi
     <div class="error-actions">
       <a href="' . h($back_url) . '" class="btn btn-primary">Retour à l\'accueil</a>
     </div>
-    <div class="error-stamp">FluxDémat</div>
+    <div class="error-stamp">' . h(get_app_name()) . '</div>
   </div>
 </div>
 ' . (function_exists('render_footer') ? render_footer() : '') . '
 </body>
 </html>');
+}
+
+// ── APP NAME & FAVICON (from DB) ───────────────────────────
+function get_app_name(): string {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    $cache = get_setting('app_name', 'CircuitDémat');
+    return $cache;
+}
+
+function render_favicon(): string {
+    $svg = get_setting('app_favicon', '');
+    if (!empty($svg)) {
+        return '<link rel="icon" href="data:image/svg+xml,' . h($svg) . '">';
+    }
+    // Favicon par défaut : losange bleu avec F
+    return '<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'20\' fill=\'%231E40AF\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\' font-weight=\'bold\'>F</text></svg>">';
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────
@@ -2570,13 +2591,13 @@ function advance_workflow(string $submission_id): void {
     // Notification de validation finale a l'agent
     $agent_email = $submission['submitted_by'] ?? '';
     if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-        $subject = 'Demande validée — ' . ($submission['form_label'] ?? 'FluxDémat');
+        $subject = 'Demande validée — ' . ($submission['form_label'] ?? get_app_name());
         $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#1a6b3c;">✓ Demande validée</h2>
   <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été <strong>validée</strong> par l\'ensemble des validateurs.</p>
   <p>Le processus de workflow est désormais terminé.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">' . h(get_app_name()) . ' — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
 </body></html>';
         send_mail($agent_email, $subject, $body);
     }
@@ -2653,13 +2674,13 @@ function validate_token(string $token, string $action = 'valider', string $comme
         // Notifier l'agent du refus
         $agent_email = $t['submitted_by'] ?? '';
         if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-            $refuse_subject = 'Demande refusée — ' . ($t['form_label'] ?? 'FluxDémat');
+            $refuse_subject = 'Demande refusée — ' . ($t['form_label'] ?? get_app_name());
             $refuse_body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#c0392b;">Demande refusée</h2>
   <p>Votre demande <strong>' . h($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . h($t['step_label']) . '</strong>.</p>
   ' . (!empty($comment) ? '<p><strong>Motif :</strong> ' . h($comment) . '</p>' : '') . '
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">' . h(get_app_name()) . ' — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
 </body></html>';
             send_mail($agent_email, $refuse_subject, $refuse_body);
         }
@@ -2743,7 +2764,7 @@ function process_admin_request(string $email): bool {
         // Envoie un email à l'admin principal pour approbation
         $approve_url = BASE_URL . '/admin_access.php?action=approve&token=' . $token;
         $reject_url = BASE_URL . '/admin_access.php?action=reject&token=' . $token;
-        $subject = 'Demande d\'accès admin - FluxDémat';
+        $subject = 'Demande d\'accès admin - ' . get_app_name();
         $body = '
 <!DOCTYPE html>
 <html>
@@ -2784,7 +2805,7 @@ function approve_admin_request(string $email): bool {
         $stmt->execute([generate_uuid(), $email, date('Y-m-d H:i:s')]);
         
         // Envoie un email de confirmation
-        $subject = 'Accès admin approuvé - FluxDémat';
+        $subject = 'Accès admin approuvé - ' . get_app_name();
         $body = '
 <!DOCTYPE html>
 <html>
@@ -2820,7 +2841,7 @@ function reject_admin_request(string $email): bool {
         $stmt->execute([$email]);
         
         // Envoie un email de refus
-        $subject = 'Demande d\'accès admin refusée - FluxDémat';
+        $subject = 'Demande d\'accès admin refusée - ' . get_app_name();
         $body = '
 <!DOCTYPE html>
 <html>
@@ -3127,12 +3148,12 @@ function cancel_submission(string $submission_id, string $cancelled_by = ''): ar
     // Notifier l'agent
     $agent_email = $submission['submitted_by'] ?? '';
     if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-        $subject = 'Demande annulée — ' . ($submission['form_label'] ?? 'FluxDémat');
+        $subject = 'Demande annulée — ' . ($submission['form_label'] ?? get_app_name());
         $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#b45309;">Demande annulée</h2>
   <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été annulée.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">' . h(get_app_name()) . '</p>
 </body></html>';
         send_mail($agent_email, $subject, $body);
     }
@@ -3471,7 +3492,7 @@ function delegate_token(string $token_id, string $to_email, string $reason = '')
   <h2 style="color:#003189;">🔄 Délégation confirmée</h2>
   <p>Votre validation pour <strong>' . h($tok['form_label']) . '</strong> (étape ' . h($step['label'] ?? '') . ') a été déléguée à <strong>' . h($to_email) . '</strong>.</p>
   <p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat — Ne pas répondre à cet email</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">' . h(get_app_name()) . ' — Ne pas répondre à cet email</p>
 </body></html>';
     send_mail($tok['email'], $confirm_subject, $confirm_body);
 

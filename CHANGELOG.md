@@ -1,4 +1,14 @@
-# Changelog — FluxDémat
+# Changelog — CircuitDémat
+
+## [5.8.0] — 2026-06-15
+
+### Feature — Nom et favicon dynamiques (configurables depuis la BDD)
+
+- **Nom de l'application en base de données** : Le nom affiché (sidebar, titres, emails, footer) n'est plus codé en dur. Il est stocké dans la table `settings` (clé `app_name`) et lisible via `get_app_name()`. Modifiable depuis la page Paramètres → section « Identité de l'application ».
+- **Favicon en base de données** : Le favicon SVG est stocké dans la table `settings` (clé `app_favicon`) et rendu via `render_favicon()`. Si la valeur est vide, le favicon par défaut est utilisé (losange bleu avec la première lettre du nom). Modifiable depuis la page Paramètres.
+- **Nouveau nom par défaut** : `CircuitDémat` (Circuit de validation + Dématérialisation). Remplace `FluxDémat` — plus de « Flux » dans le nom.
+- **Zéro valeur codée en dur** : Tous les titres de pages (`<title>`), favicons (`<link rel="icon">`), noms dans les emails et le footer utilisent désormais `get_app_name()` et `render_favicon()`.
+- **Section « Identité de l'application »** ajoutée dans la page Paramètres (admin_settings.php) avec deux champs : nom et favicon SVG.
 
 ## [5.7.0] — 2026-06-15
 

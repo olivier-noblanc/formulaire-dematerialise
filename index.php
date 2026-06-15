@@ -53,8 +53,8 @@ if ($is_admin) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Accueil — FluxDémat</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
+  <title>Accueil — <?= h(get_app_name()) ?></title>
+  <?= render_favicon() ?>
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 1080px; }
@@ -279,7 +279,7 @@ if ($is_admin) {
 <main class="container" id="main-content">
   <!-- Hero -->
   <div class="hero">
-    <h1>FluxDémat</h1>
+    <h1><?= h(get_app_name()) ?></h1>
     <p>Bienvenue sur la plateforme de dématérialisation des circuits de validation. Choisissez un formulaire pour démarrer, ou suivez vos demandes en cours.</p>
   </div>
 
