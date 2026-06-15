@@ -29,7 +29,7 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Aide et documentation — Formulaires dématérialisés DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
@@ -185,7 +185,7 @@ try {
 <main class="container" id="main-content">
 <?= render_breadcrumb([['Accueil', 'index.php'], ['Documentation']]) ?>
   <h1>Aide et documentation</h1>
-  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — DREETS <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '5.0.0' ?></span></p>
+  <p class="subtitle">Guide complet de l'application de formulaires dématérialisés — FluxDémat <span class="version-badge">v<?= defined('APP_VERSION') ? APP_VERSION : '5.0.0' ?></span></p>
 
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- GUIDE DE DÉMARRAGE RAPIDE                                  -->
@@ -516,7 +516,7 @@ try {
 
     <!-- ── Email notification mockup ── -->
     <div class="email-mockup">
-      <div class="email-header">Onboarding — Action requise</div>
+      <div class="email-header">Accueil agent — Action requise</div>
       <div class="email-body">
         <p style="margin:0 0 .75rem; font-size:.85rem;">Bonjour,</p>
         <p style="margin:0 0 .75rem; font-size:.85rem;">Une nouvelle demande nécessite votre validation pour l'étape <strong>Informatique</strong>.</p>
@@ -695,9 +695,9 @@ try {
     <p class="screenshot-caption">Page d'accueil vue par un administrateur — accès direct au back office et aux outils de gestion</p>
 
     <!-- ── Tableau de bord ── -->
-    <h3><span aria-hidden="true">📊</span> Tableau de bord (Dashboard)</h3>
+    <h3><span aria-hidden="true">📊</span> Tableau de bord</h3>
 
-    <p>Le <strong>dashboard</strong> (<code>dashboard.php</code>) est votre centre de commande. Il affiche :</p>
+    <p>Le <strong>tableau de bord</strong> (<code>dashboard.php</code>) est votre centre de commande. Il affiche :</p>
 
     <ul>
       <li><strong>Statistiques</strong> — Nombre total de demandes, en cours, clôturées</li>
@@ -716,7 +716,7 @@ try {
     </ul>
 
     <div class="tip-box">
-      <p>Depuis le dashboard, vous pouvez aussi accéder aux pages de détail de chaque soumission pour voir l'historique complet, les pièces jointes et les commentaires des validateurs.</p>
+      <p>Depuis le tableau de bord, vous pouvez aussi accéder aux pages de détail de chaque soumission pour voir l'historique complet, les pièces jointes et les commentaires des validateurs.</p>
     </div>
 
     <img src="screenshot.php?f=07_dashboard.png" alt="Tableau de bord administrateur — statistiques et liste des demandes" class="screenshot">
@@ -844,8 +844,8 @@ try {
     <img src="screenshot.php?f=11_admin_alerts.png" alt="Page de configuration des alertes — règles de deadline" class="screenshot">
     <p class="screenshot-caption">Configuration des alertes — définir des règles de notification avant les dates limites</p>
 
-    <!-- ── Monitoring ── -->
-    <h3><span aria-hidden="true">🔍</span> Monitoring et supervision</h3>
+    <!-- ── Surveillance ── -->
+    <h3><span aria-hidden="true">🔍</span> Surveillance et supervision</h3>
 
     <p>La page <strong>monitoring.php</strong> vous donne une vue d'ensemble de l'état du système :</p>
     <ul>
@@ -858,11 +858,11 @@ try {
     </ul>
 
     <div class="tip-box">
-      <p>Consultez régulièrement la page de monitoring pour identifier les validateurs qui tardent à répondre et les relancer si nécessaire.</p>
+      <p>Consultez régulièrement la page de surveillance pour identifier les validateurs qui tardent à répondre et les relancer si nécessaire.</p>
     </div>
 
-    <img src="screenshot.php?f=08_monitoring.png" alt="Page de monitoring — état du système et alertes" class="screenshot">
-    <p class="screenshot-caption">Monitoring — temps moyen, taux de validation, tokens bloqués et activité récente</p>
+    <img src="screenshot.php?f=08_monitoring.png" alt="Page de surveillance — état du système et alertes" class="screenshot">
+    <p class="screenshot-caption">Surveillance — temps moyen, taux de validation, jetons bloqués et activité récente</p>
 
     <!-- ── Statistiques ── -->
     <h3><span aria-hidden="true">📈</span> Statistiques et reporting</h3>
@@ -987,7 +987,7 @@ try {
       <li><strong>Serveur SMTP</strong> — L'adresse du serveur d'envoi d'emails (ex : smtp.social.gouv.fr)</li>
       <li><strong>Port SMTP</strong> — Le port du serveur (ex : 25)</li>
       <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : workflow@dreets.gouv.fr)</li>
-      <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : FluxDREETS)</li>
+      <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : FluxDémat)</li>
       <li><strong>Délai de relance</strong> — Le nombre d'heures avant l'envoi d'un rappel automatique (ex : 48h)</li>
       <li><strong>URL du webhook</strong> — L'adresse pour les notifications automatiques</li>
       <li><strong>Événements webhook</strong> — Les événements à notifier</li>
@@ -1019,7 +1019,7 @@ try {
         <tr><td>Voir le tableau de bord</td><td>✓</td><td>✓</td></tr>
         <tr><td>Gérer les formulaires et étapes</td><td>✓</td><td>✓</td></tr>
         <tr><td>Consulter les statistiques</td><td>✓</td><td>✓</td></tr>
-        <tr><td>Accéder au monitoring</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Accéder à la surveillance</td><td>✓</td><td>✓</td></tr>
         <tr><td>Configurer les alertes</td><td>✓</td><td>✓</td></tr>
         <tr><td>Sauvegarder et restaurer</td><td>✓</td><td>✓</td></tr>
         <tr><td>Gérer la conformité RGPD</td><td>✓</td><td>✓</td></tr>
@@ -1088,7 +1088,7 @@ try {
         <p>Connectez l'application à votre système d'information. Notifications automatiques lors des événements clés.</p>
       </div>
       <div class="feature-item">
-        <strong><span aria-hidden="true">💚</span> Health check pour monitoring</strong>
+        <strong><span aria-hidden="true">💚</span> Contrôle de santé pour la surveillance</strong>
         <p>Vérifiez automatiquement l'état de l'application : base de données, configuration email, version PHP.</p>
       </div>
       <div class="feature-item">
@@ -1145,7 +1145,7 @@ try {
       <li><span aria-hidden="true">✅</span> Créer, modifier et désactiver des formulaires</li>
       <li><span aria-hidden="true">✅</span> Configurer les étapes et les destinataires</li>
       <li><span aria-hidden="true">✅</span> Configurer les alertes de deadline</li>
-      <li><span aria-hidden="true">✅</span> Consulter les statistiques et le monitoring</li>
+      <li><span aria-hidden="true">✅</span> Consulter les statistiques et la surveillance</li>
       <li><span aria-hidden="true">✅</span> Gérer la conformité RGPD (export, suppression)</li>
       <li><span aria-hidden="true">✅</span> Sauvegarder et restaurer la base de données</li>
       <li><span aria-hidden="true">✅</span> Relancer manuellement un validateur</li>
@@ -1184,7 +1184,7 @@ try {
         <tr><td>Tableau de bord (toutes les demandes)</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
         <tr><td>Créer / modifier des formulaires</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
         <tr><td>Configurer les alertes</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
-        <tr><td>Statistiques / monitoring</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+        <tr><td>Statistiques / surveillance</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
         <tr><td>Conformité RGPD</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
         <tr><td>Sauvegarde / restauration</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
         <tr><td>Gérer les administrateurs</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
@@ -1293,7 +1293,7 @@ try {
           <li><strong>Attendre la relance automatique</strong> — Le système envoie un rappel automatique après le délai configuré (48h par défaut).</li>
           <li><strong>Relance manuelle</strong> — L'administrateur peut relancer le validateur directement depuis le tableau de bord.</li>
           <li><strong>Délégation</strong> — Le validateur peut déléguer sa validation à un collègue plus disponible.</li>
-          <li><strong>Consulter le monitoring</strong> — L'administrateur peut identifier les validateurs en retard depuis la page monitoring.php.</li>
+          <li><strong>Consulter la surveillance</strong> — L'administrateur peut identifier les validateurs en retard depuis la page monitoring.php.</li>
         </ol>
       </div>
     </details>
@@ -1401,7 +1401,7 @@ try {
           <li><strong>Consultez le health check</strong> — La page <code>health.php</code> vérifie automatiquement l'état de l'application (base de données, configuration email, etc.).</li>
           <li><strong>Vérifiez votre connexion</strong> — Assurez-vous d'être bien sur le réseau DREETS pour les pages qui nécessitent une authentification.</li>
           <li><strong>Essayez un autre navigateur</strong> — Certains problèmes peuvent être liés au navigateur.</li>
-          <li><strong>Contactez votre administrateur</strong> — Il a accès au monitoring, aux logs et aux paramètres pour diagnostiquer le problème.</li>
+          <li><strong>Contactez votre administrateur</strong> — Il a accès à la surveillance, aux logs et aux paramètres pour diagnostiquer le problème.</li>
           <li><strong>Consultez le journal d'audit</strong> — L'administrateur peut vérifier les actions récentes pour comprendre ce qui s'est passé.</li>
         </ol>
         <p>En cas d'urgence, l'administrateur peut toujours annuler une demande bloquée et en recréer une nouvelle.</p>
@@ -1574,7 +1574,7 @@ try {
           <span class="dir"><span aria-hidden="true">📁</span> formulaire-dematerialise/</span><br>
           &nbsp;&nbsp;<span class="file">config.php</span> — Constantes de configuration (BDD, SMTP, admin)<br>
           &nbsp;&nbsp;<span class="file">helpers.php</span> — Fonctions utilitaires, moteur de workflow, envoi d'emails<br>
-          &nbsp;&nbsp;<span class="file">index.php</span> — Redirection vers dashboard ou admin_access<br>
+          &nbsp;&nbsp;<span class="file">index.php</span> — Redirection vers le tableau de bord ou admin_access<br>
           &nbsp;&nbsp;<span class="file">form.php</span> — Formulaire agent (affichage + soumission)<br>
           &nbsp;&nbsp;<span class="file">form_preview.php</span> — Prévisualisation du formulaire<br>
           &nbsp;&nbsp;<span class="file">validate.php</span> — Page de validation/refus (accessible par token)<br>
@@ -1587,7 +1587,7 @@ try {
           &nbsp;&nbsp;<span class="file">admin_settings.php</span> — Configuration SMTP et webhooks (super admin)<br>
           &nbsp;&nbsp;<span class="file">admin_alerts.php</span> — Configuration des alertes de deadline<br>
           &nbsp;&nbsp;<span class="file">stats.php</span> — Statistiques et tableaux de bord<br>
-          &nbsp;&nbsp;<span class="file">monitoring.php</span> — Tableau de bord de monitoring<br>
+          &nbsp;&nbsp;<span class="file">monitoring.php</span> — Tableau de bord de surveillance<br>
           &nbsp;&nbsp;<span class="file">health.php</span> — Point de contrôle de santé<br>
           &nbsp;&nbsp;<span class="file">rgpd.php</span> — Conformité RGPD (export, suppression, purge)<br>
           &nbsp;&nbsp;<span class="file">backup.php</span> — Sauvegarde et restauration<br>

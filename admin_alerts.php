@@ -171,7 +171,7 @@ function notify_who_label(string $val): string {
         'admin+validators' => 'Admins + Validateurs',
     ];
     if (isset($map[$val])) return $map[$val];
-    if (filter_var($val, FILTER_VALIDATE_EMAIL)) return 'Email : ' . $val;
+    if (filter_var($val, FILTER_VALIDATE_EMAIL)) return 'Courriel : ' . $val;
     return $val;
 }
 ?>
@@ -180,8 +180,8 @@ function notify_who_label(string $val): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Alertes — FluxDREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+  <title>Alertes — FluxDémat</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     .container { max-width: 1100px; }
@@ -205,7 +205,7 @@ function notify_who_label(string $val): string {
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <?= render_nav('alerts', [
     'alerts'    => ['href' => 'admin_alerts.php', 'label' => 'Alertes', 'icon' => '🔔'],
-    'monitoring'=> ['href' => 'monitoring.php',   'label' => 'Monitoring', 'icon' => '🖥'],
+    'monitoring'=> ['href' => 'monitoring.php',   'label' => 'Surveillance', 'icon' => '🖥'],
     'stats'     => ['href' => 'stats.php',         'label' => 'Statistiques', 'icon' => '📈'],
     'rgpd'      => ['href' => 'rgpd.php',          'label' => 'RGPD', 'icon' => '🔐'],
 ]) ?>
@@ -365,12 +365,12 @@ function notify_who_label(string $val): string {
                     <option value="validators" <?= $r['notify_who'] === 'validators' ? 'selected' : '' ?>>Validateurs en cours</option>
                     <option value="admin+submitter" <?= $r['notify_who'] === 'admin+submitter' ? 'selected' : '' ?>>Admins + Agent</option>
                     <option value="admin+validators" <?= $r['notify_who'] === 'admin+validators' ? 'selected' : '' ?>>Admins + Validateurs</option>
-                    <option value="custom" <?= !in_array($r['notify_who'], ['admin','submitter','validators','admin+submitter','admin+validators']) ? 'selected' : '' ?>>Email personnalisé</option>
+                    <option value="custom" <?= !in_array($r['notify_who'], ['admin','submitter','validators','admin+submitter','admin+validators']) ? 'selected' : '' ?>>Courriel personnalisé</option>
                   </select>
                 </div>
                   <div class="field custom-email-field">
-                    <label>Email personnalisé <span class="hint">(si "Email personnalisé" sélectionné ci-dessus)</span></label>
-                    <input type="email" name="custom_email" value="<?= filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL) ? h($r['notify_who']) : '' ?>" placeholder="email@exemple.fr">
+                    <label>Courriel personnalisé <span class="hint">(si « Courriel personnalisé » sélectionné ci-dessus)</span></label>
+                    <input type="email" name="custom_email" value="<?= filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL) ? h($r['notify_who']) : '' ?>" placeholder="courriel@exemple.fr">
                   </div>
                 <div class="field">
                   <label class="checkbox-label">
@@ -430,12 +430,12 @@ function notify_who_label(string $val): string {
             <option value="validators">Validateurs en cours</option>
             <option value="admin+submitter">Admins + Agent</option>
             <option value="admin+validators">Admins + Validateurs</option>
-            <option value="custom">Email personnalisé</option>
+            <option value="custom">Courriel personnalisé</option>
           </select>
         </div>
         <div class="field custom-email-field">
-          <label>Email personnalisé <span class="hint">(si "Email personnalisé" sélectionné ci-dessus)</span></label>
-          <input type="email" name="custom_email" placeholder="email@exemple.fr">
+          <label>Courriel personnalisé <span class="hint">(si « Courriel personnalisé » sélectionné ci-dessus)</span></label>
+          <input type="email" name="custom_email" placeholder="courriel@exemple.fr">
         </div>
       </div>
       <div class="form-actions">

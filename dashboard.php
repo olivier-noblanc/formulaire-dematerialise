@@ -124,8 +124,8 @@ function get_tokens_status(string $sub_id): array {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Supervision workflow — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+  <title>Supervision workflow — FluxDémat</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
   <?php require_once __DIR__ . '/style.php'; ?>
   <style>
     /* Overrides */
@@ -231,7 +231,7 @@ function get_tokens_status(string $sub_id): array {
         <a href="?statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">✕ Effacer</a>
       <?php endif; ?>
     </form>
-    <a href="monitoring.php" class="btn-admin"><span aria-hidden="true">🖥</span> Monitoring</a>
+    <a href="monitoring.php" class="btn-admin"><span aria-hidden="true">🖥</span> Surveillance</a>
     <a href="admin_alerts.php" class="btn-admin" style="background:#b45309;"><span aria-hidden="true">🔔</span> Alertes</a>
     <a href="admin_forms.php" class="btn-admin"><span aria-hidden="true">⚙</span> Gestion formulaires</a>
     <a href="?export=csv&statut=<?= h($filtre) ?>&form=<?= h($form_f) ?>&search=<?= h($search) ?>" class="btn-admin" style="background:#1a6b3c;"><span aria-hidden="true">📥</span> Export CSV</a>

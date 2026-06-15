@@ -1,6 +1,6 @@
 <?php
 /**
- * test_all.php — Script de test complet du FluxDREETS v4.3.0
+ * test_all.php — Script de test complet du FluxDémat v4.3.0
  * Lance tous les tests fonctionnels en mode CLI
  * Usage: php test_all.php
  *
@@ -55,7 +55,7 @@ function capture_output(callable $fn): string {
 }
 
 echo "╔══════════════════════════════════════════════════╗\n";
-echo "║  Tests fonctionnels — FluxDREETS v4.3.0     ║\n";
+echo "║  Tests fonctionnels — FluxDémat v4.3.0     ║\n";
 echo "╚══════════════════════════════════════════════════╝\n\n";
 
 // ═══════════════════════════════════════════════════
@@ -395,12 +395,12 @@ $test_submission_uuid = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetch
 $pages = [
     'index.php' => ['label' => 'Page d\'accueil', 'get' => []],
     'form.php' => ['label' => 'Formulaire onboarding', 'get' => ['slug' => 'onboarding']],
-    'dashboard.php' => ['label' => 'Dashboard', 'get' => []],
+    'dashboard.php' => ['label' => 'Tableau de bord', 'get' => []],
     'admin_access.php' => ['label' => 'Accès admin', 'get' => []],
     'admin_forms.php' => ['label' => 'Gestion formulaires', 'get' => []],
     'admin_settings.php' => ['label' => 'Paramètres', 'get' => []],
     'admin_alerts.php' => ['label' => 'Alertes', 'get' => []],
-    'monitoring.php' => ['label' => 'Monitoring', 'get' => []],
+    'monitoring.php' => ['label' => 'Surveillance', 'get' => []],
     'my_submissions.php' => ['label' => 'Mes demandes', 'get' => []],
     'my_validations.php' => ['label' => 'Mes validations', 'get' => []],
     'docs.php' => ['label' => 'Documentation', 'get' => []],

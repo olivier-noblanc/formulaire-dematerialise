@@ -51,8 +51,8 @@ function get_auth_user(): string {
     if (empty($auth_user)) {
         http_response_code(401);
         die('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Authentification requise — DREETS</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>D</text></svg>">
+<title>Authentification requise — FluxDémat</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>F</text></svg>">
 <style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e}.bandeau{background:#003189;color:#fff;padding:.75rem 2rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.error-page{display:flex;min-height:calc(100vh - 120px);align-items:center;justify-content:center;padding:2rem 1rem}.error-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:3rem 2.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}.error-card .error-code{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.25rem;letter-spacing:-2px;color:#003189}.error-card .error-illustration{margin-bottom:1.25rem}.error-card .error-illustration svg{width:100px;height:100px}.error-card h1{font-size:1.35rem;color:#1e1e1e;margin-bottom:.75rem;border:none;padding:0}.error-card .error-message{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:1.25rem}.error-card .error-hint{font-size:.85rem;color:#666;background:#f5f5fe;border:1px solid #e0e0f0;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;text-align:left;line-height:1.55}.error-card .error-hint strong{color:#333;display:block;margin-bottom:.35rem}.error-card .error-stamp{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;font-size:.75rem;color:#aaa}</style></head><body>
 <div class="bandeau">
   <strong>DREETS</strong> — Direction Régionale de l\'Économie, de l\'Emploi, du Travail et des Solidarités
@@ -69,7 +69,7 @@ function get_auth_user(): string {
       • Vérifiez que l\'authentification Windows est activée dans IIS (Anonymous Authentication doit être désactivé).<br>
       • Contactez votre administrateur réseau si le problème persiste.
     </div>
-    <div class="error-stamp">Formulaire Dématérialisé — DREETS</div>
+    <div class="error-stamp">FluxDémat</div>
   </div>
 </div>
 </body></html>');
@@ -124,7 +124,7 @@ function is_form_owner(string $form_id, ?string $email = null): bool {
 // Récupère la liste des propriétaires d'un formulaire
 function get_form_owners(string $form_id): array {
     $pdo = get_pdo();
-    $stmt = $pdo->prepare("SELECT email, added_at FROM form_owners WHERE form_id = ? ORDER BY email");
+    $stmt = $pdo->prepare("SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email");
     $stmt->execute([$form_id]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -725,7 +725,7 @@ function db_migrate(PDO $pdo): void {
     if ($ob_count == 0) {
         $outboarding_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
-            ->execute([$outboarding_id, 'outboarding', 'Outboarding agent', 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat']);
+            ->execute([$outboarding_id, 'outboarding', 'Départ agent', 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat']);
 
         $outboarding_fields = [
             ['Identité de l\'agent',    'Nom',                                    'text',     'nom',                  null,                                                                                                   1, 1],
@@ -793,7 +793,7 @@ function db_migrate(PDO $pdo): void {
             ['smtp_user', ''],
             ['smtp_pass', ''],
             ['smtp_from', 'workflow@dreets.gouv.fr'],
-            ['smtp_from_name', 'FluxDREETS'],
+            ['smtp_from_name', 'FluxDémat'],
             ['delai_relance_h', '48'],
             ['token_expire_days', '30'],
             ['relance_max', '3'],
@@ -816,7 +816,7 @@ function db_migrate(PDO $pdo): void {
     if ($onb_count == 0) {
         $onboarding_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
-            ->execute([$onboarding_id, 'onboarding', 'Onboarding agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
+            ->execute([$onboarding_id, 'onboarding', 'Accueil agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
 
         $onboarding_fields = [
             ['Identité de l\'agent',  'Nom',                            'text',    'nom',               null,                                                           1, 1],
@@ -1688,8 +1688,8 @@ function db_migrate(PDO $pdo): void {
 
             // Formulaires par défaut (uniquement ceux qui n'existent pas encore)
             $default_forms = [
-                ['slug' => 'outboarding', 'label' => 'Outboarding agent', 'desc' => 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat'],
-                ['slug' => 'onboarding',  'label' => 'Onboarding agent',  'desc' => 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée'],
+                ['slug' => 'outboarding', 'label' => 'Départ agent', 'desc' => 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat'],
+                ['slug' => 'onboarding',  'label' => 'Accueil agent',  'desc' => 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée'],
                 ['slug' => 'sortie-hors-plages', 'label' => 'Sortie hors plages', 'desc' => 'Autorisation de sortie hors plages horaires'],
                 ['slug' => 'remboursement-avance-frais', 'label' => 'Remboursement / Avance de frais', 'desc' => 'Demande de remboursement ou avance de frais'],
                 ['slug' => 'materiel-prescription', 'label' => 'Matériel — Prescription', 'desc' => 'Prescription de matériel informatique ou bureautique'],
@@ -1717,7 +1717,7 @@ function db_migrate(PDO $pdo): void {
                     ['smtp_user', ''],
                     ['smtp_pass', ''],
                     ['smtp_from', 'workflow@dreets.gouv.fr'],
-                    ['smtp_from_name', 'FluxDREETS'],
+                    ['smtp_from_name', 'FluxDémat'],
                     ['delai_relance_h', '48'],
                     ['token_expire_days', '30'],
                     ['relance_max', '3'],
@@ -1772,7 +1772,7 @@ function generate_field_name(string $label): string {
 
 /**
  * Génère automatiquement un slug unique à partir d'un libellé.
- * Ex: "Onboarding agent" → "onboarding_agent"
+ * Ex: "Accueil agent" → "accueil_agent"
  * Ex: "Demande de congé" → "demande_de_conge"
  * Si le slug existe déjà, ajoute un suffixe numérique : "onboarding_agent_2"
  *
@@ -1943,7 +1943,7 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
         . '<nav class="sidebar" aria-label="Navigation principale">'
         .   '<a href="index.php" class="sidebar-brand">'
         .     '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
-        .     '<span class="sidebar-brand-text">FluxDREETS</span>'
+        .     '<span class="sidebar-brand-text">FluxDémat</span>'
         .   '</a>'
         .   '<div class="sidebar-nav">'
         .     $nav_html
@@ -2004,7 +2004,7 @@ function render_footer(): string {
          . '</div><!-- /.app-layout -->'
          . '<footer>'
          . '<a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>'
-         . ' · Formulaire Dématérialisé · DREETS BFC'
+         . ' · FluxDémat'
          . '</footer>';
 }
 
@@ -2065,8 +2065,8 @@ function render_error_page(int $code, string $title, string $message, string $hi
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>' . h($title) . ' — DREETS</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>D</text></svg>">
+  <title>' . h($title) . ' — FluxDémat</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'15\' fill=\'%23003189\'/><text x=\'50\' y=\'72\' font-size=\'60\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>F</text></svg>">
   ' . $css . '
 </head>
 <body>
@@ -2085,7 +2085,7 @@ function render_error_page(int $code, string $title, string $message, string $hi
     <div class="error-actions">
       <a href="' . h($back_url) . '" class="btn btn-primary">Retour à l\'accueil</a>
     </div>
-    <div class="error-stamp">Formulaire Dématérialisé — DREETS</div>
+    <div class="error-stamp">FluxDémat</div>
   </div>
 </div>
 ' . (function_exists('render_footer') ? render_footer() : '') . '
@@ -2570,13 +2570,13 @@ function advance_workflow(string $submission_id): void {
     // Notification de validation finale a l'agent
     $agent_email = $submission['submitted_by'] ?? '';
     if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-        $subject = 'Demande validée — ' . ($submission['form_label'] ?? 'FluxDREETS');
+        $subject = 'Demande validée — ' . ($submission['form_label'] ?? 'FluxDémat');
         $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#1a6b3c;">✓ Demande validée</h2>
   <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été <strong>validée</strong> par l\'ensemble des validateurs.</p>
   <p>Le processus de workflow est désormais terminé.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
 </body></html>';
         send_mail($agent_email, $subject, $body);
     }
@@ -2653,13 +2653,13 @@ function validate_token(string $token, string $action = 'valider', string $comme
         // Notifier l'agent du refus
         $agent_email = $t['submitted_by'] ?? '';
         if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-            $refuse_subject = 'Demande refusée — ' . ($t['form_label'] ?? 'FluxDREETS');
+            $refuse_subject = 'Demande refusée — ' . ($t['form_label'] ?? 'FluxDémat');
             $refuse_body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#c0392b;">Demande refusée</h2>
   <p>Votre demande <strong>' . h($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . h($t['step_label']) . '</strong>.</p>
   ' . (!empty($comment) ? '<p><strong>Motif :</strong> ' . h($comment) . '</p>' : '') . '
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat — ' . h(get_setting('smtp_from', SMTP_FROM)) . '</p>
 </body></html>';
             send_mail($agent_email, $refuse_subject, $refuse_body);
         }
@@ -2743,7 +2743,7 @@ function process_admin_request(string $email): bool {
         // Envoie un email à l'admin principal pour approbation
         $approve_url = BASE_URL . '/admin_access.php?action=approve&token=' . $token;
         $reject_url = BASE_URL . '/admin_access.php?action=reject&token=' . $token;
-        $subject = 'Demande d\'accès admin - FluxDREETS';
+        $subject = 'Demande d\'accès admin - FluxDémat';
         $body = '
 <!DOCTYPE html>
 <html>
@@ -2784,7 +2784,7 @@ function approve_admin_request(string $email): bool {
         $stmt->execute([generate_uuid(), $email, date('Y-m-d H:i:s')]);
         
         // Envoie un email de confirmation
-        $subject = 'Accès admin approuvé - FluxDREETS';
+        $subject = 'Accès admin approuvé - FluxDémat';
         $body = '
 <!DOCTYPE html>
 <html>
@@ -2820,7 +2820,7 @@ function reject_admin_request(string $email): bool {
         $stmt->execute([$email]);
         
         // Envoie un email de refus
-        $subject = 'Demande d\'accès admin refusée - FluxDREETS';
+        $subject = 'Demande d\'accès admin refusée - FluxDémat';
         $body = '
 <!DOCTYPE html>
 <html>
@@ -3127,12 +3127,12 @@ function cancel_submission(string $submission_id, string $cancelled_by = ''): ar
     // Notifier l'agent
     $agent_email = $submission['submitted_by'] ?? '';
     if (!empty($agent_email) && filter_var($agent_email, FILTER_VALIDATE_EMAIL)) {
-        $subject = 'Demande annulée — ' . ($submission['form_label'] ?? 'FluxDREETS');
+        $subject = 'Demande annulée — ' . ($submission['form_label'] ?? 'FluxDémat');
         $body = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
   <h2 style="color:#b45309;">Demande annulée</h2>
   <p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été annulée.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat</p>
 </body></html>';
         send_mail($agent_email, $subject, $body);
     }
@@ -3471,7 +3471,7 @@ function delegate_token(string $token_id, string $to_email, string $reason = '')
   <h2 style="color:#003189;">🔄 Délégation confirmée</h2>
   <p>Votre validation pour <strong>' . h($tok['form_label']) . '</strong> (étape ' . h($step['label'] ?? '') . ') a été déléguée à <strong>' . h($to_email) . '</strong>.</p>
   <p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>
-  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDREETS — Ne pas répondre à cet email</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">FluxDémat — Ne pas répondre à cet email</p>
 </body></html>';
     send_mail($tok['email'], $confirm_subject, $confirm_body);
 

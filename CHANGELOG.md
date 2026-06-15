@@ -1,4 +1,22 @@
-# Changelog — Formulaire Dématérialisé DREETS
+# Changelog — FluxDémat
+
+## [5.7.0] — 2026-06-15
+
+### Feature — Renommage FluxDémat + Zéro anglicisme
+
+- **FluxDémat** : L'application s'appelle désormais **FluxDémat** (contraction de « Flux » et « Dématérialisation »). Le nom remplace « FluxDREETS » dans toute l'interface : sidebar, titres de pages, sujets d'emails, paramètres par défaut, prompt IA, page d'accueil, installateur, favicons, etc. Aucune référence à DREETS dans le nom de l'application.
+- **Zéro anglicisme dans l'interface** : Remplacement systématique de tous les anglicismes visibles par l'utilisateur :
+  - « Dashboard » → « Tableau de bord »
+  - « Monitoring » → « Surveillance »
+  - « Onboarding agent » → « Accueil agent »
+  - « Outboarding agent » → « Départ agent »
+  - « Email » (dans les libellés et en-têtes de tableaux) → « Courriel »
+  - « Observabilité » → « Diagnostic »
+- **Favicon mis à jour** : La lettre du favicon passe de « D » à « F » pour FluxDémat.
+
+### Fix — Section propriétaires du formulaire
+
+- **`get_form_owners()`** : La requête ne retournait pas la colonne `id`, ce qui rendait le bouton « Retirer » inopérant (lien `confirm_action.php` avec `$owner['id']` vide). La fonction retourne désormais `id, email, added_at`.
 
 ## [5.6.0] — 2026-06-15
 

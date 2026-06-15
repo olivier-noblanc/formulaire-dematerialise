@@ -627,7 +627,7 @@ if ($action === 'add_form') {
 
     if (!empty($form_id) && !empty($owner_email)) {
         if (!filter_var($owner_email, FILTER_VALIDATE_EMAIL)) {
-            $error_msg = 'L\'adresse email "' . h($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@dreets.gouv.fr';
+            $error_msg = 'L\'adresse courriel "' . h($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@dreets.gouv.fr';
         } else {
             $pdo = get_pdo();
             try {
@@ -642,7 +642,7 @@ if ($action === 'add_form') {
             }
         }
     } else {
-        $error_msg = 'L\'email du propriétaire est requis.';
+        $error_msg = 'Le courriel du propriétaire est requis.';
     }
 
 } elseif ($action === 'delete_owner') {
@@ -857,7 +857,7 @@ elseif ($action === 'populate_samples') {
         $sample_forms = [
             [
                 'slug' => 'onboarding',
-                'label' => 'Onboarding agent',
+                'label' => 'Accueil agent',
                 'description' => "Formulaire d'accueil d'un nouvel agent — prise de poste, création des accès et formalités d'entrée",
                 'fields' => [
                     ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
@@ -880,7 +880,7 @@ elseif ($action === 'populate_samples') {
             ],
             [
                 'slug' => 'outboarding',
-                'label' => 'Outboarding agent',
+                'label' => 'Départ agent',
                 'description' => "Formulaire de départ d'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat",
                 'fields' => [
                     ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
@@ -1141,8 +1141,8 @@ ksort($steps_by_ordre);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gestion des formulaires — FluxDREETS</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+    <title>Gestion des formulaires — FluxDémat</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
     <?php require_once __DIR__ . '/style.php'; ?>
     <style>
         .container { max-width: 1200px; }
@@ -1468,7 +1468,7 @@ ksort($steps_by_ordre);
                 <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ d'importation ci-dessus. Le JSON généré inclura les champs du formulaire <strong>et</strong> le circuit de validation (workflow).</p>
                 <div class="field">
                     <label>Prompt à copier-coller <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ai-prompt').innerText);this.textContent='✓ Copié !';setTimeout(()=>this.textContent='📋 Copier',2000)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier</button></label>
-                    <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "FluxDREETS".
+                    <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "FluxDémat".
 
 Consignes :
 - Analyse le document administratif fourni ci-dessous.
@@ -1530,7 +1530,7 @@ Consignes :
 {
   "schema_version": "1.0",
   "form": {
-    "label": "Onboarding agent",
+    "label": "Accueil agent",
     "description": "Formulaire d'accueil d'un nouvel agent — prise de poste, création des accès et formalités d'entrée"
   },
   "fields": [
@@ -1571,7 +1571,7 @@ Voici le document administratif à analyser :
                     <div class="form-grid">
                         <div class="field">
                             <label>Libellé (affiché dans l'interface)<span class="req">*</span></label>
-                            <input type="text" name="label" required placeholder="ex: Onboarding agent" autofocus>
+                            <input type="text" name="label" required placeholder="ex: Accueil agent" autofocus>
                             <span class="hint">L'identifiant technique (slug) est généré automatiquement à partir du libellé.</span>
                         </div>
                         <div class="field full-width">
@@ -1835,7 +1835,7 @@ Voici le document administratif à analyser :
                                         <input type="hidden" name="step_id" value="<?= $selected_step['id'] ?>">
                                         <div class="form-grid">
                                             <div class="field">
-                                                <label>Email du destinataire<span class="req">*</span></label>
+                                                <label>Courriel du destinataire<span class="req">*</span></label>
                                                 <input type="email" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr">
                                             </div>
                                         </div>
@@ -2091,7 +2091,7 @@ Voici le document administratif à analyser :
                 <table class="data-table" style="margin-bottom:1rem;">
                     <thead>
                         <tr>
-                            <th>Email</th>
+                            <th>Courriel</th>
                             <th>Ajouté le</th>
                             <th style="width:80px;">Action</th>
                         </tr>

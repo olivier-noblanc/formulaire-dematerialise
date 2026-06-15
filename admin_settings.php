@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'test_email') {
         $to = get_auth_user();
-        $subject = 'Test email — FluxDREETS';
+        $subject = 'Test email — FluxDémat';
         $body = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;color:#222;">
   <h2 style="color:#003189;">Test d\'envoi d\'email</h2>
@@ -147,7 +147,7 @@ if (isset($_GET['test_webhook'])) {
     if (empty($webhook_url)) {
         $error_msg = 'Aucune URL webhook configurée.';
     } else {
-        send_webhook('test', ['message' => 'Test webhook depuis FluxDREETS', 'version' => APP_VERSION]);
+        send_webhook('test', ['message' => 'Test webhook depuis FluxDémat', 'version' => APP_VERSION]);
         $success_msg = 'Webhook de test envoyé à ' . h($webhook_url) . '.';
         app_log('webhook_test', 'settings', 'Test webhook envoyé');
     }
@@ -181,8 +181,8 @@ $ldap_ext_available = function_exists('ldap_connect');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Paramètres — FluxDREETS</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>D</text></svg>">
+    <title>Paramètres — FluxDémat</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%231E40AF'/><stop offset='100%25' stop-color='%233B82F6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>F</text></svg>">
     <?php require_once __DIR__ . '/style.php'; ?>
     <style>
         .container { max-width: 900px; }
@@ -442,7 +442,7 @@ $ldap_ext_available = function_exists('ldap_connect');
 
             <div class="field">
                 <label>Nom expéditeur</label>
-                <input type="text" name="smtp_from_name" value="<?= h($smtp_from_name) ?>" placeholder="FluxDREETS">
+                <input type="text" name="smtp_from_name" value="<?= h($smtp_from_name) ?>" placeholder="FluxDémat">
             </div>
         </div>
 
