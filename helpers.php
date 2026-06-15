@@ -152,12 +152,11 @@ function get_owned_forms(?string $email = null): array {
  * - daily  : alert_check (1x/jour)
  * - hourly : remind (1x/heure)
  */
-function run_lazy_cron(): void {
+function run_lazy_cron(PDO $pdo): void {
     static $running = false;
-    if ($running) return; // Éviter la récursion (get_pdo() appelle run_lazy_cron())
+    if ($running) return; // Éviter la récursion
     $running = true;
 
-    $pdo = get_pdo();
     $now = (int) time();
     
     $tasks = [
@@ -165,46 +164,51 @@ function run_lazy_cron(): void {
         'alert_check' => ['interval' => 86400,     'file' => __DIR__ . '/alert_check.php'],
     ];
     
-    foreach ($tasks as $key => $task) {
-        // Vérifier la dernière exécution
-        $stmt = $pdo->prepare("SELECT last_run FROM lazy_cron WHERE task_key = ?");
-        $stmt->execute([$key]);
-        $last_run = $stmt->fetchColumn();
-        
-        $should_run = false;
-        if ($last_run === false || $last_run === null) {
-            $should_run = true;
-        } else {
-            $last_ts = strtotime($last_run);
-            if ($last_ts === false) {
-                // Date invalide en base → on relance la tâche
+    try {
+        foreach ($tasks as $key => $task) {
+            // Vérifier la dernière exécution
+            $stmt = $pdo->prepare("SELECT last_run FROM lazy_cron WHERE task_key = ?");
+            $stmt->execute([$key]);
+            $last_run = $stmt->fetchColumn();
+
+            $should_run = false;
+            if ($last_run === false || $last_run === null || $last_run === '') {
                 $should_run = true;
-            } elseif (($now - $last_ts) >= $task['interval']) {
-                $should_run = true;
+            } else {
+                $last_ts = strtotime($last_run);
+                if ($last_ts === false) {
+                    // Date invalide en base → on relance la tâche
+                    $should_run = true;
+                } elseif (($now - $last_ts) >= $task['interval']) {
+                    $should_run = true;
+                }
+            }
+
+            if ($should_run) {
+                // Verrouillage : éviter les exécutions concurrentes
+                try {
+                    $pdo->prepare("INSERT OR REPLACE INTO lazy_cron (task_key, last_run, run_count) VALUES (?, ?, COALESCE((SELECT run_count FROM lazy_cron WHERE task_key = ?), 0) + 1)")
+                        ->execute([$key, date('Y-m-d H:i:s', $now), $key]);
+                } catch (PDOException $e) {
+                    continue; // Un autre processus est en cours
+                }
+
+                // Exécuter la tâche dans un bloc try/catch pour ne pas casser la page
+                try {
+                    // Les scripts remind.php et alert_check.php sont conçus pour être
+                    // appelés en CLI. On les inclut directement avec output buffering.
+                    ob_start();
+                    require $task['file'];
+                    ob_end_clean();
+                } catch (\Throwable $e) {
+                    // Ne pas faire échouer la page utilisateur
+                    error_log("Lazy cron error ({$key}): " . $e->getMessage());
+                }
             }
         }
-        
-        if ($should_run) {
-            // Verrouillage : éviter les exécutions concurrentes
-            try {
-                $pdo->prepare("INSERT OR REPLACE INTO lazy_cron (task_key, last_run, run_count) VALUES (?, ?, COALESCE((SELECT run_count FROM lazy_cron WHERE task_key = ?), 0) + 1)")
-                    ->execute([$key, date('Y-m-d H:i:s', $now), $key]);
-            } catch (PDOException $e) {
-                continue; // Un autre processus est en cours
-            }
-            
-            // Exécuter la tâche dans un bloc try/catch pour ne pas casser la page
-            try {
-                // Les scripts remind.php et alert_check.php sont conçus pour être
-                // appelés en CLI. On les inclut directement avec output buffering.
-                ob_start();
-                require $task['file'];
-                ob_end_clean();
-            } catch (\Throwable $e) {
-                // Ne pas faire échouer la page utilisateur
-                error_log("Lazy cron error ({$key}): " . $e->getMessage());
-            }
-        }
+    } catch (\Throwable $e) {
+        // Sécurité globale : ne jamais laisser le cron casser get_pdo()
+        error_log("Lazy cron fatal: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
     }
 }
 
@@ -251,7 +255,7 @@ function get_pdo(): PDO {
         db_migrate($pdo);
         
         // Exécuter les tâches planifiées (lazy cron) au premier accès
-        run_lazy_cron();
+        run_lazy_cron($pdo);
     }
     return $pdo;
 }

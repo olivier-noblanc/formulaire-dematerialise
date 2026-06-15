@@ -1,5 +1,13 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [5.4.1] — 2026-06-15
+
+### Fix — TypeError run_lazy_cron
+
+- **`run_lazy_cron(PDO $pdo)`** : La fonction recevait son PDO via un appel récursif à `get_pdo()` (ligne 160), ce qui créait une situation instable lors du premier accès. Désormais, `$pdo` est passé en paramètre depuis `get_pdo()` après l'initialisation (ligne 258), éliminant tout risque de récursion.
+- **Try/catch global** : Ajout d'un bloc `try/catch (\Throwable)` englobant tout le `foreach` dans `run_lazy_cron()`. Toute erreur fatale dans le cron (y compris TypeError, Exception, Error) est désormais loguée via `error_log()` et ne casse plus la page utilisateur.
+- **Vérification `$last_run === ''`** : Ajout du cas chaîne vide dans la vérification d'absence de dernière exécution, pour les cas où la colonne `last_run` contiendrait une chaîne vide au lieu de `NULL`.
+
 ## [5.4.0] — 2026-06-15
 
 ### Feature — Gestion avancée des formulaires
