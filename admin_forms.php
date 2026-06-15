@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf()) {
 // ── Field type helper ──────────────────────────────────────────
 $field_types = [
     'text'     => '<span aria-hidden="true">📝</span> Texte',
+    'email'    => '<span aria-hidden="true">📧</span> Courriel',
     'date'     => '<span aria-hidden="true">📅</span> Date',
     'select'   => '<span aria-hidden="true">📋</span> Sélecteur',
     'checkbox' => '<span aria-hidden="true">☑</span> Case à cocher',
@@ -42,6 +43,7 @@ $field_types = [
 function field_type_icon(string $type): string {
     $icons = [
         'text'     => '<span aria-hidden="true">📝</span>',
+        'email'    => '<span aria-hidden="true">📧</span>',
         'date'     => '<span aria-hidden="true">📅</span>',
         'select'   => '<span aria-hidden="true">📋</span>',
         'checkbox' => '<span aria-hidden="true">☑️</span>',
@@ -54,6 +56,7 @@ function field_type_icon(string $type): string {
 function field_type_label(string $type): string {
     $labels = [
         'text'     => 'Texte',
+        'email'    => 'Courriel',
         'date'     => 'Date',
         'select'   => 'Sélecteur',
         'checkbox' => 'Case à cocher',
@@ -79,7 +82,7 @@ function options_to_lines(?string $json): string {
 function validate_form_json(array $data): array {
     $errors = [];
     $warnings = [];
-    $valid_field_types = ['text', 'date', 'select', 'checkbox', 'textarea', 'file'];
+    $valid_field_types = ['text', 'email', 'date', 'select', 'checkbox', 'textarea', 'file'];
 
     // ── Top-level structure ──────────────────────────────────
     if (!isset($data['schema_version'])) {
@@ -244,9 +247,11 @@ function validate_form_json(array $data): array {
                 }
                 foreach ($s['recipients'] as $j => $email) {
                     if (!is_string($email)) {
-                        $errors[] = "$prefix.recipients[" . ($j+1) . "] doit être une chaîne (adresse email).";
+                        $errors[] = "$prefix.recipients[" . ($j+1) . "] doit être une chaîne (adresse email ou référence {{field_name}}).";
+                    } elseif (preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email)) {
+                        // Référence dynamique {{field_name}} — valide
                     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                        $errors[] = "$prefix.recipients[" . ($j+1) . "] = \"$email\" n'est pas une adresse email valide. Format attendu : prenom.nom@dreets.gouv.fr ou service@dreets.gouv.fr";
+                        $errors[] = "$prefix.recipients[" . ($j+1) . "] = \"$email\" n'est ni une adresse email valide ni une référence {{field_name}}. Format attendu : prenom.nom@dreets.gouv.fr, service@dreets.gouv.fr ou {{nom_du_champ}}";
                     }
                 }
             }
@@ -301,7 +306,7 @@ function format_validation_results(array $result): string {
         }
         $html .= '<div style="margin-top:.75rem;">';
         $html .= '<label style="font-size:.82rem;font-weight:bold;">Message à copier-coller à l\'IA pour corriger le JSON : ';
-        $html .= '<button type="button" onclick="navigator.clipboard.writeText(document.getElementById(\'validation-feedback\').innerText);this.textContent=\'✓ Copié !\';setTimeout(()=>this.textContent=\'📋 Copier le message\',2000)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier le message</button></label>';
+        $html .= '<button type="button" onclick="(function(btn){var txt=document.getElementById(\'validation-feedback\').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent=\'✓ Copié !\';setTimeout(function(){btn.textContent=\'📋 Copier le message\'},2000)}).catch(function(){var ta=document.createElement(\'textarea\');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand(\'copy\');document.body.removeChild(ta);btn.textContent=\'✓ Copié !\';setTimeout(function(){btn.textContent=\'📋 Copier le message\'},2000)})}catch(e){var ta=document.createElement(\'textarea\');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand(\'copy\');document.body.removeChild(ta);btn.textContent=\'✓ Copié !\';setTimeout(function(){btn.textContent=\'📋 Copier le message\'},2000)}})(this)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier le message</button></label>';
         $html .= '<pre id="validation-feedback" style="background:#1e293b;color:#e2e8f0;padding:.75rem;border-radius:6px;font-size:.78rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:250px;overflow-y:auto;margin-top:.25rem;">' . h($copy_text) . '</pre>';
         $html .= '</div>';
     }
@@ -487,15 +492,18 @@ if ($action === 'add_form') {
     $email = trim($_POST['email'] ?? '');
 
     if (!empty($step_id) && !empty($email)) {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error_msg = 'L\'adresse email "' . h($email) . '" n\'est pas valide. Format attendu : prenom.nom@dreets.gouv.fr';
+        // Accepter soit une adresse email valide, soit une référence dynamique {{field_name}}
+        $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email);
+        if (!$is_dynamic && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error_msg = 'Le destinataire "' . h($email) . '" n\'est ni une adresse email valide ni une référence dynamique {{field_name}}. Format attendu : prenom.nom@dreets.gouv.fr ou {{nom_du_champ}}';
         } else {
             $pdo = get_pdo();
             try {
                 $new_rcpt_id = generate_uuid();
                 $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
                     ->execute([$new_rcpt_id, $step_id, $email]);
-                app_log('recipient_add', 'step:' . $step_id, "Destinataire $email ajouté");
+                $label = $is_dynamic ? "Destinataire dynamique $email ajouté" : "Destinataire $email ajouté";
+                app_log('recipient_add', 'step:' . $step_id, $label);
                 header('Location: admin_forms.php?form_id=' . urlencode($form_id));
                 exit;
             } catch (PDOException $e) {
@@ -503,7 +511,7 @@ if ($action === 'add_form') {
             }
         }
     } else {
-        $error_msg = 'L\'étape et l\'email sont requis.';
+        $error_msg = 'L\'étape et le courriel sont requis.';
     }
 
 } elseif ($action === 'delete_recipient') {
@@ -1170,15 +1178,32 @@ ksort($steps_by_ordre);
             padding: 0;
             font-size: 1.05rem;
         }
-        .section-card-header a,
-        .section-card-header button {
+        .section-card-header a {
             color: var(--c-text-inverse);
             text-decoration: none;
             font-size: .82rem;
             opacity: .85;
         }
-        .section-card-header a:hover,
-        .section-card-header button:hover {
+        .section-card-header a:hover {
+            opacity: 1;
+        }
+        .section-card-header button.btn-secondary {
+            color: var(--c-sidebar-text);
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            font-size: .82rem;
+            opacity: .95;
+        }
+        .section-card-header button.btn-secondary:hover {
+            opacity: 1;
+            background: var(--c-primary-50);
+        }
+        .section-card-header button:not(.btn-secondary) {
+            color: var(--c-text-inverse);
+            font-size: .82rem;
+            opacity: .85;
+        }
+        .section-card-header button:not(.btn-secondary):hover {
             opacity: 1;
         }
         .section-card-body {
@@ -1467,7 +1492,7 @@ ksort($steps_by_ordre);
             <div class="section-card-body">
                 <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ d'importation ci-dessus. Le JSON généré inclura les champs du formulaire <strong>et</strong> le circuit de validation (workflow).</p>
                 <div class="field">
-                    <label>Prompt à copier-coller <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ai-prompt').innerText);this.textContent='✓ Copié !';setTimeout(()=>this.textContent='📋 Copier',2000)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier</button></label>
+                    <label>Prompt à copier-coller <button type="button" onclick="(function(btn){var txt=document.getElementById('ai-prompt').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)})}catch(e){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}})(this)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier</button></label>
                     <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?= h(get_app_name()) ?>".
 
 Consignes :
@@ -1479,7 +1504,8 @@ Consignes :
 --- CHAMPS DU FORMULAIRE (fields) ---
 - Chaque champ doit avoir un field_name technique en snake_case (sans accents, généré automatiquement depuis le label).
   Exemple : "Date d'arrivée" → "date_arrivee", "Type de demande" → "type_demande".
-- field_type peut être : "text", "date", "select", "checkbox", "textarea", "file".
+- field_type peut être : "text", "email", "date", "select", "checkbox", "textarea", "file".
+- Utilise "email" pour les champs de courriel (adresse email) — cela garantit la validation HTML5 du format email.
 - Pour "select", mets les options dans le tableau "options". Pour les autres types, "options" vaut null.
 - Regroupe les champs par thème dans card_group (ex: "Identité", "Affectation", "IT", "Logistique", "Finance", "Demande").
 - required : true si le champ est obligatoire, false sinon.
@@ -1493,7 +1519,10 @@ Consignes :
   - label : nom descriptif de l'étape (ex: "Validation manager", "Validation RH", "Validation DSI").
   - ordre : numéro séquentiel (1 = première validation, 2 = deuxième, etc.).
   - actif : true (toujours true pour les nouvelles étapes).
-  - recipients : tableau d'adresses email génériques du service validateur (ex: "manager@dreets.gouv.fr", "rh@dreets.gouv.fr", "dsi@dreets.gouv.fr", "logistique@dreets.gouv.fr", "compta@dreets.gouv.fr", "drh@dreets.gouv.fr").
+  - recipients : tableau d'adresses email. Deux formats possibles :
+    1. Adresse email statique du service validateur (ex: "rh@dreets.gouv.fr", "dsi@dreets.gouv.fr").
+    2. Référence dynamique vers un champ du formulaire avec la syntaxe {{field_name}} — utile quand le validateur dépend de l'agent qui remplit le formulaire. Exemple : si le formulaire a un champ "email_superieur", utilise "{{email_superieur}}" pour que la demande soit envoyée au supérieur hiérarchique saisi par l'agent.
+- ATTENTION : Si le document mentionne un supérieur hiérarchique, un manager direct, ou un validateur dont l'email dépend de l'agent, il FAUT créer un champ email dans les fields ET utiliser la syntaxe {{field_name}} dans les recipients de l'étape correspondante.
 - Minimum 1 étape de validation. Typiquement 2 à 4 étapes selon la complexité du processus décrit dans le document.
 - Si le document ne mentionne pas explicitement le circuit, déduis-le logiquement à partir du type de demande.
 
@@ -1507,7 +1536,7 @@ Consignes :
   "fields": [
     {
       "label": "Libellé du champ visible par l'utilisateur",
-      "field_type": "text | date | select | checkbox | textarea | file",
+      "field_type": "text | email | date | select | checkbox | textarea | file",
       "field_name": "nom_technique_snake_case",
       "options": null,
       "required": true,
@@ -1521,7 +1550,7 @@ Consignes :
       "label": "Nom de l'étape de validation",
       "ordre": 1,
       "actif": true,
-      "recipients": ["email-validateur@dreets.gouv.fr"]
+      "recipients": ["email-validateur@exemple.fr"]
     }
   ]
 }
@@ -1530,23 +1559,20 @@ Consignes :
 {
   "schema_version": "1.0",
   "form": {
-    "label": "Accueil agent",
-    "description": "Formulaire d'accueil d'un nouvel agent — prise de poste, création des accès et formalités d'entrée"
+    "label": "Demande de congé",
+    "description": "Formulaire de demande de congé avec validation hiérarchique"
   },
   "fields": [
     { "label": "Nom complet", "field_type": "text", "field_name": "nom_complet", "options": null, "required": true, "ordre": 1, "card_group": "Identité", "hint": "Nom Prénom" },
-    { "label": "Date d'arrivée", "field_type": "date", "field_name": "date_arrivee", "options": null, "required": true, "ordre": 2, "card_group": "Identité", "hint": "" },
-    { "label": "Type d'arrivée", "field_type": "select", "field_name": "type_arrivee", "options": ["Nouveau recruté", "Mutation entrante", "Contrat temporaire", "Stage"], "required": true, "ordre": 3, "card_group": "Identité", "hint": "" },
-    { "label": "Direction / Service", "field_type": "text", "field_name": "direction_service", "options": null, "required": true, "ordre": 4, "card_group": "Affectation", "hint": "" },
-    { "label": "Création compte SI", "field_type": "checkbox", "field_name": "creation_compte_si", "options": null, "required": false, "ordre": 5, "card_group": "IT", "hint": "" },
-    { "label": "Matériel informatique", "field_type": "select", "field_name": "materiel_info", "options": ["PC portable", "PC fixe", "Tablette", "Aucun"], "required": false, "ordre": 6, "card_group": "IT", "hint": "" },
-    { "label": "Remarques", "field_type": "textarea", "field_name": "remarques", "options": null, "required": false, "ordre": 7, "card_group": "Divers", "hint": "" }
+    { "label": "Courriel du supérieur hiérarchique", "field_type": "email", "field_name": "email_superieur", "options": null, "required": true, "ordre": 2, "card_group": "Identité", "hint": "Adresse email de votre manager direct" },
+    { "label": "Date de début", "field_type": "date", "field_name": "date_debut", "options": null, "required": true, "ordre": 3, "card_group": "Demande", "hint": "" },
+    { "label": "Date de fin", "field_type": "date", "field_name": "date_fin", "options": null, "required": true, "ordre": 4, "card_group": "Demande", "hint": "" },
+    { "label": "Type de congé", "field_type": "select", "field_name": "type_conge", "options": ["Congé annuel", "Congé maladie", "Congé sans solde", "RTT"], "required": true, "ordre": 5, "card_group": "Demande", "hint": "" },
+    { "label": "Motif", "field_type": "textarea", "field_name": "motif", "options": null, "required": false, "ordre": 6, "card_group": "Demande", "hint": "" }
   ],
   "steps": [
-    { "label": "Validation manager", "ordre": 1, "actif": true, "recipients": ["manager@dreets.gouv.fr"] },
-    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@dreets.gouv.fr"] },
-    { "label": "Validation DSI", "ordre": 3, "actif": true, "recipients": ["dsi@dreets.gouv.fr"] },
-    { "label": "Validation Logistique", "ordre": 4, "actif": true, "recipients": ["logistique@dreets.gouv.fr"] }
+    { "label": "Validation supérieur hiérarchique", "ordre": 1, "actif": true, "recipients": ["{{email_superieur}}"] },
+    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@dreets.gouv.fr"] }
   ]
 }
 
@@ -1836,7 +1862,8 @@ Voici le document administratif à analyser :
                                         <div class="form-grid">
                                             <div class="field">
                                                 <label>Courriel du destinataire<span class="req">*</span></label>
-                                                <input type="email" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr">
+                                                <input type="text" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr ou {{nom_du_champ}}">
+                                                <span class="hint">Adresse email statique (ex: rh@dreets.gouv.fr) ou référence dynamique vers un champ du formulaire (ex: {{email_superieur}}). La référence sera résolue au moment de la soumission.</span>
                                             </div>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Ajouter le destinataire</button>
@@ -1847,8 +1874,10 @@ Voici le document administratif à analyser :
                                     <div style="margin-top:1rem;">
                                         <div class="recipient-chips" style="gap:.5rem;">
                                             <?php foreach ($selected_step['recipients'] as $recipient): ?>
-                                                <span class="recipient-chip" style="font-size:.82rem;padding:.3rem .7rem;">
-                                                    <span aria-hidden="true">📧</span> <?= h($recipient['email']) ?>
+                                                <?php $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $recipient['email']); ?>
+                                                <span class="recipient-chip" style="font-size:.82rem;padding:.3rem .7rem;<?= $is_dynamic ? 'background:#e0e7ff;color:#3730a3;border:1px dashed #6366f1;' : '' ?>">
+                                                    <span aria-hidden="true"><?= $is_dynamic ? '🔗' : '📧' ?></span> <?= h($recipient['email']) ?>
+                                                    <?php if ($is_dynamic): ?><span style="font-size:.7rem;opacity:.7;margin-left:.3rem;">(dynamique)</span><?php endif; ?>
                                                     <form method="POST" style="display:inline;">
                                                         <?= csrf_field() ?>
                                                         <input type="hidden" name="action" value="delete_recipient">
@@ -2084,7 +2113,10 @@ Voici le document administratif à analyser :
     <?php if ($form): ?>
         <!-- Section Propriétaires du formulaire -->
         <div class="section-card" id="owners">
-            <h2>👥 Propriétaires du formulaire</h2>
+            <div class="section-card-header">
+                <h2>👥 Propriétaires du formulaire</h2>
+            </div>
+            <div class="section-card-body">
             <p class="hint" style="margin-bottom:1rem;">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
 
             <?php if (!empty($owners)): ?>
@@ -2127,6 +2159,7 @@ Voici le document administratif à analyser :
                     <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Ouvrir le tableau de suivi</a>
                 </div>
             <?php endif; ?>
+            </div>
         </div>
     <?php endif; ?>
 </div>

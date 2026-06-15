@@ -215,7 +215,7 @@ function inst_write_config(array $values): array {
         . "// Email de l'administrateur principal\n"
         . "define('ADMIN_EMAIL',    '" . addslashes($values['admin_email']) . "');\n"
         . "// Version de l'application — à mettre à jour à chaque release\n"
-        . "define('APP_VERSION',    '3.0.0');\n"
+        . "define('APP_VERSION',    '5.9.0');\n"
         . "date_default_timezone_set('Europe/Paris');\n";
 
     $config_path = __DIR__ . '/config.php';
@@ -703,7 +703,7 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
                 'SMTP_FROM_NAME' => $confirm_config['smtp_from_name'],
                 'DELAI_RELANCE_H'=> (string)$confirm_config['delai_relance_h'],
                 'ADMIN_EMAIL'    => $confirm_config['admin_email'],
-                'APP_VERSION'    => '3.0.0',
+                'APP_VERSION'    => '5.9.0',
             ];
             foreach ($config_lines as $key => $val):
                 echo '<span class="config-key">' . inst_h($key) . '</span> = <span class="config-val">' . inst_h($val) . "</span>\n";

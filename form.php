@@ -209,6 +209,13 @@ function render_field(array $field, mixed $posted_val, array $field_errors): str
     }
 
     switch ($field['field_type']) {
+        case 'email':
+            $val = h($posted_val ?? '');
+            $maxlength = ' maxlength="500"';
+            return <<<HTML
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="email" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$maxlength} pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$">{$hint}{$error_html}</div>
+HTML;
+
         case 'date':
             $val = h($posted_val ?? '');
             return <<<HTML

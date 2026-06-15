@@ -2500,6 +2500,41 @@ function build_mail_html(array $submission, string $step_label, string $token): 
  *  - Génère les tokens pour tous les destinataires de l'étape courante
  *  - Si plus aucune étape → soumission close
  */
+/**
+ * Résout les références dynamiques {{field_name}} dans une adresse email de destinataire.
+ * Si le destinataire est de la forme "{{field_name}}", la fonction cherche la valeur
+ * correspondante dans les données du formulaire soumises.
+ * Si la référence ne peut pas être résolue, retourne la chaîne inchangée.
+ *
+ * @param string $recipient  Adresse email ou référence {{field_name}}
+ * @param array  $form_data  Données du formulaire soumises (clé => valeur)
+ * @return string Adresse email résolue
+ */
+function resolve_dynamic_recipient(string $recipient, array $form_data): string {
+    if (preg_match('/^\{\{([a-z][a-z0-9_]*)\}\}$/', $recipient, $m)) {
+        $field_name = $m[1];
+        // Chercher dans les données du formulaire
+        if (isset($form_data[$field_name]) && !empty($form_data[$field_name])) {
+            $resolved = trim($form_data[$field_name]);
+            if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                return $resolved;
+            }
+        }
+        // Essayer aussi avec le nom du champ en majuscules ou variations
+        foreach ($form_data as $key => $val) {
+            if (strtolower($key) === $field_name && !empty($val)) {
+                $resolved = trim($val);
+                if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                    return $resolved;
+                }
+            }
+        }
+        // Référence non résolue — retourner la chaîne brute (sera filtrée plus tard)
+        return $recipient;
+    }
+    return $recipient;
+}
+
 function advance_workflow(string $submission_id): void {
     $pdo = get_pdo();
 
@@ -2559,9 +2594,17 @@ function advance_workflow(string $submission_id): void {
             $now = date('Y-m-d H:i:s');
             $expire_days = (int)get_setting('token_expire_days', '30');
             $expires_at = date('Y-m-d H:i:s', strtotime("+{$expire_days} days"));
+            // Décoder les données du formulaire pour résoudre les références {{field_name}}
+            $form_data = json_decode($submission['data'] ?? '{}', true) ?: [];
             foreach ($groupe as $step) {
-                $emails = explode('|', $step['emails']);
-                foreach ($emails as $email) {
+                $raw_emails = explode('|', $step['emails']);
+                foreach ($raw_emails as $email) {
+                    // Résoudre les références dynamiques {{field_name}}
+                    $email = resolve_dynamic_recipient($email, $form_data);
+                    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        error_log("Workflow: skipping invalid recipient '$email' for step {$step['id']}");
+                        continue;
+                    }
                     $token = generate_token();
                     $token_row_id = generate_uuid();
                     $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)")

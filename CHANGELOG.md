@@ -1,5 +1,41 @@
 # Changelog — CircuitDémat
 
+## [5.9.0] — 2026-06-15
+
+### Fix — Bouton Dupliquer illisible (texte blanc sur fond blanc)
+
+- **CSS `.section-card-header button`** : La règle forçait `color: var(--c-text-inverse)` (blanc) sur tous les boutons dans l'en-tête des section-cards, y compris les `.btn-secondary` qui ont un fond blanc. Résultat : texte blanc sur fond blanc = invisible.
+- **Correction** : Les boutons `.btn-secondary` dans `.section-card-header` héritent désormais de leur couleur de texte normale (`var(--c-sidebar-text)`), avec un fond blanc et une bordure. Seuls les boutons non-secondaires conservent le texte blanc.
+
+### Fix — Bouton « Copier » ne fonctionne pas (HTTP sans HTTPS)
+
+- **`navigator.clipboard.writeText()`** : Cette API n'est disponible que dans les contextes sécurisés (HTTPS ou localhost). En HTTP intranet, l'appel échoue silencieusement.
+- **Fallback `document.execCommand('copy')`** : Ajout d'un fallback complet avec création d'un `<textarea>` temporaire pour les contextes non-HTTPS. Fonctionne maintenant dans tous les cas.
+- **Concerne** : Le bouton « 📋 Copier » du prompt IA et le bouton « 📋 Copier le message » de validation JSON.
+
+### Fix — Version 3.0.0 dans l'installateur
+
+- **install.php** : Le script d'installation écrivait `APP_VERSION = '3.0.0'` dans le fichier config.php généré. La version est désormais synchronisée avec la version courante (5.9.0).
+
+### Feature — Type de champ « Courriel » (email)
+
+- **Nouveau `field_type` : `email`** : Ajouté dans le sélecteur de type de champ, la validation d'import JSON, le prompt IA, et le rendu du formulaire.
+- **Rendu HTML5** : Les champs de type `email` utilisent `<input type="email">` avec validation de pattern email intégrée.
+- **Avantage** : Avant, les champs email étaient de type `text` avec détection heuristique basée sur le `field_name` (si le nom contenait « email », « courriel » ou « mel »). Désormais, l'IA et l'import JSON peuvent explicitement créer des champs de type `email`.
+
+### Feature — Destinataires dynamiques du workflow (syntaxe `{{field_name}}`)
+
+- **Références dynamiques** : Les destinataires d'une étape de validation peuvent désormais contenir `{{field_name}}` pour faire référence à la valeur d'un champ du formulaire rempli par l'agent. Exemple : `{{email_superieur}}` envoie la demande de validation au supérieur hiérarchique saisi par l'agent.
+- **Validation d'import** : La syntaxe `{{field_name}}` est acceptée dans `steps[].recipients` lors de l'import JSON (plus d'erreur « n'est pas une adresse email valide »).
+- **Résolution à l'exécution** : La fonction `resolve_dynamic_recipient()` dans `helpers.php` résout les références `{{field_name}}` au moment où le workflow avance, en lisant les données soumises par l'agent. Si la référence ne peut être résolue ou n'est pas un email valide, le destinataire est ignoré avec un log d'erreur.
+- **Prompt IA mis à jour** : Le prompt IA explique la syntaxe `{{field_name}}` et donne un exemple concret (demande de congé avec validation du supérieur hiérarchique).
+- **Cas d'usage** : Formulaire de demande de congé, formulaire de mobilité, ou tout formulaire où le validateur dépend de l'agent qui remplit le formulaire.
+
+### Fix — Section propriétaires du formulaire (structure section-card)
+
+- **Structure manquante** : La section « Propriétaires du formulaire » n'utilisait pas la structure `.section-card-header` / `.section-card-body` standard, ce qui causait un rendu visuellement incohérent avec les autres sections.
+- **Correction** : Ajout des `div.section-card-header` et `div.section-card-body` pour un rendu cohérent.
+
 ## [5.8.0] — 2026-06-15
 
 ### Feature — Nom et favicon dynamiques (configurables depuis la BDD)

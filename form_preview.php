@@ -122,12 +122,16 @@ $workflow_steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
                 $disabled = 'disabled';
                 $hint_html = !empty($cf['hint']) ? '<span class="hint">' . h($cf['hint']) . '</span>' : '';
               ?>
-                <?php if ($cf['field_type'] === 'date'): ?>
+                <?php if ($cf['field_type'] === 'email'): ?>
+                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><input type="email" <?= $disabled ?> placeholder="courriel@exemple.fr"><?= $hint_html ?></div>
+                <?php elseif ($cf['field_type'] === 'date'): ?>
                   <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><input type="date" <?= $disabled ?>><span class="hint">Format : JJ/MM/AAAA</span><?= $hint_html ?></div>
                 <?php elseif ($cf['field_type'] === 'select'):
                   $opts = json_decode($cf['options'] ?? '[]', true) ?: [];
                 ?>
                   <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><select <?= $disabled ?>><option>— Sélectionner —</option><?php foreach ($opts as $o): ?><option><?= h($o) ?></option><?php endforeach; ?></select><?= $hint_html ?></div>
+                <?php elseif ($cf['field_type'] === 'file'): ?>
+                  <div class="field"><label><?= h($cf['label']) ?><?= $req ?></label><input type="file" <?= $disabled ?>><span class="hint">Fichier</span><?= $hint_html ?></div>
                 <?php elseif ($cf['field_type'] === 'textarea'): ?>
                   <div class="field full"><label><?= h($cf['label']) ?><?= $req ?></label><textarea <?= $disabled ?> rows="3"></textarea><?= $hint_html ?></div>
                 <?php else: ?>
