@@ -1,12 +1,19 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
-## [5.3.0] — 2026-06-15
+## [5.4.0] — 2026-06-15
 
 ### Feature — Gestion avancée des formulaires
 
 - **Export JSON** : Bouton « 📤 Exporter JSON » dans la barre d'actions d'un formulaire. Génère un fichier `.json` contenant la définition complète du formulaire (métadonnées, champs, étapes, destinataires) avec `schema_version: "1.0"`. Ce format est conçu pour être lisible par une IA qui peut analyser un document administratif et générer un JSON compatible pour import.
 
-- **Import JSON** : Bouton « 📥 Importer JSON » dans la barre du sélecteur de formulaire. Panneau dépliable permettant de coller un JSON (exporté ou généré par IA). Le formulaire est créé automatiquement avec tous ses champs, étapes et destinataires. Validation du JSON et messages d'erreur clairs.
+- **Import JSON** : Bouton « 📥 Importer JSON » dans la barre du sélecteur de formulaire. Panneau dépliable permettant de coller un JSON (exporté ou généré par IA). Le formulaire est créé automatiquement avec tous ses champs, étapes et destinataires. Validation du schéma JSON complète avant import.
+
+- **Validation JSON (dry-run)** : Bouton « 🔍 Valider le JSON » dans le panneau d'import. Teste le JSON sans l'importer, avec retour détaillé :
+  - **Erreurs bloquantes** : propriétés manquantes, types invalides (field_type inexistant, email mal formaté), doublons de field_name, select sans options, etc.
+  - **Avertissements** : suggestions non bloquantes (schema_version manquante, field_name pas en snake_case, options sur un non-select, card_group vide, etc.).
+  - **Bouton « 📋 Copier le message »** : génère un texte formaté prêt à copier-coller à l'IA pour qu'elle corrige son JSON et réessaie. Boucle de feedback LLM → validation → LLM.
+  - L'import est bloqué si des erreurs bloquantes sont détectées. Les avertissements sont affichés mais n'empêchent pas l'import.
+  - Le JSON est préservé dans le textarea après validation pour ne pas perdre le contenu.
 
 - **Prompt IA** : Bouton « 🤖 Prompt IA » dans la barre du sélecteur de formulaire. Panneau dépliable indépendant avec un prompt complet prêt à copier-coller. Le prompt demande à l'IA de générer à la fois les champs du formulaire ET le circuit de validation (workflow/steps) dans le même JSON. Inclut un exemple concret (Onboarding agent avec 4 étapes de validation). L'utilisateur colle son document administratif à la fin du prompt, l'IA génère le JSON conforme au schéma, puis il suffit de le coller dans le champ d'import. Bouton « 📋 Copier » en un clic.
 
