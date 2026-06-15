@@ -56,3 +56,7 @@ Thumbs.db
 
 # Fichiers temporaires de PHP
 *.php~
+
+# Binaires et caches de compilation (spc / static-php)
+/downloads/
+/bin/

@@ -2382,8 +2382,11 @@ function validate_token(string $token, string $action = 'valider', string $comme
     if ($t['closed_at']) return ['status' => 'closed',       'data' => $t];
 
     // Vérifier si le token a expiré
-    if (!empty($t['expires_at']) && strtotime($t['expires_at']) < time()) {
-        return ['status' => 'expired', 'data' => $t];
+    if (!empty($t['expires_at'])) {
+        $exp_ts = strtotime($t['expires_at']);
+        if ($exp_ts !== false && $exp_ts < time()) {
+            return ['status' => 'expired', 'data' => $t];
+        }
     }
 
     // Récupérer les données actuelles

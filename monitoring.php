@@ -336,7 +336,8 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
         <strong style="font-size:.9rem;"><span aria-hidden="true">🔄</span> Script de relance (remind.php)</strong><br>
         <?php if ($last_remind): ?>
           <?php
-            $remind_age = time() - strtotime($last_remind);
+            $remind_ts = strtotime($last_remind);
+            $remind_age = ($remind_ts !== false) ? (time() - $remind_ts) : 999999;
             $remind_ok = $remind_age < 86400;
           ?>
           <span class="health-dot <?= $remind_ok ? 'health-ok' : 'health-warn' ?>" style="margin-top:.5rem;"></span>
@@ -356,7 +357,8 @@ $action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY acti
         <strong style="font-size:.9rem;"><span aria-hidden="true">🔔</span> Script d'alerte (alert_check.php)</strong><br>
         <?php if ($last_alert_check): ?>
           <?php
-            $alert_age = time() - strtotime($last_alert_check);
+            $alert_ts = strtotime($last_alert_check);
+            $alert_age = ($alert_ts !== false) ? (time() - $alert_ts) : 999999;
             $alert_ok = $alert_age < 86400;
           ?>
           <span class="health-dot <?= $alert_ok ? 'health-ok' : 'health-warn' ?>" style="margin-top:.5rem;"></span>

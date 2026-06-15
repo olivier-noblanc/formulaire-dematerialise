@@ -69,8 +69,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $result = ['status' => 'already_done', 'data' => $data];
         } elseif ($data['closed_at']) {
             $result = ['status' => 'closed', 'data' => $data];
-        } elseif (!empty($data['expires_at']) && strtotime($data['expires_at']) < time()) {
-            $result = ['status' => 'expired', 'data' => $data];
+        } elseif (!empty($data['expires_at'])) {
+            $exp_ts = strtotime($data['expires_at']);
+            if ($exp_ts !== false && $exp_ts < time()) {
+                $result = ['status' => 'expired', 'data' => $data];
+            } else {
+                $result = ['status' => 'pending', 'data' => $data];
+            }
         } else {
             $result = ['status' => 'ok', 'data' => $data];
         }

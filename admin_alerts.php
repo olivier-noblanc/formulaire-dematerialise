@@ -225,7 +225,8 @@ function notify_who_label(string $val): string {
     <h2>Script de vérification des alertes</h2>
     <?php if ($last_alert_check): ?>
       <?php
-        $check_age = time() - strtotime($last_alert_check);
+        $check_ts = strtotime($last_alert_check);
+        $check_age = ($check_ts !== false) ? (time() - $check_ts) : 999999;
         $check_ok = $check_age < 86400;
       ?>
       <div class="script-status">

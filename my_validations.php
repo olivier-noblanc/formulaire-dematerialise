@@ -76,7 +76,9 @@ $active_tab = $_GET['tab'] ?? 'pending';
 
 // Vérifier si un token est expiré
 function is_token_expired(array $token): bool {
-    return !empty($token['expires_at']) && strtotime($token['expires_at']) < time();
+    if (empty($token['expires_at'])) return false;
+    $exp_ts = strtotime($token['expires_at']);
+    return ($exp_ts !== false && $exp_ts < time());
 }
 ?>
 <!DOCTYPE html>
@@ -348,7 +350,10 @@ function is_token_expired(array $token): bool {
         </div>
         <div class="vc-body">
           <div class="done-info">Traitée le <strong><?= h(date('d/m/Y à H:i', strtotime($tk['done_at']))) ?></strong></div>
-          <div class="done-date">Délai de traitement : <?= h(round((strtotime($tk['done_at']) - strtotime($tk['sent_at'])) / 3600, 1)) ?>h</div>
+          <div class="done-date">Délai de traitement : <?php
+            $done_ts = strtotime($tk['done_at']); $sent_ts = strtotime($tk['sent_at']);
+            echo h(($done_ts && $sent_ts) ? round(($done_ts - $sent_ts) / 3600, 1) : '?');
+          ?>h</div>
         </div>
       </div>
       <?php endforeach; ?>
