@@ -12,6 +12,10 @@
 
 - **Variable `--gradient-mesh-hero` manquante** : La page d'accueil utilise `var(--gradient-mesh-hero)` pour le fond du hero, mais cette variable CSS n'était jamais définie dans `style.php`. Le hero héritait d'un fond transparent, rendant le texte blanc totalement illisible. Ajout de la définition dans `:root` avec un gradient bleu républicain profond conforme au design system.
 
+### Fix — Images docs.php ne chargent pas
+
+- **Chemin relatif cassé** : Les 17 captures d'écran dans `docs.php` utilisaient des chemins relatifs (`docs/screenshots/...`) qui ne résolvaient pas correctement sur le serveur IIS (sous `/workflow/`). Remplacement par des chemins absolus via `BASE_URL` : `<?= BASE_URL ?>/docs/screenshots/...` → `http://host/workflow/docs/screenshots/...`.
+
 ## [5.1.0] — 2026-06-15
 
 ### Design System 2026 v2 — "Aurora Institutionnel"

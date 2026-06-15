@@ -295,7 +295,7 @@ try {
       <p>Comment trouver les formulaires ? Regardez dans le menu de navigation ou demandez le lien à votre administrateur. Chaque service a ses propres formulaires.</p>
     </div>
 
-    <img src="docs/screenshots/01_index_agent.png" alt="Page d'accueil de l'agent — liste des formulaires disponibles" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/01_index_agent.png" alt="Page d'accueil de l'agent — liste des formulaires disponibles" class="screenshot">
     <p class="screenshot-caption">Page d'accueil vue par un agent — les formulaires disponibles s'affichent directement</p>
 
     <!-- ── Remplir le formulaire ── -->
@@ -342,10 +342,10 @@ try {
       <p>Prenez le temps de vérifier vos informations avant d'envoyer. Une fois envoyé, vous ne pouvez plus modifier les données du formulaire.</p>
     </div>
 
-    <img src="docs/screenshots/03_form_onboarding.png" alt="Formulaire d'onboarding — sections à remplir par l'agent" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/03_form_onboarding.png" alt="Formulaire d'onboarding — sections à remplir par l'agent" class="screenshot">
     <p class="screenshot-caption">Exemple de formulaire d'arrivée d'un agent (onboarding) — sections Identité, IT, RH, Logistique</p>
 
-    <img src="docs/screenshots/04_form_outboarding.png" alt="Formulaire d'outboarding — restitution du matériel et formalités de fin de contrat" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/04_form_outboarding.png" alt="Formulaire d'outboarding — restitution du matériel et formalités de fin de contrat" class="screenshot">
     <p class="screenshot-caption">Formulaire de départ d'un agent (outboarding) — restitution du matériel et formalités de fin de contrat</p>
 
     <!-- ── Après l'envoi ── -->
@@ -448,7 +448,7 @@ try {
       <p>Vous n'avez pas besoin de relancer les validateurs vous-même. Le système envoie automatiquement des relances si un validateur ne répond pas dans le délai configuré.</p>
     </div>
 
-    <img src="docs/screenshots/05_my_submissions.png" alt="Page Mes demandes — liste des soumissions de l'agent avec statuts" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/05_my_submissions.png" alt="Page Mes demandes — liste des soumissions de l'agent avec statuts" class="screenshot">
     <p class="screenshot-caption">Page « Mes demandes » — chaque soumission affiche son statut et son avancement</p>
 
     <!-- ── Annuler une demande ── -->
@@ -581,10 +581,10 @@ try {
       <p><strong><span aria-hidden="true">⚠</span> Important :</strong> Le lien de validation est à <strong>usage unique</strong>. Une fois que vous avez cliqué sur Valider ou Refuser, le lien ne fonctionne plus. Si vous voyez « Déjà validé », cela signifie que l'action a déjà été effectuée (par vous ou par un collègue partageant la même adresse email).</p>
     </div>
 
-    <img src="docs/screenshots/15_validate.png" alt="Page de validation — boutons Valider et Refuser" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/15_validate.png" alt="Page de validation — boutons Valider et Refuser" class="screenshot">
     <p class="screenshot-caption">Page de validation — le validateur peut valider ou refuser l'étape avec un commentaire</p>
 
-    <img src="docs/screenshots/16_submission_view.png" alt="Vue détaillée d'une soumission — progression du workflow, délégation et historique" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/16_submission_view.png" alt="Vue détaillée d'une soumission — progression du workflow, délégation et historique" class="screenshot">
     <p class="screenshot-caption">Vue détaillée d'une soumission — progression du workflow, options de délégation et historique des validations</p>
 
     <!-- ── Après la validation ── -->
@@ -660,7 +660,7 @@ try {
       <li>Accéder directement au <strong>lien de validation</strong></li>
     </ul>
 
-    <img src="docs/screenshots/06_my_validations.png" alt="Page Mes validations — demandes en attente et historique" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/06_my_validations.png" alt="Page Mes validations — demandes en attente et historique" class="screenshot">
     <p class="screenshot-caption">Page « Mes validations » — vue des demandes en attente et de l'historique de validation</p>
   </div>
 
@@ -688,10 +688,10 @@ try {
       </div>
     </div>
 
-    <img src="docs/screenshots/09_admin_access.png" alt="Gestion des accès administrateur — demande et approbation" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/09_admin_access.png" alt="Gestion des accès administrateur — demande et approbation" class="screenshot">
     <p class="screenshot-caption">Gestion des accès administrateur — workflow de demande et d'approbation par le super administrateur</p>
 
-    <img src="docs/screenshots/02_index_admin.png" alt="Page d'accueil administrateur — accès au back office" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/02_index_admin.png" alt="Page d'accueil administrateur — accès au back office" class="screenshot">
     <p class="screenshot-caption">Page d'accueil vue par un administrateur — accès direct au back office et aux outils de gestion</p>
 
     <!-- ── Tableau de bord ── -->
@@ -719,7 +719,7 @@ try {
       <p>Depuis le dashboard, vous pouvez aussi accéder aux pages de détail de chaque soumission pour voir l'historique complet, les pièces jointes et les commentaires des validateurs.</p>
     </div>
 
-    <img src="docs/screenshots/07_dashboard.png" alt="Tableau de bord administrateur — statistiques et liste des demandes" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/07_dashboard.png" alt="Tableau de bord administrateur — statistiques et liste des demandes" class="screenshot">
     <p class="screenshot-caption">Tableau de bord — vue d'ensemble des demandes avec filtres, badges de workflow et actions rapides</p>
 
     <!-- ── Gestion des formulaires ── -->
@@ -771,10 +771,10 @@ try {
       </tbody>
     </table>
 
-    <img src="docs/screenshots/10_admin_forms.png" alt="Page d'administration des formulaires — gestion des formulaires et champs" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/10_admin_forms.png" alt="Page d'administration des formulaires — gestion des formulaires et champs" class="screenshot">
     <p class="screenshot-caption">Administration des formulaires — créer, modifier et configurer les champs et le circuit de validation</p>
 
-    <img src="docs/screenshots/17_form_preview.png" alt="Prévisualisation du formulaire — vue telle que les agents la verront" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/17_form_preview.png" alt="Prévisualisation du formulaire — vue telle que les agents la verront" class="screenshot">
     <p class="screenshot-caption">Prévisualisation du formulaire — l'administrateur peut visualiser le formulaire tel que le verront les agents avant publication</p>
 
     <!-- ── Gestion des étapes et destinataires ── -->
@@ -841,7 +841,7 @@ try {
       </div>
     </div>
 
-    <img src="docs/screenshots/11_admin_alerts.png" alt="Page de configuration des alertes — règles de deadline" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/11_admin_alerts.png" alt="Page de configuration des alertes — règles de deadline" class="screenshot">
     <p class="screenshot-caption">Configuration des alertes — définir des règles de notification avant les dates limites</p>
 
     <!-- ── Monitoring ── -->
@@ -861,7 +861,7 @@ try {
       <p>Consultez régulièrement la page de monitoring pour identifier les validateurs qui tardent à répondre et les relancer si nécessaire.</p>
     </div>
 
-    <img src="docs/screenshots/08_monitoring.png" alt="Page de monitoring — état du système et alertes" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/08_monitoring.png" alt="Page de monitoring — état du système et alertes" class="screenshot">
     <p class="screenshot-caption">Monitoring — temps moyen, taux de validation, tokens bloqués et activité récente</p>
 
     <!-- ── Statistiques ── -->
@@ -996,13 +996,13 @@ try {
       <p><strong><span aria-hidden="true">⚠</span> Accès restreint :</strong> La page de paramètres est réservée au <strong>super administrateur</strong>.</p>
     </div>
 
-    <img src="docs/screenshots/12_admin_settings.png" alt="Page des paramètres — configuration SMTP et relances" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/12_admin_settings.png" alt="Page des paramètres — configuration SMTP et relances" class="screenshot">
     <p class="screenshot-caption">Paramètres — configuration SMTP, délai de relance et webhooks (réservé au super admin)</p>
 
-    <img src="docs/screenshots/13_docs.png" alt="Page de documentation et d'aide en ligne" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/13_docs.png" alt="Page de documentation et d'aide en ligne" class="screenshot">
     <p class="screenshot-caption">Page d'aide et documentation — guide complet accessible à tous les utilisateurs</p>
 
-    <img src="docs/screenshots/14_changelog.png" alt="Journal des modifications — historique des versions" class="screenshot">
+    <img src="<?= BASE_URL ?>/docs/screenshots/14_changelog.png" alt="Journal des modifications — historique des versions" class="screenshot">
     <p class="screenshot-caption">Journal des modifications — historique des évolutions et corrections par version</p>
 
     <!-- ── Admin vs Super admin ── -->
