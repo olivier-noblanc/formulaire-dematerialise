@@ -1,0 +1,388 @@
+  1400→  1400→                                                Ordre <?= h($step['ordre']) ?>
+  1401→  1401→                                                <?php if ($step['actif']): ?>
+  1402→  1402→                                                    <span class="badge badge-ok">Actif</span>
+  1403→  1403→                                                <?php else: ?>
+  1404→  1404→                                                    <span class="badge" style="background:#eee;color:#595959;">Inactif</span>
+  1405→  1405→                                                <?php endif; ?>
+  1406→  1406→                                            </div>
+  1407→  1407→                                            <?php if (!empty($step['recipients'])): ?>
+  1408→  1408→                                                <div class="recipient-chips">
+  1409→  1409→                                                    <?php foreach ($step['recipients'] as $rcpt): ?>
+  1410→  1410→                                                        <span class="recipient-chip">
+  1411→  1411→                                                            <?= h($rcpt['email']) ?>
+  1412→  1412→                                                            <form method="POST" style="display:inline;">
+  1413→  1413→                                                                <?= csrf_field() ?>
+  1414→  1414→                                                                <input type="hidden" name="action" value="delete_recipient">
+  1415→  1415→                                                                <input type="hidden" name="recipient_id" value="<?= $rcpt['id'] ?>">
+  1416→  1416→                                                                <button type="submit" class="chip-delete" title="Supprimer">×</button>
+  1417→  1417→                                                            </form>
+  1418→  1418→                                                        </span>
+  1419→  1419→                                                    <?php endforeach; ?>
+  1420→  1420→                                                </div>
+  1421→  1421→                                            <?php else: ?>
+  1422→  1422→                                                <div style="font-size:.8rem;color:#999;margin-top:.3rem;">Aucun destinataire</div>
+  1423→  1423→                                            <?php endif; ?>
+  1424→  1424→                                        </div>
+  1425→  1425→                                        <div class="step-actions">
+  1426→  1426→                                            <a href="?form_id=<?= $form_id ?>&edit_step=<?= $step['id'] ?>" class="btn btn-secondary" style="font-size:.78rem;padding:.3rem .6rem;">Modifier</a>
+  1427→  1427→                                            <form method="POST" style="display:inline;">
+  1428→  1428→                                                <?= csrf_field() ?>
+  1429→  1429→                                                <input type="hidden" name="action" value="delete_step">
+  1430→  1430→                                                <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
+  1431→  1431→                                                <button type="submit" class="btn btn-danger" style="font-size:.78rem;padding:.3rem .6rem;">Supprimer</button>
+  1432→  1432→                                            </form>
+  1433→  1433→                                        </div>
+  1434→  1434→                                    </div>
+  1435→  1435→                                <?php endif; ?>
+  1436→  1436→                            <?php endforeach; ?>
+  1437→  1437→                        </div>
+  1438→  1438→                    <?php endif; ?>
+  1439→  1439→                </div>
+  1440→  1440→            </div>
+  1441→  1441→
+  1442→  1442→            <!-- ══════════════════════════════════════════════════ -->
+  1443→  1443→            <!-- SECTION C: Recipient management per step         -->
+  1444→  1444→            <!-- ══════════════════════════════════════════════════ -->
+  1445→  1445→            <div class="section-card">
+  1446→  1446→                <div class="section-card-header">
+  1447→  1447→                    <h2><span aria-hidden="true">📧</span> Destinataires par étape</h2>
+  1448→  1448→                </div>
+  1449→  1449→                <div class="section-card-body">
+  1450→  1450→                    <div class="step-recipient-picker">
+  1451→  1451→                        <div class="field">
+  1452→  1452→                            <label>Choisir une étape</label>
+  1453→  1453→                            <form method="GET" style="display:inline-flex;gap:.5rem;align-items:center;">
+  1454→  1454→                                <input type="hidden" name="form_id" value="<?= $form_id ?>">
+  1455→  1455→                                <select name="step_id">
+  1456→  1456→                                    <option value="">— Sélectionner une étape —</option>
+  1457→  1457→                                    <?php foreach ($steps as $step): ?>
+  1458→  1458→                                        <option value="<?= $step['id'] ?>" <?= (isset($_GET['step_id']) && $_GET['step_id'] == $step['id']) ? 'selected' : '' ?>>
+  1459→  1459→                                            Étape <?= h($step['ordre']) ?> — <?= h($step['label']) ?>
+  1460→  1460→                                        </option>
+  1461→  1461→                                    <?php endforeach; ?>
+  1462→  1462→                                </select>
+  1463→  1463→                                <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;">OK</button>
+  1464→  1464→                            </form>
+  1465→  1465→                        </div>
+  1466→  1466→
+  1467→  1467→                        <?php if (isset($_GET['step_id']) && !empty($_GET['step_id'])): ?>
+  1468→  1468→                            <?php
+  1469→  1469→                            $selected_step = null;
+  1470→  1470→                            foreach ($steps as $step) {
+  1471→  1471→                                if ($step['id'] == $_GET['step_id']) {
+  1472→  1472→                                    $selected_step = $step;
+  1473→  1473→                                    break;
+  1474→  1474→                                }
+  1475→  1475→                            }
+  1476→  1476→                            ?>
+  1477→  1477→
+  1478→  1478→                            <?php if ($selected_step): ?>
+  1479→  1479→                                <h3 style="margin-top:1rem;">Étape <?= h($selected_step['ordre']) ?> — <?= h($selected_step['label']) ?></h3>
+  1480→  1480→
+  1481→  1481→                                <div class="add-sub-card">
+  1482→  1482→                                    <h4>＋ Ajouter un destinataire</h4>
+  1483→  1483→                                    <form method="POST">
+  1484→  1484→                                        <?= csrf_field() ?>
+  1485→  1485→                                        <input type="hidden" name="action" value="add_recipient">
+  1486→  1486→                                        <input type="hidden" name="step_id" value="<?= $selected_step['id'] ?>">
+  1487→  1487→                                        <div class="form-grid">
+  1488→  1488→                                            <div class="field">
+  1489→  1489→                                                <label>Email du destinataire<span class="req">*</span></label>
+  1490→  1490→                                                <input type="email" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr">
+  1491→  1491→                                            </div>
+  1492→  1492→                                        </div>
+  1493→  1493→                                        <button type="submit" class="btn btn-primary">Ajouter le destinataire</button>
+  1494→  1494→                                    </form>
+  1495→  1495→                                </div>
+  1496→  1496→
+  1497→  1497→                                <?php if (!empty($selected_step['recipients'])): ?>
+  1498→  1498→                                    <div style="margin-top:1rem;">
+  1499→  1499→                                        <div class="recipient-chips" style="gap:.5rem;">
+  1500→  1500→                                            <?php foreach ($selected_step['recipients'] as $recipient): ?>
+  1501→  1501→                                                <span class="recipient-chip" style="font-size:.82rem;padding:.3rem .7rem;">
+  1502→  1502→                                                    <span aria-hidden="true">📧</span> <?= h($recipient['email']) ?>
+  1503→  1503→                                                    <form method="POST" style="display:inline;">
+  1504→  1504→                                                        <?= csrf_field() ?>
+  1505→  1505→                                                        <input type="hidden" name="action" value="delete_recipient">
+  1506→  1506→                                                        <input type="hidden" name="recipient_id" value="<?= $recipient['id'] ?>">
+  1507→  1507→                                                        <button type="submit" class="chip-delete" title="Supprimer">×</button>
+  1508→  1508→                                                    </form>
+  1509→  1509→                                                </span>
+  1510→  1510→                                            <?php endforeach; ?>
+  1511→  1511→                                        </div>
+  1512→  1512→                                    </div>
+  1513→  1513→                                <?php else: ?>
+  1514→  1514→                                    <p style="color:#595959;margin-top:.75rem;">Aucun destinataire défini pour cette étape.</p>
+  1515→  1515→                                <?php endif; ?>
+  1516→  1516→                            <?php endif; ?>
+  1517→  1517→                        <?php else: ?>
+  1518→  1518→                            <p style="color:#595959;margin-top:.5rem;">Sélectionnez une étape pour gérer ses destinataires.</p>
+  1519→  1519→                        <?php endif; ?>
+  1520→  1520→                    </div>
+  1521→  1521→                </div>
+  1522→  1522→            </div>
+  1523→  1523→
+  1524→  1524→            <!-- ══════════════════════════════════════════════════ -->
+  1525→  1525→            <!-- SECTION D: Form fields                          -->
+  1526→  1526→            <!-- ══════════════════════════════════════════════════ -->
+  1527→  1527→            <div class="section-card" id="fields">
+  1528→  1528→                <div class="section-card-header">
+  1529→  1529→                    <h2><span aria-hidden="true">📝</span> Champs du formulaire</h2>
+  1530→  1530→                    <a href="form_preview.php?form_id=<?= $form_id ?>" class="btn-preview" target="_blank" style="font-size:.8rem;"><span aria-hidden="true">👁</span> Prévisualiser</a>
+  1531→  1531→                </div>
+  1532→  1532→                <div class="section-card-body">
+  1533→  1533→                    <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Ces champs définissent le formulaire que les agents rempliront. <span class="required-star">*</span> = champ obligatoire.</p>
+  1534→  1534→
+  1535→  1535→                    <?php if (!empty($form_fields)): ?>
+  1536→  1536→                        <table class="fields-table">
+  1537→  1537→                            <thead>
+  1538→  1538→                                <tr>
+  1539→  1539→                                    <th>#</th>
+  1540→  1540→                                    <th>Groupe</th>
+  1541→  1541→                                    <th>Libellé</th>
+  1542→  1542→                                    <th>Identifiant</th>
+  1543→  1543→                                    <th>Type</th>
+  1544→  1544→                                    <th>Options</th>
+  1545→  1545→                                    <th>Actions</th>
+  1546→  1546→                                </tr>
+  1547→  1547→                            </thead>
+  1548→  1548→                            <tbody>
+  1549→  1549→                                <?php foreach ($form_fields as $ff): ?>
+  1550→  1550→                                    <?php if ($edit_field_id === $ff['id']): ?>
+  1551→  1551→                                        <!-- ── Edit field inline ──────────────── -->
+  1552→  1552→                                        <tr>
+  1553→  1553→                                            <td colspan="7" style="background:#f0f4ff;padding:1rem;">
+  1554→  1554→                                                <h4 style="margin-bottom:.75rem;color:#003189;">Modifier le champ</h4>
+  1555→  1555→                                                <form method="POST">
+  1556→  1556→                                                    <?= csrf_field() ?>
+  1557→  1557→                                                    <input type="hidden" name="action" value="update_field">
+  1558→  1558→                                                    <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
+  1559→  1559→                                                    <input type="hidden" name="form_id" value="<?= $form_id ?>">
+  1560→  1560→                                                    <div class="form-grid">
+  1561→  1561→                                                        <div class="field">
+  1562→  1562→                                                            <label>Libellé<span class="req">*</span></label>
+  1563→  1563→                                                            <input type="text" name="ff_label" value="<?= h($ff['label']) ?>" required>
+  1564→  1564→                                                        </div>
+  1565→  1565→                                                        <div class="field">
+  1566→  1566→                                                            <label>Identifiant technique <span class="hint">(auto si vide)</span></label>
+  1567→  1567→                                                            <input type="text" name="ff_field_name" value="<?= h($ff['field_name']) ?>" placeholder="Généré automatiquement depuis le libellé">
+  1568→  1568→                                                        </div>
+  1569→  1569→                                                        <div class="field">
+  1570→  1570→                                                            <label>Type de champ</label>
+  1571→  1571→                                                            <select name="ff_field_type">
+  1572→  1572→                                                                <?php foreach ($field_types as $val => $lbl): ?>
+  1573→  1573→                                                                    <option value="<?= $val ?>" <?= $ff['field_type'] === $val ? 'selected' : '' ?>><?= $lbl ?></option>
+  1574→  1574→                                                                <?php endforeach; ?>
+  1575→  1575→                                                            </select>
+  1576→  1576→                                                        </div>
+  1577→  1577→                                                        <div class="field">
+  1578→  1578→                                                            <label>Ordre</label>
+  1579→  1579→                                                            <input type="number" name="ff_ordre" value="<?= $ff['ordre'] ?>" min="0">
+  1580→  1580→                                                        </div>
+  1581→  1581→                                                        <div class="field">
+  1582→  1582→                                                            <label>Groupe (carte)</label>
+  1583→  1583→                                                            <?php if (!empty($existing_groups)): ?>
+  1584→  1584→                                                                <select name="ff_card_group">
+  1585→  1585→                                                                    <?php foreach ($existing_groups as $g): ?>
+  1586→  1586→                                                                        <option value="<?= h($g) ?>" <?= $ff['card_group'] === $g ? 'selected' : '' ?>><?= h($g) ?></option>
+  1587→  1587→                                                                    <?php endforeach; ?>
+  1588→  1588→                                                                    <option value="__new__" <?= !in_array($ff['card_group'], $existing_groups) ? 'selected' : '' ?>>— Nouveau groupe —</option>
+  1589→  1589→                                                                </select>
+  1590→  1590→                                                            <?php endif; ?>
+  1591→  1591→                                                            <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" style="margin-top:.3rem;" value="">
+  1592→  1592→                                                            <?php if (empty($existing_groups)): ?>
+  1593→  1593→                                                                <input type="hidden" name="ff_card_group" value="">
+  1594→  1594→                                                            <?php endif; ?>
+  1595→  1595→                                                        </div>
+  1596→  1596→                                                        <div class="field">
+  1597→  1597→                                                            <label>Options <span class="hint">(une par ligne, uniquement pour Sélecteur)</span></label>
+  1598→  1598→                                                            <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"><?= h(options_to_lines($ff['options'] ?? '')) ?></textarea>
+  1599→  1599→                                                        </div>
+  1600→  1600→                                                        <div class="field">
+  1601→  1601→                                                            <label>Indication <span class="hint">(texte d'aide sous le champ)</span></label>
+  1602→  1602→                                                            <input type="text" name="ff_hint" value="<?= h($ff['hint'] ?? '') ?>" placeholder="ex : en euros TTC">
+  1603→  1603→                                                        </div>
+  1604→  1604→                                                    </div>
+  1605→  1605→                                                    <div class="field" style="margin-top:.25rem;">
+  1606→  1606→                                                        <label class="checkbox-label">
+  1607→  1607→                                                            <input type="checkbox" name="ff_required" <?= $ff['required'] ? 'checked' : '' ?>> Champ obligatoire <span class="required-star">*</span>
+  1608→  1608→                                                        </label>
+  1609→  1609→                                                    </div>
+  1610→  1610→                                                    <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+  1611→  1611→                                                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+  1612→  1612→                                                        <a href="?form_id=<?= $form_id ?>#fields" class="btn btn-secondary">Annuler</a>
+  1613→  1613→                                                    </div>
+  1614→  1614→                                                </form>
+  1615→  1615→                                            </td>
+  1616→  1616→                                        </tr>
+  1617→  1617→                                    <?php else: ?>
+  1618→  1618→                                        <tr>
+  1619→  1619→                                            <td><?= h($ff['ordre']) ?></td>
+  1620→  1620→                                            <td><span style="font-size:.8rem;color:#666;"><?= h($ff['card_group']) ?></span></td>
+  1621→  1621→                                            <td>
+  1622→  1622→                                                <?= h($ff['label']) ?>
+  1623→  1623→                                                <?php if ($ff['required']): ?>
+  1624→  1624→                                                    <span class="required-star" title="Champ obligatoire">*</span>
+  1625→  1625→                                                <?php endif; ?>
+  1626→  1626→                                            </td>
+  1627→  1627→                                            <td><code style="font-size:.78rem;background:#eef;padding:.1rem .3rem;border-radius:2px;"><?= h($ff['field_name']) ?></code></td>
+  1628→  1628→                                            <td>
+  1629→  1629→                                                <span class="field-type-badge">
+  1630→  1630→                                                    <?= field_type_icon($ff['field_type']) ?>
+  1631→  1631→                                                    <?= field_type_label($ff['field_type']) ?>
+  1632→  1632→                                                </span>
+  1633→  1633→                                            </td>
+  1634→  1634→                                            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= h($ff['options'] ?? '') ?>">
+  1635→  1635→                                                <?php
+  1636→  1636→                                                $opts = $ff['options'] ?? '';
+  1637→  1637→                                                if (!empty($opts)) {
+  1638→  1638→                                                    $decoded = json_decode($opts, true);
+  1639→  1639→                                                    if (is_array($decoded)) {
+  1640→  1640→                                                        echo h(implode(', ', $decoded));
+  1641→  1641→                                                    } else {
+  1642→  1642→                                                        echo h($opts);
+  1643→  1643→                                                    }
+  1644→  1644→                                                } else {
+  1645→  1645→                                                    echo '—';
+  1646→  1646→                                                }
+  1647→  1647→                                                ?>
+  1648→  1648→                                            </td>
+  1649→  1649→                                            <td class="actions">
+  1650→  1650→                                                <a href="?form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#fields" class="btn btn-secondary" style="font-size:.76rem;padding:.25rem .5rem;">Modifier</a>
+  1651→  1651→                                                <form method="POST" style="display:inline;">
+  1652→  1652→                                                    <?= csrf_field() ?>
+  1653→  1653→                                                    <input type="hidden" name="action" value="delete_field">
+  1654→  1654→                                                    <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
+  1655→  1655→                                                    <input type="hidden" name="form_id" value="<?= $form_id ?>">
+  1656→  1656→                                                    <button type="submit" class="btn btn-danger" style="font-size:.76rem;padding:.25rem .5rem;">Supprimer</button>
+  1657→  1657→                                                </form>
+  1658→  1658→                                            </td>
+  1659→  1659→                                        </tr>
+  1660→  1660→                                    <?php endif; ?>
+  1661→  1661→                                <?php endforeach; ?>
+  1662→  1662→                            </tbody>
+  1663→  1663→                        </table>
+  1664→  1664→                    <?php else: ?>
+  1665→  1665→                        <div class="empty-state">
+  1666→  1666→                            <div class="empty-icon" aria-hidden="true">📝</div>
+  1667→  1667→                            <p>Aucun champ défini pour ce formulaire.</p>
+  1668→  1668→                        </div>
+  1669→  1669→                    <?php endif; ?>
+  1670→  1670→
+  1671→  1671→                    <!-- ── Add field form ──────────────────────────── -->
+  1672→  1672→                    <div class="add-sub-card">
+  1673→  1673→                        <h4>＋ Ajouter un champ</h4>
+  1674→  1674→                        <form method="POST">
+  1675→  1675→                            <?= csrf_field() ?>
+  1676→  1676→                            <input type="hidden" name="action" value="add_field">
+  1677→  1677→                            <input type="hidden" name="form_id" value="<?= $form_id ?>">
+  1678→  1678→                            <div class="form-grid">
+  1679→  1679→                                <div class="field">
+  1680→  1680→                                    <label>Libellé<span class="req">*</span></label>
+  1681→  1681→                                    <input type="text" name="ff_label" required placeholder="ex: Nom, Date de début">
+  1682→  1682→                                </div>
+  1683→  1683→                                <div class="field">
+  1684→  1684→                                    <label>Identifiant technique <span class="hint">(auto si vide)</span></label>
+  1685→  1685→                                    <input type="text" name="ff_field_name" placeholder="Généré automatiquement depuis le libellé">
+  1686→  1686→                                </div>
+  1687→  1687→                                <div class="field">
+  1688→  1688→                                    <label>Type de champ</label>
+  1689→  1689→                                    <select name="ff_field_type">
+  1690→  1690→                                        <?php foreach ($field_types as $val => $lbl): ?>
+  1691→  1691→                                            <option value="<?= $val ?>"><?= $lbl ?></option>
+  1692→  1692→                                        <?php endforeach; ?>
+  1693→  1693→                                    </select>
+  1694→  1694→                                </div>
+  1695→  1695→                                <div class="field">
+  1696→  1696→                                    <label>Ordre</label>
+  1697→  1697→                                    <input type="number" name="ff_ordre" min="0" value="<?= count($form_fields) + 1 ?>">
+  1698→  1698→                                </div>
+  1699→  1699→                                <div class="field">
+  1700→  1700→                                    <label>Groupe (carte)</label>
+  1701→  1701→                                    <?php if (!empty($existing_groups)): ?>
+  1702→  1702→                                        <select name="ff_card_group">
+  1703→  1703→                                            <?php foreach ($existing_groups as $g): ?>
+  1704→  1704→                                                <option value="<?= h($g) ?>" <?= $g === 'Général' ? 'selected' : '' ?>><?= h($g) ?></option>
+  1705→  1705→                                            <?php endforeach; ?>
+  1706→  1706→                                            <option value="__new__">— Nouveau groupe —</option>
+  1707→  1707→                                        </select>
+  1708→  1708→                                    <?php else: ?>
+  1709→  1709→                                        <input type="hidden" name="ff_card_group" value="">
+  1710→  1710→                                    <?php endif; ?>
+  1711→  1711→                                    <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" style="margin-top:.3rem;" value="">
+  1712→  1712→                                </div>
+  1713→  1713→                                <div class="field full-width">
+  1714→  1714→                                    <label>Options <span class="hint">(une par ligne, uniquement pour Sélecteur)</span></label>
+  1715→  1715→                                    <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"></textarea>
+  1716→  1716→                                </div>
+  1717→  1717→                                <div class="field full-width">
+  1718→  1718→                                    <label>Indication <span class="hint">(texte d'aide sous le champ)</span></label>
+  1719→  1719→                                    <input type="text" name="ff_hint" placeholder="ex : en euros TTC">
+  1720→  1720→                                </div>
+  1721→  1721→                            </div>
+  1722→  1722→                            <div class="field" style="margin-top:.25rem;">
+  1723→  1723→                                <label class="checkbox-label">
+  1724→  1724→                                    <input type="checkbox" name="ff_required"> Champ obligatoire <span class="required-star">*</span>
+  1725→  1725→                                </label>
+  1726→  1726→                            </div>
+  1727→  1727→                            <button type="submit" class="btn btn-primary" style="margin-top:.5rem;">Ajouter le champ</button>
+  1728→  1728→                        </form>
+  1729→  1729→                    </div>
+  1730→  1730→                </div>
+  1731→  1731→            </div>
+  1732→  1732→        <?php endif; ?>
+  1733→  1733→    <?php endif; ?>
+  1734→  1734→
+  1735→  1735→    <?php if ($form): ?>
+  1736→  1736→        <!-- Section Propriétaires du formulaire -->
+  1737→  1737→        <div class="section-card" id="owners">
+  1738→  1738→            <h2>👥 Propriétaires du formulaire</h2>
+  1739→  1739→            <p class="hint" style="margin-bottom:1rem;">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
+  1740→  1740→
+  1741→  1741→            <?php if (!empty($owners)): ?>
+  1742→  1742→                <table class="data-table" style="margin-bottom:1rem;">
+  1743→  1743→                    <thead>
+  1744→  1744→                        <tr>
+  1745→  1745→                            <th>Email</th>
+  1746→  1746→                            <th>Ajouté le</th>
+  1747→  1747→                            <th style="width:80px;">Action</th>
+  1748→  1748→                        </tr>
+  1749→  1749→                    </thead>
+  1750→  1750→                    <tbody>
+  1751→  1751→                        <?php foreach ($owners as $owner): ?>
+  1752→  1752→                        <tr>
+  1753→  1753→                            <td><?= h($owner['email']) ?></td>
+  1754→  1754→                            <td><?= h($owner['added_at']) ?></td>
+  1755→  1755→                            <td>
+  1756→  1756→                                <a href="confirm_action.php?action=remove_owner&id=<?= $owner['id'] ?>&form_id=<?= $form_id ?>" class="btn btn-sm btn-danger">Retirer</a>
+  1757→  1757→                            </td>
+  1758→  1758→                        </tr>
+  1759→  1759→                        <?php endforeach; ?>
+  1760→  1760→                    </tbody>
+  1761→  1761→                </table>
+  1762→  1762→            <?php else: ?>
+  1763→  1763→                <p style="color:#595959;font-style:italic;margin-bottom:1rem;">Aucun propriétaire défini. Seuls les administrateurs peuvent voir le tableau de suivi.</p>
+  1764→  1764→            <?php endif; ?>
+  1765→  1765→
+  1766→  1766→            <form method="POST" action="admin_forms.php?form_id=<?= $form_id ?>#owners">
+  1767→  1767→                <?= csrf_field() ?>
+  1768→  1768→                <input type="hidden" name="action" value="add_owner">
+  1769→  1769→                <input type="hidden" name="form_id" value="<?= $form_id ?>">
+  1770→  1770→                <div style="display:flex;gap:.5rem;align-items:center;">
+  1771→  1771→                    <input type="email" name="owner_email" placeholder="prenom.nom@dreets.gouv.fr" required style="flex:1;">
+  1772→  1772→                    <button type="submit" class="btn btn-primary">Ajouter un propriétaire</button>
+  1773→  1773→                </div>
+  1774→  1774→            </form>
+  1775→  1775→
+  1776→  1776→            <?php if (!empty($owners)): ?>
+  1777→  1777→                <div style="margin-top:1rem;">
+  1778→  1778→                    <a href="form_tracking.php?f=<?= h($form['id'] ?? '') ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Ouvrir le tableau de suivi</a>
+  1779→  1779→                </div>
+  1780→  1780→            <?php endif; ?>
+  1781→  1781→        </div>
+  1782→  1782→    <?php endif; ?>
+  1783→  1783→</div>
+  1784→  1784→<?= render_footer() ?>
+  1785→  1785→</body>
+  1786→  1786→</html>
+  1787→  1787→
