@@ -1567,43 +1567,80 @@ function render_nav(string $current_page = '', array $extra_admin_links = []): s
 
     // Liens admin — toujours présents pour les admins
     $admin_links = [
-        'dashboard'  => ['href' => 'dashboard.php',      'label' => 'Tableau de bord', 'icon' => '📊'],
-        'settings'   => ['href' => 'admin_settings.php', 'label' => 'Paramètres',      'icon' => '⚙'],
+        'dashboard'  => ['href' => 'dashboard.php',      'label' => 'Supervision',  'icon' => '📊'],
+        'settings'   => ['href' => 'admin_settings.php', 'label' => 'Paramètres',   'icon' => '⚙'],
     ];
 
-    // Liens admin supplémentaires (spécifiques à la page courante)
-    // $extra_admin_links format: ['key' => ['href' => '...', 'label' => '...', 'icon' => '...']]
-
-    $nav_links_html = '';
+    // ── Build sidebar nav items ──────────────────────────────
+    $nav_html = '';
+    $nav_html .= '<div class="sidebar-section-title">Navigation</div>';
     foreach ($main_links as $key => $link) {
-        $active = ($current_page === $key) ? ' class="nav-active"' : '';
+        $active_cls = ($current_page === $key) ? ' active' : '';
         $badge = '';
         if ($key === 'mes_validations' && $pending_count > 0) {
-            $badge = ' <span class="nav-badge" aria-label="' . $pending_count . ' validation(s) en attente">' . $pending_count . '</span>';
+            $badge = '<span class="sidebar-badge" aria-label="' . $pending_count . ' en attente">' . $pending_count . '</span>';
         }
-        $nav_links_html .= '<a href="' . $link['href'] . '"' . $active . '><span aria-hidden="true">' . $link['icon'] . '</span> ' . $link['label'] . $badge . '</a>';
+        $nav_html .= '<a href="' . $link['href'] . '" class="sidebar-item' . $active_cls . '">'
+            . '<span class="sidebar-item-icon" aria-hidden="true">' . $link['icon'] . '</span>'
+            . '<span class="sidebar-item-label">' . $link['label'] . '</span>'
+            . $badge
+            . '</a>';
     }
 
-    $admin_links_html = '';
     if ($is_admin) {
+        $nav_html .= '<div class="sidebar-section-title">Administration</div>';
         foreach ($admin_links as $key => $link) {
-            $active = ($current_page === $key) ? ' class="nav-active"' : '';
-            $admin_links_html .= '<a href="' . $link['href'] . '"' . $active . '><span aria-hidden="true">' . $link['icon'] . '</span> ' . $link['label'] . '</a>';
+            $active_cls = ($current_page === $key) ? ' active' : '';
+            $nav_html .= '<a href="' . $link['href'] . '" class="sidebar-item' . $active_cls . '">'
+                . '<span class="sidebar-item-icon" aria-hidden="true">' . $link['icon'] . '</span>'
+                . '<span class="sidebar-item-label">' . $link['label'] . '</span>'
+                . '</a>';
         }
         foreach ($extra_admin_links as $key => $link) {
-            $active = ($current_page === $key) ? ' class="nav-active"' : '';
-            $admin_links_html .= '<a href="' . $link['href'] . '"' . $active . '><span aria-hidden="true">' . $link['icon'] . '</span> ' . $link['label'] . '</a>';
+            $active_cls = ($current_page === $key) ? ' active' : '';
+            $nav_html .= '<a href="' . $link['href'] . '" class="sidebar-item' . $active_cls . '">'
+                . '<span class="sidebar-item-icon" aria-hidden="true">' . $link['icon'] . '</span>'
+                . '<span class="sidebar-item-label">' . $link['label'] . '</span>'
+                . '</a>';
         }
     }
 
-    return '<nav class="bandeau" aria-label="Navigation principale">
-  <a href="index.php" class="nav-brand"><span class="brand-icon" aria-hidden="true">&#9670;</span> DREETS<span class="brand-dot"></span></a>
-  <span class="nav-main">' . $nav_links_html . '</span>
-  <span class="nav-admin">
-    ' . $admin_links_html . '
-    <span class="nav-user">' . h($user) . '</span>
-  </span>
-</nav>';
+    // ── User initials for avatar ─────────────────────────────
+    $user_initials = strtoupper(substr($user, 0, 1));
+
+    // ── Topbar right section ─────────────────────────────────
+    $notif_dot = $pending_count > 0 ? '<span class="topbar-notif-dot"></span>' : '';
+
+    // ── Output full layout ───────────────────────────────────
+    return '<div class="app-layout">'
+        . '<nav class="sidebar" aria-label="Navigation principale">'
+        .   '<a href="index.php" class="sidebar-brand">'
+        .     '<span class="sidebar-logo-mark">D</span>'
+        .     '<span class="sidebar-brand-text">DREETS</span>'
+        .   '</a>'
+        .   '<div class="sidebar-nav">'
+        .     $nav_html
+        .   '</div>'
+        .   '<div class="sidebar-user">'
+        .     '<div class="sidebar-user-card">'
+        .       '<span class="sidebar-user-avatar">' . $user_initials . '</span>'
+        .       '<span class="sidebar-user-email" title="' . h($user) . '">' . h($user) . '</span>'
+        .     '</div>'
+        .   '</div>'
+        . '</nav>'
+        . '<div class="main-area">'
+        .   '<div class="topbar">'
+        .     '<div class="topbar-left">'
+        .       '<div class="topbar-breadcrumb">'
+        .         '<a href="index.php">Accueil</a>'
+        .       '</div>'
+        .     '</div>'
+        .     '<div class="topbar-right">'
+        .       '<a href="my_validations.php" class="topbar-icon-btn" title="Mes validations">' . $notif_dot . '✅</a>'
+        .       '<a href="form.php?f=onboarding" class="topbar-cta">+ Nouvelle demande</a>'
+        .     '</div>'
+        .   '</div>'
+        .   '<div class="content">';
 }
 
 /**
@@ -1635,11 +1672,13 @@ function render_breadcrumb(array $breadcrumbs): string {
 
 // ── FOOTER ────────────────────────────────────────────────────
 function render_footer(): string {
-    return '<footer>
-  <a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>
-  <span style="margin:0 .5rem;opacity:.4;">|</span> Formulaire Dématérialisé
-  <span style="margin:0 .5rem;opacity:.4;">|</span> DREETS BFC
-</footer>';
+    return '</div><!-- /.content -->'
+         . '</div><!-- /.main-area -->'
+         . '</div><!-- /.app-layout -->'
+         . '<footer>'
+         . '<a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>'
+         . ' · Formulaire Dématérialisé · DREETS BFC'
+         . '</footer>';
 }
 
 // ── ERROR PAGES ────────────────────────────────────────────────
