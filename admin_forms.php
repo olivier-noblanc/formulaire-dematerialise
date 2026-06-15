@@ -422,6 +422,370 @@ if ($action === 'add_form') {
     }
 }
 
+// ── Export JSON ────────────────────────────────────────────────
+elseif ($action === 'export_form') {
+    $export_id = trim($_POST['form_id'] ?? '');
+    if (empty($export_id)) {
+        $error_msg = 'Aucun formulaire sélectionné pour l\'export.';
+    } else {
+        $pdo = get_pdo();
+        $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
+        $stmt->execute([$export_id]);
+        $form_data = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$form_data) {
+            $error_msg = 'Formulaire introuvable.';
+        } else {
+            // Build export structure
+            $export = [
+                'schema_version' => '1.0',
+                'exported_at' => date('c'),
+                'form' => [
+                    'label' => $form_data['label'],
+                    'slug' => $form_data['slug'],
+                    'description' => $form_data['description'] ?? '',
+                    'actif' => (int)$form_data['actif'],
+                    'deadline_field' => $form_data['deadline_field'] ?? '',
+                ],
+                'fields' => [],
+                'steps' => [],
+            ];
+
+            // Fields
+            $f_stmt = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre");
+            $f_stmt->execute([$export_id]);
+            foreach ($f_stmt->fetchAll(PDO::FETCH_ASSOC) as $f) {
+                $export['fields'][] = [
+                    'label' => $f['label'],
+                    'field_type' => $f['field_type'],
+                    'field_name' => $f['field_name'],
+                    'options' => $f['options'] ? json_decode($f['options'], true) : null,
+                    'required' => (int)$f['required'],
+                    'ordre' => (int)$f['ordre'],
+                    'card_group' => $f['card_group'] ?? 'Général',
+                    'hint' => $f['hint'] ?? '',
+                ];
+            }
+
+            // Steps + recipients
+            $s_stmt = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? ORDER BY ordre");
+            $s_stmt->execute([$export_id]);
+            foreach ($s_stmt->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                $recipients = [];
+                $r_stmt = $pdo->prepare("SELECT email FROM step_recipients WHERE step_id = ?");
+                $r_stmt->execute([$s['id']]);
+                foreach ($r_stmt->fetchAll(PDO::FETCH_COLUMN) as $email) {
+                    $recipients[] = $email;
+                }
+                $export['steps'][] = [
+                    'label' => $s['label'],
+                    'ordre' => (int)$s['ordre'],
+                    'actif' => (int)$s['actif'],
+                    'recipients' => $recipients,
+                ];
+            }
+
+            // Download as JSON file
+            $filename = preg_replace('/[^a-z0-9_-]/i', '_', $form_data['slug']) . '.json';
+            header('Content-Type: application/json; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            echo json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+    }
+}
+
+// ── Import JSON ────────────────────────────────────────────────
+elseif ($action === 'import_form') {
+    $json_input = trim($_POST['json_data'] ?? '');
+    if (empty($json_input)) {
+        $error_msg = 'Aucune donnée JSON fournie pour l\'import.';
+    } else {
+        $data = json_decode($json_input, true);
+        if ($data === null) {
+            $error_msg = 'JSON invalide : ' . json_last_error_msg();
+        } elseif (empty($data['form']['label'])) {
+            $error_msg = 'Le JSON doit contenir au moins form.label.';
+        } else {
+            $pdo = get_pdo();
+            try {
+                $pdo->beginTransaction();
+
+                $label = $data['form']['label'];
+                $slug = !empty($data['form']['slug']) ? $data['form']['slug'] : generate_slug($label);
+                // Ensure unique slug
+                $slug = generate_slug($label);
+                $desc = $data['form']['description'] ?? '';
+                $deadline = $data['form']['deadline_field'] ?? '';
+
+                $new_id = generate_uuid();
+                $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at, deadline_field) VALUES (?, ?, ?, ?, 1, datetime('now'), ?)")
+                    ->execute([$new_id, $slug, $label, $desc, $deadline]);
+
+                // Import fields
+                if (!empty($data['fields'])) {
+                    $field_stmt = $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, required, ordre, card_group, hint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $ordre = 1;
+                    foreach ($data['fields'] as $f) {
+                        $options_json = null;
+                        if (!empty($f['options'])) {
+                            $options_json = is_string($f['options']) ? $f['options'] : json_encode($f['options'], JSON_UNESCAPED_UNICODE);
+                        }
+                        $field_name = !empty($f['field_name']) ? $f['field_name'] : generate_field_name($f['label']);
+                        $field_stmt->execute([
+                            generate_uuid(), $new_id,
+                            $f['label'] ?? 'Champ',
+                            $f['field_type'] ?? 'text',
+                            $field_name,
+                            $options_json,
+                            (int)($f['required'] ?? 0),
+                            (int)($f['ordre'] ?? $ordre),
+                            $f['card_group'] ?? 'Général',
+                            $f['hint'] ?? '',
+                        ]);
+                        $ordre++;
+                    }
+                }
+
+                // Import steps
+                if (!empty($data['steps'])) {
+                    foreach ($data['steps'] as $s) {
+                        $step_id = generate_uuid();
+                        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, ?)")
+                            ->execute([$step_id, $new_id, $s['label'] ?? 'Étape', (int)($s['ordre'] ?? 1), (int)($s['actif'] ?? 1)]);
+
+                        if (!empty($s['recipients'])) {
+                            $recip_stmt = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+                            foreach ($s['recipients'] as $email) {
+                                $recip_stmt->execute([generate_uuid(), $step_id, $email]);
+                            }
+                        }
+                    }
+                }
+
+                $pdo->commit();
+                app_log('form_import', 'form:' . $new_id, "Formulaire '$label' importé depuis JSON");
+                header('Location: admin_forms.php?form_id=' . urlencode($new_id));
+                exit;
+            } catch (PDOException $e) {
+                $pdo->rollBack();
+                $error_msg = 'Erreur lors de l\'import : ' . $e->getMessage();
+            }
+        }
+    }
+}
+
+// ── Populate sample forms ──────────────────────────────────────
+elseif ($action === 'populate_samples') {
+    $pdo = get_pdo();
+    try {
+        $pdo->beginTransaction();
+
+        $sample_forms = [
+            [
+                'slug' => 'onboarding',
+                'label' => 'Onboarding agent',
+                'description' => "Formulaire d'accueil d'un nouvel agent — prise de poste, création des accès et formalités d'entrée",
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
+                    ['label' => "Date d'arrivée", 'field_type' => 'date', 'field_name' => 'date_arrivee', 'required' => 1, 'card_group' => 'Identité'],
+                    ['label' => "Type d'arrivée", 'field_type' => 'select', 'field_name' => 'type_arrivee', 'options' => ['Nouveau recruté', 'Mutation entrante', 'Contrat temporaire', 'Stage'], 'required' => 1, 'card_group' => 'Identité'],
+                    ['label' => 'Direction / Service', 'field_type' => 'text', 'field_name' => 'direction_service', 'required' => 1, 'card_group' => 'Affectation'],
+                    ['label' => 'Bureau / Poste', 'field_type' => 'text', 'field_name' => 'bureau_poste', 'required' => 0, 'card_group' => 'Affectation'],
+                    ['label' => 'Création compte SI', 'field_type' => 'checkbox', 'field_name' => 'creation_compte_si', 'required' => 0, 'card_group' => 'IT'],
+                    ['label' => 'Création messagerie', 'field_type' => 'checkbox', 'field_name' => 'creation_messagerie', 'required' => 0, 'card_group' => 'IT'],
+                    ['label' => 'Matériel informatique', 'field_type' => 'select', 'field_name' => 'materiel_info', 'options' => ['PC portable', 'PC fixe', 'Tablette', 'Aucun'], 'required' => 0, 'card_group' => 'IT'],
+                    ['label' => 'Badge accès', 'field_type' => 'checkbox', 'field_name' => 'badge_acces', 'required' => 0, 'card_group' => 'Logistique'],
+                    ['label' => 'Remarques', 'field_type' => 'textarea', 'field_name' => 'remarques', 'required' => 0, 'card_group' => 'Divers'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                    ['label' => 'Validation RH', 'ordre' => 2, 'recipients' => ['rh@dreets.gouv.fr']],
+                    ['label' => 'Validation DSI', 'ordre' => 3, 'recipients' => ['dsi@dreets.gouv.fr']],
+                    ['label' => 'Validation Logistique', 'ordre' => 4, 'recipients' => ['logistique@dreets.gouv.fr']],
+                ],
+            ],
+            [
+                'slug' => 'outboarding',
+                'label' => 'Outboarding agent',
+                'description' => "Formulaire de départ d'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat",
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
+                    ['label' => 'Date de départ', 'field_type' => 'date', 'field_name' => 'date_depart', 'required' => 1, 'card_group' => 'Identité'],
+                    ['label' => 'Motif de départ', 'field_type' => 'select', 'field_name' => 'motif_depart', 'options' => ['Démission', 'Retraite', 'Mutation sortante', 'Fin de contrat', 'Licenciement'], 'required' => 1, 'card_group' => 'Identité'],
+                    ['label' => 'Restitution matériel', 'field_type' => 'checkbox', 'field_name' => 'restitution_materiel', 'required' => 0, 'card_group' => 'Logistique'],
+                    ['label' => 'Clôture compte SI', 'field_type' => 'checkbox', 'field_name' => 'cloture_compte_si', 'required' => 0, 'card_group' => 'IT'],
+                    ['label' => 'Clôture messagerie', 'field_type' => 'checkbox', 'field_name' => 'cloture_messagerie', 'required' => 0, 'card_group' => 'IT'],
+                    ['label' => 'Remarques', 'field_type' => 'textarea', 'field_name' => 'remarques', 'required' => 0, 'card_group' => 'Divers'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                    ['label' => 'Validation RH', 'ordre' => 2, 'recipients' => ['rh@dreets.gouv.fr']],
+                    ['label' => 'Validation DSI', 'ordre' => 3, 'recipients' => ['dsi@dreets.gouv.fr']],
+                    ['label' => 'Validation Logistique', 'ordre' => 4, 'recipients' => ['logistique@dreets.gouv.fr']],
+                ],
+            ],
+            [
+                'slug' => 'acces-si',
+                'label' => 'Accès SI',
+                'description' => "Demande de création, modification ou suppression d'un accès au système d'information",
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité'],
+                    ['label' => "Type de demande", 'field_type' => 'select', 'field_name' => 'type_demande', 'options' => ['Création', 'Modification', 'Suppression'], 'required' => 1, 'card_group' => 'Demande'],
+                    ['label' => 'Application / SI concerné', 'field_type' => 'text', 'field_name' => 'application_si', 'required' => 1, 'card_group' => 'Demande'],
+                    ['label' => 'Justification', 'field_type' => 'textarea', 'field_name' => 'justification', 'required' => 0, 'card_group' => 'Demande'],
+                    ['label' => 'Date souhaitée', 'field_type' => 'date', 'field_name' => 'date_souhaitee', 'required' => 0, 'card_group' => 'Demande'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                    ['label' => 'Validation DSI', 'ordre' => 2, 'recipients' => ['dsi@dreets.gouv.fr']],
+                ],
+            ],
+            [
+                'slug' => 'formation',
+                'label' => 'Formation',
+                'description' => 'Demande de formation',
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                    ['label' => 'Intitulé de la formation', 'field_type' => 'text', 'field_name' => 'intitule_formation', 'required' => 1, 'card_group' => 'Formation'],
+                    ['label' => 'Organisme', 'field_type' => 'text', 'field_name' => 'organisme', 'required' => 0, 'card_group' => 'Formation'],
+                    ['label' => 'Date début', 'field_type' => 'date', 'field_name' => 'date_debut', 'required' => 1, 'card_group' => 'Formation'],
+                    ['label' => 'Date fin', 'field_type' => 'date', 'field_name' => 'date_fin', 'required' => 0, 'card_group' => 'Formation'],
+                    ['label' => 'Coût estimé (€)', 'field_type' => 'text', 'field_name' => 'cout_estime', 'required' => 0, 'card_group' => 'Formation'],
+                    ['label' => 'Justification', 'field_type' => 'textarea', 'field_name' => 'justification', 'required' => 1, 'card_group' => 'Formation'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                    ['label' => 'Validation RH', 'ordre' => 2, 'recipients' => ['rh@dreets.gouv.fr']],
+                ],
+            ],
+            [
+                'slug' => 'mutation',
+                'label' => 'Mutation',
+                'description' => 'Demande de mutation',
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                    ['label' => 'Direction actuelle', 'field_type' => 'text', 'field_name' => 'direction_actuelle', 'required' => 1, 'card_group' => 'Mutation'],
+                    ['label' => 'Direction demandée', 'field_type' => 'text', 'field_name' => 'direction_demandee', 'required' => 1, 'card_group' => 'Mutation'],
+                    ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Mutation'],
+                    ['label' => 'Date souhaitée', 'field_type' => 'date', 'field_name' => 'date_souhaitee', 'required' => 0, 'card_group' => 'Mutation'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager actuel', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                    ['label' => 'Validation manager accueil', 'ordre' => 2, 'recipients' => ['manager-accueil@dreets.gouv.fr']],
+                    ['label' => 'Validation DRH', 'ordre' => 3, 'recipients' => ['drh@dreets.gouv.fr']],
+                ],
+            ],
+            [
+                'slug' => 'materiel-prescription',
+                'label' => 'Matériel — Prescription',
+                'description' => 'Prescription de matériel informatique ou bureautique',
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                    ['label' => 'Type de matériel', 'field_type' => 'select', 'field_name' => 'type_materiel', 'options' => ['PC portable', 'PC fixe', 'Écran', 'Imprimante', 'Clavier/Souris', 'Autre'], 'required' => 1, 'card_group' => 'Matériel'],
+                    ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Matériel'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                    ['label' => 'Validation DSI', 'ordre' => 2, 'recipients' => ['dsi@dreets.gouv.fr']],
+                ],
+            ],
+            [
+                'slug' => 'remboursement-avance-frais',
+                'label' => 'Remboursement / Avance de frais',
+                'description' => 'Demande de remboursement ou avance de frais',
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                    ['label' => 'Type de demande', 'field_type' => 'select', 'field_name' => 'type_demande', 'options' => ['Remboursement', 'Avance'], 'required' => 1, 'card_group' => 'Finance'],
+                    ['label' => 'Montant (€)', 'field_type' => 'text', 'field_name' => 'montant', 'required' => 1, 'card_group' => 'Finance'],
+                    ['label' => 'Justificatif', 'field_type' => 'file', 'field_name' => 'justificatif', 'required' => 1, 'card_group' => 'Finance'],
+                    ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Finance'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                    ['label' => 'Validation Comptabilité', 'ordre' => 2, 'recipients' => ['compta@dreets.gouv.fr']],
+                ],
+            ],
+            [
+                'slug' => 'sortie-hors-plages',
+                'label' => 'Sortie hors plages',
+                'description' => 'Autorisation de sortie hors plages horaires',
+                'fields' => [
+                    ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                    ['label' => 'Date', 'field_type' => 'date', 'field_name' => 'date_sortie', 'required' => 1, 'card_group' => 'Demande'],
+                    ['label' => 'Heure départ', 'field_type' => 'text', 'field_name' => 'heure_depart', 'required' => 1, 'card_group' => 'Demande', 'hint' => 'ex : 16h30'],
+                    ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Demande'],
+                ],
+                'steps' => [
+                    ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
+                ],
+            ],
+        ];
+
+        $created = 0;
+        $skipped = 0;
+        foreach ($sample_forms as $sf) {
+            // Check if slug already exists
+            $chk = $pdo->prepare("SELECT COUNT(*) FROM forms WHERE slug = ?");
+            $chk->execute([$sf['slug']]);
+            if ($chk->fetchColumn() > 0) {
+                $skipped++;
+                continue;
+            }
+
+            $form_uuid = generate_uuid();
+            $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+                ->execute([$form_uuid, $sf['slug'], $sf['label'], $sf['description']]);
+
+            // Fields
+            if (!empty($sf['fields'])) {
+                $field_stmt = $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, required, ordre, card_group, hint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $ordre = 1;
+                foreach ($sf['fields'] as $f) {
+                    $options_json = null;
+                    if (!empty($f['options'])) {
+                        $options_json = json_encode($f['options'], JSON_UNESCAPED_UNICODE);
+                    }
+                    $field_stmt->execute([
+                        generate_uuid(), $form_uuid,
+                        $f['label'], $f['field_type'], $f['field_name'],
+                        $options_json,
+                        (int)($f['required'] ?? 0),
+                        $ordre,
+                        $f['card_group'] ?? 'Général',
+                        $f['hint'] ?? '',
+                    ]);
+                    $ordre++;
+                }
+            }
+
+            // Steps
+            if (!empty($sf['steps'])) {
+                foreach ($sf['steps'] as $s) {
+                    $step_uuid = generate_uuid();
+                    $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)")
+                        ->execute([$step_uuid, $form_uuid, $s['label'], $s['ordre']]);
+
+                    if (!empty($s['recipients'])) {
+                        $recip_stmt = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+                        foreach ($s['recipients'] as $email) {
+                            $recip_stmt->execute([generate_uuid(), $step_uuid, $email]);
+                        }
+                    }
+                }
+            }
+
+            $created++;
+        }
+
+        $pdo->commit();
+        app_log('populate_samples', 'system', "Formulaires exemples peuplés : $created créés, $skipped ignorés (déjà existants)");
+        $success_msg = "$created formulaire(s) exemple(s) créé(s), $skipped ignoré(s) (déjà existant(s)).";
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        $error_msg = 'Erreur lors du peuplement : ' . $e->getMessage();
+    }
+}
+
 // ── Data fetching ──────────────────────────────────────────────
 
 $form = null;
@@ -759,6 +1123,33 @@ ksort($steps_by_ordre);
             <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;">OK</button>
         </form>
         <a href="admin_forms.php" class="btn btn-primary">＋ Nouveau formulaire</a>
+        <button type="button" onclick="document.getElementById('import-panel').classList.toggle('hidden')" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;"><span aria-hidden="true">📥</span> Importer JSON</button>
+        <form method="POST" style="display:inline;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="populate_samples">
+            <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;"><span aria-hidden="true">📦</span> Formulaires exemples</button>
+        </form>
+    </div>
+
+    <!-- ── Import JSON panel ──────────────────────────────────── -->
+    <div id="import-panel" class="hidden" style="margin-bottom:1.5rem;">
+        <div class="section-card">
+            <div class="section-card-header">
+                <h2><span aria-hidden="true">📥</span> Importer un formulaire depuis JSON</h2>
+            </div>
+            <div class="section-card-body">
+                <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Collez un JSON décrivant un formulaire (exporté depuis cette page ou généré par une IA). Le format attendu : <code>{ "form": { "label": "..." }, "fields": [...], "steps": [...] }</code></p>
+                <form method="POST">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="import_form">
+                    <div class="field">
+                        <label>Données JSON<span class="req">*</span></label>
+                        <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@dreets.gouv.fr"]}]}' style="font-family:monospace;font-size:.8rem;"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Importer le formulaire</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <?php if (empty($form_id)): ?>
@@ -793,6 +1184,12 @@ ksort($steps_by_ordre);
             <!-- ── Top action bar ──────────────────────────────── -->
             <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
                 <a href="form_preview.php?form_id=<?= $form_id ?>" class="btn-preview" target="_blank"><span aria-hidden="true">👁</span> Prévisualiser le formulaire</a>
+                <form method="POST" style="display:inline;">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="export_form">
+                    <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
+                    <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📤</span> Exporter JSON</button>
+                </form>
                 <a href="dashboard.php" class="btn btn-secondary">← Tableau de bord</a>
             </div>
 

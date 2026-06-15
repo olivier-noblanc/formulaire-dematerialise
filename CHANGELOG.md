@@ -1,5 +1,21 @@
 # Changelog — Formulaire Dématérialisé DREETS
 
+## [5.3.0] — 2026-06-15
+
+### Feature — Gestion avancée des formulaires
+
+- **Export JSON** : Bouton « 📤 Exporter JSON » dans la barre d'actions d'un formulaire. Génère un fichier `.json` contenant la définition complète du formulaire (métadonnées, champs, étapes, destinataires) avec `schema_version: "1.0"`. Ce format est conçu pour être lisible par une IA qui peut analyser un document administratif et générer un JSON compatible pour import.
+
+- **Import JSON** : Bouton « 📥 Importer JSON » dans la barre du sélecteur de formulaire. Panneau dépliable permettant de coller un JSON (exporté ou généré par IA). Le formulaire est créé automatiquement avec tous ses champs, étapes et destinataires. Validation du JSON et messages d'erreur clairs.
+
+- **Formulaires exemples** : Bouton « 📦 Formulaires exemples » qui peuple la base avec 8 formulaires pré-configurés complets (Onboarding, Outboarding, Accès SI, Formation, Mutation, Matériel, Remboursement frais, Sortie hors plages) incluant champs, sections et circuits de validation. Les formulaires déjà existants (même slug) sont ignorés silencieusement.
+
+- **Dupliquer** : Le bouton existant « Dupliquer » copie désormais le formulaire complet (champs + étapes + destinataires).
+
+### Fix — CSS
+
+- **Classe `.hidden`** : Ajout de la classe utilitaire `.hidden { display: none !important; }` dans `style.php` pour le panneau d'import.
+
 ## [5.2.0] — 2026-06-15
 
 ### Fix — TypeError date argument dans `helpers.php:188`
