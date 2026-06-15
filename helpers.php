@@ -478,13 +478,26 @@ function db_migrate(PDO $pdo): void {
     ");
     
     // Vérifier si la table admins est vide et insérer l'administrateur principal si nécessaire
-    $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
-    if ($count_stmt->fetchColumn() == 0) {
-        $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
-            ->execute([generate_uuid(), get_admin_email(), date('Y-m-d H:i:s')]);
+    // ⚠️  Le seeding est encapsulé dans un try/catch car sur une base existante
+    //     (avant migration v9), les colonnes id sont encore INTEGER et les UUIDs
+    //     TEXT causent un "datatype mismatch". Le seeding sera re-tenté après
+    //     les migrations versionnées via le flag $seed_needed.
+    $seed_needed = false;
+    try {
+        $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
+        if ($count_stmt->fetchColumn() == 0) {
+            $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
+                ->execute([generate_uuid(), get_admin_email(), date('Y-m-d H:i:s')]);
+        }
+    } catch (PDOException $e) {
+        $seed_needed = true;
     }
 
     // Seed formulaire outboarding si la table forms est vide ou ne contient que l'onboarding
+    // ⚠️  Encapsulé dans try/catch : si la base existe encore avec id INTEGER (avant v9),
+    //     les INSERT UUID échouent en "datatype mismatch". Le seeding sera re-tenté
+    //     après les migrations versionnées si $seed_needed = true.
+    try {
     $ob_count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug = 'outboarding'")->fetchColumn();
     if ($ob_count == 0) {
         $outboarding_id = generate_uuid();
@@ -899,6 +912,13 @@ function db_migrate(PDO $pdo): void {
         $stmt_sr->execute([generate_uuid(), $acces_si_step1_id, 'chef.service@dreets.gouv.fr']);
         $stmt_sr->execute([generate_uuid(), $acces_si_step2_id, 'dsi@dreets.gouv.fr']);
         $stmt_sr->execute([generate_uuid(), $acces_si_step3_id, 'rssi@dreets.gouv.fr']);
+    }
+
+    } catch (PDOException $e) {
+        // Datatype mismatch ou autre erreur — la base est probablement
+        // encore dans l'ancien format (id INTEGER avant migration v9).
+        // On retentera le seeding après les migrations versionnées.
+        $seed_needed = true;
     }
 
     // ── Legacy migrations (unversioned — always run for backward compat) ──
@@ -1419,6 +1439,66 @@ function db_migrate(PDO $pdo): void {
         $pdo->exec("UPDATE submissions SET closed_at = SUBSTR(closed_at, 9) WHERE closed_at LIKE 'REFUSED:%'");
     } catch (PDOException $e) {
         // Ignorer si la migration a déjà été faite
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SEEDING DIFFÉRÉ — si le seeding initial a échoué (datatype mismatch
+    // sur une base pré-v9 avec id INTEGER), on le retente ici après les
+    // migrations versionnées qui ont converti les colonnes en TEXT.
+    // ═══════════════════════════════════════════════════════════════
+    if (!empty($seed_needed)) {
+        try {
+            // Admin par défaut
+            $count_stmt = $pdo->query("SELECT COUNT(*) FROM admins");
+            if ($count_stmt->fetchColumn() == 0) {
+                $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
+                    ->execute([generate_uuid(), get_admin_email(), date('Y-m-d H:i:s')]);
+            }
+
+            // Formulaires par défaut (uniquement ceux qui n'existent pas encore)
+            $default_forms = [
+                ['slug' => 'outboarding', 'label' => 'Outboarding agent', 'desc' => 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat'],
+                ['slug' => 'onboarding',  'label' => 'Onboarding agent',  'desc' => 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée'],
+                ['slug' => 'sortie-hors-plages', 'label' => 'Sortie hors plages', 'desc' => 'Autorisation de sortie hors plages horaires'],
+                ['slug' => 'remboursement-avance-frais', 'label' => 'Remboursement / Avance de frais', 'desc' => 'Demande de remboursement ou avance de frais'],
+                ['slug' => 'materiel-prescription', 'label' => 'Matériel — Prescription', 'desc' => 'Prescription de matériel informatique ou bureautique'],
+                ['slug' => 'mutation', 'label' => 'Mutation', 'desc' => 'Demande de mutation'],
+                ['slug' => 'formation', 'label' => 'Formation', 'desc' => 'Demande de formation'],
+                ['slug' => 'acces-si', 'label' => 'Accès SI', 'desc' => 'Demande de création, modification ou suppression d\'un accès au système d\'information'],
+            ];
+            foreach ($default_forms as $df) {
+                $exists = $pdo->prepare("SELECT COUNT(*) FROM forms WHERE slug = ?");
+                $exists->execute([$df['slug']]);
+                if ($exists->fetchColumn() == 0) {
+                    $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+                        ->execute([generate_uuid(), $df['slug'], $df['label'], $df['desc']]);
+                }
+            }
+
+            // Paramètres par défaut
+            $settings_count = $pdo->query("SELECT COUNT(*) FROM settings")->fetchColumn();
+            if ($settings_count == 0) {
+                $defaults = [
+                    ['smtp_host', 'smtp.social.gouv.fr'],
+                    ['smtp_port', '25'],
+                    ['smtp_auth', '0'],
+                    ['smtp_secure', ''],
+                    ['smtp_user', ''],
+                    ['smtp_pass', ''],
+                    ['smtp_from', 'workflow@dreets.gouv.fr'],
+                    ['smtp_from_name', 'Workflow DREETS'],
+                    ['delai_relance_h', '48'],
+                    ['token_expire_days', '30'],
+                    ['relance_max', '3'],
+                ];
+                $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
+                foreach ($defaults as $row) {
+                    $stmt->execute($row);
+                }
+            }
+        } catch (PDOException $e) {
+            // Silencieux — le seeding sera retenté au prochain chargement
+        }
     }
 }
 
