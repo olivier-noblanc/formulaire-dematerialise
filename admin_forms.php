@@ -1150,6 +1150,63 @@ ksort($steps_by_ordre);
                 </form>
             </div>
         </div>
+
+        <!-- ── Prompt IA ──────────────────────────────────────────── -->
+        <div class="section-card" style="margin-top:1rem;">
+            <div class="section-card-header">
+                <h2><span aria-hidden="true">🤖</span> Prompt IA — Générer un formulaire à partir d'un document</h2>
+            </div>
+            <div class="section-card-body">
+                <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ ci-dessus.</p>
+                <div class="field">
+                    <label>Prompt à copier-coller <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ai-prompt').innerText);this.textContent='✓ Copié !';setTimeout(()=>this.textContent='📋 Copier',2000)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier</button></label>
+                    <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs au format JSON pour l'application "Workflow DREETS".
+
+Consignes :
+- Analyse le document administratif fourni ci-dessous.
+- Génère un JSON strictement conforme au schéma suivant.
+- Chaque champ doit avoir un field_name technique en snake_case (sans accents, généré automatiquement depuis le label).
+- field_type peut être : "text", "date", "select", "checkbox", "textarea", "file".
+- Pour "select", mets les options dans le tableau "options".
+- Regroupe les champs par thème dans card_group (ex: "Identité", "Affectation", "IT", "Logistique").
+- Les étapes représentent le circuit de validation (workflow). Chaque étape a un label, un ordre et des emails de destinataires.
+- Les emails de destinataires sont des adresses génériques de service (ex: "manager@dreets.gouv.fr", "rh@dreets.gouv.fr").
+- Ne fais JAMAIS référence à ton propre rôle, ne mets aucune explication hors JSON.
+
+Schéma JSON attendu :
+{
+  "schema_version": "1.0",
+  "form": {
+    "label": "Nom du formulaire",
+    "description": "Description courte du formulaire"
+  },
+  "fields": [
+    {
+      "label": "Libellé du champ visible par l'utilisateur",
+      "field_type": "text | date | select | checkbox | textarea | file",
+      "field_name": "nom_technique_snake_case",
+      "options": ["Option A", "Option B"],
+      "required": true,
+      "card_group": "Nom de la section",
+      "hint": "Texte d'aide optionnel"
+    }
+  ],
+  "steps": [
+    {
+      "label": "Nom de l'étape de validation",
+      "ordre": 1,
+      "actif": true,
+      "recipients": ["email-validateur@dreets.gouv.fr"]
+    }
+  ]
+}
+
+Voici le document administratif à analyser :
+
+[COLLEZ VOTRE DOCUMENT ICI]</pre>
+                </div>
+            </div>
+        </div>
     </div>
 
     <?php if (empty($form_id)): ?>

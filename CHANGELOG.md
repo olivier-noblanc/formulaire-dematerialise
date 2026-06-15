@@ -8,6 +8,8 @@
 
 - **Import JSON** : Bouton « 📥 Importer JSON » dans la barre du sélecteur de formulaire. Panneau dépliable permettant de coller un JSON (exporté ou généré par IA). Le formulaire est créé automatiquement avec tous ses champs, étapes et destinataires. Validation du JSON et messages d'erreur clairs.
 
+- **Prompt IA** : Section « 🤖 Prompt IA » dans le panneau d'import avec un prompt complet prêt à copier-coller. L'utilisateur colle son document administratif à la fin du prompt, l'IA génère le JSON conforme au schéma, puis il suffit de le coller dans le champ d'import. Bouton « 📋 Copier » en un clic.
+
 - **Formulaires exemples** : Bouton « 📦 Formulaires exemples » qui peuple la base avec 8 formulaires pré-configurés complets (Onboarding, Outboarding, Accès SI, Formation, Mutation, Matériel, Remboursement frais, Sortie hors plages) incluant champs, sections et circuits de validation. Les formulaires déjà existants (même slug) sont ignorés silencieusement.
 
 - **Dupliquer** : Le bouton existant « Dupliquer » copie désormais le formulaire complet (champs + étapes + destinataires).
