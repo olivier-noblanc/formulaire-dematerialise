@@ -16,6 +16,10 @@
 
 - **Classe `.hidden`** : Ajout de la classe utilitaire `.hidden { display: none !important; }` dans `style.php` pour le panneau d'import.
 
+### Maintenance — Screenshots docs.php
+
+- **Mise à jour des 17 captures d'écran** : Toutes les screenshots de `docs.php` ont été refaites avec la nouvelle UI « Institutionnel v3 » (sidebar layout, palette bleu républicain, hero gradient). Les anciennes captures montraient l'interface pré-v5 qui n'était plus représentative.
+
 ## [5.2.0] — 2026-06-15
 
 ### Fix — TypeError date argument dans `helpers.php:188`
