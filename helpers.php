@@ -799,6 +799,8 @@ function db_migrate(PDO $pdo): void {
             ['relance_max', '3'],
             ['app_name', 'CircuitDémat'],
             ['app_favicon', ''],
+            ['ldap_suggest_enabled', '0'],
+            ['ldap_suggest_filter', '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))'],
         ];
         $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
         foreach ($defaults as $row) {
@@ -1725,6 +1727,8 @@ function db_migrate(PDO $pdo): void {
                     ['relance_max', '3'],
                     ['app_name', 'CircuitDémat'],
                     ['app_favicon', ''],
+                    ['ldap_suggest_enabled', '0'],
+                    ['ldap_suggest_filter', '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))'],
                 ];
                 $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
                 foreach ($defaults as $row) {
@@ -2205,6 +2209,157 @@ function verify_email_ldap(string $email): array {
     }
 
     return ['ok' => false, 'method' => 'ldap', 'detail' => "Adresse $email introuvable dans l'annuaire Active Directory"];
+}
+
+/**
+ * Recherche des adresses email dans l'annuaire LDAP pour l'autocomplétion.
+ * Retourne un tableau d'entrées ['email' => '...', 'cn' => '...'].
+ * Utilise un cache fichier de 30 minutes pour éviter de surcharger le serveur LDAP.
+ *
+ * @param string $query Terme de recherche (nom, prénom, ou partie d'email). Vide = tous.
+ * @param int    $limit Nombre maximum de résultats (défaut 100, max 500).
+ * @return array Tableau d'entrées ['email' => string, 'cn' => string]
+ */
+function ldap_suggest(string $query = '', int $limit = 100): array {
+    // Vérifier que l'extension LDAP est disponible
+    if (!function_exists('ldap_connect')) {
+        return [];
+    }
+
+    // Vérifier que la suggestion LDAP est activée
+    if (get_setting('ldap_suggest_enabled', '0') !== '1') {
+        return [];
+    }
+
+    $host     = get_setting('ldap_host', '');
+    $port     = (int)get_setting('ldap_port', '389');
+    $base_dn  = get_setting('ldap_base_dn', '');
+    $bind_dn  = get_setting('ldap_bind_dn', '');
+    $bind_pass= get_setting('ldap_bind_pass', '');
+    $suggest_filter = get_setting('ldap_suggest_filter', '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))');
+
+    if (empty($host) || empty($base_dn)) {
+        return [];
+    }
+
+    $limit = max(1, min(500, $limit));
+
+    // ── Cache fichier (30 minutes) ──────────────────────────────
+    $cache_dir = __DIR__ . '/db/cache';
+    if (!is_dir($cache_dir)) {
+        @mkdir($cache_dir, 0770, true);
+    }
+    $cache_key = md5($host . $base_dn . $query . $limit);
+    $cache_file = $cache_dir . '/ldap_suggest_' . $cache_key . '.json';
+    $cache_ttl = 1800; // 30 minutes
+
+    if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_ttl) {
+        $cached = @json_decode(file_get_contents($cache_file), true);
+        if (is_array($cached)) {
+            return $cached;
+        }
+    }
+
+    // ── Connexion LDAP ──────────────────────────────────────────
+    $ldap_uri = (strpos($host, '://') !== false) ? $host : 'ldap://' . $host;
+    $conn = @ldap_connect($ldap_uri, $port);
+    if (!$conn) {
+        return [];
+    }
+
+    ldap_set_option($conn, LDAP_OPT_PROTOCOL_VERSION, 3);
+    ldap_set_option($conn, LDAP_OPT_REFERRALS, 0);
+    ldap_set_option($conn, LDAP_OPT_NETWORK_TIMEOUT, 5);
+    ldap_set_option($conn, LDAP_OPT_TIMELIMIT, 8);
+
+    // Bind
+    if (!empty($bind_dn)) {
+        $bind = @ldap_bind($conn, $bind_dn, $bind_pass);
+    } else {
+        $bind = @ldap_bind($conn);
+    }
+    if (!$bind) {
+        @ldap_close($conn);
+        return [];
+    }
+
+    // ── Recherche ───────────────────────────────────────────────
+    $escaped_query = ldap_escape($query, '', LDAP_ESCAPE_FILTER);
+    $search_filter = str_replace('{query}', $escaped_query, $suggest_filter);
+
+    // Si la requête est vide, chercher tous les utilisateurs avec un email
+    if (empty($query)) {
+        $search_filter = '(mail=*)';
+    }
+
+    $search = @ldap_search($conn, $base_dn, $search_filter, ['mail', 'cn', 'sn', 'givenName'], 0, $limit);
+    if (!$search) {
+        @ldap_close($conn);
+        return [];
+    }
+
+    $entries = ldap_get_entries($conn, $search);
+    @ldap_close($conn);
+
+    // ── Mise en forme des résultats ─────────────────────────────
+    $results = [];
+    $count = (int)($entries['count'] ?? 0);
+    for ($i = 0; $i < $count; $i++) {
+        $entry = $entries[$i];
+        $mail = $entry['mail'][0] ?? '';
+        if (empty($mail) || !filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+            continue;
+        }
+        $cn = $entry['cn'][0] ?? '';
+        $sn = $entry['sn'][0] ?? '';
+        $givenName = $entry['givenname'][0] ?? '';
+
+        // Construire un nom affichable
+        $display = $cn;
+        if (empty($display)) {
+            $display = trim($givenName . ' ' . $sn);
+        }
+        if (empty($display)) {
+            $display = $mail;
+        }
+
+        $results[] = ['email' => strtolower(trim($mail)), 'cn' => $display];
+    }
+
+    // Trier par nom
+    usort($results, function($a, $b) {
+        return strcasecmp($a['cn'], $b['cn']);
+    });
+
+    // ── Écrire dans le cache ────────────────────────────────────
+    @file_put_contents($cache_file, json_encode($results, JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+    return $results;
+}
+
+/**
+ * Génère le HTML d'un élément <datalist> avec les suggestions LDAP.
+ * Pur HTML5 — aucun JavaScript requis. Le navigateur gère le filtrage natif.
+ *
+ * @param string $list_id Identifiant HTML unique du datalist
+ * @param string $query   Terme de recherche LDAP (optionnel)
+ * @param int    $limit   Nombre max de résultats
+ * @return string HTML du <datalist> ou chaîne vide si LDAP non configuré
+ */
+function render_ldap_datalist(string $list_id, string $query = '', int $limit = 200): string {
+    $results = ldap_suggest($query, $limit);
+    if (empty($results)) {
+        return '';
+    }
+
+    $html = '<datalist id="' . h($list_id) . '">';
+    foreach ($results as $entry) {
+        // La valeur est l'email, le label affiche le nom
+        $html .= '<option value="' . h($entry['email']) . '" label="' . h($entry['cn']) . '">';
+    }
+    $html .= '</datalist>';
+
+    return $html;
 }
 
 /**

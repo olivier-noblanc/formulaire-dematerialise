@@ -72,6 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'ldap_base_dn'      => trim($_POST['ldap_base_dn'] ?? ''),
             'ldap_bind_dn'      => trim($_POST['ldap_bind_dn'] ?? ''),
             'ldap_filter'       => trim($_POST['ldap_filter'] ?? '(mail={email})'),
+            'ldap_suggest_enabled' => isset($_POST['ldap_suggest_enabled']) ? '1' : '0',
+            'ldap_suggest_filter'  => trim($_POST['ldap_suggest_filter'] ?? '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))'),
         ];
 
         // Conserver l'ancien mot de passe LDAP si le champ est vide
@@ -175,6 +177,8 @@ $ldap_base_dn     = get_setting('ldap_base_dn', '');
 $ldap_bind_dn     = get_setting('ldap_bind_dn', '');
 $ldap_bind_pass   = get_setting('ldap_bind_pass', '');
 $ldap_filter      = get_setting('ldap_filter', '(mail={email})');
+$ldap_suggest_enabled = get_setting('ldap_suggest_enabled', '0');
+$ldap_suggest_filter  = get_setting('ldap_suggest_filter', '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))');
 
 $ldap_ext_available = function_exists('ldap_connect');
 ?>
@@ -310,6 +314,30 @@ $ldap_ext_available = function_exists('ldap_connect');
                 <div class="field">
                     <label>Filtre de recherche <span class="hint">({email} sera remplacé par l'adresse à vérifier)</span></label>
                     <input type="text" name="ldap_filter" value="<?= h($ldap_filter) ?>" placeholder="(mail={email})">
+                </div>
+
+                <hr style="margin:1.5rem 0;border:none;border-top:1px solid #d0d0e0;">
+
+                <h3 style="margin-top:0;color:#003189;">Suggestions d'emails (autocomplétion)</h3>
+                <p style="color:#555;font-size:.9rem;margin-bottom:1rem;">
+                    Active la suggestion d'adresses email issues de l'annuaire LDAP dans les champs courriel des formulaires et lors de l'ajout de destinataires.
+                    <strong>Pur HTML5</strong> — utilise l'élément <code>&lt;datalist&gt;</code> natif du navigateur, aucun JavaScript requis.
+                    L'agent commence à taper et le navigateur propose les adresses correspondantes.
+                </p>
+                <div class="field">
+                    <label class="checkbox-label" style="font-weight:bold;">
+                        <input type="checkbox" name="ldap_suggest_enabled" <?= $ldap_suggest_enabled === '1' ? 'checked' : '' ?>>
+                        Activer les suggestions LDAP sur les champs courriel
+                    </label>
+                    <p style="margin:.5rem 0 0;color:#666;font-size:.85rem;">
+                        Quand activé, les champs de type « Courriel » dans les formulaires publics et le champ « Ajouter un destinataire » dans l'administration
+                        proposeront automatiquement les adresses de l'annuaire. Les résultats sont mis en cache 30 minutes pour ne pas surcharger le serveur LDAP.
+                    </p>
+                </div>
+                <div class="field">
+                    <label>Filtre de suggestion <span class="hint">({query} sera remplacé par le terme de recherche)</span></label>
+                    <input type="text" name="ldap_suggest_filter" value="<?= h($ldap_suggest_filter) ?>" placeholder="(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))">
+                    <span class="hint">Filtre LDAP pour la recherche d'autocomplétion. Par défaut, cherche sur le nom complet (cn), l'email, le nom de famille (sn) et le prénom (givenName).</span>
                 </div>
             </div>
 

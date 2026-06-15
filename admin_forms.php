@@ -1862,12 +1862,13 @@ Voici le document administratif à analyser :
                                         <div class="form-grid">
                                             <div class="field">
                                                 <label>Courriel du destinataire<span class="req">*</span></label>
-                                                <input type="text" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr ou {{nom_du_champ}}">
-                                                <span class="hint">Adresse email statique (ex: rh@dreets.gouv.fr) ou référence dynamique vers un champ du formulaire (ex: {{email_superieur}}). La référence sera résolue au moment de la soumission.</span>
+                                                <input type="text" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr ou {{nom_du_champ}}" list="ldap-recipient-suggestions" autocomplete="off">
+                                                <span class="hint">Adresse email statique (ex: rh@dreets.gouv.fr) ou référence dynamique vers un champ du formulaire (ex: {{email_superieur}}). La référence sera résolue au moment de la soumission.<?= get_setting('ldap_suggest_enabled', '0') === '1' ? ' Saisissez le début du nom ou de l\'email pour voir les suggestions de l\'annuaire.' : '' ?></span>
                                             </div>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Ajouter le destinataire</button>
                                     </form>
+                                    <?= render_ldap_datalist('ldap-recipient-suggestions', '', 300) ?>
                                 </div>
 
                                 <?php if (!empty($selected_step['recipients'])): ?>

@@ -170,7 +170,7 @@ foreach ($form_fields as $field) {
 /**
  * Rend un champ dynamique en HTML avec support aria pour les erreurs
  */
-function render_field(array $field, mixed $posted_val, array $field_errors): string {
+function render_field(array $field, mixed $posted_val, array $field_errors, string $datalist_id = ''): string {
     $name = h($field['field_name']);
     $label = h($field['label']);
     $req_span = $field['required'] ? ' <span class="req">*</span>' : '';
@@ -212,8 +212,9 @@ function render_field(array $field, mixed $posted_val, array $field_errors): str
         case 'email':
             $val = h($posted_val ?? '');
             $maxlength = ' maxlength="500"';
+            $list_attr = !empty($datalist_id) ? ' list="' . h($datalist_id) . '"' : '';
             return <<<HTML
-<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="email" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$maxlength} pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$">{$hint}{$error_html}</div>
+<div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="email" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$maxlength} pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"{$list_attr}>{$hint}{$error_html}</div>
 HTML;
 
         case 'date':
@@ -348,6 +349,24 @@ HTML;
       <?= csrf_field() ?>
       <input type="hidden" name="MAX_FILE_SIZE" value="<?= get_max_file_size() ?>">
 
+      <?php
+      // ── Détection des champs email pour l'autocomplétion LDAP ────
+      $has_email_fields = false;
+      foreach ($form_fields as $cf) {
+          if ($cf['field_type'] === 'email') { $has_email_fields = true; break; }
+      }
+      if (!$has_email_fields) {
+          foreach ($form_fields as $cf) {
+              $fn_l = mb_strtolower($cf['field_name'], 'UTF-8');
+              if ($cf['field_type'] === 'text' && (strpos($fn_l, 'email') !== false || strpos($fn_l, 'courriel') !== false || strpos($fn_l, 'mel') !== false)) {
+                  $has_email_fields = true; break;
+              }
+          }
+      }
+      $ldap_datalist_id = $has_email_fields ? 'ldap-email-suggestions' : '';
+      $ldap_datalist_html = $has_email_fields ? render_ldap_datalist($ldap_datalist_id, '', 300) : '';
+      ?>
+
       <?php if (empty($grouped)): ?>
         <p class="no-fields">Aucun champ configuré pour ce formulaire. Contactez un administrateur.</p>
       <?php else: ?>
@@ -369,20 +388,22 @@ HTML;
             <?php if (!empty($non_checkboxes)): ?>
               <div class="grid-2">
                 <?php foreach ($non_checkboxes as $cf): ?>
-                  <?= render_field($cf, $_POST[$cf['field_name']] ?? null, $field_errors) ?>
+                  <?= render_field($cf, $_POST[$cf['field_name']] ?? null, $field_errors, $ldap_datalist_id) ?>
                 <?php endforeach; ?>
               </div>
             <?php endif; ?>
             <?php if (!empty($checkboxes)): ?>
               <div class="checkboxes"<?php if (!empty($non_checkboxes)) echo ' style="margin-top:1rem;"'; ?>>
                 <?php foreach ($checkboxes as $cf): ?>
-                  <?= render_field($cf, $_POST[$cf['field_name']] ?? null, $field_errors) ?>
+                  <?= render_field($cf, $_POST[$cf['field_name']] ?? null, $field_errors, $ldap_datalist_id) ?>
                 <?php endforeach; ?>
               </div>
             <?php endif; ?>
           </fieldset>
         <?php endforeach; ?>
       <?php endif; ?>
+
+      <?= $ldap_datalist_html ?>
 
       <?php if (!empty($grouped)): ?>
         <div class="card" style="background:#f8f8ff;border-color:#003189;">

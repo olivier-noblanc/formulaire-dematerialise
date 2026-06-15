@@ -1,5 +1,19 @@
 # Changelog — CircuitDémat
 
+## [5.10.0] — 2026-06-15
+
+### Feature — Suggestions LDAP sur les champs courriel (pur HTML5, zéro JS)
+
+- **Autocomplétion LDAP via `<datalist>`** : Quand la suggestion LDAP est activée dans les paramètres, les champs de type « Courriel » (`email`) dans les formulaires publics et le champ « Ajouter un destinataire » dans l'administration proposent automatiquement les adresses de l'annuaire LDAP.
+- **Pur HTML5** : Utilise l'élément natif `<datalist>` du navigateur. L'agent commence à taper et le navigateur filtre et propose les correspondances. Aucun JavaScript requis.
+- **Fonction `ldap_suggest()`** : Nouvelle fonction dans helpers.php qui interroge l'annuaire LDAP avec un filtre configurable (par défaut : recherche sur cn, mail, sn, givenName). Retourne un tableau d'entrées `[email, cn]`.
+- **Fonction `render_ldap_datalist()`** : Génère le HTML `<datalist>` avec les résultats LDAP. Un seul `<datalist>` par page, partagé par tous les champs email.
+- **Cache fichier 30 min** : Les résultats LDAP sont mis en cache dans `db/cache/` pendant 30 minutes pour éviter de surcharger le serveur LDAP à chaque affichage de page.
+- **Paramètres administrables** : Deux nouveaux paramètres dans Paramètres → Sécurité email → Configuration LDAP :
+  - `ldap_suggest_enabled` : Case à cocher pour activer/désactiver les suggestions
+  - `ldap_suggest_filter` : Filtre LDAP personnalisable pour la recherche (par défaut cherche sur nom, prénom, email)
+- **Détection automatique** : Si le formulaire contient des champs de type `email` ou des champs texte dont le nom contient « email » / « courriel » / « mel », le `<datalist>` LDAP est automatiquement injecté.
+
 ## [5.9.0] — 2026-06-15
 
 ### Fix — Bouton Dupliquer illisible (texte blanc sur fond blanc)
