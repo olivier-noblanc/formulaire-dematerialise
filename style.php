@@ -1,14 +1,14 @@
 <?php
-// style.php — Design System 2026 "République Institutionnel" v3 — Sidebar Layout
+// style.php — Design System 2026 "Institutionnel" v3 — Sidebar Layout
 // À inclure via require_once __DIR__ . '/style.php'; dans le <head>
 // Zéro JavaScript — Pure CSS + HTML5
 // Layout : Sidebar blanche 196px + Contenu principal
-// Identité : République Française — Bleu #000091, Blanc #FFFFFF, Rouge #E1000F
+// Palette bleu #000091 / rouge #E1000F
 ?>
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN SYSTEM 2026 — "République Institutionnel" v3
-   Sidebar layout · Palette républicaine · Marianne
+   DESIGN SYSTEM 2026 — "Institutionnel" v3
+   Sidebar layout · Palette bleu profond
    Zéro CDN · Zéro JS · Zéro dépendance externe
    ═══════════════════════════════════════════════════════════════ */
 
@@ -128,7 +128,6 @@
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #000091 0%, #1212FF 100%);
   --gradient-primary-hover: linear-gradient(135deg, #00006F 0%, #000091 100%);
-  --gradient-tricolore: linear-gradient(90deg, #000091 0%, #000091 33%, #FFFFFF 33%, #FFFFFF 66%, #E1000F 66%, #E1000F 100%);
   --gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
   --gradient-surface: linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.7) 100%);
 
@@ -176,32 +175,17 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Tricolore top bar on sidebar ──────────────────────────── */
-.sidebar::before {
-  content: '';
-  display: block;
-  height: 3px;
-  background: var(--gradient-tricolore);
-  flex-shrink: 0;
-}
-
-/* Logo / Brand area — Marianne + République Française */
+/* Logo / Brand area */
 .sidebar-brand {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 14px 10px;
+  align-items: center;
+  gap: 9px;
+  padding: 16px 14px;
   text-decoration: none;
   color: var(--c-text);
   border-bottom: 1px solid var(--c-border-light);
 }
 .sidebar-brand:hover { text-decoration: none; }
-
-.sidebar-brand-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
 .sidebar-logo-mark {
   width: 30px; height: 30px;
@@ -220,16 +204,6 @@ body {
   color: var(--c-text);
   letter-spacing: -.02em;
   line-height: 1.2;
-}
-
-.sidebar-brand-sub {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--c-primary);
-  padding-left: 38px; /* align with brand text after logo */
-  line-height: 1;
 }
 
 /* Navigation sections */
@@ -1131,33 +1105,6 @@ footer a {
 }
 footer a:hover { color: var(--c-primary-dark); text-decoration: underline; }
 
-/* ── RF mention in footer ───────────────────────────────────── */
-.footer-rf {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 2px;
-}
-.footer-rf-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
-  color: var(--c-primary);
-  font-size: 10px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.footer-tricolore {
-  display: inline-block;
-  width: 18px;
-  height: 6px;
-  background: var(--gradient-tricolore);
-  border-radius: 1px;
-  flex-shrink: 0;
-}
-
 /* ── Skip link (RGAA) ─────────────────────────────────────── */
 .skip-link {
   position: absolute;
@@ -1261,9 +1208,7 @@ main > .card:nth-child(4), main > .sub-card:nth-child(4) { animation-delay: .12s
     flex-direction: column;
     overflow: visible;
   }
-  .sidebar::before { height: 3px; }
   .sidebar-brand { padding: 8px 12px; border-bottom: 1px solid var(--c-border-light); }
-  .sidebar-brand-sub { padding-left: 38px; }
   .sidebar-nav {
     padding: 6px 8px;
     display: flex;

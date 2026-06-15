@@ -1534,16 +1534,10 @@ function render_nav(string $current_page = '', array $extra_admin_links = []): s
 /**
  * Génère l'en-tête complet : sidebar + topbar + ouverture du contenu.
  *
- * Identité République Française :
- *   - Barre tricolore en haut de la sidebar (CSS .sidebar::before)
- *   - Logo losange bleu + "DREETS" + "RÉPUBLIQUE FRANÇAISE"
- *   - Footer avec mention RF et drapeau tricolore
- *
  * Structure HTML :
  *   <div class="app-layout">
  *     <nav class="sidebar">
- *       [Barre tricolore RF ::before]
- *       [Logo DREETS + République Française]
+ *       [Logo losange ◆ + DREETS]
  *       [Navigation]
  *       [Carte utilisateur]
  *     </nav>
@@ -1633,15 +1627,11 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
     $notif_dot = $pending_count > 0 ? '<span class="topbar-notif-dot"></span>' : '';
 
     // ── Output full layout ───────────────────────────────────
-    // La barre tricolore est en CSS (.sidebar::before)
     return '<div class="app-layout">'
         . '<nav class="sidebar" aria-label="Navigation principale">'
         .   '<a href="index.php" class="sidebar-brand">'
-        .     '<div class="sidebar-brand-top">'
-        .       '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
-        .       '<span class="sidebar-brand-text">DREETS</span>'
-        .     '</div>'
-        .     '<span class="sidebar-brand-sub">République Française</span>'
+        .     '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
+        .     '<span class="sidebar-brand-text">DREETS</span>'
         .   '</a>'
         .   '<div class="sidebar-nav">'
         .     $nav_html
@@ -1701,10 +1691,6 @@ function render_footer(): string {
          . '</div><!-- /.main-area -->'
          . '</div><!-- /.app-layout -->'
          . '<footer>'
-         . '<div class="footer-rf">'
-         .   '<span class="footer-rf-logo">République Française</span>'
-         .   '<span class="footer-tricolore" aria-hidden="true"></span>'
-         . '</div>'
          . '<a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>'
          . ' · Formulaire Dématérialisé · DREETS BFC'
          . '</footer>';
