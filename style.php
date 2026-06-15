@@ -1,32 +1,40 @@
 <?php
-// style.php — Design System 2026 "Aurora Institutionnel" v2 — Sidebar Layout
+// style.php — Design System 2026 "République Institutionnel" v3 — Sidebar Layout
 // À inclure via require_once __DIR__ . '/style.php'; dans le <head>
 // Zéro JavaScript — Pure CSS + HTML5
 // Layout : Sidebar blanche 196px + Contenu principal
+// Identité : République Française — Bleu #000091, Blanc #FFFFFF, Rouge #E1000F
 ?>
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN SYSTEM 2026 — "Aurora Institutionnel" v2
-   Sidebar layout · Palette bleu républicain · Bento cards
+   DESIGN SYSTEM 2026 — "République Institutionnel" v3
+   Sidebar layout · Palette républicaine · Marianne
    Zéro CDN · Zéro JS · Zéro dépendance externe
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Custom Properties (Design Tokens) ──────────────────────── */
 :root {
   /* Primary — Bleu républicain */
-  --c-primary: #1C3D7A;
-  --c-primary-dark: #0F2347;
-  --c-primary-darker: #0A1A38;
-  --c-primary-light: #2D5AA0;
-  --c-primary-lighter: #4A7AC0;
-  --c-primary-50: #EBF0FA;
-  --c-primary-100: #D0E0F0;
-  --c-primary-200: #B0CBE8;
+  --c-primary: #000091;
+  --c-primary-dark: #00006F;
+  --c-primary-darker: #000050;
+  --c-primary-light: #1212FF;
+  --c-primary-lighter: #5656FF;
+  --c-primary-50: #F5F5FE;
+  --c-primary-100: #E3E3FE;
+  --c-primary-200: #C6C6FF;
 
-  /* Accent */
-  --c-accent: #1C3D7A;
-  --c-accent-dark: #0F2347;
-  --c-accent-light: #2D5AA0;
+  /* Tricolore républicain */
+  --c-rouge: #E1000F;
+  --c-rouge-dark: #C0000D;
+  --c-rouge-light: #FF1D2E;
+  --c-rouge-50: #FFF0F0;
+  --c-rouge-100: #FFD7D7;
+
+  /* Accent — Bleu républicain */
+  --c-accent: #000091;
+  --c-accent-dark: #00006F;
+  --c-accent-light: #1212FF;
 
   /* Semantic */
   --c-success: #10B981;
@@ -37,45 +45,45 @@
   --c-warning-dark: #78350F;
   --c-warning-50: #FEF3C7;
   --c-warning-100: #FDE68A;
-  --c-danger: #EF4444;
-  --c-danger-dark: #991B1B;
-  --c-danger-50: #FEE2E2;
-  --c-danger-100: #FECACA;
-  --c-info: #1C3D7A;
-  --c-info-50: #EBF0FA;
-  --c-info-100: #D0E0F0;
+  --c-danger: #E1000F;
+  --c-danger-dark: #C0000D;
+  --c-danger-50: #FFF0F0;
+  --c-danger-100: #FFD7D7;
+  --c-info: #000091;
+  --c-info-50: #F5F5FE;
+  --c-info-100: #E3E3FE;
 
   /* Neutrals — Bleu-gris */
   --c-bg: #EBF0FA;
   --c-bg-warm: #F5F9FF;
   --c-surface: #FFFFFF;
   --c-surface-elevated: #FFFFFF;
-  --c-surface-glass: rgba(255, 255, 255, 0.92);
+  --c-surface-glass: rgba(255, 255, 255, 0.95);
   --c-border: #C8D8ED;
   --c-border-light: #E0EAF5;
   --c-border-subtle: #EBF0FA;
-  --c-text: #0F2347;
-  --c-text-secondary: #1A3050;
-  --c-text-tertiary: #5A7AA0;
+  --c-text: #161616;
+  --c-text-secondary: #3A3A3A;
+  --c-text-tertiary: #666666;
   --c-text-inverse: #FFFFFF;
 
   /* Sidebar specific */
   --c-sidebar-bg: #FFFFFF;
-  --c-sidebar-hover: #EBF0FA;
-  --c-sidebar-active: #1C3D7A;
-  --c-sidebar-text: #2D4A6E;
-  --c-sidebar-section: #7A9ABD;
+  --c-sidebar-hover: #F5F5FE;
+  --c-sidebar-active: #000091;
+  --c-sidebar-text: #3A3A3A;
+  --c-sidebar-section: #666666;
 
   /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(15,35,71,.04);
-  --shadow-sm: 0 1px 3px rgba(15,35,71,.06), 0 1px 2px rgba(15,35,71,.04);
-  --shadow-md: 0 4px 6px -1px rgba(15,35,71,.07), 0 2px 4px -2px rgba(15,35,71,.04);
-  --shadow-lg: 0 10px 15px -3px rgba(15,35,71,.08), 0 4px 6px -4px rgba(15,35,71,.03);
-  --shadow-xl: 0 20px 25px -5px rgba(15,35,71,.1), 0 8px 10px -6px rgba(15,35,71,.03);
-  --shadow-2xl: 0 25px 50px -12px rgba(15,35,71,.12);
-  --shadow-glow: 0 0 20px rgba(28,61,122,.1);
-  --shadow-colored: 0 4px 14px rgba(28,61,122,.14);
-  --shadow-inner: inset 0 2px 4px rgba(15,35,71,.04);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.03);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.03);
+  --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,.12);
+  --shadow-glow: 0 0 20px rgba(0,0,145,.1);
+  --shadow-colored: 0 4px 14px rgba(0,0,145,.14);
+  --shadow-inner: inset 0 2px 4px rgba(0,0,0,.04);
 
   /* Radius */
   --r-xs: 4px;
@@ -98,7 +106,7 @@
   --sp-12: 3rem;
   --sp-16: 4rem;
 
-  /* Typography */
+  /* Typography — Marianne (DSFR) */
   --font-sans: "Marianne", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
   --text-xs: .75rem;
@@ -118,20 +126,11 @@
   --duration-slow: .4s;
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #1C3D7A 0%, #2D5AA0 100%);
-  --gradient-primary-hover: linear-gradient(135deg, #0F2347 0%, #1C3D7A 100%);
-  --gradient-aurora: linear-gradient(135deg, #1C3D7A 0%, #2D5AA0 25%, #4A7AC0 50%, #2D5AA0 75%, #1C3D7A 100%);
-  --gradient-warm: linear-gradient(135deg, #D97706 0%, #EF4444 100%);
-  --gradient-cool: linear-gradient(135deg, #1C3D7A 0%, #06B6D4 100%);
+  --gradient-primary: linear-gradient(135deg, #000091 0%, #1212FF 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #00006F 0%, #000091 100%);
+  --gradient-tricolore: linear-gradient(90deg, #000091 0%, #000091 33%, #FFFFFF 33%, #FFFFFF 66%, #E1000F 66%, #E1000F 100%);
   --gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
   --gradient-surface: linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.7) 100%);
-  --gradient-mesh-1: radial-gradient(at 20% 20%, rgba(28,61,122,.05) 0%, transparent 50%),
-                     radial-gradient(at 80% 80%, rgba(45,90,160,.04) 0%, transparent 50%),
-                     radial-gradient(at 50% 50%, rgba(28,61,122,.03) 0%, transparent 70%);
-  --gradient-mesh-hero: radial-gradient(ellipse at 20% 50%, rgba(28,61,122,.45) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 20%, rgba(45,90,160,.3) 0%, transparent 50%),
-                        radial-gradient(ellipse at 60% 80%, rgba(6,182,212,.15) 0%, transparent 50%),
-                        linear-gradient(135deg, #0A1A38 0%, #1C3D7A 50%, #2D5AA0 100%);
 
   /* Layout */
   --sidebar-width: 196px;
@@ -177,17 +176,33 @@ body {
   overflow-x: hidden;
 }
 
-/* Logo mark */
+/* ── Tricolore top bar on sidebar ──────────────────────────── */
+.sidebar::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: var(--gradient-tricolore);
+  flex-shrink: 0;
+}
+
+/* Logo / Brand area — Marianne + République Française */
 .sidebar-brand {
   display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 16px 14px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px 10px;
   text-decoration: none;
   color: var(--c-text);
   border-bottom: 1px solid var(--c-border-light);
 }
 .sidebar-brand:hover { text-decoration: none; }
+
+.sidebar-brand-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .sidebar-logo-mark {
   width: 30px; height: 30px;
   background: var(--c-primary);
@@ -198,11 +213,23 @@ body {
   font-size: 14px;
   flex-shrink: 0;
 }
+
 .sidebar-brand-text {
   font-weight: 700;
   font-size: 14px;
   color: var(--c-text);
   letter-spacing: -.02em;
+  line-height: 1.2;
+}
+
+.sidebar-brand-sub {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--c-primary);
+  padding-left: 38px; /* align with brand text after logo */
+  line-height: 1;
 }
 
 /* Navigation sections */
@@ -391,7 +418,7 @@ body {
   position: absolute;
   top: 4px; right: 4px;
   width: 7px; height: 7px;
-  background: #D93025;
+  background: var(--c-rouge);
   border-radius: 50%;
   border: 1.5px solid var(--c-surface);
 }
@@ -525,7 +552,7 @@ p { margin-bottom: var(--sp-3); }
 .btn-danger {
   background: #fff;
   color: var(--c-danger-dark);
-  border: 1px solid #FECACA;
+  border: 1px solid var(--c-danger-100);
 }
 .btn-danger:hover {
   background: var(--c-danger-50);
@@ -598,7 +625,7 @@ p { margin-bottom: var(--sp-3); }
 .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; }
 label { font-size: 11px; font-weight: 600; color: var(--c-text-secondary); }
 .hint { font-size: 10px; color: var(--c-text-tertiary); font-weight: 400; }
-.req { color: var(--c-danger); margin-left: 2px; }
+.req { color: var(--c-rouge); margin-left: 2px; }
 input[type="text"], input[type="date"], input[type="number"], input[type="password"], input[type="email"], input[type="tel"], input[type="url"], select, textarea {
     width: 100%;
     padding: 7px 10px;
@@ -614,7 +641,7 @@ input[type="text"], input[type="date"], input[type="number"], input[type="passwo
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--c-primary);
-  box-shadow: 0 0 0 2px rgba(28,61,122,.1);
+  box-shadow: 0 0 0 2px rgba(0,0,145,.1);
 }
 textarea { resize: vertical; min-height: 80px; }
 .field-error { border-color: var(--c-danger) !important; background: var(--c-danger-50); }
@@ -686,7 +713,7 @@ tbody tr:hover { background: #F5F9FF; }
 .badge-warn, .badge-en-cours { background: var(--c-warning-50); color: var(--c-warning-dark); }
 .badge-warn::before, .badge-en-cours::before { background: #D97706; }
 .badge-err, .badge-refuse { background: var(--c-danger-50); color: var(--c-danger-dark); }
-.badge-err::before, .badge-refuse::before { background: #EF4444; }
+.badge-err::before, .badge-refuse::before { background: #E1000F; }
 .badge-info { background: var(--c-info-50); color: var(--c-primary); }
 .badge-info::before { background: var(--c-primary); }
 
@@ -774,7 +801,7 @@ tbody tr:hover { background: #F5F9FF; }
 .stat-card.success .stat-value { color: var(--c-success-dark); }
 .stat-card.success::before { background: var(--gradient-success); }
 .stat-card.danger .stat-value { color: var(--c-danger-dark); }
-.stat-card.danger::before { background: linear-gradient(135deg, #EF4444, #DC2626); }
+.stat-card.danger::before { background: linear-gradient(135deg, #E1000F, #C0000D); }
 .stat-card.warning .stat-value { color: var(--c-warning-dark); }
 .stat-card.warning::before { background: linear-gradient(135deg, #F59E0B, #D97706); }
 
@@ -848,7 +875,7 @@ select.form-filter {
 }
 .step-current .step-icon {
   background: var(--c-primary); color: #fff;
-  box-shadow: 0 0 0 3px rgba(28,61,122,.15), 0 2px 6px rgba(28,61,122,.2);
+  box-shadow: 0 0 0 3px rgba(0,0,145,.15), 0 2px 6px rgba(0,0,145,.2);
 }
 .step-upcoming .step-icon {
   background: var(--c-primary-50); color: var(--c-sidebar-section);
@@ -862,7 +889,7 @@ select.form-filter {
 /* ── Health dots ────────────────────────────────────────────── */
 .health-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
 .health-ok { background: var(--c-success); box-shadow: 0 0 4px rgba(16,185,129,.4); }
-.health-err { background: var(--c-danger); box-shadow: 0 0 4px rgba(239,68,68,.4); }
+.health-err { background: var(--c-danger); box-shadow: 0 0 4px rgba(225,0,15,.4); }
 .health-warn { background: var(--c-warning); box-shadow: 0 0 4px rgba(217,119,6,.4); }
 .health-unknown { background: var(--c-text-tertiary); }
 
@@ -1104,6 +1131,33 @@ footer a {
 }
 footer a:hover { color: var(--c-primary-dark); text-decoration: underline; }
 
+/* ── RF mention in footer ───────────────────────────────────── */
+.footer-rf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.footer-rf-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--c-primary);
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.footer-tricolore {
+  display: inline-block;
+  width: 18px;
+  height: 6px;
+  background: var(--gradient-tricolore);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
 /* ── Skip link (RGAA) ─────────────────────────────────────── */
 .skip-link {
   position: absolute;
@@ -1207,7 +1261,9 @@ main > .card:nth-child(4), main > .sub-card:nth-child(4) { animation-delay: .12s
     flex-direction: column;
     overflow: visible;
   }
+  .sidebar::before { height: 3px; }
   .sidebar-brand { padding: 8px 12px; border-bottom: 1px solid var(--c-border-light); }
+  .sidebar-brand-sub { padding-left: 38px; }
   .sidebar-nav {
     padding: 6px 8px;
     display: flex;

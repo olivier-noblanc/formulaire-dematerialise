@@ -1520,23 +1520,44 @@ function parse_options_input(string $input): ?string {
 /**
  * Génère le bandeau de navigation commun à toutes les pages.
  *
- * Structure : [Logo DREETS] [Liens principaux] [Utilisateur + admin]
- *
- * Liens principaux (toujours visibles) :
- *   - Accueil
- *   - Mes demandes
- *   - Mes validations (avec badge compteur si > 0)
- *   - Documentation
- *
- * Liens admin (si is_admin_user) :
- *   - Tableau de bord
- *   - Paramètres
+ * Alias de render_header() pour compatibilité ascendante.
+ * Les pages existantes qui appellent render_nav() continuent de fonctionner.
  *
  * @param string $current_page  Identifiant de la page courante pour marquage actif
- *                              (accueil|mes_demandes|mes_validations|docs|dashboard|forms|settings|stats|monitoring|alerts|rgpd|health|changelog|backup)
+ * @param array  $extra_admin_links Liens admin supplémentaires
  * @return string HTML du bandeau <nav>
  */
 function render_nav(string $current_page = '', array $extra_admin_links = []): string {
+    return render_header($current_page, $extra_admin_links);
+}
+
+/**
+ * Génère l'en-tête complet : sidebar + topbar + ouverture du contenu.
+ *
+ * Identité République Française :
+ *   - Barre tricolore en haut de la sidebar (CSS .sidebar::before)
+ *   - Logo losange bleu + "DREETS" + "RÉPUBLIQUE FRANÇAISE"
+ *   - Footer avec mention RF et drapeau tricolore
+ *
+ * Structure HTML :
+ *   <div class="app-layout">
+ *     <nav class="sidebar">
+ *       [Barre tricolore RF ::before]
+ *       [Logo DREETS + République Française]
+ *       [Navigation]
+ *       [Carte utilisateur]
+ *     </nav>
+ *     <div class="main-area">
+ *       <div class="topbar">[Fil d'Ariane + Actions]</div>
+ *       <div class="content">
+ *
+ * Chaque page doit fermer par </div></div></div> avant render_footer().
+ *
+ * @param string $current_page  Identifiant de la page courante pour marquage actif
+ * @param array  $extra_admin_links Liens admin supplémentaires (clé => ['href'=>…, 'label'=>…, 'icon'=>…])
+ * @return string HTML de l'en-tête complet
+ */
+function render_header(string $current_page = '', array $extra_admin_links = []): string {
     $user = get_auth_user();
     $is_admin = is_admin_user();
 
@@ -1612,11 +1633,15 @@ function render_nav(string $current_page = '', array $extra_admin_links = []): s
     $notif_dot = $pending_count > 0 ? '<span class="topbar-notif-dot"></span>' : '';
 
     // ── Output full layout ───────────────────────────────────
+    // La barre tricolore est en CSS (.sidebar::before)
     return '<div class="app-layout">'
         . '<nav class="sidebar" aria-label="Navigation principale">'
         .   '<a href="index.php" class="sidebar-brand">'
-        .     '<span class="sidebar-logo-mark">D</span>'
-        .     '<span class="sidebar-brand-text">DREETS</span>'
+        .     '<div class="sidebar-brand-top">'
+        .       '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
+        .       '<span class="sidebar-brand-text">DREETS</span>'
+        .     '</div>'
+        .     '<span class="sidebar-brand-sub">République Française</span>'
         .   '</a>'
         .   '<div class="sidebar-nav">'
         .     $nav_html
@@ -1676,6 +1701,10 @@ function render_footer(): string {
          . '</div><!-- /.main-area -->'
          . '</div><!-- /.app-layout -->'
          . '<footer>'
+         . '<div class="footer-rf">'
+         .   '<span class="footer-rf-logo">République Française</span>'
+         .   '<span class="footer-tricolore" aria-hidden="true"></span>'
+         . '</div>'
          . '<a href="changelog.php" title="Voir le journal des modifications">v' . h(APP_VERSION) . '</a>'
          . ' · Formulaire Dématérialisé · DREETS BFC'
          . '</footer>';
