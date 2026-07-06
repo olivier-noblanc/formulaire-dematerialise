@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Workflow;
 
-use App\Core\Database;
+use App\Contract\ConditionInterface;
 
 /**
  * Évaluateur de conditions (partagé entre fields et steps).
@@ -11,7 +11,7 @@ use App\Core\Database;
  * Format JSON : {"field": "nom_champ", "op": "eq", "value": "valeur"}
  * Opérateurs : eq, neq, in, not_empty, empty
  */
-final class ConditionEvaluator
+final class ConditionEvaluator implements ConditionInterface
 {
     /**
      * Évalue une condition générique.

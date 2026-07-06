@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use App\Contract\SecurityInterface;
+
 /**
  * Service de sécurité : CSRF, headers HTTP, rate limiting.
  */
-final class SecurityService
+final class SecurityService implements SecurityInterface
 {
     public function sendSecurityHeaders(): void
     {

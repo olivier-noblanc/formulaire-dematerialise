@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 namespace App\Auth;
 
+use App\Contract\AuthInterface;
 use App\Core\Database;
 
 /**
  * Service d'authentification et gestion des admins.
  */
-final class AuthService
+final class AuthService implements AuthInterface
 {
     private Database $db;
 

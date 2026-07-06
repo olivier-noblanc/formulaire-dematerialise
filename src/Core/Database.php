@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Contract\DatabaseInterface;
+
 /**
  * Gestion de la connexion SQLite (singleton PDO).
  */
-final class Database
+final class Database implements DatabaseInterface
 {
     private ?\PDO $pdo = null;
     private ?\PDO $pdoTest = null;
