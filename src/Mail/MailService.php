@@ -83,13 +83,6 @@ final class MailService
 
     public function renderEmailTemplate(string $title, string $bodyHtml): string
     {
-        $appName = $this->settings->get('app_name', 'CircuitDémat');
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>
-            <div style="max-width:600px;margin:0 auto;font-family:sans-serif;">
-            <h1 style="color:#000091;">' . h($title) . '</h1>
-            ' . $bodyHtml . '
-            <hr style="border:none;border-top:1px solid #ddd;margin:2rem 0;">
-            <p style="color:#999;font-size:.75rem;">' . h($appName) . ' — CircuitDémat</p>
-            </div></body></html>';
+        return \render_email_template($title, $bodyHtml);
     }
 }

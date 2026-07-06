@@ -8,10 +8,16 @@
 #   2. Lint PHP (php -l sur tous les .php)
 #   3. PHPStan (analyse statique niveau 6, baseline autorisée)
 #   4. Tests fonctionnels (test_all.php — 57 tests)
-#   5. Tests de rendu HTML (test_form_render_html.php)
-#   6. Tests de non-régression (Bug01-Bug11)
+#   5. Tests d'échappement emails
+#   6. Tests URLs d'email
 #   7. Audit URLs cassées (9 catégories)
-#   8. Audit épuration UI (pas de topbar/breadcrumb)
+#   8. Tests PHPMailer warnings
+#   9. Tests assets + cache HTTP
+#  10. Tests de rendu HTML (test_form_render_html.php)
+#  11. Tests structurels HTML (StructuralHtmlTest.php)
+#  12. Tests de non-régression (Bug01-Bug11)
+#  13. Audit épuration UI (pas de topbar/breadcrumb)
+#  14. Tests unitaires wave (test_unit_wave*)
 #
 # ── Configuration du runner ─────────────────────────────────────
 # Utilise les runners PUBLICS de Codeberg (https://codeberg.org/actions/meta).
@@ -43,13 +49,9 @@ jobs:
         uses: actions/checkout@v4
 
       # ── 2. Installer PHP 8.4 + extensions ──────────────────
-      # Les runners Codeberg utilisent l'image ubuntu par défaut.
-      # On ajoute le dépôt sury.org pour avoir PHP 8.4 (Ubuntu LTS
-      # ne fournit que PHP 8.1/8.2 par défaut).
       - name: Install PHP 8.4 + extensions
         run: |
           set -e
-          # Dépôt sury.org (maintient les paquets PHP récents pour Debian/Ubuntu)
           apt-get update
           apt-get install -y --no-install-recommends \
             ca-certificates wget gnupg lsb-release
@@ -58,8 +60,6 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php $(lsb_release -sc) main" \
             > /etc/apt/sources.list.d/sury-php.list
           apt-get update
-          # PHP 8.4 + extensions requises : pdo_sqlite (DB), mbstring (PHPMailer),
-          # xml (SimpleXML pour parsing CHANGELOG), tokenizer (PHPStan)
           apt-get install -y --no-install-recommends \
             php8.4-cli \
             php8.4-sqlite3 \
@@ -83,7 +83,6 @@ jobs:
       - name: PHPStan
         run: |
           set -e
-          # Télécharger phpstan.phar (dernière version = 2.x, requise par notre baseline)
           wget -q https://github.com/phpstan/phpstan/releases/latest/download/phpstan.phar
           chmod +x phpstan.phar
           php phpstan.phar analyse --memory-limit=512M --no-progress
@@ -92,18 +91,87 @@ jobs:
       - name: Tests fonctionnels (test_all.php)
         run: php tests/test_all.php
 
-      # ── 6. Tests de rendu HTML (TEST_MODE=false via sous-processus) ──
-      - name: Tests de rendu HTML
-        run: php tests/test_form_render_html.php
+      # ── 6. Tests d'échappement emails ─────────────────────
+      - name: Tests échappement emails
+        run: |
+          if [ -f tests/test_mail_escaping.php ]; then
+            php tests/test_mail_escaping.php
+          else
+            echo "SKIP: test_mail_escaping.php not found"
+          fi
 
-      # ── 7. Tests de non-régression (11 bugs historiques) ───
-      - name: Tests de non-régression (Bug01-Bug11)
-        run: php tests/regression/run_all.php
+      # ── 7. Tests URLs d'email ─────────────────────────────
+      - name: Tests URLs d'email
+        run: |
+          if [ -f tests/test_email_urls.php ]; then
+            php tests/test_email_urls.php
+          else
+            echo "SKIP: test_email_urls.php not found"
+          fi
 
-      # ── 8. Audit proactif des URLs cassées (9 catégories) ──
+      # ── 8. Audit URLs cassées (9 catégories) ──────────────
       - name: Audit URLs cassées
         run: php tests/test_no_broken_urls.php
 
-      # ── 9. Audit épuration UI (pas de topbar/breadcrumb) ────
+      # ── 9. Tests PHPMailer warnings ───────────────────────
+      - name: Tests PHPMailer warnings
+        run: |
+          if [ -f tests/test_phpmailer_warnings.php ]; then
+            php tests/test_phpmailer_warnings.php
+          else
+            echo "SKIP: test_phpmailer_warnings.php not found"
+          fi
+
+      # ── 10. Tests assets + cache HTTP ─────────────────────
+      - name: Tests assets + cache HTTP
+        run: |
+          if [ -f tests/test_assets_cache.php ]; then
+            php tests/test_assets_cache.php
+          else
+            echo "SKIP: test_assets_cache.php not found"
+          fi
+
+      # ── 11. Tests de rendu HTML (TEST_MODE=false via sous-processus) ──
+      - name: Tests de rendu HTML
+        run: php tests/test_form_render_html.php
+
+      # ── 12. Tests structurels HTML ────────────────────────
+      - name: Tests structurels HTML
+        run: |
+          if [ -f tests/StructuralHtmlTest.php ]; then
+            php tests/StructuralHtmlTest.php
+          else
+            echo "SKIP: StructuralHtmlTest.php not found"
+          fi
+
+      # ── 13. Tests de non-régression (11 bugs historiques) ───
+      - name: Tests de non-régression (Bug01-Bug11)
+        run: php tests/regression/run_all.php
+
+      # ── 14. Audit épuration UI (pas de topbar/breadcrumb) ────
       - name: Audit épuration UI
         run: php tests/test_no_topbar_breadcrumb.php
+
+      # ── 15. Tests unitaires wave (si présents) ──────────────
+      - name: Tests unitaires wave
+        run: |
+          set +e
+          wave_count=0
+          for f in tests/test_unit_wave*.php; do
+            if [ -f "$f" ]; then
+              echo "--- Running $f ---"
+              php "$f"
+              rc=$?
+              if [ $rc -ne 0 ]; then
+                echo "FAIL: $f (exit code $rc)"
+                exit 1
+              fi
+              wave_count=$((wave_count + 1))
+            fi
+          done
+          set -e
+          if [ $wave_count -eq 0 ]; then
+            echo "SKIP: no test_unit_wave*.php files found"
+          else
+            echo "OK: $wave_count wave test file(s) passed"
+          fi

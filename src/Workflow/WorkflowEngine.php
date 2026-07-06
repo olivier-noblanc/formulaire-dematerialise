@@ -7,6 +7,7 @@ use App\Core\Database;
 use App\Forms\FieldService;
 use App\Settings\SettingsService;
 use App\Mail\MailService;
+use App\SubmissionStatus;
 
 /**
  * Moteur de workflow — tokens, steps, validation.
@@ -243,7 +244,7 @@ final class WorkflowEngine
             $allDone = true;
             foreach ($groupe as $step) {
                 $dones = $tokensByStep[$step['step_id']] ?? [];
-                if (empty($dones) || !every($dones, fn($d) => $d !== null)) {
+                if (empty($dones) || !array_all($dones, fn($d) => $d !== null)) {
                     $allDone = false;
                     break;
                 }
@@ -253,8 +254,8 @@ final class WorkflowEngine
         }
 
         // Toutes les étapes sont validées → clôturer
-        $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'valide' WHERE id = ?")
-            ->execute([$now, $submissionId]);
+        $pdo->prepare("UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?")
+            ->execute([$now, SubmissionStatus::VALIDE->value, $submissionId]);
 
         // Notifier l'agent
         $agentEmail = $submission['submitted_by'] ?? '';
@@ -281,9 +282,10 @@ final class WorkflowEngine
 
     /**
      * Valide ou refuse un token.
+     * @param string $doneBy Email du user logged-on qui a cliqué (v10.0.2)
      * @return array{status: string, data?: array<string, mixed>}
      */
-    public function validateToken(string $token, string $action = 'valider', string $comment = ''): array
+    public function validateToken(string $token, string $action = 'valider', string $comment = '', string $doneBy = ''): array
     {
         if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
             return ['status' => 'invalid'];
@@ -313,6 +315,7 @@ final class WorkflowEngine
         $data['validations'][] = [
             'step_label' => $t['step_label'],
             'email' => $t['email'],
+            'done_by' => $doneBy,
             'action' => $action,
             'commentaire' => $comment,
             'date' => gmdate('Y-m-d H:i:s'),
@@ -323,8 +326,8 @@ final class WorkflowEngine
             $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
             if ($stmt->rowCount() === 0) { $pdo->rollBack(); return ['status' => 'already_done', 'data' => $t]; }
 
-            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'refuse' WHERE id = ?")
-                ->execute([gmdate('Y-m-d H:i:s'), $t['submission_id']]);
+            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?")
+                ->execute([gmdate('Y-m-d H:i:s'), SubmissionStatus::REFUSE->value, $t['submission_id']]);
 
             $agentEmail = $t['submitted_by'] ?? '';
             if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
@@ -360,8 +363,8 @@ final class WorkflowEngine
     public function hasActiveSubmissions(string $formId): int
     {
         $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = 'en_cours'");
-        $stmt->execute([$formId]);
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = ?");
+        $stmt->execute([$formId, SubmissionStatus::EN_COURS->value]);
         return (int) $stmt->fetchColumn();
     }
 
@@ -371,9 +374,9 @@ final class WorkflowEngine
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM tokens t
             JOIN submissions s ON s.id = t.submission_id
-            WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = 'en_cours'
+            WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = ?
         ");
-        $stmt->execute([$stepId]);
+        $stmt->execute([$stepId, SubmissionStatus::EN_COURS->value]);
         return (int) $stmt->fetchColumn();
     }
 
@@ -409,22 +412,11 @@ final class WorkflowEngine
 
     private function generateToken(): string
     {
-        return bin2hex(random_bytes(32));
+        return \generate_token();
     }
 
     private function generateUuid(): string
     {
-        return bin2hex(random_bytes(16));
-    }
-}
-
-// Helper temporaire (sera supprimé quand PHP 8.4 aura array_every natif)
-if (!function_exists('every')) {
-    function every(array $arr, callable $fn): bool
-    {
-        foreach ($arr as $item) {
-            if (!$fn($item)) return false;
-        }
-        return true;
+        return \generate_uuid();
     }
 }

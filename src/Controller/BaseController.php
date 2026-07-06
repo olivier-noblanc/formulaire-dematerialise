@@ -50,16 +50,16 @@ abstract class BaseController
     protected function initServices(): void
     {
         $app = App::getInstance();
-        $this->settings = new SettingsService($this->db);
-        $this->auth = new AuthService($this->db);
-        $this->fields = new FieldService($this->db);
-        $this->security = new SecurityService();
-        $this->mail = new MailService($this->db, $this->settings);
-        $this->audit = new AuditLogService($this->db);
-        $this->cache = new CacheService();
-        $this->html = new HtmlService();
-        $this->conditions = new ConditionEvaluator();
-        $this->workflow = new WorkflowEngine($this->db, $this->settings, $this->mail, $this->fields, $this->conditions);
+        $this->settings = $app->get(SettingsService::class);
+        $this->auth = $app->get(AuthService::class);
+        $this->fields = $app->get(FieldService::class);
+        $this->security = $app->get(SecurityService::class);
+        $this->mail = $app->get(MailService::class);
+        $this->audit = $app->get(AuditLogService::class);
+        $this->cache = $app->get(CacheService::class);
+        $this->html = $app->get(HtmlService::class);
+        $this->conditions = $app->get(ConditionEvaluator::class);
+        $this->workflow = $app->get(WorkflowEngine::class);
     }
 
     protected function renderPage(string $title, string $currentPage = '', string $pageCss = '', string $content = ''): string
