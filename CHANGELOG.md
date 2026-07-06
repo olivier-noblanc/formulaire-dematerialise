@@ -1,5 +1,79 @@
 # Changelog — CircuitDémat
 
+## [10.2.0] — 2026-07-06
+_Résumé : Refactoring architecture + bugs pré-existants corrigés + tests + docs._
+
+### 🔧 Refactoring workflow — une seule source de vérité
+
+**Problème** : le moteur workflow existait en double — procédural (`lib/workflow.php`, 473 lignes) et OOP (`src/Workflow/WorkflowEngine.php`, 430 lignes). Les deux versions pouvaient dériver (ex: `validate_token()` procédural avait `$done_by`, l'OOP non).
+
+**Fix** : `lib/workflow.php` réécrit en 9 fonctions de délégation minces vers `WorkflowEngine`. La logique métier est maintenant en un seul endroit. `WorkflowEngine::validateToken()` accepte maintenant `$doneBy`.
+
+### 🔧 Suppression des doublons de fonctions
+
+| Fonction | Avant | Après |
+|----------|-------|-------|
+| `generateUuid()` | 4 implémentations (uuid.php, WorkflowEngine, FieldService, SecurityService, AuditLogService) | 1 source (`lib/uuid.php`), les 4 autres déléguent |
+| `render_email_template()` | 2 implémentations (lib/mail.php, MailService) avec HTML différent | MailService délègue au global |
+| `every()` helper | Fonction temporaire dans WorkflowEngine | Remplacée par `array_all()` PHP 8.4 |
+
+### 🔧 BaseController — utilisation du DI container
+
+**Problème** : `BaseController::initServices()` créait de nouvelles instances de tous les services au lieu de les tirer du container DI.
+
+**Fix** : `initServices()` tire maintenant les 10 services depuis `App::getInstance()->get()`.
+
+### 🗄 Cache amélioré (CacheService)
+
+- **Thundering herd protection** : lock file + `flock()` pour éviter les exécutions concurrentes du même callback
+- **Gestion corruption** : fichier corrompu → fallback graceful (pas de crash)
+- **Éviction taille max** : défaut 50 MB, éviction à 80% quand dépassé
+- **Nettoyage lock files** sur `clear()`
+
+### 📦 Enum PHP 8.1 `SubmissionStatus`
+
+Nouveau `src/SubmissionStatus.php` : `EN_COURS`, `VALIDE`, `REFUSE`, `ANNULE` avec `label()`, `icon()`, `color()`, `cssClass()`. Utilisé dans `WorkflowEngine` pour les requêtes SQL de statut.
+
+### 🧪 Tests CacheService
+
+Nouveau `tests/test_cache_service.php` : 10 tests (set/get, callback, cache hit, TTL, clear, corruption, types complexes, eviction taille max, version, thundering herd).
+
+### 🔄 CI alignée avec gate.sh
+
+Pipeline passé de 9 à 15 étapes : ajout de `test_mail_escaping`, `test_email_urls`, `test_phpmailer_warnings`, `test_assets_cache`, `StructuralHtmlTest`, et itération sur `test_unit_wave*.php`.
+
+### 📚 Documentation déploiement
+
+Nouveau `docs/DEPLOY.md` : prérequis, IIS, installation, permissions, health check, mise à jour, backup, monitoring, lazy cron, dépannage.
+
+### 🐛 Bug fix : migration v26 — colonne `rgpd_consent`
+
+**Problème** : la colonne `rgpd_consent` était utilisée par `FormController` (INSERT) et `download.php` (SELECT) mais n'avait jamais été ajoutée à la table `submissions`. Bug pré-existant détecté par `Bug01_EndifFormControllerTest`.
+
+**Fix** : migration v26 ajoute `rgpd_consent INTEGER NOT NULL DEFAULT 0`.
+
+### 🐛 Bug fix : test Bug11 — séparateurs de chemins Windows
+
+**Problème** : le test `Bug11_NoTopbarBreadcrumb` échouait sur Windows car `strpos()` comparait des chemins avec `\` (Windows) vs `/` (attendu).
+
+**Fix** : normalisation des paths avec `str_replace('\\', '/', $file)` + utilisation du code source brut pour la détection.
+
+### 🐛 Bug fix : test_assets_cache — null sur shell_exec
+
+**Problème** : `shell_exec()` retournait `null` quand curl échouait → `strpos(null)` plantait en PHP 8.
+
+**Fix** : ajout d'un null/empty check avant `strpos()`.
+
+### 📊 Tests
+
+- Lint PHP : 100% ✅
+- PHPStan : 0 erreur ✅
+- test_all.php : 57/57 ✅
+- Régression : 11/11 ✅ (Bug01 et Bug11 corrigés)
+- CacheService : 10/10 ✅ (nouveau)
+
+---
+
 ## [10.1.14] — 2026-07-03
 _Résumé : Corbeille (statut annule) + suppression définitive admin only + icônes partout._
 

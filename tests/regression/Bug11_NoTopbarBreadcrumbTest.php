@@ -67,18 +67,21 @@ function run_bug11_test(): bool {
             $failures[] = "topbar trouvé dans $rel (code source)";
         }
         // render_breadcrumb( — ne doit plus être appelé
-        if (preg_match('/render_breadcrumb\s*\(/', $stripped)) {
+        // Utiliser le code SOURCE (pas stripped) pour la détection,
+        // car le stripping des commentaires peut manger la définition.
+        if (preg_match('/render_breadcrumb\s*\(/', $src)) {
             $rel = str_replace($root . '/', '', $file);
+            $normFile = str_replace('\\', '/', $file);
             // Exception : la DÉFINITION de render_breadcrumb dans lib/render_navigation.php
             // est tolérée (on garde la fonction pour rétro-compat, mais elle ne doit
             // plus être appelée par les pages).
-            if (strpos($file, 'lib/render_navigation.php') !== false) {
+            if (strpos($normFile, 'lib/render_navigation.php') !== false) {
                 // Vérifier que c'est bien la définition (function render_breadcrumb)
-                // et non un appel
-                if (!preg_match('/function\s+render_breadcrumb\s*\(/', $stripped)) {
+                // et non un appel — on cherche dans le code source brut
+                if (!preg_match('/function\s+render_breadcrumb\s*\(/', $src)) {
                     $failures[] = "appel render_breadcrumb() trouvé dans $rel";
                 }
-            } elseif (strpos($file, 'src/View/ViewRenderer.php') !== false) {
+            } elseif (strpos($normFile, 'src/View/ViewRenderer.php') !== false) {
                 // ViewRenderer::breadcrumb() est une façade qui appelle render_breadcrumb
                 // — on la tolère car elle n'est plus appelée par les pages (v9.1.0).
                 // Le test vérifie juste qu'elle n'est pas appelée.

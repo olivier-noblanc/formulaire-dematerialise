@@ -46,6 +46,10 @@ function http_get(string $url, array $headers = []): array {
     }
     $response = shell_exec($cmdStr);
 
+    if ($response === null || $response === '') {
+        return ['status' => 0, 'headers' => '', 'body' => '', 'info' => []];
+    }
+
     // Séparer headers et body
     $pos = strpos($response, "\r\n\r\n");
     if ($pos === false) $pos = strpos($response, "\n\n");

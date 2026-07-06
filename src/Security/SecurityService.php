@@ -118,6 +118,6 @@ final class SecurityService
 
     private function generateUuid(): string
     {
-        return bin2hex(random_bytes(16));
+        return \generate_uuid();
     }
 }
