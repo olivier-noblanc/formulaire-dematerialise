@@ -1,0 +1,30 @@
+parameters:
+    level: 7
+    paths:
+        - .
+    excludePaths:
+        - docs/screenshots/*
+        - db/*
+        - cache/*
+        - PHPMailer/*
+        - node_modules/*
+        - scripts/*
+        - download/*
+        - .git/*
+        - *.bak
+        # Fichiers de test exclus (polyfills mbstring, tests CLI)
+        - test_refactor.php
+        - test_v4.php
+        - test_bootstrap.php
+        - test_advanced.php
+        - test_all.php
+        - test_api.php
+        - test_http.php
+        - test_e2e.php
+        - test_unit.php
+    tmpDir: /tmp/phpstan
+    reportUnmatchedIgnoredErrors: false
+    bootstrapFiles:
+        - PHPMailer/PHPMailer.php
+        - PHPMailer/Exception.php
+        - PHPMailer/SMTP.php

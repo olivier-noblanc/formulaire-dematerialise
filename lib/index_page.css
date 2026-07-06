@@ -1,0 +1,422 @@
+    body.page-accueil .container { max-width: 1080px; }
+
+    /* Hero — Aurora mesh gradient */
+    .hero {
+      background: var(--gradient-mesh-hero);
+      color: #fff;
+      border-radius: var(--r-2xl);
+      padding: 3rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-2xl), 0 0 60px rgba(30,64,175,.2);
+    }
+    body.page-accueil .hero::before {
+      content: '';
+      position: absolute;
+      top: -30%; right: -10%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,255,255,.08) 0%, transparent 60%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    body.page-accueil .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -20%; left: -5%;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(6,182,212,.15) 0%, transparent 60%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    body.page-accueil .hero h1 {
+      color: #fff;
+      font-size: var(--text-4xl);
+      margin-bottom: .5rem;
+      position: relative;
+      letter-spacing: -.04em;
+      font-weight: 900;
+    }
+    body.page-accueil .hero p {
+      opacity: .9;
+      font-size: var(--text-lg);
+      line-height: 1.7;
+      position: relative;
+      max-width: 640px;
+    }
+
+    /* Quick stats — Bento grid */
+    body.page-accueil .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: var(--sp-4);
+      margin-bottom: 2rem;
+    }
+    body.page-accueil .qs-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border-light);
+      border-radius: var(--r-lg);
+      padding: 1.25rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
+    }
+    body.page-accueil .qs-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg), var(--shadow-glow);
+    }
+    body.page-accueil .qs-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient-primary);
+    }
+    body.page-accueil .qs-card .qs-icon { font-size: 1.5rem; margin-bottom: .3rem; opacity: .7; }
+    .qs-card .qs-value {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--c-primary);
+      letter-spacing: -.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    body.page-accueil .qs-card .qs-label {
+      font-size: var(--text-xs);
+      color: var(--c-text-tertiary);
+      margin-top: .15rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    body.page-accueil .qs-card.warning::before { background: var(--c-warning); }
+    .qs-card.warning .qs-value { color: var(--c-warning-dark); }
+    body.page-accueil .qs-card.danger::before { background: var(--c-danger); }
+    .qs-card.danger .qs-value { color: var(--c-danger-dark); }
+    body.page-accueil .qs-card.success::before { background: var(--c-success); }
+    .qs-card.success .qs-value { color: var(--c-success-dark); }
+
+    /* Form cards — Clickable bento with hover glow (v10.1.10: dé-scopé pour my_forms) */
+    .form-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .form-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border-light);
+      border-radius: var(--r-lg);
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      box-shadow: var(--shadow-sm);
+      transition: all .3s var(--ease-out);
+      position: relative;
+      overflow: hidden;
+    }
+    .form-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity .3s var(--ease-out);
+    }
+    .form-card:hover {
+      box-shadow: var(--shadow-xl), var(--shadow-glow);
+      border-color: var(--c-primary-light);
+      transform: translateY(-3px);
+    }
+    .form-card:hover::before { opacity: 1; }
+    .form-card .fc-title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--c-primary-dark);
+      margin-bottom: .5rem;
+    }
+    .form-card .fc-desc {
+      font-size: var(--text-sm);
+      color: var(--c-text-secondary);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .form-card .fc-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: var(--gradient-primary);
+      color: #fff;
+      padding: .55rem 1.3rem;
+      border-radius: var(--r-full);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      box-shadow: var(--shadow-colored);
+      transition: all .2s var(--ease-out);
+    }
+    .form-card:hover .fc-btn { background: var(--gradient-primary-hover); transform: translateX(2px); }
+
+    /* Nav tiles — Elegant icon + text cards */
+    .nav-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    body.page-accueil .nav-tile {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border-light);
+      border-radius: var(--r-lg);
+      padding: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: var(--shadow-xs);
+      transition: all .25s var(--ease-out);
+    }
+    body.page-accueil .nav-tile:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+      border-color: var(--c-primary-light);
+      text-decoration: none;
+    }
+    body.page-accueil .nav-tile .nt-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      width: 40px; height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--c-primary-50);
+      border-radius: var(--r-md);
+      transition: background .2s var(--ease-out);
+    }
+    body.page-accueil .nav-tile:hover .nt-icon { background: var(--c-primary-100); }
+    .nav-tile .nt-label { font-weight: 700; color: var(--c-primary-dark); font-size: var(--text-sm); }
+    body.page-accueil .nav-tile .nt-desc { font-size: var(--text-xs); color: var(--c-text-tertiary); margin-top: .1rem; }
+
+    .section-title {
+      font-size: var(--text-xl);
+      color: var(--c-primary-dark);
+      border-bottom: 2px solid var(--c-primary-50);
+      padding-bottom: .5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Brand icon in nav */
+    body.page-accueil .brand-icon {
+      font-size: 1.1rem;
+      opacity: .8;
+    }
+
+    /* ── S4-TUTORIAL (Action 6) : Mini-tutoriel de 1ère utilisation ──
+       Affiché au-dessus du welcome-state quand l'agent a 0 soumission ET
+       Discret mais visible — bandeau tricolore Marianne en haut
+       (bleu / blanc / rouge) + 3 étapes numérotées (ronds colorés) + icônes
+       + bouton "J'ai compris". Couleurs Marianne (bleu républicain #000091).
+       role="region" + aria-label pour lecteurs d'écran. */
+    body.page-accueil .tutorial {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border-light);
+      border-radius: var(--r-xl);
+      padding: var(--sp-6);
+      margin-bottom: var(--sp-6);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    /* Bandeau tricolore Marianne en haut (bleu / blanc / rouge) */
+    body.page-accueil .tutorial::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(to right,
+        #000091 0 33.33%,
+        #ffffff 33.33% 66.66%,
+        #E1000F 66.66%);
+    }
+    body.page-accueil .tutorial-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-5);
+    }
+    body.page-accueil .tutorial-header-icon {
+      font-size: 2rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    body.page-accueil .tutorial-title {
+      font-size: var(--text-xl);
+      color: var(--c-primary-dark);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin: 0 0 .15rem;
+    }
+    body.page-accueil .tutorial-subtitle {
+      font-size: var(--text-sm);
+      color: var(--c-text-secondary);
+      margin: 0;
+    }
+    body.page-accueil .tutorial-steps {
+      list-style: none;
+      margin: 0 0 var(--sp-5);
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--sp-4);
+    }
+    body.page-accueil .tutorial-step {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      background: var(--c-primary-50);
+      border: 1px solid var(--c-primary-100);
+      border-radius: var(--r-lg);
+      padding: var(--sp-4);
+      transition: border-color var(--duration-fast) var(--ease-out),
+                  box-shadow var(--duration-fast) var(--ease-out),
+                  transform var(--duration-fast) var(--ease-out);
+    }
+    body.page-accueil .tutorial-step:hover {
+      border-color: var(--c-primary-light);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    /* Rond coloré avec le numéro — bien visible, contraste AAA sur bleu Marianne */
+    body.page-accueil .tutorial-step-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: var(--r-full);
+      background: var(--gradient-primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: var(--text-base);
+      flex-shrink: 0;
+      box-shadow: var(--shadow-colored);
+    }
+    body.page-accueil .tutorial-step-icon {
+      font-size: 1.25rem;
+      line-height: 1.2;
+      flex-shrink: 0;
+      margin-top: .1rem;
+    }
+    body.page-accueil .tutorial-step-body { flex: 1; min-width: 0; }
+    .tutorial-step-title {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--c-primary-dark);
+      margin-bottom: .2rem;
+    }
+    body.page-accueil .tutorial-step-desc {
+      font-size: var(--text-sm);
+      color: var(--c-text-secondary);
+      line-height: 1.5;
+    }
+    body.page-accueil .tutorial-footer {
+      text-align: right;
+    }
+    /* Bouton "J'ai compris" — purement visuel (masque le tutoriel sur la page
+       courante via JS inline). Au prochain chargement, si l'agent a créé une
+       soumission, le tutoriel ne s'affiche plus naturellement. */
+    body.page-accueil .tutorial-dismiss {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: var(--gradient-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--r-full);
+      padding: .6rem 1.4rem;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow-colored);
+      transition: background var(--duration-fast) var(--ease-out),
+                  transform var(--duration-fast) var(--ease-out);
+    }
+    body.page-accueil .tutorial-dismiss:hover {
+      background: var(--gradient-primary-hover);
+      transform: translateX(2px);
+    }
+    body.page-accueil .tutorial-dismiss:focus-visible {
+      outline: 2px solid var(--c-primary);
+      outline-offset: 2px;
+    }
+    /* Responsive : sur petit mobile, étapes en colonne + padding réduit */
+    @media (max-width: 600px) {
+      body.page-accueil .tutorial { padding: var(--sp-5) var(--sp-4); }
+      .tutorial-steps { grid-template-columns: 1fr; }
+      body.page-accueil .tutorial-title { font-size: var(--text-lg); }
+    }
+
+    /* ── ITER1-C / Action A.4 : encadré « Où suis-je ? » discret ──
+       M. Robert (70 ans) ne savait pas où il était sur la page d'accueil
+       (parcours senior 6/10 → ≥9/10). Bandeau discret sous le hero pour
+       lui indiquer sa localisation et la prochaine action attendue. */
+    body.page-accueil .where-am-i {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      background: var(--c-bg-warm);
+      border: 1px solid var(--c-border-light);
+      border-left: 4px solid var(--c-primary);
+      border-radius: var(--r-md);
+      padding: .65rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: var(--text-md);
+      color: var(--c-text-secondary);
+      line-height: 1.5;
+    }
+    body.page-accueil .where-am-i-icon {
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    body.page-accueil .where-am-i-text { flex: 1; }
+    .where-am-i strong { color: var(--c-primary-dark); font-weight: 700; }
+
+    /* ── ITER1-C / Action A.3 : CTA « Voir mes demandes » dans le tutoriel ──
+       Bouton secondaire à côté de « J'ai compris » qui pointe vers
+       my_submissions.php (parcours senior : l'utilisateur découvre où
+       retrouver ses demandes futures). */
+    body.page-accueil .tutorial-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: .6rem;
+      flex-wrap: wrap;
+    }
+    body.page-accueil .tutorial-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: var(--c-surface);
+      color: var(--c-primary-dark);
+      border: 1.5px solid var(--c-primary-light);
+      border-radius: var(--r-full);
+      padding: .6rem 1.3rem;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      text-decoration: none;
+      transition: background var(--duration-fast) var(--ease-out),
+                  border-color var(--duration-fast) var(--ease-out),
+                  transform var(--duration-fast) var(--ease-out);
+    }
+    body.page-accueil .tutorial-cta:hover {
+      background: var(--c-primary-50);
+      border-color: var(--c-primary);
+      transform: translateX(2px);
+      text-decoration: none;
+    }
+    body.page-accueil .tutorial-cta:focus-visible {
+      outline: 2px solid var(--c-primary);
+      outline-offset: 2px;
+    }

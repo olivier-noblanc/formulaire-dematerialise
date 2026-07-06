@@ -1,0 +1,320 @@
+/* CSS spécifique au tableau de bord (dashboard.php).
+ *
+ * Chargé par dashboard_page_css() dans lib/render_dashboard.php via
+ * file_get_contents() — refactor « all-under-600 » : le contenu CSS
+ * volumineux (≈ 310 lignes) vit ici pour garder lib/render_dashboard.php
+ * sous 600 lignes. Comportement strictement identique à l'ancien heredoc
+ * <<<'CSS' inline (les espaces d'indentation n'ont aucun effet en CSS).
+ */
+
+/* Overrides */
+body.page-dashboard .container { max-width: 1240px; }
+
+/* Toolbar hierarchy */
+.toolbar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; align-items: center; }
+body.page-dashboard .toolbar-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; flex: 1; min-width: 0; }
+
+/* U-13 — Hiérarchie des actions admin (Primary / Secondary / Tertiary).
+   3 niveaux pour guider l'admin novice DREETS (40-60 ans) :
+   - Primary (.btn-admin seul) : actions faites 90% du temps → gradient Marianne bleu (défini plus bas, partagé avec .filtres a.actif)
+   - Secondary (.btn-admin--secondary) : consultation fréquente → outline Marianne bleu discret
+   - Tertiary (.btn-admin--tertiary / --danger) : actions rares ou destructrices → cachées dans <details> "Plus d'actions" */
+.admin-actions {
+  display: flex; flex-direction: column; gap: .75rem;
+  padding-top: .75rem; border-top: 1px solid var(--c-border); width: 100%;
+}
+body.page-dashboard .admin-actions-row { display: flex; flex-direction: column; gap: .35rem; }
+.admin-actions-label {
+  font-size: var(--text-xs); color: var(--c-text-tertiary);
+  text-transform: uppercase; letter-spacing: .04em; font-weight: 600;
+}
+body.page-dashboard .admin-actions-btns { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.admin-actions .btn-admin { font-size: .8rem; padding: .4rem .9rem; }
+
+/* Modificateur secondary (outline discret) — surcharge le gradient .btn-admin.
+   Spécificité (0,0,2,0) > .btn-admin (0,0,1,0) → la surcharge s'applique. */
+body.page-dashboard .btn-admin.btn-admin--secondary {
+  background: var(--c-surface);
+  color: var(--c-primary);
+  border: 1.5px solid var(--c-primary-200);
+  box-shadow: none;
+}
+body.page-dashboard .btn-admin.btn-admin--secondary:hover {
+  background: var(--c-primary-50);
+  border-color: var(--c-primary);
+  color: var(--c-primary-dark);
+}
+
+/* Modificateur tertiary (amber discret) — actions rares dans "Plus d'actions".
+   L'amber (warning) signale "à utiliser ponctuellement" sans être alarmiste. */
+body.page-dashboard .btn-admin.btn-admin--tertiary {
+  background: var(--c-warning-50);
+  color: var(--c-warning-dark);
+  border: 1.5px solid var(--c-warning-100);
+  box-shadow: none;
+}
+body.page-dashboard .btn-admin.btn-admin--tertiary:hover {
+  background: var(--c-warning-100);
+  border-color: var(--c-warning);
+  color: var(--c-warning-dark);
+}
+
+/* Modificateur danger (rouge Marianne) — pour RGPD (purge destructrice).
+   Distinct du tertiary pour signaler le caractère potentiellement irréversible. */
+body.page-dashboard .btn-admin.btn-admin--danger {
+  background: var(--c-surface);
+  color: var(--c-danger-dark);
+  border: 1.5px solid var(--c-danger-100);
+  box-shadow: none;
+}
+body.page-dashboard .btn-admin.btn-admin--danger:hover {
+  background: var(--c-danger-50);
+  border-color: var(--c-danger);
+  color: var(--c-danger-dark);
+}
+
+/* Menu déroulant « Plus d'actions » — supprimé en S4-UI (VÉTO 2 M. Robert).
+   Anciennement : <details class="admin-more-actions"> cachait les actions avancées.
+   M. Robert (70 ans) interprétait cette cachette comme un défaut de l'app.
+   Les styles ci-dessous restent pour rétro-compatibilité mais ne sont plus
+   utilisés par la nouvelle structure .admin-actions-advanced. */
+body.page-dashboard .admin-more-actions {
+  background: var(--c-bg-warm);
+  border: 1px solid var(--c-border-light);
+  border-radius: var(--r-md);
+  padding: .5rem .75rem;
+  margin-top: .25rem;
+}
+body.page-dashboard .admin-more-actions > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  padding: .25rem .5rem;
+  border-radius: var(--r-md);
+  background: transparent;
+  border: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+body.page-dashboard .admin-more-actions > summary::-webkit-details-marker { display: none; }
+.admin-more-actions > summary::before {
+  content: "▸";
+  color: var(--c-text-tertiary);
+  transition: transform var(--duration-fast) var(--ease-out);
+  font-size: var(--text-sm);
+  display: inline-block;
+}
+body.page-dashboard .admin-more-actions[open] > summary::before { transform: rotate(90deg); }
+.admin-more-actions > summary:hover {
+  background: var(--c-primary-50);
+  color: var(--c-primary-dark);
+}
+body.page-dashboard .admin-more-actions > summary:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
+}
+body.page-dashboard .admin-more-actions-count {
+  color: var(--c-text-tertiary);
+  font-weight: 500;
+  font-size: var(--text-xs);
+}
+body.page-dashboard .admin-more-actions-content {
+  margin-top: .5rem;
+  padding-top: .5rem;
+  border-top: 1px dashed var(--c-border);
+}
+body.page-dashboard .admin-more-actions-hint {
+  font-size: var(--text-xs);
+  color: var(--c-text-tertiary);
+  margin: 0 0 .5rem 0;
+  font-style: italic;
+}
+
+/* S4-UI / Action 2 : « Actions avancées » visibles (VÉTO 2 M. Robert).
+   La rangée tertiary remplace le <details> caché. On garde la hiérarchie :
+   - boutons tertiary (amber discret) + danger (rouge) — visuellement secondaires
+   - séparateur pointillé en haut pour marquer le passage aux actions rares
+   - mention « à utiliser ponctuellement » en italique dans le label
+   Les boutons ne sont plus cachés — M. Robert les voit d'emblée. */
+body.page-dashboard .admin-actions-advanced {
+  padding-top: .75rem;
+  border-top: 1px dashed var(--c-border);
+  margin-top: .25rem;
+}
+body.page-dashboard .admin-actions-advanced .admin-actions-label {
+  color: var(--c-warning-dark);
+}
+body.page-dashboard .admin-actions-label-hint {
+  font-weight: 500;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--c-text-tertiary);
+  font-size: var(--text-xs);
+  margin-left: .35rem;
+}
+
+/* Responsive : sur très petit mobile (≤420px, iPhone SE 375px), boutons pleine largeur empilés
+   — facilite le tap target pour la cible 40-60 ans (pas de risque de clic erroné). */
+@media (max-width: 420px) {
+  body.page-dashboard .admin-actions-btns { flex-direction: column; }
+  .admin-actions-btns .btn-admin { width: 100%; justify-content: center; }
+}
+
+/* Page-specific */
+body.page-dashboard .filtres { display: flex; gap: .5rem; }
+.filtres a, .btn-admin {
+  padding: .4rem 1rem;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-full);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  color: var(--c-primary);
+  font-weight: 500;
+  background: var(--c-surface);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+body.page-dashboard .filtres a:hover, body.page-dashboard .btn-admin:hover {
+  border-color: var(--c-primary-light);
+  background: var(--c-primary-50);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+body.page-dashboard .filtres a.actif, body.page-dashboard .btn-admin {
+  background: var(--gradient-primary);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: var(--shadow-colored);
+}
+body.page-dashboard tbody tr:nth-child(4n+1), body.page-dashboard tbody tr:nth-child(4n+2) { background: var(--c-bg-warm); }
+.token-grid { display: flex; flex-wrap: wrap; gap: .35rem; }
+body.page-dashboard .token-badge {
+  font-size: var(--text-xs);
+  padding: .2rem .5rem;
+  border-radius: var(--r-full);
+  white-space: nowrap;
+  font-weight: 600;
+}
+body.page-dashboard .token-ok   { background: var(--c-success-50); color: var(--c-success-dark); }
+.token-wait { background: var(--c-warning-50); color: var(--c-warning-dark); animation: softPulse 2.5s ease-in-out infinite; }
+body.page-dashboard .token-pend { background: var(--c-bg-warm); color: var(--c-text-tertiary); }
+.detail-content {
+  padding: 1.25rem;
+  background: var(--c-bg-warm);
+  font-size: var(--text-sm);
+  line-height: 1.9;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+}
+body.page-dashboard .ordre-label {
+  font-size: .68rem;
+  background: var(--gradient-primary);
+  color: #fff;
+  padding: .1rem .45rem;
+  border-radius: var(--r-full);
+  margin-right: .25rem;
+  font-weight: 700;
+}
+
+/* ITER1-B / Action A — Simplification pour M. Robert (70 ans).
+   Tableau passé de --text-sm (13px) à --text-md (14px) pour respecter
+   la contrainte persona ≥14px (agent.md « vision presbytie »). */
+body.page-dashboard table { font-size: var(--text-md); }
+/* ITER2 — M. Robert : police du tableau plus lisible (était --text-sm = 13px) */
+thead th { font-size: var(--text-md) !important; }
+
+/* ITER1-B / Action A — Phrase d'introduction sous le titre.
+   Texte courant, couleur secondaire, max 80ch pour la lisibilité. */
+body.page-dashboard .page-intro {
+  font-size: var(--text-md);
+  color: var(--c-text-secondary);
+  margin: .25rem 0 1.5rem 0;
+  max-width: 80ch;
+  line-height: 1.55;
+}
+
+/* ITER1-B / Action A — Légende des badges (comme dans my_submissions.php Action 5).
+   M. Robert ne savait pas à quoi correspondent « en cours / validé / refusé »
+   sans exemple. Réutilise .badge-warn/.badge-ok/.badge-err de style.php. */
+body.page-dashboard .status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .75rem;
+  align-items: center;
+  margin: 0 0 1rem 0;
+  padding: .6rem .85rem;
+  background: var(--c-bg-warm);
+  border: 1px solid var(--c-border-light);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  color: var(--c-text-secondary);
+}
+body.page-dashboard .status-legend-title {
+  font-weight: 700;
+  color: var(--c-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-right: .25rem;
+  font-size: var(--text-xs);
+}
+body.page-dashboard .status-legend .badge { font-size: var(--text-xs); padding: .15rem .6rem .15rem .8rem; }
+.status-legend-text {
+  color: var(--c-text-tertiary);
+  font-style: italic;
+}
+
+/* S5-B / Action 3 : encart « État du système » — Mme Laurent (DSI) a noté
+   diagnostic incident 4.8/10. Encart discret en haut du dashboard avec 4
+   indicateurs (SMTP, DB, dernière sauvegarde, demandes en attente) + liens
+   vers health.php et monitoring.php. */
+body.page-dashboard .system-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: center;
+  padding: .75rem 1rem;
+  margin: 0 0 1.25rem 0;
+  background: var(--c-bg-warm, #f5f5fe);
+  border: 1px solid var(--c-border-light, #e0e0eb);
+  border-radius: var(--r-md, 8px);
+  font-size: var(--text-sm, .85rem);
+}
+body.page-dashboard .system-overview-title {
+  font-size: var(--text-xs, .72rem);
+  color: var(--c-text-tertiary, #666);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+}
+body.page-dashboard .system-overview-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  white-space: nowrap;
+}
+body.page-dashboard .system-overview-item strong { color: var(--c-text, #1e1e1e); }
+.system-overview-links {
+  margin-left: auto;
+  display: inline-flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+}
+body.page-dashboard .system-overview-links a {
+  font-size: var(--text-xs, .75rem);
+  padding: .25rem .6rem;
+  border-radius: var(--r-full, 999px);
+  border: 1px solid var(--c-border, #d0d0e0);
+  background: var(--c-surface, #fff);
+  color: var(--c-primary, #003189);
+  text-decoration: none;
+  transition: background .15s ease-out;
+}
+body.page-dashboard .system-overview-links a:hover {
+  background: var(--c-primary-50, #e8eaf6);
+}
+@media (max-width: 640px) {
+  body.page-dashboard .system-overview-links { margin-left: 0; width: 100%; }
+}

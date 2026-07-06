@@ -1,0 +1,54 @@
+# Dépendances PHP (seul vendor/autoload.php et vendor/PHPMailer sont versionnés — serveur offline)
+/vendor/*
+!vendor/autoload.php
+!vendor/PHPMailer/
+
+# Base de données SQLite (v10.0.8 — ne JAMAIS committer la DB)
+/db/*.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Fichiers de configuration sensibles (v10.0.8 — ne JAMAIS committer)
+/config.php
+/.env
+/.env.local
+/.env.production
+/.env.staging
+
+# Fichiers temporaires et cache
+/tmp/
+/cache/
+*.tmp
+*.log
+/db/cache/
+/download/claude_cache.json
+
+# Backups (générés par update.ps1)
+/backups/
+/backup-*.zip
+
+# Sessions PHP (si stockées dans le projet)
+/sessions/
+
+# Système de fichiers
+.DS_Store
+Thumbs.db
+web.config
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests
+/tool-results/
+/spc
+/worklog.md
+/AGENT.md
+/agent.md
+
+# PHPMailer web.config (sécurité IIS)
+web.config
+.phpstan-cache/

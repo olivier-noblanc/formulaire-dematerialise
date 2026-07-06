@@ -1,0 +1,169 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Error pages & user messages rendering.
+ *
+ * @package lib
+ */
+
+// ── ERROR PAGES ────────────────────────────────────────────────
+
+/**
+ * Exception dédiée pour les pages d'erreur (A-22).
+ * Remplace l'utilisation de die() dans render_error_page().
+ * Permet aux tests unitaires d'attraper l'erreur au lieu d'un exit() fatal.
+ */
+class ErrorResponseException extends \Exception {
+    public function __construct(
+        public readonly int $httpCode,
+        public readonly string $title,
+        string $message,
+        public readonly string $hint = '',
+        public readonly string $backUrl = 'index.php'
+    ) {
+        parent::__construct($message, $httpCode);
+    }
+
+    public function getErrorTitle(): string { return $this->title; }
+    public function getHint(): string { return $this->hint; }
+    public function getBackUrl(): string { return $this->backUrl; }
+}
+
+/**
+ * Affiche une page d'erreur HTML complète et arrête l'exécution.
+ *
+ * @param int    $code      Code HTTP (403, 404, 400, 401, 500…)
+ * @param string $title     Titre court (ex: "Accès refusé")
+ * @param string $message   Message descriptif
+ * @param string $hint      Conseil / marche à suivre (optionnel)
+ * @param string $back_url  URL du bouton de retour (défaut: index.php)
+ * @return never
+ */
+function render_error_page(int $code, string $title, string $message, string $hint = '', string $back_url = 'index.php'): never {
+    http_response_code($code);
+
+    // Sécurité (S-12) : envoyer les headers de sécurité même sur les pages d'erreur
+    // send_security_headers() est déjà appelé globalement, mais on s'assure
+    // que les headers critiques sont présents même si la réponse a commencé
+    if (!headers_sent()) {
+        send_security_headers();
+    }
+
+    // Icônes SVG selon le code d'erreur
+    $icons = [
+        403 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#c0392b" stroke-width="5" fill="#fde8e8"/><rect x="38" y="28" width="24" height="28" rx="4" fill="#c0392b"/><circle cx="50" cy="30" r="2.5" fill="#fde8e8"/><path d="M50 42v8" stroke="#fde8e8" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="56" r="2" fill="#fde8e8"/><path d="M30 72 Q50 65 70 72" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+        404 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#003189" stroke-width="5" fill="#e8eaf6"/><path d="M30 70 L50 30 L70 70" stroke="#003189" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="38" y1="58" x2="62" y2="58" stroke="#003189" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="26" r="3" fill="#003189"/></svg>',
+        400 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#b45309" stroke-width="5" fill="#fff3e0"/><path d="M50 30v24" stroke="#b45309" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="66" r="3.5" fill="#b45309"/></svg>',
+        401 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#003189" stroke-width="5" fill="#e8eaf6"/><rect x="38" y="42" width="24" height="22" rx="3" fill="#003189"/><path d="M42 42V36 a8 8 0 0 1 16 0v6" stroke="#003189" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="50" cy="52" r="2.5" fill="#e8eaf6"/></svg>',
+        500 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#c0392b" stroke-width="5" fill="#fde8e8"/><path d="M32 38 Q40 32 50 38 Q60 44 68 38" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M32 56 Q40 50 50 56 Q60 62 68 56" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M35 72 Q50 64 65 72" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+    ];
+    $icon = $icons[$code] ?? $icons[500];
+
+    $hint_html = '';
+    if (!empty($hint)) {
+        $hint_html = '<div class="error-hint"><strong>Que faire ?</strong>' . nl2br(h($hint)) . '</div>';
+    }
+
+    $user = '';
+    if (function_exists('get_auth_user')) {
+        try { $user = get_auth_user(); } catch (\Throwable $e) { $user = ''; error_log('render_error_page auth error: ' . $e->getMessage()); }
+    }
+
+    $bandeau_links = '';
+    if (!empty($user)) {
+        $bandeau_links = '<span>Connecté en tant que : <strong>' . h($user) . '</strong></span>
+    <span><a href="index.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">Accueil</a></span>';
+    }
+
+    // Charger le CSS partagé
+    // R3-B : style.php est à la racine du projet ; depuis lib/ on remonte d'un niveau.
+    $css = '';
+    $style_file = __DIR__ . '/../style.php';
+    if (file_exists($style_file)) {
+        ob_start();
+        require $style_file;
+        $css = (string)ob_get_clean();
+    }
+    // Si le require n'a rien produit (style.php est un fragment <style>…</style>), fallback minimal
+    if (empty(trim(strip_tags($css)))) {
+        $css = '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e}.bandeau{background:#003189;color:#fff;padding:.75rem 2rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.bandeau a{color:#b3c8f0;font-size:.8rem;text-decoration:none}.btn{padding:.5rem 1rem;border:none;border-radius:3px;font-size:.85rem;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-block}.btn-primary{background:#003189;color:#fff}.btn-primary:hover{background:#002270}.skip-link{position:absolute;left:-9999px;top:0;background:#003189;color:#fff;padding:.5rem 1rem;z-index:9999}.skip-link:focus{left:0}.error-page{display:flex;min-height:calc(100vh - 120px);align-items:center;justify-content:center;padding:2rem 1rem}.error-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:3rem 2.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}.error-card .error-code{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.25rem;letter-spacing:-2px}.error-card .error-code.code-403{color:#c0392b}.error-card .error-code.code-404{color:#003189}.error-card .error-code.code-400{color:#b45309}.error-card .error-code.code-401{color:#003189}.error-card .error-code.code-500{color:#c0392b}.error-card .error-illustration{margin-bottom:1.25rem}.error-card .error-illustration svg{width:100px;height:100px}.error-card h1{font-size:1.35rem;color:#1e1e1e;margin-bottom:.75rem;border:none;padding:0}.error-card .error-message{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:1.25rem}.error-card .error-hint{font-size:.85rem;color:#666;background:#f5f5fe;border:1px solid #e0e0f0;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;text-align:left;line-height:1.55}.error-card .error-hint strong{color:#333;display:block;margin-bottom:.35rem}.error-card .error-actions{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}.error-card .error-stamp{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;font-size:.75rem;color:#aaa}</style>';
+    }
+
+    // A-22 : En mode test, lancer une exception testable au lieu de die()
+    // En production, exit() reste nécessaire pour arrêter le rendu de la page
+    $error_html = '<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>' . h($title) . ' — ' . h(get_app_name()) . '</title>
+  ' . render_favicon() . '
+  ' . $css . '
+</head>
+<body>
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+<div class="bandeau">
+  <strong>DREETS</strong> — Direction Régionale de l\'Économie, de l\'Emploi, du Travail et des Solidarités
+  ' . $bandeau_links . '
+</div>
+<div class="error-page" id="main-content">
+  <div class="error-card">
+    <div class="error-illustration">' . $icon . '</div>
+    <div class="error-code code-' . $code . '">' . $code . '</div>
+    <h1>' . h($title) . '</h1>
+    <p class="error-message">' . h($message) . '</p>
+    ' . $hint_html . '
+    <div class="error-actions">
+      <a href="' . h($back_url) . '" class="btn btn-primary">Retour à l\'accueil</a>
+    </div>
+    <div class="error-stamp">' . h(get_app_name()) . '</div>
+  </div>
+</div>
+' . (function_exists('render_footer') ? render_footer() : '') . '
+</body>
+</html>';
+
+    // A-22 : En mode test, lancer une exception testable au lieu de exit()
+    /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
+    if (TEST_MODE && php_sapi_name() !== "cli") {
+        throw new ErrorResponseException($code, $title, $message, $hint, $back_url);
+    }
+    echo $error_html;
+    exit(1);
+}
+
+// ── MESSAGES UTILISATEUR ───────────────────────────────────────
+
+/**
+ * Affiche les messages de succès/erreur/info/warning.
+ * Utilisez dans les pages : <?= render_messages(['success'=>$success_msg, 'error'=>$error_msg, 'info'=>$info_msg]) ?>
+ *
+ * Accessibilité (RGAA 7.5 / 8.x) :
+ * - error   : role="alert"      + aria-live="assertive" (annonce immédiate par le lecteur d'écran)
+ * - success : role="status"     + aria-live="polite"    (annonce dès que possible, non interruptif)
+ * - info    : role="status"     + aria-live="polite"
+ * - warning : role="status"     + aria-live="polite"
+ * @param array<string, mixed> $messages
+ */
+function render_messages(array $messages = []): string {
+    $html = '';
+    foreach ($messages as $type => $text) {
+        if (empty($text)) continue;
+        $class = match($type) {
+            'success' => 'msg-success',
+            'error'   => 'msg-error',
+            'info'    => 'msg-info',
+            'warning' => 'msg-warning',
+            default   => 'msg-info',
+        };
+        // Attributs ARIA selon le type de message (U-10)
+        $aria = match($type) {
+            'error'   => ' role="alert" aria-live="assertive"',
+            'success', 'info', 'warning' => ' role="status" aria-live="polite"',
+            default   => ' role="status" aria-live="polite"',
+        };
+        $html .= '<div class="' . $class . '"' . $aria . '>' . h($text) . '</div>';
+    }
+    return $html;
+}

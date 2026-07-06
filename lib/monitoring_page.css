@@ -1,0 +1,17 @@
+    /* Overrides */
+    body.page-monitoring .container { max-width: 1200px; }
+    .grid-2 { gap: 1.5rem; margin-bottom: 2rem; }
+
+    /* Page-specific */
+    body.page-monitoring .alert-row.urgent { background: #fde8e8 !important; }
+    .alert-row.warning { background: #fff3e0 !important; }
+    body.page-monitoring .alert-row.ok { background: #e8f5e9 !important; }
+    .days-remaining { font-weight: bold; padding: .2rem .6rem; border-radius: var(--r-sm); font-size: .85rem; }
+    body.page-monitoring .days-remaining.overdue { background: #c0392b; color: #fff; }
+    .days-remaining.critical { background: #b45309; color: #fff; }
+    body.page-monitoring .days-remaining.warning { background: #fff3e0; color: #b45309; }
+    .days-remaining.ok { background: #e8f5e9; color: #1a6b3c; }
+
+    @media (max-width: 768px) {
+      body.page-monitoring .grid-2 { grid-template-columns: 1fr; }
+    }
