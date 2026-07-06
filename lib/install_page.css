@@ -1,0 +1,94 @@
+/* ── Reset & Base ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body.page-install html { scroll-behavior: smooth; }
+body { font-family: "Marianne", Arial, sans-serif; background: #f5f5fe; color: #1e1e1e; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Bandeau ──────────────────────────────────────────── */
+body.page-install .bandeau { background: #003189; color: #fff; padding: .75rem 2rem; font-size: .85rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.bandeau a { color: #b3c8f0; font-size: .8rem; text-decoration: none; }
+
+/* ── Container ────────────────────────────────────────── */
+body.page-install .container { max-width: 800px; margin: 0 auto; padding: 0 1rem 2rem; width: 100%; flex: 1; }
+
+/* ── Typography ───────────────────────────────────────── */
+h1 { font-size: 1.4rem; color: #003189; margin-bottom: 1.25rem; }
+body.page-install h2 { font-size: 1.1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1rem; }
+
+/* ── Cards ────────────────────────────────────────────── */
+.card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
+body.page-install .card h2 { font-size: 1.1rem; color: #003189; border-bottom: 2px solid #003189; padding-bottom: .5rem; margin-bottom: 1.25rem; }
+
+/* ── Buttons ──────────────────────────────────────────── */
+.btn { padding: .5rem 1rem; border: none; border-radius: 3px; font-size: .85rem; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+body.page-install .btn-primary { background: #003189; color: #fff; }
+.btn-primary:hover { background: #002270; }
+body.page-install .btn-secondary { background: #f0f0f0; color: #333; }
+.btn-secondary:hover { background: #e0e0e0; }
+body.page-install .btn-danger { background: #c0392b; color: #fff; }
+.btn-danger:hover { background: #a93226; }
+body.page-install .btn-test { background: #27ae60; color: #fff; }
+.btn-test:hover { background: #219a52; }
+body.page-install .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── Messages ─────────────────────────────────────────── */
+.msg-success { background: #e8f5e9; border: 1px solid #27ae60; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #1a6b3c; }
+body.page-install .msg-error { background: #ffebee; border: 1px solid #c0392b; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #c0392b; }
+.msg-info { background: #e3f2fd; border: 1px solid #1976d2; border-radius: 3px; padding: .75rem 1rem; margin-bottom: 1rem; color: #1565c0; }
+
+/* ── Form fields ──────────────────────────────────────── */
+body.page-install .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
+label { font-size: .85rem; font-weight: bold; color: #444; }
+body.page-install .hint { font-size: .75rem; color: #888; font-weight: normal; }
+.req { color: #c0392b; margin-left: 2px; }
+body.page-install input[type="text"], body.page-install input[type="date"], body.page-install input[type="number"], body.page-install input[type="password"], body.page-install input[type="email"], body.page-install select, body.page-install textarea {
+    width: 100%; padding: .5rem .75rem; border: 1px solid #aaa;
+    border-radius: 3px; font-size: .9rem; font-family: inherit; background: #fff; color: #1e1e1e;
+}
+body.page-install input:focus, body.page-install select:focus, body.page-install textarea:focus { outline: 2px solid #003189; outline-offset: 1px; border-color: #003189; }
+.field-error { border-color: #c0392b !important; background: #fff5f5; }
+
+/* ── Form actions ─────────────────────────────────────── */
+body.page-install .form-actions { display: flex; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+
+/* ── Stepper ──────────────────────────────────────────── */
+.stepper { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; gap: 0; }
+body.page-install .step-item { display: flex; flex-direction: column; align-items: center; min-width: 100px; max-width: 180px; flex: 1; text-align: center; position: relative; padding: 0 .5rem; }
+.step-item:not(:last-child)::after { content: ''; position: absolute; top: 18px; right: -50%; width: 100%; height: 3px; z-index: 0; }
+body.page-install .step-item.step-done:not(:last-child)::after { background: #1a6b3c; }
+.step-item.step-active:not(:last-child)::after { background: #b45309; }
+body.page-install .step-item.step-upcoming:not(:last-child)::after { background: #ccc; }
+.step-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .95rem; font-weight: bold; z-index: 1; margin-bottom: .5rem; }
+body.page-install .step-done .step-icon { background: #1a6b3c; color: #fff; }
+.step-active .step-icon { background: #003189; color: #fff; }
+body.page-install .step-upcoming .step-icon { background: #ccc; color: #666; }
+.step-label { font-size: .78rem; font-weight: bold; color: #333; margin-bottom: .15rem; line-height: 1.3; }
+body.page-install .step-upcoming .step-label { color: #999; }
+
+/* ── Prerequisite checks ──────────────────────────────── */
+.check-list { list-style: none; padding: 0; }
+body.page-install .check-item { display: flex; align-items: flex-start; gap: .75rem; padding: .75rem 0; border-bottom: 1px solid #eee; font-size: .9rem; }
+.check-item:last-child { border-bottom: none; }
+body.page-install .check-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: bold; flex-shrink: 0; margin-top: 1px; }
+.check-ok .check-icon { background: #1a6b3c; color: #fff; }
+body.page-install .check-fail .check-icon { background: #c0392b; color: #fff; }
+.check-label { font-weight: bold; color: #333; }
+body.page-install .check-detail { font-size: .8rem; color: #888; margin-top: .15rem; }
+
+/* ── Config preview (step 3) ──────────────────────────── */
+.config-preview { background: #f7f7fb; border: 1px solid #ddd; border-radius: 4px; padding: 1.25rem; font-family: "Consolas", "Monaco", monospace; font-size: .82rem; line-height: 1.7; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+body.page-install .config-preview .config-key { color: #003189; font-weight: bold; }
+.config-preview .config-val { color: #1a6b3c; }
+
+/* ── Warning box ──────────────────────────────────────── */
+body.page-install .warn-box { background: #fff3e0; border-left: 4px solid #b45309; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 0 4px 4px 0; font-size: .9rem; color: #7c4700; }
+
+/* ── Footer ───────────────────────────────────────────── */
+.footer { text-align: center; padding: 1.5rem; font-size: .78rem; color: #999; margin-top: auto; border-top: 1px solid #eee; }
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 600px) {
+    body.page-install .stepper { gap: 0; }
+    .step-item { min-width: 70px; padding: 0 .25rem; }
+    body.page-install .step-label { font-size: .7rem; }
+    .bandeau { padding: .5rem 1rem; font-size: .78rem; }
+}

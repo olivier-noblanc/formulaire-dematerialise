@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "form": {
+    "label": "Adaptation poste — Matériel suite avis médical",
+    "description": "Demande de matériel suite à ordonnance médicale pour adaptation immédiate au poste de l'agent"
+  },
+  "fields": [
+    { "label": "Nom AGENT", "field_type": "text", "field_name": "nom_agent", "options": null, "required": true, "ordre": 1, "card_group": "Identité agent", "hint": "Nom de famille", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Prénom AGENT", "field_type": "text", "field_name": "prenom_agent", "options": null, "required": true, "ordre": 2, "card_group": "Identité agent", "hint": "", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Nombre d'agents concernés", "field_type": "text", "field_name": "nbre_agent", "options": null, "required": true, "ordre": 3, "card_group": "Identité agent", "hint": "1 par défaut, plus si adaptation collective", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Pôle", "field_type": "text", "field_name": "pole", "options": null, "required": true, "ordre": 4, "card_group": "Affectation", "hint": "", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Site", "field_type": "text", "field_name": "site", "options": null, "required": true, "ordre": 5, "card_group": "Affectation", "hint": "Adresse du site d'affectation", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "RQTH", "field_type": "select", "field_name": "rqth", "options": ["Non", "Oui", "En cours"], "required": true, "ordre": 6, "card_group": "Affectation", "hint": "Reconnaissance Qualité Travailleur Handicapé", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "FEB", "field_type": "select", "field_name": "feb", "options": ["Non", "Oui"], "required": false, "ordre": 7, "card_group": "Affectation", "hint": "Fiche d'écriture budgétaire", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+
+    { "label": "ORIGINE de la DEMANDE", "field_type": "select", "field_name": "origine_demande", "options": ["Agent", "Médecin de prévention", "Manager", "Autre"], "required": true, "ordre": 8, "card_group": "Demande", "hint": "Qui a initié la demande", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Date de la demande par l'agent", "field_type": "date", "field_name": "date_demande_agent", "options": null, "required": false, "ordre": 9, "card_group": "Demande", "hint": "Si demande formulée par l'agent avant avis médecin de prévention", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Date de la demande du médecin de prévention", "field_type": "date", "field_name": "date_demande_medecin", "options": null, "required": true, "ordre": 10, "card_group": "Demande", "hint": "", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+
+    { "label": "Avis médecin (ordonnance)", "field_type": "file", "field_name": "avis_medecin", "options": null, "required": true, "ordre": 11, "card_group": "Justificatifs", "hint": "Ordonnance médicale ou avis du médecin de prévention", "filled_by": "demandeur", "validator_step": "", "visibility": "owner_only" },
+    { "label": "DEVIS", "field_type": "file", "field_name": "devis", "options": null, "required": false, "ordre": 12, "card_group": "Justificatifs", "hint": "Devis du matériel si disponible", "filled_by": "demandeur", "validator_step": "", "visibility": "owner_only" },
+
+    { "label": "Matériel demandé pour bureau", "field_type": "textarea", "field_name": "materiel_bureau", "options": null, "required": false, "ordre": 13, "card_group": "Matériel demandé", "hint": "Description précise (ex: écran 27\", repose-pieds, siège ergonomique)", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Matériel demandé pour Télétravail", "field_type": "textarea", "field_name": "materiel_teletravail", "options": null, "required": false, "ordre": 14, "card_group": "Matériel demandé", "hint": "Matériel à installer au domicile de l'agent", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+    { "label": "Référence", "field_type": "text", "field_name": "reference_materiel", "options": null, "required": false, "ordre": 15, "card_group": "Matériel demandé", "hint": "Référence catalogue UGAP/autre", "filled_by": "demandeur", "validator_step": "", "visibility": "all" },
+
+    { "label": "Avis interne DREETS", "field_type": "textarea", "field_name": "avis_interne_dreets", "options": null, "required": false, "ordre": 16, "card_group": "Décision owner", "hint": "Avis interne DREETS (réservé owner)", "filled_by": "validator", "validator_step": "Validation owner", "visibility": "all" },
+    { "label": "Observations", "field_type": "textarea", "field_name": "observations_owner", "options": null, "required": false, "ordre": 17, "card_group": "Décision owner", "hint": "Observations de l'owner (réservé owner)", "filled_by": "validator", "validator_step": "Validation owner", "visibility": "all" },
+    { "label": "Décision de la SG", "field_type": "select", "field_name": "decision_sg", "options": ["En attente", "Acceptée", "Acceptée avec réserves", "Refusée", "Reportée"], "required": false, "ordre": 18, "card_group": "Décision owner", "hint": "Décision Secrétariat Général (réservé owner)", "filled_by": "validator", "validator_step": "Validation owner", "visibility": "all" },
+
+    { "label": "Actions à mettre en œuvre — Logistique", "field_type": "textarea", "field_name": "actions_logistique", "options": null, "required": false, "ordre": 19, "card_group": "Logistique", "hint": "Réservé Logistique", "filled_by": "validator", "validator_step": "Logistique", "visibility": "all" },
+    { "label": "Matériel remis (modalités)", "field_type": "textarea", "field_name": "materiel_remis", "options": null, "required": false, "ordre": 20, "card_group": "Logistique", "hint": "Préciser date / remis par qui / etc.", "filled_by": "validator", "validator_step": "Logistique", "visibility": "all" },
+    { "label": "Actions RESTANT à mettre en œuvre — Logistique", "field_type": "textarea", "field_name": "actions_restantes_logistique", "options": null, "required": false, "ordre": 21, "card_group": "Logistique", "hint": "Ce qu'il reste à faire côté logistique", "filled_by": "validator", "validator_step": "Logistique", "visibility": "all" },
+    { "label": "Reste à traiter (Logistique)", "field_type": "select", "field_name": "reste_a_traiter_logistique", "options": ["Oui", "Non"], "required": false, "ordre": 22, "card_group": "Logistique", "hint": "", "filled_by": "validator", "validator_step": "Logistique", "visibility": "all" },
+
+    { "label": "Actions à mettre en œuvre — DSI", "field_type": "textarea", "field_name": "actions_dsi", "options": null, "required": false, "ordre": 23, "card_group": "DSI", "hint": "Réservé DSI", "filled_by": "validator", "validator_step": "DSI", "visibility": "all" },
+    { "label": "Actions RESTANT à mettre en œuvre — DSI", "field_type": "textarea", "field_name": "actions_restantes_dsi", "options": null, "required": false, "ordre": 24, "card_group": "DSI", "hint": "Ce qu'il reste à faire côté DSI", "filled_by": "validator", "validator_step": "DSI", "visibility": "all" },
+    { "label": "Reste à traiter (DSI)", "field_type": "select", "field_name": "reste_a_traiter_dsi", "options": ["Oui", "Non"], "required": false, "ordre": 25, "card_group": "DSI", "hint": "", "filled_by": "validator", "validator_step": "DSI", "visibility": "all" }
+  ],
+  "steps": [
+    { "label": "Validation owner", "ordre": 1, "actif": true, "recipients": ["olivier.noblanc@dreets.gouv.fr"] },
+    { "label": "Logistique", "ordre": 2, "actif": true, "recipients": ["logistique@dreets.gouv.fr"] },
+    { "label": "DSI", "ordre": 2, "actif": true, "recipients": ["dsi@dreets.gouv.fr"] }
+  ]
+}

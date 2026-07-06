@@ -1,0 +1,83 @@
+    body.page-mes_demandes .container { max-width: 1000px; }
+    .back-link { display: inline-block; margin-bottom: 1.5rem; font-size: .85rem; color: var(--c-primary-dark); text-decoration: none; }
+    body.page-mes_demandes .back-link:hover { text-decoration: underline; }
+
+    /* Header */
+    .sub-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+    body.page-mes_demandes .sub-title { font-size: 1.4rem; color: var(--c-primary-dark); margin-bottom: .25rem; }
+    .sub-meta { font-size: .85rem; color: #888; line-height: 1.8; }
+
+    /* Progress bar */
+    body.page-mes_demandes .progress-section { margin-bottom: 2rem; }
+    .progress-bar-container { background: #e0e0e0; border-radius: 12px; height: 28px; overflow: hidden; position: relative; margin-bottom: .5rem; }
+    body.page-mes_demandes .progress-bar-fill { height: 100%; border-radius: 12px; transition: width .3s; display: flex; align-items: center; justify-content: center; color: #fff; font-size: .8rem; font-weight: bold; }
+    .progress-bar-fill.complete { background: #1a6b3c; }
+    body.page-mes_demandes .progress-bar-fill.in-progress { background: linear-gradient(90deg, #1a6b3c <?= $progress_pct ?>%, #b45309 <?= $progress_pct ?>%); }
+    .progress-bar-fill.not-started { background: #ccc; color: #666; }
+    body.page-mes_demandes .progress-label { font-size: .85rem; color: #555; text-align: center; }
+
+    /* Deadline */
+    .deadline-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+    body.page-mes_demandes .deadline-card.overdue { border-left: 5px solid #c0392b; background: #fff5f5; }
+    .deadline-card.urgent { border-left: 5px solid #b45309; background: #fff8f0; }
+    body.page-mes_demandes .deadline-card.ok { border-left: 5px solid #1a6b3c; }
+    .deadline-card .dl-icon { font-size: 2rem; }
+    body.page-mes_demandes .deadline-card .dl-text { flex: 1; }
+    .deadline-card .dl-date { font-size: 1.3rem; font-weight: bold; color: var(--c-primary-dark); }
+    body.page-mes_demandes .deadline-card .dl-remaining { font-size: .9rem; font-weight: bold; }
+    .deadline-card .dl-remaining.overdue { color: #c0392b; }
+    body.page-mes_demandes .deadline-card .dl-remaining.urgent { color: #b45309; }
+    .deadline-card .dl-remaining.ok { color: #1a6b3c; }
+
+    /* Workflow diagram */
+    body.page-mes_demandes .workflow-diagram { margin-bottom: 2rem; }
+    .wf-flow { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding: 1rem 0; }
+    body.page-mes_demandes .wf-step-group { display: flex; flex-direction: column; gap: .5rem; align-items: center; }
+    .wf-step { border-radius: 10px; padding: 1rem 1.25rem; min-width: 180px; max-width: 220px; text-align: center; position: relative; }
+    body.page-mes_demandes .wf-step.validated { background: #e8f5e9; border: 2px solid #1a6b3c; }
+    .wf-step.current { background: #fff3e0; border: 2px dashed #b45309; }
+    body.page-mes_demandes .wf-step.upcoming { background: #f5f5f5; border: 2px solid #ddd; }
+    .wf-step.refused { background: #fde8e8; border: 2px solid #c0392b; }
+    body.page-mes_demandes .wf-step .wf-ordre { font-size: .7rem; font-weight: bold; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem; }
+    .wf-step.validated .wf-ordre { color: #1a6b3c; }
+    body.page-mes_demandes .wf-step.current .wf-ordre { color: #b45309; }
+    .wf-step.upcoming .wf-ordre { color: #999; }
+    body.page-mes_demandes .wf-step .wf-label { font-weight: bold; font-size: .95rem; margin-bottom: .5rem; }
+    .wf-step.validated .wf-label { color: #1a6b3c; }
+    body.page-mes_demandes .wf-step.current .wf-label { color: #b45309; }
+    .wf-step.upcoming .wf-label { color: #888; }
+    body.page-mes_demandes .wf-step .wf-validators { font-size: .75rem; line-height: 1.5; }
+    .wf-step .wf-validator-item { display: flex; align-items: center; justify-content: center; gap: .25rem; margin-bottom: .15rem; }
+    body.page-mes_demandes .wf-step .wf-check { color: #1a6b3c; font-weight: bold; }
+    .wf-step .wf-pending { color: #b45309; }
+    body.page-mes_demandes .wf-step .wf-waiting { color: #999; }
+    .wf-connector { display: flex; align-items: center; padding: 0 .25rem; flex-shrink: 0; }
+    body.page-mes_demandes .wf-connector .arrow { color: var(--c-primary-dark); font-size: 1.5rem; font-weight: bold; }
+
+    /* Data cards */
+    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 1.5rem; }
+    body.page-mes_demandes .data-item { padding: .5rem 0; border-bottom: 1px solid #f0f0f0; }
+    .data-item .data-label { font-size: .8rem; color: #888; font-weight: bold; }
+    body.page-mes_demandes .data-item .data-value { font-size: .9rem; color: #333; margin-top: .1rem; }
+    .data-group-title { grid-column: 1 / -1; font-size: .95rem; color: var(--c-primary-dark); font-weight: bold; border-bottom: 2px solid var(--c-primary-dark); padding-bottom: .5rem; margin-top: .75rem; }
+
+    /* Validation history */
+    body.page-mes_demandes .val-item { display: flex; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid #f0f0f0; }
+    .val-item:last-child { border-bottom: none; }
+    body.page-mes_demandes .val-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: .1rem; }
+    .val-content { flex: 1; }
+    body.page-mes_demandes .val-header { font-weight: bold; font-size: .9rem; }
+    .val-detail { font-size: .8rem; color: #888; margin-top: .2rem; }
+    body.page-mes_demandes .val-comment { font-size: .85rem; color: #555; background: #f5f5fe; padding: .5rem; border-radius: 3px; margin-top: .35rem; font-style: italic; }
+    .val-done-by { font-size: .8rem; color: #003189; margin-top: .25rem; }
+
+    /* Actions */
+    .actions-bar { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
+
+    @media (max-width: 768px) {
+      body.page-mes_demandes .data-grid { grid-template-columns: 1fr; }
+      .wf-flow { flex-direction: column; align-items: stretch; }
+      body.page-mes_demandes .wf-connector { justify-content: center; padding: .25rem 0; }
+      .wf-connector .arrow { transform: rotate(90deg); }
+      body.page-mes_demandes .wf-step { min-width: auto; max-width: none; }
+    }

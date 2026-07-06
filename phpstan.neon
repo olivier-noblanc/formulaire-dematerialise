@@ -1,0 +1,25 @@
+includes:
+    - phpstan-baseline.neon
+parameters:
+    level: 6
+    paths:
+        - src/
+        - lib/
+        - classes/
+        - pages/
+        - helpers.php
+        - config.php
+        - index.php
+        - assets.php
+        - alert_check.php
+        - remind.php
+        - style.php
+    excludePaths:
+        - tests/*
+        - vendor/*
+        - router.php
+        - install.php
+    tmpDir: .phpstan-cache
+    treatPhpDocTypesAsCertain: false
+    bootstrapFiles:
+        - helpers.php

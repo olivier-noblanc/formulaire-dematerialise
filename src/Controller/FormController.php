@@ -1,0 +1,448 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Controller;
+
+/**
+ * Contrôleur du formulaire de demande (form.php?f=<slug>).
+ *
+ * Affiche un formulaire dynamique (champs issus de la table form_fields,
+ * filtrés par filled_by='demandeur'), gère la soumission POST (validation,
+ * persistance, upload de fichiers, déclenchement du workflow), envoie un
+ * email de confirmation à l'agent, et renvoie du JSON en mode test.
+ */
+final class FormController extends BaseController
+{
+    /**
+     * Point d'entrée du contrôleur — reproduit à l'identique la logique
+     * historique de form.php (validation slug, fetch formulaire, POST
+     * handler, rendu HTML ou JSON test).
+     */
+    public function handle(): void
+    {
+        $this->initServices();
+
+        $pdo  = $this->db->getPdo();
+        $slug = trim($_GET['f'] ?? '');
+
+        // Sécurité (A-01) : valider le slug du formulaire
+        if ($slug) {
+            try {
+                $slug = validate_input($slug, 'slug', ['max_length' => 100]);
+            } catch (\InvalidArgumentException $e) {
+                render_error_page(
+                    400,
+                    'Paramètre invalide',
+                    'Le paramètre de formulaire fourni est invalide.',
+                    'Vérifiez l\'adresse dans votre navigateur.'
+                );
+            }
+        }
+
+        $form_stmt = $pdo->prepare("SELECT * FROM forms WHERE slug = ? AND actif = 1");
+        $form_stmt->execute([$slug]);
+        $form = $form_stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$form) {
+            /** @phpstan-ignore-next-line if.alwaysTrue */
+            if (TEST_MODE) {
+                test_json_response(['error' => 'Formulaire introuvable', 'slug' => $slug]);
+            }
+            render_error_page(
+                404,
+                'Formulaire introuvable',
+                'Le formulaire demandé n\'existe pas ou a été désactivé.',
+                'Vérifiez l\'adresse dans votre navigateur. Vous pouvez retourner à l\'accueil pour voir les formulaires disponibles.'
+            );
+        }
+
+        $submitted_by = $this->auth->getUser();
+        $field_errors = [];
+        $file_errors  = [];
+        $success      = false;
+
+        // Vérifier si l'agent a déjà une soumission en cours pour ce formulaire
+        $existing_stmt = $pdo->prepare(
+            "SELECT id, submitted_at FROM submissions
+             WHERE form_id = ? AND submitted_by = ? AND status = 'en_cours'
+             ORDER BY submitted_at DESC LIMIT 1"
+        );
+        $existing_stmt->execute([$form['id'], $submitted_by]);
+        $existing_submission = $existing_stmt->fetch(\PDO::FETCH_ASSOC);
+
+        // Charger les champs dynamiques du formulaire, ordonnés par ordre.
+        // Exclure les champs réservés aux validateurs (filled_by='validator').
+        $all_form_fields = get_form_fields($form['id']);
+        $form_fields = array_filter($all_form_fields, function ($f): bool {
+            return empty($f['filled_by']) || $f['filled_by'] === 'demandeur';
+        });
+
+        // Pour les champs avec condition : préparer les données pour le JS
+        // Les champs conditionnels sont affichés mais masqués par le JS
+        // Leurs required sont retirés côté serveur si la condition n'est pas remplie
+        $field_values = $_POST;
+        $conditional_fields = [];
+        foreach ($form_fields as $f) {
+            if (!empty($f['condition'])) {
+                $conditional_fields[$f['field_name']] = $f['condition'];
+            }
+        }
+
+        $submission_id = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->security->requireCsrf();
+
+            // Validation dynamique des champs obligatoires
+            foreach ($form_fields as $field) {
+                if ($field['required'] && $field['field_type'] !== 'checkbox') {
+                    if (empty(trim($_POST[$field['field_name']] ?? ''))) {
+                        $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
+                    }
+                }
+            }
+
+            // Validation des fichiers uploadés
+            $file_errors = [];
+            foreach ($form_fields as $field) {
+                if ($field['field_type'] === 'file') {
+                    $fname = $field['field_name'];
+                    if ($field['required'] && empty($_FILES[$fname]['name'])) {
+                        $file_errors[$fname] = 'Ce fichier est obligatoire';
+                    }
+                }
+            }
+
+            // Validation du consentement RGPD
+            if (empty($_POST['rgpd_consent'])) {
+                $field_errors['rgpd_consent'] = 'Vous devez accepter le traitement de vos données pour soumettre le formulaire.';
+            }
+
+            if (empty($field_errors) && empty($file_errors)) {
+                $now  = date('Y-m-d H:i:s');
+                $data = [];
+                // Sécurité : exclure les champs internes du JSON de données métier
+                $exclude_keys = ['csrf_token', 'rgpd_consent', 'action', 'MAX_FILE_SIZE'];
+                foreach ($_POST as $k => $v) {
+                    if (in_array($k, $exclude_keys, true)) {
+                        continue;
+                    }
+                    $data[$k] = is_array($v) ? implode(', ', $v) : trim($v);
+                }
+
+                // Ajouter les noms de fichiers uploadés dans les données
+                foreach ($form_fields as $field) {
+                    if ($field['field_type'] === 'file') {
+                        $fname = $field['field_name'];
+                        if (!empty($_FILES[$fname]['name'])) {
+                            $data[$fname] = $_FILES[$fname]['name'];
+                        }
+                    }
+                }
+
+                $rgpd_consent  = !empty($_POST['rgpd_consent']) ? 1 : 0;
+                $submission_id = generate_uuid();
+                $pdo->prepare(
+                    "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, rgpd_consent)
+                     VALUES (?,?,?,?,?,?)"
+                )->execute([
+                    $submission_id,
+                    $form['id'],
+                    json_encode($data, JSON_UNESCAPED_UNICODE),
+                    $submitted_by,
+                    $now,
+                    $rgpd_consent,
+                ]);
+
+                // Traiter les fichiers uploadés — AVANT d'invoquer advance_workflow() et
+                // d'envoyer l'email de confirmation. Si un upload échoue (taille, format,
+                // erreur disque), on ne déclenche PAS le workflow et on n'envoie PAS
+                // l'email — l'utilisateur reste sur le formulaire avec l'erreur affichée
+                // à côté du champ fichier, et la soumission est marquée "incomplète".
+                // La soumission reste en base (traçabilité) mais son statut est forcé
+                // à "en_cours" sans tokens générés.
+                foreach ($form_fields as $field) {
+                    if ($field['field_type'] === 'file') {
+                        $fname = $field['field_name'];
+                        if (!empty($_FILES[$fname]['name']) && $_FILES[$fname]['error'] !== UPLOAD_ERR_NO_FILE) {
+                            $upload_result = handle_file_upload($_FILES[$fname], $submission_id, $fname);
+                            if (!$upload_result['success']) {
+                                $file_errors[$fname] = $upload_result['message'];
+                            }
+                        }
+                    }
+                }
+
+                // Si un upload a échoué, on nettoie la soumission (pour ne pas laisser
+                // de soumission orpheline sans fichiers) et on retourne au formulaire.
+                if (!empty($file_errors)) {
+                    // Supprimer la soumission invalide (et ses pièces jointes partielles)
+                    $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submission_id]);
+                    // Note : advance_workflow() n'a pas encore été appelé → pas de tokens à nettoyer
+                    // On ne set PAS $success = true → le formulaire est ré-affiché
+                } else {
+                    advance_workflow($submission_id);
+
+                    // Envoyer un email de confirmation à l'agent
+                    $confirm_subject = 'Demande enregistrée — ' . $form['label'];
+                    $confirm_body = render_email_template(
+                        '✓ Demande enregistrée',
+                        '<p>Votre demande <strong>'
+                        . $this->html->h($this->html->tJargon($form['label']))
+                        . '</strong> a bien été enregistrée le '
+                        . $this->html->h(date('d/m/Y à H:i'))
+                        . '.</p><p>'
+                        . $this->html->h($this->html->tJargon(
+                            'Le workflow de validation a été déclenché. Vous serez notifié par email lorsque votre demande sera traitée ou si un refus est émis.'
+                        ))
+                        . '</p>'
+                    );
+                    send_mail($submitted_by, $confirm_subject, $confirm_body);
+
+                    $success = true;
+                }
+
+                // Mode test : renvoyer JSON au lieu du HTML
+                /** @phpstan-ignore-next-line if.alwaysTrue */
+                if (TEST_MODE) {
+                    $tok_stmt = $pdo->prepare(
+                        "SELECT t.id, t.step_id, t.email, t.token, t.sent_at,
+                                st.label as step_label, st.ordre
+                         FROM tokens t
+                         JOIN steps st ON st.id = t.step_id
+                         WHERE t.submission_id = ?
+                         ORDER BY st.ordre"
+                    );
+                    $tok_stmt->execute([$submission_id]);
+                    $generated_tokens = $tok_stmt->fetchAll(\PDO::FETCH_ASSOC);
+                    test_json_response([
+                        'success'       => true,
+                        'submission_id' => $submission_id,
+                        'form_slug'     => $slug,
+                        'form_label'    => $form['label'],
+                        'submitted_by'  => $submitted_by,
+                        'data'          => $data,
+                        'tokens'        => $generated_tokens,
+                        'mails_count'   => count($GLOBALS['_test_mails']),
+                    ]);
+                }
+            } elseif (TEST_MODE) {
+                // Erreurs de validation en mode test
+                test_json_response(['error' => 'Erreurs de validation', 'field_errors' => $field_errors]);
+            }
+        }
+
+        // Mode test : GET renvoie les métadonnées du formulaire en JSON
+        /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
+        if (TEST_MODE && $_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['screenshot'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            $fields_list = [];
+            foreach ($form_fields as $f) {
+                $fields_list[] = [
+                    'field_name' => $f['field_name'],
+                    'label'      => $f['label'],
+                    'field_type' => $f['field_type'],
+                    'required'   => (bool) $f['required'],
+                    'options'    => $f['options'] ? json_decode($f['options'], true) : null,
+                    'card_group' => $f['card_group'],
+                ];
+            }
+            echo json_encode([
+                '_test_mode'   => true,
+                'form'         => [
+                    'id'          => $form['id'],
+                    'slug'        => $form['slug'],
+                    'label'       => $form['label'],
+                    'description' => $form['description'],
+                ],
+                'fields'       => $fields_list,
+                'csrf_token'   => $this->security->generateCsrfToken(),
+                'submitted_by' => $submitted_by,
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        }
+
+        // Regrouper les champs par card_group pour le rendu visuel
+        $grouped       = [];
+        $field_labels  = [];
+        foreach ($form_fields as $field) {
+            $group = $field['card_group'] ?: 'Général';
+            $grouped[$group][] = $field;
+            $field_labels[$field['field_name']] = $field['label'];
+        }
+
+        // Valeurs à pré-remplir — prioriser $_POST (ré-affichage après erreur de validation)
+        $field_values       = $_POST;
+        $ldap_datalist_id   = '';
+        $ldap_datalist_html = '';
+        $form_label         = $form['label'] ?? 'Formulaire';
+
+        $page_css = $this->renderPageCss();
+        $content  = $this->renderContent(
+            $form,
+            $form_label,
+            $submitted_by,
+            $existing_submission,
+            $success,
+            $submission_id,
+            $grouped,
+            $field_errors,
+            $file_errors,
+            $field_values,
+            $ldap_datalist_id,
+            $ldap_datalist_html,
+            $slug
+        );
+
+        echo $this->renderPage(
+            $this->html->h($this->html->tJargon($form['label'])),
+            'forms',
+            $page_css,
+            $content
+        );
+    }
+
+    /**
+     * CSS spécifique à la page formulaire (nowdoc statique — sans interpolation).
+     */
+    private function renderPageCss(): string
+    {
+        return '';
+    }
+
+    /**
+     * Rendu HTML du formulaire (titre, champs, consentement RGPD,
+     * bouton submit, script de progression). Reproduit à l'identique la
+     * structure HTML historique de form.php (output buffering + inline PHP).
+     *
+     * @param array<string, mixed>                            $form
+     * @param array<string, mixed>|false                      $existing_submission
+     * @param array<string, list<array<string, mixed>>>       $grouped  Clé=nom du groupe, valeur=liste des champs
+     * @param array<string, mixed>                            $field_errors
+     * @param array<string, mixed>                            $file_errors  Erreurs spécifiques aux uploads
+     * @param array<string, mixed>                            $field_values
+     */
+    private function renderContent(
+        array $form,
+        string $form_label,
+        string $submitted_by,
+        $existing_submission,
+        bool $success,
+        string $submission_id,
+        array $grouped,
+        array $field_errors,
+        array $file_errors,
+        array $field_values,
+        string $ldap_datalist_id,
+        string $ldap_datalist_html,
+        string $slug
+    ): string {
+        // Les variables locales sont nécessaires pour le template inline ci-dessous.
+        $h        = [$this->html, 'h'];
+        $tJargon  = [$this->html, 'tJargon'];
+
+        ob_start();
+        ?>
+  <?php // S4-UI / Action 1 : anti-jargon sur le titre + description du formulaire. ?>
+  <h1><?= $h($tJargon($form['label'])) ?></h1>
+  <?php if ($form['description']): ?><p class="agent-info"><?= $h($tJargon($form['description'])) ?></p><?php endif; ?>
+  <p class="agent-info">Formulaire rempli par : <strong><?= $h($submitted_by) ?></strong></p>
+
+  <?php if ($existing_submission && !$success): ?>
+    <div class="warn-box">
+      <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
+      <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
+      <p><a href="index.php?p=submission_view&id=<?= urlencode($existing_submission['id']) ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
+    </div>
+  <?php endif; ?>
+
+  <?php if ($success): ?>
+    <div class="success">
+      <strong><span aria-hidden="true">✓</span> Demande enregistrée</strong>
+      <?= $h($tJargon('Le workflow de validation a été déclenché automatiquement.')) ?> Un email de confirmation vous a été envoyé.
+    </div>
+    <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+      <a href="index.php?p=submission_view&id=<?= urlencode($submission_id) ?>" class="btn btn-primary">Voir ma demande</a>
+      <a href="index.php?p=my_submissions" class="btn btn-secondary">Mes demandes</a>
+      <a href="index.php" class="btn btn-secondary">Accueil</a>
+    </div>
+  <?php else: ?>
+    <form method="POST" action="index.php?p=form&f=<?= urlencode((string)$slug) ?>" enctype="multipart/form-data" id="form-main">
+      <?= csrf_field() ?>
+    <?php // ITER1-B / Action B : encadré « Aide » en haut du formulaire. ?>
+    <aside class="form-help-box" aria-label="Aide pour remplir le formulaire">
+      <span class="form-help-icon" aria-hidden="true">💡</span>
+      <span class="form-help-text">
+        <?php // U-08 : indicateur de progression (uniquement si >1 section) ?>
+        <?= render_form_progress_indicator($grouped) ?>
+        <?php foreach ($grouped as $card_title => $card_fields): ?>
+          <?php
+          // Séparer les checkboxes des autres champs pour le rendu
+          $checkboxes = [];
+          $non_checkboxes = [];
+          foreach ($card_fields as $cf) {
+              if ($cf['field_type'] === 'checkbox') {
+                  $checkboxes[] = $cf;
+              } else {
+                  $non_checkboxes[] = $cf;
+              }
+          }
+          ?>
+          <fieldset class="card">
+            <legend><?= $h($card_title) ?></legend>
+            <?php if (!empty($non_checkboxes)): ?>
+              <div class="grid-2">
+                <?php foreach ($non_checkboxes as $cf): ?>
+                  <?php $cond = !empty($cf['condition']) ? ' data-condition="' . htmlspecialchars((string)$cf['condition'], ENT_QUOTES) . '"' : ''; ?>
+                  <div<?php if ($cond) echo $cond; ?>>
+                  <?= render_field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+            <?php if (!empty($checkboxes)): ?>
+              <div class="checkboxes"<?php if (!empty($non_checkboxes)) echo ' style="margin-top:1rem;"'; ?>>
+                <?php foreach ($checkboxes as $cf): ?>
+                  <?php $cond = !empty($cf['condition']) ? ' data-condition="' . htmlspecialchars((string)$cf['condition'], ENT_QUOTES) . '"' : ''; ?>
+                  <div<?php if ($cond) echo $cond; ?>>
+                  <?= render_field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </fieldset>
+        <?php endforeach; ?>
+      </span></aside>
+
+      <?= $ldap_datalist_html ?>
+
+      <?php if (!empty($grouped)): ?>
+        <div class="card" style="background:#f8f8ff;border-color:#003189;">
+          <label class="checkbox-item" style="font-size:.85rem;line-height:1.5;">
+            <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true"<?= !empty($_POST['rgpd_consent']) ? ' checked' : '' ?>>
+            J'accepte le traitement de mes données personnelles dans le cadre de cette procédure.
+          </label>
+          <?php // Message d'erreur si le consentement RGPD a été oublié lors d'une soumission précédente ?>
+          <?php if (!empty($field_errors['rgpd_consent'])): ?>
+            <p class="error-hint" style="margin-top:.5rem;margin-left:1.7rem;color:#c0392b;font-size:.8rem;" role="alert">
+              <?= $h($field_errors['rgpd_consent']) ?>
+            </p>
+          <?php endif; ?>
+          <p style="font-size:.75rem;color:#595959;margin-top:.5rem;margin-left:1.7rem;">
+            <?php // S4-UI / Action 1 : la mention légale contient « dématérialisation » → on traduit. ?>
+            <?= $h($tJargon($this->settings->get('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Durée de conservation : 24 mois après clôture.'))) ?>
+          </p>
+        </div>
+        <div class="form-actions" style="margin-top:1.5rem;justify-content:center;gap:1rem;flex-wrap:wrap;">
+          <button type="submit" class="btn-submit">✓ Envoyer ma demande</button>
+        </div>
+      <?php endif; ?>
+    </form>
+    <script src="assets.php?type=js&file=form-progress"></script>
+    <script src="assets.php?type=js&file=form-conditions"></script>
+  <?php endif; ?>
+<?php
+        $content = ob_get_clean();
+        return $content === false ? '' : $content;
+    }
+}

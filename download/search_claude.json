@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://claude.ai",
+    "name": "Claude: Sign in",
+    "snippet": "Claude is a next generation AI assistant built by Anthropic and trained to be safe, accurate, and secure to help you do your best work. · Create with Claude.",
+    "host_name": "claude.ai",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.anthropic.com/news/claude-design-anthropic-labs",
+    "name": "Introducing Claude Design by Anthropic Labs",
+    "snippet": "Today, we're launching Claude Design, a new Anthropic Labs product that lets you collaborate with Claude to create polished visual work like ...",
+    "host_name": "www.anthropic.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://claude.ai/login?selectAccount=true&returnTo=%2Foauth%2Fauthorize%3Fcode%3Dtrue%26client_id%3D9d1c250a-e61b-44d9-88ed-5944d1962f5e%26response_type%3Dcode%26redirect_u%3D",
+    "name": "Sign in - Claude",
+    "snippet": "Sign in to Claude, Anthropic's AI assistant for problem solvers.",
+    "host_name": "claude.ai",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=tVqBkHXDIiI&vl=en-US",
+    "name": "How to Use Anthropic's Claude Design AI to Create Visual Renderings",
+    "snippet": "Claude Design est enfin là ! Anthropic vient de lancer sa nouvelle interface dédiée à la création de contenus visuels et de prototypes.",
+    "host_name": "www.youtube.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://x.com/claudeai/status/2045156271251218897",
+    "name": "Claude reads your codebase and design files to build your team's",
+    "snippet": "Claude reads your codebase and design files to build your team's design system, then applies it automatically, keeping every project ...",
+    "host_name": "x.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=dcXAciJLuwg",
+    "name": "Claude Skills: AI-Powered CSS Theme Generation - YouTube",
+    "snippet": "209 views · 5 months ago. #ClaudeAI #CSS #vibecoding ...more. Software Wrighter. 126. Subscribe. 5. Share. Save. Report. Comments. Add a comment ...",
+    "host_name": "www.youtube.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://claude.com",
+    "name": "Claude.ai",
+    "snippet": "Claude is a next generation AI assistant built by Anthropic and trained to be safe, accurate, and secure to help you do your best work.",
+    "host_name": "claude.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=kWrWE8q-e9s",
+    "name": "Claude Design a tué Lovable et Gamma (la preuve en 3 prompts)",
+    "snippet": "... Claude Design : https://claude.ai/design (nouveau studio design IA d'Anthropic — prototype, slides, motion design, animations) - Claude : https: ...",
+    "host_name": "www.youtube.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.blogdumoderateur.com/anthropic-lance-claude-design",
+    "name": "Anthropic lance Claude Design, un outil IA pour créer des  - BDM",
+    "snippet": "Le nouveau produit transforme un prompt en maquette, prototype interactif ou présentation, avec export vers Canva, PDF, PPTX ou Claude Code.",
+    "host_name": "www.blogdumoderateur.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.sabirsoft.com/en/blog/claude-ai-design-ui-ux",
+    "name": "Claude AI for Design: Build Beautiful UI & Design Systems with AI in",
+    "snippet": "How to use Claude AI to design UI components, generate design systems, write accessible CSS, and turn Figma ideas into production-ready ...",
+    "host_name": "www.sabirsoft.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

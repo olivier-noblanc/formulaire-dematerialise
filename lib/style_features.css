@@ -1,0 +1,273 @@
+/* ═══════════════════════════════════════════════════════════════
+   U-08 — Indicateur de progression du formulaire (S2-CTO)
+   Composant affiché en haut du formulaire si >1 section.
+   Token-based : couleurs Marianne (bleu républicain), pas de hardcodage.
+   ═══════════════════════════════════════════════════════════════ */
+.form-progress {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-light);
+  border-radius: var(--r-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.form-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .75rem;
+  margin-bottom: .6rem;
+  flex-wrap: wrap;
+}
+.form-progress-label {
+  font-size: var(--text-sm);
+  color: var(--c-primary-dark);
+  font-weight: 600;
+}
+.form-progress-label strong {
+  color: var(--c-primary);
+  font-size: var(--text-base);
+  font-weight: 800;
+}
+.form-progress-count {
+  font-size: var(--text-xs);
+  color: var(--c-text-tertiary);
+  white-space: nowrap;
+}
+.form-progress-bar {
+  background: var(--c-border-light);
+  border-radius: var(--r-full);
+  height: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.form-progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: var(--r-full);
+  transition: width .3s var(--ease-out);
+  min-width: 0;
+}
+
+/* ── Responsive : indicateur de progression ── */
+@media (max-width: 600px) {
+  .form-progress { padding: .75rem .85rem; }
+  .form-progress-label { font-size: var(--text-xs); }
+  .form-progress-label strong { font-size: var(--text-sm); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   U-04 — Refus mobile frictionnel (S2-DESIGNER-A)
+   Composants pour validate.php : radios de motifs de refus + récapitulatif
+   avant confirmation. Cible : validateurs DREETS 40-60 ans sur mobile.
+   Touch targets ≥44px (Apple HIG / RGAA 13.7). Palette Marianne.
+   Aucune dépendance à .btn — styles auto-suffisants pour ne pas hériter
+   du .btn vert défini localement dans validate.php $page_css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Fieldset conteneur des motifs de refus — sans bordure native */
+.refusal-section {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--sp-5) 0;
+}
+.refusal-legend {
+  display: block;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--c-text-secondary);
+  margin-bottom: var(--sp-1);
+  padding: 0;
+}
+.refusal-hint {
+  display: block;
+  margin-bottom: var(--sp-3);
+  font-size: var(--text-xs);
+  color: var(--c-text-tertiary);
+}
+
+/* Liste des radios — grille 1 colonne mobile, 2 colonnes desktop */
+.refusal-motif-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+}
+@media (min-width: 480px) {
+  .refusal-motif-list { grid-template-columns: 1fr 1fr; }
+}
+
+/* Chaque radio = label touch-friendly ≥44px de haut (Apple HIG) */
+.refusal-motif-radio {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font-size: var(--text-md);
+  color: var(--c-text);
+  transition: background var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+.refusal-motif-radio:hover {
+  background: var(--c-primary-50);
+  border-color: var(--c-primary-lighter);
+}
+.refusal-motif-radio input[type="radio"] {
+  /* Radio natif agrandi pour lisibilité cible 40-60 ans */
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--c-primary);
+  cursor: pointer;
+}
+.refusal-motif-radio:has(input:checked) {
+  /* Sélection moderne (:has supporté Safari 15.4+/Chrome 105+/FF 121+).
+     Dégradation gracieuse : le radio natif reste visible via accent-color. */
+  background: var(--c-primary-50);
+  border-color: var(--c-primary);
+  box-shadow: inset 0 0 0 1px var(--c-primary);
+}
+.refusal-motif-radio input[type="radio"]:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.refusal-motif-icon { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
+.refusal-motif-label { font-weight: 500; }
+
+/* Récapitulatif avant confirmation — bloc alerte rouge Marianne */
+.refusal-summary {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--c-danger-50);
+  border: 1px solid var(--c-danger);
+  border-left: 4px solid var(--c-danger);
+  border-radius: var(--r-md);
+  outline: none;
+}
+.refusal-summary[hidden] { display: none; }
+.refusal-summary:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.refusal-summary-title {
+  margin: 0 0 var(--sp-2) 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--c-danger-dark);
+}
+.refusal-summary-text {
+  margin: 0 0 var(--sp-2) 0;
+  font-size: var(--text-md);
+  color: var(--c-text);
+  line-height: 1.5;
+}
+.refusal-summary-text strong {
+  color: var(--c-danger-dark);
+  font-weight: 700;
+}
+.refusal-summary-warning {
+  margin: 0 0 var(--sp-4) 0;
+  font-size: var(--text-sm);
+  color: var(--c-danger-dark);
+  font-weight: 600;
+}
+.refusal-summary-actions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.refusal-summary-actions .btn-refuse-definitive,
+.refusal-summary-actions .btn-refuse-cancel {
+  flex: 1;
+  min-height: 44px;
+}
+
+/* Boutons d'action refus — rouge Marianne, distincts du bouton Valider */
+.btn-refuse-confirm,
+.btn-refuse-definitive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-4);
+  font-family: inherit;
+  font-size: var(--text-md);
+  font-weight: 700;
+  background: var(--c-rouge);
+  color: var(--c-text-inverse);
+  border: 1px solid var(--c-rouge);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.btn-refuse-confirm:hover,
+.btn-refuse-definitive:hover {
+  background: var(--c-rouge-dark);
+  border-color: var(--c-rouge-dark);
+  color: var(--c-text-inverse);
+}
+
+/* Bouton "Annuler" du récap — neutre, clairement secondaire */
+.btn-refuse-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-4);
+  font-family: inherit;
+  font-size: var(--text-md);
+  font-weight: 600;
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.btn-refuse-cancel:hover {
+  background: var(--c-bg);
+  color: var(--c-text);
+}
+
+/* Bouton "Valider" — vert succès, distinct du bouton "Confirmer le refus" */
+.btn-validate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-4);
+  font-family: inherit;
+  font-size: var(--text-md);
+  font-weight: 700;
+  background: var(--c-success);
+  color: var(--c-text-inverse);
+  border: 1px solid var(--c-success);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.btn-validate:hover {
+  background: var(--c-success-dark);
+  border-color: var(--c-success-dark);
+}
+
+/* Responsive : sur très petit mobile (≤420px, iPhone SE), boutons en colonne */
+@media (max-width: 420px) {
+  .refusal-summary-actions { flex-direction: column; }
+  .refusal-summary-actions .btn-refuse-definitive,
+  .refusal-summary-actions .btn-refuse-cancel { width: 100%; }
+  .refusal-motif-list { grid-template-columns: 1fr; }
+  .refusal-motif-radio { padding: var(--sp-2); }
+}
+

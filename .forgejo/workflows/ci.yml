@@ -1,0 +1,109 @@
+# .forgejo/workflows/ci.yml — CI Forgejo Actions pour CircuitDémat
+#
+# Pipeline CI complet en un seul job (optimisé pour les runners publics
+# Codeberg qui ont une limite de 5 minutes par job sur codeberg-small).
+#
+# Étapes (fail-fast via set -e implicite) :
+#   1. Install PHP 8.4 + extensions (pdo_sqlite, mbstring, xml) depuis sury.org
+#   2. Lint PHP (php -l sur tous les .php)
+#   3. PHPStan (analyse statique niveau 6, baseline autorisée)
+#   4. Tests fonctionnels (test_all.php — 57 tests)
+#   5. Tests de rendu HTML (test_form_render_html.php)
+#   6. Tests de non-régression (Bug01-Bug11)
+#   7. Audit URLs cassées (9 catégories)
+#   8. Audit épuration UI (pas de topbar/breadcrumb)
+#
+# ── Configuration du runner ─────────────────────────────────────
+# Utilise les runners PUBLICS de Codeberg (https://codeberg.org/actions/meta).
+# Labels disponibles : codeberg-tiny (2 min), codeberg-small (5 min),
+# codeberg-medium (10 min). On utilise codeberg-small (5 min max).
+#
+# ⚠️ PRÉREQUIS : le dépôt doit être PUBLIC. Les runners Codeberg ne
+# prennent pas en charge les dépôts privés. Vérifie la visibilité sur
+# Settings → General → Repository visibility.
+#
+# ⚠️ Docker-in-Docker n'est PAS supporté sur les runners Codeberg.
+# On ne peut pas utiliser `container: php:8.4-cli` ni `docker-php-ext-install`.
+# À la place, on installe PHP 8.4 via apt depuis le dépôt sury.org.
+
+name: CI
+
+on:
+  push:
+    branches: [master, dev, "feature/*", "fix/*"]
+  pull_request:
+    branches: [master, dev]
+
+jobs:
+  ci:
+    runs-on: codeberg-small
+    steps:
+      # ── 1. Checkout du code ─────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Installer PHP 8.4 + extensions ──────────────────
+      # Les runners Codeberg utilisent l'image ubuntu par défaut.
+      # On ajoute le dépôt sury.org pour avoir PHP 8.4 (Ubuntu LTS
+      # ne fournit que PHP 8.1/8.2 par défaut).
+      - name: Install PHP 8.4 + extensions
+        run: |
+          set -e
+          # Dépôt sury.org (maintient les paquets PHP récents pour Debian/Ubuntu)
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates wget gnupg lsb-release
+          wget -qO- https://packages.sury.org/php/apt.gpg \
+            | gpg --dearmor -o /usr/share/keyrings/sury-php.gpg
+          echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php $(lsb_release -sc) main" \
+            > /etc/apt/sources.list.d/sury-php.list
+          apt-get update
+          # PHP 8.4 + extensions requises : pdo_sqlite (DB), mbstring (PHPMailer),
+          # xml (SimpleXML pour parsing CHANGELOG), tokenizer (PHPStan)
+          apt-get install -y --no-install-recommends \
+            php8.4-cli \
+            php8.4-sqlite3 \
+            php8.4-mbstring \
+            php8.4-xml \
+            php8.4-curl
+          php --version
+          php -m | grep -E 'pdo_sqlite|mbstring|xml|tokenizer' || true
+
+      # ── 3. Lint PHP (syntaxe sur tous les fichiers) ────────
+      - name: Lint PHP
+        run: |
+          set -e
+          find . -name "*.php" \
+            -not -path "./vendor/*" \
+            -not -path "./tests/*" \
+            -not -path "./node_modules/*" \
+            -print0 | xargs -0 -n1 php -l
+
+      # ── 4. PHPStan (analyse statique niveau 6) ─────────────
+      - name: PHPStan
+        run: |
+          set -e
+          # Télécharger phpstan.phar (dernière version = 2.x, requise par notre baseline)
+          wget -q https://github.com/phpstan/phpstan/releases/latest/download/phpstan.phar
+          chmod +x phpstan.phar
+          php phpstan.phar analyse --memory-limit=512M --no-progress
+
+      # ── 5. Tests fonctionnels (57 tests) ───────────────────
+      - name: Tests fonctionnels (test_all.php)
+        run: php tests/test_all.php
+
+      # ── 6. Tests de rendu HTML (TEST_MODE=false via sous-processus) ──
+      - name: Tests de rendu HTML
+        run: php tests/test_form_render_html.php
+
+      # ── 7. Tests de non-régression (11 bugs historiques) ───
+      - name: Tests de non-régression (Bug01-Bug11)
+        run: php tests/regression/run_all.php
+
+      # ── 8. Audit proactif des URLs cassées (9 catégories) ──
+      - name: Audit URLs cassées
+        run: php tests/test_no_broken_urls.php
+
+      # ── 9. Audit épuration UI (pas de topbar/breadcrumb) ────
+      - name: Audit épuration UI
+        run: php tests/test_no_topbar_breadcrumb.php

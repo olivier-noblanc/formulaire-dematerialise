@@ -1,0 +1,155 @@
+/* ═══════════════════════════════════════════════════════════════
+   U-06 (part 1) — Aide en ligne par champ de formulaire
+   .field-hint : hint automatique généré par render_field() selon
+   le type de champ (date, email, tel, number, text, textarea, file).
+   RGAA 11.9 : lié au champ via aria-describedby (id="hint-<name>")
+   pour que l'aide à la saisie soit annoncée par le lecteur d'écran
+   en plus du label.
+   .hint (existant) reste utilisé pour les hints personnalisés
+   (colonne `hint` de form_fields) — aide métier, pas de format.
+   ═══════════════════════════════════════════════════════════════ */
+.field-hint {
+  font-size: var(--text-xs);
+  color: var(--c-text-tertiary);
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   U-06 (part 2) — Empty-state guidé accueil agent (index.php)
+   Affiché uniquement quand l'agent a VRAIMENT 0 soumission
+   (pas 0 en cours mais 10 archivées). Remplace la section
+   "Nouvelle demande" par un parcours d'onboarding guidé :
+   icône → titre → texte → top 3 formulaires → lien doc.
+   role="region" + aria-label pour lecteurs d'écran.
+   ═══════════════════════════════════════════════════════════════ */
+.welcome-state {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-light);
+  border-radius: var(--r-xl);
+  padding: var(--sp-10) var(--sp-6);
+  margin-bottom: var(--sp-8);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+/* Bandeau tricolore haut — signature Marianne (cohérent avec .form-card / .qs-card) */
+.welcome-state::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+.welcome-icon {
+  font-size: 3rem;
+  margin-bottom: var(--sp-3);
+  line-height: 1;
+}
+.welcome-title {
+  font-size: var(--text-2xl);
+  color: var(--c-primary-dark);
+  margin-bottom: var(--sp-3);
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.welcome-text {
+  font-size: var(--text-base);
+  color: var(--c-text-secondary);
+  max-width: 540px;
+  margin: 0 auto var(--sp-6);
+  line-height: 1.6;
+}
+.welcome-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+  text-align: left;
+}
+.welcome-form-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+  box-shadow: var(--shadow-xs);
+}
+.welcome-form-card:hover {
+  border-color: var(--c-primary-light);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.welcome-form-card:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.welcome-form-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 44px; height: 44px; /* Apple HIG touch target */
+  display: flex; align-items: center; justify-content: center;
+  background: var(--c-primary-50);
+  border-radius: var(--r-md);
+}
+.welcome-form-body { flex: 1; min-width: 0; }
+.welcome-form-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--c-primary-dark);
+  margin-bottom: .15rem;
+}
+.welcome-form-desc {
+  font-size: var(--text-sm);
+  color: var(--c-text-secondary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.welcome-form-btn {
+  display: inline-flex;
+  align-items: center;
+  background: var(--gradient-primary);
+  color: var(--c-text-inverse);
+  padding: .5rem 1rem;
+  border-radius: var(--r-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-colored);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.welcome-form-card:hover .welcome-form-btn { background: var(--gradient-primary-hover); }
+.welcome-doc-link {
+  font-size: var(--text-sm);
+  color: var(--c-text-secondary);
+}
+.welcome-doc-link a {
+  color: var(--c-primary);
+  text-decoration: underline;
+  font-weight: 600;
+}
+.welcome-doc-link a:hover { color: var(--c-primary-dark); }
+
+/* Responsive : sur petit mobile, cartes formulaire en colonne + padding réduit */
+@media (max-width: 600px) {
+  .welcome-state { padding: var(--sp-6) var(--sp-4); }
+  .welcome-actions { grid-template-columns: 1fr; }
+  .welcome-form-card { padding: var(--sp-3); }
+  .welcome-form-btn { padding: .4rem .8rem; }
+  .welcome-title { font-size: var(--text-xl); }
+}
+
+/* ── Legacy: keep .bandeau class defined for backward compat ── */
+.bandeau { display: none; }

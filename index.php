@@ -1,0 +1,84 @@
+<?php
+// index.php — Front controller unique (router)
+//
+// TOUT passe par ici. Aucun autre fichier .php à la racine n'est un point d'entrée.
+// Les pages sont dans pages/ et sont chargées par ce router.
+//
+// URL : index.php?p=admin_settings  →  pages/admin_settings.php
+// URL : index.php (sans ?p=)        →  pages/accueil.php (page d'accueil)
+//
+// Sécurité : le paramètre p est validé contre une whitelist de pages autorisées.
+// Pas d'URL rewriting nécessaire — le query string fait le routage.
+
+require_once __DIR__ . '/helpers.php';
+
+// ── Whitelist des pages autorisées ──
+// Chaque entrée correspond à un fichier pages/<key>.php
+$ALLOWED_PAGES = [
+    // Pages publiques
+    'accueil'           => 'Page d\'accueil',
+    'form'              => 'Formulaire',
+    'validate'          => 'Validation',
+    'my_submissions'    => 'Mes demandes',
+    'my_validations'    => 'Mes validations',
+    'docs'              => 'Documentation',
+    'changelog'         => 'Journal des modifications',
+    'my_forms'          => 'Mes formulaires',  // v10.1.9 — page dédiée owners
+    'download'          => 'Téléchargement',
+    'form_preview'      => 'Prévisualisation',
+    'form_tracking'     => 'Suivi',
+    'submission_view'   => 'Détail soumission',
+    'confirm_action'    => 'Confirmation',
+    'screenshot'        => 'Capture d\'écran',
+    'rgpd'              => 'RGPD',
+    // Pages admin
+    'admin_access'      => 'Accès admin',
+    'admin_alerts'      => 'Alertes',
+    'admin_forms'       => 'Gestion formulaires',
+    'admin_settings'    => 'Paramètres',
+    'backup'            => 'Sauvegarde',
+    'dashboard'         => 'Supervision',
+    'health'            => 'Santé système',
+    'monitoring'        => 'Surveillance',
+    'stats'             => 'Statistiques',
+    'persona'           => 'Persona',  // v10.0.0 — route dédiée persona (start/stop)
+];
+
+// ── Router ──
+// Détection de la page : priorité à ?p=, puis déduction depuis les paramètres
+// (ex: ?form_id=XXX → admin_forms, ?token=XXX → validate, ?id=XXX → submission_view)
+$page = $_GET['p'] ?? '';
+if ($page === '') {
+    // Auto-détection : si form_id est présent sans ?p=, c'est admin_forms
+    if (isset($_GET['form_id']) && !empty($_GET['form_id'])) {
+        $page = 'admin_forms';
+    } elseif (isset($_GET['token']) && !empty($_GET['token'])) {
+        $page = 'validate';
+    } elseif (isset($_GET['id']) && !empty($_GET['id']) && !isset($_GET['action'])) {
+        // ?id=XXX sans ?action= → submission_view (mais pas si ?action= qui est pour admin_access)
+        $page = 'submission_view';
+    } else {
+        $page = 'accueil';
+    }
+}
+$page = preg_replace('/[^a-z_]/', '', $page); // Sanitize : lettres + underscore uniquement
+
+if (!array_key_exists($page, $ALLOWED_PAGES)) {
+    http_response_code(404);
+    render_error_page(404, 'Page introuvable',
+        'La page demandée n\'existe pas.',
+        'Vérifiez l\'adresse ou retournez à l\'accueil.');
+    // render_error_page appelle exit() — pas besoin de exit ici
+}
+
+$pageFile = __DIR__ . '/pages/' . $page . '.php';
+if (!file_exists($pageFile)) {
+    http_response_code(404);
+    render_error_page(404, 'Page introuvable',
+        'Le fichier de page n\'existe pas : pages/' . h($page) . '.php',
+        'Contactez l\'administrateur.');
+    // render_error_page appelle exit() — pas besoin de exit ici
+}
+
+// ── Charger la page ──
+require $pageFile;
