@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Cache;
 
+use App\Contract\CacheInterface;
+
 /**
  * Service de cache fichier simple (TTL en secondes).
  *
@@ -12,7 +14,7 @@ namespace App\Cache;
  * - Max cache size enforcement (default 50 MB)
  * - Corrupted file graceful handling
  */
-final class CacheService
+final class CacheService implements CacheInterface
 {
     private string $cacheDir;
     private int $maxSizeBytes;

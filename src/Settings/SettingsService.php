@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 namespace App\Settings;
 
+use App\Contract\SettingsInterface;
 use App\Core\Database;
 
 /**
  * Service de gestion des settings (key/value store avec chiffrement).
  */
-final class SettingsService
+final class SettingsService implements SettingsInterface
 {
     private Database $db;
     private static array $cache = [];

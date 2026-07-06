@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace App\Render;
 
+use App\Contract\HtmlInterface;
+
 /**
  * Service de rendu HTML — échappement, icônes, jargon.
  */
-final class HtmlService
+final class HtmlService implements HtmlInterface
 {
     /**
      * Échappe une valeur pour l'affichage HTML.

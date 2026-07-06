@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Contract\MailInterface;
 use App\Core\Database;
 use App\Settings\SettingsService;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -10,7 +11,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 /**
  * Service d'envoi d'emails via PHPMailer.
  */
-final class MailService
+final class MailService implements MailInterface
 {
     private Database $db;
     private SettingsService $settings;

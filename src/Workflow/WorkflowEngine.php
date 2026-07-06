@@ -8,11 +8,12 @@ use App\Forms\FieldService;
 use App\Settings\SettingsService;
 use App\Mail\MailService;
 use App\SubmissionStatus;
+use App\Contract\WorkflowInterface;
 
 /**
  * Moteur de workflow — tokens, steps, validation.
  */
-final class WorkflowEngine
+final class WorkflowEngine implements WorkflowInterface
 {
     private Database $db;
     private SettingsService $settings;

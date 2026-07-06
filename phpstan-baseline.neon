@@ -1,7 +1,7 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Offset ''admin_email'' on array\{smtp_host\: ''smtp\.social\.gouv\.fr'', smtp_port\: ''25'', smtp_from\: ''workflow@dreets…'', smtp_from_name\: ''CircuitDémat'', delai_relance_h\: ''48'', admin_email\: ''olivier\.noblanc…'', admin_email_cc\: ''dreets\-bfc…'', token_expire_days\: ''30'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			message: '#^Offset ''admin_email'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@localhost'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
 			path: classes/migrations/v16.php
@@ -169,13 +169,43 @@ parameters:
 			path: lib/render_install.php
 
 		-
-			message: '#^Offset ''admin_email'' on array\{smtp_host\: ''smtp\.social\.gouv\.fr'', smtp_port\: ''25'', smtp_from\: ''workflow@dreets…'', smtp_from_name\: ''CircuitDémat'', delai_relance_h\: ''48'', admin_email\: ''olivier\.noblanc…'', admin_email_cc\: ''dreets\-bfc…'', token_expire_days\: ''30'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			message: '#^Function get_submission_with_form_label\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: lib/workflow.php
+
+		-
+			message: '#^Function get_token_by_id_with_context\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: lib/workflow.php
+
+		-
+			message: '#^Function get_token_with_context\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: lib/workflow.php
+
+		-
+			message: '#^Function get_workflow_steps\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: lib/workflow.php
+
+		-
+			message: '#^Function resolve_dynamic_recipient\(\) has parameter \$form_data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: lib/workflow.php
+
+		-
+			message: '#^Offset ''admin_email'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@localhost'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
 			identifier: isset.offset
 			count: 1
 			path: src/Auth/AuthService.php
 
 		-
-			message: '#^Offset ''email_domain'' on array\{smtp_host\: ''smtp\.social\.gouv\.fr'', smtp_port\: ''25'', smtp_from\: ''workflow@dreets…'', smtp_from_name\: ''CircuitDémat'', delai_relance_h\: ''48'', admin_email\: ''olivier\.noblanc…'', admin_email_cc\: ''dreets\-bfc…'', token_expire_days\: ''30'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			message: '#^Offset ''email_domain'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@localhost'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
 			identifier: isset.offset
 			count: 1
 			path: src/Auth/AuthService.php
@@ -193,6 +223,24 @@ parameters:
 			path: src/Cache/CacheService.php
 
 		-
+			message: '#^Method App\\Contract\\ConditionInterface\:\:evaluate\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contract/ConditionInterface.php
+
+		-
+			message: '#^Method App\\Contract\\MailInterface\:\:buildValidationEmail\(\) has parameter \$submission with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contract/MailInterface.php
+
+		-
+			message: '#^Method App\\Contract\\WorkflowInterface\:\:resolveDynamicRecipient\(\) has parameter \$formData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
 			message: '#^Method App\\Controller\\BaseController\:\:json\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -205,7 +253,7 @@ parameters:
 			path: src/Controller/BaseController.php
 
 		-
-			message: '#^Offset ''app_name'' on array\{smtp_host\: ''smtp\.social\.gouv\.fr'', smtp_port\: ''25'', smtp_from\: ''workflow@dreets…'', smtp_from_name\: ''CircuitDémat'', delai_relance_h\: ''48'', admin_email\: ''olivier\.noblanc…'', admin_email_cc\: ''dreets\-bfc…'', token_expire_days\: ''30'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			message: '#^Offset ''app_name'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@localhost'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
 			identifier: isset.offset
 			count: 1
 			path: src/Core/Config.php
@@ -311,12 +359,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Function App\\Workflow\\every\(\) has parameter \$arr with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
 
 		-
 			message: '#^Method App\\Workflow\\WorkflowEngine\:\:resolveDynamicRecipient\(\) has parameter \$formData with no value type specified in iterable type array\.$#'

@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 namespace App\Forms;
 
+use App\Contract\FieldInterface;
 use App\Core\Database;
 
 /**
  * Service de gestion des champs de formulaire (demandeur + validateur).
  */
-final class FieldService
+final class FieldService implements FieldInterface
 {
     private Database $db;
 

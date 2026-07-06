@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 namespace App\Audit;
 
+use App\Contract\AuditInterface;
 use App\Core\Database;
 
 /**
  * Service de journalisation d'audit et sécurité.
  */
-final class AuditLogService
+final class AuditLogService implements AuditInterface
 {
     private Database $db;
 
