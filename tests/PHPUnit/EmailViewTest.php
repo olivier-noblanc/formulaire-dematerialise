@@ -41,6 +41,7 @@ final class EmailViewTest extends TestCase
         $submission = [
             'form_label' => 'Test Form',
             'submitted_by' => 'test@example.com',
+            'data' => json_encode(['name' => 'John', 'email' => 'john@example.com']),
         ];
         try {
             $html = $this->emailView->validationEmail($submission, 'Step 1', 'token123');

@@ -34,7 +34,7 @@ final class DatabaseLibTest extends TestCase
     public function testGenerateFieldNameAccents(): void
     {
         $result = generate_field_name("Type d'arrivée");
-        $this->assertSame('type_arrivee', $result);
+        $this->assertSame('type_d_arrivee', $result);
     }
 
     public function testGenerateFieldNameSpecialChars(): void

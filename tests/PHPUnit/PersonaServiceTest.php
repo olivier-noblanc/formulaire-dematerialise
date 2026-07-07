@@ -19,6 +19,11 @@ final class PersonaServiceTest extends TestCase
 
         $pdo = $this->db->getPdo();
         $pdo->exec("DELETE FROM persona_tokens");
+
+        // Seed admin user required by lookup()
+        $admin_id = generate_uuid();
+        $pdo->prepare("INSERT OR IGNORE INTO admins (id, email) VALUES (?, ?)")
+            ->execute([$admin_id, 'admin@test.com']);
     }
 
     public function testCreateTokenReturnsEmptyWithEmptyAdmin(): void
