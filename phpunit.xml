@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/phpunit_bootstrap.php"
+         colors="true"
+         stopOnFailure="false"
+         executionOrder="depends,defects">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/PHPUnit</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+            <directory suffix=".php">lib</directory>
+            <file>helpers.php</file>
+        </include>
+    </source>
+</phpunit>
