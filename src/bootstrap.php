@@ -30,6 +30,8 @@ use App\Workflow\WorkflowEngine;
 use App\Workflow\ConditionEvaluator;
 use App\Persona\PersonaService;
 use App\Token\TokenService;
+use App\Attachment\AttachmentService;
+use App\Forms\ValidatorDataService;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -72,6 +74,12 @@ $app->set(EmailView::class, new EmailView());
 // Token lifecycle service
 $tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $workflow);
 $app->set(TokenService::class, $tokenService);
+
+// Attachment service
+$app->set(AttachmentService::class, new AttachmentService($db));
+
+// Validator data service
+$app->set(ValidatorDataService::class, new ValidatorDataService($db));
 
 // Note : les méthodes statiques App::db(), App::config(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`

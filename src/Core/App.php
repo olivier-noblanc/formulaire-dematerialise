@@ -124,4 +124,14 @@ final class App
     {
         return self::getInstance()->get(\App\Token\TokenService::class);
     }
+
+    public static function validatorData(): \App\Forms\ValidatorDataService
+    {
+        return self::getInstance()->get(\App\Forms\ValidatorDataService::class);
+    }
+
+    public static function attachment(): \App\Attachment\AttachmentService
+    {
+        return self::getInstance()->get(\App\Attachment\AttachmentService::class);
+    }
 }
