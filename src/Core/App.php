@@ -134,4 +134,9 @@ final class App
     {
         return self::getInstance()->get(\App\Attachment\AttachmentService::class);
     }
+
+    public static function cron(): \App\Cron\CronService
+    {
+        return self::getInstance()->get(\App\Cron\CronService::class);
+    }
 }

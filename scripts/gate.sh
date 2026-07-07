@@ -232,6 +232,13 @@ run_step "3b. Tests échappement emails (test_mail_escaping.php)" \
     "$PHP_BIN tests/test_mail_escaping.php"
 
 # ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 3b2 — Tests cache service (tests/test_cache_service.php)
+# ═════════════════════════════════════════════════════════════════════════════
+run_step "3b2. Tests cache service (test_cache_service.php)" \
+    "test -f tests/test_cache_service.php" \
+    "$PHP_BIN tests/test_cache_service.php"
+
+# ═════════════════════════════════════════════════════════════════════════════
 # ÉTAPE 3e — Tests URLs d'email (tests/test_email_urls.php)
 # Vérifie que les liens d'email utilisent index.php?p=xxx et non xxx.php
 # ═════════════════════════════════════════════════════════════════════════════

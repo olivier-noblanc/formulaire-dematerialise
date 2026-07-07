@@ -175,3 +175,12 @@ jobs:
           else
             echo "OK: $wave_count wave test file(s) passed"
           fi
+
+      # ── 16. Tests cache service ───────────────────────────────
+      - name: Tests cache service
+        run: |
+          if [ -f tests/test_cache_service.php ]; then
+            php tests/test_cache_service.php
+          else
+            echo "SKIP: test_cache_service.php not found"
+          fi
