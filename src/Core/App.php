@@ -50,6 +50,11 @@ final class App
         $this->services[$class] = $service;
     }
 
+    public function has(string $class): bool
+    {
+        return isset($this->services[$class]);
+    }
+
     public static function db(): Database
     {
         return self::getInstance()->get(Database::class);

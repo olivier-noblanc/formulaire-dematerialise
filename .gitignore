@@ -52,3 +52,20 @@ web.config
 # PHPMailer web.config (sécurité IIS)
 web.config
 .phpstan-cache/
+
+# Code coverage
+/coverage-html/
+
+# Graphify
+/graphify-out/
+
+# PHPUnit
+/phpunit.phar
+/.phpunit.result.cache
+
+# Temporary downloads
+/pcov.zip
+/composer-setup.php
+
+# Personal TODO
+/TODO.md

@@ -25,8 +25,10 @@ use App\Cache\CacheService;
 use App\Render\HtmlService;
 use App\View\ViewRenderer;
 use App\View\EmailView;
+use App\Stats\StatsService;
 use App\Workflow\WorkflowEngine;
 use App\Workflow\ConditionEvaluator;
+use App\Persona\PersonaService;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -47,6 +49,8 @@ $app->set(AuditLogService::class, new AuditLogService($db));
 $app->set(CacheService::class, new CacheService());
 $app->set(HtmlService::class, new HtmlService());
 $app->set(ConditionEvaluator::class, new ConditionEvaluator());
+$app->set(StatsService::class, new StatsService($db));
+$app->set(PersonaService::class, new PersonaService($db));
 
 // Services avec dépendances
 $settings = $app->get(SettingsService::class);
