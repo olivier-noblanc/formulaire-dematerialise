@@ -35,6 +35,7 @@ use App\Workflow\ConditionEvaluator;
 use App\Persona\PersonaService;
 use App\Stats\StatsService;
 use App\View\ViewRenderer;
+use App\Token\TokenService;
 
 $app = App::getInstance();
 
@@ -60,4 +61,12 @@ $app->set(WorkflowEngine::class, new WorkflowEngine(
     $app->get(MailService::class),
     $app->get(FieldService::class),
     $app->get(ConditionEvaluator::class)
+));
+$app->set(TokenService::class, new TokenService(
+    $db,
+    $app->get(SettingsService::class),
+    $app->get(AuthService::class),
+    $app->get(AuditLogService::class),
+    $app->get(MailService::class),
+    $app->get(WorkflowEngine::class)
 ));
