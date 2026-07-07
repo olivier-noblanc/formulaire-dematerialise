@@ -29,6 +29,7 @@ use App\Stats\StatsService;
 use App\Workflow\WorkflowEngine;
 use App\Workflow\ConditionEvaluator;
 use App\Persona\PersonaService;
+use App\Token\TokenService;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -67,6 +68,10 @@ $html = $app->get(HtmlService::class);
 $view = new ViewRenderer($html);
 $app->set(ViewRenderer::class, $view);
 $app->set(EmailView::class, new EmailView());
+
+// Token lifecycle service
+$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $workflow);
+$app->set(TokenService::class, $tokenService);
 
 // Note : les méthodes statiques App::db(), App::config(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`
