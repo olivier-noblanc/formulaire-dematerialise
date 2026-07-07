@@ -36,6 +36,8 @@ use App\Persona\PersonaService;
 use App\Stats\StatsService;
 use App\View\ViewRenderer;
 use App\Token\TokenService;
+use App\Attachment\AttachmentService;
+use App\Forms\ValidatorDataService;
 
 $app = App::getInstance();
 
@@ -70,3 +72,5 @@ $app->set(TokenService::class, new TokenService(
     $app->get(MailService::class),
     $app->get(WorkflowEngine::class)
 ));
+$app->set(ValidatorDataService::class, new ValidatorDataService($db));
+$app->set(AttachmentService::class, new AttachmentService($db));

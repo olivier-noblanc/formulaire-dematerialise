@@ -1,0 +1,193 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Attachment;
+
+use App\Core\Database;
+
+/**
+ * Service de gestion des pièces jointes.
+ *
+ * Extrait de lib/attachments.php — upload, stockage (BLOB), et récupération
+ * des pièces jointes d'une soumission.
+ * Les fonctions globales dans lib/attachments.php délèguent maintenant ici.
+ */
+final class AttachmentService
+{
+    private Database $db;
+
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+    }
+
+    /**
+     * Types MIME autorisés pour les pièces jointes.
+     * Sécurisé : pas d'exécutables, pas de scripts.
+     * @return list<string>
+     */
+    public function getAllowedMimeTypes(): array
+    {
+        return [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'text/plain',
+            'text/csv',
+            'application/zip',
+        ];
+    }
+
+    /**
+     * Extensions autorisées (vérification supplémentaire).
+     * @return list<string>
+     */
+    public function getAllowedExtensions(): array
+    {
+        return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip'];
+    }
+
+    /**
+     * Taille maximale des fichiers en octets (10 Mo).
+     */
+    public function getMaxFileSize(): int
+    {
+        return 10 * 1024 * 1024;
+    }
+
+    /**
+     * Gère l'upload d'un fichier pour une soumission.
+     *
+     * @param array<string, mixed> $file Le tableau $_FILES['field_name']
+     * @param string $submissionId ID de la soumission
+     * @param string $fieldName Nom du champ
+     * @return array{success: bool, message: string, attachment_id: string|null}
+     */
+    public function handleFileUpload(array $file, string $submissionId, string $fieldName): array
+    {
+        // Sécurité (S-16) : limiter le nombre d'uploads par IP
+        if (!rate_limit_check('file_upload', 10, 60)) {
+            return ['success' => false, 'message' => 'Trop de téléchargements en peu de temps. Veuillez patienter.', 'attachment_id' => null];
+        }
+
+        // Vérifier les erreurs d'upload
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $errors = [
+                UPLOAD_ERR_INI_SIZE   => 'Le fichier dépasse la taille maximale autorisée par le serveur.',
+                UPLOAD_ERR_FORM_SIZE  => 'Le fichier dépasse la taille maximale autorisée par le formulaire.',
+                UPLOAD_ERR_PARTIAL    => 'Le fichier n\'a été que partiellement téléchargé.',
+                UPLOAD_ERR_NO_FILE    => 'Aucun fichier n\'a été téléchargé.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant sur le serveur.',
+                UPLOAD_ERR_CANT_WRITE => 'Erreur d\'écriture sur le serveur.',
+            ];
+            return ['success' => false, 'message' => $errors[$file['error']] ?? 'Erreur inconnue lors de l\'upload.', 'attachment_id' => null];
+        }
+
+        // Vérifier la taille
+        if ($file['size'] > $this->getMaxFileSize()) {
+            return ['success' => false, 'message' => 'Le fichier dépasse la taille maximale autorisée (10 Mo).', 'attachment_id' => null];
+        }
+
+        // Sécurité (S-06) : sanitisser le nom de fichier
+        $safeName = basename($file['name']);
+        $safeName = preg_replace('/[^a-zA-Z0-9._\-\x{00C0}-\x{024F}]/u', '_', $safeName);
+        $safeName = ltrim($safeName, '.');
+        if (empty($safeName)) {
+            $safeName = 'fichier';
+        }
+
+        // Sécurité (S-06) : vérifier les doubles extensions dangereuses
+        $dangerousExts = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'pht', 'phar', 'shtml', 'asa', 'asp', 'aspx', 'cgi', 'pl', 'py', 'rb', 'sh', 'jsp', 'war'];
+        $nameParts = explode('.', $safeName);
+        if (count($nameParts) > 2) {
+            foreach ($nameParts as $part) {
+                if (in_array(strtolower($part), $dangerousExts, true)) {
+                    app_log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — double extension dangereuse : ' . $safeName);
+                    return ['success' => false, 'message' => 'Nom de fichier non autorisé. Les doubles extensions contenant des scripts ne sont pas acceptées.', 'attachment_id' => null];
+                }
+            }
+        }
+
+        // Vérifier l'extension (dernière partie)
+        $ext = strtolower(end($nameParts));
+        if (!in_array($ext, $this->getAllowedExtensions())) {
+            return ['success' => false, 'message' => 'Type de fichier non autorisé. Extensions acceptées : ' . implode(', ', $this->getAllowedExtensions()) . '.', 'attachment_id' => null];
+        }
+
+        // Sécurité (S-06) : vérifier que l'extension n'est pas dans la liste dangereuse
+        if (in_array($ext, $dangerousExts, true)) {
+            app_log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — extension dangereuse : ' . $ext);
+            return ['success' => false, 'message' => 'Type de fichier non autorisé.', 'attachment_id' => null];
+        }
+
+        // Vérifier le type MIME
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo === false) {
+            return ['success' => false, 'message' => 'Impossible d\'analyser le type de fichier.', 'attachment_id' => null];
+        }
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        if (!in_array($mimeType, $this->getAllowedMimeTypes())) {
+            return ['success' => false, 'message' => 'Type MIME non autorisé : ' . h($mimeType === false ? '' : $mimeType) . '.', 'attachment_id' => null];
+        }
+
+        // Sécurité (S-06) : vérifier les types MIME dangereux
+        $dangerousMimes = ['application/x-php', 'text/x-php', 'application/x-httpd-php', 'application/x-sh', 'application/x-cgi', 'application/x-perl', 'application/x-python', 'text/html'];
+        if (in_array($mimeType, $dangerousMimes, true)) {
+            app_log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — MIME dangereux : ' . $mimeType . ' pour fichier ' . $safeName);
+            return ['success' => false, 'message' => 'Type de fichier non autorisé.', 'attachment_id' => null];
+        }
+
+        // Lire le contenu du fichier pour stockage BLOB
+        $fileContent = file_get_contents($file['tmp_name']);
+        if ($fileContent === false) {
+            return ['success' => false, 'message' => 'Erreur lors de la lecture du fichier.', 'attachment_id' => null];
+        }
+
+        // Enregistrer dans la base de données
+        $pdo = $this->db->getPdo();
+        $attachmentId = generate_uuid();
+        $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, '', ?, ?, ?, datetime('now'))")
+            ->execute([$attachmentId, $submissionId, $fieldName, $safeName, $mimeType, $file['size'], $fileContent]);
+
+        app_log('file_upload', 'submission:' . $submissionId, 'Fichier uploadé : ' . $safeName . ' (' . $mimeType . ', ' . $file['size'] . ' octets)');
+
+        return ['success' => true, 'message' => 'Fichier ' . $safeName . ' enregistré.', 'attachment_id' => $attachmentId];
+    }
+
+    /**
+     * Récupère les pièces jointes d'une soumission.
+     *
+     * @param string $submissionId ID de la soumission
+     * @return array<string, mixed> Liste des pièces jointes
+     */
+    public function getAttachments(string $submissionId): array
+    {
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC");
+        $stmt->execute([$submissionId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupère une pièce jointe par son ID.
+     *
+     * @param string $attachmentId ID de la pièce jointe
+     * @return array<string, mixed>|null Données de la pièce jointe ou null
+     */
+    public function getAttachmentById(string $attachmentId): ?array
+    {
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT * FROM attachments WHERE id = ?");
+        $stmt->execute([$attachmentId]);
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+}

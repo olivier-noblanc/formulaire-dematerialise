@@ -181,3 +181,5 @@ $_app->set(\App\Token\TokenService::class, new \App\Token\TokenService(
     $_mail_svc,
     $_workflow_svc
 ));
+$_app->set(\App\Forms\ValidatorDataService::class, new \App\Forms\ValidatorDataService($_db_service));
+$_app->set(\App\Attachment\AttachmentService::class, new \App\Attachment\AttachmentService($_db_service));
