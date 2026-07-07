@@ -15,15 +15,6 @@ use App\Render\HtmlService;
 
 final class AppTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        // Reset singleton for clean tests
-        $reflection = new \ReflectionClass(App::class);
-        $instance = $reflection->getProperty('instance');
-        $instance->setAccessible(true);
-        $instance->setValue(null, null);
-    }
-
     public function testGetInstanceReturnsSingleton(): void
     {
         $app1 = App::getInstance();
@@ -34,39 +25,46 @@ final class AppTest extends TestCase
     public function testSetAndGetService(): void
     {
         $app = App::getInstance();
-        $db = new Database();
-        $app->set(Database::class, $db);
-        $this->assertSame($db, $app->get(Database::class));
+        // Use a unique key to avoid clobbering bootstrap services
+        $key = 'App\\Tests\\DummyService_' . uniqid();
+        $app->set($key, new \stdClass());
+        $this->assertInstanceOf(\stdClass::class, $app->get($key));
     }
 
     public function testGetThrowsForUnregisteredService(): void
     {
         $app = App::getInstance();
         $this->expectException(\RuntimeException::class);
-        $app->get('NonExistentService');
+        $app->get('App\\NonExistent\\Service_' . uniqid());
     }
 
     public function testStaticDbMethod(): void
     {
-        $app = App::getInstance();
-        $app->set(Database::class, new Database());
         $db = App::db();
         $this->assertInstanceOf(Database::class, $db);
     }
 
     public function testStaticConfigMethod(): void
     {
-        $app = App::getInstance();
-        $app->set(Config::class, new Config());
         $config = App::config();
         $this->assertInstanceOf(Config::class, $config);
     }
 
     public function testStaticHtmlMethod(): void
     {
-        $app = App::getInstance();
-        $app->set(HtmlService::class, new HtmlService());
         $html = App::html();
         $this->assertInstanceOf(HtmlService::class, $html);
+    }
+
+    public function testHasReturnsTrueForRegisteredService(): void
+    {
+        $app = App::getInstance();
+        $this->assertTrue($app->has(Database::class));
+    }
+
+    public function testHasReturnsFalseForUnregisteredService(): void
+    {
+        $app = App::getInstance();
+        $this->assertFalse($app->has('App\\NonExistent\\Service_' . uniqid()));
     }
 }

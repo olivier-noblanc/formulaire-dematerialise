@@ -32,6 +32,9 @@ use App\Mail\MailService;
 use App\Forms\FieldService;
 use App\Workflow\WorkflowEngine;
 use App\Workflow\ConditionEvaluator;
+use App\Persona\PersonaService;
+use App\Stats\StatsService;
+use App\View\ViewRenderer;
 
 $app = App::getInstance();
 
@@ -48,6 +51,9 @@ $db = new Database();
     $app->set(MailService::class, new MailService($db, $app->get(SettingsService::class)));
     $app->set(FieldService::class, new FieldService($db));
     $app->set(ConditionEvaluator::class, new ConditionEvaluator());
+    $app->set(PersonaService::class, new PersonaService($db));
+    $app->set(StatsService::class, new StatsService($db));
+    $app->set(ViewRenderer::class, new ViewRenderer($app->get(HtmlService::class)));
 $app->set(WorkflowEngine::class, new WorkflowEngine(
     $db,
     $app->get(SettingsService::class),

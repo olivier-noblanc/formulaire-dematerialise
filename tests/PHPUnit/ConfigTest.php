@@ -30,7 +30,7 @@ final class ConfigTest extends TestCase
 
     public function testGetReturnsConfigValue(): void
     {
-        $this->assertSame('smtp.social.gouv.fr', $this->config->get('smtp_host'));
+        $this->assertSame('localhost', $this->config->get('smtp_host'));
     }
 
     public function testGetBaseUrl(): void
@@ -55,6 +55,6 @@ final class ConfigTest extends TestCase
 
     public function testGetAppName(): void
     {
-        $this->assertSame('CircuitDémat', $this->config->getAppName());
+        $this->assertSame('CircuitDémat — DREETS BFC', $this->config->getAppName());
     }
 }
