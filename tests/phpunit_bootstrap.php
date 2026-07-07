@@ -37,6 +37,7 @@ use App\Stats\StatsService;
 use App\View\ViewRenderer;
 use App\Token\TokenService;
 use App\Attachment\AttachmentService;
+use App\Cron\CronService;
 use App\Forms\ValidatorDataService;
 
 $app = App::getInstance();
@@ -74,3 +75,4 @@ $app->set(TokenService::class, new TokenService(
 ));
 $app->set(ValidatorDataService::class, new ValidatorDataService($db));
 $app->set(AttachmentService::class, new AttachmentService($db));
+$app->set(CronService::class, new CronService($db));
