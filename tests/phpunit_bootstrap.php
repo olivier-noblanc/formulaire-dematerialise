@@ -43,6 +43,8 @@ use App\Core\MigrationService;
 use App\Webhook\WebhookService;
 use App\Repository\SettingsRepository;
 use App\Repository\AuditRepository;
+use App\Repository\AdminRepository;
+use App\Repository\FormRepository;
 use App\Repository\AttachmentRepository;
 
 $app = App::getInstance();
@@ -54,6 +56,8 @@ $db = new Database();
     $app->set(SettingsService::class, new SettingsService($db));
     $app->set(SettingsRepository::class, new SettingsRepository($db));
     $app->set(AuditRepository::class, new AuditRepository($db));
+    $app->set(AdminRepository::class, new AdminRepository($db));
+    $app->set(FormRepository::class, new FormRepository($db));
     $app->set(AttachmentRepository::class, new AttachmentRepository($db));
     $app->set(AuthService::class, new AuthService($db));
     $app->set(CacheService::class, new CacheService());
