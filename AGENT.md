@@ -9,7 +9,7 @@ Guide technique pour agents IA travaillant sur le codebase CircuitDémat.
 Les repositories centralisent l'accès aux données. Ne pas utiliser `get_pdo()` directement.
 
 ### Fichiers
-- `src/Repository/BaseRepository.php` — Abstract avec helpers CRUD
+- `src/Repository/BaseRepository.php` — Abstract avec helpers `fetchOne()`, `fetchAll()`, `execute()`, `lastInsertId()`
 - `src/Repository/FormRepository.php` — forms + form_fields + form_owners
 - `src/Repository/SubmissionRepository.php` — submissions + validator_data
 - `src/Repository/TokenRepository.php` — tokens + delegations
@@ -28,3 +28,37 @@ $form = $repo->findById($id);
 // Dans un service
 public function __construct(private FormRepository $forms) {}
 ```
+
+---
+
+## Services (via DI container)
+
+Tous les services sont enregistrés dans `src/bootstrap.php` et accessibles via `App::serviceName()`.
+
+### Services existants
+| Service | Classe | Static accessor |
+|---------|--------|----------------|
+| Auth | `App\Auth\AuthService` | `App::auth()` |
+| Settings | `App\Settings\SettingsService` | `App::settings()` |
+| Security | `App\Security\SecurityService` | `App::security()` |
+| Mail | `App\Mail\MailService` | `App::mail()` |
+| Audit | `App\Audit\AuditLogService` | `App::audit()` |
+| Cache | `App\Cache\CacheService` | `App::cache()` |
+| Html | `App\Render\HtmlService` | `App::html()` |
+| Workflow | `App\Workflow\WorkflowEngine` | `App::workflow()` |
+| Token | `App\Token\TokenService` | `App::token()` |
+| ValidatorData | `App\Forms\ValidatorDataService` | `App::validatorData()` |
+| Attachment | `App\Attachment\AttachmentService` | `App::attachment()` |
+| Cron | `App\Cron\CronService` | `App::cron()` |
+| Webhook | `App\Webhook\WebhookService` | `App::webhook()` |
+| Fields | `App\Forms\FieldService` | `App::fields()` |
+
+### Nouveaux services (v10.5.0)
+| Service | Classe | Static accessor | Description |
+|---------|--------|----------------|-------------|
+| Validation | `App\Validation\ValidationService` | `App::validation()` | Validation/sanitisation d'entrées (uuid, email, slug, action, status, int, date, token) |
+| EmailVerification | `App\Email\EmailVerificationService` | `App::emailVerify()` | Vérification email LDAP + SMTP |
+| Export | `App\Export\ExportService` | `App::export()` | Export CSV streamé des soumissions |
+
+### Règle
+Toujours utiliser `App::serviceName()` ou injecter via constructeur. Ne jamais instancier un service directement (`new XxxService(...)`) hors de `src/bootstrap.php`.
