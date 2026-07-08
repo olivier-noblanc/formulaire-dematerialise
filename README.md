@@ -3,7 +3,7 @@
 > Système de validation dématérialisé pour la DREETS Bourgogne-Franche-Comté.
 > Workflows de formulaires, suivi en temps réel, alertes automatiques J-N, supervision complète.
 
-**Version 10.0.9** | PHP 8.4 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
+**Version 10.3.0** | PHP 8.4 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
 
 ---
 
@@ -74,7 +74,7 @@ chacun valide ou refuse à son rythme — le système trace, relance et alerte a
 | Authentification | Windows Auth (IIS + Kerberos) via `$_SERVER['AUTH_USER']` |
 | Mail | PHPMailer (seule dépendance vendored) |
 | Tâches planifiées | **Lazy cron** intégré (depuis v4.2.0) — `remind.php` et `alert_check.php` s'exécutent au premier accès PDO, aucun Planificateur de tâches Windows requis |
-| Sécurité | CSRF, PDO prepared statements, rate limiting, chiffrement AES-256-CBC des settings sensibles, headers HTTP complets (CSP, HSTS, X-Frame-Options) |
+| Sécurité | CSRF, PDO prepared statements, chiffrement AES-256-CBC des settings sensibles, headers HTTP complets (CSP, HSTS, X-Frame-Options), rate limiting IIS natif |
 
 ### Principes
 
@@ -130,7 +130,7 @@ Le script sauvegarde automatiquement l'existant et préserve `config.php`.
 | Journal d'audit | Toutes les actions administratives tracées dans `audit_log` + `security_log()` |
 | Chiffrement au repos | AES-256-CBC pour `smtp_pass`, `ldap_bind_pass`, `webhook_secret`, `app_test_secret` (clé via `APP_ENCRYPTION_KEY`) |
 | Headers HTTP | CSP, HSTS (HTTPS), X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy |
-| Rate limiting | Sur endpoints sensibles (download, CSV export, form creation, send_mail, validate_token, ldap_suggest…) |
+| Rate limiting | Géré nativement par IIS (pas de duplication PHP) |
 | Protection répertoires | `db/`, `classes/`, `PHPMailer/` bloqués via `web.config` IIS |
 | Mode TEST sécurisé | Activation par variable d'environnement `APP_TEST_MODE` ou `APP_TEST_SECRET` (header seul bloqué en prod depuis v5.20.0) |
 
