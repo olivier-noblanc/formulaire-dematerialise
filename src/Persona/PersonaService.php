@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Persona;
 
+use App\Core\App;
 use App\Core\Database;
 
 /**
@@ -55,9 +56,7 @@ final class PersonaService
             ");
             $stmt->execute([$id, $token, $admin_email, $target_email, $expires_at]);
 
-            if (function_exists('app_log')) {
-                app_log('persona_create', 'admin:' . $admin_email, "Persona créé pour $target_email (expire $expires_at)");
-            }
+            App::audit()->log('persona_create', 'admin:' . $admin_email, "Persona créé pour $target_email (expire $expires_at)", '');
             return $token;
         } catch (\Throwable $e) {
             error_log('persona_create_token error: ' . $e->getMessage());
@@ -128,8 +127,8 @@ final class PersonaService
             ");
             $stmt->execute([$token]);
             $revoked = $stmt->rowCount() > 0;
-            if ($revoked && function_exists('app_log')) {
-                app_log('persona_revoke', 'token:' . substr($token, 0, 8) . '…', "Persona révoqué");
+            if ($revoked) {
+                App::audit()->log('persona_revoke', 'token:' . substr($token, 0, 8) . '…', "Persona révoqué", '');
             }
             return $revoked;
         } catch (\Throwable $e) {

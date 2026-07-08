@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Core\App;
+
 /**
  * Contrôleur du tableau de bord administrateur (dashboard.php).
  *
@@ -80,7 +82,7 @@ final class DashboardController extends BaseController
                         ? 'valide'
                         : ($filtre === 'refuse' ? 'refuse' : ''));
             }
-            app_log('export_csv', '', 'Export CSV des soumissions');
+            \App\Core\App::audit()->log('export_csv', '', 'Export CSV des soumissions', '');
             export_csv($pdo, $options);
         }
 

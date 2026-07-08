@@ -144,4 +144,9 @@ final class App
     {
         return self::getInstance()->get(MigrationService::class);
     }
+
+    public static function webhook(): \App\Webhook\WebhookService
+    {
+        return self::getInstance()->get(\App\Webhook\WebhookService::class);
+    }
 }

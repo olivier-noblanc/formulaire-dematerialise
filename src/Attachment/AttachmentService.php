@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Attachment;
 
+use App\Core\App;
 use App\Core\Database;
 
 /**
@@ -109,7 +110,7 @@ final class AttachmentService
         if (count($nameParts) > 2) {
             foreach ($nameParts as $part) {
                 if (in_array(strtolower($part), $dangerousExts, true)) {
-                    app_log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — double extension dangereuse : ' . $safeName);
+                    App::audit()->log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — double extension dangereuse : ' . $safeName, '');
                     return ['success' => false, 'message' => 'Nom de fichier non autorisé. Les doubles extensions contenant des scripts ne sont pas acceptées.', 'attachment_id' => null];
                 }
             }
@@ -123,7 +124,7 @@ final class AttachmentService
 
         // Sécurité (S-06) : vérifier que l'extension n'est pas dans la liste dangereuse
         if (in_array($ext, $dangerousExts, true)) {
-            app_log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — extension dangereuse : ' . $ext);
+            App::audit()->log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — extension dangereuse : ' . $ext, '');
             return ['success' => false, 'message' => 'Type de fichier non autorisé.', 'attachment_id' => null];
         }
 
@@ -141,7 +142,7 @@ final class AttachmentService
         // Sécurité (S-06) : vérifier les types MIME dangereux
         $dangerousMimes = ['application/x-php', 'text/x-php', 'application/x-httpd-php', 'application/x-sh', 'application/x-cgi', 'application/x-perl', 'application/x-python', 'text/html'];
         if (in_array($mimeType, $dangerousMimes, true)) {
-            app_log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — MIME dangereux : ' . $mimeType . ' pour fichier ' . $safeName);
+            App::audit()->log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — MIME dangereux : ' . $mimeType . ' pour fichier ' . $safeName, '');
             return ['success' => false, 'message' => 'Type de fichier non autorisé.', 'attachment_id' => null];
         }
 
@@ -157,7 +158,7 @@ final class AttachmentService
         $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, '', ?, ?, ?, datetime('now'))")
             ->execute([$attachmentId, $submissionId, $fieldName, $safeName, $mimeType, $file['size'], $fileContent]);
 
-        app_log('file_upload', 'submission:' . $submissionId, 'Fichier uploadé : ' . $safeName . ' (' . $mimeType . ', ' . $file['size'] . ' octets)');
+        App::audit()->log('file_upload', 'submission:' . $submissionId, 'Fichier uploadé : ' . $safeName . ' (' . $mimeType . ', ' . $file['size'] . ' octets)', '');
 
         return ['success' => true, 'message' => 'Fichier ' . $safeName . ' enregistré.', 'attachment_id' => $attachmentId];
     }
