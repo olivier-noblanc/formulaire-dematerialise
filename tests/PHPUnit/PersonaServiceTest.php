@@ -14,7 +14,7 @@ final class PersonaServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->db = new Database();
+        $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->persona = new PersonaService($this->db);
 
         $pdo = $this->db->getPdo();

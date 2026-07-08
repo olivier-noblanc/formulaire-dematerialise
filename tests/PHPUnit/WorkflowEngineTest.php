@@ -18,7 +18,7 @@ final class WorkflowEngineTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->db = new Database();
+        $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $settings = new SettingsService($this->db);
         $mail = new MailService($this->db, $settings);
         $fields = new FieldService($this->db);
