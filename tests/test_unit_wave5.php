@@ -56,7 +56,7 @@ test('Régression T-01 : aucun generate_uuid() dans une requête SQL SQLite', fu
 
 // ── 13.2 admin_alerts.php POST add_rule : UUID bindé côté PHP (T-01) ──
 test('admin_alerts.php POST add_rule : crée une règle avec UUID valide (T-01)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     // Réplique exacte de admin_alerts.php:43-47 (post-fix R2-CTO) :
@@ -89,7 +89,7 @@ test('admin_alerts.php POST add_rule : crée une règle avec UUID valide (T-01)'
 
 // ── 13.3 alert_check.php CLI : alerte J-3 envoyée, loggée, dédoublonnée (T-01/P-01/O-02) ──
 test('alert_check.php CLI : alerte J-3 envoyée et loggée avec UUID (T-01/P-01/O-02)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     // Setup : règle J-3 avec email custom unique (isole des autres règles seeded)
@@ -129,7 +129,7 @@ test('alert_check.php CLI : alerte J-3 envoyée et loggée avec UUID (T-01/P-01/
     // 1ère exécution
     $out1 = shell_exec("env $env $php_cmd $alert_check 2>&1");
     // Reconnecter pour vérifier les résultats
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $errors = [];
     // Vérif 1 : pas de régression T-01 ("no such function: generate_uuid")
     if (strpos($out1 ?? '', 'no such function: generate_uuid') !== false) {
@@ -155,7 +155,7 @@ test('alert_check.php CLI : alerte J-3 envoyée et loggée avec UUID (T-01/P-01/
     // 2e exécution : déduplication (pas de doublon en alert_log)
     release_pdo();
     $out2 = shell_exec("env $env $php_cmd $alert_check 2>&1");
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $log_count_2 = (int)$pdo->query('SELECT COUNT(*) FROM alert_log WHERE rule_id = ' . $pdo->quote($rule_id))->fetchColumn();
     if ($log_count_2 !== $log_count_1) {
         $errors[] = "Déduplication cassée : alert_log count $log_count_1 → $log_count_2 après 2e exécution";
@@ -175,26 +175,26 @@ test('release_pdo() existe et retourne void (T-19)', function() {
 });
 
 test('release_pdo() préserve le singleton avant release (T-19)', function() {
-    $pdo1 = get_pdo();
-    $pdo2 = get_pdo();
+    $pdo1 = \App\Core\App::db()->getPdo();
+    $pdo2 = \App\Core\App::db()->getPdo();
     return ($pdo1 === $pdo2) ? true : 'Singleton cassé : get_pdo() retourne des instances différentes';
 });
 
 test('release_pdo() : get_pdo() retourne une nouvelle instance après release (T-19)', function() {
-    $pdo1 = get_pdo();
+    $pdo1 = \App\Core\App::db()->getPdo();
     release_pdo();
-    $pdo2 = get_pdo();
+    $pdo2 = \App\Core\App::db()->getPdo();
     return ($pdo1 !== $pdo2) ? true : 'get_pdo() retourne la même instance après release_pdo()';
 });
 
 test('release_pdo() met $GLOBALS[_pdo_test] à null (T-19)', function() {
-    get_pdo();
+    \App\Core\App::db()->getPdo();
     release_pdo();
     return (!isset($GLOBALS['_pdo_test']) || $GLOBALS['_pdo_test'] === null) ? true : "\$GLOBALS['_pdo_test'] non null après release_pdo()";
 });
 
 test('release_pdo() idempotente : 2 appels successifs ne lèvent pas d\'erreur (T-19)', function() {
-    get_pdo();
+    \App\Core\App::db()->getPdo();
     try {
         release_pdo();
         release_pdo(); // 2e appel : $GLOBALS['_pdo_test'] déjà null
@@ -205,7 +205,7 @@ test('release_pdo() idempotente : 2 appels successifs ne lèvent pas d\'erreur (
 });
 
 test('release_pdo() rollback une transaction en cours (T-19)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $marker = 'rollback_r2_tester_' . bin2hex(random_bytes(4));
@@ -222,7 +222,7 @@ test('release_pdo() rollback une transaction en cours (T-19)', function() {
     // release_pdo() doit rollbacker la transaction et libérer la connexion
     release_pdo();
     // Rouvrir une connexion et vérifier que la ligne a été rollbackée
-    $pdo2 = get_pdo();
+    $pdo2 = \App\Core\App::db()->getPdo();
     $after = (int)$pdo2->query('SELECT COUNT(*) FROM alert_rules WHERE label = ' . $pdo2->quote($marker))->fetchColumn();
     // Cleanup (au cas où le rollback n'aurait pas marché)
     $pdo2->prepare("DELETE FROM alert_rules WHERE label = ?")->execute([$marker]);

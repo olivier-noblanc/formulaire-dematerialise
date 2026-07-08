@@ -38,7 +38,7 @@ echo "── Test persona token-based (v10.0.0) ──\n";
 // ── Test 1 : Table persona_tokens existe ──
 echo "\n── Test 1 : Table persona_tokens existe ──\n";
 try {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $count = (int)$pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_tokens'")->fetchColumn();
     check_p('Table persona_tokens existe', $count === 1);
 } catch (\Throwable $e) {
@@ -52,7 +52,7 @@ $target_email = 'agent.test@exemple.invalid';
 
 // Insérer l'admin test en DB (persona_lookup vérifie qu'il est encore admin)
 try {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $existing = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
     $existing->execute([$admin_email]);
     if (!$existing->fetchColumn()) {

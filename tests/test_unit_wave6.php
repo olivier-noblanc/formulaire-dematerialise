@@ -19,7 +19,7 @@ echo "── 14. Tests Wave 6 — S2-CTO (Brouillons P-02 + Indicateur progressi
 // v12 est skippée. On crée la table ici (CREATE TABLE IF NOT EXISTS — idempotent)
 // pour permettre aux tests de s'exécuter sans dépendre d'un reset DB.
 test('Setup : table drafts existe en DB test (P-02)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS drafts (
             id TEXT PRIMARY KEY NOT NULL,
@@ -39,7 +39,7 @@ test('Setup : table drafts existe en DB test (P-02)', function() {
 
 // ── 14.1 save_draft() crée un nouveau brouillon avec un UUID v4 valide ──
 test('save_draft() crée un brouillon avec UUID v4 valide (P-02)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $user = 's2_cto_draft_create_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
@@ -68,7 +68,7 @@ test('save_draft() crée un brouillon avec UUID v4 valide (P-02)', function() {
 
 // ── 14.2 get_draft() récupère le brouillon avec les bonnes données ──
 test('get_draft() récupère un brouillon par son ID (P-02)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $user = 's2_cto_draft_get_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
@@ -90,7 +90,7 @@ test('get_draft() récupère un brouillon par son ID (P-02)', function() {
 
 // ── 14.3 save_draft() met à jour un brouillon existant (upsert via draft_id) — reprise brouillon ──
 test('save_draft() met à jour un brouillon existant via draft_id (P-02 — reprise)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $user = 's2_cto_draft_update_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
@@ -117,7 +117,7 @@ test('save_draft() met à jour un brouillon existant via draft_id (P-02 — repr
 
 // ── 14.4 list_drafts() retourne les brouillons de l'utilisateur avec form_label/slug ──
 test('list_drafts() retourne les brouillons avec form_label/slug (P-02)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $user = 's2_cto_draft_list_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
@@ -146,7 +146,7 @@ test('list_drafts() retourne les brouillons avec form_label/slug (P-02)', functi
 
 // ── 14.5 delete_draft() supprime le brouillon — suppression brouillon ──
 test('delete_draft() supprime un brouillon appartenant à l\'utilisateur (P-02)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $user = 's2_cto_draft_del_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
@@ -166,7 +166,7 @@ test('delete_draft() supprime un brouillon appartenant à l\'utilisateur (P-02)'
 
 // ── 14.6 delete_draft() refuse de supprimer un brouillon appartenant à un autre user (sécurité) ──
 test('delete_draft() refuse la suppression d\'un brouillon d\'autrui (P-02 — sécurité)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $owner = 's2_cto_draft_owner_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
@@ -189,7 +189,7 @@ test('delete_draft() refuse la suppression d\'un brouillon d\'autrui (P-02 — s
 
 // ── 14.7 save_draft() ne peut pas updater un brouillon d'autrui (sécurité — vol d'ID) ──
 test('save_draft() avec draft_id d\'autrui crée un nouveau brouillon (P-02 — sécurité)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $owner = 's2_cto_save_owner_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
@@ -226,7 +226,7 @@ test('get_draft() retourne null pour un ID vide (P-02 — robustesse)', function
 
 // ── 14.10 cleanup_old_drafts() supprime les brouillons de plus de N jours ──
 test('cleanup_old_drafts() supprime les brouillons > 30 jours (P-02 — cron)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $user = 's2_cto_cleanup_' . bin2hex(random_bytes(4)) . '@exemple.invalid';

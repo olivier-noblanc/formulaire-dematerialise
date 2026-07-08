@@ -182,7 +182,7 @@ test('resolve_dynamic_recipient() référence non résolue', function() {
 });
 
 test('is_form_owner() avec email non-propriétaire', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
     $result = is_form_owner($form_id, 'nobody@exemple.invalid');
@@ -190,7 +190,7 @@ test('is_form_owner() avec email non-propriétaire', function() {
 });
 
 test('get_form_owners() retourne un tableau', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
     $owners = get_form_owners($form_id);

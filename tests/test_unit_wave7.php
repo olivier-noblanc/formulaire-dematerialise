@@ -17,7 +17,7 @@ echo "── 15. Tests Wave 7 — S3-TESTER (submission_view.php E2E + anti-rég
 // ── 15.0 Setup : la table delegations a une colonne token_id (pas from_token_id) ──
 // Test positif qui documente la découverte clé du S3-TESTER : la colonne réelle est `token_id`.
 test('Setup : la table delegations a une colonne token_id (pas from_token_id)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $cols = $pdo->query("PRAGMA table_info(delegations)")->fetchAll(PDO::FETCH_COLUMN, 1);
     $has_token_id = in_array('token_id', $cols, true);
     $has_from_token_id = in_array('from_token_id', $cols, true);
@@ -33,7 +33,7 @@ test('get_delegations() retourne un tableau vide pour une soumission sans délé
     //   La fonction lève "no such column: d.from_token_id" AVANT même de filtrer les rows,
     //   car la colonne est résolue au prepare/execute du JOIN.
     //   TODO S4 : remplacer `d.from_token_id` par `d.token_id` (colonne réelle) dans helpers.php:3034.
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // Récupérer une soumission qui existe (sans délégation connue)
     $sub_id = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
     if (!$sub_id) return 'Aucune soumission en DB test pour le test';
@@ -57,7 +57,7 @@ test('get_delegations() retourne les délégations correctes pour une soumission
     //   TODO S4 : remplacer `d.from_token_id` par `d.token_id` dans helpers.php:3034.
     //   Note : la spec listait `from_token_id` dans les colonnes attendues, mais le schéma
     //   réel a `token_id` — cette assertion sera satisfaite quand le bug sera résolu.
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // Créer une soumission + délégation pour vérifier count, colonnes, ordre
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
@@ -141,7 +141,7 @@ test('submission_view.php rend une page 200 OK pour un ID de soumission valide (
     // ⚠ Ce test ÉCHOUE actuellement à cause du bug S2-TESTER — submission_view.php:555 appelle
     //   get_delegations() qui lève une PDOException, crashant la page (HTTP 500 implicite).
     //   TODO S4 : remplacer `d.from_token_id` par `d.token_id` dans helpers.php:3034.
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $sub_id = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
     if (!$sub_id) return 'Aucune soumission en DB test pour le test';
     // Construire le script subprocess
@@ -284,7 +284,7 @@ test('submission_view.php gère un ID valide d\'un autre utilisateur (redirect p
     // (get_delegations), donc ce test n'est PAS impacté par le bug S2-TESTER.
     // Note spec/impl : la spec mentionnait "rend 403" — l'implémentation actuelle fait un
     // redirect 302 vers dashboard.php. Ce test valide le comportement réel (302 + pas de fuite).
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // Récupérer une soumission dont le submitted_by est connu
     $row = $pdo->query("SELECT id, submitted_by FROM submissions LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     if (!$row) return 'Aucune soumission en DB test pour le test';
@@ -366,7 +366,7 @@ test('Runtime anti-régression : get_delegations() retourne une délégation fac
     // puis appelle get_delegations() (qui JOIN sur `from_token_id` — colonne inexistante).
     // ⚠ Ce test ÉCHOUE à cause du bug S2-TESTER. Il démontre explicitement la régression.
     //   TODO S4 : remplacer `d.from_token_id` par `d.token_id` dans helpers.php:3034.
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $onb_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$onb_id) return 'Form onboarding non trouvé en DB test';
     $sub_id = generate_uuid();

@@ -286,7 +286,7 @@ echo "\n";
 echo "── 6. Accès aux données ──\n";
 
 test('get_form_fields() retourne un tableau pour un form_id valide', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
     $fields = get_form_fields($form_id);
@@ -294,7 +294,7 @@ test('get_form_fields() retourne un tableau pour un form_id valide', function() 
 });
 
 test('get_workflow_steps() retourne un tableau pour un form_id valide', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
     $steps = get_workflow_steps($form_id);
@@ -320,7 +320,7 @@ test('get_global_stats() total = en_cours + valide + refuse', function() {
 });
 
 test('get_form_by_uuid() avec UUID valide', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
     $form = get_form_by_uuid($form_id);
@@ -334,31 +334,31 @@ test('get_form_by_uuid() avec UUID invalide retourne null', function() {
 
 test('get_setting() / set_setting() round-trip', function() {
     $key = 'test_unit_' . bin2hex(random_bytes(4));
-    set_setting($key, 'valeur_test');
-    $val = get_setting($key);
+    \App\Core\App::settings()->set($key, 'valeur_test');
+    $val = \App\Core\App::settings()->get($key);
     // Clean up
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $pdo->prepare("DELETE FROM settings WHERE key = ?")->execute([$key]);
     return $val === 'valeur_test' ? true : "Got: $val";
 });
 
 test('get_setting() avec clé inexistante retourne défaut', function() {
-    $val = get_setting('cle_inexistante_' . bin2hex(random_bytes(4)), 'default_val');
+    $val = \App\Core\App::settings()->get('cle_inexistante_' . bin2hex(random_bytes(4)), 'default_val');
     return $val === 'default_val' ? true : "Got: $val";
 });
 
 test('get_setting() smtp_host existe', function() {
-    $val = get_setting('smtp_host');
+    $val = \App\Core\App::settings()->get('smtp_host');
     return !empty($val) ? true : 'smtp_host vide';
 });
 
 test('get_setting() admin_email existe', function() {
-    $val = get_setting('admin_email');
+    $val = \App\Core\App::settings()->get('admin_email');
     return !empty($val) && strpos($val, '@') !== false ? true : "admin_email invalide: $val";
 });
 
 test('has_active_submissions() retourne un entier', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
     $result = has_active_submissions($form_id);
@@ -366,9 +366,9 @@ test('has_active_submissions() retourne un entier', function() {
 });
 
 test('app_log() écrit dans l\'audit', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $before = $pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
-    app_log('test_unit', 'test_target', 'Test unitaire détaillé');
+    \App\Core\App::audit()->log('test_unit', 'test_target', 'Test unitaire détaillé');
     $after = $pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
     return $after > $before ? true : 'Audit log non incrémenté';
 });
@@ -487,21 +487,21 @@ echo "── 8. Sécurité ──\n";
 test('SQL injection résistance sur get_form_by_uuid()', function() {
     $result = get_form_by_uuid("'; DROP TABLE forms; --");
     // La table forms doit toujours exister
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $check = $pdo->query("SELECT COUNT(*) FROM forms")->fetchColumn();
     return $check > 0 ? true : 'Table forms potentiellement affectée';
 });
 
 test('SQL injection résistance sur get_form_fields()', function() {
     $result = get_form_fields("1 OR 1=1");
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $check = $pdo->query("SELECT COUNT(*) FROM forms")->fetchColumn();
     return $check > 0 ? true : 'Table forms potentiellement affectée';
 });
 
 test('SQL injection résistance sur get_workflow_steps()', function() {
     $result = get_workflow_steps("'; DROP TABLE steps; --");
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $check = $pdo->query("SELECT COUNT(*) FROM steps")->fetchColumn();
     return $check > 0 ? true : 'Table steps potentiellement affectée';
 });

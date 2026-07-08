@@ -33,7 +33,7 @@ echo "╚═══════════════════════�
 // ═══════════════════════════════════════════════════
 // Helper: get onboarding form ID for DB tests
 // ═══════════════════════════════════════════════════
-$pdo = get_pdo();
+$pdo = \App\Core\App::db()->getPdo();
 $onboarding_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
 
 // ═══════════════════════════════════════════════════
