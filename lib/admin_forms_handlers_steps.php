@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use App\Core\App;
 
 /**
  * POST handlers admin_forms.php — Étapes de validation et destinataires.
@@ -38,7 +39,7 @@ function handle_admin_action_add_step(PDO $pdo): array {
         $new_step_id = generate_uuid();
         $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)")
             ->execute([$new_step_id, $form_id, $label, $ordre]);
-        app_log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
+        App::audit()->log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id) . '#step-' . urlencode($new_step_id)];
     } catch (PDOException $e) {
         $result['error'] = 'Erreur lors de l\'ajout de l\'étape : ' . $e->getMessage();
@@ -94,7 +95,7 @@ function handle_admin_action_update_step(PDO $pdo, string $get_form_id): array {
     try {
         $pdo->prepare("UPDATE steps SET label = ?, ordre = ?, actif = ?, `condition` = ? WHERE id = ?")
             ->execute([$label, $ordre, $actif, $condition_json, $step_id]);
-        app_log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
+        App::audit()->log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de la mise à jour de l\'étape : ' . $e->getMessage()];
@@ -138,14 +139,14 @@ function handle_admin_action_add_recipient(PDO $pdo, string $get_form_id): array
     // Accepter soit une adresse email valide, soit une référence dynamique {{field_name}}
     $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email);
     if (!$is_dynamic && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        return ['error' => 'Le destinataire "' . h($email) . '" n\'est ni une adresse email valide ni une référence dynamique {{field_name}}. Format attendu : prenom.nom@' . get_setting('email_domain', 'exemple.invalid') . ' ou {{nom_du_champ}}'];
+        return ['error' => 'Le destinataire "' . h($email) . '" n\'est ni une adresse email valide ni une référence dynamique {{field_name}}. Format attendu : prenom.nom@' . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . ' ou {{nom_du_champ}}'];
     }
     try {
         $new_rcpt_id = generate_uuid();
         $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
             ->execute([$new_rcpt_id, $step_id, $email]);
         $label = $is_dynamic ? "Destinataire dynamique $email ajouté" : "Destinataire $email ajouté";
-        app_log('recipient_add', 'step:' . $step_id, $label);
+        App::audit()->log('recipient_add', 'step:' . $step_id, $label);
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de l\'ajout du destinataire : ' . $e->getMessage()];

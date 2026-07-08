@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use App\Core\App;
 
 /**
  * POST handlers admin_forms.php — Formulaires, Champs, Propriétaires, JSON.
@@ -82,7 +83,7 @@ function handle_admin_action_add_form(PDO $pdo): array {
         $slug = generate_slug($label);
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$new_form_id, $slug, $label, $description]);
-        app_log('form_create', 'form:' . $new_form_id, "Formulaire '$label' créé (slug auto: $slug)");
+        App::audit()->log('form_create', 'form:' . $new_form_id, "Formulaire '$label' créé (slug auto: $slug)");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_form_id)];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de l\'ajout du formulaire : ' . $e->getMessage()];
@@ -113,7 +114,7 @@ function handle_admin_action_update_form(PDO $pdo): array {
         $slug = generate_slug($label, (string)$form_id);
         $pdo->prepare("UPDATE forms SET slug = ?, label = ?, description = ?, actif = ? WHERE id = ?")
             ->execute([$slug, $label, $description, $actif, $form_id]);
-        app_log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
+        App::audit()->log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id)];
     } catch (PDOException $e) {
         $result['error'] = 'Erreur lors de la mise à jour du formulaire : ' . $e->getMessage();
@@ -147,7 +148,7 @@ function handle_admin_action_delete_form(PDO $pdo): array {
     try {
         $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$form_id]);
         $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$form_id]);
-        app_log('form_delete', 'form:' . $form_id, "Formulaire supprimé");
+        App::audit()->log('form_delete', 'form:' . $form_id, "Formulaire supprimé");
         return ['redirect' => 'index.php?p=admin_forms'];
     } catch (PDOException $e) {
         $result['error'] = 'Erreur lors de la suppression du formulaire : ' . $e->getMessage();
@@ -206,7 +207,7 @@ function handle_admin_action_duplicate_form(PDO $pdo): array {
         }
     }
 
-    app_log('form_duplicate', 'form:' . $new_id, 'Formulaire dupliqué');
+    App::audit()->log('form_duplicate', 'form:' . $new_id, 'Formulaire dupliqué');
     return [
         'redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_id),
         'success' => 'Formulaire dupliqué avec succès.',
@@ -253,7 +254,7 @@ function handle_admin_action_add_field(PDO $pdo): array {
         $new_field_id = generate_uuid();
         $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$new_field_id, $form_id, $ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_hint, $ff_required, $ff_ordre, $ff_card_group, $ff_filled_by, $ff_validator_step, $ff_visibility]);
-        app_log('field_add', 'form:' . $form_id, "Champ '$ff_label' ajouté");
+        App::audit()->log('field_add', 'form:' . $form_id, "Champ '$ff_label' ajouté");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#field-' . urlencode($new_field_id)];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de l\'ajout du champ : ' . $e->getMessage()];
@@ -298,7 +299,7 @@ function handle_admin_action_update_field(PDO $pdo): array {
 
         $pdo->prepare("UPDATE form_fields SET label = ?, field_type = ?, field_name = ?, options = ?, hint = ?, required = ?, ordre = ?, card_group = ?, filled_by = ?, validator_step = ?, visibility = ? WHERE id = ?")
             ->execute([$ff_label, $ff_field_type, $ff_field_name, $options_json, $ff_hint, $ff_required, $ff_ordre, $ff_card_group, $ff_filled_by, $ff_validator_step, $ff_visibility, $field_id]);
-        app_log('field_update', 'field:' . $field_id, "Champ '$ff_label' mis à jour");
+        App::audit()->log('field_update', 'field:' . $field_id, "Champ '$ff_label' mis à jour");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#field-' . urlencode($field_id)];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de la mise à jour du champ : ' . $e->getMessage()];
@@ -330,13 +331,13 @@ function handle_admin_action_add_owner(PDO $pdo): array {
         return ['error' => 'Le courriel du propriétaire est requis.'];
     }
     if (!filter_var($owner_email, FILTER_VALIDATE_EMAIL)) {
-        return ['error' => 'L\'adresse courriel "' . h($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@' . get_setting('email_domain', 'exemple.invalid') . ''];
+        return ['error' => 'L\'adresse courriel "' . h($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@' . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . ''];
     }
     try {
         $new_owner_id = generate_uuid();
         $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)")
             ->execute([$new_owner_id, $form_id, $owner_email]);
-        app_log('owner_add', 'form:' . $form_id, "Propriétaire $owner_email ajouté");
+        App::audit()->log('owner_add', 'form:' . $form_id, "Propriétaire $owner_email ajouté");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners'];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de l\'ajout du propriétaire : ' . $e->getMessage()];
@@ -354,7 +355,7 @@ function handle_admin_action_delete_owner(PDO $pdo): array {
     }
     try {
         $pdo->prepare("DELETE FROM form_owners WHERE id = ?")->execute([$owner_id]);
-        app_log('owner_remove', 'form:' . $form_id, "Propriétaire retiré");
+        App::audit()->log('owner_remove', 'form:' . $form_id, "Propriétaire retiré");
         return ['redirect' => build_url('index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners')];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de la suppression du propriétaire : ' . $e->getMessage()];
@@ -592,7 +593,7 @@ function handle_admin_action_import_form(PDO $pdo): array {
         }
 
         $pdo->commit();
-        app_log('form_import', 'form:' . $new_id, "Formulaire '$label' importé depuis JSON");
+        App::audit()->log('form_import', 'form:' . $new_id, "Formulaire '$label' importé depuis JSON");
         return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_id)];
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();

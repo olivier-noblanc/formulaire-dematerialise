@@ -21,7 +21,7 @@ function render_docs_section_validateur(): string
     <!-- ── Recevoir un email ── -->
     <h3><span aria-hidden="true">📧</span> Je reçois un email de validation</h3>
 
-    <p>Quand une demande nécessite votre intervention, vous recevez un email de <strong><?= h(get_setting('smtp_from', 'workflow@exemple.invalid')) ?></strong> avec l'objet :</p>
+    <p>Quand une demande nécessite votre intervention, vous recevez un email de <strong><?= h(\App\Core\App::settings()->get('smtp_from', 'workflow@exemple.invalid')) ?></strong> avec l'objet :</p>
 
     <div class="info-box">
       <p><code>[Action requise] Nom du formulaire — Nom de l'étape</code></p>

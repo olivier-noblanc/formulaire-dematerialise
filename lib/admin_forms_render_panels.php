@@ -84,7 +84,7 @@ function render_import_json_panel(array $ctx): string {
                     <?= csrf_field() ?>
                     <div class="field">
                         <label>Données JSON<span class="req">*</span></label>
-                        <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général","filled_by":"demandeur"},{"label":"Décision","field_type":"select","field_name":"decision","options":["Accepté","Refusé"],"required":1,"card_group":"Décision","filled_by":"validator","validator_step":"Validation manager"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>"]}]}' style="font-family:monospace;font-size:.8rem;"><?= h($preserved_json ?? '') ?></textarea>
+                        <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général","filled_by":"demandeur"},{"label":"Décision","field_type":"select","field_name":"decision","options":["Accepté","Refusé"],"required":1,"card_group":"Décision","filled_by":"validator","validator_step":"Validation manager"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>"]}]}' style="font-family:monospace;font-size:.8rem;"><?= h($preserved_json ?? '') ?></textarea>
                     </div>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
                         <input type="hidden" name="action" value="validate_json" id="import-action-input">
@@ -208,7 +208,7 @@ IMPORTANT : Si tu comptes exclure une colonne du document source, signale-le EXP
   - ordre : numéro séquentiel (1 = première validation, 2 = deuxième, etc.).
   - actif : true (toujours true pour les nouvelles étapes).
   - recipients : tableau d'adresses email. Trois formats possibles :
-    1. Adresse email statique du service validateur (ex: "rh@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>", "dsi@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>").
+    1. Adresse email statique du service validateur (ex: "rh@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>", "dsi@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>").
     2. Référence dynamique vers un champ du formulaire avec la syntaxe {{field_name}} — utile quand le validateur dépend de l'agent qui remplit le formulaire. Exemple : si le formulaire a un champ "email_superieur", utilise "{{email_superieur}}" pour que la demande soit envoyée au supérieur hiérarchique saisi par l'agent.
     3. Référence spéciale {{owner}} — le propriétaire du formulaire (l'admin qui a créé le formulaire). Utiliser quand le document indique que "l'owner", "le responsable" ou "l'administrateur du formulaire" doit valider, sans préciser d'adresse email. Ne PAS demander d'email dans ce cas.
 - ATTENTION : Si le document mentionne un supérieur hiérarchique, un manager direct, ou un validateur dont l'email dépend de l'agent, il FAUT créer un champ email dans les fields ET utiliser la syntaxe {{field_name}} dans les recipients de l'étape correspondante.
@@ -281,7 +281,7 @@ IMPORTANT : Si tu comptes exclure une colonne du document source, signale-le EXP
   ],
   "steps": [
     { "label": "Validation supérieur hiérarchique", "ordre": 1, "actif": true, "recipients": ["{{email_superieur}}"] },
-    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>"] }
+    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>"] }
   ]
 }
 

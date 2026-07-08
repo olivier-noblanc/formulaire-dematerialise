@@ -32,12 +32,12 @@ final class EmailVerificationService
             return ['ok' => false, 'method' => 'ldap', 'detail' => 'Extension PHP ldap non disponible'];
         }
 
-        $host      = get_setting('ldap_host', '');
-        $port      = (int) get_setting('ldap_port', '389');
-        $base_dn   = get_setting('ldap_base_dn', '');
-        $bind_dn   = get_setting('ldap_bind_dn', '');
-        $bind_pass = get_setting('ldap_bind_pass', '');
-        $filter    = get_setting('ldap_filter', '(mail={email})');
+        $host      = \App\Core\App::settings()->get('ldap_host', '');
+        $port      = (int) \App\Core\App::settings()->get('ldap_port', '389');
+        $base_dn   = \App\Core\App::settings()->get('ldap_base_dn', '');
+        $bind_dn   = \App\Core\App::settings()->get('ldap_bind_dn', '');
+        $bind_pass = \App\Core\App::settings()->get('ldap_bind_pass', '');
+        $filter    = \App\Core\App::settings()->get('ldap_filter', '(mail={email})');
 
         if ($host === '' || $base_dn === '') {
             return ['ok' => false, 'method' => 'ldap', 'detail' => 'Configuration LDAP incomplète (hôte ou base DN manquant)'];
@@ -100,12 +100,12 @@ final class EmailVerificationService
             return [];
         }
 
-        if (get_setting('ldap_suggest_enabled', '0') !== '1') {
+        if (\App\Core\App::settings()->get('ldap_suggest_enabled', '0') !== '1') {
             return [];
         }
 
-        $host    = get_setting('ldap_host', '');
-        $base_dn = get_setting('ldap_base_dn', '');
+        $host    = \App\Core\App::settings()->get('ldap_host', '');
+        $base_dn = \App\Core\App::settings()->get('ldap_base_dn', '');
         if ($host === '' || $base_dn === '') {
             return [];
         }
@@ -122,17 +122,17 @@ final class EmailVerificationService
      */
     private function cacheLdapSuggest(string $query, int $limit): array
     {
-        $host     = get_setting('ldap_host', '');
-        $base_dn = get_setting('ldap_base_dn', '');
+        $host     = \App\Core\App::settings()->get('ldap_host', '');
+        $base_dn = \App\Core\App::settings()->get('ldap_base_dn', '');
         $cache_key = 'ldap_suggest:' . $host . ':' . $base_dn . ':' . $query . ':' . $limit;
 
         return $this->cache->get($cache_key, 300, function () use ($query, $limit): array {
-            $host          = get_setting('ldap_host', '');
-            $port          = (int) get_setting('ldap_port', '389');
-            $base_dn       = get_setting('ldap_base_dn', '');
-            $bind_dn       = get_setting('ldap_bind_dn', '');
-            $bind_pass     = get_setting('ldap_bind_pass', '');
-            $suggest_filter = get_setting(
+            $host          = \App\Core\App::settings()->get('ldap_host', '');
+            $port          = (int) \App\Core\App::settings()->get('ldap_port', '389');
+            $base_dn       = \App\Core\App::settings()->get('ldap_base_dn', '');
+            $bind_dn       = \App\Core\App::settings()->get('ldap_bind_dn', '');
+            $bind_pass     = \App\Core\App::settings()->get('ldap_bind_pass', '');
+            $suggest_filter = \App\Core\App::settings()->get(
                 'ldap_suggest_filter',
                 '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))'
             );
@@ -214,10 +214,10 @@ final class EmailVerificationService
      */
     public function verifySmtp(string $email): array
     {
-        $smtp_host   = get_setting('smtp_host');
-        $smtp_port   = (int) get_setting('smtp_port');
-        $smtp_from   = get_setting('smtp_from');
-        $smtp_secure = get_setting('smtp_secure', '');
+        $smtp_host   = \App\Core\App::settings()->get('smtp_host');
+        $smtp_port   = (int) \App\Core\App::settings()->get('smtp_port');
+        $smtp_from   = \App\Core\App::settings()->get('smtp_from');
+        $smtp_secure = \App\Core\App::settings()->get('smtp_secure', '');
 
         if ($smtp_host === '') {
             return ['ok' => false, 'method' => 'smtp', 'detail' => 'Aucun serveur SMTP configuré'];
@@ -326,7 +326,7 @@ final class EmailVerificationService
      */
     public function verify(string $email): array
     {
-        $mode = get_setting('email_verify_mode', 'none');
+        $mode = \App\Core\App::settings()->get('email_verify_mode', 'none');
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ['ok' => false, 'method' => 'format', 'detail' => 'Format d\'email invalide : ' . $email];
@@ -354,7 +354,7 @@ final class EmailVerificationService
      */
     public function testVerification(string $email): array
     {
-        $mode = get_setting('email_verify_mode', 'none');
+        $mode = \App\Core\App::settings()->get('email_verify_mode', 'none');
 
         $results = [
             'email'         => $email,

@@ -10,6 +10,7 @@ declare(strict_types=1);
 // count_purge_targets), calcul des statistiques DB et format_bytes().
 require_once dirname(__DIR__) . '/helpers.php';
 require_once dirname(__DIR__) . '/lib/render_backup.php';
+use App\Core\App;
 
 // Vérification des droits d'accès
 require_admin();
@@ -45,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $filename = 'workflow_backup_' . date('Ymd_His') . '.db';
 
             // Journalisation avant le téléchargement
-            app_log('backup_download', 'database', 'Téléchargement sauvegarde : ' . $filename);
+            App::audit()->log('backup_download', 'database', 'Téléchargement sauvegarde : ' . $filename);
 
             // Envoi du fichier en téléchargement
             header('Content-Type: application/x-sqlite3');
@@ -104,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         _dbm_q($test_pdo, 'SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
                         $test_pdo = null; // Fermer
 
-                        app_log('backup_restore', 'database',
+                        App::audit()->log('backup_restore', 'database',
                                 'Base restaurée depuis le fichier : ' . h($orig_name) .
                                 ' (sauvegarde pré-restauration : ' . basename($backup_before) . ')');
 
@@ -197,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Optimiser la base
                         $pdo->exec('VACUUM');
 
-                        app_log('purge_data', 'database',
+                        App::audit()->log('purge_data', 'database',
                             "Purge effectuée : {$submissions_deleted} soumissions, " .
                             "{$tokens_deleted} tokens, {$alert_logs_deleted} alert_logs, " .
                             "{$validator_data_deleted} submission_validator_data " .

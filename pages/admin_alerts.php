@@ -1,6 +1,7 @@
 <?php
 // admin_alerts.php — Configuration des regles d'alerte parametrables
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 require_admin();
 
@@ -45,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $rule_id = generate_uuid();
                     $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, ?, 1)")
                         ->execute([$rule_id, $form_id, $days_before, $condition_type, $notify_who, $label]);
-                    app_log('alert_rule_create', 'form:' . $form_id, 'Règle d\'alerte créée : ' . $label);
+                    App::audit()->log('alert_rule_create', 'form:' . $form_id, 'Règle d\'alerte créée : ' . $label);
                     $success_msg = 'Règle d\'alerte créée avec succès.';
                 } catch (Exception $e) {
                     $error_msg = 'Erreur lors de la création : ' . $e->getMessage();
@@ -79,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $pdo->prepare("UPDATE alert_rules SET days_before=?, condition_type=?, notify_who=?, label=?, actif=? WHERE id=?")
                         ->execute([$days_before, $condition_type, $notify_who, $label, $actif, $rule_id]);
-                    app_log('alert_rule_update', 'rule:' . $rule_id, 'Règle d\'alerte modifiée : ' . $label);
+                    App::audit()->log('alert_rule_update', 'rule:' . $rule_id, 'Règle d\'alerte modifiée : ' . $label);
                     $success_msg = 'Règle d\'alerte modifiée avec succès.';
                 } catch (Exception $e) {
                     $error_msg = 'Erreur lors de la modification : ' . $e->getMessage();
@@ -91,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rule_id = trim($_POST['rule_id'] ?? '');
         try {
             $pdo->prepare("DELETE FROM alert_rules WHERE id = ?")->execute([$rule_id]);
-            app_log('alert_rule_delete', 'rule:' . $rule_id, 'Règle d\'alerte supprimée');
+            App::audit()->log('alert_rule_delete', 'rule:' . $rule_id, 'Règle d\'alerte supprimée');
             $success_msg = 'Règle d\'alerte supprimée.';
         } catch (Exception $e) {
             $error_msg = 'Erreur lors de la suppression : ' . $e->getMessage();
@@ -105,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo->prepare("UPDATE forms SET deadline_field = ? WHERE id = ?")
                     ->execute([$deadline_field, $form_id]);
-                app_log('deadline_field_update', 'form:' . $form_id, 'Champ deadline mis à jour : ' . ($deadline_field ?: '(aucun)'));
+                App::audit()->log('deadline_field_update', 'form:' . $form_id, 'Champ deadline mis à jour : ' . ($deadline_field ?: '(aucun)'));
                 $success_msg = 'Champ date limite mis à jour pour le formulaire.';
             } catch (Exception $e) {
                 $error_msg = 'Erreur : ' . $e->getMessage();
@@ -114,11 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     elseif ($action === 'delete_alert_log') {
         // A-14 (W4-3) : durée de rétention configurable via setting
-        $retention_days = (int)get_setting('alert_log_retention_days', '90');
+        $retention_days = (int)\App\Core\App::settings()->get('alert_log_retention_days', '90');
         // Purger les anciens logs d'alerte (> $retention_days jours)
         try {
             $pdo->prepare("DELETE FROM alert_log WHERE sent_at < datetime('now', ?)")->execute(["-{$retention_days} days"]);
-            app_log('alert_log_purge', 'alert_log', "Purge des logs d'alerte > {$retention_days} jours");
+            App::audit()->log('alert_log_purge', 'alert_log', "Purge des logs d'alerte > {$retention_days} jours");
             $success_msg = "Anciens logs d'alerte purgés (plus de {$retention_days} jours).";
         } catch (Exception $e) {
             $error_msg = 'Erreur : ' . $e->getMessage();
@@ -151,7 +152,7 @@ $alert_logs = _dbm_q($pdo, "
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Derniere execution du script
-$last_alert_check = get_setting('last_alert_check', '');
+$last_alert_check = \App\Core\App::settings()->get('last_alert_check', '');
 
 // Champs de type date disponibles par formulaire
 $date_fields_by_form = [];
@@ -418,7 +419,7 @@ ob_start();
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h2 style="margin:0;border:none;padding:0;">📬 Historique des alertes envoyées</h2>
-      <?php $purge_days = (int)get_setting('alert_log_retention_days', '90'); ?>
+      <?php $purge_days = (int)\App\Core\App::settings()->get('alert_log_retention_days', '90'); ?>
       <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="delete_alert_log">

@@ -43,7 +43,7 @@ try {
 // Récupérer les mentions légales pour la section RGPD
 $legal_mentions = '';
 try {
-    $legal_mentions = get_setting('legal_mentions', '');
+    $legal_mentions = \App\Core\App::settings()->get('legal_mentions', '');
 } catch (Exception $e) {
     $legal_mentions = '';
     error_log('docs.php legal_mentions error: ' . $e->getMessage());

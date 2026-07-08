@@ -166,7 +166,7 @@ function render_owners_section(array $ctx): string {
             <input type="hidden" name="action" value="add_owner">
             <input type="hidden" name="form_id" value="<?= $form_id ?>">
             <div style="display:flex;gap:.5rem;align-items:center;">
-                <input type="email" name="owner_email" placeholder="prenom.nom@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>" required style="flex:1;">
+                <input type="email" name="owner_email" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" required style="flex:1;">
                 <button type="submit" class="btn btn-primary">Ajouter un propriétaire</button>
             </div>
         </form>

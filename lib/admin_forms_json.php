@@ -191,7 +191,7 @@ function validate_form_json(array $data): array {
 
     // ── steps array ─────────────────────────────────────────
     if (!isset($data['steps'])) {
-        $warnings[] = 'Propriété "steps" manquante. Le formulaire sera créé sans circuit de validation. Ajoutez un tableau "steps" pour définir le workflow. Exemple : { "steps": [{ "label": "Validation manager", "ordre": 1, "actif": true, "recipients": ["manager@' . get_setting('email_domain', 'exemple.invalid') . '"] }] }';
+        $warnings[] = 'Propriété "steps" manquante. Le formulaire sera créé sans circuit de validation. Ajoutez un tableau "steps" pour définir le workflow. Exemple : { "steps": [{ "label": "Validation manager", "ordre": 1, "actif": true, "recipients": ["manager@' . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . '"] }] }';
     } elseif (!is_array($data['steps'])) {
         $errors[] = '"steps" doit être un tableau. Trouvé : ' . gettype($data['steps']);
     } else {
@@ -273,7 +273,7 @@ function validate_form_json(array $data): array {
 
             // recipients
             if (!isset($s['recipients']) || !is_array($s['recipients'])) {
-                $errors[] = $prefix . '.recipients est requis et doit être un tableau d\'adresses email. Exemple : ["manager@' . get_setting('email_domain', 'exemple.invalid') . '", "rh@' . get_setting('email_domain', 'exemple.invalid') . '"]';
+                $errors[] = $prefix . '.recipients est requis et doit être un tableau d\'adresses email. Exemple : ["manager@' . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . '", "rh@' . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . '"]';
             } else {
                 if (count($s['recipients']) === 0) {
                     $warnings[] = "$prefix.recipients est vide. L\'étape n\'aura aucun validateur — personne ne pourra approuver cette étape.";
@@ -284,7 +284,7 @@ function validate_form_json(array $data): array {
                     } elseif (preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email)) {
                         // Référence dynamique {{field_name}} — valide
                     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                        $errors[] = "$prefix.recipients[" . ($j+1) . "] = \"$email\" n'est ni une adresse email valide ni une référence {{field_name}}. Format attendu : prenom.nom@" . get_setting('email_domain', 'exemple.invalid') . ", service@" . get_setting('email_domain', 'exemple.invalid') . " ou {{nom_du_champ}}";
+                        $errors[] = "$prefix.recipients[" . ($j+1) . "] = \"$email\" n'est ni une adresse email valide ni une référence {{field_name}}. Format attendu : prenom.nom@" . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . ", service@" . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . " ou {{nom_du_champ}}";
                     }
                 }
             }

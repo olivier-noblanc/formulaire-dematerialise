@@ -50,7 +50,7 @@ function admin_settings_page_css(): string
 /**
  * Compose le contenu HTML de la page admin_settings.php.
  *
- * Lit les paramètres actuels via get_setting() et affiche les 6 sections :
+ * Lit les paramètres actuels via \App\Core\App::settings()->get() et affiche les 6 sections :
  *  1. Sécurité email (dry-run + vérification destinataires LDAP/SMTP)
  *  2. Test de vérification email
  *  3. Identité app + Admin + SMTP + Workflow
@@ -69,28 +69,28 @@ function render_admin_settings_content(array $state): string
     $verify_result = $state['verify_result'] ?? null;
 
     // Lecture des paramètres actuels
-    $smtp_host             = get_setting('smtp_host');
-    $smtp_port             = get_setting('smtp_port');
-    $smtp_auth             = get_setting('smtp_auth', '0');
-    $smtp_secure           = get_setting('smtp_secure', '');
-    $smtp_user             = get_setting('smtp_user', '');
-    $smtp_pass             = get_setting('smtp_pass', '');
-    $smtp_from             = get_setting('smtp_from');
-    $smtp_from_name        = get_setting('smtp_from_name');
-    $delai_relance_h       = get_setting('delai_relance_h');
-    $token_expire_days     = get_setting('token_expire_days', '30');
-    $relance_max           = get_setting('relance_max', '3');
-    $retention_months      = get_setting('retention_months', '24');
-    $mail_dry_run          = get_setting('mail_dry_run', '1');
-    $email_verify_mode     = get_setting('email_verify_mode', 'none');
-    $ldap_host             = get_setting('ldap_host', '');
-    $ldap_port             = get_setting('ldap_port', '389');
-    $ldap_base_dn          = get_setting('ldap_base_dn', '');
-    $ldap_bind_dn          = get_setting('ldap_bind_dn', '');
-    $ldap_bind_pass        = get_setting('ldap_bind_pass', '');
-    $ldap_filter           = get_setting('ldap_filter', '(mail={email})');
-    $ldap_suggest_enabled  = get_setting('ldap_suggest_enabled', '0');
-    $ldap_suggest_filter   = get_setting('ldap_suggest_filter', '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))');
+    $smtp_host             = \App\Core\App::settings()->get('smtp_host');
+    $smtp_port             = \App\Core\App::settings()->get('smtp_port');
+    $smtp_auth             = \App\Core\App::settings()->get('smtp_auth', '0');
+    $smtp_secure           = \App\Core\App::settings()->get('smtp_secure', '');
+    $smtp_user             = \App\Core\App::settings()->get('smtp_user', '');
+    $smtp_pass             = \App\Core\App::settings()->get('smtp_pass', '');
+    $smtp_from             = \App\Core\App::settings()->get('smtp_from');
+    $smtp_from_name        = \App\Core\App::settings()->get('smtp_from_name');
+    $delai_relance_h       = \App\Core\App::settings()->get('delai_relance_h');
+    $token_expire_days     = \App\Core\App::settings()->get('token_expire_days', '30');
+    $relance_max           = \App\Core\App::settings()->get('relance_max', '3');
+    $retention_months      = \App\Core\App::settings()->get('retention_months', '24');
+    $mail_dry_run          = \App\Core\App::settings()->get('mail_dry_run', '1');
+    $email_verify_mode     = \App\Core\App::settings()->get('email_verify_mode', 'none');
+    $ldap_host             = \App\Core\App::settings()->get('ldap_host', '');
+    $ldap_port             = \App\Core\App::settings()->get('ldap_port', '389');
+    $ldap_base_dn          = \App\Core\App::settings()->get('ldap_base_dn', '');
+    $ldap_bind_dn          = \App\Core\App::settings()->get('ldap_bind_dn', '');
+    $ldap_bind_pass        = \App\Core\App::settings()->get('ldap_bind_pass', '');
+    $ldap_filter           = \App\Core\App::settings()->get('ldap_filter', '(mail={email})');
+    $ldap_suggest_enabled  = \App\Core\App::settings()->get('ldap_suggest_enabled', '0');
+    $ldap_suggest_filter   = \App\Core\App::settings()->get('ldap_suggest_filter', '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))');
 
     $ldap_ext_available = function_exists('ldap_connect');
 
@@ -271,7 +271,7 @@ function render_admin_settings_content(array $state): string
             <div class="field">
                 <label>Adresse email à tester</label>
                 <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-                    <input type="email" name="verify_test_email" value="<?= h($_POST['verify_test_email'] ?? '') ?>" placeholder="agent@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>" style="max-width:350px;">
+                    <input type="email" name="verify_test_email" value="<?= h($_POST['verify_test_email'] ?? '') ?>" placeholder="agent@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" style="max-width:350px;">
                     <button type="submit" class="btn btn-test">Vérifier cette adresse</button>
                 </div>
             </div>
@@ -312,13 +312,13 @@ function render_admin_settings_content(array $state): string
 
             <div class="field">
                 <label for="app_name">Nom de l'application</label>
-                <input type="text" id="app_name" name="app_name" value="<?= h(get_setting('app_name', 'CircuitDémat')) ?>" placeholder="CircuitDémat">
+                <input type="text" id="app_name" name="app_name" value="<?= h(\App\Core\App::settings()->get('app_name', 'CircuitDémat')) ?>" placeholder="CircuitDémat">
                 <span class="hint">Ce nom est affiché dans la barre latérale, les titres de pages, les emails et le pied de page. Modifiable à tout moment.</span>
             </div>
 
             <div class="field">
                 <label for="app_favicon">Favicon (SVG)</label>
-                <textarea id="app_favicon" name="app_favicon" rows="3" placeholder="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>...</svg>" style="font-family:monospace;font-size:.8rem;"><?= h(get_setting('app_favicon', '')) ?></textarea>
+                <textarea id="app_favicon" name="app_favicon" rows="3" placeholder="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>...</svg>" style="font-family:monospace;font-size:.8rem;"><?= h(\App\Core\App::settings()->get('app_favicon', '')) ?></textarea>
                 <span class="hint">Code SVG du favicon. Laisser vide pour le favicon par défaut (losange bleu avec la première lettre du nom). Le contenu est inséré dans <code>data:image/svg+xml,</code> — ne pas mettre l'en-tête <code>&lt;?xml</code> ni échapper les caractères.</span>
             </div>
         </div>
@@ -328,7 +328,7 @@ function render_admin_settings_content(array $state): string
 
             <div class="field">
                 <label for="admin_email">Email de l'administrateur principal</label>
-                <input type="email" id="admin_email" name="admin_email" value="<?= h(get_admin_email()) ?>" placeholder="prenom.nom@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>" required>
+                <input type="email" id="admin_email" name="admin_email" value="<?= h(get_admin_email()) ?>" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" required>
                 <span class="hint">Cet utilisateur est super-administrateur et reçoit les demandes d'accès. Modifiable depuis la base de données si l'accès est perdu.</span>
             </div>
         </div>
@@ -374,7 +374,7 @@ function render_admin_settings_content(array $state): string
 
             <div class="field">
                 <label>Email expéditeur <span class="info-tooltip" title="Adresse email d'expéditeur (ex: workflow@exemple.invalid)" aria-label="Aide technique : Adresse email d'expéditeur (ex: workflow@exemple.invalid)" tabindex="0" role="button">ℹ️</span></label>
-                <input type="text" name="smtp_from" value="<?= h($smtp_from) ?>" placeholder="workflow@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>">
+                <input type="text" name="smtp_from" value="<?= h($smtp_from) ?>" placeholder="workflow@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>">
             </div>
 
             <div class="field">
@@ -429,17 +429,17 @@ function render_admin_settings_content(array $state): string
         <input type="hidden" name="action" value="save_webhook">
         <div class="field">
           <label for="webhook_url">URL du webhook</label>
-          <input type="url" id="webhook_url" name="webhook_url" value="<?= h(get_setting('webhook_url', '')) ?>" placeholder="https://si.exemple.invalid/api/webhook">
+          <input type="url" id="webhook_url" name="webhook_url" value="<?= h(\App\Core\App::settings()->get('webhook_url', '')) ?>" placeholder="https://si.exemple.invalid/api/webhook">
           <span class="hint">URL recevant les notifications en POST JSON. Laissez vide pour désactiver.</span>
         </div>
         <div class="field">
           <label for="webhook_events">Événements à notifier</label>
-          <input type="text" id="webhook_events" name="webhook_events" value="<?= h(get_setting('webhook_events', 'workflow_complete,submission_cancelled')) ?>" placeholder="workflow_complete,submission_cancelled,token_validated">
+          <input type="text" id="webhook_events" name="webhook_events" value="<?= h(\App\Core\App::settings()->get('webhook_events', 'workflow_complete,submission_cancelled')) ?>" placeholder="workflow_complete,submission_cancelled,token_validated">
           <span class="hint">Séparés par des virgules. Événements disponibles : <code>workflow_complete</code>, <code>submission_cancelled</code>, <code>token_validated</code>, <code>all</code></span>
         </div>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
           <button type="submit" class="btn btn-primary">Enregistrer</button>
-          <?php if (!empty(get_setting('webhook_url', ''))): ?>
+          <?php if (!empty(\App\Core\App::settings()->get('webhook_url', ''))): ?>
             </form>
             <form method="POST" style="display:inline;">
               <?= csrf_field() ?>
@@ -455,7 +455,7 @@ function render_admin_settings_content(array $state): string
         <pre style="margin:.5rem 0 0;white-space:pre-wrap;color:#555;">{
   "event": "workflow_complete",
   "timestamp": "2025-01-15T10:30:00+01:00",
-  "data": { "submission_id": 42, "form_label": "Onboarding", "submitted_by": "agent@<?= h(get_setting('email_domain', 'exemple.invalid')) ?>" }
+  "data": { "submission_id": 42, "form_label": "Onboarding", "submitted_by": "agent@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" }
 }</pre>
       </div>
     </div>

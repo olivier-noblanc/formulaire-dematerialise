@@ -140,7 +140,7 @@ if ($nb_skipped > 0) {
 echo "\n";
 
 // Tracer l'execution
-set_setting('last_alert_check', date('Y-m-d H:i:s'), 'alert_check.php');
+\App\Core\App::settings()->set('last_alert_check', date('Y-m-d H:i:s'), 'alert_check.php');
 app_log('alert_check', 'alert', "{$nb_alerts} alerte(s) envoyee(s), {$nb_skipped} ignoree(s)", 'alert_check.php');
 
 // ── Fonctions utilitaires ──────────────────────────────────────

@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use App\Core\App;
 
 /**
  * Sample forms populator — onboarding, outboarding, acces_si, etc.
@@ -237,7 +238,7 @@ function populate_sample_forms(PDO $pdo): string
         }
 
         $pdo->commit();
-        app_log('populate_samples', 'system', "Formulaires exemples peuplés : $created créés, $skipped ignorés (déjà existants)");
+        App::audit()->log('populate_samples', 'system', "Formulaires exemples peuplés : $created créés, $skipped ignorés (déjà existants)", '');
         return "$created formulaire(s) exemple(s) créé(s), $skipped ignoré(s) (déjà existant(s)).";
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) {

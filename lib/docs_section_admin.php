@@ -380,7 +380,7 @@ function render_docs_section_admin(): string
     <ul>
       <li><strong>Serveur SMTP</strong> — L'adresse du serveur d'envoi d'emails (ex : smtp.social.gouv.fr)</li>
       <li><strong>Port SMTP</strong> — Le port du serveur (ex : 25)</li>
-      <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : <?= h(get_setting('smtp_from', 'workflow@exemple.invalid')) ?>)</li>
+      <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : <?= h(\App\Core\App::settings()->get('smtp_from', 'workflow@exemple.invalid')) ?>)</li>
       <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : CircuitDémat)</li>
       <li><strong>Délai de relance</strong> — Le nombre d'heures avant l'envoi d'un rappel automatique (ex : 48h)</li>
       <li><strong>URL du webhook</strong> — L'adresse pour les notifications automatiques</li>

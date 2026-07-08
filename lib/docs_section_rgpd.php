@@ -11,7 +11,7 @@ function render_docs_section_rgpd(): string
     // Récupérer les mentions légales pour la section RGPD
     $legal_mentions = '';
     try {
-        $legal_mentions = get_setting('legal_mentions', '');
+        $legal_mentions = \App\Core\App::settings()->get('legal_mentions', '');
     } catch (Exception $e) {
         $legal_mentions = '';
         error_log('docs_section_rgpd legal_mentions error: ' . $e->getMessage());
@@ -30,7 +30,7 @@ function render_docs_section_rgpd(): string
       <?php if (!empty($legal_mentions)): ?>
         <p><?= nl2br(h($legal_mentions)) ?></p>
       <?php else: ?>
-        <p>Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et d'effacement de vos données. Contact : <?= h(get_setting('rgpd_contact', 'CIL DREETS')) ?>. Durée de conservation : <?= (int)get_setting('retention_months', '24') ?> mois après clôture.</p>
+        <p>Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et d'effacement de vos données. Contact : <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>. Durée de conservation : <?= (int)\App\Core\App::settings()->get('retention_months', '24') ?> mois après clôture.</p>
       <?php endif; ?>
     </div>
 
@@ -69,7 +69,7 @@ function render_docs_section_rgpd(): string
     <h4>Responsable de traitement</h4>
     <p>
       Le responsable de traitement est la DREETS (Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités).
-      Pour toute question relative à la protection de vos données, contactez le <strong><?= h(get_setting('rgpd_contact', 'CIL DREETS')) ?></strong> (Correspondant Informatique et Libertés).
+      Pour toute question relative à la protection de vos données, contactez le <strong><?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?></strong> (Correspondant Informatique et Libertés).
     </p>
 
     <h4>Accessibilité (RGAA)</h4>
