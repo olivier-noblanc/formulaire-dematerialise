@@ -62,4 +62,4 @@ echo "\n";
 
 // Tracer la derniere execution pour le monitoring
 \App\Core\App::settings()->set('last_remind_run', date('Y-m-d H:i:s'), 'remind.php');
-app_log('remind_run', 'remind', "{$nb} relance(s) envoyée(s), {$blocked} bloquée(s)", 'remind.php');
+\App\Core\App::audit()->log('remind_run', 'remind', "{$nb} relance(s) envoyée(s), {$blocked} bloquée(s)", 'remind.php');
