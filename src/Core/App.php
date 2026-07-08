@@ -154,4 +154,14 @@ final class App
     {
         return self::getInstance()->get(\App\Validation\ValidationService::class);
     }
+
+    public static function emailVerify(): \App\Email\EmailVerificationService
+    {
+        return self::getInstance()->get(\App\Email\EmailVerificationService::class);
+    }
+
+    public static function export(): \App\Export\ExportService
+    {
+        return self::getInstance()->get(\App\Export\ExportService::class);
+    }
 }
