@@ -49,6 +49,14 @@ Nouveau `src/Export/ExportService.php` : export CSV des soumissions extrait de `
 - **PHPStan** : 0 erreur ✅
 - **Lint PHP** : 100% ✅
 
+### 📋 Travail restant (voir TODO.md)
+
+- **BaseController DI** : refactoriser pour utiliser le container DI (22 connexions)
+- **h() validation** : valider les 79 arêtes inferred
+- **Community 0 decomposition** : 149 communautés → < 20 cibles
+- **Repository Pattern — pages/** : injecter les repositories dans les contrôleurs
+- **Test DB cleanup** : corriger les FK cassées
+
 ---
 
 ## [10.4.0] — 2026-07-08
