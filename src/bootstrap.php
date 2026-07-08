@@ -39,6 +39,8 @@ use App\Attachment\AttachmentService;
 use App\Cron\CronService;
 use App\Forms\ValidatorDataService;
 use App\Core\MigrationService;
+use App\Repository\SubmissionRepository;
+use App\Repository\TokenRepository;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -57,6 +59,8 @@ $app->set(SettingsRepository::class, new SettingsRepository($db));
 $app->set(AuditRepository::class, new AuditRepository($db));
 $app->set(AdminRepository::class, new AdminRepository($db));
 $app->set(FormRepository::class, new FormRepository($db));
+$app->set(SubmissionRepository::class, new SubmissionRepository($db));
+$app->set(TokenRepository::class, new TokenRepository($db));
 $app->set(AttachmentRepository::class, new AttachmentRepository($db));
 $app->set(FieldService::class, new FieldService($db));
 $app->set(HtmlService::class, new HtmlService());
