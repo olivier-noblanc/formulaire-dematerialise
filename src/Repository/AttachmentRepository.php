@@ -22,8 +22,8 @@ final class AttachmentRepository extends BaseRepository
     {
         $id = \generate_uuid();
         $this->execute(
-            "INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, '', ?, ?, ?, datetime('now'))",
-            [$id, $data['submission_id'], $data['field_name'], $data['original_name'], $data['mime_type'], $data['file_size'], $data['file_data']]
+            "INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            [$id, $data['submission_id'], $data['field_name'], $data['original_name'], $data['original_name'], $data['mime_type'], $data['file_size'], $data['file_data']]
         );
         return $id;
     }
