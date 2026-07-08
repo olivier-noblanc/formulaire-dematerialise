@@ -1,55 +1,16 @@
-# Task 7: AdminRepository — Report
+# Task 7 — Refactor `pages/download.php`
 
-## What I Implemented
+**File**: `pages/download.php`
 
-Created `AdminRepository` extending `BaseRepository` with the following methods:
+## Changes
 
-- `findByEmail(string $email): ?array` — look up admin by email (case-insensitive)
-- `isAdmin(string $email): bool` — check if email is an admin
-- `isSuperAdmin(string $email): bool` — check against super admin email from settings
-- `getSuperAdminEmail(): string` — retrieve super admin email from settings table
-- `getAll(): array` — list all admins ordered by email
-- `add(string $email, string $addedBy): bool` — insert admin (INSERT OR IGNORE)
-- `remove(string $email): bool` — delete admin by email
-- `getPendingRequests(): array` — list pending admin_requests
-- `approveRequest(string $requestId, string $approvedBy): bool` — approve request + add admin
-- `rejectRequest(string $requestId, string $rejectedBy): bool` — reject request
+| Old (procedural) | New (DI) |
+|---|---|
+| `get_auth_user()` | `App::auth()->getUser()` |
+| `is_admin_user()` | `App::auth()->isAdmin()` |
 
-## TDD Evidence
+**Instances replaced**: 2 (lines 42–43 in main flow, lines 183–184 in `export_submission_json()`).
 
-### RED Phase
-```
-Tests: 3, Assertions: 0, Errors: 3
-Error: Class "App\Repository\AdminRepository" not found
-```
+## Verification
 
-### GREEN Phase
-After implementing the class and running `composer dump-autoload` (needed because `classmap-authoritative: true`):
-```
-OK (3 tests, 3 assertions)
-```
-
-### Full Suite
-```
-OK, but there were issues!
-Tests: 522, Assertions: 807, Deprecations: 3, Skipped: 19
-```
-(All pre-existing deprecations/skips, no regressions)
-
-## Files Changed
-
-| File | Action |
-|------|--------|
-| `src/Repository/AdminRepository.php` | Created |
-| `tests/PHPUnit/Repository/AdminRepositoryTest.php` | Created |
-
-## Commit
-
-```
-bf04da4 feat: AdminRepository (TDD)
-```
-Author: onoblanc <admin.local@exemple.invalid>
-
-## Concerns
-
-None. All 3 tests pass, full suite is clean.
+- `php -l pages/download.php` — syntax OK, no errors.

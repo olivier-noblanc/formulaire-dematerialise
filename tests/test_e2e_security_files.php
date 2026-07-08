@@ -91,8 +91,8 @@ function run_tests_e2e_security(): void {
         $_POST['csrf_token'] = 'invalid_token';
         $ok_invalid = !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
 
-        // Test 3 : csrf_field() génère un champ caché
-        $html = csrf_field();
+        // Test 3 : csrfField() génère un champ caché
+        $html = \App\Core\App::security()->csrfField();
         $has_field = strpos($html, 'name="csrf_token"') !== false && strpos($html, 'type="hidden"') !== false;
 
         return ($ok_valid && $ok_invalid && $has_field) ? true : 'CSRF logique défaillante';

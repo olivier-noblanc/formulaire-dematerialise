@@ -1,162 +1,37 @@
-# Task 10: SubmissionRepository
+# Task 10: Batch P2 — 9 fichiers restants
 
-**Files:**
-- Create: `src/Repository/SubmissionRepository.php`
-- Test: `tests/PHPUnit/Repository/SubmissionRepositoryTest.php`
+## Fichiers
 
-**Interfaces:**
-- Consumes: `BaseRepository`
-- Produces: `SubmissionRepository::findById()`, `findByForm()`, `findBySubmitter()`, `findPendingForValidator()`, `create()`, `updateStatus()`, `getValidatorData()`, `saveValidatorData()`, `deleteValidatorData()`
+1. `pages/my_submissions.php` — `get_auth_user()`, `display_user()`, `t_jargon()`
+2. `pages/my_validations.php` — `get_auth_user()`, `t_jargon()`
+3. `pages/validate.php` — `get_auth_user()`, `t_jargon()`, `get_file_icon()`, `format_file_size()`
+4. `pages/form_preview.php` — `require_admin()`, `get_auth_user()`
+5. `pages/docs.php` — `get_auth_user()`, `is_admin_effective()`, `get_latest_version()`
+6. `pages/changelog.php` — `get_latest_version()`, `t_jargon()`
+7. `pages/confirm_action.php` — `display_user()`
+8. `pages/my_forms.php` — `get_auth_user()`, `get_owned_forms()`, `t_jargon()`
+9. `pages/persona.php` — `require_admin()`, `get_auth_user()`
 
-## Step 1: Write the failing test
+## Mapping
 
-```php
-<?php
-declare(strict_types=1);
+| Wrapper | Remplacement |
+|---------|-------------|
+| `get_auth_user()` | `App::auth()->getUser()` |
+| `is_admin_effective()` | `App::auth()->isAdminEffective()` |
+| `get_owned_forms()` | `App::auth()->getOwnedForms()` |
+| `require_admin()` | `App::auth()->requireAdmin()` |
+| `display_user($email)` | `App::html()->displayUser($email)` |
+| `t_jargon($text)` | `App::html()->tJargon($text)` |
+| `get_file_icon($mime)` | `App::html()->getFileIcon($mime)` |
+| `format_file_size($bytes)` | `App::html()->formatFileSize($bytes)` |
+| `get_latest_version()` | `App::cache()->getLatestVersion()` |
 
-namespace App\Tests\Repository;
-
-use PHPUnit\Framework\TestCase;
-use App\Repository\SubmissionRepository;
-use App\Core\Database;
-
-final class SubmissionRepositoryTest extends TestCase
-{
-    private SubmissionRepository $repo;
-
-    protected function setUp(): void
-    {
-        $this->repo = new SubmissionRepository(new Database());
-    }
-
-    public function testFindByIdReturnsNullForNonexistent(): void
-    {
-        $result = $this->repo->findById('nonexistent');
-        $this->assertNull($result);
-    }
-
-    public function testFindByFormReturnsArray(): void
-    {
-        $result = $this->repo->findByForm('nonexistent');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testGetValidatorDataReturnsArray(): void
-    {
-        $result = $this->repo->getValidatorData('nonexistent');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-}
-```
-
-## Step 2: Run test to verify it fails
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/SubmissionRepositoryTest.php`
-Expected: FAIL with "Class 'App\Repository\SubmissionRepository' not found"
-
-## Step 3: Write minimal implementation
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace App\Repository;
-
-final class SubmissionRepository extends BaseRepository
-{
-    public function findById(string $id): ?array
-    {
-        return $this->fetchOne("SELECT * FROM submissions WHERE id = ?", [$id]);
-    }
-    
-    public function findByForm(string $formId, ?string $status = null): array
-    {
-        $sql = "SELECT * FROM submissions WHERE form_id = ?";
-        $params = [$formId];
-        if ($status !== null) {
-            $sql .= " AND status = ?";
-            $params[] = $status;
-        }
-        return $this->fetchAll($sql . " ORDER BY submitted_at DESC", $params);
-    }
-    
-    public function findBySubmitter(string $email): array
-    {
-        return $this->fetchAll(
-            "SELECT * FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC",
-            [$email]
-        );
-    }
-    
-    public function findPendingForValidator(string $email): array
-    {
-        return $this->fetchAll(
-            "SELECT s.*, t.id as token_id, t.step_id, t.action 
-             FROM submissions s 
-             JOIN tokens t ON t.submission_id = s.id 
-             WHERE t.to_email = ? AND t.used_at IS NULL AND t.expired_at > datetime('now')
-             ORDER BY t.created_at",
-            [$email]
-        );
-    }
-    
-    public function create(array $data): string
-    {
-        $id = \generate_uuid();
-        $this->execute(
-            "INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-            [$id, $data['form_id'], $data['data'], $data['submitted_by'], $data['status'] ?? 'en_cours']
-        );
-        return $id;
-    }
-    
-    public function updateStatus(string $id, string $status): bool
-    {
-        return $this->execute(
-            "UPDATE submissions SET status = ? WHERE id = ?",
-            [$status, $id]
-        );
-    }
-    
-    public function getValidatorData(string $submissionId, ?string $stepId = null): array
-    {
-        $sql = "SELECT * FROM submission_validator_data WHERE submission_id = ?";
-        $params = [$submissionId];
-        if ($stepId !== null) {
-            $sql .= " AND step_id = ?";
-            $params[] = $stepId;
-        }
-        return $this->fetchAll($sql . " ORDER BY filled_at", $params);
-    }
-    
-    public function saveValidatorData(string $submissionId, string $fieldName, string $value, string $filledBy, ?string $stepId = null): void
-    {
-        $this->execute(
-            "INSERT OR REPLACE INTO submission_validator_data (submission_id, field_name, value, filled_by_email, step_id, filled_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-            [$submissionId, $fieldName, $value, $filledBy, $stepId]
-        );
-    }
-    
-    public function deleteValidatorData(string $submissionId, string $fieldName): void
-    {
-        $this->execute(
-            "DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?",
-            [$submissionId, $fieldName]
-        );
-    }
-}
-```
-
-## Step 4: Run test to verify it passes
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/SubmissionRepositoryTest.php`
-Expected: PASS (3 tests)
-
-## Step 5: Commit
+## Testing
 
 ```bash
-rtk git add src/Repository/SubmissionRepository.php tests/PHPUnit/Repository/SubmissionRepositoryTest.php
-rtk git commit --author="onoblanc <admin.local@exemple.invalid>" -m "feat: SubmissionRepository (TDD)"
+php -l pages/my_submissions.php pages/my_validations.php pages/validate.php pages/form_preview.php pages/docs.php pages/changelog.php pages/confirm_action.php pages/my_forms.php pages/persona.php
 ```
+
+## Report
+
+Écrire dans `.superpowers/sdd/task-10-report.md`

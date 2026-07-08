@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Core\App;
+
 /**
  * Repository pour les journaux d'audit et de sécurité.
  *
@@ -13,8 +15,8 @@ final class AuditRepository extends BaseRepository
 {
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): bool
     {
-        if ($actor === '' && function_exists('get_auth_user')) {
-            $actor = get_auth_user();
+        if ($actor === '') {
+            $actor = App::auth()->getUser() ?: '';
         }
         return $this->execute(
             "INSERT INTO audit_log (id, action, target, detail, actor, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
@@ -24,8 +26,8 @@ final class AuditRepository extends BaseRepository
 
     public function securityLog(string $event, string $detail = '', string $actor = ''): bool
     {
-        if ($actor === '' && function_exists('get_auth_user')) {
-            $actor = get_auth_user();
+        if ($actor === '') {
+            $actor = App::auth()->getUser() ?: '';
         }
         return $this->execute(
             "INSERT INTO audit_log (id, action, target, detail, actor, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",

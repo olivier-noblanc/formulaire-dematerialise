@@ -86,15 +86,13 @@ $_app->set(\App\Core\Config::class, new \App\Core\Config());
 // get_pdo() délègue à App::db() — le service est déjà enregistré ci-dessus
 require_once __DIR__ . '/lib/database.php';
 
-// ── 4. Auth & admin users ──
-require_once __DIR__ . '/lib/auth.php';
+
 
 // ── 5. Settings + cache ──
 require_once __DIR__ . '/lib/settings.php';
 require_once __DIR__ . '/lib/cache.php';
 
-// ── 6. Sécurité (headers + CSRF) ──
-require_once __DIR__ . '/lib/security.php';
+// ── 6. Sécurité (headers) ──
 
 // Enregistrer SecurityService AVANT d'appeler send_security_headers()
 // HtmlService doit être enregistré avant (SecurityService en dépend)

@@ -256,7 +256,7 @@ echo "── 3. Auth & accès ──\n";
 test('get_auth_user() en mode test avec email', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
     $_SERVER['HTTP_X_TEST_USER'] = 'agent@exemple.invalid';
-    $email = get_auth_user();
+    $email = \App\Core\App::auth()->getUser();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return $email === 'agent@exemple.invalid' ? true : "Got: $email";
 });
@@ -264,7 +264,7 @@ test('get_auth_user() en mode test avec email', function() {
 test('get_auth_user() en mode test avec login sans @', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
     $_SERVER['HTTP_X_TEST_USER'] = 'dupont';
-    $email = get_auth_user();
+    $email = \App\Core\App::auth()->getUser();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return $email === 'dupont@exemple.invalid' ? true : "Got: $email";
 });
@@ -272,7 +272,7 @@ test('get_auth_user() en mode test avec login sans @', function() {
 test('get_auth_user() en mode test sans X-Test-User = fallback', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
     unset($_SERVER['HTTP_X_TEST_USER']);
-    $email = get_auth_user();
+    $email = \App\Core\App::auth()->getUser();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return $email === 'test.agent@exemple.invalid' ? true : "Got: $email";
 });
@@ -280,16 +280,16 @@ test('get_auth_user() en mode test sans X-Test-User = fallback', function() {
 test('get_auth_user() normalise en minuscules', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
     $_SERVER['HTTP_X_TEST_USER'] = 'Agent@exemple.invalid';
-    $email = get_auth_user();
+    $email = \App\Core\App::auth()->getUser();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return $email === 'agent@exemple.invalid' ? true : "Got: $email";
 });
 
 test('is_admin_user() avec email admin', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
-    $admin_email = get_admin_email();
+    $admin_email = \App\Core\App::auth()->getAdminEmail();
     $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
-    $result = is_admin_user();
+    $result = \App\Core\App::auth()->isAdmin();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return $result ? true : "$admin_email non détecté comme admin";
 });
@@ -297,16 +297,16 @@ test('is_admin_user() avec email admin', function() {
 test('is_admin_user() avec email non-admin', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
     $_SERVER['HTTP_X_TEST_USER'] = 'random.user@exemple.invalid';
-    $result = is_admin_user();
+    $result = \App\Core\App::auth()->isAdmin();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return !$result ? true : 'Utilisateur aléatoire détecté comme admin !';
 });
 
 test('is_super_admin() avec email admin principal', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
-    $admin_email = get_admin_email();
+    $admin_email = \App\Core\App::auth()->getAdminEmail();
     $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
-    $result = is_super_admin();
+    $result = \App\Core\App::auth()->isSuperAdmin();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return $result ? true : "$admin_email non super admin";
 });
@@ -314,7 +314,7 @@ test('is_super_admin() avec email admin principal', function() {
 test('is_super_admin() avec email non-super-admin', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
     $_SERVER['HTTP_X_TEST_USER'] = 'other.admin@exemple.invalid';
-    $result = is_super_admin();
+    $result = \App\Core\App::auth()->isSuperAdmin();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return !$result ? true : 'Utilisateur aléatoire détecté comme super admin !';
 });
@@ -322,11 +322,11 @@ test('is_super_admin() avec email non-super-admin', function() {
 test('require_admin() en mode test avec non-admin → JSON error', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
     $_SERVER['HTTP_X_TEST_USER'] = 'definitely.not.admin@exemple.invalid';
-    // require_admin() calls test_json_response() which does exit, so we test via subprocess
+    // requireAdmin() calls test_json_response() which does exit, so we test via subprocess
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
-    // Instead, verify that is_admin_user() returns false for non-admin
+    // Instead, verify that isAdmin() returns false for non-admin
     $_SERVER['HTTP_X_TEST_USER'] = 'definitely.not.admin@exemple.invalid';
-    $is_admin = is_admin_user();
+    $is_admin = \App\Core\App::auth()->isAdmin();
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
     return !$is_admin ? true : 'Non-admin détecté comme admin';
 });
@@ -370,38 +370,38 @@ test('handle_post() en POST sans action retourne null', function() {
 
 test('generate_csrf_token() retourne une chaîne hex', function() {
     @session_start();
-    $token = generate_csrf_token();
+    $token = \App\Core\App::security()->generateCsrfToken();
     return ctype_xdigit($token) && strlen($token) === 64 ? true : "Non-hex ou mauvaise longueur: " . strlen($token);
 });
 
 test('generate_csrf_token() stocke en session', function() {
     @session_start();
-    $token = generate_csrf_token();
+    $token = \App\Core\App::security()->generateCsrfToken();
     return isset($_SESSION['csrf_token']) && $_SESSION['csrf_token'] === $token ? true : 'Token pas en session';
 });
 
 test('csrf_field() génère un input hidden', function() {
     @session_start();
-    $html = csrf_field();
+    $html = \App\Core\App::security()->csrfField();
     return strpos($html, 'name="csrf_token"') !== false && strpos($html, 'type="hidden"') !== false ? true : "HTML: $html";
 });
 
 test('csrf_field() contient un value non vide', function() {
     @session_start();
-    $html = csrf_field();
+    $html = \App\Core\App::security()->csrfField();
     return preg_match('/value="[^"]+"/', $html) ? true : "Pas de value: $html";
 });
 
 test('verify_csrf() en mode test retourne toujours true', function() {
-    // En mode TEST, verify_csrf() bypass toujours
-    $result = verify_csrf();
+    // En mode TEST, verifyCsrf() bypass toujours
+    $result = \App\Core\App::security()->verifyCsrf();
     return $result === true ? true : 'CSRF bypass ne fonctionne pas en mode test';
 });
 
 test('require_csrf() ne lève pas en mode test', function() {
-    // En mode TEST, verify_csrf() retourne true, donc require_csrf() ne fait rien
+    // En mode TEST, verifyCsrf() retourne true, donc requireCsrf() ne fait rien
     // Si une exception est levée, le test échouera
-    require_csrf();
+    \App\Core\App::security()->requireCsrf();
     return true;
 });
 

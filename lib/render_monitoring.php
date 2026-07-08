@@ -123,7 +123,7 @@ HTML;
  */
 function render_monitoring_repartition(int $total_sub, int $valide_sub, int $en_cours_sub, int $refuse_sub): string
 {
-    $donut = render_donut_chart($total_sub, $valide_sub, $en_cours_sub, $refuse_sub);
+    $donut = \App\Core\App::html()->renderDonutChart($total_sub, $valide_sub, $en_cours_sub, $refuse_sub);
     return <<<HTML
   <!-- Graphique de répartition des statuts -->
   <div class="card">

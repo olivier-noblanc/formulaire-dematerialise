@@ -25,8 +25,8 @@ final class RgpdService
      */
     public function exportUserData(string $email): array
     {
-        $caller = function_exists('get_auth_user') ? get_auth_user() : '';
-        $callerIsAdmin = (function_exists('is_admin_user') && is_admin_user()) || (function_exists('is_super_admin') && is_super_admin());
+        $caller = App::auth()->getUser();
+        $callerIsAdmin = App::auth()->isAdmin() || App::auth()->isSuperAdmin();
         if (!$callerIsAdmin && strtolower($email) !== strtolower($caller)) {
             App::audit()->log('access_denied', 'rgpd:' . $email, 'Tentative d\'export RGPD non autorisée par ' . $caller, '');
             return ['email' => $email, 'error' => 'Accès refusé : vous ne pouvez exporter que vos propres données.'];
@@ -60,8 +60,8 @@ final class RgpdService
      */
     public function deleteUserData(string $email): bool
     {
-        $caller = function_exists('get_auth_user') ? get_auth_user() : '';
-        $callerIsAdmin = (function_exists('is_admin_user') && is_admin_user()) || (function_exists('is_super_admin') && is_super_admin());
+        $caller = App::auth()->getUser();
+        $callerIsAdmin = App::auth()->isAdmin() || App::auth()->isSuperAdmin();
         if (!$callerIsAdmin && strtolower($email) !== strtolower($caller)) {
             App::audit()->log('access_denied', 'rgpd:' . $email, 'Tentative de suppression RGPD non autorisée par ' . $caller, '');
             return false;

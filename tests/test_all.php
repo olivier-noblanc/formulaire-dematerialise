@@ -134,7 +134,7 @@ test('get_auth_user() normalise le login', function() {
     $expected = $user . '@exemple.invalid';
     // Vérifier aussi le résultat en mode test
     $_SERVER['HTTP_X_TEST_USER'] = 'testeur@exemple.invalid';
-    $email = get_auth_user();
+    $email = \App\Core\App::auth()->getUser();
     return $email === 'testeur@exemple.invalid' ? true : "Got: $email (attendu: testeur@exemple.invalid)";
 });
 
@@ -170,26 +170,26 @@ test('parse_options_input() convertit une option par ligne', function() {
 });
 
 test('is_admin_user() détecte un admin', function() {
-    // En mode TEST, is_admin_user() utilise X-Test-User
-    $admin_email = get_admin_email();
+    // En mode TEST, isAdmin() utilise X-Test-User
+    $admin_email = \App\Core\App::auth()->getAdminEmail();
     $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
-    $result = is_admin_user();
+    $result = \App\Core\App::auth()->isAdmin();
     $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
     return $result ? true : $admin_email . ' non détecté comme admin';
 });
 
 test('is_super_admin() détecte le super admin', function() {
-    // En mode TEST, is_super_admin() utilise X-Test-User
-    $admin_email = get_admin_email();
+    // En mode TEST, isSuperAdmin() utilise X-Test-User
+    $admin_email = \App\Core\App::auth()->getAdminEmail();
     $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
-    $result = is_super_admin();
+    $result = \App\Core\App::auth()->isSuperAdmin();
     $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
     return $result ? true : $admin_email . ' non super admin';
 });
 
 test('csrf_field() génère un token', function() {
     @session_start();
-    $html = csrf_field();
+    $html = \App\Core\App::security()->csrfField();
     return strpos($html, 'name="csrf_token"') !== false ? true : "Pas de champ CSRF: $html";
 });
 
@@ -435,7 +435,7 @@ test('CSRF token validé en POST', function() {
     $token = $_SESSION['csrf_token'] ?? bin2hex(random_bytes(32));
     $_SESSION['csrf_token'] = $token;
     $_POST['csrf_token'] = $token;
-    $result = verify_csrf();
+    $result = \App\Core\App::security()->verifyCsrf();
     return $result ? true : 'CSRF check a échoué avec le bon token';
 });
 

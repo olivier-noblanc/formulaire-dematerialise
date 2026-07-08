@@ -45,7 +45,7 @@ $filesToDownload = @(
     "confirm_action.php","changelog.php","form_preview.php","form_tracking.php",
     "install.php","screenshot.php","remind.php","alert_check.php",
     "lib/autoloader.php","lib/core_bootstrap.php","lib/database.php","lib/auth.php",
-    "lib/settings.php","lib/security.php","lib/cache.php","lib/audit_log.php",
+    "lib/settings.php","lib/cache.php","lib/audit_log.php",
     "lib/test_mode.php","lib/email_verify.php","lib/mail.php","lib/workflow.php",
     "lib/filled_by.php","lib/conditions.php","lib/tokens.php","lib/attachments.php",
     "lib/rgpd.php","lib/stats.php","lib/webhook.php","lib/export_csv.php",

@@ -132,7 +132,7 @@ function handle_admin_action_delete_form(PDO $pdo): array {
         return $result;
     }
     // Sécurité (S-15) : seuls les propriétaires du formulaire ou le super-admin peuvent le supprimer
-    if (!is_form_owner((string)$form_id) && !is_super_admin()) {
+    if (!App::auth()->isFormOwner((string)$form_id) && !App::auth()->isSuperAdmin()) {
         $result['error'] = 'Seuls les propriétaires du formulaire peuvent le supprimer.';
         return $result;
     }
@@ -352,7 +352,7 @@ function handle_admin_action_delete_owner(PDO $pdo): array {
     try {
         $pdo->prepare("DELETE FROM form_owners WHERE id = ?")->execute([$owner_id]);
         App::audit()->log('owner_remove', 'form:' . $form_id, "Propriétaire retiré");
-        return ['redirect' => build_url('index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners')];
+        return ['redirect' => \App\Core\App::html()->buildUrl('index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners')];
     } catch (PDOException $e) {
         return ['error' => 'Erreur lors de la suppression du propriétaire : ' . $e->getMessage()];
     }

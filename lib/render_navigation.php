@@ -51,10 +51,10 @@ function render_nav(string $current_page = '', array $extra_admin_links = []): s
  * @return string HTML de l'en-tête complet
  */
 function render_header(string $current_page = '', array $extra_admin_links = []): string {
-    $user = get_auth_user();
-    $is_admin = is_admin_user();           // réel (sécurité — pour le persona)
+    $user = \App\Core\App::auth()->getUser();
+    $is_admin = \App\Core\App::auth()->isAdmin();           // réel (sécurité — pour le persona)
     // v9.9.0 — is_admin_effective = false si persona actif → masque la sidebar admin
-    $is_admin_eff = is_admin_effective();
+    $is_admin_eff = \App\Core\App::auth()->isAdminEffective();
 
     // Compteur de validations en attente pour le badge
     $pending_count = 0;
@@ -95,7 +95,7 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
     if ($is_admin && $persona_current_token !== '' && function_exists('persona_lookup')) {
         $persona_active_email = persona_lookup($persona_current_token);
         if ($persona_active_email !== '') {
-            $persona_display = display_user_short($persona_active_email);
+            $persona_display = \App\Core\App::html()->displayUserShort($persona_active_email);
             // Bouton "Quitter" → route persona?action=stop (qui révoque le token)
             $stop_url = 'index.php?p=persona&action=stop&persona_token=' . urlencode($persona_current_token);
             $persona_active = '<div class="persona-banner" role="status">'
@@ -178,7 +178,7 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
     // qui affiche la section "Mes formulaires (suivi)" avec toutes les cartes.
     $owned_forms = [];
     try {
-        $owned_forms = get_owned_forms($user);
+        $owned_forms = \App\Core\App::auth()->getOwnedForms();
     } catch (\Throwable $e) {
         // ignore — section non affichée
     }
@@ -206,7 +206,7 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
             foreach ($persona_stmt->fetchAll(\PDO::FETCH_COLUMN) as $u) {
                 $persona_users[] = [
                     'email' => $u,
-                    'display' => display_user_short($u),
+                    'display' => \App\Core\App::html()->displayUserShort($u),
                 ];
             }
             $persona_users_json = json_encode($persona_users, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -217,13 +217,13 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
 
     // ── User initials for avatar ─────────────────────────────
     $user_initials = strtoupper(substr($user, 0, 1));
-    $user_short = display_user_short($user);  // v9.8.0 — sans @domaine
+    $user_short = \App\Core\App::html()->displayUserShort($user);
 
     // ── User card avec persona intégré (v9.8.0, refonte v10.0.0) ──
     // La user card affiche le local part (sans @domaine).
     // Si admin, un clic ouvre un menu persona pour visualiser en tant qu'un autre user.
     // v10.0.0 — utilise $persona_active_email (défini plus haut via token lookup)
-    $persona_active_short = $persona_active_email !== '' ? display_user_short($persona_active_email) : '';
+    $persona_active_short = $persona_active_email !== '' ? \App\Core\App::html()->displayUserShort($persona_active_email) : '';
     $user_card_data_persona = $is_admin ? ' data-persona-users="' . h($persona_users_json) . '"' : '';
     $user_card_data_active  = $persona_active_email !== '' ? ' data-persona-active="' . h($persona_active_email) . '"' : '';
 

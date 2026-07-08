@@ -1,42 +1,32 @@
-# Task 2: SettingsRepository — Report
+# Task 2 — Migrated `src/` files to direct DI calls
 
-## What I Implemented
+## Summary
 
-SettingsRepository extending BaseRepository with 4 methods:
-- `get(string $key, string $default = ''): ?string` — fetches value by key, returns default if missing
-- `set(string $key, string $value, string $updatedBy = ''): bool` — INSERT OR REPLACE with timestamp
-- `delete(string $key): bool` — removes key from settings
-- `getAll(): array` — returns all settings ordered by key
+Replaced 16 procedural auth wrapper calls with `App::auth()->*` DI calls across 7 files. Removed all `function_exists('get_auth_user')` guards.
 
-## TDD Evidence
+## Files modified
 
-**RED:** Ran `rtk php phpunit.phar tests/PHPUnit/Repository/SettingsRepositoryTest.php`
-- 4 errors, all "Class 'App\Repository\SettingsRepository' not found"
-- Expected: class doesn't exist yet
+| File | Changes |
+|------|---------|
+| `src/Controller/DashboardController.php` | 4 replacements: `require_admin()` → `App::auth()->requireAdmin()`, 3× `is_admin_user()` → `App::auth()->isAdmin()` |
+| `src/Controller/IndexController.php` | 2 replacements: `is_admin_effective()` → `App::auth()->isAdminEffective()`, `get_owned_forms($user)` → `App::auth()->getOwnedForms($user)`. Added `use App\Core\App;` |
+| `src/Audit/AuditLogService.php` | 2 replacements: `get_auth_user()` → `App::auth()->getUser()` (with guard removal). Added `use App\Core\App;` |
+| `src/Repository/AuditRepository.php` | 2 replacements: `get_auth_user()` → `App::auth()->getUser()` (with guard removal). Added `use App\Core\App;` |
+| `src/Mail/MailerService.php` | 1 replacement: `get_auth_user()` → `App::auth()->getUser()` |
+| `src/Rgpd/RgpdService.php` | 6 replacements: 2× `get_auth_user()` → `App::auth()->getUser()`, 2× `is_admin_user()` → `App::auth()->isAdmin()`, 2× `is_super_admin()` → `App::auth()->isSuperAdmin()` (with guard removal) |
+| `src/Render/HtmlService.php` | 1 replacement: `get_auth_user()` → `App::auth()->getUser()` (with guard removal). Added `use App\Core\App;` |
 
-**GREEN:** After writing implementation + `composer dump-autoload`
-- 4 tests, 4 assertions, all passing
+## Lint results
 
-## Files Changed
+All 7 files pass `php -l` with no errors.
 
-- `src/Repository/SettingsRepository.php` (created)
-- `tests/PHPUnit/Repository/SettingsRepositoryTest.php` (created)
+## Guard removal
 
-## Test Results
+- `AuditLogService.php`: removed `function_exists('get_auth_user')` ternary in `log()` and `securityLog()`
+- `AuditRepository.php`: removed `function_exists('get_auth_user')` condition in `log()` and `securityLog()`
+- `RgpdService.php`: removed `function_exists('get_auth_user')`, `function_exists('is_admin_user')`, `function_exists('is_super_admin')` in `exportUserData()` and `deleteUserData()`
+- `HtmlService.php`: removed `function_exists('get_auth_user')` in `displayUser()`
 
-```
-OK (4 tests, 4 assertions)
-```
+## Remaining procedural calls in `src/`
 
-Full suite: 513 tests, 797 assertions — no regressions.
-
-## Self-Review
-
-**Completeness:** All 4 methods implemented per spec. All 4 tests written per spec.
-**Quality:** Clean, minimal implementation following BaseRepository patterns exactly.
-**Discipline:** No overbuilding. Followed existing codebase patterns (PSR-4, strict_types, INSERT OR REPLACE for set).
-**Testing:** Tests verify real behavior against SQLite (set/get roundtrip, delete, default values). No mocking.
-
-## Note
-
-After creating the files, `composer dump-autoload` was needed because `classmap-authoritative: true` was set. This is a project-wide concern — new classes under `src/` require autoload regen. Not a problem, but worth noting for future task authors.
+None — grep confirms zero remaining procedural auth calls in the modified files. The only hits are in comments (docstrings referencing old function names).

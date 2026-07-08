@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Audit;
 
 use App\Contract\AuditInterface;
+use App\Core\App;
 use App\Core\Database;
 use App\Repository\AuditRepository;
 
@@ -22,7 +23,7 @@ final class AuditLogService implements AuditInterface
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): void
     {
         if (empty($actor)) {
-            $actor = function_exists('get_auth_user') ? get_auth_user() : 'system';
+            $actor = App::auth()->getUser() ?: 'system';
         }
 
         // Masquer les emails sauf en CLI ou actions critiques
@@ -40,7 +41,7 @@ final class AuditLogService implements AuditInterface
     public function securityLog(string $event, string $detail = '', string $actor = ''): void
     {
         if (empty($actor)) {
-            $actor = function_exists('get_auth_user') ? get_auth_user() : 'system';
+            $actor = App::auth()->getUser() ?: 'system';
         }
         error_log('[SECURITY] ' . $event . ': ' . $detail . ' (actor: ' . $actor . ')');
         $this->log('security_event', 'security:' . $event, $detail, $actor);

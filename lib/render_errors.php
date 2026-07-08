@@ -66,9 +66,7 @@ function render_error_page(int $code, string $title, string $message, string $hi
     }
 
     $user = '';
-    if (function_exists('get_auth_user')) {
-        try { $user = get_auth_user(); } catch (\Throwable $e) { $user = ''; error_log('render_error_page auth error: ' . $e->getMessage()); }
-    }
+    try { $user = \App\Core\App::auth()->getUser(); } catch (\Throwable $e) { $user = ''; error_log('render_error_page auth error: ' . $e->getMessage()); }
 
     $bandeau_links = '';
     if (!empty($user)) {

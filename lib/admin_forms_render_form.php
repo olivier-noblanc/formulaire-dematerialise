@@ -148,7 +148,7 @@ function render_owners_section(array $ctx): string {
                 <tbody>
                     <?php foreach ($owners as $owner): ?>
                     <tr>
-                        <td><?= display_user($owner['email']) ?></td>
+                        <td><?= \App\Core\App::html()->displayUser($owner['email']) ?></td>
                         <td><?= h($owner['added_at']) ?></td>
                         <td>
                             <a href="index.php?p=confirm_action&action=remove_owner&id=<?= $owner['id'] ?>&form_id=<?= $form_id ?>" class="btn btn-sm btn-danger">Retirer</a>

@@ -190,4 +190,3 @@ require_once __DIR__ . '/uuid.php';
 require_once __DIR__ . '/date.php';
 require_once __DIR__ . '/html.php';
 require_once __DIR__ . '/validation.php';
-require_once __DIR__ . '/security.php';

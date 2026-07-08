@@ -1,30 +1,39 @@
-# Task 9: Register Admin + Form in DI — Report
+# Task 9: Refactor pages/stats.php — Replace procedural wrappers with DI calls
 
-## What I Implemented
+## Summary
 
-Registered `AdminRepository` and `FormRepository` in the DI container across three bootstrap files:
+Refactored `pages/stats.php` to use direct dependency injection calls instead of procedural wrapper functions.
 
-1. **helpers.php** — Added `$_app->set()` calls after `AuditRepository` registration (line ~169)
-2. **src/bootstrap.php** — Added `use` statements and `$app->set()` calls after `AuditRepository` registration (line ~56)
-3. **tests/phpunit_bootstrap.php** — Added `use` statements and `$app->set()` calls after `AuditRepository` registration (line ~57)
+## Changes Made
 
-## Tests
+### 1. pages/stats.php
 
-- **525 tests pass** (OK, 0 failures)
-- 19 skipped, 3 deprecations — all pre-existing
-- Exceeds the 504+ threshold specified in the task brief
+| Before | After |
+|--------|-------|
+| `require_admin()` | `\App\Core\App::auth()->requireAdmin()` |
+| `_dbm_q($pdo, "...")` | `$pdo->query("...")` |
+| `render_donut_chart(...)` | `\App\Core\App::html()->renderDonutChart(...)` |
+| `display_user($vs['email'])` | `\App\Core\App::html()->displayUser($vs['email'])` |
+| `format_file_size(...)` | `\App\Core\App::html()->formatFileSize(...)` |
 
-## Files Changed
+### 2. src/Contract/HtmlInterface.php
 
-- `helpers.php` — +2 registrations
-- `src/bootstrap.php` — +2 use statements, +2 registrations
-- `tests/phpunit_bootstrap.php` — +2 use statements, +2 registrations
+Added two new method signatures to the interface:
+- `displayUser(string $email, ?string $current_user = null, bool $force_email = false): string`
+- `renderDonutChart(int $total, int $valide, int $en_cours, int $refuse): string`
 
-## Commit
+### 3. src/Render/HtmlService.php
 
-- **SHA:** `ba8c8bd`
-- **Message:** `feat: register AdminRepository + FormRepository in DI`
+Implemented the two new methods, porting logic from `lib/html.php`:
+- `displayUser()` — masks email domain for current user, shows "Vous" for self
+- `renderDonutChart()` — generates SVG donut chart with conic-gradient
 
-## Issues or Concerns
+## Verification
 
-None. Straightforward wiring task — both repositories already existed and accepted `$db_service`/`$db` as their constructor argument, matching the existing pattern for `AuditRepository` and `SettingsRepository`.
+All three files pass `php -l` syntax check.
+
+## Notes
+
+- `get_global_stats()` and `get_stats_by_period()` remain as procedural calls from `helpers.php` — these are not yet migrated to DI (tracked in separate tasks).
+- `get_db_size()` also remains procedural (outside scope of this task).
+- The `h()` function calls in the template remain unchanged as they're used inline in HTML and the HtmlService `h()` method is already available via `\App\Core\App::html()->h()` if needed later.

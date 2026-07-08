@@ -1,117 +1,41 @@
-# Task 2: SettingsRepository
+# Task 2: Migrer `src/` — Auth wrappers → DI
 
-**Files:**
-- Create: `src/Repository/SettingsRepository.php`
-- Test: `tests/PHPUnit/Repository/SettingsRepositoryTest.php`
+## Context
 
-**Interfaces:**
-- Consumes: `BaseRepository`
-- Produces: `SettingsRepository::get()`, `set()`, `delete()`, `getAll()`
+Les fichiers dans `src/` appellent encore des wrappers procéduraux. L'objectif est de les migrer vers les appels DI directs.
 
-## Step 1: Write the failing test
+## Fichiers à modifier
 
-```php
-<?php
-declare(strict_types=1);
+1. `src/Controller/DashboardController.php` — `require_admin()`, `is_admin_user()`
+2. `src/Controller/IndexController.php` — `is_admin_effective()`, `get_owned_forms()`
+3. `src/Audit/AuditLogService.php` — `get_auth_user()` (2 occurrences)
+4. `src/Repository/AuditRepository.php` — `get_auth_user()` (2 occurrences)
+5. `src/Mail/MailerService.php` — `get_auth_user()` (1 occurrence)
+6. `src/Rgpd/RgpdService.php` — `get_auth_user()`, `is_admin_user()`, `is_super_admin()` (6 occurrences)
+7. `src/Render/HtmlService.php` — `get_auth_user()` (1 occurrence dans `displayUser()`)
 
-namespace App\Tests\Repository;
+## Mapping
 
-use PHPUnit\Framework\TestCase;
-use App\Repository\SettingsRepository;
-use App\Core\Database;
+| Wrapper | Remplacement |
+|---------|-------------|
+| `get_auth_user()` | `App::auth()->getUser()` |
+| `is_admin_user()` | `App::auth()->isAdmin()` |
+| `is_super_admin()` | `App::auth()->isSuperAdmin()` |
+| `require_admin()` | `App::auth()->requireAdmin()` |
+| `is_admin_effective()` | `App::auth()->isAdminEffective()` |
+| `get_owned_forms()` | `App::auth()->getOwnedForms()` |
 
-final class SettingsRepositoryTest extends TestCase
-{
-    private SettingsRepository $repo;
+## Constraints
 
-    protected function setUp(): void
-    {
-        $this->repo = new SettingsRepository(new Database());
-    }
+- Les fichiers `src/` ont déjà `use App\Core\App;` — vérifier avant d'ajouter
+- Supprimer les guards `function_exists('get_auth_user')` si présents
 
-    public function testGetReturnsDefaultForMissingKey(): void
-    {
-        $result = $this->repo->get('nonexistent_key', 'default');
-        $this->assertSame('default', $result);
-    }
-
-    public function testSetAndGetRoundTrip(): void
-    {
-        $key = 'test_repo_' . uniqid();
-        $this->repo->set($key, 'test_value');
-        $result = $this->repo->get($key);
-        $this->assertSame('test_value', $result);
-    }
-
-    public function testDeleteRemovesKey(): void
-    {
-        $key = 'test_delete_' . uniqid();
-        $this->repo->set($key, 'to_delete');
-        $this->repo->delete($key);
-        $result = $this->repo->get($key, '');
-        $this->assertSame('', $result);
-    }
-
-    public function testGetAllReturnsArray(): void
-    {
-        $result = $this->repo->getAll();
-        $this->assertIsArray($result);
-    }
-}
-```
-
-## Step 2: Run test to verify it fails
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/SettingsRepositoryTest.php`
-Expected: FAIL with "Class 'App\Repository\SettingsRepository' not found"
-
-## Step 3: Write minimal implementation
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace App\Repository;
-
-final class SettingsRepository extends BaseRepository
-{
-    public function get(string $key, string $default = ''): ?string
-    {
-        $result = $this->fetchOne(
-            "SELECT value FROM settings WHERE key = ?",
-            [$key]
-        );
-        return $result['value'] ?? $default;
-    }
-    
-    public function set(string $key, string $value, string $updatedBy = ''): bool
-    {
-        return $this->execute(
-            "INSERT OR REPLACE INTO settings (key, value, updated_at, updated_by) VALUES (?, ?, datetime('now'), ?)",
-            [$key, $value, $updatedBy]
-        );
-    }
-    
-    public function delete(string $key): bool
-    {
-        return $this->execute("DELETE FROM settings WHERE key = ?", [$key]);
-    }
-    
-    public function getAll(): array
-    {
-        return $this->fetchAll("SELECT key, value FROM settings ORDER BY key");
-    }
-}
-```
-
-## Step 4: Run test to verify it passes
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/SettingsRepositoryTest.php`
-Expected: PASS (4 tests)
-
-## Step 5: Commit
+## Testing
 
 ```bash
-rtk git add src/Repository/SettingsRepository.php tests/PHPUnit/Repository/SettingsRepositoryTest.php
-rtk git commit --author="onoblanc <admin.local@exemple.invalid>" -m "feat: SettingsRepository (TDD)"
+php -l src/Controller/DashboardController.php src/Controller/IndexController.php src/Audit/AuditLogService.php src/Repository/AuditRepository.php src/Mail/MailerService.php src/Rgpd/RgpdService.php src/Render/HtmlService.php
 ```
+
+## Report
+
+Écrire dans `.superpowers/sdd/task-2-report.md`
