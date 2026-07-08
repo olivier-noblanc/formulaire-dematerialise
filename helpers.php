@@ -166,6 +166,8 @@ $_app->set(\App\Audit\AuditLogService::class, new \App\Audit\AuditLogService($_d
 $_app->set(\App\Cache\CacheService::class, new \App\Cache\CacheService());
 $_app->set(\App\Repository\SettingsRepository::class, new \App\Repository\SettingsRepository($_db_service));
 $_app->set(\App\Repository\AuditRepository::class, new \App\Repository\AuditRepository($_db_service));
+$_app->set(\App\Repository\AdminRepository::class, new \App\Repository\AdminRepository($_db_service));
+$_app->set(\App\Repository\FormRepository::class, new \App\Repository\FormRepository($_db_service));
 $_app->set(\App\Repository\AttachmentRepository::class, new \App\Repository\AttachmentRepository($_db_service));
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());
