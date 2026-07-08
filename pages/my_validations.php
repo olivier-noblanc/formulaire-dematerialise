@@ -1,8 +1,9 @@
 <?php
 // my_validations.php — Dashboard validateur : tâches en attente + historique
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
-$user = get_auth_user();
+$user = App::auth()->getUser();
 $pdo  = \App\Core\App::db()->getPdo();
 $search = trim($_GET['search'] ?? '');
 
@@ -348,8 +349,8 @@ ob_start();
               <td>
                 <a href="index.php?p=submission_view&id=<?= urlencode($r_sub_id) ?>"><?= h($r_form_label) ?></a>
               </td>
-              <td><?= h(t_jargon($r_step_label)) ?></td>
-              <td><?= h(t_jargon($r_field_lbl !== '' ? $r_field_lbl : $r_field_name)) ?></td>
+              <td><?= h(App::html()->tJargon($r_step_label)) ?></td>
+              <td><?= h(App::html()->tJargon($r_field_lbl !== '' ? $r_field_lbl : $r_field_name)) ?></td>
               <td><?= h($r_value_short) ?></td>
             </tr>
           <?php endforeach; ?>

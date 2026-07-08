@@ -13,10 +13,11 @@ declare(strict_types=1);
  */
 
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 // Sécurité : réservé aux admins réels (pas effectif — un admin en persona
 // doit pouvoir stopper son persona)
-require_admin();
+App::auth()->requireAdmin();
 
 $action = $_GET['action'] ?? '';
 $current_token = $_GET['persona_token'] ?? '';
@@ -49,7 +50,7 @@ if ($action === 'start') {
 
     // Créer le token — l'admin email = get_auth_user() (qui retourne l'user
     // réel puisqu'on n'a pas encore de persona_token actif ici)
-    $admin_email = get_auth_user();
+    $admin_email = App::auth()->getUser();
     $token = persona_create_token($admin_email, $target_email);
     if ($token === '') {
         render_error_page(500, 'Erreur création token',

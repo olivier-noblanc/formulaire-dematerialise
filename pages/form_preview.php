@@ -1,8 +1,9 @@
 <?php
 // form_preview.php — Previsualisation du formulaire tel que l'agent le verra
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
-require_admin();
+App::auth()->requireAdmin();
 
 $pdo = \App\Core\App::db()->getPdo();
 $form_id = trim($_GET['form_id'] ?? '');
@@ -38,7 +39,7 @@ ob_start();
 
   <h1><?= h($form['label']) ?></h1>
   <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= h($form['description']) ?></p><?php endif; ?>
-  <p style="font-size:.85rem;color:#555;margin-bottom:1.5rem;">Formulaire rempli par : <strong><?= h(get_auth_user()) ?></strong></p>
+  <p style="font-size:.85rem;color:#555;margin-bottom:1.5rem;">Formulaire rempli par : <strong><?= h(App::auth()->getUser()) ?></strong></p>
 
   <?php if (!empty($workflow_steps)): ?>
   <div class="workflow-preview">

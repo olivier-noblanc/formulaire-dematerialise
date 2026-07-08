@@ -13,7 +13,7 @@ require_once dirname(__DIR__) . '/lib/render_backup.php';
 use App\Core\App;
 
 // Vérification des droits d'accès
-require_admin();
+App::auth()->requireAdmin();
 
 $success_msg = '';
 $error_msg   = '';
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     try {
                         $test_pdo = new PDO('sqlite:' . $db_path);
                         $test_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                        _dbm_q($test_pdo, 'SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
+                        $test_pdo->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
                         $test_pdo = null; // Fermer
 
                         App::audit()->log('backup_restore', 'database',
@@ -314,7 +314,7 @@ function count_purge_targets(int $months): array {
 $db_stats = [];
 
 // Taille du fichier
-$db_stats['file_size'] = get_db_size();
+$db_stats['file_size'] = filesize($db_path);
 $db_stats['file_size_readable'] = format_bytes($db_stats['file_size']);
 $db_stats['file_exists'] = file_exists($db_path);
 $db_stats['file_modified'] = '—';
@@ -329,7 +329,7 @@ try {
     $pdo = App::db()->getPdo();
     foreach ($db_tables as $table) {
         try {
-            $count = (int)_dbm_q($pdo, "SELECT COUNT(*) FROM {$table}")->fetchColumn();
+            $count = (int)$pdo->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
             $db_stats['row_counts'][$table] = $count;
         } catch (Exception $e) {
             $db_stats['row_counts'][$table] = '—';
@@ -338,8 +338,8 @@ try {
     }
 
     // Date de la soumission la plus ancienne et la plus récente
-    $oldest = _dbm_q($pdo, "SELECT MIN(submitted_at) FROM submissions")->fetchColumn();
-    $newest = _dbm_q($pdo, "SELECT MAX(submitted_at) FROM submissions")->fetchColumn();
+    $oldest = $pdo->query("SELECT MIN(submitted_at) FROM submissions")->fetchColumn();
+    $newest = $pdo->query("SELECT MAX(submitted_at) FROM submissions")->fetchColumn();
     $oldest_str = $oldest !== false ? (string)$oldest : '';
     $newest_str = $newest !== false ? (string)$newest : '';
     $oldest_ts = $oldest_str !== '' ? strtotime($oldest_str) : false;
@@ -348,9 +348,9 @@ try {
     $db_stats['newest_submission'] = ($newest_str !== '' && $newest_ts !== false) ? date('d/m/Y H:i', $newest_ts) : '—';
 
     // Informations SQLite : page_count et freelist_count
-    $page_count    = (int)_dbm_q($pdo, "PRAGMA page_count")->fetchColumn();
-    $freelist_count = (int)_dbm_q($pdo, "PRAGMA freelist_count")->fetchColumn();
-    $page_size     = (int)_dbm_q($pdo, "PRAGMA page_size")->fetchColumn();
+    $page_count    = (int)$pdo->query("PRAGMA page_count")->fetchColumn();
+    $freelist_count = (int)$pdo->query("PRAGMA freelist_count")->fetchColumn();
+    $page_size     = (int)$pdo->query("PRAGMA page_size")->fetchColumn();
     $db_stats['page_count']     = $page_count;
     $db_stats['freelist_count'] = $freelist_count;
     $db_stats['page_size']      = $page_size;

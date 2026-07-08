@@ -90,7 +90,7 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'status' => $all_healthy ? 'healthy' : 'unhealthy',
-        'version' => get_latest_version(),
+        'version' => App::cache()->getLatestVersion(),
         'timestamp' => date('c'),
         'checks' => array_map(function($c) {
             return ['label' => $c['label'], 'status' => $c['ok'] ? 'ok' : 'error', 'detail' => $c['detail']];
@@ -107,7 +107,7 @@ ob_start();
 
   <div class="status-banner <?= $all_healthy ? 'healthy' : 'unhealthy' ?>">
     <h2><?= $all_healthy ? '<span aria-hidden="true">✓</span> Système opérationnel' : '<span aria-hidden="true">⚠</span> Problème détecté' ?></h2>
-    <p style="margin-top:.5rem;color:#555;">v<?= h(get_latest_version()) ?> — <?= h(date('d/m/Y à H:i')) ?></p>
+    <p style="margin-top:.5rem;color:#555;">v<?= h(App::cache()->getLatestVersion()) ?> — <?= h(date('d/m/Y à H:i')) ?></p>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden;">

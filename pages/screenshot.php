@@ -5,9 +5,10 @@
 // Usage : screenshot.php?f=01_index_agent.png
 
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 // Access control: only authenticated users can view screenshots
-if (!get_auth_user()) {
+if (!App::auth()->getUser()) {
     http_response_code(403);
     exit('Accès refusé');
 }

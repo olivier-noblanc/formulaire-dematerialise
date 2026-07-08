@@ -6,7 +6,7 @@ require_once dirname(__DIR__) . '/lib/admin_forms_samples.php';
 use App\Core\App;
 
 // Vérification des droits d'accès
-require_admin();
+App::auth()->requireAdmin();
 
 $pdo = App::db()->getPdo();
 
@@ -136,7 +136,7 @@ if (!empty($form_id)) {
         $existing_groups = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         // Form owners
-        $owners = get_form_owners((string)$form_id);
+        $owners = App::auth()->getFormOwners((string)$form_id);
     }
 }
 

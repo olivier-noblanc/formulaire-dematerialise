@@ -20,9 +20,10 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/helpers.php';
 require_once dirname(__DIR__) . '/lib/admin_settings_handlers.php';
 require_once dirname(__DIR__) . '/lib/render_admin_settings.php';
+use App\Core\App;
 
 // Vérification des droits d'accès
-require_admin();
+App::auth()->requireAdmin();
 
 // Traitement du POST — délégué au dispatcher lib/admin_settings_handlers.php.
 // CSRF, validation et conservation des passwords sont gérés dans le handler.

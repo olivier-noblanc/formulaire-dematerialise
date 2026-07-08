@@ -39,8 +39,8 @@ if (!$attachment) {
         'Si vous avez suivi un lien depuis un email, la pièce jointe a peut-être été supprimée. Contactez l\'expéditeur de la demande.');
 }
 
-$user = get_auth_user();
-$is_admin = is_admin_user();
+$user = App::auth()->getUser();
+$is_admin = App::auth()->isAdmin();
 
 // Vérifier les droits d'accès :
 // - Admin : accès à tout
@@ -180,8 +180,8 @@ function export_submission_json(): void {
             'Contactez un administrateur si vous pensez qu\'il s\'agit d\'une erreur.');
     }
 
-    $user = get_auth_user();
-    $is_admin = is_admin_user();
+    $user = App::auth()->getUser();
+    $is_admin = App::auth()->isAdmin();
 
     // Vérifier les droits d'accès (mêmes règles que pour les pièces jointes) :
     // - Admin : accès à tout

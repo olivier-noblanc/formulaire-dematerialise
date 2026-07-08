@@ -2,7 +2,7 @@
 // stats.php — Statistiques et tableaux de bord par période
 require_once dirname(__DIR__) . '/helpers.php';
 
-require_admin();
+\App\Core\App::auth()->requireAdmin();
 
 $pdo = \App\Core\App::db()->getPdo();
 $period = $_GET['period'] ?? 'month';
@@ -19,13 +19,13 @@ $global_stats = get_global_stats();
 $period_stats = get_stats_by_period($period, 12);
 
 // Statistiques par formulaire
-$form_stats = _dbm_q($pdo, "
+$form_stats = $pdo->query("
     SELECT f.label, f.slug, COUNT(s.id) as total,
            SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
            SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
            SUM(CASE WHEN s.status = 'refuse' THEN 1 ELSE 0 END) as refuse,
-           AVG(CASE WHEN s.status = 'valide' AND s.closed_at IS NOT NULL 
-               THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL) 
+           AVG(CASE WHEN s.status = 'valide' AND s.closed_at IS NOT NULL
+               THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
                ELSE NULL END) as avg_seconds
     FROM forms f
     LEFT JOIN submissions s ON s.form_id = f.id
@@ -34,13 +34,13 @@ $form_stats = _dbm_q($pdo, "
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Statistiques par validateur
-$validator_stats = _dbm_q($pdo, "
+$validator_stats = $pdo->query("
     SELECT t.email,
            COUNT(t.id) as total,
            SUM(CASE WHEN t.done_at IS NOT NULL THEN 1 ELSE 0 END) as done,
            SUM(CASE WHEN t.done_at IS NULL THEN 1 ELSE 0 END) as pending,
-           AVG(CASE WHEN t.done_at IS NOT NULL 
-               THEN CAST(strftime('%s', t.done_at) AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) 
+           AVG(CASE WHEN t.done_at IS NOT NULL
+               THEN CAST(strftime('%s', t.done_at) AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL)
                ELSE NULL END) as avg_response_seconds
     FROM tokens t
     JOIN submissions s ON s.id = t.submission_id
@@ -101,7 +101,7 @@ ob_start();
   <!-- Répartition des statuts -->
   <div class="card">
     <h2>Répartition des statuts</h2>
-    <?= render_donut_chart((int)$global_stats['total'], (int)$global_stats['valide'], (int)$global_stats['en_cours'], (int)$global_stats['refuse']) ?>
+    <?= \App\Core\App::html()->renderDonutChart((int)$global_stats['total'], (int)$global_stats['valide'], (int)$global_stats['en_cours'], (int)$global_stats['refuse']) ?>
   </div>
 
   <!-- Soumissions par période -->
@@ -190,7 +190,7 @@ ob_start();
           $vs_avg = !empty($vs['avg_response_seconds']) ? round((float)$vs['avg_response_seconds'] / 3600, 1) . ' h' : '—';
         ?>
           <tr>
-            <td><?= display_user($vs['email']) ?></td>
+            <td><?= \App\Core\App::html()->displayUser($vs['email']) ?></td>
             <td><?= (int)$vs['total'] ?></td>
             <td><span class="badge badge-ok"><?= (int)$vs['done'] ?></span></td>
             <td><span class="badge badge-warn"><?= (int)$vs['pending'] ?></span></td>
@@ -215,11 +215,11 @@ ob_start();
         <div class="stat-label">Pièces jointes</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value"><?= format_file_size($global_stats['attachments_size']) ?></div>
+        <div class="stat-value"><?= \App\Core\App::html()->formatFileSize($global_stats['attachments_size']) ?></div>
         <div class="stat-label">Volume pièces jointes</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value"><?= format_file_size(get_db_size()) ?></div>
+        <div class="stat-value"><?= \App\Core\App::html()->formatFileSize(get_db_size()) ?></div>
         <div class="stat-label">Taille base de données</div>
       </div>
     </div>

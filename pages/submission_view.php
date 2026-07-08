@@ -36,12 +36,12 @@ if (!$sub) {
 
 $data = json_decode($sub['data'], true) ?: [];
 $status = $sub['status'] ?? 'en_cours';
-$user = get_auth_user();
-$is_admin = is_admin_effective();  // v9.9.0 — persona: false si admin en mode visu
+$user = App::auth()->getUser();
+$is_admin = App::auth()->isAdminEffective();  // v9.9.0 — persona: false si admin en mode visu
 // Owner du formulaire : peut éditer les champs validateur post-validation
 // (au même titre que l'admin). Calculé tôt car réutilisé par le POST handler
 // ci-dessous et par le rendu (can_edit_validator).
-$is_form_owner = is_form_owner((string)$sub['form_id']);
+$is_form_owner = App::auth()->isFormOwner((string)$sub['form_id']);
 
 // Vérifier l'accès : admin ou propriétaire
 if (!$is_admin && $sub['submitted_by'] !== $user) {

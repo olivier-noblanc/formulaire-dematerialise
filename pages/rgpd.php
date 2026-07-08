@@ -3,7 +3,7 @@
 require_once dirname(__DIR__) . '/helpers.php';
 use App\Core\App;
 
-require_admin();
+App::auth()->requireAdmin();
 
 $pdo = \App\Core\App::db()->getPdo();
 $success_msg = '';
@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $retention = (int)($_POST['retention_months'] ?? 24);
         if ($retention < 1) $retention = 1;
         if ($retention > 120) $retention = 120;
-        \App\Core\App::settings()->set('legal_mentions', $legal_text, get_auth_user());
-        \App\Core\App::settings()->set('retention_months', (string)$retention, get_auth_user());
+        \App\Core\App::settings()->set('legal_mentions', $legal_text, App::auth()->getUser());
+        \App\Core\App::settings()->set('retention_months', (string)$retention, App::auth()->getUser());
         App::audit()->log('rgpd_settings', 'settings', 'Mentions légales et durée de conservation mises à jour');
         $success_msg = 'Mentions légales et durée de conservation mises à jour.';
     }
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_msg = 'Adresse email invalide.';
         } elseif (!$confirmed) {
             $error_msg = 'Veuillez confirmer la suppression en cochant la case.';
-        } elseif ($email === get_auth_user()) {
+        } elseif ($email === App::auth()->getUser()) {
             $error_msg = 'Vous ne pouvez pas supprimer vos propres données.';
         } else {
             // P2-B : Purger les données validator (filled_by='validator')
@@ -152,9 +152,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $retention_months = (int)\App\Core\App::settings()->get('retention_months', '24');
 $legal_mentions = \App\Core\App::settings()->get('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Contact : ' . \App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS') . '.');
 
-$total_submissions = (int)_dbm_q($pdo, "SELECT COUNT(*) FROM submissions")->fetchColumn();
-$total_attachments = (int)_dbm_q($pdo, "SELECT COUNT(*) FROM attachments")->fetchColumn();
-$total_audit = (int)_dbm_q($pdo, "SELECT COUNT(*) FROM audit_log")->fetchColumn();
+$total_submissions = (int)$pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn();
+$total_attachments = (int)$pdo->query("SELECT COUNT(*) FROM attachments")->fetchColumn();
+$total_audit = (int)$pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
 $old_submissions_stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE status != 'en_cours' AND closed_at < datetime('now', '-' || ? || ' months')");
 $old_submissions_stmt->execute([$retention_months]);
 $old_submissions = (int)$old_submissions_stmt->fetchColumn();
@@ -176,7 +176,7 @@ ob_start();
     <div class="stat-mini"><div class="val"><?= $total_submissions ?></div><div class="lbl">Soumissions</div></div>
     <div class="stat-mini"><div class="val"><?= $total_attachments ?></div><div class="lbl">Pièces jointes</div></div>
     <div class="stat-mini"><div class="val"><?= $total_audit ?></div><div class="lbl">Entrées d'audit</div></div>
-    <div class="stat-mini"><div class="val"><?= format_file_size($db_size) ?></div><div class="lbl">Taille base de données</div></div>
+    <div class="stat-mini"><div class="val"><?= App::html()->formatFileSize($db_size) ?></div><div class="lbl">Taille base de données</div></div>
   </div>
 
   <?php if ($old_submissions > 0): ?>

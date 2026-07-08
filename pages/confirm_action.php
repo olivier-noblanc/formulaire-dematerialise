@@ -109,7 +109,7 @@ switch ($action) {
         $tok_stmt->execute([$token_id]);
         $tok_info = $tok_stmt->fetch(PDO::FETCH_ASSOC);
         if ($tok_info) {
-            $detail_text = display_user($tok_info['email']) . ' (étape : ' . h($tok_info['step_label']) . ') ?';
+            $detail_text = App::html()->displayUser($tok_info['email']) . ' (étape : ' . h($tok_info['step_label']) . ') ?';
         } else {
             $detail_text = 'token #' . h($token_id) . ' ?';
         }
@@ -137,7 +137,7 @@ switch ($action) {
         $ow_stmt = $pdo->prepare("SELECT email FROM form_owners WHERE id = ?");
         $ow_stmt->execute([$owner_id]);
         $ow_email = $ow_stmt->fetchColumn();
-        $detail_text = $ow_email ? display_user((string)$ow_email) . ' ?' : '#' . h((string)$owner_id) . ' ?';
+        $detail_text = $ow_email ? App::html()->displayUser((string)$ow_email) . ' ?' : '#' . h((string)$owner_id) . ' ?';
         break;
     case 'delete_submission':
         $sub_id = trim($_GET['submission_id']);

@@ -8,6 +8,7 @@
 //   - Badges version colorés en bleu républicain pour les versions récentes.
 //   - t_jargon() appliqué sur les textes visibles (titre, sous-titre, intro).
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 /**
  * Parse le fichier CHANGELOG.md et retourne un tableau structuré
@@ -132,7 +133,7 @@ $page_css = '';
 ob_start();
 ?>
   <h1>📋 Journal des mises à jour — CircuitDémat</h1>
-  <div class="current-version">Version actuelle : v<?= h(get_latest_version()) ?></div>
+  <div class="current-version">Version actuelle : v<?= h(App::cache()->getLatestVersion()) ?></div>
 
   <?php if (empty($changelog)): ?>
     <div class="empty-changelog">
@@ -144,8 +145,8 @@ ob_start();
     <div class="changelog-explain" role="note" aria-label="À propos de cette page">
       <p>
         <span aria-hidden="true">ℹ️</span>
-        <strong><?= h(t_jargon('Cette page liste les évolutions de l\'application.')) ?></strong>
-        <?= h(t_jargon('Le résumé en français courant est en haut. Le détail technique est en bas, réservé aux experts.')) ?>
+        <strong><?= h(App::html()->tJargon('Cette page liste les évolutions de l\'application.')) ?></strong>
+        <?= h(App::html()->tJargon('Le résumé en français courant est en haut. Le détail technique est en bas, réservé aux experts.')) ?>
       </p>
     </div>
 
@@ -163,7 +164,7 @@ ob_start();
     <?php if ($has_summaries): ?>
     <section class="changelog-summary" aria-label="En résumé">
       <h2><span aria-hidden="true">📌</span> En résumé</h2>
-      <p class="summary-intro"><?= h(t_jargon('Vue simplifiée — le détail technique suit plus bas, réservé aux experts.')) ?></p>
+      <p class="summary-intro"><?= h(App::html()->tJargon('Vue simplifiée — le détail technique suit plus bas, réservé aux experts.')) ?></p>
       <ul class="summary-list">
         <?php
         // ITER1-A — Couleur des badges version :

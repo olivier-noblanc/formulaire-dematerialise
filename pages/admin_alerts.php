@@ -3,7 +3,7 @@
 require_once dirname(__DIR__) . '/helpers.php';
 use App\Core\App;
 
-require_admin();
+App::auth()->requireAdmin();
 
 $pdo = App::db()->getPdo();
 $success_msg = '';
@@ -131,9 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $edit_rule_id = trim($_GET['edit_rule'] ?? '');
 
 // Recuperer les donnees
-$forms = _dbm_q($pdo, "SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
+$forms = $pdo->query("SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
 
-$rules = _dbm_q($pdo, "
+$rules = $pdo->query("
     SELECT ar.*, f.label as form_label, f.slug as form_slug, f.deadline_field
     FROM alert_rules ar
     JOIN forms f ON f.id = ar.form_id
@@ -141,7 +141,7 @@ $rules = _dbm_q($pdo, "
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Historique des alertes (50 dernieres)
-$alert_logs = _dbm_q($pdo, "
+$alert_logs = $pdo->query("
     SELECT al.*, f.label as form_label, ar.label as rule_label
     FROM alert_log al
     JOIN submissions s ON s.id = al.submission_id
@@ -365,7 +365,7 @@ ob_start();
   <div class="card">
     <h2>➕ Ajouter une règle d'alerte</h2>
     <form method="POST">
-      <?= csrf_field() ?>
+      <?= App::security()->csrfField() ?>
       <input type="hidden" name="action" value="add_rule">
       <div class="grid-2">
         <div class="field">
@@ -421,7 +421,7 @@ ob_start();
       <h2 style="margin:0;border:none;padding:0;">📬 Historique des alertes envoyées</h2>
       <?php $purge_days = (int)\App\Core\App::settings()->get('alert_log_retention_days', '90'); ?>
       <form method="POST">
-        <?= csrf_field() ?>
+        <?= App::security()->csrfField() ?>
         <input type="hidden" name="action" value="delete_alert_log">
         <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .6rem;" onclick="return confirm('Purger les logs d\\'alerte de plus de <?= $purge_days ?> jours ?');"><span aria-hidden="true">🗑</span> Purger &gt; <?= $purge_days ?>j</button>
       </form>

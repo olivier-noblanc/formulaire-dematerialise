@@ -12,13 +12,14 @@ declare(strict_types=1);
  */
 
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
-$user = get_auth_user();
+$user = App::auth()->getUser();
 if ($user === '') {
     render_error_page(403, 'Accès refusé', 'Vous devez être connecté.', '');
 }
 
-$owned_forms = get_owned_forms($user);
+$owned_forms = App::auth()->getOwnedForms($user);
 
 $page_css = '';
 ob_start();
@@ -38,10 +39,10 @@ ob_start();
     <div class="form-cards">
       <?php foreach ($owned_forms as $of):
         $f_id    = h((string)($of['id'] ?? ''));
-        $f_label = h(t_jargon((string)($of['label'] ?? '')));
+        $f_label = h(App::html()->tJargon((string)($of['label'] ?? '')));
         $f_desc  = '';
         if (!empty($of['description'])) {
-          $f_desc = '<div class="fc-desc">' . h(t_jargon((string)$of['description'])) . '</div>';
+          $f_desc = '<div class="fc-desc">' . h(App::html()->tJargon((string)$of['description'])) . '</div>';
         }
       ?>
         <a href="index.php?p=form_tracking&f=<?= $f_id ?>" class="form-card">

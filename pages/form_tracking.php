@@ -3,7 +3,7 @@
 // Accessible uniquement par les owners du formulaire ou les administrateurs
 require_once dirname(__DIR__) . '/helpers.php';
 
-$user = get_auth_user();
+$user = \App\Core\App::auth()->getUser();
 $pdo = \App\Core\App::db()->getPdo();
 $form_uuid = trim($_GET['f'] ?? '');
 
@@ -22,8 +22,8 @@ if (!$form) {
 $form_id = $form['id'];
 
 // Vérifier les droits : admin OU owner du formulaire
-$is_admin = is_admin_user() || is_super_admin();
-$is_owner = is_form_owner($form_id, $user);
+$is_admin = \App\Core\App::auth()->isAdmin() || \App\Core\App::auth()->isSuperAdmin();
+$is_owner = \App\Core\App::auth()->isFormOwner($form_id);
 
 if (!$is_admin && !$is_owner) {
     render_error_page(403, 'Accès refusé',
@@ -198,7 +198,7 @@ foreach ($stats_stmt->fetchAll(PDO::FETCH_ASSOC) as $sr) {
 }
 
 // Owners du formulaire
-$owners = get_form_owners($form_id);
+$owners = \App\Core\App::auth()->getFormOwners($form_id);
 $fuuid = h($form['id']);
 ?>
 <?php
@@ -213,7 +213,7 @@ ob_start();
   <div class="owners-list">
     Propriétaires :
     <?php foreach ($owners as $ow): ?>
-      <span><?= display_user($ow['email']) ?></span>
+      <span><?= \App\Core\App::html()->displayUser($ow['email']) ?></span>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
@@ -269,7 +269,7 @@ ob_start();
         <?php foreach ($submissions as $sub): ?>
         <tr>
           <td style="white-space:nowrap;"><?= h(substr($sub['submitted_at'], 0, 10)) ?></td>
-          <td><?= display_user($sub['submitted_by']) ?></td>
+          <td><?= \App\Core\App::html()->displayUser($sub['submitted_by']) ?></td>
           <td>
             <?php
             $badge_class = 'badge-' . $sub['status'];
@@ -300,7 +300,7 @@ ob_start();
       </tbody>
     </table>
 
-    <?= render_pagination($page, $total_pages, 'index.php?p=form_tracking&f=' . $fuuid . '&status=' . h($filter_status)) ?>
+    <?= \App\Core\App::html()->renderPagination($page, $total_pages, 'index.php?p=form_tracking&f=' . $fuuid . '&status=' . h($filter_status)) ?>
   <?php endif; ?>
 
 <?php

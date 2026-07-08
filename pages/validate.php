@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $val = trim((string)($_POST[$fname] ?? ''));
                     if ($val === '') {
-                        $missing[] = t_jargon((string)($vf['label'] ?? $fname));
+                        $missing[] = App::html()->tJargon((string)($vf['label'] ?? $fname));
                     }
                 }
             }
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // v10.0.2 — Passer le user logged-on (get_auth_user) à validate_token
             // pour stocker qui a réellement cliqué (différent de l'email du token
             // qui peut être une shared mailbox)
-            $done_by = get_auth_user();
+            $done_by = App::auth()->getUser();
             $result = validate_token((string)$token, (string)$action, $comment, $done_by);
 
             // Mode test : renvoyer JSON
@@ -369,7 +369,7 @@ ob_start();
         $value = $pvd['value'] === '1' ? '✓ Oui' : h($pvd['value']);
         $step_lbl = h($pvd['step_label'] ?? '');
     ?>
-      <p><strong><?= h(t_jargon($label)) ?>:</strong> <?= $value ?>
+      <p><strong><?= h(App::html()->tJargon($label)) ?>:</strong> <?= $value ?>
       <?php if ($step_lbl): ?><br><small style="color:#666;">Étape : <?= $step_lbl ?></small><?php endif; ?>
       </p>
     <?php endforeach; ?>
@@ -400,7 +400,7 @@ ob_start();
   <div class="validation-details">
     <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($visible_attachments) ?>)</h2>
     <?php foreach ($visible_attachments as $att): ?>
-      <p><?= get_file_icon($att['mime_type']) ?> <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" style="color:var(--c-primary-dark);text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= format_file_size((int)$att['file_size']) ?>)</span></p>
+      <p><?= App::html()->getFileIcon($att['mime_type']) ?> <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" style="color:var(--c-primary-dark);text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= App::html()->formatFileSize((int)$att['file_size']) ?>)</span></p>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>

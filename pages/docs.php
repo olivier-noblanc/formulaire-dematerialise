@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 // Modules de sections de documentation (P-DOCS refactor)
 require_once dirname(__DIR__) . '/lib/docs_section_start.php';
@@ -31,9 +32,9 @@ $is_admin     = false;
 $user_email   = '';
 
 try {
-    $user_email = get_auth_user();
+    $user_email = App::auth()->getUser();
     $is_logged_in = !empty($user_email);
-    $is_admin = is_admin_effective();  // v9.9.0 — persona: false si admin en mode visu
+    $is_admin = App::auth()->isAdminEffective();  // v9.9.0 — persona: false si admin en mode visu
 } catch (RuntimeException $e) {
     // AUTH_USER missing — unauthenticated context (e.g. token link)
     $is_logged_in = false;
@@ -54,7 +55,7 @@ $page_css = '';
 ob_start();
 ?>
   <h1>Aide et documentation</h1>
-  <p class="subtitle"><span class="version-badge">v<?= h(get_latest_version()) ?></span></p>
+  <p class="subtitle"><span class="version-badge">v<?= h(App::cache()->getLatestVersion()) ?></span></p>
   <?php // v10.0.6 — subtitle raccourci (gardé seulement la version, utile) ?>
 
 <?= render_docs_section_start() ?>
