@@ -229,7 +229,7 @@ function render_backup_content(
             peuvent être en cours de modification.
         </p>
         <form method="POST">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="download_backup">
             <button type="submit" class="btn btn-primary"><span aria-hidden="true">💾</span> Télécharger la sauvegarde</button>
         </form>
@@ -250,7 +250,7 @@ function render_backup_content(
         </div>
 
         <form method="POST" enctype="multipart/form-data">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="restore_backup">
             <div class="upload-zone">
                 <p><span aria-hidden="true">📁</span> Sélectionnez un fichier de sauvegarde (.db)</p>
@@ -297,7 +297,7 @@ function render_backup_content(
                         Ces données seront <strong>définitivement supprimées</strong>. Cette action est irréversible.
                     </p>
                     <form method="POST" style="display:flex;gap:.5rem;align-items:center;">
-                        <?= csrf_field() ?>
+                        <?= \App\Core\App::security()->csrfField() ?>
                         <input type="hidden" name="action" value="purge_confirm">
                         <input type="hidden" name="purge_months" value="<?= (int)$purge_preview['months'] ?>">
                         <button type="submit" class="btn btn-danger"><span aria-hidden="true">✅</span> Confirmer la purge</button>
@@ -312,7 +312,7 @@ function render_backup_content(
         <?php endif; ?>
 
         <form method="POST">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="purge_count">
             <div class="field">
                 <label>Purger les données clôturées depuis plus de</label>

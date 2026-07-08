@@ -66,7 +66,7 @@ function render_form_fields_section(array $ctx): string {
                                     <td colspan="7" style="background:#f0f4ff;padding:1rem;">
                                         <h4 style="margin-bottom:.75rem;color:#003189;">Modifier le champ</h4>
                                         <form method="POST">
-                                            <?= csrf_field() ?>
+                                            <?= \App\Core\App::security()->csrfField() ?>
                                             <input type="hidden" name="action" value="update_field">
                                             <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
@@ -187,7 +187,7 @@ function render_form_fields_section(array $ctx): string {
                                     <td class="actions">
                                         <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#field-<?= $ff['id'] ?>" class="btn btn-secondary" style="font-size:.76rem;padding:.25rem .5rem;">Modifier</a>
                                         <form method="POST" style="display:inline;">
-                                            <?= csrf_field() ?>
+                                            <?= \App\Core\App::security()->csrfField() ?>
                                             <input type="hidden" name="action" value="delete_field">
                                             <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
@@ -210,7 +210,7 @@ function render_form_fields_section(array $ctx): string {
             <div class="add-sub-card">
                 <h4>＋ Ajouter un champ</h4>
                 <form method="POST">
-                    <?= csrf_field() ?>
+                    <?= \App\Core\App::security()->csrfField() ?>
                     <input type="hidden" name="action" value="add_field">
                     <input type="hidden" name="form_id" value="<?= $form_id ?>">
                     <div class="form-grid">

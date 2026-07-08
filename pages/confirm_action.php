@@ -2,6 +2,7 @@
 // confirm_action.php — Page de confirmation pour les actions destructrices
 // Remplace les boîtes de dialogue JavaScript confirm() par une page serveur
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 /**
  * Valide qu'une URL est relative (interne au site) — pas d'open redirect.
@@ -103,7 +104,7 @@ switch ($action) {
     case 'regenerate_token':
         $token_id = trim($_GET['token_id']);
         // Récupérer l'email associé au token
-        $pdo = get_pdo();
+        $pdo = App::db()->getPdo();
         $tok_stmt = $pdo->prepare("SELECT t.email, st.label as step_label FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.id = ?");
         $tok_stmt->execute([$token_id]);
         $tok_info = $tok_stmt->fetch(PDO::FETCH_ASSOC);
@@ -116,7 +117,7 @@ switch ($action) {
     case 'delete_rule':
         $rule_id = trim($_GET['rule_id']);
         // Récupérer le nom de la règle
-        $pdo = get_pdo();
+        $pdo = App::db()->getPdo();
         $rule_stmt = $pdo->prepare("SELECT label FROM alert_rules WHERE id = ?");
         $rule_stmt->execute([$rule_id]);
         $rule_label = $rule_stmt->fetchColumn();
@@ -132,7 +133,7 @@ switch ($action) {
         break;
     case 'remove_owner':
         $owner_id = trim($_GET['id']);
-        $pdo = get_pdo();
+        $pdo = App::db()->getPdo();
         $ow_stmt = $pdo->prepare("SELECT email FROM form_owners WHERE id = ?");
         $ow_stmt->execute([$owner_id]);
         $ow_email = $ow_stmt->fetchColumn();
@@ -177,7 +178,7 @@ ob_start();
     <?php endif; ?>
 
     <form method="POST" action="<?= h($post_url) ?>">
-      <?= csrf_field() ?>
+      <?= App::security()->csrfField() ?>
       <input type="hidden" name="action" value="<?= h($action) ?>">
       <input type="hidden" name="confirmed" value="1">
       <?php foreach ($config['params'] as $param): ?>

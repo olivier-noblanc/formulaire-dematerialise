@@ -3,7 +3,7 @@
 require_once dirname(__DIR__) . '/helpers.php';
 
 $user = get_auth_user();
-$pdo  = get_pdo();
+$pdo  = \App\Core\App::db()->getPdo();
 $search = trim($_GET['search'] ?? '');
 $status_filter = $_GET['statut'] ?? 'tous';
 

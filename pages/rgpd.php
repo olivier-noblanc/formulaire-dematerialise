@@ -5,14 +5,14 @@ use App\Core\App;
 
 require_admin();
 
-$pdo = get_pdo();
+$pdo = \App\Core\App::db()->getPdo();
 $success_msg = '';
 $error_msg = '';
 $info_msg = '';
 
 // Traitement des actions POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_csrf();
+    \App\Core\App::security()->requireCsrf();
 
     $action = $_POST['action'] ?? '';
 
@@ -189,7 +189,7 @@ ob_start();
   <div class="card">
     <h2><span aria-hidden="true">📜</span> Mentions légales & Politique de conservation</h2>
     <form method="POST">
-      <?= csrf_field() ?>
+      <?= \App\Core\App::security()->csrfField() ?>
       <input type="hidden" name="action" value="update_legal">
       <div class="field">
         <label for="legal_mentions">Mentions légales affichées aux utilisateurs</label>
@@ -213,7 +213,7 @@ ob_start();
       Saisissez l'adresse email de l'agent pour générer un export JSON complet.
     </p>
     <form method="POST" style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;">
-      <?= csrf_field() ?>
+      <?= \App\Core\App::security()->csrfField() ?>
       <input type="hidden" name="action" value="export_user">
       <div class="field" style="margin-bottom:0;flex:1;min-width:250px;">
         <label for="export_email">Email de l'agent</label>
@@ -231,7 +231,7 @@ ob_start();
       Les soumissions seront anonymisées (le statut et le workflow sont conservés pour traçabilité, mais les données personnelles sont remplacées).
     </p>
     <form method="POST">
-      <?= csrf_field() ?>
+      <?= \App\Core\App::security()->csrfField() ?>
       <input type="hidden" name="action" value="delete_user">
       <div class="field">
         <label for="delete_email">Email de l'agent à supprimer</label>
@@ -260,7 +260,7 @@ ob_start();
       <p style="color:#1a6b3c;font-size:.9rem;margin-bottom:1rem;"><span aria-hidden="true">✓</span> Aucune soumission à purger actuellement.</p>
     <?php endif; ?>
     <form method="POST">
-      <?= csrf_field() ?>
+      <?= \App\Core\App::security()->csrfField() ?>
       <input type="hidden" name="action" value="auto_purge">
       <label class="checkbox-item" style="margin-bottom:1rem;">
         <input type="checkbox" name="confirmed" value="1" required>

@@ -121,7 +121,7 @@ function render_admin_settings_content(array $state): string
     <!-- SECTION 1 : Sécurité email — Dry-Run + Vérification       -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <form method="POST">
-        <?= csrf_field() ?>
+        <?= \App\Core\App::security()->csrfField() ?>
         <input type="hidden" name="action" value="save_email_verify">
 
         <div class="card" id="section-email-security">
@@ -266,7 +266,7 @@ function render_admin_settings_content(array $state): string
             avant d'activer la vérification en production.
         </p>
         <form method="POST">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="test_verify_email">
             <div class="field">
                 <label>Adresse email à tester</label>
@@ -304,7 +304,7 @@ function render_admin_settings_content(array $state): string
     <!-- SECTION 3 : Configuration SMTP                            -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <form method="POST">
-        <?= csrf_field() ?>
+        <?= \App\Core\App::security()->csrfField() ?>
         <input type="hidden" name="action" value="save_settings">
 
         <div class="card">
@@ -425,7 +425,7 @@ function render_admin_settings_content(array $state): string
         Les notifications sont envoyées en POST JSON sur l'URL configurée.
       </p>
       <form method="POST">
-        <?= csrf_field() ?>
+        <?= \App\Core\App::security()->csrfField() ?>
         <input type="hidden" name="action" value="save_webhook">
         <div class="field">
           <label for="webhook_url">URL du webhook</label>
@@ -442,7 +442,7 @@ function render_admin_settings_content(array $state): string
           <?php if (!empty(\App\Core\App::settings()->get('webhook_url', ''))): ?>
             </form>
             <form method="POST" style="display:inline;">
-              <?= csrf_field() ?>
+              <?= \App\Core\App::security()->csrfField() ?>
               <input type="hidden" name="action" value="test_webhook">
               <button type="submit" class="btn btn-test">Tester le webhook</button>
             </form>
@@ -473,7 +473,7 @@ function render_admin_settings_content(array $state): string
             </div>
         <?php endif; ?>
         <form method="POST">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="test_email">
             <button type="submit" class="btn btn-test">Envoyer un email de test</button>
         </form>

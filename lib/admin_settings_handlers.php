@@ -54,7 +54,7 @@ function handle_admin_settings_post(): array
     }
 
     // Vérification CSRF
-    require_csrf();
+    App::security()->requireCsrf();
 
     $action = $_POST['action'] ?? '';
 

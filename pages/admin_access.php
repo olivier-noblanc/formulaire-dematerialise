@@ -1,13 +1,14 @@
 <?php
 // admin_access.php — Page d'accès au back office avec demande d'accès admin
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 // Traitement des actions POST uniquement (securite : plus d'actions modifiant la DB en GET)
 $confirm_data = null; // Pour afficher la page de confirmation si on clique sur un lien email
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérification CSRF
-    require_csrf();
+    App::security()->requireCsrf();
 
     $action = $_POST['action'] ?? '';
     
@@ -36,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     elseif ($action === 'approve' && is_super_admin()) {
         $token = $_POST['token'] ?? '';
-        $pdo = get_pdo();
+        $pdo = App::db()->getPdo();
         $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
         $stmt->execute([$token]);
         $request = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -52,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     elseif ($action === 'reject' && is_super_admin()) {
         $token = $_POST['token'] ?? '';
-        $pdo = get_pdo();
+        $pdo = App::db()->getPdo();
         $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
         $stmt->execute([$token]);
         $request = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -96,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $get_action = $_GET['action'] ?? '';
 $get_token = $_GET['token'] ?? '';
 if (($get_action === 'approve' || $get_action === 'reject') && !empty($get_token) && is_super_admin()) {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     $stmt = $pdo->prepare("SELECT email, requested_at FROM admin_requests WHERE token = ? AND status = 'pending'");
     $stmt->execute([$get_token]);
     $confirm_data = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -109,7 +110,7 @@ if (($get_action === 'approve' || $get_action === 'reject') && !empty($get_token
 // Récupération des demandes d'accès pour l'admin principal
 $admin_requests = [];
 if (is_super_admin()) {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     $stmt = $pdo->prepare("SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY requested_at DESC");
     $stmt->execute();
     $admin_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -118,7 +119,7 @@ if (is_super_admin()) {
 // Récupération des admins
 $admins = [];
 if (is_super_admin() || is_admin_user()) {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     $stmt = $pdo->prepare("SELECT * FROM admins ORDER BY email");
     $stmt->execute();
     $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -145,7 +146,7 @@ ob_start();
                 Confirmez-vous cette action ?
             </p>
             <form method="POST" style="display:flex;gap:.5rem;">
-                <?= csrf_field() ?>
+                <?= App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="<?= h($confirm_data['action']) ?>">
                 <input type="hidden" name="token" value="<?= h($confirm_data['token']) ?>">
                 <button type="submit" class="btn" style="background:<?= $confirm_data['action'] === 'approve' ? '#1a6b3c' : '#c0392b' ?>;color:#fff;">
@@ -185,13 +186,13 @@ ob_start();
                                 <td><?= h(date('d/m/Y à H:i', strtotime((string)$request['requested_at']))) ?></td>
                                 <td class="actions">
                                     <form method="POST" style="display:inline;">
-                                        <?= csrf_field() ?>
+                                        <?= App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="approve_request">
                                         <input type="hidden" name="email" value="<?= h($request['email']) ?>">
                                         <button type="submit" class="action-btn approve-btn">Approuver</button>
                                     </form>
                                     <form method="POST" style="display:inline;">
-                                        <?= csrf_field() ?>
+                                        <?= App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="reject_request">
                                         <input type="hidden" name="email" value="<?= h($request['email']) ?>">
                                         <button type="submit" class="action-btn reject-btn" onclick="return confirm('Refuser cette demande d\'accès ?');">Refuser</button>
@@ -222,7 +223,7 @@ ob_start();
                             <td>
                                 <?php if ($admin['email'] !== get_admin_email()): ?>
                                     <form method="POST" style="display:inline;">
-                                        <?= csrf_field() ?>
+                                        <?= App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="remove_admin">
                                         <input type="hidden" name="email" value="<?= h($admin['email']) ?>">
                                         <button type="submit" class="action-btn reject-btn" onclick="return confirm('Supprimer cet administrateur ? Cette action est irréversible.');">Supprimer</button>
@@ -243,7 +244,7 @@ ob_start();
             <p>Une fois votre demande approuvée par l'administrateur principal, vous pourrez accéder au back office.</p>
             
             <form method="POST">
-                <?= csrf_field() ?>
+                <?= App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="request_access">
                 <button type="submit" class="btn btn-primary">Demander l'accès admin</button>
             </form>

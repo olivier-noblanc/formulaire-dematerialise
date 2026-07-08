@@ -10,7 +10,7 @@ $token  = '';
 // Traitement du POST — exécute l'action
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérification CSRF
-    require_csrf();
+    \App\Core\App::security()->requireCsrf();
 
     $token = trim($_POST['token'] ?? '');
     $action = trim($_POST['action'] ?? '');
@@ -195,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $response['step_label']  = $data['step_label'] ?? '';
             $response['form_label']  = $data['form_label'] ?? '';
             $response['submission_id'] = $data['submission_id'] ?? null;
-            $response['csrf_token']  = generate_csrf_token();
+            $response['csrf_token']  = \App\Core\App::security()->generateCsrfToken();
         }
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
@@ -264,7 +264,7 @@ ob_start();
     $data = $result['data'] ?? [];
     $d   = json_decode($data['data'] ?? '{}', true);
     $nom = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
 
     // Récupérer toutes les étapes du workflow pour afficher la progression
     $wf_steps = $pdo->prepare("
@@ -407,7 +407,7 @@ ob_start();
 
   <!-- Formulaire de validation/refus (U-04 — Refus mobile frictionnel) -->
   <form method="post" id="validation-form">
-    <?= csrf_field() ?>
+    <?= \App\Core\App::security()->csrfField() ?>
     <input type="hidden" name="token" value="<?= h((string)$token) ?>">
 
     <!-- Champs validateur (filled_by='validator') — Option A

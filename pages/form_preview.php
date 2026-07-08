@@ -4,7 +4,7 @@ require_once dirname(__DIR__) . '/helpers.php';
 
 require_admin();
 
-$pdo = get_pdo();
+$pdo = \App\Core\App::db()->getPdo();
 $form_id = trim($_GET['form_id'] ?? '');
 
 $form = $pdo->prepare("SELECT * FROM forms WHERE id = ?");

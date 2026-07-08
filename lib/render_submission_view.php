@@ -319,7 +319,7 @@ function render_submission_view_admin_comment(string $admin_comment, bool $can_e
 
     $comment_h   = h((string)$admin_comment);
     $sub_id_h    = h((string)$sub_id);
-    $csrf        = csrf_field();
+    $csrf        = \App\Core\App::security()->csrfField();
 
     // Formulaire inline (textarea + bouton Modifier) — POST update_admin_comment.
     return <<<HTML

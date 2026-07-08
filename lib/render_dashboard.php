@@ -494,14 +494,14 @@ function render_dashboard_submission_detail($d, string $status, array $tokens, a
                 $temail = h((string)($t['email'] ?? ''));
                 // Rappel manuel (remind_one)
                 $html .= "                <form method=\"POST\" style=\"display:inline;\">\n"
-                    . csrf_field() . "\n"
+                    . \App\Core\App::security()->csrfField() . "\n"
                     . "                  <input type=\"hidden\" name=\"action\" value=\"remind_one\">\n"
                     . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
                     . "                  <button type=\"submit\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;\"><span aria-hidden=\"true\">📧</span> Rappeler {$temail}</button>\n"
                     . "                </form>\n";
                 // Régénération de token (regenerate_token)
                 $html .= "                <form method=\"POST\" style=\"display:inline;\">\n"
-                    . csrf_field() . "\n"
+                    . \App\Core\App::security()->csrfField() . "\n"
                     . "                  <input type=\"hidden\" name=\"action\" value=\"regenerate_token\">\n"
                     . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
                     . "                  <button type=\"submit\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;\"><span aria-hidden=\"true\">🔄</span> Régénérer {$temail}</button>\n"

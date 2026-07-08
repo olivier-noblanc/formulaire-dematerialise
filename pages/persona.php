@@ -35,7 +35,7 @@ if ($action === 'start') {
 
     // Vérifier que l'email existe dans la DB (a déjà soumis une demande)
     try {
-        $pdo = get_pdo();
+        $pdo = \App\Core\App::db()->getPdo();
         $check = $pdo->prepare("SELECT 1 FROM submissions WHERE submitted_by = ? LIMIT 1");
         $check->execute([$target_email]);
         if (!$check->fetchColumn()) {

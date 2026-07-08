@@ -61,7 +61,7 @@ function render_header(string $current_page = '', array $extra_admin_links = [])
     // v9.7.0 — Issue 2 : compteur de demandes en cours pour le badge "Mes demandes"
     $my_en_cours_count = 0;
     try {
-        $pdo = get_pdo();
+        $pdo = \App\Core\App::db()->getPdo();
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM tokens t
             JOIN submissions s ON s.id = t.submission_id
@@ -449,7 +449,7 @@ function render_page(
     // Déjà envoyés globalement par send_security_headers(), mais on s'assure
     // qu'ils sont présents même si un output a commencé avant render_page()
     if (!headers_sent()) {
-        send_security_headers();
+        \App\Core\App::security()->sendSecurityHeaders();
     }
     ?>
 <!DOCTYPE html>

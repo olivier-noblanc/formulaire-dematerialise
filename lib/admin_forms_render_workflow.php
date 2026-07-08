@@ -73,7 +73,7 @@ function render_workflow_diagram_section(array $ctx): string {
             <div class="add-sub-card">
                 <h4>＋ Ajouter une étape</h4>
                 <form method="POST">
-                    <?= csrf_field() ?>
+                    <?= \App\Core\App::security()->csrfField() ?>
                     <input type="hidden" name="action" value="add_step">
                     <input type="hidden" name="form_id" value="<?= $form_id ?>">
                     <div class="form-grid">
@@ -99,7 +99,7 @@ function render_workflow_diagram_section(array $ctx): string {
                             <div class="step-card editing" id="step-<?= h($step['id']) ?>">
                                 <div class="step-info" style="width:100%;">
                                     <form method="POST">
-                                        <?= csrf_field() ?>
+                                        <?= \App\Core\App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="update_step">
                                         <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                         <input type="hidden" name="form_id" value="<?= $form_id ?>">
@@ -218,7 +218,7 @@ function render_workflow_diagram_section(array $ctx): string {
                                                 <span class="recipient-chip">
                                                     <?= display_user($rcpt['email']) ?>
                                                     <form method="POST" style="display:inline;">
-                                                        <?= csrf_field() ?>
+                                                        <?= \App\Core\App::security()->csrfField() ?>
                                                         <input type="hidden" name="action" value="delete_recipient">
                                                         <input type="hidden" name="recipient_id" value="<?= $rcpt['id'] ?>">
                                                         <button type="submit" class="chip-delete" title="Supprimer">×</button>
@@ -233,7 +233,7 @@ function render_workflow_diagram_section(array $ctx): string {
                                 <div class="step-actions">
                                     <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_step=<?= $step['id'] ?>#step-<?= $step['id'] ?>" class="btn btn-secondary" style="font-size:.78rem;padding:.3rem .6rem;">Modifier</a>
                                     <form method="POST" style="display:inline;">
-                                        <?= csrf_field() ?>
+                                        <?= \App\Core\App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="delete_step">
                                         <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                         <button type="submit" class="btn btn-danger" style="font-size:.78rem;padding:.3rem .6rem;" onclick="return confirm('Supprimer cette étape ? Les validateurs associés perdront leurs accès.');">Supprimer</button>
@@ -243,7 +243,7 @@ function render_workflow_diagram_section(array $ctx): string {
                                         <summary class="btn btn-secondary" style="font-size:.78rem;padding:.3rem .6rem;cursor:pointer;list-style:none;display:inline-block;">＋ Destinataire</summary>
                                         <div style="position:absolute;z-index:20;right:0;top:100%;background:#fff;border:1px solid var(--c-border);border-radius:6px;padding:.75rem;box-shadow:var(--shadow-md);min-width:320px;margin-top:.25rem;">
                                             <form method="POST">
-                                                <?= csrf_field() ?>
+                                                <?= \App\Core\App::security()->csrfField() ?>
                                                 <input type="hidden" name="action" value="add_recipient">
                                                 <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                                 <input type="hidden" name="form_id" value="<?= $form_id ?>">

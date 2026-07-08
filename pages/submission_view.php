@@ -10,7 +10,7 @@ require_once dirname(__DIR__) . '/lib/render_submission_view.php';
 require_once dirname(__DIR__) . '/lib/render_submission_view_sections.php';
 use App\Core\App;
 
-$pdo = get_pdo();
+$pdo = App::db()->getPdo();
 $sub_id = trim($_GET['id'] ?? '');
 
 if (empty($sub_id)) {
@@ -99,7 +99,7 @@ $days_remaining = $dl_info['days_left'];
 // Traitement des actions POST
 $action_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_csrf();
+    App::security()->requireCsrf();
 
     $action = $_POST['action'] ?? '';
 

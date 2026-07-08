@@ -8,7 +8,7 @@ use App\Core\App;
 // Vérification des droits d'accès
 require_admin();
 
-$pdo = get_pdo();
+$pdo = App::db()->getPdo();
 
 // Récupération des formulaires pour le sélecteur
 $forms = _dbm_q($pdo, "SELECT id, label FROM forms ORDER BY label")->fetchAll(PDO::FETCH_ASSOC);
@@ -36,7 +36,7 @@ try {
 $action = $_POST['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_csrf();
+    App::security()->requireCsrf();
 }
 
 

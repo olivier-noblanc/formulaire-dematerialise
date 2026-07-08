@@ -5,13 +5,13 @@ use App\Core\App;
 
 require_admin();
 
-$pdo = get_pdo();
+$pdo = App::db()->getPdo();
 $success_msg = '';
 $error_msg = '';
 
 // Traitement du POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_csrf();
+    App::security()->requireCsrf();
 
     $action = $_POST['action'] ?? '';
 
@@ -238,7 +238,7 @@ ob_start();
     ?>
       <div class="deadline-config">
         <form method="POST" style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
-          <?= csrf_field() ?>
+          <?= App::security()->csrfField() ?>
           <input type="hidden" name="action" value="update_deadline_field">
           <input type="hidden" name="form_id" value="<?= h($f['id']) ?>">
           <strong style="min-width:150px;"><?= h($f['label']) ?></strong>
@@ -285,7 +285,7 @@ ob_start();
             <div class="rule-actions">
               <a href="index.php?p=admin_alerts&edit_rule=<?= urlencode($r['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>
               <form method="POST" style="display:inline;">
-                <?= csrf_field() ?>
+                <?= App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="delete_rule">
                 <input type="hidden" name="rule_id" value="<?= h($r['id']) ?>">
                 <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;" onclick="return confirm('Supprimer cette règle d\\'alerte ?');">Supprimer</button>
@@ -307,7 +307,7 @@ ob_start();
           <?php if ($edit_rule_id === $r['id']): ?>
           <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;">
             <form method="POST">
-              <?= csrf_field() ?>
+              <?= App::security()->csrfField() ?>
               <input type="hidden" name="action" value="update_rule">
               <input type="hidden" name="rule_id" value="<?= h($r['id']) ?>">
               <div class="grid-2">
