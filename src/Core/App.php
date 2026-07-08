@@ -149,4 +149,9 @@ final class App
     {
         return self::getInstance()->get(\App\Webhook\WebhookService::class);
     }
+
+    public static function validation(): \App\Validation\ValidationService
+    {
+        return self::getInstance()->get(\App\Validation\ValidationService::class);
+    }
 }

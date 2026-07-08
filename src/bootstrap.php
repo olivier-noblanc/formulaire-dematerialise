@@ -41,6 +41,7 @@ use App\Forms\ValidatorDataService;
 use App\Core\MigrationService;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
+use App\Validation\ValidationService;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -105,6 +106,9 @@ $app->set(CronService::class, new CronService($db));
 
 // Migration service
 $app->set(MigrationService::class, new MigrationService($db));
+
+// Validation service
+$app->set(ValidationService::class, new ValidationService());
 
 // Note : les méthodes statiques App::db(), App::config(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`

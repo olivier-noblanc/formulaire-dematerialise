@@ -41,6 +41,7 @@ use App\Cron\CronService;
 use App\Forms\ValidatorDataService;
 use App\Core\MigrationService;
 use App\Webhook\WebhookService;
+use App\Validation\ValidationService;
 use App\Repository\SettingsRepository;
 use App\Repository\AuditRepository;
 use App\Repository\AdminRepository;
@@ -95,3 +96,4 @@ $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRe
 $app->set(CronService::class, new CronService($db));
 $app->set(MigrationService::class, new MigrationService($db));
 $app->set(WebhookService::class, new WebhookService($db, $app->get(SettingsService::class)));
+$app->set(ValidationService::class, new ValidationService());
