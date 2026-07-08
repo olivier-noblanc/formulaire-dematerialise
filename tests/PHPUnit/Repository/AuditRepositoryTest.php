@@ -39,4 +39,29 @@ final class AuditRepositoryTest extends TestCase
         $result = $this->repo->getSecurityLogs(10);
         $this->assertIsArray($result);
     }
+
+    public function testLogAndReadBackRoundTrip(): void
+    {
+        $action = 'roundtrip_test_' . substr(\generate_uuid(), 0, 8);
+        $target = 'test_target';
+        $detail = 'test detail for round-trip';
+        $actor = 'tester@test.com';
+
+        $logged = $this->repo->log($action, $target, $detail, $actor);
+        $this->assertTrue($logged);
+
+        $logs = $this->repo->getLogs(10, $action);
+        $this->assertNotEmpty($logs);
+
+        $found = false;
+        foreach ($logs as $entry) {
+            if ($entry['action'] === $action && $entry['actor'] === $actor) {
+                $this->assertSame($target, $entry['target']);
+                $this->assertSame($detail, $entry['detail']);
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found, 'Logged entry not found in getLogs results');
+    }
 }
