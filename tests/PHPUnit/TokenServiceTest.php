@@ -21,6 +21,16 @@ final class TokenServiceTest extends TestCase
     private Database $db;
     private string $originalUser;
 
+    private string $testFormId;
+    private string $testStepId;
+    private string $testSubmissionId;
+    private string $testClosedSubmissionId;
+    private string $testPendingTokenId;
+    private string $testDoneTokenId;
+    private string $testClosedTokenId;
+    private string $testTokenEmail;
+    private string $testSubmissionOwner;
+
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
@@ -42,11 +52,94 @@ final class TokenServiceTest extends TestCase
         );
 
         $this->originalUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
+
+        // Seed test data
+        $this->seedTestData();
     }
 
     protected function tearDown(): void
     {
         $_SERVER['HTTP_X_TEST_USER'] = $this->originalUser;
+        $this->cleanupTestData();
+    }
+
+    private function seedTestData(): void
+    {
+        $pdo = $this->db->getPdo();
+
+        // Create test form
+        $this->testFormId = generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif) VALUES (?, ?, ?, ?, 1)")
+            ->execute([$this->testFormId, 'test-form-' . uniqid(), 'Test Form', 'Test form for TokenService tests']);
+
+        // Create test step
+        $this->testStepId = generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, 1, 1)")
+            ->execute([$this->testStepId, $this->testFormId, 'Validation test']);
+
+        // Create step recipient
+        $this->testTokenEmail = 'validator_' . uniqid() . '@test.com';
+        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
+            ->execute([generate_uuid(), $this->testStepId, $this->testTokenEmail]);
+
+        // Create en_cours submission
+        $this->testSubmissionOwner = 'owner_' . uniqid() . '@test.com';
+        $this->testSubmissionId = generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', ?, datetime('now'), 'en_cours', 1)")
+            ->execute([$this->testSubmissionId, $this->testFormId, $this->testSubmissionOwner]);
+
+        // Create pending token on en_cours submission
+        $this->testPendingTokenId = generate_uuid();
+        $pendingTokenValue = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$this->testPendingTokenId, $this->testSubmissionId, $this->testStepId, $this->testTokenEmail, $pendingTokenValue, $expiresAt]);
+
+        // Create done token on en_cours submission
+        $this->testDoneTokenId = generate_uuid();
+        $doneTokenValue = generate_token();
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), ?)")
+            ->execute([$this->testDoneTokenId, $this->testSubmissionId, $this->testStepId, 'done_' . uniqid() . '@test.com', $doneTokenValue, $expiresAt]);
+
+        // Create closed submission
+        $this->testClosedSubmissionId = generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, closed_at, rgpd_consent) VALUES (?, ?, '{}', ?, datetime('now'), 'valide', datetime('now'), 1)")
+            ->execute([$this->testClosedSubmissionId, $this->testFormId, $this->testSubmissionOwner]);
+
+        // Create pending token on closed submission
+        $this->testClosedTokenId = generate_uuid();
+        $closedTokenValue = generate_token();
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$this->testClosedTokenId, $this->testClosedSubmissionId, $this->testStepId, 'closed_validator@test.com', $closedTokenValue, $expiresAt]);
+    }
+
+    private function cleanupTestData(): void
+    {
+        $pdo = $this->db->getPdo();
+
+        // Remove test data in reverse order of dependencies
+        $pdo->prepare("DELETE FROM tokens WHERE id IN (?, ?, ?)")->execute([
+            $this->testPendingTokenId,
+            $this->testDoneTokenId,
+            $this->testClosedTokenId,
+        ]);
+        // Also clean up any tokens created during tests (e.g. by regenerate/delegate)
+        $pdo->prepare("DELETE FROM tokens WHERE submission_id IN (?, ?)")->execute([
+            $this->testSubmissionId,
+            $this->testClosedSubmissionId,
+        ]);
+        $pdo->prepare("DELETE FROM delegations WHERE token_id IN (?, ?, ?)")->execute([
+            $this->testPendingTokenId,
+            $this->testDoneTokenId,
+            $this->testClosedTokenId,
+        ]);
+        $pdo->prepare("DELETE FROM submissions WHERE id IN (?, ?)")->execute([
+            $this->testSubmissionId,
+            $this->testClosedSubmissionId,
+        ]);
+        $pdo->prepare("DELETE FROM step_recipients WHERE step_id = ?")->execute([$this->testStepId]);
+        $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$this->testStepId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$this->testFormId]);
     }
 
     // ── getForSubmission ────────────────────────────────────────
@@ -60,31 +153,34 @@ final class TokenServiceTest extends TestCase
 
     public function testGetForSubmissionWithExtraFields(): void
     {
-        $tokens = $this->tokenService->getForSubmission('nonexistent', ['t.id', 't.token']);
+        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId, ['t.id', 't.token']);
         $this->assertIsArray($tokens);
+        $this->assertNotEmpty($tokens);
     }
 
     public function testGetForSubmissionFiltersDisallowedFields(): void
     {
-        // Extra fields not in the allowed list should be filtered out
-        $tokens = $this->tokenService->getForSubmission('nonexistent', ['t.id', 'nonexistent_column']);
+        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId, ['t.id', 'nonexistent_column']);
         $this->assertIsArray($tokens);
+        $this->assertNotEmpty($tokens);
+        $this->assertArrayHasKey('id', $tokens[0]);
+        $this->assertArrayNotHasKey('nonexistent_column', $tokens[0]);
     }
 
     public function testGetForSubmissionWithRealData(): void
     {
-        $pdo = $this->db->getPdo();
-        $submissionId = $pdo->query("SELECT submission_id FROM tokens LIMIT 1")->fetchColumn();
-
-        if (!$submissionId) {
-            $this->markTestSkipped('No tokens available');
-        }
-
-        $tokens = $this->tokenService->getForSubmission($submissionId);
+        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId);
         $this->assertNotEmpty($tokens);
         $this->assertArrayHasKey('email', $tokens[0]);
         $this->assertArrayHasKey('done_at', $tokens[0]);
         $this->assertArrayHasKey('step_id', $tokens[0]);
+        $this->assertArrayHasKey('step_label', $tokens[0]);
+    }
+
+    public function testGetForSubmissionReturnsMultipleTokens(): void
+    {
+        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId);
+        $this->assertGreaterThanOrEqual(2, count($tokens));
     }
 
     // ── regenerate ──────────────────────────────────────────────
@@ -109,15 +205,7 @@ final class TokenServiceTest extends TestCase
     {
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
-        $pdo = $this->db->getPdo();
-        // Find a token that's already done
-        $doneToken = $pdo->query("SELECT t.id FROM tokens t WHERE t.done_at IS NOT NULL LIMIT 1")->fetchColumn();
-
-        if (!$doneToken) {
-            $this->markTestSkipped('No done token available');
-        }
-
-        $result = $this->tokenService->regenerate($doneToken);
+        $result = $this->tokenService->regenerate($this->testDoneTokenId);
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('déjà été traité', $result['message']);
     }
@@ -126,15 +214,7 @@ final class TokenServiceTest extends TestCase
     {
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
-        $pdo = $this->db->getPdo();
-        // Find a token on a closed submission
-        $row = $pdo->query("SELECT t.id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status != 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch();
-
-        if (!$row) {
-            $this->markTestSkipped('No token on closed submission available');
-        }
-
-        $result = $this->tokenService->regenerate($row['id']);
+        $result = $this->tokenService->regenerate($this->testClosedTokenId);
         $this->assertFalse($result['success']);
         $this->assertStringContainsString("n'est plus en cours", $result['message']);
     }
@@ -143,18 +223,35 @@ final class TokenServiceTest extends TestCase
     {
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
-        $pdo = $this->db->getPdo();
-        // Find a pending token on an en_cours submission
-        $row = $pdo->query("SELECT t.id, t.email FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch();
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token on en_cours submission available');
-        }
-
-        $result = $this->tokenService->regenerate($row['id']);
-        // Mail may or may not succeed in TEST_MODE, but regenerate should succeed
+        $result = $this->tokenService->regenerate($this->testPendingTokenId);
         $this->assertTrue($result['success']);
-        $this->assertStringContainsString($row['email'], $result['message']);
+        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
+
+        // Verify old token is now done
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertNotNull($stmt->fetchColumn());
+
+        // Verify new token was created
+        $newCount = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND id != ?");
+        $newCount->execute([$this->testSubmissionId, $this->testDoneTokenId]);
+        $this->assertGreaterThanOrEqual(1, (int)$newCount->fetchColumn());
+    }
+
+    public function testRegenerateCreatesNewTokenWithCorrectEmail(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+
+        $result = $this->tokenService->regenerate($this->testPendingTokenId);
+        $this->assertTrue($result['success']);
+
+        // Check the new token exists with the same email
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT email FROM tokens WHERE submission_id = ? AND done_at IS NULL AND id != ?");
+        $stmt->execute([$this->testSubmissionId, $this->testDoneTokenId]);
+        $email = $stmt->fetchColumn();
+        $this->assertSame($this->testTokenEmail, $email);
     }
 
     // ── cancel ──────────────────────────────────────────────────
@@ -168,49 +265,81 @@ final class TokenServiceTest extends TestCase
 
     public function testCancelReturnsErrorForNonEnCoursSubmission(): void
     {
-        $pdo = $this->db->getPdo();
-        $refused = $pdo->query("SELECT id FROM submissions WHERE status = 'refuse' LIMIT 1")->fetchColumn();
-
-        if (!$refused) {
-            $this->markTestSkipped('No non-en_cours submission available');
-        }
-
-        $result = $this->tokenService->cancel($refused, 'admin@test.com');
+        $result = $this->tokenService->cancel($this->testClosedSubmissionId, 'admin@test.com');
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('en cours', $result['message']);
     }
 
     public function testCancelReturnsErrorForUnauthorizedNonAdmin(): void
     {
-        $pdo = $this->db->getPdo();
-        $sub = $pdo->query("SELECT id, submitted_by FROM submissions WHERE status = 'en_cours' LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$sub) {
-            $this->markTestSkipped('No en_cours submission available');
-        }
-
-        $result = $this->tokenService->cancel($sub['id'], 'unauthorized@test.com');
+        $result = $this->tokenService->cancel($this->testSubmissionId, 'unauthorized@test.com');
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('autorisé', $result['message']);
     }
 
     public function testCancelSuccessAsOwner(): void
     {
-        $pdo = $this->db->getPdo();
-        $sub = $pdo->query("SELECT id, submitted_by FROM submissions WHERE status = 'en_cours' LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$sub) {
-            $this->markTestSkipped('No en_cours submission available');
-        }
-
-        $result = $this->tokenService->cancel($sub['id'], $sub['submitted_by']);
+        $result = $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
         $this->assertTrue($result['success']);
         $this->assertStringContainsString('annulée', $result['message']);
 
         // Verify status changed
+        $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
-        $check->execute([$sub['id']]);
+        $check->execute([$this->testSubmissionId]);
         $this->assertSame('annule', $check->fetchColumn());
+    }
+
+    public function testCancelSetsClosedAt(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $check = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
+        $check->execute([$this->testSubmissionId]);
+        $this->assertNotNull($check->fetchColumn());
+    }
+
+    public function testCancelMarksTokensAsDone(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $check = $pdo->prepare("SELECT done_at FROM tokens WHERE submission_id = ? AND id = ?");
+        $check->execute([$this->testSubmissionId, $this->testPendingTokenId]);
+        $this->assertNotNull($check->fetchColumn());
+    }
+
+    public function testCancelAddsValidationToData(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $check = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $check->execute([$this->testSubmissionId]);
+        $data = json_decode($check->fetchColumn(), true);
+        $this->assertArrayHasKey('validations', $data);
+        $this->assertNotEmpty($data['validations']);
+        $lastValidation = end($data['validations']);
+        $this->assertSame('Annulation', $lastValidation['step_label']);
+        $this->assertSame('refuser', $lastValidation['action']);
+    }
+
+    public function testCancelSuccessAsAdmin(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+
+        // Re-create the submission since it may have been cancelled by another test
+        $pdo = $this->db->getPdo();
+        $newSubId = generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', ?, datetime('now'), 'en_cours', 1)")
+            ->execute([$newSubId, $this->testFormId, 'other_owner@test.com']);
+
+        $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
+        $this->assertTrue($result['success']);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
     }
 
     // ── remind ──────────────────────────────────────────────────
@@ -224,44 +353,56 @@ final class TokenServiceTest extends TestCase
 
     public function testRemindReturnsErrorForAlreadyDoneToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $doneTokenId = $pdo->query("SELECT t.id FROM tokens t WHERE t.done_at IS NOT NULL LIMIT 1")->fetchColumn();
-
-        if (!$doneTokenId) {
-            $this->markTestSkipped('No done token available');
-        }
-
-        $result = $this->tokenService->remind($doneTokenId);
+        $result = $this->tokenService->remind($this->testDoneTokenId);
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('déjà été traité', $result['message']);
     }
 
     public function testRemindReturnsErrorForClosedSubmission(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status != 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch();
-
-        if (!$row) {
-            $this->markTestSkipped('No token on closed submission available');
-        }
-
-        $result = $this->tokenService->remind($row['id']);
+        $result = $this->tokenService->remind($this->testClosedTokenId);
         $this->assertFalse($result['success']);
         $this->assertStringContainsString("n'est plus en cours", $result['message']);
     }
 
     public function testRemindSuccessOnPendingToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.id, t.email FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token on en_cours submission available');
-        }
-
-        $result = $this->tokenService->remind($row['id']);
+        $result = $this->tokenService->remind($this->testPendingTokenId);
         $this->assertTrue($result['success']);
-        $this->assertStringContainsString($row['email'], $result['message']);
+        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
+    }
+
+    public function testRemindIncrementsRelanceCount(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $count = (int)$stmt->fetchColumn();
+        $this->assertGreaterThanOrEqual(1, $count);
+    }
+
+    public function testRemindSetsRelanceAt(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT relance_at FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertNotNull($stmt->fetchColumn());
+    }
+
+    public function testRemindMultipleTimesIncreasesCount(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $count = (int)$stmt->fetchColumn();
+        $this->assertGreaterThanOrEqual(2, $count);
     }
 
     // ── delegate ────────────────────────────────────────────────
@@ -275,80 +416,92 @@ final class TokenServiceTest extends TestCase
 
     public function testDelegateReturnsErrorForInvalidEmail(): void
     {
-        $result = $this->tokenService->delegate('nonexistent-token-id', 'not-an-email');
+        $result = $this->tokenService->delegate($this->testPendingTokenId, 'not-an-email');
         $this->assertFalse($result['success']);
-        $this->assertNotEmpty($result['message']);
+        $this->assertStringContainsString('invalide', $result['message']);
     }
 
     public function testDelegateReturnsErrorForAlreadyDoneToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $doneTokenId = $pdo->query("SELECT t.id FROM tokens t WHERE t.done_at IS NOT NULL LIMIT 1")->fetchColumn();
-
-        if (!$doneTokenId) {
-            $this->markTestSkipped('No done token available');
-        }
-
-        $result = $this->tokenService->delegate($doneTokenId, 'target@test.com');
+        $result = $this->tokenService->delegate($this->testDoneTokenId, 'target@test.com');
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('déjà été traité', $result['message']);
     }
 
     public function testDelegateReturnsErrorForSelfDelegation(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.id, t.email FROM tokens t WHERE t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token available');
-        }
-
-        $result = $this->tokenService->delegate($row['id'], $row['email']);
+        $result = $this->tokenService->delegate($this->testPendingTokenId, $this->testTokenEmail);
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('vous-même', $result['message']);
     }
 
     public function testDelegateReturnsErrorForClosedSubmission(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status != 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch();
-
-        if (!$row) {
-            $this->markTestSkipped('No token on closed submission available');
-        }
-
-        $result = $this->tokenService->delegate($row['id'], 'target@test.com');
+        $result = $this->tokenService->delegate($this->testClosedTokenId, 'target@test.com');
         $this->assertFalse($result['success']);
         $this->assertStringContainsString("n'est plus en cours", $result['message']);
     }
 
     public function testDelegateSuccess(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.id, t.email FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token on en_cours submission available');
-        }
-
         $toEmail = 'delegate_target_' . uniqid() . '@test.com';
-        $result = $this->tokenService->delegate($row['id'], $toEmail, 'Test delegation');
+        $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail, 'Test delegation');
         $this->assertTrue($result['success']);
         $this->assertStringContainsString($toEmail, $result['message']);
 
         // Verify new token was created
-        $check = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = (SELECT submission_id FROM tokens WHERE id = ?) AND email = ? AND done_at IS NULL");
-        $check->execute([$row['id'], $toEmail]);
+        $pdo = $this->db->getPdo();
+        $check = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ? AND done_at IS NULL");
+        $check->execute([$this->testSubmissionId, $toEmail]);
         $this->assertNotEmpty($check->fetch());
 
         // Verify delegation record
         $delCheck = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
-        $delCheck->execute([$row['id'], $toEmail]);
+        $delCheck->execute([$this->testPendingTokenId, $toEmail]);
         $this->assertNotEmpty($delCheck->fetch());
+    }
+
+    public function testDelegateMarksOldTokenAsDone(): void
+    {
+        $toEmail = 'delegate_target2_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertNotNull($stmt->fetchColumn());
+    }
+
+    public function testDelegateStoresReason(): void
+    {
+        $toEmail = 'delegate_target3_' . uniqid() . '@test.com';
+        $reason = 'Going on vacation';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail, $reason);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT reason FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$this->testPendingTokenId, $toEmail]);
+        $this->assertSame($reason, $stmt->fetchColumn());
+    }
+
+    public function testDelegateReturnsErrorForDuplicateActiveToken(): void
+    {
+        $pdo = $this->db->getPdo();
+
+        // Create a second active token on the same submission/step for another email
+        $existingEmail = 'existing_validator_' . uniqid() . '@test.com';
+        $existingTokenId = generate_uuid();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$existingTokenId, $this->testSubmissionId, $this->testStepId, $existingEmail, generate_token(), $expiresAt]);
+
+        // Try to delegate our pending token to the email that already has an active token
+        $result = $this->tokenService->delegate($this->testPendingTokenId, $existingEmail, 'Conflict');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('déjà actif', $result['message']);
 
         // Cleanup
-        $pdo->prepare("DELETE FROM delegations WHERE token_id = ? AND to_email = ?")->execute([$row['id'], $toEmail]);
-        $pdo->prepare("DELETE FROM tokens WHERE submission_id = (SELECT submission_id FROM tokens WHERE id = ?) AND email = ? AND done_at IS NULL")->execute([$row['id'], $toEmail]);
+        $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$existingTokenId]);
     }
 
     // ── getDelegations ──────────────────────────────────────────
@@ -360,17 +513,42 @@ final class TokenServiceTest extends TestCase
         $this->assertEmpty($delegations);
     }
 
+    public function testGetDelegationsReturnsEmptyForSubmissionWithoutDelegations(): void
+    {
+        $delegations = $this->tokenService->getDelegations($this->testSubmissionId);
+        $this->assertIsArray($delegations);
+        $this->assertEmpty($delegations);
+    }
+
     public function testGetDelegationsWithRealData(): void
     {
-        $pdo = $this->db->getPdo();
-        // Check if there are any delegations
-        $count = $pdo->query("SELECT COUNT(*) FROM delegations")->fetchColumn();
-        if ((int)$count === 0) {
-            $this->markTestSkipped('No delegation records available');
-        }
+        // Create a delegation first
+        $toEmail = 'del_get_target_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail, 'Test reason');
 
-        $subId = $pdo->query("SELECT t.submission_id FROM delegations d JOIN tokens t ON t.id = d.token_id LIMIT 1")->fetchColumn();
-        $delegations = $this->tokenService->getDelegations($subId);
+        $delegations = $this->tokenService->getDelegations($this->testSubmissionId);
         $this->assertNotEmpty($delegations);
+        $this->assertArrayHasKey('from_email', $delegations[0]);
+        $this->assertArrayHasKey('to_email', $delegations[0]);
+        $this->assertArrayHasKey('step_label', $delegations[0]);
+    }
+
+    public function testGetDelegationsReturnsCorrectSubmissionScope(): void
+    {
+        // Create delegation on test submission
+        $toEmail = 'del_scope_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
+
+        // Create a different submission and check it has no delegations
+        $pdo = $this->db->getPdo();
+        $otherSubId = generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', ?, datetime('now'), 'en_cours', 1)")
+            ->execute([$otherSubId, $this->testFormId, 'other@test.com']);
+
+        $delegations = $this->tokenService->getDelegations($otherSubId);
+        $this->assertEmpty($delegations);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$otherSubId]);
     }
 }
