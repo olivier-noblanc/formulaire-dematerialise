@@ -23,6 +23,7 @@ use App\Mail\MailService;
 use App\Audit\AuditLogService;
 use App\Cache\CacheService;
 use App\Render\HtmlService;
+use App\Repository\SettingsRepository;
 use App\View\ViewRenderer;
 use App\View\EmailView;
 use App\Stats\StatsService;
@@ -48,6 +49,7 @@ $app->set(Config::class, new Config());
 // Services seront instanciés à la demande
 $app->set(AuthService::class, new AuthService($db));
 $app->set(SettingsService::class, new SettingsService($db));
+$app->set(SettingsRepository::class, new SettingsRepository($db));
 $app->set(FieldService::class, new FieldService($db));
 $app->set(HtmlService::class, new HtmlService());
 $app->set(SecurityService::class, new SecurityService($app->get(HtmlService::class)));

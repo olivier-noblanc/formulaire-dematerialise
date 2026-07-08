@@ -41,6 +41,7 @@ use App\Cron\CronService;
 use App\Forms\ValidatorDataService;
 use App\Core\MigrationService;
 use App\Webhook\WebhookService;
+use App\Repository\SettingsRepository;
 
 $app = App::getInstance();
 
@@ -49,6 +50,7 @@ $db = new Database();
     $app->set(Database::class, $db);
     $app->set(Config::class, new Config());
     $app->set(SettingsService::class, new SettingsService($db));
+    $app->set(SettingsRepository::class, new SettingsRepository($db));
     $app->set(AuthService::class, new AuthService($db));
     $app->set(CacheService::class, new CacheService());
     $app->set(HtmlService::class, new HtmlService());
