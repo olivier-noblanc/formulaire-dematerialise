@@ -5,6 +5,13 @@ namespace App\Repository;
 
 final class AdminRepository extends BaseRepository
 {
+    public function __construct(
+        \App\Core\Database $db,
+        private SettingsRepository $settings,
+    ) {
+        parent::__construct($db);
+    }
+
     public function findByEmail(string $email): ?array
     {
         return $this->fetchOne("SELECT * FROM admins WHERE email = ?", [strtolower($email)]);
@@ -23,8 +30,7 @@ final class AdminRepository extends BaseRepository
 
     public function getSuperAdminEmail(): string
     {
-        $result = $this->fetchOne("SELECT value FROM settings WHERE key = 'admin_email'");
-        return $result['value'] ?? '';
+        return $this->settings->get('admin_email') ?? '';
     }
 
     public function getAll(): array
