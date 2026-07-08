@@ -27,6 +27,24 @@ final class WorkflowEngineTest extends TestCase
         $this->workflow = new WorkflowEngine($this->db, $settings, $mail, $fields, $conditions);
     }
 
+    // ── Constructor / DI ───────────────────────────────────────
+
+    public function testConstructorCreatesInstance(): void
+    {
+        $this->assertInstanceOf(WorkflowEngine::class, $this->workflow);
+    }
+
+    public function testImplementsWorkflowInterface(): void
+    {
+        $this->assertInstanceOf(\App\Contract\WorkflowInterface::class, $this->workflow);
+    }
+
+    public function testServiceRegistrableInContainer(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $this->assertTrue($app->has(WorkflowEngine::class));
+    }
+
     // ── getTokenWithContext ──────────────────────────────────────
 
     public function testGetTokenWithContextReturnsNullForInvalidToken(): void
@@ -51,6 +69,18 @@ final class WorkflowEngineTest extends TestCase
         $this->assertArrayHasKey('step_label', $result);
         $this->assertArrayHasKey('form_label', $result);
         $this->assertArrayHasKey('email', $result);
+    }
+
+    public function testGetTokenWithContextReturnsNullForEmptyString(): void
+    {
+        $result = $this->workflow->getTokenWithContext('');
+        $this->assertNull($result);
+    }
+
+    public function testGetTokenWithContextReturnsNullForTooLongToken(): void
+    {
+        $result = $this->workflow->getTokenWithContext(str_repeat('a', 256));
+        $this->assertNull($result);
     }
 
     // ── getTokenByIdWithContext ──────────────────────────────────
@@ -78,6 +108,12 @@ final class WorkflowEngineTest extends TestCase
         $this->assertArrayHasKey('form_label', $result);
         $this->assertArrayHasKey('data', $result);
         $this->assertArrayHasKey('status', $result);
+    }
+
+    public function testGetTokenByIdWithContextReturnsNullForEmptyString(): void
+    {
+        $result = $this->workflow->getTokenByIdWithContext('');
+        $this->assertNull($result);
     }
 
     // ── getWorkflowSteps ────────────────────────────────────────
@@ -120,6 +156,47 @@ final class WorkflowEngineTest extends TestCase
         $this->assertEmpty($steps);
     }
 
+    public function testGetWorkflowStepsReturnsEmptyForEmptyFormId(): void
+    {
+        $steps = $this->workflow->getWorkflowSteps('');
+        $this->assertIsArray($steps);
+        $this->assertEmpty($steps);
+    }
+
+    public function testGetWorkflowStepsReturnsConditionField(): void
+    {
+        $pdo = $this->db->getPdo();
+        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+
+        if (!$formId) {
+            $this->markTestSkipped('No forms available');
+        }
+
+        $steps = $this->workflow->getWorkflowSteps((string) $formId);
+        if (empty($steps)) {
+            $this->markTestSkipped('No active steps');
+        }
+
+        $this->assertArrayHasKey('condition', $steps[0]);
+    }
+
+    public function testGetWorkflowStepsReturnsRecipientEmailsField(): void
+    {
+        $pdo = $this->db->getPdo();
+        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+
+        if (!$formId) {
+            $this->markTestSkipped('No forms available');
+        }
+
+        $steps = $this->workflow->getWorkflowSteps((string) $formId);
+        if (empty($steps)) {
+            $this->markTestSkipped('No active steps');
+        }
+
+        $this->assertArrayHasKey('recipient_emails', $steps[0]);
+    }
+
     // ── getSubmissionWithFormLabel ───────────────────────────────
 
     public function testGetSubmissionWithFormLabelReturnsNullForInvalidId(): void
@@ -142,6 +219,44 @@ final class WorkflowEngineTest extends TestCase
         $this->assertArrayHasKey('form_label', $result);
         $this->assertArrayHasKey('status', $result);
         $this->assertArrayHasKey('data', $result);
+    }
+
+    public function testGetSubmissionWithFormLabelReturnsNullForEmptyString(): void
+    {
+        $result = $this->workflow->getSubmissionWithFormLabel('');
+        $this->assertNull($result);
+    }
+
+    public function testGetSubmissionWithFormLabelReturnsSubmittedByField(): void
+    {
+        $pdo = $this->db->getPdo();
+        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+
+        if (!$subId) {
+            $this->markTestSkipped('No submissions available');
+        }
+
+        $result = $this->workflow->getSubmissionWithFormLabel($subId);
+        if ($result === null) {
+            $this->markTestSkipped('Submission has no valid form join');
+        }
+        $this->assertArrayHasKey('submitted_by', $result);
+    }
+
+    public function testGetSubmissionWithFormLabelReturnsClosedAtField(): void
+    {
+        $pdo = $this->db->getPdo();
+        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+
+        if (!$subId) {
+            $this->markTestSkipped('No submissions available');
+        }
+
+        $result = $this->workflow->getSubmissionWithFormLabel($subId);
+        if ($result === null) {
+            $this->markTestSkipped('Submission has no valid form join');
+        }
+        $this->assertArrayHasKey('closed_at', $result);
     }
 
     // ── resolveDynamicRecipient ──────────────────────────────────
@@ -189,8 +304,79 @@ final class WorkflowEngineTest extends TestCase
     public function testResolveDynamicRecipientWithOwnerTemplate(): void
     {
         $result = $this->workflow->resolveDynamicRecipient('{{owner}}', [], 'nonexistent-submission');
-        // Without a valid submission, owner falls back to the template string
         $this->assertSame('{{owner}}', $result);
+    }
+
+    public function testResolveDynamicRecipientIgnoresNonLowercaseStart(): void
+    {
+        $result = $this->workflow->resolveDynamicRecipient('{{ManagerEmail}}', ['ManagerEmail' => 'test@example.com']);
+        $this->assertSame('{{ManagerEmail}}', $result);
+    }
+
+    public function testResolveDynamicRecipientIgnoresNumericStart(): void
+    {
+        $result = $this->workflow->resolveDynamicRecipient('{{1field}}', ['1field' => 'test@example.com']);
+        $this->assertSame('{{1field}}', $result);
+    }
+
+    public function testResolveDynamicRecipientResolvesExactMatchFirst(): void
+    {
+        $formData = ['email' => 'exact@example.com', 'Email' => 'case@example.com'];
+        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
+        $this->assertSame('exact@example.com', $result);
+    }
+
+    public function testResolveDynamicRecipientResolvesCaseInsensitiveFallback(): void
+    {
+        $formData = ['Email' => 'fallback@example.com'];
+        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
+        $this->assertSame('fallback@example.com', $result);
+    }
+
+    public function testResolveDynamicRecipientReturnsTemplateForNullFormDataValue(): void
+    {
+        $formData = ['email' => null];
+        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
+        $this->assertSame('{{email}}', $result);
+    }
+
+    public function testResolveDynamicRecipientReturnsTemplateForWhitespaceOnlyEmail(): void
+    {
+        $formData = ['email' => '   '];
+        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
+        $this->assertSame('{{email}}', $result);
+    }
+
+    public function testResolveDynamicRecipientWithOwnerAndNoSubmissionId(): void
+    {
+        $result = $this->workflow->resolveDynamicRecipient('{{owner}}', []);
+        $this->assertSame('{{owner}}', $result);
+    }
+
+    public function testResolveDynamicRecipientWithOwnerAndNonexistentSubmission(): void
+    {
+        $result = $this->workflow->resolveDynamicRecipient('{{owner}}', [], '00000000-0000-0000-0000-000000000000');
+        $this->assertSame('{{owner}}', $result);
+    }
+
+    public function testResolveDynamicRecipientWithPartialTemplateSyntax(): void
+    {
+        // Missing closing braces
+        $result = $this->workflow->resolveDynamicRecipient('{{email', ['email' => 'test@example.com']);
+        $this->assertSame('{{email', $result);
+    }
+
+    public function testResolveDynamicRecipientWithTripleBraces(): void
+    {
+        // Triple braces — should not match regex
+        $result = $this->workflow->resolveDynamicRecipient('{{{email}}}', ['email' => 'test@example.com']);
+        $this->assertSame('{{{email}}}', $result);
+    }
+
+    public function testResolveDynamicRecipientWithEmptyFormData(): void
+    {
+        $result = $this->workflow->resolveDynamicRecipient('{{anything}}', []);
+        $this->assertSame('{{anything}}', $result);
     }
 
     // ── validateToken ───────────────────────────────────────────
@@ -256,7 +442,6 @@ final class WorkflowEngineTest extends TestCase
         $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif de refus');
         $this->assertSame('ok', $result['status']);
 
-        // Verify submission is now refused
         $check = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
         $check->execute([$row['submission_id']]);
         $this->assertSame('refuse', $check->fetchColumn());
@@ -274,256 +459,10 @@ final class WorkflowEngineTest extends TestCase
         $longComment = str_repeat('x', 1500);
         $result = $this->workflow->validateToken($row['token'], 'valider', $longComment);
         $this->assertSame('ok', $result['status']);
-        // The comment should be truncated to 1000 chars in the validation data
         $data = json_decode($result['data']['data'], true);
         $validation = end($data['validations']);
         $this->assertLessThanOrEqual(1000, strlen($validation['commentaire']));
     }
-
-    // ── hasActiveSubmissions ─────────────────────────────────────
-
-    public function testHasActiveSubmissionsReturnsInt(): void
-    {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-
-        if (!$formId) {
-            $this->markTestSkipped('No forms available');
-        }
-
-        $count = $this->workflow->hasActiveSubmissions($formId);
-        $this->assertIsInt($count);
-        $this->assertGreaterThanOrEqual(0, $count);
-    }
-
-    public function testHasActiveSubmissionsReturnsZeroForNonexistentForm(): void
-    {
-        $count = $this->workflow->hasActiveSubmissions('nonexistent-form-id');
-        $this->assertSame(0, $count);
-    }
-
-    // ── hasActiveStepSubmissions ─────────────────────────────────
-
-    public function testHasActiveStepSubmissionsReturnsInt(): void
-    {
-        $pdo = $this->db->getPdo();
-        $stepId = $pdo->query("SELECT id FROM steps LIMIT 1")->fetchColumn();
-
-        if (!$stepId) {
-            $this->markTestSkipped('No steps available');
-        }
-
-        $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertIsInt($count);
-        $this->assertGreaterThanOrEqual(0, $count);
-    }
-
-    public function testHasActiveStepSubmissionsReturnsZeroForNonexistentStep(): void
-    {
-        $count = $this->workflow->hasActiveStepSubmissions('nonexistent-step-id');
-        $this->assertSame(0, $count);
-    }
-
-    public function testHasActiveStepSubmissionsReturnsCountForStepWithPendingTokens(): void
-    {
-        $pdo = $this->db->getPdo();
-        $stepId = $pdo->query("SELECT step_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE t.done_at IS NULL AND s.status = 'en_cours' LIMIT 1")->fetchColumn();
-
-        if (!$stepId) {
-            $this->markTestSkipped('No step with pending tokens available');
-        }
-
-        $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertGreaterThan(0, $count);
-    }
-
-    // ── advanceWorkflow ──────────────────────────────────────────
-
-    public function testAdvanceWorkflowReturnsEarlyForNonexistentSubmission(): void
-    {
-        // Should not throw — just returns early
-        $this->workflow->advanceWorkflow('nonexistent-submission-id');
-        $this->assertTrue(true);
-    }
-
-    public function testAdvanceWorkflowReturnsEarlyForClosedSubmission(): void
-    {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions WHERE closed_at IS NOT NULL LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No closed submission available');
-        }
-
-        // Should return early without error
-        $this->workflow->advanceWorkflow((string) $subId);
-        $this->assertTrue(true);
-    }
-
-    public function testAdvanceWorkflowCreatesTokensForActiveSubmission(): void
-    {
-        $pdo = $this->db->getPdo();
-        // Find an en_cours submission that has steps but no tokens yet (fresh submission)
-        $row = $pdo->query("
-            SELECT s.id as sub_id, s.form_id
-            FROM submissions s
-            WHERE s.status = 'en_cours' AND s.closed_at IS NULL
-            AND NOT EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id)
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No fresh en_cours submission without tokens available');
-        }
-
-        // Verify steps exist for this form
-        $steps = $this->workflow->getWorkflowSteps((string) $row['form_id']);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps for the form');
-        }
-
-        // Verify at least one step has recipients
-        $hasRecipients = false;
-        foreach ($steps as $step) {
-            if (!empty(trim($step['recipient_emails'] ?? ''))) {
-                $hasRecipients = true;
-                break;
-            }
-        }
-        if (!$hasRecipients) {
-            $this->markTestSkipped('No steps with recipients for the form');
-        }
-
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
-        $countStmt->execute([$row['sub_id']]);
-        $tokensBefore = $countStmt->fetchColumn();
-        $this->workflow->advanceWorkflow((string) $row['sub_id']);
-        $countStmt->execute([$row['sub_id']]);
-        $tokensAfter = $countStmt->fetchColumn();
-
-        $this->assertGreaterThan((int) $tokensBefore, (int) $tokensAfter, 'advanceWorkflow should create new tokens');
-    }
-
-    public function testAdvanceWorkflowSkipsInvalidEmailRecipients(): void
-    {
-        $pdo = $this->db->getPdo();
-        // Find a step with an invalid (non-email) recipient
-        $row = $pdo->query("
-            SELECT st.id as step_id, st.form_id, st.ordre
-            FROM steps st
-            JOIN step_recipients sr ON sr.step_id = st.id
-            WHERE st.actif = 1 AND sr.email NOT LIKE '%@%'
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No step with invalid email recipient available');
-        }
-
-        // Find a matching submission
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? AND status = 'en_cours' AND closed_at IS NULL LIMIT 1");
-        $stmt->execute([$row['form_id']]);
-        $subId = $stmt->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No active submission for the form with invalid recipient');
-        }
-
-        // Should not throw even with invalid email recipients
-        $this->workflow->advanceWorkflow((string) $subId);
-        $this->assertTrue(true);
-    }
-
-    public function testAdvanceWorkflowSkipsConditionWhenNotMet(): void
-    {
-        $pdo = $this->db->getPdo();
-        // Find a step with a condition that won't match
-        $row = $pdo->query("
-            SELECT st.id as step_id, st.form_id, st.`condition`
-            FROM steps st
-            WHERE st.actif = 1 AND st.`condition` IS NOT NULL AND st.`condition` != '' AND st.`condition` != 'null'
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No step with a condition available');
-        }
-
-        // Find a matching submission with empty data (condition won't match)
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? AND status = 'en_cours' AND closed_at IS NULL LIMIT 1");
-        $stmt->execute([$row['form_id']]);
-        $subId = $stmt->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No active submission for the form with conditional step');
-        }
-
-        // Should not throw — condition is evaluated and step skipped
-        $this->workflow->advanceWorkflow((string) $subId);
-        $this->assertTrue(true);
-    }
-
-    // ── resolveDynamicRecipient edge cases ───────────────────────
-
-    public function testResolveDynamicRecipientIgnoresNonLowercaseStart(): void
-    {
-        // Template regex requires [a-z] start — uppercase start should not match
-        $result = $this->workflow->resolveDynamicRecipient('{{ManagerEmail}}', ['ManagerEmail' => 'test@example.com']);
-        $this->assertSame('{{ManagerEmail}}', $result);
-    }
-
-    public function testResolveDynamicRecipientIgnoresNumericStart(): void
-    {
-        // Template regex requires [a-z] start — numeric start should not match
-        $result = $this->workflow->resolveDynamicRecipient('{{1field}}', ['1field' => 'test@example.com']);
-        $this->assertSame('{{1field}}', $result);
-    }
-
-    public function testResolveDynamicRecipientResolvesExactMatchFirst(): void
-    {
-        // Exact key match takes priority over case-insensitive fallback
-        $formData = ['email' => 'exact@example.com', 'Email' => 'case@example.com'];
-        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
-        $this->assertSame('exact@example.com', $result);
-    }
-
-    public function testResolveDynamicRecipientResolvesCaseInsensitiveFallback(): void
-    {
-        // No exact match — falls back to case-insensitive comparison
-        $formData = ['Email' => 'fallback@example.com'];
-        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
-        $this->assertSame('fallback@example.com', $result);
-    }
-
-    public function testResolveDynamicRecipientReturnsTemplateForNullFormDataValue(): void
-    {
-        $formData = ['email' => null];
-        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
-        $this->assertSame('{{email}}', $result);
-    }
-
-    public function testResolveDynamicRecipientReturnsTemplateForWhitespaceOnlyEmail(): void
-    {
-        $formData = ['email' => '   '];
-        $result = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
-        $this->assertSame('{{email}}', $result);
-    }
-
-    public function testResolveDynamicRecipientWithOwnerAndNoSubmissionId(): void
-    {
-        // {{owner}} without submissionId — falls back to template
-        $result = $this->workflow->resolveDynamicRecipient('{{owner}}', []);
-        $this->assertSame('{{owner}}', $result);
-    }
-
-    public function testResolveDynamicRecipientWithOwnerAndNonexistentSubmission(): void
-    {
-        // {{owner}} with a submission that doesn't exist — falls back to template
-        $result = $this->workflow->resolveDynamicRecipient('{{owner}}', [], '00000000-0000-0000-0000-000000000000');
-        $this->assertSame('{{owner}}', $result);
-    }
-
-    // ── validateToken edge cases ─────────────────────────────────
 
     public function testValidateTokenReturnsExpiredForExpiredToken(): void
     {
@@ -606,7 +545,6 @@ final class WorkflowEngineTest extends TestCase
         $result = $this->workflow->validateToken($row['token'], 'valider', 'Test', $doneBy);
         $this->assertSame('ok', $result['status']);
 
-        // Verify done_by is stored in the submission data
         $check = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $check->execute([$row['submission_id']]);
         $data = json_decode((string) $check->fetchColumn(), true);
@@ -614,9 +552,108 @@ final class WorkflowEngineTest extends TestCase
         $this->assertSame($doneBy, $validation['done_by']);
     }
 
-    // ── getWorkflowSteps caching ─────────────────────────────────
+    public function testValidateTokenWithDefaultAction(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("SELECT t.token FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
 
-    public function testGetWorkflowStepsReturnsConsistentResults(): void
+        if (!$row) {
+            $this->markTestSkipped('No pending token available');
+        }
+
+        // Default action is 'valider'
+        $result = $this->workflow->validateToken($row['token']);
+        $this->assertSame('ok', $result['status']);
+    }
+
+    public function testValidateTokenRefuseWithComment(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("SELECT t.token, t.submission_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No pending token available');
+        }
+
+        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif de refus détaillé');
+        $this->assertSame('ok', $result['status']);
+    }
+
+    public function testValidateTokenRefuseWithoutComment(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("SELECT t.token, t.submission_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No pending token available');
+        }
+
+        $result = $this->workflow->validateToken($row['token'], 'refuser', '');
+        $this->assertSame('ok', $result['status']);
+    }
+
+    public function testValidateTokenWithEmptyComment(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("SELECT t.token FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No pending token available');
+        }
+
+        $result = $this->workflow->validateToken($row['token'], 'valider', '');
+        $this->assertSame('ok', $result['status']);
+    }
+
+    public function testValidateTokenStoresStepLabel(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("
+            SELECT t.token, t.submission_id
+            FROM tokens t
+            JOIN submissions s ON s.id = t.submission_id
+            WHERE s.status = 'en_cours' AND t.done_at IS NULL
+            LIMIT 1
+        ")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No pending token available');
+        }
+
+        $result = $this->workflow->validateToken($row['token'], 'valider', 'Test');
+        $this->assertSame('ok', $result['status']);
+
+        $data = json_decode($result['data']['data'], true);
+        $validation = end($data['validations']);
+        $this->assertArrayHasKey('step_label', $validation);
+        $this->assertArrayHasKey('email', $validation);
+        $this->assertArrayHasKey('action', $validation);
+        $this->assertArrayHasKey('date', $validation);
+    }
+
+    public function testValidateTokenStoresDateTimestamp(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("SELECT t.token FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No pending token available');
+        }
+
+        $before = gmdate('Y-m-d H:i:s');
+        $result = $this->workflow->validateToken($row['token'], 'valider', 'Test');
+        $after = gmdate('Y-m-d H:i:s');
+
+        $this->assertSame('ok', $result['status']);
+        $data = json_decode($result['data']['data'], true);
+        $validation = end($data['validations']);
+        $this->assertGreaterThanOrEqual($before, $validation['date']);
+        $this->assertLessThanOrEqual($after, $validation['date']);
+    }
+
+    // ── hasActiveSubmissions ─────────────────────────────────────
+
+    public function testHasActiveSubmissionsReturnsInt(): void
     {
         $pdo = $this->db->getPdo();
         $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
@@ -625,13 +662,22 @@ final class WorkflowEngineTest extends TestCase
             $this->markTestSkipped('No forms available');
         }
 
-        // Call twice — static cache should return same results
-        $first = $this->workflow->getWorkflowSteps((string) $formId);
-        $second = $this->workflow->getWorkflowSteps((string) $formId);
-        $this->assertSame($first, $second);
+        $count = $this->workflow->hasActiveSubmissions($formId);
+        $this->assertIsInt($count);
+        $this->assertGreaterThanOrEqual(0, $count);
     }
 
-    // ── hasActiveSubmissions consistency ─────────────────────────
+    public function testHasActiveSubmissionsReturnsZeroForNonexistentForm(): void
+    {
+        $count = $this->workflow->hasActiveSubmissions('nonexistent-form-id');
+        $this->assertSame(0, $count);
+    }
+
+    public function testHasActiveSubmissionsReturnsZeroForEmptyFormId(): void
+    {
+        $count = $this->workflow->hasActiveSubmissions('');
+        $this->assertSame(0, $count);
+    }
 
     public function testHasActiveSubmissionsMatchesDirectQuery(): void
     {
@@ -648,6 +694,41 @@ final class WorkflowEngineTest extends TestCase
         $directCount = $stmt->fetchColumn();
 
         $this->assertSame((int) $directCount, $methodResult);
+    }
+
+    // ── hasActiveStepSubmissions ─────────────────────────────────
+
+    public function testHasActiveStepSubmissionsReturnsInt(): void
+    {
+        $pdo = $this->db->getPdo();
+        $stepId = $pdo->query("SELECT id FROM steps LIMIT 1")->fetchColumn();
+
+        if (!$stepId) {
+            $this->markTestSkipped('No steps available');
+        }
+
+        $count = $this->workflow->hasActiveStepSubmissions($stepId);
+        $this->assertIsInt($count);
+        $this->assertGreaterThanOrEqual(0, $count);
+    }
+
+    public function testHasActiveStepSubmissionsReturnsZeroForNonexistentStep(): void
+    {
+        $count = $this->workflow->hasActiveStepSubmissions('nonexistent-step-id');
+        $this->assertSame(0, $count);
+    }
+
+    public function testHasActiveStepSubmissionsReturnsCountForStepWithPendingTokens(): void
+    {
+        $pdo = $this->db->getPdo();
+        $stepId = $pdo->query("SELECT step_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE t.done_at IS NULL AND s.status = 'en_cours' LIMIT 1")->fetchColumn();
+
+        if (!$stepId) {
+            $this->markTestSkipped('No step with pending tokens available');
+        }
+
+        $count = $this->workflow->hasActiveStepSubmissions($stepId);
+        $this->assertGreaterThan(0, $count);
     }
 
     public function testHasActiveStepSubmissionsMatchesDirectQuery(): void
@@ -669,5 +750,269 @@ final class WorkflowEngineTest extends TestCase
         $directCount = $stmt->fetchColumn();
 
         $this->assertSame((int) $directCount, $methodResult);
+    }
+
+    public function testHasActiveStepSubmissionsReturnsZeroForEmptyStepId(): void
+    {
+        $count = $this->workflow->hasActiveStepSubmissions('');
+        $this->assertSame(0, $count);
+    }
+
+    // ── advanceWorkflow ──────────────────────────────────────────
+
+    public function testAdvanceWorkflowReturnsEarlyForNonexistentSubmission(): void
+    {
+        $this->workflow->advanceWorkflow('nonexistent-submission-id');
+        $this->assertTrue(true);
+    }
+
+    public function testAdvanceWorkflowReturnsEarlyForClosedSubmission(): void
+    {
+        $pdo = $this->db->getPdo();
+        $subId = $pdo->query("SELECT id FROM submissions WHERE closed_at IS NOT NULL LIMIT 1")->fetchColumn();
+
+        if (!$subId) {
+            $this->markTestSkipped('No closed submission available');
+        }
+
+        $this->workflow->advanceWorkflow((string) $subId);
+        $this->assertTrue(true);
+    }
+
+    public function testAdvanceWorkflowReturnsEarlyForEmptySubmissionId(): void
+    {
+        $this->workflow->advanceWorkflow('');
+        $this->assertTrue(true);
+    }
+
+    public function testAdvanceWorkflowCreatesTokensForActiveSubmission(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("
+            SELECT s.id as sub_id, s.form_id
+            FROM submissions s
+            WHERE s.status = 'en_cours' AND s.closed_at IS NULL
+            AND NOT EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id)
+            LIMIT 1
+        ")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No fresh en_cours submission without tokens available');
+        }
+
+        $steps = $this->workflow->getWorkflowSteps((string) $row['form_id']);
+        if (empty($steps)) {
+            $this->markTestSkipped('No active steps for the form');
+        }
+
+        $hasRecipients = false;
+        foreach ($steps as $step) {
+            if (!empty(trim($step['recipient_emails'] ?? ''))) {
+                $hasRecipients = true;
+                break;
+            }
+        }
+        if (!$hasRecipients) {
+            $this->markTestSkipped('No steps with recipients for the form');
+        }
+
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
+        $countStmt->execute([$row['sub_id']]);
+        $tokensBefore = $countStmt->fetchColumn();
+        $this->workflow->advanceWorkflow((string) $row['sub_id']);
+        $countStmt->execute([$row['sub_id']]);
+        $tokensAfter = $countStmt->fetchColumn();
+
+        $this->assertGreaterThan((int) $tokensBefore, (int) $tokensAfter, 'advanceWorkflow should create new tokens');
+    }
+
+    public function testAdvanceWorkflowSkipsInvalidEmailRecipients(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("
+            SELECT st.id as step_id, st.form_id, st.ordre
+            FROM steps st
+            JOIN step_recipients sr ON sr.step_id = st.id
+            WHERE st.actif = 1 AND sr.email NOT LIKE '%@%'
+            LIMIT 1
+        ")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No step with invalid email recipient available');
+        }
+
+        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? AND status = 'en_cours' AND closed_at IS NULL LIMIT 1");
+        $stmt->execute([$row['form_id']]);
+        $subId = $stmt->fetchColumn();
+
+        if (!$subId) {
+            $this->markTestSkipped('No active submission for the form with invalid recipient');
+        }
+
+        $this->workflow->advanceWorkflow((string) $subId);
+        $this->assertTrue(true);
+    }
+
+    public function testAdvanceWorkflowSkipsConditionWhenNotMet(): void
+    {
+        $pdo = $this->db->getPdo();
+        $row = $pdo->query("
+            SELECT st.id as step_id, st.form_id, st.`condition`
+            FROM steps st
+            WHERE st.actif = 1 AND st.`condition` IS NOT NULL AND st.`condition` != '' AND st.`condition` != 'null'
+            LIMIT 1
+        ")->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $this->markTestSkipped('No step with a condition available');
+        }
+
+        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? AND status = 'en_cours' AND closed_at IS NULL LIMIT 1");
+        $stmt->execute([$row['form_id']]);
+        $subId = $stmt->fetchColumn();
+
+        if (!$subId) {
+            $this->markTestSkipped('No active submission for the form with conditional step');
+        }
+
+        $this->workflow->advanceWorkflow((string) $subId);
+        $this->assertTrue(true);
+    }
+
+    // ── getWorkflowSteps caching ─────────────────────────────────
+
+    public function testGetWorkflowStepsReturnsConsistentResults(): void
+    {
+        $pdo = $this->db->getPdo();
+        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+
+        if (!$formId) {
+            $this->markTestSkipped('No forms available');
+        }
+
+        $first = $this->workflow->getWorkflowSteps((string) $formId);
+        $second = $this->workflow->getWorkflowSteps((string) $formId);
+        $this->assertSame($first, $second);
+    }
+
+    // ── validateToken edge cases with various token formats ─────
+
+    public function testValidateTokenReturnsInvalidForShortHex(): void
+    {
+        $result = $this->workflow->validateToken('abc123');
+        $this->assertSame('invalid', $result['status']);
+    }
+
+    public function testValidateTokenReturnsInvalidForUppercaseHex(): void
+    {
+        $result = $this->workflow->validateToken(strtoupper(str_repeat('a', 64)));
+        $this->assertSame('invalid', $result['status']);
+    }
+
+    public function testValidateTokenReturnsInvalidForHexWithSpecialChars(): void
+    {
+        $result = $this->workflow->validateToken(str_repeat('g', 64));
+        $this->assertSame('invalid', $result['status']);
+    }
+
+    public function testValidateTokenReturnsInvalidForMixedCaseHex(): void
+    {
+        $token = str_repeat('A', 32) . str_repeat('a', 32);
+        $result = $this->workflow->validateToken($token);
+        $this->assertSame('invalid', $result['status']);
+    }
+
+    // ── ConditionEvaluator (shared component) ────────────────────
+
+    public function testConditionEvaluatorHandlesEmptyCondition(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $this->assertTrue($evaluator->evaluate('', []));
+        $this->assertTrue($evaluator->evaluate(null, []));
+    }
+
+    public function testConditionEvaluatorHandlesInvalidJson(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $this->assertTrue($evaluator->evaluate('not-json', []));
+    }
+
+    public function testConditionEvaluatorHandlesEqOperator(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'status', 'op' => 'eq', 'value' => 'active']);
+        $this->assertTrue($evaluator->evaluate($condition, ['status' => 'active']));
+        $this->assertFalse($evaluator->evaluate($condition, ['status' => 'inactive']));
+    }
+
+    public function testConditionEvaluatorHandlesNeqOperator(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'status', 'op' => 'neq', 'value' => 'active']);
+        $this->assertFalse($evaluator->evaluate($condition, ['status' => 'active']));
+        $this->assertTrue($evaluator->evaluate($condition, ['status' => 'inactive']));
+    }
+
+    public function testConditionEvaluatorHandlesInOperator(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'role', 'op' => 'in', 'value' => ['admin', 'editor']]);
+        $this->assertTrue($evaluator->evaluate($condition, ['role' => 'admin']));
+        $this->assertFalse($evaluator->evaluate($condition, ['role' => 'viewer']));
+    }
+
+    public function testConditionEvaluatorHandlesInOperatorWithString(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'role', 'op' => 'in', 'value' => 'admin,editor']);
+        $this->assertTrue($evaluator->evaluate($condition, ['role' => 'admin']));
+        $this->assertFalse($evaluator->evaluate($condition, ['role' => 'viewer']));
+    }
+
+    public function testConditionEvaluatorHandlesNotEmptyOperator(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'name', 'op' => 'not_empty']);
+        $this->assertTrue($evaluator->evaluate($condition, ['name' => 'John']));
+        $this->assertFalse($evaluator->evaluate($condition, ['name' => '']));
+        $this->assertFalse($evaluator->evaluate($condition, []));
+    }
+
+    public function testConditionEvaluatorHandlesEmptyOperator(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'name', 'op' => 'empty']);
+        $this->assertTrue($evaluator->evaluate($condition, ['name' => '']));
+        $this->assertTrue($evaluator->evaluate($condition, []));
+        $this->assertFalse($evaluator->evaluate($condition, ['name' => 'John']));
+    }
+
+    public function testConditionEvaluatorHandlesUnknownOperator(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'name', 'op' => 'unknown']);
+        $this->assertTrue($evaluator->evaluate($condition, ['name' => 'John']));
+    }
+
+    public function testConditionEvaluatorHandlesArrayValueInData(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'tags', 'op' => 'not_empty']);
+        $this->assertTrue($evaluator->evaluate($condition, ['tags' => ['admin', 'user']]));
+    }
+
+    public function testConditionEvaluatorHandlesMissingFieldInData(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'missing', 'op' => 'eq', 'value' => '']);
+        $this->assertTrue($evaluator->evaluate($condition, []));
+    }
+
+    public function testConditionEvaluatorDefaultsToEqOperator(): void
+    {
+        $evaluator = new ConditionEvaluator();
+        $condition = json_encode(['field' => 'name', 'value' => 'test']);
+        $this->assertTrue($evaluator->evaluate($condition, ['name' => 'test']));
+        $this->assertFalse($evaluator->evaluate($condition, ['name' => 'other']));
     }
 }
