@@ -168,6 +168,8 @@ $_app->set(\App\Repository\SettingsRepository::class, new \App\Repository\Settin
 $_app->set(\App\Repository\AuditRepository::class, new \App\Repository\AuditRepository($_db_service));
 $_app->set(\App\Repository\AdminRepository::class, new \App\Repository\AdminRepository($_db_service));
 $_app->set(\App\Repository\FormRepository::class, new \App\Repository\FormRepository($_db_service));
+$_app->set(\App\Repository\SubmissionRepository::class, new \App\Repository\SubmissionRepository($_db_service));
+$_app->set(\App\Repository\TokenRepository::class, new \App\Repository\TokenRepository($_db_service));
 $_app->set(\App\Repository\AttachmentRepository::class, new \App\Repository\AttachmentRepository($_db_service));
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());

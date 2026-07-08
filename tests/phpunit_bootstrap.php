@@ -46,6 +46,8 @@ use App\Repository\AuditRepository;
 use App\Repository\AdminRepository;
 use App\Repository\FormRepository;
 use App\Repository\AttachmentRepository;
+use App\Repository\SubmissionRepository;
+use App\Repository\TokenRepository;
 
 $app = App::getInstance();
 
@@ -58,6 +60,8 @@ $db = new Database();
     $app->set(AuditRepository::class, new AuditRepository($db));
     $app->set(AdminRepository::class, new AdminRepository($db));
     $app->set(FormRepository::class, new FormRepository($db));
+$app->set(SubmissionRepository::class, new SubmissionRepository($db));
+$app->set(TokenRepository::class, new TokenRepository($db));
     $app->set(AttachmentRepository::class, new AttachmentRepository($db));
     $app->set(AuthService::class, new AuthService($db));
     $app->set(CacheService::class, new CacheService());
