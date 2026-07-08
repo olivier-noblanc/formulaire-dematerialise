@@ -42,6 +42,8 @@ use App\Core\MigrationService;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
 use App\Validation\ValidationService;
+use App\Export\ExportService;
+use App\Email\EmailVerificationService;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -109,6 +111,12 @@ $app->set(MigrationService::class, new MigrationService($db));
 
 // Validation service
 $app->set(ValidationService::class, new ValidationService());
+
+// Export service
+$app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class)));
+
+// Email verification service
+$app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
 
 // Note : les méthodes statiques App::db(), App::config(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`
