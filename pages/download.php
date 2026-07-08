@@ -51,7 +51,7 @@ $has_access = false;
 if ($is_admin) {
     $has_access = true;
 } else {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
 
     // Vérifier si l'utilisateur est le propriétaire de la soumission
     $sub_stmt = $pdo->prepare("SELECT submitted_by FROM submissions WHERE id = ?");
@@ -163,7 +163,7 @@ function export_submission_json(): void {
             'Vérifiez que le lien que vous avez utilisé est correct et complet.');
     }
 
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
 
     // Récupérer la soumission + le label du formulaire
     $sub_stmt = $pdo->prepare(

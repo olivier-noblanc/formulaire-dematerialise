@@ -4,7 +4,7 @@
 require_once dirname(__DIR__) . '/helpers.php';
 
 $user = get_auth_user();
-$pdo = get_pdo();
+$pdo = \App\Core\App::db()->getPdo();
 $form_uuid = trim($_GET['f'] ?? '');
 
 // Récupérer le formulaire par UUID (non devinable)

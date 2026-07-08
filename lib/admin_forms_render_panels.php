@@ -45,7 +45,7 @@ function render_form_selector_panel(array $ctx): string {
         <button type="button" onclick="document.getElementById('import-panel').classList.toggle('hidden')" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;"><span aria-hidden="true">📥</span> Importer JSON</button>
         <button type="button" onclick="document.getElementById('ai-prompt-panel').classList.toggle('hidden')" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;"><span aria-hidden="true">🤖</span> Prompt IA</button>
         <form method="POST" style="display:inline;">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="populate_samples">
             <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .8rem;"><span aria-hidden="true">📦</span> Formulaires exemples</button>
         </form>
@@ -81,7 +81,7 @@ function render_import_json_panel(array $ctx): string {
                 <?php endif; ?>
 
                 <form method="POST">
-                    <?= csrf_field() ?>
+                    <?= \App\Core\App::security()->csrfField() ?>
                     <div class="field">
                         <label>Données JSON<span class="req">*</span></label>
                         <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général","filled_by":"demandeur"},{"label":"Décision","field_type":"select","field_name":"decision","options":["Accepté","Refusé"],"required":1,"card_group":"Décision","filled_by":"validator","validator_step":"Validation manager"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>"]}]}' style="font-family:monospace;font-size:.8rem;"><?= h($preserved_json ?? '') ?></textarea>
@@ -315,7 +315,7 @@ function render_new_form_panel(array $ctx): string {
         </div>
         <div class="section-card-body">
             <form method="POST">
-                <?= csrf_field() ?>
+                <?= \App\Core\App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="add_form">
                 <div class="form-grid">
                     <div class="field">

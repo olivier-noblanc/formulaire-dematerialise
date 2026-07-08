@@ -127,7 +127,7 @@ function render_submission_view_workflow_actions(array $all_tokens, bool $is_adm
         }
         $tok_id  = h((string)($tok['id'] ?? ''));
         $email   = display_user((string)($tok['email'] ?? ''));  // v10.0.2 — display_user
-        $csrf    = csrf_field();
+        $csrf    = \App\Core\App::security()->csrfField();
 
         $forms_html .= <<<HTML
           <form method="POST" style="display:inline;">
@@ -189,7 +189,7 @@ function render_submission_view_delegation_form(array $all_tokens, string $user,
         $options_html .= "<option value=\"{$id}\">Étape {$ordre} — {$email}</option>";
     }
 
-    $csrf = csrf_field();
+    $csrf = \App\Core\App::security()->csrfField();
 
     return <<<HTML
     <div class="actions-bar" style="margin-top:0;">
@@ -321,7 +321,7 @@ function render_submission_view_validator_data(array $validator_data_rows, array
 
         // OWNER-EDIT : bloc valeur — formulaire inline éditable ou lecture seule.
         if ($can_edit) {
-            $csrf         = csrf_field();
+            $csrf         = \App\Core\App::security()->csrfField();
             $sub_id_h     = h($sub_id);
             $fname_h      = h($field_name);
             $value_input  = h($value_raw);
@@ -548,7 +548,7 @@ HTML;
     // ── Action « Rappeler tous » (admin) ──
     $action_html = '';
     if ($is_admin && $status === 'en_cours') {
-        $csrf = csrf_field();
+        $csrf = \App\Core\App::security()->csrfField();
         $action_html = <<<HTML
     <div class="actions-bar">
       <form method="POST">

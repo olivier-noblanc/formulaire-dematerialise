@@ -35,7 +35,7 @@ function render_top_action_bar(array $ctx): string {
     <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
         <a href="index.php?p=form_preview&form_id=<?= $form_id ?>" class="btn-preview" target="_blank"><span aria-hidden="true">👁</span> Prévisualiser le formulaire</a>
         <form method="POST" style="display:inline;">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="export_form">
             <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
             <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📤</span> Exporter JSON</button>
@@ -69,13 +69,13 @@ function render_form_info_section(array $ctx): string {
         <div class="section-card-header">
             <h2><span aria-hidden="true">📋</span> Informations du formulaire</h2>
             <form method="POST" style="display:inline;">
-                <?= csrf_field() ?>
+                <?= \App\Core\App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="duplicate_form">
                 <input type="hidden" name="source_form_id" value="<?= $form['id'] ?>">
                 <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📋</span> Dupliquer</button>
             </form>
             <form method="POST" style="display:inline;">
-                <?= csrf_field() ?>
+                <?= \App\Core\App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="delete_form">
                 <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
                 <button type="submit" style="background:#c0392b;color:#fff;border:none;border-radius:3px;padding:.3rem .7rem;cursor:pointer;font-size:.8rem;font-family:inherit;" onclick="return confirm('Supprimer ce formulaire et toutes ses données ? Cette action est irréversible.');">Supprimer</button>
@@ -83,7 +83,7 @@ function render_form_info_section(array $ctx): string {
         </div>
         <div class="section-card-body">
             <form method="POST">
-                <?= csrf_field() ?>
+                <?= \App\Core\App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="update_form">
                 <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
                 <div class="form-grid">
@@ -162,7 +162,7 @@ function render_owners_section(array $ctx): string {
         <?php endif; ?>
 
         <form method="POST" action="index.php?p=admin_forms&form_id=<?= $form_id ?>#owners">
-            <?= csrf_field() ?>
+            <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="add_owner">
             <input type="hidden" name="form_id" value="<?= $form_id ?>">
             <div style="display:flex;gap:.5rem;align-items:center;">

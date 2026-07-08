@@ -47,7 +47,7 @@ function render_error_page(int $code, string $title, string $message, string $hi
     // send_security_headers() est déjà appelé globalement, mais on s'assure
     // que les headers critiques sont présents même si la réponse a commencé
     if (!headers_sent()) {
-        send_security_headers();
+        \App\Core\App::security()->sendSecurityHeaders();
     }
 
     // Icônes SVG selon le code d'erreur

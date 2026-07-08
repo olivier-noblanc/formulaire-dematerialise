@@ -3,6 +3,7 @@
 // Accessible sans authentification (utilisé par les outils de supervision)
 // Retourne HTTP 200 si sain, HTTP 503 si problème détecté
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 $checks = [];
 $all_healthy = true;
@@ -11,7 +12,7 @@ $all_healthy = true;
 $db_ok = false;
 $db_detail = '';
 try {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     $test = _dbm_q($pdo, "SELECT 1")->fetchColumn();
     $db_ok = ($test === 1 || $test === '1');
     $db_detail = 'Connexion SQLite OK';
@@ -40,7 +41,7 @@ $checks[] = ['label' => 'Répertoire de données', 'ok' => $dir_writable, 'detai
 $schema_ok = false;
 $schema_detail = '';
 try {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     $tables = _dbm_q($pdo, "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
     $required = ['forms', 'submissions', 'tokens', 'settings', 'audit_log'];
     $missing = array_diff($required, $tables);
@@ -60,7 +61,7 @@ $checks[] = ['label' => 'Schéma de base de données', 'ok' => $schema_ok, 'deta
 $smtp_ok = false;
 $smtp_detail = '';
 try {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     $smtp_host = \App\Core\App::settings()->get('smtp_host', '');
     $smtp_ok = !empty($smtp_host);
     $smtp_detail = $smtp_ok ? 'Hôte SMTP configuré : ' . $smtp_host : 'Aucun hôte SMTP configuré';

@@ -11,7 +11,7 @@ use App\Core\App;
 
 require_admin();
 
-$pdo = get_pdo();
+$pdo = App::db()->getPdo();
 
 // ── Metrique : temps moyen de traitement ──
 $avg_time_stmt = _dbm_q($pdo, "

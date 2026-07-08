@@ -3,13 +3,13 @@
 require_once dirname(__DIR__) . '/helpers.php';
 
 $user = get_auth_user();
-$pdo  = get_pdo();
+$pdo  = \App\Core\App::db()->getPdo();
 $search = trim($_GET['search'] ?? '');
 
 // Traitement de la delegation
 $delegation_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delegate_token') {
-    require_csrf();
+    \App\Core\App::security()->requireCsrf();
     $token_id = trim($_POST['token_id'] ?? '');
     $delegate_to = trim($_POST['delegate_to'] ?? '');
     $delegate_reason = trim($_POST['delegate_reason'] ?? '');
@@ -200,7 +200,7 @@ ob_start();
           <details style="margin-left:.5rem;">
             <summary class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;cursor:pointer;display:inline;"><span aria-hidden="true">🔄</span> Déléguer</summary>
             <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;padding:.75rem;background:#f8f8fc;border-radius:4px;border:1px solid #ddd;">
-              <?= csrf_field() ?>
+              <?= \App\Core\App::security()->csrfField() ?>
               <input type="hidden" name="action" value="delegate_token">
               <input type="hidden" name="token_id" value="<?= h($tk['token_id']) ?>">
               <input type="email" name="delegate_to" placeholder="email@exemple.invalid" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">

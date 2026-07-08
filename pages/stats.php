@@ -4,7 +4,7 @@ require_once dirname(__DIR__) . '/helpers.php';
 
 require_admin();
 
-$pdo = get_pdo();
+$pdo = \App\Core\App::db()->getPdo();
 $period = $_GET['period'] ?? 'month';
 if (!in_array($period, ['week', 'month', 'year'])) $period = 'month';
 

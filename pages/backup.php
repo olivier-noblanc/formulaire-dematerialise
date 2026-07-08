@@ -34,7 +34,7 @@ $db_tables = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens',
 // ═══════════════════════════════════════════════════════════════
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_csrf();
+    App::security()->requireCsrf();
 
     $action = $_POST['action'] ?? '';
 
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             else {
                 // Fermer la connexion PDO existante pour libérer le fichier SQLite
                 // (release_pdo() met $GLOBALS['_pdo'] à null + rollback, T-19/O-05)
-                release_pdo();
+                App::db()->release();
 
                 // Copie de sécurité de la base actuelle
                 $backup_before = $db_path . '.before_restore_' . date('Ymd_His');
@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $info_msg = 'Aucune soumission à purger pour la période de ' . $months . ' mois.';
             } else {
                 try {
-                    $pdo = get_pdo();
+                    $pdo = App::db()->getPdo();
                     $pdo->exec('PRAGMA foreign_keys = ON');
 
                     $cutoff = date('Y-m-d H:i:s', strtotime("-{$months} months"));
@@ -252,7 +252,7 @@ function is_valid_sqlite_db(string $path): bool {
  * @return array<string, mixed>
  */
 function count_purge_targets(int $months): array {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     $cutoff_ts = strtotime("-{$months} months");
     $cutoff = date('Y-m-d H:i:s', $cutoff_ts !== false ? $cutoff_ts : 0);
 
@@ -326,7 +326,7 @@ if (file_exists($db_path)) {
 // Comptage par table
 $db_stats['row_counts'] = [];
 try {
-    $pdo = get_pdo();
+    $pdo = App::db()->getPdo();
     foreach ($db_tables as $table) {
         try {
             $count = (int)_dbm_q($pdo, "SELECT COUNT(*) FROM {$table}")->fetchColumn();
