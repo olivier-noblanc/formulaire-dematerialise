@@ -14,7 +14,8 @@ final class CronServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->db = new Database();
+        CronService::resetRunningGuard();
+        $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->cron = new CronService($this->db);
 
         $pdo = $this->db->getPdo();
@@ -70,6 +71,7 @@ final class CronServiceTest extends TestCase
         $count1 = (int)$stmt1->fetchColumn();
 
         // Run again immediately — should skip (interval not elapsed)
+        CronService::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -91,6 +93,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count1 = (int)$stmt1->fetchColumn();
 
+        CronService::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");

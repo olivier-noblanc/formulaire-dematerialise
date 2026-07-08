@@ -14,7 +14,7 @@ final class AuditLogServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->db = new Database();
+        $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->audit = new AuditLogService($this->db);
     }
 

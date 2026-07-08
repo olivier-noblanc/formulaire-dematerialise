@@ -16,7 +16,7 @@ final class MailServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->db = new Database();
+        $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->settings = new SettingsService($this->db);
         $this->mail = new MailService($this->db, $this->settings);
     }

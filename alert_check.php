@@ -32,7 +32,9 @@ $rules = _dbm_q($pdo, "
 
 if (empty($rules)) {
     echo "[{$now->format('Y-m-d H:i:s')}] Aucune regle d'alerte active.\n";
-    exit(0);
+    if (empty($GLOBALS['_lazy_cron_running'])) {
+        exit(0);
+    }
 }
 
 foreach ($rules as $rule) {

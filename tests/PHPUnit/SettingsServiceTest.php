@@ -14,8 +14,18 @@ final class SettingsServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->db = new Database();
+        $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->settings = new SettingsService($this->db);
+
+        // Reset static cache to avoid cross-test pollution
+        $reflection = new \ReflectionClass(SettingsService::class);
+        $cacheProp = $reflection->getProperty('cache');
+        $cacheProp->setAccessible(true);
+        $cacheProp->setValue(null, []);
+
+        // Ensure smtp_host is not in DB so fallback to SETTINGS_DEFAULTS is tested
+        $pdo = $this->db->getPdo();
+        $pdo->exec("DELETE FROM settings WHERE key = 'smtp_host'");
     }
 
     public function testGetReturnsDefaultForMissingKey(): void

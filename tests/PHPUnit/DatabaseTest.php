@@ -12,7 +12,7 @@ final class DatabaseTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->database = new Database();
+        $this->database = \App\Core\App::getInstance()->get(\App\Core\Database::class);
     }
 
     public function testGetPdoReturnsPdoInstance(): void

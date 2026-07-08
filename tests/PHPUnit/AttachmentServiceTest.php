@@ -13,7 +13,7 @@ final class AttachmentServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $db = new Database();
+        $db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->attachmentService = new AttachmentService($db);
     }
 
