@@ -94,7 +94,8 @@ $tokenService = new TokenService($db, $settings, $app->get(AuthService::class), 
 $app->set(TokenService::class, $tokenService);
 
 // Attachment service
-$app->set(AttachmentService::class, new AttachmentService($db));
+$attachmentRepo = $app->get(AttachmentRepository::class);
+$app->set(AttachmentService::class, new AttachmentService($db, $attachmentRepo));
 
 // Validator data service
 $app->set(ValidatorDataService::class, new ValidatorDataService($db));
