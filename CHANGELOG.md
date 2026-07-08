@@ -1,5 +1,16 @@
 # Changelog — CircuitDémat
 
+## [10.4.0] — 2026-07-08
+_Résumé : Repository Pattern — centralisation de l'accès aux données._
+
+### 🏗 Repository Pattern
+
+- **BaseRepository** : abstract avec helpers `fetchOne()`, `fetchAll()`, `execute()`, `lastInsertId()`
+- **7 Domain Repositories** : Form, Submission, Token, Settings, Admin, Audit, Attachment
+- **Migration** : services src/ utilisent désormais les repositories au lieu de `getPdo()` direct
+- **TDD** : tests unitaires pour chaque repository
+- **PHP Modernization** : readonly, constructor promotion, union types sur les nouveaux fichiers
+
 ## [10.3.0] — 2026-07-08
 _Résumé : Interfaces complétées + rate limiting supprimé (IIS) + SecurityService injecte HtmlService._
 
