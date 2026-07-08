@@ -38,11 +38,11 @@ final class AdminRepository extends BaseRepository
         return $this->fetchAll("SELECT * FROM admins ORDER BY email");
     }
 
-    public function add(string $email, string $addedBy): bool
+    public function add(string $email): bool
     {
         return $this->execute(
-            "INSERT OR IGNORE INTO admins (email, added_at, added_by) VALUES (?, datetime('now'), ?)",
-            [strtolower($email), $addedBy]
+            "INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))",
+            [\generate_uuid(), strtolower($email)]
         );
     }
 
@@ -63,7 +63,7 @@ final class AdminRepository extends BaseRepository
         $request = $this->fetchOne("SELECT * FROM admin_requests WHERE id = ?", [$requestId]);
         if ($request === null) return false;
 
-        $this->add($request['email'], $approvedBy);
+        $this->add($request['email']);
         return $this->execute(
             "UPDATE admin_requests SET status = 'approved', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?",
             [$approvedBy, $requestId]
