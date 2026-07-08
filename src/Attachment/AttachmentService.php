@@ -5,6 +5,7 @@ namespace App\Attachment;
 
 use App\Core\App;
 use App\Core\Database;
+use App\Repository\AttachmentRepository;
 
 /**
  * Service de gestion des pièces jointes.
@@ -16,10 +17,12 @@ use App\Core\Database;
 final class AttachmentService
 {
     private Database $db;
+    private AttachmentRepository $repo;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, AttachmentRepository $repo)
     {
         $this->db = $db;
+        $this->repo = $repo;
     }
 
     /**
@@ -148,10 +151,14 @@ final class AttachmentService
         }
 
         // Enregistrer dans la base de données
-        $pdo = $this->db->getPdo();
-        $attachmentId = generate_uuid();
-        $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, '', ?, ?, ?, datetime('now'))")
-            ->execute([$attachmentId, $submissionId, $fieldName, $safeName, $mimeType, $file['size'], $fileContent]);
+        $attachmentId = $this->repo->create([
+            'submission_id' => $submissionId,
+            'field_name' => $fieldName,
+            'original_name' => $safeName,
+            'mime_type' => $mimeType,
+            'file_size' => $file['size'],
+            'file_data' => $fileContent,
+        ]);
 
         App::audit()->log('file_upload', 'submission:' . $submissionId, 'Fichier uploadé : ' . $safeName . ' (' . $mimeType . ', ' . $file['size'] . ' octets)', '');
 
@@ -166,10 +173,7 @@ final class AttachmentService
      */
     public function getAttachments(string $submissionId): array
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC");
-        $stmt->execute([$submissionId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->repo->findBySubmission($submissionId);
     }
 
     /**
@@ -180,10 +184,6 @@ final class AttachmentService
      */
     public function getAttachmentById(string $attachmentId): ?array
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT * FROM attachments WHERE id = ?");
-        $stmt->execute([$attachmentId]);
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result ?: null;
+        return $this->repo->findById($attachmentId);
     }
 }

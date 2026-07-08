@@ -91,7 +91,7 @@ $app->set(TokenService::class, new TokenService(
     $app->get(WorkflowEngine::class)
 ));
 $app->set(ValidatorDataService::class, new ValidatorDataService($db));
-$app->set(AttachmentService::class, new AttachmentService($db));
+$app->set(AttachmentService::class, new AttachmentService($db, $app->get(AttachmentRepository::class)));
 $app->set(CronService::class, new CronService($db));
 $app->set(MigrationService::class, new MigrationService($db));
 $app->set(WebhookService::class, new WebhookService($db, $app->get(SettingsService::class)));
