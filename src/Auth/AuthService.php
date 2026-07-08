@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Auth;
 
 use App\Contract\AuthInterface;
+use App\Contract\MailInterface;
+use App\Core\App;
 use App\Core\Database;
 
 /**
@@ -12,10 +14,24 @@ use App\Core\Database;
 final class AuthService implements AuthInterface
 {
     private Database $db;
+    private ?MailInterface $mailer = null;
 
     public function __construct(Database $db)
     {
         $this->db = $db;
+    }
+
+    public function setMailer(MailInterface $mailer): void
+    {
+        $this->mailer = $mailer;
+    }
+
+    private function getMailer(): MailInterface
+    {
+        if ($this->mailer === null) {
+            $this->mailer = App::mail();
+        }
+        return $this->mailer;
     }
 
     /**
@@ -103,19 +119,10 @@ final class AuthService implements AuthInterface
 
     /**
      * v9.9.0 — "Effective admin" = admin réel ET pas de persona actif.
-     *
-     * Utilisé pour l'AFFICHAGE (sidebar, pages admin) : quand un admin
-     * active un persona, il veut voir l'interface comme un user simple,
-     * donc les sections admin doivent être masquées.
-     *
-     * isAdmin() (basé sur l'user réel) reste true pour la SÉCURITÉ
-     * (require_admin, accès aux pages admin directes).
      */
     public function isAdminEffective(): bool
     {
         if (!$this->isAdmin()) return false;
-        // v10.0.0 — Si un persona token valide est présent (GET ou POST),
-        // l'admin "effective" est false (masque la sidebar admin)
         $token = '';
         if (isset($_GET['persona_token'])) {
             $token = (string)$_GET['persona_token'];
@@ -132,7 +139,6 @@ final class AuthService implements AuthInterface
 
     public function isSuperAdmin(): bool
     {
-        // v9.7.0 — basé sur l'user réel (pas le persona)
         $user = $this->getRealUser();
         $adminEmail = $this->getAdminEmail();
         return $user === $adminEmail;
@@ -220,5 +226,158 @@ final class AuthService implements AuthInterface
         ");
         $stmt->execute([$email]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    // ── ADMIN REQUEST MANAGEMENT ────────────────────────────────
+
+    /**
+     * Traite une demande d'accès admin.
+     *
+     * @return array{success: bool, reason: string}
+     */
+    public function processAdminRequest(string $email): array
+    {
+        try {
+            $pdo = $this->db->getPdo();
+
+            if ($this->isAdmin()) {
+                return ['success' => true, 'reason' => 'already_admin'];
+            }
+
+            $stmt = $pdo->prepare("SELECT 1 FROM admin_requests WHERE email = ? AND status = 'pending'");
+            $stmt->execute([$email]);
+            if ($stmt->fetch() !== false) {
+                return ['success' => false, 'reason' => 'pending'];
+            }
+
+            $token = bin2hex(random_bytes(32));
+            $ar_id = generate_uuid();
+            $stmt = $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, 'pending', ?)");
+            $stmt->execute([$ar_id, $email, gmdate('Y-m-d H:i:s'), $token]);
+
+            App::audit()->log('admin_request', 'admin:' . $email, 'Demande d\'accès admin', $email);
+
+            $approve_url = resolve_base_url() . '/index.php?p=admin_access&action=approve&token=' . $token;
+            $reject_url = resolve_base_url() . '/index.php?p=admin_access&action=reject&token=' . $token;
+            $subject = 'Demande d\'accès admin - ' . get_app_name();
+            $body = '
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Demande d\'accès admin</h2>
+    <p>Un utilisateur a demandé l\'accès admin au back office du workflow :</p>
+    <p><strong>Utilisateur :</strong> ' . h($email) . '</p>
+    <p><strong>Date :</strong> ' . gmdate('d/m/Y H:i:s') . ' UTC</p>
+    <p><a href="' . $approve_url . '" style="background:#1a6b3c;color:#fff;padding:10px 15px;text-decoration:none;border-radius:4px;display:inline-block;margin-right:10px;">Approuver</a>
+    <a href="' . $reject_url . '" style="background:#c0392b;color:#fff;padding:10px 15px;text-decoration:none;border-radius:4px;display:inline-block;">Refuser</a></p>
+</body>
+</html>';
+
+            $cc_email = App::settings()->get('admin_email_cc', '');
+            $mail_sent = $this->getMailer()->send($this->getAdminEmail(), $subject, $body);
+            if ($cc_email !== '' && $cc_email !== $this->getAdminEmail()) {
+                $this->getMailer()->send($cc_email, '[CC] ' . $subject, $body);
+            }
+
+            $dry_run = App::settings()->get('mail_dry_run', '0') === '1';
+            if ($dry_run) {
+                return ['success' => true, 'reason' => 'dry_run'];
+            }
+            if (!$mail_sent) {
+                return ['success' => false, 'reason' => 'mail_failed'];
+            }
+
+            return ['success' => true, 'reason' => 'sent'];
+        } catch (\Exception $e) {
+            error_log('Erreur lors de la demande d\'accès admin : ' . $e->getMessage());
+            return ['success' => false, 'reason' => 'exception', 'error' => $e->getMessage()];
+        }
+    }
+
+    public function approveAdminRequest(string $email): bool
+    {
+        $pdo = $this->db->getPdo();
+
+        try {
+            $stmt = $pdo->prepare("UPDATE admin_requests SET status = 'approved' WHERE email = ?");
+            $stmt->execute([$email]);
+
+            $stmt = $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, ?)");
+            $stmt->execute([generate_uuid(), $email, gmdate('Y-m-d H:i:s')]);
+
+            $subject = 'Accès admin approuvé - ' . get_app_name();
+            $body = '
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Accès admin approuvé</h2>
+    <p>Votre demande d\'accès admin au back office du workflow a été approuvée.</p>
+    <p>Vous pouvez maintenant accéder au back office en cliquant sur le lien ci-dessous :</p>
+    <p><a href="' . resolve_base_url() . '/index.php?p=admin_access">Accéder au back office</a></p>
+</body>
+</html>';
+
+            $this->getMailer()->send($email, $subject, $body);
+            App::audit()->log('admin_approve', 'admin:' . $email, 'Accès admin approuvé');
+            return true;
+        } catch (\Exception $e) {
+            error_log('Erreur lors de l\'approbation de la demande admin : ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function rejectAdminRequest(string $email): bool
+    {
+        $pdo = $this->db->getPdo();
+
+        try {
+            $stmt = $pdo->prepare("UPDATE admin_requests SET status = 'rejected' WHERE email = ?");
+            $stmt->execute([$email]);
+
+            $subject = 'Demande d\'accès admin refusée - ' . get_app_name();
+            $body = '
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Demande d\'accès admin refusée</h2>
+    <p>Votre demande d\'accès admin au back office du workflow a été refusée.</p>
+</body>
+</html>';
+
+            $this->getMailer()->send($email, $subject, $body);
+            App::audit()->log('admin_reject', 'admin:' . $email, 'Accès admin refusé');
+            return true;
+        } catch (\Exception $e) {
+            error_log('Erreur lors du refus de la demande admin : ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function removeAdmin(string $email): bool
+    {
+        $pdo = $this->db->getPdo();
+
+        if ($email === $this->getAdminEmail()) {
+            return false;
+        }
+
+        try {
+            $stmt = $pdo->prepare("DELETE FROM admins WHERE email = ?");
+            $stmt->execute([$email]);
+            App::audit()->log('admin_remove', 'admin:' . $email, 'Admin supprimé', $email);
+            return true;
+        } catch (\Exception $e) {
+            error_log('Erreur lors de la suppression d\'un admin : ' . $e->getMessage());
+            return false;
+        }
     }
 }

@@ -159,7 +159,8 @@ require_once __DIR__ . '/lib/jargon.php';
 // BOOTSTRAP OOP — enregistrer les services restants dans le container DI
 // (Database et Config déjà enregistrés en haut)
 // ═══════════════════════════════════════════════════════════════
-$_app->set(\App\Auth\AuthService::class, new \App\Auth\AuthService($_db_service));
+$_auth_svc = new \App\Auth\AuthService($_db_service);
+$_app->set(\App\Auth\AuthService::class, $_auth_svc);
 $_app->set(\App\Repository\SettingsRepository::class, new \App\Repository\SettingsRepository($_db_service));
 $_settings_repo = $_app->get(\App\Repository\SettingsRepository::class);
 $_app->set(\App\Settings\SettingsService::class, new \App\Settings\SettingsService($_settings_repo));
@@ -178,6 +179,7 @@ $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionE
 $_settings_svc = $_app->get(\App\Settings\SettingsService::class);
 $_mail_svc = new \App\Mail\MailService($_db_service, $_settings_svc);
 $_app->set(\App\Mail\MailService::class, $_mail_svc);
+$_auth_svc->setMailer($_mail_svc);
 $_fields_svc = $_app->get(\App\Forms\FieldService::class);
 $_conditions_svc = $_app->get(\App\Workflow\ConditionEvaluator::class);
 $_workflow_svc = new \App\Workflow\WorkflowEngine($_db_service, $_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc);
@@ -187,6 +189,7 @@ $_app->set(\App\View\ViewRenderer::class, new \App\View\ViewRenderer($_html_svc)
 $_app->set(\App\View\EmailView::class, new \App\View\EmailView());
 $_app->set(\App\Persona\PersonaService::class, new \App\Persona\PersonaService($_db_service));
 $_app->set(\App\Stats\StatsService::class, new \App\Stats\StatsService($_db_service));
+$_app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($_db_service));
 $_app->set(\App\Token\TokenService::class, new \App\Token\TokenService(
     $_db_service,
     $_settings_svc,
