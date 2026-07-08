@@ -65,7 +65,7 @@ function render_docs_section_start(): string
         <ol class="start-card-steps">
           <li>Consultez la <strong>FAQ</strong> ci-dessous (questions fréquentes).</li>
           <li>Contactez votre <strong>administrateur</strong> DREETS.</li>
-          <li>Pour les données personnelles : <?= h(get_setting('rgpd_contact', 'CIL DREETS')) ?>.</li>
+          <li>Pour les données personnelles : <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</li>
         </ol>
         <a class="start-card-link" href="#faq"><span aria-hidden="true">❓</span> Voir la FAQ</a>
       </div>

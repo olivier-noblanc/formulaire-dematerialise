@@ -147,10 +147,10 @@ HTML;
  */
 function render_monitoring_smtp_card(string $smtp_status, string $smtp_detail, string $smtp_debug_log = ''): string
 {
-    $smtp_host    = h(get_setting('smtp_host'));
-    $smtp_port    = h(get_setting('smtp_port'));
-    $smtp_secure  = h(get_setting('smtp_secure', '') ?: 'Aucun');
-    $mail_dry_run = get_setting('mail_dry_run', '0') === '1';
+    $smtp_host    = h(\App\Core\App::settings()->get('smtp_host'));
+    $smtp_port    = h(\App\Core\App::settings()->get('smtp_port'));
+    $smtp_secure  = h(\App\Core\App::settings()->get('smtp_secure', '') ?: 'Aucun');
+    $mail_dry_run = \App\Core\App::settings()->get('mail_dry_run', '0') === '1';
 
     if ($smtp_status === 'ok') {
         $dot         = '<span class="health-dot health-ok"></span>';
@@ -252,9 +252,9 @@ HTML;
         $alert_html = '<span class="health-dot health-unknown"></span><span class="badge badge-info">Jamais exécuté</span>';
     }
 
-    $delai_relance    = h(get_setting('delai_relance_h', '48'));
-    $relance_max      = h(get_setting('relance_max', '3'));
-    $token_expire_days = h(get_setting('token_expire_days', '30'));
+    $delai_relance    = h(\App\Core\App::settings()->get('delai_relance_h', '48'));
+    $relance_max      = h(\App\Core\App::settings()->get('relance_max', '3'));
+    $token_expire_days = h(\App\Core\App::settings()->get('token_expire_days', '30'));
 
     return <<<HTML
     <!-- Scripts automatises -->

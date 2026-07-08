@@ -8,6 +8,7 @@
 require_once dirname(__DIR__) . '/helpers.php';
 require_once dirname(__DIR__) . '/lib/render_submission_view.php';
 require_once dirname(__DIR__) . '/lib/render_submission_view_sections.php';
+use App\Core\App;
 
 $pdo = get_pdo();
 $sub_id = trim($_GET['id'] ?? '');
@@ -168,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // submission_reminds n'existe pas — les relances sont dans audit_log
                 $pdo->prepare("DELETE FROM audit_log WHERE target = ?")->execute(['submission:' . $sub_id]);
                 $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$sub_id]);
-                app_log('submission_delete', 'submission:' . $sub_id, "Demande supprimée définitivement");
+                App::audit()->log('submission_delete', 'submission:' . $sub_id, "Demande supprimée définitivement", '');
                 header('Location: index.php?p=my_submissions&deleted=1');
                 exit;
             } catch (\Throwable $e) {

@@ -18,7 +18,7 @@ $now  = new DateTimeImmutable();
 $nb   = 0;
 $blocked = 0;
 
-$relance_max = (int)get_setting('relance_max', '3');
+$relance_max = (int)\App\Core\App::settings()->get('relance_max', '3');
 
 $tokens = _dbm_q($pdo, "
     SELECT t.*, st.label as step_label, f.label as form_label, s.data
@@ -42,7 +42,7 @@ foreach ($tokens as $t) {
     $last_ref = $t['relance_at'] ? new DateTimeImmutable($t['relance_at']) : $sent;
     $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
 
-    if ($depuis < (int)get_setting('delai_relance_h')) continue;
+    if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h')) continue;
 
     $subject = '[RELANCE] ' . $t['form_label'] . ' — ' . $t['step_label'];
     if (send_mail($t['email'], $subject, build_mail_html($t, $t['step_label'], $t['token']))) {
@@ -61,5 +61,5 @@ if ($blocked > 0) {
 echo "\n";
 
 // Tracer la derniere execution pour le monitoring
-set_setting('last_remind_run', date('Y-m-d H:i:s'), 'remind.php');
+\App\Core\App::settings()->set('last_remind_run', date('Y-m-d H:i:s'), 'remind.php');
 app_log('remind_run', 'remind', "{$nb} relance(s) envoyée(s), {$blocked} bloquée(s)", 'remind.php');

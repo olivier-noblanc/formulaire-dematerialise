@@ -375,12 +375,12 @@ HTML;
 function get_app_name(): string {
     static $cache = null;
     if ($cache !== null) return $cache;
-    $cache = get_setting('app_name', 'CircuitDémat');
+    $cache = \App\Core\App::settings()->get('app_name', 'CircuitDémat');
     return $cache;
 }
 
 function render_favicon(): string {
-    $svg = get_setting('app_favicon', '');
+    $svg = \App\Core\App::settings()->get('app_favicon', '');
     if (!empty($svg)) {
         return '<link rel="icon" href="data:image/svg+xml,' . h($svg) . '">';
     }

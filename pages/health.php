@@ -61,7 +61,7 @@ $smtp_ok = false;
 $smtp_detail = '';
 try {
     $pdo = get_pdo();
-    $smtp_host = get_setting('smtp_host', '');
+    $smtp_host = \App\Core\App::settings()->get('smtp_host', '');
     $smtp_ok = !empty($smtp_host);
     $smtp_detail = $smtp_ok ? 'Hôte SMTP configuré : ' . $smtp_host : 'Aucun hôte SMTP configuré';
 } catch (Exception $e) {

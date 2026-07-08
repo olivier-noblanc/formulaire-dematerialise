@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use App\Core\App;
 
 /**
  * POST handlers admin_settings.php — SMTP, vérification email, webhooks.
@@ -69,13 +70,13 @@ function handle_admin_settings_post(): array
     // des champs webhook_url / webhook_events dans le POST.
     if (isset($_POST['webhook_url'])) {
         $user = get_auth_user();
-        set_setting('webhook_url', trim($_POST['webhook_url']), $user);
-        app_log('settings_update', 'settings:webhook_url', 'URL webhook mise à jour');
+        \App\Core\App::settings()->set('webhook_url', trim($_POST['webhook_url']), $user);
+        App::audit()->log('settings_update', 'settings:webhook_url', 'URL webhook mise à jour');
     }
     if (isset($_POST['webhook_events'])) {
         $user = get_auth_user();
-        set_setting('webhook_events', trim($_POST['webhook_events']), $user);
-        app_log('settings_update', 'settings:webhook_events', 'Événements webhook mis à jour');
+        \App\Core\App::settings()->set('webhook_events', trim($_POST['webhook_events']), $user);
+        App::audit()->log('settings_update', 'settings:webhook_events', 'Événements webhook mis à jour');
     }
 
     if ($action === 'test_email') {
@@ -129,7 +130,7 @@ function admin_settings_handle_save_settings(): array
 
     // Conserver l'ancien mot de passe si le champ est vide
     if (empty($settings['smtp_pass'])) {
-        $settings['smtp_pass'] = get_setting('smtp_pass', '');
+        $settings['smtp_pass'] = \App\Core\App::settings()->get('smtp_pass', '');
     }
     // Valider l'email admin
     if (!empty($settings['admin_email']) && !filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL)) {
@@ -139,9 +140,9 @@ function admin_settings_handle_save_settings(): array
 
     try {
         foreach ($settings as $key => $value) {
-            set_setting($key, $value, $updated_by);
+            \App\Core\App::settings()->set($key, $value, $updated_by);
         }
-        app_log('settings_update', 'settings', 'Paramètres mis à jour', $updated_by);
+        App::audit()->log('settings_update', 'settings', 'Paramètres mis à jour', $updated_by);
         $success_msg = 'Paramètres enregistrés avec succès.';
     } catch (Exception $e) {
         $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
@@ -195,9 +196,9 @@ function admin_settings_handle_save_email_verify(string $error_msg): array
 
     try {
         foreach ($ev_settings as $key => $value) {
-            set_setting($key, $value, $updated_by);
+            \App\Core\App::settings()->set($key, $value, $updated_by);
         }
-        app_log('settings_update', 'settings:email_verify', 'Paramètres de vérification email mis à jour', $updated_by);
+        App::audit()->log('settings_update', 'settings:email_verify', 'Paramètres de vérification email mis à jour', $updated_by);
         if (empty($error_msg)) {
             $success_msg = 'Paramètres de vérification email enregistrés avec succès.';
         }
@@ -250,7 +251,7 @@ function admin_settings_handle_test_verify_email(string $error_msg): array
     $test_addr = trim($_POST['verify_test_email'] ?? '');
     if (!empty($test_addr) && filter_var($test_addr, FILTER_VALIDATE_EMAIL)) {
         $verify_result = test_email_verification($test_addr);
-        app_log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', get_auth_user());
+        App::audit()->log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', get_auth_user());
         return [$verify_result, $error_msg];
     }
     $error_msg = 'Veuillez saisir une adresse email valide pour le test.';
@@ -267,13 +268,13 @@ function admin_settings_handle_test_verify_email(string $error_msg): array
  */
 function admin_settings_handle_test_webhook(string $success_msg, string $error_msg): array
 {
-    $webhook_url = get_setting('webhook_url', '');
+    $webhook_url = \App\Core\App::settings()->get('webhook_url', '');
     if (empty($webhook_url)) {
         $error_msg = 'Aucune URL webhook configurée.';
         return [$success_msg, $error_msg];
     }
     send_webhook('test', ['message' => 'Test webhook depuis ' . get_app_name(), 'version' => get_latest_version()]);
     $success_msg = 'Webhook de test envoyé à ' . h($webhook_url) . '.';
-    app_log('webhook_test', 'settings', 'Test webhook envoyé');
+    App::audit()->log('webhook_test', 'settings', 'Test webhook envoyé');
     return [$success_msg, $error_msg];
 }

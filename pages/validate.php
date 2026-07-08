@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 // Initialisation par défaut — évite les variables indéfinies si aucune branche
 // ci-dessous ne les renseigne (ex: POST « refuser » sans commentaire).
@@ -163,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $result = ['status' => 'invalid'];
         } else {
             // Journaliser la consultation du token pour audit (S-09)
-            app_log('token_view', 'token:' . substr($token, 0, 8) . '...', 'Consultation page de validation');
+            App::audit()->log('token_view', 'token:' . substr($token, 0, 8) . '...', 'Consultation page de validation', '');
 
             // A-18 : utiliser la fonction centralisée au lieu de dupliquer la jointure
             $data = get_token_with_context($token);

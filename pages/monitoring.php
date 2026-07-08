@@ -7,6 +7,7 @@
 require_once dirname(__DIR__) . '/helpers.php';
 require_once dirname(__DIR__) . '/lib/render_monitoring.php';
 require_once dirname(__DIR__) . '/lib/render_monitoring_audit.php';
+use App\Core\App;
 
 require_admin();
 
@@ -33,7 +34,7 @@ $en_cours_sub = $gstats['en_cours'];
 $taux_validation = $gstats['taux_validation'];
 
 // ── Tokens bloques (en attente depuis + de X jours) ──
-$delai_relance = (int)get_setting('delai_relance_h', '48');
+$delai_relance = (int)\App\Core\App::settings()->get('delai_relance_h', '48');
 $bloque_hours = $delai_relance * 2; // Seuil : 2x le delai de relance
 $tokens_bloques = _dbm_q($pdo, "
     SELECT t.id, t.email, t.sent_at, t.relance_count, t.expires_at,
@@ -151,17 +152,17 @@ if (isset($_GET['test_smtp']) && $_GET['test_smtp'] === '1') {
         $smtp_detail = 'Échec de l\'envoi à ' . h($to) . ' — ' . h($err) . ' (statut: ' . h($smtp_result['status']) . ')';
     }
     $smtp_debug_log = $smtp_result['smtp_log'];
-    app_log('smtp_test', 'smtp', $smtp_detail);
+    App::audit()->log('smtp_test', 'smtp', $smtp_detail);
 }
 
 // ── Récupération des derniers logs mail (table mail_log v23+) ──
 $mail_logs = get_recent_mail_logs(20);
 
 // ── Dernier remind (setting追踪) ──
-$last_remind = get_setting('last_remind_run', '');
+$last_remind = \App\Core\App::settings()->get('last_remind_run', '');
 
 // ── Dernier alert_check ──
-$last_alert_check = get_setting('last_alert_check', '');
+$last_alert_check = \App\Core\App::settings()->get('last_alert_check', '');
 
 // ── Soumissions par jour (7 derniers jours) ──
 $daily_stmt = _dbm_q($pdo, "
@@ -239,7 +240,7 @@ if (isset($_GET['export_audit']) && $_GET['export_audit'] === '1') {
             'Vous avez effectué trop d\'exports du journal d\'audit en peu de temps.',
             'Veuillez patienter quelques instants avant de réessayer.');
     }
-    app_log('audit_export', 'audit_log', 'Export CSV du journal d\'audit filtré');
+    App::audit()->log('audit_export', 'audit_log', 'Export CSV du journal d\'audit filtré');
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="audit_log_' . date('Ymd_His') . '.csv"');
     $audit_export_stmt = $pdo->prepare("SELECT created_at, action, actor, target, detail, ip FROM audit_log $audit_where_sql ORDER BY created_at DESC");

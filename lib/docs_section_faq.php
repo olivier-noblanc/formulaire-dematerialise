@@ -63,7 +63,7 @@ function render_docs_section_faq(): string
       <div class="detail-body">
         <p>Les données sont conservées pendant la <strong>durée configurée par l'administrateur</strong> (par défaut : <strong>24 mois</strong> après la clôture de la demande).</p>
         <p>Après ce délai, les données sont automatiquement supprimées par la <strong>purge automatique RGPD</strong>. Cette purge s'exécute périodiquement pour garantir la conformité au RGPD.</p>
-        <p>Vous pouvez demander la suppression anticipée de vos données en contactant l'administrateur ou le <?= h(get_setting('rgpd_contact', 'CIL DREETS')) ?>.</p>
+        <p>Vous pouvez demander la suppression anticipée de vos données en contactant l'administrateur ou le <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</p>
       </div>
     </details>
 

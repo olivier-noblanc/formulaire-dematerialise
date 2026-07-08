@@ -3,6 +3,7 @@
 require_once dirname(__DIR__) . '/helpers.php';
 require_once dirname(__DIR__) . '/lib/admin_forms_json.php';
 require_once dirname(__DIR__) . '/lib/admin_forms_samples.php';
+use App\Core\App;
 
 // Vérification des droits d'accès
 require_admin();
@@ -27,7 +28,7 @@ try {
     if ($edit_step_id) $edit_step_id = validate_input($edit_step_id, 'uuid');
     if ($edit_field_id) $edit_field_id = validate_input($edit_field_id, 'uuid');
 } catch (\InvalidArgumentException $e) {
-    security_log('invalid_admin_forms_id', 'form_id=' . substr((string)$form_id, 0, 20) . ' edit_step=' . substr((string)$edit_step_id, 0, 20) . ' edit_field=' . substr((string)$edit_field_id, 0, 20));
+    App::audit()->securityLog('invalid_admin_forms_id', 'form_id=' . substr((string)$form_id, 0, 20) . ' edit_step=' . substr((string)$edit_step_id, 0, 20) . ' edit_field=' . substr((string)$edit_field_id, 0, 20));
     render_error_page(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
 }
 

@@ -154,7 +154,7 @@ function render_docs_section_technique(): string
         <p>L'application s'appuie sur <strong>l'authentification Windows (IIS)</strong> :</p>
         <ul>
           <li>Le serveur web IIS fournit la variable <code>$_SERVER['AUTH_USER']</code> contenant le compte Windows de l'utilisateur (ex : <code>DREETS\prenom.nom</code>).</li>
-          <li>La fonction <code>get_auth_user()</code> transforme ce compte en adresse email (ex : <code>prenom.nom@<?= h(get_setting('email_domain', 'dreets.gouv.fr')) ?></code>).</li>
+          <li>La fonction <code>get_auth_user()</code> transforme ce compte en adresse email (ex : <code>prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?></code>).</li>
           <li>Les pages <code>index.php?p=form</code>, <code>index.php?p=dashboard</code>, <code>index.php?p=admin_forms</code> et <code>index.php?p=admin_access</code> nécessitent cette authentification.</li>
           <li>La page <code>index.php?p=validate</code> est accessible <strong>sans authentification</strong> (les validateurs externes n'ont pas forcément de compte DREETS).</li>
         </ul>

@@ -1,6 +1,7 @@
 <?php
 // rgpd.php — Conformité RGPD : mentions légales, export, suppression, purge
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 require_admin();
 
@@ -21,9 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $retention = (int)($_POST['retention_months'] ?? 24);
         if ($retention < 1) $retention = 1;
         if ($retention > 120) $retention = 120;
-        set_setting('legal_mentions', $legal_text, get_auth_user());
-        set_setting('retention_months', (string)$retention, get_auth_user());
-        app_log('rgpd_settings', 'settings', 'Mentions légales et durée de conservation mises à jour');
+        \App\Core\App::settings()->set('legal_mentions', $legal_text, get_auth_user());
+        \App\Core\App::settings()->set('retention_months', (string)$retention, get_auth_user());
+        App::audit()->log('rgpd_settings', 'settings', 'Mentions légales et durée de conservation mises à jour');
         $success_msg = 'Mentions légales et durée de conservation mises à jour.';
     }
 
@@ -68,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     && empty($data['validator_data_on_submissions'])) {
                     $info_msg = 'Aucune donnée trouvée pour ' . h($email) . '.';
                 } else {
-                    app_log('rgpd_export', 'user:' . $email, 'Export des données demandé');
+                    App::audit()->log('rgpd_export', 'user:' . $email, 'Export des données demandé');
                     header('Content-Type: application/json; charset=utf-8');
                     header('Content-Disposition: attachment; filename="rgpd_export_' . str_replace(['@', '.'], '_', $email) . '_' . date('Ymd_His') . '.json"');
                     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
@@ -113,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // (3) Appeler la fonction helpers standard (anonymise soumissions, tokens, etc.)
                 $result = rgpd_delete_user_data($email);
                 if ($result) {
-                    app_log('rgpd_delete', 'user:' . $email, 'Données utilisateur anonymisées');
+                    App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur anonymisées');
                     $success_msg = 'Données de ' . h($email) . ' supprimées (anonymisées).';
                 } else {
                     $error_msg = 'Erreur lors de la suppression des données.';
@@ -128,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$confirmed) {
             $error_msg = 'Veuillez confirmer la purge en cochant la case de confirmation.';
         } else {
-            $months = (int)get_setting('retention_months', '24');
+            $months = (int)\App\Core\App::settings()->get('retention_months', '24');
 
             // P2-B : Activer les FK pour que CASCADE supprime les submission_validator_data
             // lors du DELETE FROM submissions effectué par rgpd_auto_purge().
@@ -146,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
 
             if ($count > 0) {
-                app_log('rgpd_purge', 'system', "Purge automatique : {$count} soumissions de plus de {$months} mois supprimées");
+                App::audit()->log('rgpd_purge', 'system', "Purge automatique : {$count} soumissions de plus de {$months} mois supprimées");
                 $success_msg = "Purge effectuée : {$count} soumissions de plus de {$months} mois supprimées.";
             } else {
                 $info_msg = "Aucune soumission à purger (critère : plus de {$months} mois).";
@@ -156,8 +157,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Statistiques RGPD
-$retention_months = (int)get_setting('retention_months', '24');
-$legal_mentions = get_setting('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Contact : ' . get_setting('rgpd_contact', 'CIL DREETS') . '.');
+$retention_months = (int)\App\Core\App::settings()->get('retention_months', '24');
+$legal_mentions = \App\Core\App::settings()->get('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Contact : ' . \App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS') . '.');
 
 $total_submissions = (int)_dbm_q($pdo, "SELECT COUNT(*) FROM submissions")->fetchColumn();
 $total_attachments = (int)_dbm_q($pdo, "SELECT COUNT(*) FROM attachments")->fetchColumn();
@@ -224,7 +225,7 @@ ob_start();
       <input type="hidden" name="action" value="export_user">
       <div class="field" style="margin-bottom:0;flex:1;min-width:250px;">
         <label for="export_email">Email de l'agent</label>
-        <input type="email" id="export_email" name="export_email" placeholder="prenom.nom@<?= h(get_setting('email_domain', 'dreets.gouv.fr')) ?>" required>
+        <input type="email" id="export_email" name="export_email" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required>
       </div>
       <button type="submit" class="btn btn-primary"><span aria-hidden="true">📥</span> Exporter les données</button>
     </form>
@@ -242,7 +243,7 @@ ob_start();
       <input type="hidden" name="action" value="delete_user">
       <div class="field">
         <label for="delete_email">Email de l'agent à supprimer</label>
-        <input type="email" id="delete_email" name="delete_email" placeholder="prenom.nom@<?= h(get_setting('email_domain', 'dreets.gouv.fr')) ?>" required>
+        <input type="email" id="delete_email" name="delete_email" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required>
       </div>
       <label class="checkbox-item" style="margin-bottom:1rem;">
         <input type="checkbox" name="confirmed" value="1" required>

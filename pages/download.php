@@ -3,6 +3,7 @@
 // L'accès est restreint aux utilisateurs authentifiés (admin, agent ou validateur)
 // Les fichiers sont stockés en BLOB dans SQLite (depuis v4.0)
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
 // Sécurité (S-16) : limiter le nombre de téléchargements par IP
 if (!rate_limit_check('download', 30, 60)) {
@@ -31,7 +32,7 @@ if (empty($attachment_id)) {
 try {
         $attachment_id = (string)validate_input($attachment_id, 'uuid');
 } catch (\InvalidArgumentException $e) {
-    security_log('invalid_attachment_id', 'ID=' . substr($attachment_id, 0, 20));
+    App::audit()->securityLog('invalid_attachment_id', 'ID=' . substr($attachment_id, 0, 20));
     render_error_page(400, 'Requête invalide',
         'L\'identifiant de pièce jointe fourni est invalide.',
         'Vérifiez que le lien que vous avez utilisé est correct et complet.');
@@ -163,7 +164,7 @@ function export_submission_json(): void {
     try {
         $submission_id = (string)validate_input($submission_id, 'uuid');
     } catch (\InvalidArgumentException $e) {
-        security_log('invalid_submission_id', 'ID=' . substr($submission_id, 0, 20));
+        App::audit()->securityLog('invalid_submission_id', 'ID=' . substr($submission_id, 0, 20));
         render_error_page(400, 'Requête invalide',
             'L\'identifiant de soumission fourni est invalide.',
             'Vérifiez que le lien que vous avez utilisé est correct et complet.');
@@ -261,7 +262,7 @@ function export_submission_json(): void {
     $export['validator_data'] = $vd_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Journalisation avant l'envoi du payload
-    app_log('export_submission', 'submission:' . $submission_id, 'Export JSON de la soumission par ' . $user);
+    App::audit()->log('export_submission', 'submission:' . $submission_id, 'Export JSON de la soumission par ' . $user, '');
 
     // Envoi du JSON en téléchargement
     $filename = 'submission_' . $submission_id . '_' . date('Ymd_His') . '.json';

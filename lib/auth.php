@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use App\Core\App;
 
 /**
  * Authentication & admin user management.
@@ -115,7 +116,7 @@ function process_admin_request(string $email): array {
         $stmt = $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, 'pending', ?)");
         $stmt->execute([$ar_id, $email, gmdate('Y-m-d H:i:s'), $token]);
 
-        app_log('admin_request', 'admin:' . $email, 'Demande d\'accès admin', $email);
+        App::audit()->log('admin_request', 'admin:' . $email, 'Demande d\'accès admin', $email);
 
         // Envoie un email à l'admin principal pour approbation
         $approve_url = resolve_base_url() . '/index.php?p=admin_access&action=approve&token=' . $token;
@@ -138,14 +139,14 @@ function process_admin_request(string $email): array {
 </html>';
 
         // Envoyer à l'admin + CC si configuré
-        $cc_email = get_setting('admin_email_cc', '');
+        $cc_email = \App\Core\App::settings()->get('admin_email_cc', '');
         $mail_sent = send_mail(get_admin_email(), $subject, $body);
         if ($cc_email !== '' && $cc_email !== get_admin_email()) {
             send_mail($cc_email, '[CC] ' . $subject, $body);
         }
 
         // Vérifier si les mails étaient en dry-run (non envoyés réellement)
-        $dry_run = get_setting('mail_dry_run', '0') === '1';
+        $dry_run = \App\Core\App::settings()->get('mail_dry_run', '0') === '1';
         if ($dry_run) {
             return ['success' => true, 'reason' => 'dry_run'];
         }
@@ -192,7 +193,7 @@ function approve_admin_request(string $email): bool {
 </html>';
         
         send_mail($email, $subject, $body);
-        app_log('admin_approve', 'admin:' . $email, 'Accès admin approuvé');
+        App::audit()->log('admin_approve', 'admin:' . $email, 'Accès admin approuvé');
         return true;
     } catch (Exception $e) {
         error_log('Erreur lors de l\'approbation de la demande admin : ' . $e->getMessage());
@@ -226,7 +227,7 @@ function reject_admin_request(string $email): bool {
 </html>';
         
         send_mail($email, $subject, $body);
-        app_log('admin_reject', 'admin:' . $email, 'Accès admin refusé');
+        App::audit()->log('admin_reject', 'admin:' . $email, 'Accès admin refusé');
         return true;
     } catch (Exception $e) {
         error_log('Erreur lors du refus de la demande admin : ' . $e->getMessage());
@@ -248,7 +249,7 @@ function remove_admin(string $email): bool {
     try {
         $stmt = $pdo->prepare("DELETE FROM admins WHERE email = ?");
         $stmt->execute([$email]);
-        app_log('admin_remove', 'admin:' . $email, 'Admin supprimé', $email);
+        App::audit()->log('admin_remove', 'admin:' . $email, 'Admin supprimé', $email);
         return true;
     } catch (Exception $e) {
         error_log('Erreur lors de la suppression d\'un admin : ' . $e->getMessage());

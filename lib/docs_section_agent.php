@@ -234,7 +234,7 @@ function render_docs_section_agent(): string
     <ul>
       <li><strong>Droit d'accès</strong> — Vous pouvez consulter toutes les données vous concernant depuis « Mes demandes ».</li>
       <li><strong>Droit de rectification</strong> — Contactez votre administrateur pour corriger des données erronées.</li>
-      <li><strong>Droit d'effacement</strong> — Vous pouvez demander la suppression de vos données en contactant l'administrateur ou le <?= h(get_setting('rgpd_contact', 'CIL DREETS')) ?>.</li>
+      <li><strong>Droit d'effacement</strong> — Vous pouvez demander la suppression de vos données en contactant l'administrateur ou le <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</li>
       <li><strong>Durée de conservation</strong> — Vos données sont conservées pendant une durée limitée (par défaut 24 mois après la clôture de la demande), puis automatiquement supprimées.</li>
     </ul>
   </div>
