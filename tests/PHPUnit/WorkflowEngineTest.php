@@ -20,7 +20,7 @@ final class WorkflowEngineTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
-        $settings = new SettingsService($this->db, new SettingsRepository($this->db));
+        $settings = new SettingsService(new SettingsRepository($this->db));
         $mail = new MailService($this->db, $settings);
         $fields = new FieldService($this->db);
         $conditions = new ConditionEvaluator();

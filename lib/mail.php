@@ -41,7 +41,7 @@ function _mail_service(): \App\Mail\MailerService {
     // Fallback : instancier directement (hors bootstrap)
     if ($service === null) {
         $db = new \App\Core\Database();
-        $settings = new \App\Settings\SettingsService($db, new \App\Repository\SettingsRepository($db));
+        $settings = new \App\Settings\SettingsService(new \App\Repository\SettingsRepository($db));
         $service = new \App\Mail\MailerService($db, $settings);
     }
     return $service;

@@ -14,9 +14,8 @@ final class AttachmentServiceTest extends TestCase
     protected function setUp(): void
     {
         $app = \App\Core\App::getInstance();
-        $db = $app->get(\App\Core\Database::class);
         $repo = $app->get(\App\Repository\AttachmentRepository::class);
-        $this->attachmentService = new AttachmentService($db, $repo);
+        $this->attachmentService = new AttachmentService($repo);
     }
 
     public function testGetAllowedMimeTypesReturnsArray(): void

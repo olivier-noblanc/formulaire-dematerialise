@@ -5,6 +5,7 @@ namespace App\Workflow;
 
 use App\Core\Database;
 use App\Settings\SettingsService;
+use App\Repository\SettingsRepository;
 use App\Mail\MailService;
 use App\Forms\FieldService;
 use App\Contract\WorkflowInterface;
@@ -18,7 +19,8 @@ final class WorkflowService implements WorkflowInterface
 
     public function __construct(Database $db)
     {
-        $settings = new SettingsService($db);
+        $settingsRepo = new SettingsRepository($db);
+        $settings = new SettingsService($settingsRepo);
         $mail     = new MailService($db, $settings);
         $fields   = new FieldService($db);
         $conditions = new ConditionEvaluator();

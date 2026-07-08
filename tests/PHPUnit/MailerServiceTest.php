@@ -18,7 +18,7 @@ final class MailerServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
-        $this->settings = new SettingsService($this->db, new SettingsRepository($this->db));
+        $this->settings = new SettingsService(new SettingsRepository($this->db));
         $this->mailer = new MailerService($this->db, $this->settings);
     }
 
