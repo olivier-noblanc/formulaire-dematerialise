@@ -165,6 +165,8 @@ $_app->set(\App\Forms\FieldService::class, new \App\Forms\FieldService($_db_serv
 $_app->set(\App\Audit\AuditLogService::class, new \App\Audit\AuditLogService($_db_service));
 $_app->set(\App\Cache\CacheService::class, new \App\Cache\CacheService());
 $_app->set(\App\Repository\SettingsRepository::class, new \App\Repository\SettingsRepository($_db_service));
+$_app->set(\App\Repository\AuditRepository::class, new \App\Repository\AuditRepository($_db_service));
+$_app->set(\App\Repository\AttachmentRepository::class, new \App\Repository\AttachmentRepository($_db_service));
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());
 $_settings_svc = $_app->get(\App\Settings\SettingsService::class);
