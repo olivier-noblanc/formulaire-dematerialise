@@ -160,11 +160,12 @@ require_once __DIR__ . '/lib/jargon.php';
 // (Database et Config déjà enregistrés en haut)
 // ═══════════════════════════════════════════════════════════════
 $_app->set(\App\Auth\AuthService::class, new \App\Auth\AuthService($_db_service));
-$_app->set(\App\Settings\SettingsService::class, new \App\Settings\SettingsService($_db_service));
+$_app->set(\App\Repository\SettingsRepository::class, new \App\Repository\SettingsRepository($_db_service));
+$_settings_repo = $_app->get(\App\Repository\SettingsRepository::class);
+$_app->set(\App\Settings\SettingsService::class, new \App\Settings\SettingsService($_db_service, $_settings_repo));
 $_app->set(\App\Forms\FieldService::class, new \App\Forms\FieldService($_db_service));
 $_app->set(\App\Audit\AuditLogService::class, new \App\Audit\AuditLogService($_db_service));
 $_app->set(\App\Cache\CacheService::class, new \App\Cache\CacheService());
-$_app->set(\App\Repository\SettingsRepository::class, new \App\Repository\SettingsRepository($_db_service));
 $_app->set(\App\Repository\AuditRepository::class, new \App\Repository\AuditRepository($_db_service));
 $_app->set(\App\Repository\AdminRepository::class, new \App\Repository\AdminRepository($_db_service));
 $_app->set(\App\Repository\FormRepository::class, new \App\Repository\FormRepository($_db_service));

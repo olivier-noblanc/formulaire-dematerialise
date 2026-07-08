@@ -11,7 +11,7 @@ final class SettingsRepository extends BaseRepository
             "SELECT value FROM settings WHERE key = ?",
             [$key]
         );
-        return $result['value'] ?? $default;
+        return $result !== null ? ($result['value'] ?? $default) : null;
     }
 
     public function set(string $key, string $value, string $updatedBy = ''): bool

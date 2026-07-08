@@ -5,6 +5,7 @@ namespace App\Settings;
 
 use App\Contract\SettingsInterface;
 use App\Core\Database;
+use App\Repository\SettingsRepository;
 
 /**
  * Service de gestion des settings (key/value store avec chiffrement).
@@ -12,11 +13,13 @@ use App\Core\Database;
 final class SettingsService implements SettingsInterface
 {
     private Database $db;
+    private SettingsRepository $repo;
     private static array $cache = [];
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, SettingsRepository $repo)
     {
         $this->db = $db;
+        $this->repo = $repo;
     }
 
     public function get(string $key, string $default = ''): string
@@ -26,16 +29,13 @@ final class SettingsService implements SettingsInterface
         }
 
         try {
-            $pdo = $this->db->getPdo();
-            $stmt = $pdo->prepare("SELECT value FROM settings WHERE key = ?");
-            $stmt->execute([$key]);
-            $val = $stmt->fetchColumn();
+            $val = $this->repo->get($key);
 
-            if ($val !== false) {
+            if ($val !== null) {
                 if (in_array($key, $this->getSensitiveKeys(), true)) {
-                    $result = $this->decrypt((string) $val);
+                    $result = $this->decrypt($val);
                 } else {
-                    $result = (string) $val;
+                    $result = $val;
                 }
                 self::$cache[$key] = $result;
                 return $result;
@@ -56,9 +56,7 @@ final class SettingsService implements SettingsInterface
             $value = $this->encrypt($value);
         }
 
-        $pdo = $this->db->getPdo();
-        $pdo->prepare("INSERT OR REPLACE INTO settings (key, value, updated_at, updated_by) VALUES (?, ?, datetime('now'), ?)")
-            ->execute([$key, $value, $updatedBy]);
+        $this->repo->set($key, $value, $updatedBy);
 
         self::$cache[$key] = $value;
     }

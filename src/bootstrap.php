@@ -54,8 +54,9 @@ $app->set(Config::class, new Config());
 
 // Services seront instanciés à la demande
 $app->set(AuthService::class, new AuthService($db));
-$app->set(SettingsService::class, new SettingsService($db));
 $app->set(SettingsRepository::class, new SettingsRepository($db));
+$settingsRepo = $app->get(SettingsRepository::class);
+$app->set(SettingsService::class, new SettingsService($db, $settingsRepo));
 $app->set(AuditRepository::class, new AuditRepository($db));
 $app->set(AdminRepository::class, new AdminRepository($db));
 $app->set(FormRepository::class, new FormRepository($db));
