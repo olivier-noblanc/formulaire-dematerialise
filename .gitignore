@@ -46,8 +46,7 @@ web.config
 /tool-results/
 /spc
 /worklog.md
-/AGENT.md
-/agent.md
+
 
 # PHPMailer web.config (sécurité IIS)
 web.config
