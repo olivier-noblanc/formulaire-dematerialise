@@ -20,8 +20,6 @@ final class FormController extends BaseController
      */
     public function handle(): void
     {
-        $this->initServices();
-
         $pdo  = $this->db->getPdo();
         $slug = trim($_GET['f'] ?? '');
 

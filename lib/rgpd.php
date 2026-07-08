@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 use App\Rgpd\RgpdService;
-use App\Core\Database;
+use App\Core\App;
 
 // ── RGPD COMPLIANCE ──────────────────────────────────────────
 
@@ -21,7 +21,7 @@ use App\Core\Database;
  * @return array<string, mixed>
  */
 function rgpd_export_user_data(string $email): array {
-    return (new RgpdService(new Database()))->exportUserData($email);
+    return (new RgpdService(App::db()))->exportUserData($email);
 }
 
 /**
@@ -29,7 +29,7 @@ function rgpd_export_user_data(string $email): array {
  * Anonymise les soumissions et supprime les pièces jointes
  */
 function rgpd_delete_user_data(string $email): bool {
-    return (new RgpdService(new Database()))->deleteUserData($email);
+    return (new RgpdService(App::db()))->deleteUserData($email);
 }
 
 /**
@@ -37,5 +37,5 @@ function rgpd_delete_user_data(string $email): bool {
  * Supprime les soumissions clôturées de plus de X mois
  */
 function rgpd_auto_purge(int $months = 24): int {
-    return (new RgpdService(new Database()))->autoPurge($months);
+    return (new RgpdService(App::db()))->autoPurge($months);
 }

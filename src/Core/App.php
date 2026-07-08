@@ -139,4 +139,9 @@ final class App
     {
         return self::getInstance()->get(\App\Cron\CronService::class);
     }
+
+    public static function migrations(): MigrationService
+    {
+        return self::getInstance()->get(MigrationService::class);
+    }
 }

@@ -40,16 +40,6 @@ abstract class BaseController
         $app = App::getInstance();
         $this->db = $app->get(Database::class);
         $this->config = $app->get(Config::class);
-
-        // Initialiser les services à la demande
-        if (!isset($app)) {
-            $app = App::getInstance();
-        }
-    }
-
-    protected function initServices(): void
-    {
-        $app = App::getInstance();
         $this->settings = $app->get(SettingsService::class);
         $this->auth = $app->get(AuthService::class);
         $this->fields = $app->get(FieldService::class);

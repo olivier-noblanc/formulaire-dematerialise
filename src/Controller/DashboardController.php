@@ -19,8 +19,6 @@ final class DashboardController extends BaseController
      */
     public function handle(): void
     {
-        $this->initServices();
-
         // Chargement du module de rendu spécifique au dashboard
         // (déclare dashboard_page_css() et render_dashboard_content()).
         require_once __DIR__ . '/../../lib/render_dashboard.php';
