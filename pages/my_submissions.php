@@ -1,8 +1,9 @@
 <?php
 // my_submissions.php — Page "Mes demandes" pour l'agent connecté
 require_once dirname(__DIR__) . '/helpers.php';
+use App\Core\App;
 
-$user = get_auth_user();
+$user = App::auth()->getUser();
 $pdo  = \App\Core\App::db()->getPdo();
 $search = trim($_GET['search'] ?? '');
 $status_filter = $_GET['statut'] ?? 'tous';
@@ -41,7 +42,7 @@ if (!function_exists('simplify_form_label')) {
         //    jargon générique restant (S4-UI : « Circuit de validation » →
         //    « Étapes de validation », « Workflow » → « Parcours », etc.).
         //    Idempotent (garanti par placeholders \x01/\x02 dans t_jargon).
-        return t_jargon($label);
+        return App::html()->tJargon($label);
     }
 }
 
@@ -138,10 +139,10 @@ foreach ($submissions as &$sub) {
             $detail_parts = [];
             foreach ($tokens_by_step[$step_id] as $tok) {
                 if (!empty($tok['done_at'])) {
-                    $detail_parts[] = display_user($tok['email']) . ' <span aria-hidden="true">✓</span>';
+                    $detail_parts[] = App::html()->displayUser($tok['email']) . ' <span aria-hidden="true">✓</span>';
                 } else {
                     $all_done = false;
-                    $detail_parts[] = display_user($tok['email']) . ' <span aria-hidden="true">⏳</span>';
+                    $detail_parts[] = App::html()->displayUser($tok['email']) . ' <span aria-hidden="true">⏳</span>';
                 }
             }
             $ws['step_status'] = $all_done ? 'validated' : 'current';
@@ -291,7 +292,7 @@ ob_start();
             <?php
               foreach ($data['validations'] as $v) {
                   if ($v['action'] === 'refuser') {
-                      echo '<strong>Refusé par :</strong> ' . display_user($v['email']) . ' (' . h($v['step_label']) . ')';
+                      echo '<strong>Refusé par :</strong> ' . App::html()->displayUser($v['email']) . ' (' . h($v['step_label']) . ')';
                       if (!empty($v['commentaire'])) echo '<br><strong>Motif :</strong> ' . h($v['commentaire']);
                       break;
                   }
@@ -309,7 +310,7 @@ ob_start();
                   }
               }
               if ($last_validator !== null) {
-                  echo '<strong>Validée par :</strong> ' . display_user($last_validator['email']) . ' (' . h($last_validator['step_label']) . ')';
+                  echo '<strong>Validée par :</strong> ' . App::html()->displayUser($last_validator['email']) . ' (' . h($last_validator['step_label']) . ')';
                   if (!empty($last_validator['commentaire'])) echo '<br><strong>Commentaire :</strong> ' . h($last_validator['commentaire']);
               } else {
                   echo '<strong>Demande validée</strong> — circuit complet';

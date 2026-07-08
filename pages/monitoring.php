@@ -9,12 +9,12 @@ require_once dirname(__DIR__) . '/lib/render_monitoring.php';
 require_once dirname(__DIR__) . '/lib/render_monitoring_audit.php';
 use App\Core\App;
 
-require_admin();
+App::auth()->requireAdmin();
 
 $pdo = App::db()->getPdo();
 
 // ── Metrique : temps moyen de traitement ──
-$avg_time_stmt = _dbm_q($pdo, "
+$avg_time_stmt = $pdo->query("
     SELECT AVG(
         CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
     ) as avg_seconds
@@ -36,7 +36,7 @@ $taux_validation = $gstats['taux_validation'];
 // ── Tokens bloques (en attente depuis + de X jours) ──
 $delai_relance = (int)\App\Core\App::settings()->get('delai_relance_h', '48');
 $bloque_hours = $delai_relance * 2; // Seuil : 2x le delai de relance
-$tokens_bloques = _dbm_q($pdo, "
+$tokens_bloques = $pdo->query("
     SELECT t.id, t.email, t.sent_at, t.relance_count, t.expires_at,
            st.label as step_label, st.ordre,
            s.id as submission_id, s.submitted_by, s.submitted_at,
@@ -51,7 +51,7 @@ $tokens_bloques = _dbm_q($pdo, "
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // ── Tokens expires non traites ──
-$tokens_expired = _dbm_q($pdo, "
+$tokens_expired = $pdo->query("
     SELECT COUNT(*) FROM tokens t
     JOIN submissions s ON s.id = t.submission_id
     WHERE t.done_at IS NULL AND t.expires_at IS NOT NULL
@@ -61,7 +61,7 @@ $tokens_expired = _dbm_q($pdo, "
 // ── Alertes actives : soumissions en cours proches de la deadline ──
 $active_alerts = [];
 try {
-    $alert_submissions = _dbm_q($pdo, "
+    $alert_submissions = $pdo->query("
         SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.form_id,
                f.label as form_label, f.deadline_field
         FROM submissions s
@@ -114,7 +114,7 @@ try {
 // ── Dernieres alertes envoyees ──
 $recent_alerts = [];
 try {
-    $recent_alerts = _dbm_q($pdo, "
+    $recent_alerts = $pdo->query("
         SELECT al.*, f.label as form_label, ar.label as rule_label
         FROM alert_log al
         JOIN submissions s ON s.id = al.submission_id
@@ -133,7 +133,7 @@ $smtp_status = 'inconnu';
 $smtp_detail = '';
 $smtp_debug_log = '';  // conversation SMTP complète (uniquement si test demandé)
 if (isset($_GET['test_smtp']) && $_GET['test_smtp'] === '1') {
-    $to = get_auth_user();
+    $to = App::auth()->getUser();
     $subject = 'Test SMTP — Surveillance ' . get_app_name();
     $body = render_email_template(
         'Test SMTP',
@@ -165,7 +165,7 @@ $last_remind = \App\Core\App::settings()->get('last_remind_run', '');
 $last_alert_check = \App\Core\App::settings()->get('last_alert_check', '');
 
 // ── Soumissions par jour (7 derniers jours) ──
-$daily_stmt = _dbm_q($pdo, "
+$daily_stmt = $pdo->query("
     SELECT DATE(submitted_at) as day, COUNT(*) as cnt
     FROM submissions
     WHERE submitted_at >= datetime('now', '-7 days')
@@ -175,7 +175,7 @@ $daily_stmt = _dbm_q($pdo, "
 $daily_stats = $daily_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ── Soumissions par formulaire ──
-$by_form_stmt = _dbm_q($pdo, "
+$by_form_stmt = $pdo->query("
     SELECT f.label, COUNT(s.id) as total,
            SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
            SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
@@ -275,7 +275,7 @@ $audit_stmt->execute(array_merge($audit_params, [$audit_per_page, $audit_offset]
 $audit_logs = $audit_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ── Types d'actions pour le filtre (valeurs distinctes de la DB) ──
-$action_types = _dbm_q($pdo, "SELECT DISTINCT action FROM audit_log ORDER BY action")->fetchAll(PDO::FETCH_COLUMN);
+$action_types = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY action")->fetchAll(PDO::FETCH_COLUMN);
 
 // URL de base pour la pagination (préserve tous les filtres actifs)
 $audit_base_qs = http_build_query(array_filter([

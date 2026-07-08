@@ -112,4 +112,79 @@ final class HtmlService implements HtmlInterface
 
         return $text;
     }
+
+    /**
+     * Affiche un email avec masquage du domaine pour l'utilisateur courant.
+     */
+    public function displayUser(string $email, ?string $current_user = null, bool $force_email = false): string
+    {
+        if ($email === '') return '';
+        if ($force_email) return $this->h($email);
+
+        if ($current_user === null) {
+            $current_user = function_exists('get_auth_user') ? get_auth_user() : '';
+        }
+
+        // Cas 1 : email = user courant → "Vous"
+        if ($current_user !== '' && strcasecmp($email, $current_user) === 0) {
+            return '<strong>Vous</strong>';
+        }
+
+        // Cas 2 : masquer le domaine si = domaine du user courant
+        if ($current_user !== '' && str_contains($current_user, '@')) {
+            $user_domain = strtolower(substr($current_user, strrpos($current_user, '@')));
+            $email_lower = strtolower($email);
+            if (str_ends_with($email_lower, $user_domain)) {
+                $local_part = substr($email, 0, strlen($email) - strlen($user_domain));
+                return $this->h($local_part . '@');
+            }
+        }
+
+        // Cas 3 : email complet
+        return $this->h($email);
+    }
+
+    /**
+     * Génère un graphique donut pour la répartition des statuts.
+     */
+    public function renderDonutChart(int $total, int $valide, int $en_cours, int $refuse): string
+    {
+        if ($total <= 0) {
+            return '<div class="chart-row">'
+                 . '<div class="donut-chart" style="background:#e0e0e0;">'
+                 . '<div class="donut-center">'
+                 . '<span class="donut-value">0</span>'
+                 . '<span class="donut-label">Total</span>'
+                 . '</div></div>'
+                 . '<div class="chart-legend">'
+                 . '<div class="legend-item"><span class="legend-dot" style="background:#1a6b3c;"></span><strong>Validées</strong> : 0 (0%)</div>'
+                 . '<div class="legend-item"><span class="legend-dot" style="background:#b45309;"></span><strong>En cours</strong> : 0 (0%)</div>'
+                 . '<div class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span><strong>Refusées</strong> : 0 (0%)</div>'
+                 . '</div></div>';
+        }
+
+        $p_valide = round(($valide / $total) * 100);
+        $p_en_cours = round(($en_cours / $total) * 100);
+        $p_refuse = round(($refuse / $total) * 100);
+        // Ajuster pour que ça fasse 100%
+        $diff = 100 - $p_valide - $p_en_cours - $p_refuse;
+        $p_valide += $diff; // Compenser les arrondis
+
+        // Construire le conic-gradient
+        $g_valide_end = $p_valide;
+        $g_en_cours_end = $p_valide + $p_en_cours;
+        $gradient = "conic-gradient(#1a6b3c 0% {$g_valide_end}%, #b45309 {$g_valide_end}% {$g_en_cours_end}%, #c0392b {$g_en_cours_end}% 100%)";
+
+        return '<div class="chart-row">'
+             . '<div class="donut-chart" style="background:' . $gradient . ';">'
+             . '<div class="donut-center">'
+             . '<span class="donut-value">' . $total . '</span>'
+             . '<span class="donut-label">Total</span>'
+             . '</div></div>'
+             . '<div class="chart-legend">'
+             . '<div class="legend-item"><span class="legend-dot" style="background:#1a6b3c;"></span><strong>Validées</strong> : ' . $valide . ' (' . $p_valide . '%)</div>'
+             . '<div class="legend-item"><span class="legend-dot" style="background:#b45309;"></span><strong>En cours</strong> : ' . $en_cours . ' (' . $p_en_cours . '%)</div>'
+             . '<div class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span><strong>Refusées</strong> : ' . $refuse . ' (' . $p_refuse . '%)</div>'
+             . '</div></div>';
+    }
 }
