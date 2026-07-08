@@ -26,6 +26,10 @@
  */
 
 function h(?string $val): string {
+    // Délègue au service DI si disponible (T14 — architecture)
+    if (class_exists(\App\Core\App::class) && \App\Core\App::getInstance()->has(\App\Render\HtmlService::class)) {
+        return \App\Core\App::html()->h($val);
+    }
     return htmlspecialchars($val ?? '', ENT_QUOTES, 'UTF-8');
 }
 

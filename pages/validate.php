@@ -151,13 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $token = trim($_GET['token'] ?? '');
 
-    // Sécurité (S-09) : limiter les tentatives de consultation de token (anti-énumération)
-    if ($token && !rate_limit_check('validate_view', 30, 60)) {
-        render_error_page(429, 'Trop de requêtes',
-            'Vous avez effectué trop de consultations de liens de validation en peu de temps. Veuillez patienter quelques instants.',
-            'Attendez environ 1 minute avant de réessayer.');
-    }
-
     if ($token) {
         // Sécurité (S-09) : vérifier le format du token avant la requête DB
         if (!preg_match('/^[a-f0-9]{64}$/', $token)) {

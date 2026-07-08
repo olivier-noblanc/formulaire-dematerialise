@@ -98,12 +98,6 @@ function run_tests_e2e_security(): void {
         return ($ok_valid && $ok_invalid && $has_field) ? true : 'CSRF logique défaillante';
     });
 
-    test('Rate limiting fonctionnel', function() use ($pdo) {
-        // Vérifier que la table rate_limits existe
-        $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='rate_limits'")->fetchColumn();
-        return $tables ? true : 'Table rate_limits manquante';
-    });
-
     echo "\n";
 }
 

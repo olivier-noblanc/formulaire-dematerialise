@@ -5,13 +5,6 @@
 require_once dirname(__DIR__) . '/helpers.php';
 use App\Core\App;
 
-// Sécurité (S-16) : limiter le nombre de téléchargements par IP
-if (!rate_limit_check('download', 30, 60)) {
-    render_error_page(429, 'Trop de requêtes',
-        'Vous avez effectué trop de téléchargements en peu de temps.',
-        'Veuillez patienter quelques instants avant de réessayer.');
-}
-
 // P2-B : Mode export de soumission en JSON (incluant les données validator).
 // Endpoint : download.php?mode=export_submission&submission_id=<uuid>
 // On branche avant le code « pièce jointe » pour éviter de consommer l'argument ?id=.

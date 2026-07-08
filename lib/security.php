@@ -58,13 +58,3 @@ function require_csrf(): void {
 function send_security_headers(): void {
     \App\Core\App::security()->sendSecurityHeaders();
 }
-
-// ── SECURITY HARDENING ──────────────────────────────────────
-
-/**
- * Rate limiting par IP et par action
- * Retourne true si l'action est autorisée, false si le rate limit est atteint
- */
-function rate_limit_check(string $action = 'default', int $max_attempts = 10, int $window_seconds = 60): bool {
-    return \App\Core\App::security()->rateLimitCheck($action, $max_attempts, $window_seconds);
-}

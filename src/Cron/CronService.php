@@ -135,14 +135,11 @@ final class CronService
     }
 
     /**
-     * Gère une requête POST — rate limit, CSRF, retourne l'action.
+     * Gère une requête POST — CSRF, retourne l'action.
      */
     public function handlePost(): ?string
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return null;
-        if (!rate_limit_check('handle_post', 30, 60)) {
-            render_error_page(429, 'Trop de requêtes', 'Vous avez effectué trop de requêtes en peu de temps.');
-        }
         require_csrf();
         return $_POST['action'] ?? null;
     }

@@ -61,16 +61,6 @@ final class MailerService
             return $result;
         }
 
-        // Sécurité : limiter le nombre d'emails envoyés par IP (anti-spam)
-        if (!rate_limit_check('send_mail', 20, 60)) {
-            $msg = "Rate limit atteint pour IP " . $ip;
-            error_log("send_mail() BLOQUÉ — $msg");
-            $this->logAttempt($to, $subject, 'rate_limited', $msg, '', $actor, $ip);
-            $result['error'] = $msg;
-            $result['status'] = 'rate_limited';
-            return $result;
-        }
-
         // Mode test : intercepter les mails sans les envoyer
         /** @phpstan-ignore-next-line if.alwaysTrue */
         if (TEST_MODE) {

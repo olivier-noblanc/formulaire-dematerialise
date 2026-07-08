@@ -63,16 +63,4 @@ final class SecurityLibTest extends TestCase
         $field = csrf_field();
         $this->assertStringNotContainsString('persona_token', $field);
     }
-
-    public function testRateLimitCheckAllowsNormalRequest(): void
-    {
-        $this->assertTrue(rate_limit_check('test_action_' . uniqid(), 10, 60));
-    }
-
-    public function testRateLimitCheckWithDifferentActions(): void
-    {
-        $action = 'unique_action_' . uniqid();
-        $this->assertTrue(rate_limit_check($action, 5, 60));
-        $this->assertTrue(rate_limit_check($action, 5, 60));
-    }
 }

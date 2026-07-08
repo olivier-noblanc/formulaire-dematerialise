@@ -524,25 +524,6 @@ test('XSS résistance : render_submission_data() échappe les données', functio
     return strpos($html, '<script>') === false ? true : 'Script non échappé dans render_submission_data';
 });
 
-test('rate_limit_check() existe et fonctionne', function() {
-    $result = rate_limit_check('test_unit', 100, 60);
-    return is_bool($result) ? true : 'Pas un booléen: ' . gettype($result);
-});
-
-test('rate_limit_check() limite les tentatives excessives', function() {
-    $action = 'test_limit_' . bin2hex(random_bytes(4));
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    // Insert records using SQLite's datetime('now') for UTC consistency
-    $pdo = get_pdo();
-    for ($i = 0; $i < 5; $i++) {
-        $pdo->prepare("INSERT INTO rate_limits (id, action_key, ip, attempted_at) VALUES (?, ?, ?, datetime('now'))")
-            ->execute([generate_uuid(), $action, $ip]);
-    }
-    // Next call should be blocked (5 >= max 5)
-    $result = rate_limit_check($action, 5, 3600);
-    return $result === false ? true : 'Rate limit non atteint';
-});
-
 test('get_allowed_extensions() ne contient pas d\'exécutables', function() {
     $exts = get_allowed_extensions();
     $dangerous = ['exe', 'bat', 'cmd', 'sh', 'php', 'phtml', 'js', 'vbs', 'com', 'msi'];
