@@ -1,26 +1,47 @@
-# Task 6 Report: Register Audit + Attachment in DI
+# Task 6 Report: Supprimer `lib/security.php`
 
-## What Was Implemented
+## Status: DONE
 
-Registered `AuditRepository` and `AttachmentRepository` in the DI container across all three bootstrap files, following the existing pattern of adding after `SettingsRepository`.
+## What was done
 
-## Files Changed
+1. **Verified no external callers remain** — grep confirmed all `csrf_field()`, `verify_csrf()`, `require_csrf()`, `generate_csrf_token()` calls outside `lib/security.php` and `src/` were in test files (test names/comments + actual calls). `install.php` uses its own `inst_` prefixed functions, not the wrappers.
 
-1. **helpers.php** — Added two `$_app->set()` calls after `SettingsRepository` registration (fully-qualified class names)
-2. **src/bootstrap.php** — Added two `use` statements and two `$app->set()` calls after `SettingsRepository` registration
-3. **tests/phpunit_bootstrap.php** — Added two `use` statements and two `$app->set()` calls after `SettingsRepository` registration
+2. **Migrated test callers to DI** — 4 test files updated to call `\App\Core\App::security()->*` directly:
+   - `tests/test_unit_basics.php` — 6 test calls migrated
+   - `tests/test_all.php` — 2 test calls migrated
+   - `tests/test_e2e_security_files.php` — 1 test call migrated
+   - `tests/PHPUnit/Lib/SecurityLibTest.php` — 7 method calls migrated (added `use App\Core\App` import)
 
-## Test Results
+3. **Deleted `lib/security.php`**
 
-- **519 tests, 804 assertions, 0 failures**
-- 19 skipped, 3 deprecation warnings (pre-existing)
-- All pass with `OK` status
+4. **Removed requires** from:
+   - `helpers.php:96` — removed `require_once __DIR__ . '/lib/security.php';`
+   - `lib/core_bootstrap.php:193` — removed `require_once __DIR__ . '/security.php';`
 
-## Commit
+5. **Lint passed** on all modified files:
+   - `helpers.php` — ok
+   - `tests/test_unit_basics.php` — ok
+   - `tests/test_all.php` — ok
+   - `tests/test_e2e_security_files.php` — ok
+   - `tests/PHPUnit/Lib/SecurityLibTest.php` — ok
+   - `lib/core_bootstrap.php` — ok
 
-- SHA: `776cf14`
-- Message: `feat: register AuditRepository + AttachmentRepository in DI`
+## Verification
 
-## Issues / Concerns
+Grep for wrapper function names outside `lib/security.php` and `src/` returns only:
+- Test **names** (string arguments in `test('...')`) — not actual calls
+- **Comments** referencing the old function names
+- `install.php` local `inst_verify_csrf()` — independent implementation, not a wrapper call
 
-None. Straightforward DI wiring with no issues.
+Zero actual function calls to the deleted wrappers remain.
+
+## Files modified
+
+- `lib/security.php` — DELETED
+- `helpers.php` — removed require
+- `lib/core_bootstrap.php` — removed require
+- `force-update.ps1` — removed `lib/security.php` from file list
+- `tests/test_unit_basics.php` — migrated to DI
+- `tests/test_all.php` — migrated to DI
+- `tests/test_e2e_security_files.php` — migrated to DI
+- `tests/PHPUnit/Lib/SecurityLibTest.php` — migrated to DI

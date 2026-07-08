@@ -69,12 +69,12 @@ function handle_admin_settings_post(): array
     // Webhook settings — non gated par $action, déclenchés par la présence
     // des champs webhook_url / webhook_events dans le POST.
     if (isset($_POST['webhook_url'])) {
-        $user = get_auth_user();
+        $user = App::auth()->getUser();
         \App\Core\App::settings()->set('webhook_url', trim($_POST['webhook_url']), $user);
         App::audit()->log('settings_update', 'settings:webhook_url', 'URL webhook mise à jour');
     }
     if (isset($_POST['webhook_events'])) {
-        $user = get_auth_user();
+        $user = App::auth()->getUser();
         \App\Core\App::settings()->set('webhook_events', trim($_POST['webhook_events']), $user);
         App::audit()->log('settings_update', 'settings:webhook_events', 'Événements webhook mis à jour');
     }
@@ -109,7 +109,7 @@ function admin_settings_handle_save_settings(): array
 {
     $success_msg = '';
     $error_msg   = '';
-    $updated_by  = get_auth_user();
+    $updated_by  = App::auth()->getUser();
     $settings    = [
         'app_name'          => trim($_POST['app_name'] ?? ''),
         'app_favicon'       => trim($_POST['app_favicon'] ?? ''),
@@ -164,7 +164,7 @@ function admin_settings_handle_save_settings(): array
 function admin_settings_handle_save_email_verify(string $error_msg): array
 {
     $success_msg = '';
-    $updated_by  = get_auth_user();
+    $updated_by  = App::auth()->getUser();
     $ev_settings = [
         'mail_dry_run'         => isset($_POST['mail_dry_run']) ? '1' : '0',
         'email_verify_mode'    => trim($_POST['email_verify_mode'] ?? 'none'),
@@ -218,7 +218,7 @@ function admin_settings_handle_save_email_verify(string $error_msg): array
  */
 function admin_settings_handle_test_email(): string
 {
-    $to      = get_auth_user();
+    $to      = App::auth()->getUser();
     $subject = 'Test email — ' . get_app_name();
     $body    = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;color:#222;">
@@ -251,7 +251,7 @@ function admin_settings_handle_test_verify_email(string $error_msg): array
     $test_addr = trim($_POST['verify_test_email'] ?? '');
     if (!empty($test_addr) && filter_var($test_addr, FILTER_VALIDATE_EMAIL)) {
         $verify_result = test_email_verification($test_addr);
-        App::audit()->log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', get_auth_user());
+        App::audit()->log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', App::auth()->getUser());
         return [$verify_result, $error_msg];
     }
     $error_msg = 'Veuillez saisir une adresse email valide pour le test.';

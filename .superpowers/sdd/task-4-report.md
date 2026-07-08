@@ -1,46 +1,68 @@
-# Task 4: AuditRepository — Report
+# Task 4 Report
 
-## What I implemented
+## 1. Migration: `classes/migrations/schema_initial.php`
 
-**`src/Repository/AuditRepository.php`** — extends `BaseRepository` with four methods:
+**Status**: Done
 
-| Method | Description | Table |
-|---|---|---|
-| `log($action, $target, $detail, $actor): bool` | Insert audit entry | `audit_log` |
-| `securityLog($event, $detail, $actor): bool` | Insert security event as `action='security_event'` | `audit_log` |
-| `getLogs($limit, $actionFilter): array` | Fetch audit logs, optional action filter | `audit_log` |
-| `getSecurityLogs($limit): array` | Fetch security logs only | `audit_log` |
+Replaced `get_admin_email()` with `App::auth()->getAdminEmail()` at line 272. Lint passes clean.
 
-**Key design decision**: The brief's implementation referenced a `security_log` table that does not exist in the schema. The existing `AuditLogService` writes security logs into `audit_log` with `action='security_event'` and `target='security:' . $event`. I matched this existing pattern rather than creating a phantom table reference.
+## 2. Verification: External callers of wrappers
 
-## What I tested
+### Auth wrappers (`lib/auth.php`) — still called externally
 
-**`tests/PHPUnit/Repository/AuditRepositoryTest.php`** — 4 tests:
+The grep for all auth wrappers (excluding `lib/auth.php`, `lib/html.php`, `lib/security.php`, and `tests/`) returned **non-zero results**:
 
-1. `testLogReturnsBool` — `log()` returns `true` on successful INSERT
-2. `testSecurityLogReturnsBool` — `securityLog()` returns `true` on successful INSERT
-3. `testGetLogsReturnsArray` — `getLogs(10)` returns an array
-4. `testGetSecurityLogsReturnsArray` — `getSecurityLogs(10)` returns an array
+| File | Function referenced | Nature |
+|------|-------------------|--------|
+| `lib/html.php:59` | `get_auth_user()` | Active call in `display_user()` |
+| `lib/docs_section_technique.php:157` | `get_auth_user()` | Doc text (code snippet in HTML) |
+| `lib/docs_section_admin.php:246` | `is_admin_effective()` | Doc text (explanation) |
+| `src/Controller/IndexController.php:29` | `is_admin_effective()` | Comment |
+| `src/Auth/AuthService.php:67` | `is_admin_user()` | Comment |
+| `pages/persona.php:51` | `get_auth_user()` | Comment |
+| `lib/core_bootstrap.php:41` | `require_admin()` | Comment |
+| `classes/migrations/v16.php:8` | `get_admin_email()` | Comment |
 
-**Results**: All 4 tests pass. Full Repository test suite: 13/13 pass.
+**Verdict**: Active calls remain in `lib/html.php` (which depends on `get_auth_user()`). The rest are doc strings or comments — not runtime callers. The auth wrappers cannot be removed yet due to `lib/html.php`.
 
-## TDD Evidence
+### HTML wrappers (`lib/html.php`) — still called externally
 
-- **RED**: Created test file first → ran `phpunit AuditRepositoryTest.php` → 4 errors: `Class "App\Repository\AuditRepository" not found`
-- **GREEN**: Implemented `AuditRepository.php` → ran `phpunit AuditRepositoryTest.php` → 4 tests, 4 assertions, OK
+**`h()`** — 530+ matches. External active callers in production code:
+- `src/Mail/MailerService.php`
+- `lib/render_admin_settings.php`
+- `lib/render_navigation.php`
+- `lib/render_dashboard.php`
+- `lib/render_errors.php`
+- `lib/admin_forms_handlers_forms.php`
+- `lib/admin_settings_handlers.php`
+- `lib/docs_section_technique.php`
 
-## Files changed
+**`display_user()`** — 29 matches. External active callers:
+- `lib/admin_forms_render_workflow.php`
+- `lib/render_submission_view_sections.php`
+- `lib/admin_forms_render_form.php`
+- `src/Token/TokenService.php`
 
-| File | Action |
-|---|---|
-| `src/Repository/AuditRepository.php` | Created |
-| `tests/PHPUnit/Repository/AuditRepositoryTest.php` | Created |
+**Verdict**: `h()` and `display_user()` are heavily used across the codebase. Cannot be removed.
 
-## Commit
+### Security wrappers (`lib/security.php`) — partially migrated
 
-`479c300` — `feat: AuditRepository (TDD)` (author: onoblanc)
+**`csrf_field()`** — 1 external active caller:
+- `src/Controller/FormController.php:369`
 
-## Concerns
+**`csrf_check()`** — 0 external callers. ✅ Ready for removal (but only if `csrf_field()` is also migrated).
 
-1. **Brief's `security_log` table reference is a schema mismatch.** The brief's Step 3 implementation uses `INSERT INTO security_log`, but no such table exists in any migration. The existing `AuditLogService::securityLog()` writes to `audit_log` with `action='security_event'`. I followed the real schema to avoid runtime SQL errors. If a separate `security_log` table is desired later, a migration + schema change would be needed.
-2. **`get_auth_user()` fallback.** The `log()` and `securityLog()` methods call `get_auth_user()` if `$actor` is empty. In CLI/test context, this function may return empty or 'system' depending on session state. This matches the existing `AuditLogService` behavior.
+**Verdict**: `csrf_field()` is still called from `FormController.php`. Security wrappers cannot be fully removed yet.
+
+## 3. Summary
+
+| Wrapper | External callers remain? | Safe to remove? |
+|---------|------------------------|-----------------|
+| Auth wrappers | Yes (`lib/html.php` calls `get_auth_user()`) | No |
+| `h()` | Yes (10+ files) | No |
+| `display_user()` | Yes (4 files) | No |
+| `csrf_field()` | Yes (1 file) | No |
+| `csrf_check()` | No | Yes |
+
+**Task 4 migration (schema_initial.php)**: ✅ Complete.
+**Wrapper removal readiness**: ❌ Not ready — external callers still exist in production code.

@@ -297,7 +297,7 @@ final class TokenService
         $mailBody = build_mail_html($submission, $stepLabel, $newToken);
 
         $delegationNotice = '<div style="background:#e8eaf6;border:1px solid #003189;border-radius:4px;padding:12px;margin-bottom:16px;">
-            <strong>Délégation :</strong> Cette validation vous a été déléguée par <strong>' . display_user($tok['email']) . '</strong>.
+            <strong>Délégation :</strong> Cette validation vous a été déléguée par <strong>' . App::html()->displayUser($tok['email']) . '</strong>.
             ' . (!empty($reason) ? '<br><em>Motif : ' . h($reason) . '</em>' : '') . '
         </div>';
         $mailBody = str_replace('<h2 style="color:#003189;">', $delegationNotice . '<h2 style="color:#003189;">', $mailBody);
@@ -306,7 +306,7 @@ final class TokenService
 
         $confirmSubject = 'Délégation confirmée — ' . $tok['form_label'];
         $confirmBodyHtml = '<h2 style="color:#003189;">Délégation confirmée</h2>'
-            . '<p>Votre validation pour <strong>' . h($tok['form_label']) . '</strong> (étape ' . h($stepLabel) . ') a été déléguée à <strong>' . display_user($toEmail) . '</strong>.</p>'
+            . '<p>Votre validation pour <strong>' . h($tok['form_label']) . '</strong> (étape ' . h($stepLabel) . ') a été déléguée à <strong>' . App::html()->displayUser($toEmail) . '</strong>.</p>'
             . '<p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>';
         $this->mail->send($tok['email'], $confirmSubject, render_email_template('Délégation confirmée', $confirmBodyHtml));
 

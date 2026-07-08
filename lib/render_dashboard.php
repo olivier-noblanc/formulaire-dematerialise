@@ -485,7 +485,7 @@ function render_dashboard_submission_detail($d, string $status, array $tokens, a
     if ($status === 'en_cours') {
         $html .= "              <hr style=\"margin:1rem 0;\">\n";
         $html .= "              <div style=\"display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start;\">\n";
-        if (is_admin_effective()) {  // v9.9.0 — persona: false si admin en mode visu
+        if (\App\Core\App::auth()->isAdminEffective()) {  // v9.9.0 — persona: false si admin en mode visu
             foreach ($tokens as $t) {
                 if (!empty($t['done_at'])) {
                     continue;
@@ -578,7 +578,7 @@ function render_dashboard_content(
     $content .= render_dashboard_status_legend();
     $content .= render_dashboard_table($rows, $tokens_by_submission, $validator_status_by_submission);
 
-    $content .= render_pagination($page, $total_pages, 'index.php?p=dashboard&' . http_build_query([
+    $content .= \App\Core\App::html()->renderPagination($page, $total_pages, 'index.php?p=dashboard&' . http_build_query([
         'statut' => $filtre,
         'form'   => $form_f,
         'search' => $search,

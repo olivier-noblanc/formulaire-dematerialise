@@ -1,49 +1,37 @@
-# Task 6: Register Audit + Attachment in DI
+# Task 6: Supprimer `lib/security.php`
 
-**Files:**
-- Modify: `helpers.php:165`
-- Modify: `src/bootstrap.php:51`
-- Modify: `tests/phpunit_bootstrap.php:52`
+## Context
 
-## Step 1: Add to helpers.php
+Les wrappers de sécurité (`csrf_field()`, `verify_csrf()`, etc.) doivent être remplacés par des appels DI directs.
 
-After SettingsRepository registration, add:
+## Fichiers à modifier
 
-```php
-$_app->set(\App\Repository\AuditRepository::class, new \App\Repository\AuditRepository($_db_service));
-$_app->set(\App\Repository\AttachmentRepository::class, new \App\Repository\AttachmentRepository($_db_service));
-```
+1. `lib/security.php` — SUPPRIMER
+2. `helpers.php` — supprimer le `require_once __DIR__ . '/security.php';`
 
-## Step 2: Add to src/bootstrap.php
-
-After SettingsRepository registration, add:
-
-```php
-use App\Repository\AuditRepository;
-use App\Repository\AttachmentRepository;
-$app->set(AuditRepository::class, new AuditRepository($db));
-$app->set(AttachmentRepository::class, new AttachmentRepository($db));
-```
-
-## Step 3: Add to tests/phpunit_bootstrap.php
-
-After SettingsRepository registration, add:
-
-```php
-use App\Repository\AuditRepository;
-use App\Repository\AttachmentRepository;
-$app->set(AuditRepository::class, new AuditRepository($db));
-$app->set(AttachmentRepository::class, new AttachmentRepository($db));
-```
-
-## Step 4: Run all tests
-
-Run: `rtk php phpunit.phar`
-Expected: 504+ tests PASS
-
-## Step 5: Commit
+## Vérification préalable
 
 ```bash
-rtk git add helpers.php src/bootstrap.php tests/phpunit_bootstrap.php
-rtk git commit --author="onoblanc <olivier.noblanc@dreets.gouv.fr>" -m "feat: register AuditRepository + AttachmentRepository in DI"
+rg "\bcsrf_field\(|verify_csrf\(|require_csrf\(|generate_csrf_token\(" --glob="*.php" --glob="!lib/security.php" --glob="!src/*"
 ```
+
+Doit retourner 0 résultat (hors src/ qui a déjà été migré).
+
+## Mapping
+
+| Wrapper | Remplacement |
+|---------|-------------|
+| `csrf_field()` | `App::security()->csrfField()` |
+| `verify_csrf()` | `App::security()->verifyCsrf()` |
+| `require_csrf()` | `App::security()->requireCsrf()` |
+| `generate_csrf_token()` | `App::security()->generateCsrfToken()` |
+
+## Testing
+
+```bash
+php -l helpers.php
+```
+
+## Report
+
+Écrire dans `.superpowers/sdd/task-6-report.md`

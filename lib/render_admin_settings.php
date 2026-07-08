@@ -328,7 +328,7 @@ function render_admin_settings_content(array $state): string
 
             <div class="field">
                 <label for="admin_email">Email de l'administrateur principal</label>
-                <input type="email" id="admin_email" name="admin_email" value="<?= h(get_admin_email()) ?>" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required>
+                <input type="email" id="admin_email" name="admin_email" value="<?= h(\App\Core\App::auth()->getAdminEmail()) ?>" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required>
                 <span class="hint">Cet utilisateur est super-administrateur et reçoit les demandes d'accès. Modifiable depuis la base de données si l'accès est perdu.</span>
             </div>
         </div>
@@ -465,7 +465,7 @@ function render_admin_settings_content(array $state): string
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card" id="section-email-send" style="margin-top:1.5rem;">
         <h2>Test d'envoi d'email</h2>
-        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">Envoyer un email de test à votre adresse (<?= h(get_auth_user()) ?>) pour vérifier la configuration SMTP.</p>
+        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">Envoyer un email de test à votre adresse (<?= h(\App\Core\App::auth()->getUser()) ?>) pour vérifier la configuration SMTP.</p>
         <?php if ($mail_dry_run === '1'): ?>
             <div class="warning-box" style="margin-bottom:1rem;">
                 <strong>Mode Dry-Run actif</strong> — L'email sera journalisé mais <strong>pas réellement envoyé</strong>.

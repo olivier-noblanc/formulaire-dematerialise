@@ -31,7 +31,7 @@ test('render_nav() marque la page active', function() {
 
 test('render_nav() pour admin contient les liens admin', function() {
     $prev = $_SERVER['HTTP_X_TEST_USER'] ?? '';
-    $admin_email = get_admin_email();
+    $admin_email = \App\Core\App::auth()->getAdminEmail();
     $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
     $html = render_nav('forms');
     $_SERVER['HTTP_X_TEST_USER'] = $prev;
@@ -93,7 +93,7 @@ test('get_app_name() retourne CircuitDémat par défaut', function() {
 });
 
 test('get_admin_email() retourne un email valide', function() {
-    $email = get_admin_email();
+    $email = \App\Core\App::auth()->getAdminEmail();
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false ? true : "Email invalide: $email";
 });
 
@@ -185,7 +185,7 @@ test('is_form_owner() avec email non-propriétaire', function() {
     $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
-    $result = is_form_owner($form_id, 'nobody@dreets.gouv.fr');
+    $result = \App\Core\App::auth()->isFormOwner($form_id, 'nobody@dreets.gouv.fr');
     return $result === false ? true : 'Non-propriétaire détecté comme propriétaire';
 });
 
@@ -193,12 +193,12 @@ test('get_form_owners() retourne un tableau', function() {
     $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
-    $owners = get_form_owners($form_id);
+    $owners = \App\Core\App::auth()->getFormOwners($form_id);
     return is_array($owners) ? true : 'Pas un tableau';
 });
 
 test('get_owned_forms() retourne un tableau', function() {
-    $forms = get_owned_forms('nobody@dreets.gouv.fr');
+    $forms = \App\Core\App::auth()->getOwnedForms('nobody@dreets.gouv.fr');
     return is_array($forms) ? true : 'Pas un tableau';
 });
 

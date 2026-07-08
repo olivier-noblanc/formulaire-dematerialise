@@ -1,107 +1,36 @@
-# Task 5: AttachmentRepository
+# Task 5: Supprimer `lib/auth.php`
 
-**Files:**
-- Create: `src/Repository/AttachmentRepository.php`
-- Test: `tests/PHPUnit/Repository/AttachmentRepositoryTest.php`
+## Context
 
-**Interfaces:**
-- Consumes: `BaseRepository`
-- Produces: `AttachmentRepository::findById()`, `findBySubmission()`, `create()`, `delete()`, `deleteBySubmission()`
+Tous les appelants de `lib/auth.php` ont été migrés vers les appels DI directs. Il est maintenant sûr de supprimer le fichier.
 
-## Step 1: Write the failing test
+## Fichiers à modifier
 
-```php
-<?php
-declare(strict_types=1);
+1. `lib/auth.php` — SUPPRIMER
+2. `helpers.php` — supprimer le `require_once __DIR__ . '/auth.php';`
 
-namespace App\Tests\Repository;
+## Vérification préalable
 
-use PHPUnit\Framework\TestCase;
-use App\Repository\AttachmentRepository;
-use App\Core\Database;
-
-final class AttachmentRepositoryTest extends TestCase
-{
-    private AttachmentRepository $repo;
-
-    protected function setUp(): void
-    {
-        $this->repo = new AttachmentRepository(new Database());
-    }
-
-    public function testFindByIdReturnsNullForNonexistent(): void
-    {
-        $result = $this->repo->findById('nonexistent');
-        $this->assertNull($result);
-    }
-
-    public function testFindBySubmissionReturnsArray(): void
-    {
-        $result = $this->repo->findBySubmission('nonexistent');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-}
-```
-
-## Step 2: Run test to verify it fails
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/AttachmentRepositoryTest.php`
-Expected: FAIL with "Class 'App\Repository\AttachmentRepository' not found"
-
-## Step 3: Write minimal implementation
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace App\Repository;
-
-final class AttachmentRepository extends BaseRepository
-{
-    public function findById(string $id): ?array
-    {
-        return $this->fetchOne("SELECT * FROM attachments WHERE id = ?", [$id]);
-    }
-    
-    public function findBySubmission(string $submissionId): array
-    {
-        return $this->fetchAll(
-            "SELECT * FROM attachments WHERE submission_id = ? ORDER BY created_at",
-            [$submissionId]
-        );
-    }
-    
-    public function create(array $data): string
-    {
-        $id = \generate_uuid();
-        $this->execute(
-            "INSERT INTO attachments (id, submission_id, field_name, filename, mime_type, size, data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
-            [$id, $data['submission_id'], $data['field_name'], $data['filename'], $data['mime_type'], $data['size'], $data['data']]
-        );
-        return $id;
-    }
-    
-    public function delete(string $id): bool
-    {
-        return $this->execute("DELETE FROM attachments WHERE id = ?", [$id]);
-    }
-    
-    public function deleteBySubmission(string $submissionId): bool
-    {
-        return $this->execute("DELETE FROM attachments WHERE submission_id = ?", [$submissionId]);
-    }
-}
-```
-
-## Step 4: Run test to verify it passes
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/AttachmentRepositoryTest.php`
-Expected: PASS (2 tests)
-
-## Step 5: Commit
+Avant de supprimer, vérifier qu'aucun fichier n'appelle encore les wrappers :
 
 ```bash
-rtk git add src/Repository/AttachmentRepository.php tests/PHPUnit/Repository/AttachmentRepositoryTest.php
-rtk git commit --author="onoblanc <olivier.noblanc@dreets.gouv.fr>" -m "feat: AttachmentRepository (TDD)"
+rg "function_exists\('get_auth_user'\)|function_exists\('is_admin_user'\)" --include="*.php"
 ```
+
+Doit retourner 0 résultat.
+
+```bash
+rg "\bget_auth_user\(|is_admin_user\(|is_super_admin\(|require_admin\(|is_admin_effective\(|is_form_owner\(|get_form_owners\(|get_owned_forms\(|get_admin_email\(|process_admin_request\(|approve_admin_request\(|reject_admin_request\(|remove_admin\(" --include="*.php" --glob="!lib/auth.php"
+```
+
+Doit retourner 0 résultat.
+
+## Testing
+
+```bash
+php -l helpers.php
+```
+
+## Report
+
+Écrire dans `.superpowers/sdd/task-5-report.md`

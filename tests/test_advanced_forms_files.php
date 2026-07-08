@@ -60,7 +60,7 @@ function run_tests_advanced_forms(): void {
     });
 
     test('get_form_owners() returns correct owners', function() use ($onboarding_id) {
-        $owners = get_form_owners($onboarding_id);
+        $owners = \App\Core\App::auth()->getFormOwners($onboarding_id);
         // Should return an array (may be empty if no owners set)
         /** @phpstan-ignore-next-line function.alreadyNarrowedType */
         return is_array($owners) ? true : 'Expected array, got: ' . gettype($owners);
@@ -68,8 +68,8 @@ function run_tests_advanced_forms(): void {
 
     test('get_owned_forms() for admin email returns forms', function() {
         // Use the admin email from settings
-        $admin_email = get_admin_email();
-        $forms = get_owned_forms($admin_email);
+        $admin_email = \App\Core\App::auth()->getAdminEmail();
+        $forms = \App\Core\App::auth()->getOwnedForms($admin_email);
         // May or may not return forms, but should be an array
         /** @phpstan-ignore-next-line function.alreadyNarrowedType */
         return is_array($forms) ? true : 'Expected array, got: ' . gettype($forms);
@@ -81,7 +81,7 @@ function run_tests_advanced_forms(): void {
         $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)")
             ->execute([generate_uuid(), $onboarding_id, $owner_email]);
 
-        $result = is_form_owner($onboarding_id, $owner_email);
+        $result = \App\Core\App::auth()->isFormOwner($onboarding_id);
 
         // Cleanup
         $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")->execute([$onboarding_id, $owner_email]);
@@ -92,15 +92,15 @@ function run_tests_advanced_forms(): void {
     test('is_form_owner() with admin email returns true (admins are implicitly owners)', function() use ($pdo, $onboarding_id) {
         // Admins should be treated as owners via is_admin_user check
         // is_form_owner checks form_owners table, not admin status, but let's verify behavior
-        $admin_email = get_admin_email();
+        $admin_email = \App\Core\App::auth()->getAdminEmail();
         // First, make sure admin is in admins table
         $pdo->prepare("INSERT OR IGNORE INTO admins (id, email) VALUES (?, ?)")
             ->execute([generate_uuid(), $admin_email]);
 
         // The function only checks form_owners table, not admin status
         // So this test documents the actual behavior
-        $is_owner = is_form_owner($onboarding_id, $admin_email);
-        $is_admin = is_admin_user();
+        $is_owner = \App\Core\App::auth()->isFormOwner($onboarding_id);
+        $is_admin = \App\Core\App::auth()->isAdmin();
 
         // If admin is not in form_owners, is_form_owner returns false
         // This is expected behavior - admins are not automatically form owners

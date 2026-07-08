@@ -216,7 +216,7 @@ function render_workflow_diagram_section(array $ctx): string {
                                         <div class="recipient-chips">
                                             <?php foreach ($step['recipients'] as $rcpt): ?>
                                                 <span class="recipient-chip">
-                                                    <?= display_user($rcpt['email']) ?>
+                                                    <?= \App\Core\App::html()->displayUser($rcpt['email']) ?>
                                                     <form method="POST" style="display:inline;">
                                                         <?= \App\Core\App::security()->csrfField() ?>
                                                         <input type="hidden" name="action" value="delete_recipient">

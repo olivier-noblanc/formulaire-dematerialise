@@ -269,7 +269,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
         $count_stmt = _dbm_q($pdo, "SELECT COUNT(*) FROM admins");
         if ($count_stmt->fetchColumn() == 0) {
             $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
-                ->execute([generate_uuid(), get_admin_email(), date('Y-m-d H:i:s')]);
+                ->execute([generate_uuid(), App::auth()->getAdminEmail(), date('Y-m-d H:i:s')]);
         }
     } catch (PDOException $e) {
         // Silencieux

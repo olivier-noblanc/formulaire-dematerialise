@@ -1,128 +1,40 @@
-# Task 4: AuditRepository
+# Task 4: Migrer `classes/` + vérifier `lib/html.php` + `lib/security.php`
 
-**Files:**
-- Create: `src/Repository/AuditRepository.php`
-- Test: `tests/PHPUnit/Repository/AuditRepositoryTest.php`
+## Context
 
-**Interfaces:**
-- Consumes: `BaseRepository`
-- Produces: `AuditRepository::log()`, `securityLog()`, `getLogs()`, `getSecurityLogs()`
+Dernière étape avant de supprimer les wrappers procéduraux. Vérifier que `classes/migrations/schema_initial.php` utilise DI, et que `lib/html.php` et `lib/security.php` n'ont plus d'appels externes.
 
-## Step 1: Write the failing test
+## Fichiers à modifier
 
-```php
-<?php
-declare(strict_types=1);
+1. `classes/migrations/schema_initial.php` — `get_admin_email()` (1 occurrence)
 
-namespace App\Tests\Repository;
+## Fichiers à vérifier (pas modifier)
 
-use PHPUnit\Framework\TestCase;
-use App\Repository\AuditRepository;
-use App\Core\Database;
+2. `lib/html.php` — vérifier que `h()`, `display_user()`, etc. ne sont plus appelés en dehors de `lib/html.php` lui-même
+3. `lib/security.php` — vérifier que `csrf_field()`, etc. ne sont plus appelés en dehors de `lib/security.php` lui-même
 
-final class AuditRepositoryTest extends TestCase
-{
-    private AuditRepository $repo;
+## Mapping
 
-    protected function setUp(): void
-    {
-        $this->repo = new AuditRepository(new Database());
-    }
+| Wrapper | Remplacement |
+|---------|-------------|
+| `get_admin_email()` | `App::auth()->getAdminEmail()` |
 
-    public function testLogReturnsBool(): void
-    {
-        $result = $this->repo->log('test_action', 'target', 'detail', 'test@test.com');
-        $this->assertTrue($result);
-    }
-
-    public function testSecurityLogReturnsBool(): void
-    {
-        $result = $this->repo->securityLog('test_event', 'detail', 'test@test.com');
-        $this->assertTrue($result);
-    }
-
-    public function testGetLogsReturnsArray(): void
-    {
-        $result = $this->repo->getLogs(10);
-        $this->assertIsArray($result);
-    }
-
-    public function testGetSecurityLogsReturnsArray(): void
-    {
-        $result = $this->repo->getSecurityLogs(10);
-        $this->assertIsArray($result);
-    }
-}
-```
-
-## Step 2: Run test to verify it fails
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/AuditRepositoryTest.php`
-Expected: FAIL with "Class 'App\Repository\AuditRepository' not found"
-
-## Step 3: Write minimal implementation
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace App\Repository;
-
-final class AuditRepository extends BaseRepository
-{
-    public function log(string $action, string $target = '', string $detail = '', string $actor = ''): bool
-    {
-        if ($actor === '' && function_exists('get_auth_user')) {
-            $actor = get_auth_user();
-        }
-        return $this->execute(
-            "INSERT INTO audit_log (id, action, target, detail, actor, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-            [\generate_uuid(), $action, $target, $detail, $actor]
-        );
-    }
-    
-    public function securityLog(string $event, string $detail = '', string $actor = ''): bool
-    {
-        if ($actor === '' && function_exists('get_auth_user')) {
-            $actor = get_auth_user();
-        }
-        return $this->execute(
-            "INSERT INTO security_log (id, event, detail, actor, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
-            [\generate_uuid(), $event, $detail, $actor]
-        );
-    }
-    
-    public function getLogs(int $limit = 100, string $actionFilter = ''): array
-    {
-        $sql = "SELECT * FROM audit_log";
-        $params = [];
-        if ($actionFilter !== '') {
-            $sql .= " WHERE action = ?";
-            $params[] = $actionFilter;
-        }
-        $sql .= " ORDER BY created_at DESC LIMIT ?";
-        $params[] = $limit;
-        return $this->fetchAll($sql, $params);
-    }
-    
-    public function getSecurityLogs(int $limit = 100): array
-    {
-        return $this->fetchAll(
-            "SELECT * FROM security_log ORDER BY created_at DESC LIMIT ?",
-            [$limit]
-        );
-    }
-}
-```
-
-## Step 4: Run test to verify it passes
-
-Run: `rtk php phpunit.phar tests/PHPUnit/Repository/AuditRepositoryTest.php`
-Expected: PASS (4 tests)
-
-## Step 5: Commit
+## Testing
 
 ```bash
-rtk git add src/Repository/AuditRepository.php tests/PHPUnit/Repository/AuditRepositoryTest.php
-rtk git commit --author="onoblanc <olivier.noblanc@dreets.gouv.fr>" -m "feat: AuditRepository (TDD)"
+php -l classes/migrations/schema_initial.php
 ```
+
+## Vérification
+
+Vérifier qu'aucun fichier hors `lib/auth.php`, `lib/html.php`, `lib/security.php` n'appelle encore les wrappers :
+
+```bash
+rg "get_auth_user\(|is_admin_user\(|require_admin\(|is_super_admin\(|is_admin_effective\(|is_form_owner\(|get_form_owners\(|get_owned_forms\(|get_admin_email\(|process_admin_request\(|approve_admin_request\(|reject_admin_request\(|remove_admin\(" --include="*.php" --glob="!lib/auth.php" --glob="!lib/html.php" --glob="!lib/security.php"
+```
+
+Doit retourner 0 résultat.
+
+## Report
+
+Écrire dans `.superpowers/sdd/task-4-report.md`

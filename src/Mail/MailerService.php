@@ -48,7 +48,7 @@ final class MailerService
     {
         $result = ['success' => false, 'error' => '', 'smtp_log' => '', 'status' => 'error'];
         $to = strtolower(trim($to));
-        $actor = get_auth_user();
+        $actor = App::auth()->getUser();
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'CLI';
 
         // Sécurité : valider l'adresse du destinataire

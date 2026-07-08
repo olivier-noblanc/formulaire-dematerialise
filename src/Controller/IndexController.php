@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Core\App;
+
 /**
  * Contrôleur de la page d'accueil (index.php).
  *
@@ -26,10 +28,10 @@ final class IndexController extends BaseController
         $pdo      = $this->db->getPdo();
         // v9.9.0 — is_admin_effective() = false si persona actif → l'admin
         // en mode persona voit la page d'accueil comme un user simple.
-        $is_admin = is_admin_effective();
+        $is_admin = App::auth()->isAdminEffective();
 
         // Récupérer les formulaires dont l'utilisateur est propriétaire
-        $owned_forms = get_owned_forms($user);
+        $owned_forms = App::auth()->getOwnedForms($user);
         $has_owned   = !empty($owned_forms);
 
         // Récupérer les formulaires actifs

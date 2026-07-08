@@ -129,7 +129,7 @@ function run_tests_advanced_admin(): void {
         $old_user = $_SERVER['HTTP_X_TEST_USER'];
         $_SERVER['HTTP_X_TEST_USER'] = $test_email;
 
-        $result = is_admin_user();
+        $result = \App\Core\App::auth()->isAdmin();
 
         // Cleanup
         $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$test_email]);
@@ -148,7 +148,7 @@ function run_tests_advanced_admin(): void {
         $old_user = $_SERVER['HTTP_X_TEST_USER'];
         $_SERVER['HTTP_X_TEST_USER'] = $test_email;
 
-        $result = is_admin_user();
+        $result = \App\Core\App::auth()->isAdmin();
 
         // Cleanup
         $_SERVER['HTTP_X_TEST_USER'] = $old_user;
@@ -178,23 +178,23 @@ function run_tests_advanced_admin(): void {
     });
 
     test('get_admin_email() returns super admin email', function() {
-        $email = get_admin_email();
+        $email = \App\Core\App::auth()->getAdminEmail();
         return (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL))
             ? true : "Invalid admin email: $email";
     });
 
     test('is_super_admin() only for main admin email', function() {
-        $admin_email = get_admin_email();
+        $admin_email = \App\Core\App::auth()->getAdminEmail();
 
         $old_user = $_SERVER['HTTP_X_TEST_USER'];
 
         // Test with admin email
         $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
-        $is_super = is_super_admin();
+        $is_super = \App\Core\App::auth()->isSuperAdmin();
 
         // Test with different email
         $_SERVER['HTTP_X_TEST_USER'] = 'not_super_admin@dreets.gouv.fr';
-        $not_super = is_super_admin();
+        $not_super = \App\Core\App::auth()->isSuperAdmin();
 
         $_SERVER['HTTP_X_TEST_USER'] = $old_user;
 
@@ -207,9 +207,9 @@ function run_tests_advanced_admin(): void {
 
         // require_admin calls test_json_response which does exit, so test in subprocess
         $output = shell_exec('/home/z/my-project/bin/php/bin/php -r '
-            . "'" . 'require_once ' . escapeshellarg('dirname(__DIR__) . '/test_bootstrap.php'') . ';'
+            . "'" . 'require_once ' . escapeshellarg("dirname(__DIR__) . '/test_bootstrap.php'") . ';'
             . '$_SERVER["HTTP_X_TEST_USER"] = "notadmin@dreets.gouv.fr";'
-            . 'require_admin();'
+            . '\App\Core\App::auth()->requireAdmin();'
             . "echo \"DID_NOT_EXIT\";'");
 
         $_SERVER['HTTP_X_TEST_USER'] = $old_user;

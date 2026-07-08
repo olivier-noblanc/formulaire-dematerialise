@@ -1,41 +1,77 @@
-# Task 10: SubmissionRepository — Report
+# Task 10 Report — Batch P2: 9 fichiers restants
 
-## What was implemented
+**Date**: 2026-07-08
+**Status**: SUCCESS
 
-`SubmissionRepository` extending `BaseRepository` with the following methods:
+## Summary
 
-- `findById(string $id): ?array` — single submission lookup
-- `findByForm(string $formId, ?string $status = null): array` — list by form, optional status filter
-- `findBySubmitter(string $email): array` — list by submitter email
-- `findPendingForValidator(string $email): array` — JOIN with tokens for active pending validations
-- `create(array $data): string` — insert with UUID generation
-- `updateStatus(string $id, string $status): bool` — status update
-- `getValidatorData(string $submissionId, ?string $stepId = null): array` — validator field data
-- `saveValidatorData(string $submissionId, string $fieldName, string $value, string $filledBy, ?string $stepId = null): void` — upsert via INSERT OR REPLACE
-- `deleteValidatorData(string $submissionId, string $fieldName): void` — delete validator field
+Refactored 9 page files to replace procedural wrapper calls with direct DI calls via `App::auth()`, `App::html()`, and `App::cache()`.
 
-### Deviations from brief
+## Changes per file
 
-The brief's SQL had column names that don't match the actual schema. Fixed:
-- `findPendingForValidator`: `t.email` (not `t.to_email`), `t.done_at` (not `t.used_at`), `t.expires_at` (not `t.expired_at`), ordered by `t.sent_at`
-- `saveValidatorData`: Added `field_label` (NOT NULL in schema), uses `filled_by='validator'` and `filled_by_email` columns to match actual table definition
+### 1. `pages/my_submissions.php`
+- Added `use App\Core\App;`
+- `get_auth_user()` → `App::auth()->getUser()` (line 5)
+- `t_jargon()` → `App::html()->tJargon()` (line 44, inside `simplify_form_label()`)
+- `display_user()` → `App::html()->displayUser()` (lines 141, 144, 295, 313)
 
-## TDD Evidence
+### 2. `pages/my_validations.php`
+- Added `use App\Core\App;`
+- `get_auth_user()` → `App::auth()->getUser()` (line 5)
+- `t_jargon()` → `App::html()->tJargon()` (lines 351, 352)
 
-**RED**: Tests run before implementation — 3 errors, "Class App\Repository\SubmissionRepository not found"
-**GREEN**: Tests run after implementation — 3 tests, 5 assertions, OK
+### 3. `pages/validate.php`
+- Already had `use App\Core\App;`
+- `t_jargon()` → `App::html()->tJargon()` (lines 61, 372)
+- `get_auth_user()` → `App::auth()->getUser()` (line 86)
+- `get_file_icon()` → `App::html()->getFileIcon()` (line 403)
+- `format_file_size()` → `App::html()->formatFileSize()` (line 403)
 
-Full suite: 528 tests, 816 assertions, 0 failures.
+### 4. `pages/form_preview.php`
+- Added `use App\Core\App;`
+- `require_admin()` → `App::auth()->requireAdmin()` (line 5)
+- `get_auth_user()` → `App::auth()->getUser()` (line 41)
 
-## Files changed
+### 5. `pages/docs.php`
+- Added `use App\Core\App;`
+- `get_auth_user()` → `App::auth()->getUser()` (line 34)
+- `is_admin_effective()` → `App::auth()->isAdminEffective()` (line 36)
+- `get_latest_version()` → `App::cache()->getLatestVersion()` (line 57)
 
-- `src/Repository/SubmissionRepository.php` (created)
-- `tests/PHPUnit/repository/SubmissionRepositoryTest.php` (created)
+### 6. `pages/changelog.php`
+- Added `use App\Core\App;`
+- `get_latest_version()` → `App::cache()->getLatestVersion()` (line 135)
+- `t_jargon()` → `App::html()->tJargon()` (lines 147, 148, 166)
 
-## Commit
+### 7. `pages/confirm_action.php`
+- Already had `use App\Core\App;`
+- `display_user()` → `App::html()->displayUser()` (lines 112, 140)
 
-`59443f8` — `feat: SubmissionRepository (TDD)`
+### 8. `pages/my_forms.php`
+- Added `use App\Core\App;`
+- `get_auth_user()` → `App::auth()->getUser()` (line 16)
+- `get_owned_forms()` → `App::auth()->getOwnedForms()` (line 21)
+- `t_jargon()` → `App::html()->tJargon()` (lines 41, 44)
 
-## Concerns
+### 9. `pages/persona.php`
+- Added `use App\Core\App;`
+- `require_admin()` → `App::auth()->requireAdmin()` (line 19)
+- `get_auth_user()` → `App::auth()->getUser()` (line 52)
 
-None. All 9 public methods implemented per the task spec. Schema deviations were necessary to match the actual database columns.
+## Lint results
+
+All 9 files pass `php -l` with no errors.
+
+## Wrappers fully migrated
+
+| Wrapper | Count | Status |
+|---------|-------|--------|
+| `get_auth_user()` | 7 | All migrated |
+| `t_jargon()` | 9 | All migrated |
+| `display_user()` | 6 | All migrated |
+| `require_admin()` | 2 | All migrated |
+| `is_admin_effective()` | 1 | All migrated |
+| `get_owned_forms()` | 1 | All migrated |
+| `get_file_icon()` | 1 | All migrated |
+| `format_file_size()` | 1 | All migrated |
+| `get_latest_version()` | 2 | All migrated |

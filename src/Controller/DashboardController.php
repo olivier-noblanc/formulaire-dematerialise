@@ -26,7 +26,7 @@ final class DashboardController extends BaseController
         require_once __DIR__ . '/../../lib/render_dashboard.php';
 
         // Sécurité : le dashboard est réservé aux administrateurs
-        require_admin();
+        App::auth()->requireAdmin();
 
         $pdo     = $this->db->getPdo();
         $filtre  = $_GET['statut'] ?? 'tous';
@@ -80,7 +80,7 @@ final class DashboardController extends BaseController
 
         // Régénération de token (admin)
         $regen_msg = '';
-        if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && is_admin_user()) {
+        if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && App::auth()->isAdmin()) {
             $this->security->requireCsrf();
             $token_id = trim($_POST['token_id'] ?? '');
             // Sécurité (S-07) : valider le format du token_id
@@ -102,7 +102,7 @@ final class DashboardController extends BaseController
 
         // Rappel manuel (admin)
         $remind_msg = '';
-        if (isset($_POST['action']) && $_POST['action'] === 'remind_one' && is_admin_user()) {
+        if (isset($_POST['action']) && $_POST['action'] === 'remind_one' && App::auth()->isAdmin()) {
             $this->security->requireCsrf();
             $token_id = trim($_POST['token_id'] ?? '');
             // Sécurité (S-07) : valider le format du token_id
@@ -144,7 +144,7 @@ final class DashboardController extends BaseController
                 $sub_stmt = $pdo->prepare("SELECT submitted_by FROM submissions WHERE id = ?");
                 $sub_stmt->execute([$sub_id]);
                 $sub_owner = $sub_stmt->fetchColumn();
-                if (is_admin_user() || $sub_owner === $actor) {
+                if (App::auth()->isAdmin() || $sub_owner === $actor) {
                     $result     = cancel_submission((string) $sub_id, $actor);
                     $cancel_msg = $result['message'];
                     /** @phpstan-ignore-next-line if.alwaysTrue */

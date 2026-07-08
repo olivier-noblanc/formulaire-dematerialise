@@ -49,7 +49,7 @@ function render_submission_view_workflow_diagram(array $workflow_steps, string $
         $validators_html = '';
         if (!empty($tokens)) {
             foreach ($tokens as $tok) {
-                $email        = display_user((string)($tok['email'] ?? ''));  // v10.0.2 — display_user au lieu de h()
+                $email        = \App\Core\App::html()->displayUser((string)($tok['email'] ?? ''));
                 $relance      = (int)($tok['relance_count'] ?? 0);
                 $done         = !empty($tok['done_at']);
                 $is_current   = ($ws['step_status'] ?? '') === 'current';
@@ -126,7 +126,7 @@ function render_submission_view_workflow_actions(array $all_tokens, bool $is_adm
             continue;
         }
         $tok_id  = h((string)($tok['id'] ?? ''));
-        $email   = display_user((string)($tok['email'] ?? ''));  // v10.0.2 — display_user
+        $email   = \App\Core\App::html()->displayUser((string)($tok['email'] ?? ''));
         $csrf    = \App\Core\App::security()->csrfField();
 
         $forms_html .= <<<HTML
@@ -185,7 +185,7 @@ function render_submission_view_delegation_form(array $all_tokens, string $user,
     foreach ($my_pending as $mpt) {
         $id    = h((string)($mpt['id'] ?? ''));
         $ordre = (int)($mpt['ordre'] ?? 0);
-        $email = display_user((string)($mpt['email'] ?? ''));  // v10.0.2 — display_user
+        $email = \App\Core\App::html()->displayUser((string)($mpt['email'] ?? ''));
         $options_html .= "<option value=\"{$id}\">Étape {$ordre} — {$email}</option>";
     }
 
@@ -306,7 +306,7 @@ function render_submission_view_validator_data(array $validator_data_rows, array
 
         $audit_parts   = ['Rempli'];
         if ($by_email !== '') {
-            $audit_parts[] = ' par ' . display_user($by_email);
+            $audit_parts[] = ' par ' . \App\Core\App::html()->displayUser($by_email);
         }
         if ($step_lab !== '') {
             $audit_parts[] = ' — étape : ' . h(t_jargon($step_lab));
@@ -389,7 +389,7 @@ function render_submission_view_validation_history(array $data): string
         $is_valid = ($v['action'] ?? '') === 'valider';
         $icon = $is_valid ? '✅' : '❌';
         $step_label = h((string)($v['step_label'] ?? ''));
-        $email_display = display_user((string)($v['email'] ?? ''));
+        $email_display = \App\Core\App::html()->displayUser((string)($v['email'] ?? ''));
         $color = $is_valid ? '#1a6b3c' : '#c0392b';
         $action_label = $is_valid ? 'Validé' : 'Refusé';
         $date = h((string)($v['date'] ?? ''));
@@ -399,7 +399,7 @@ function render_submission_view_validation_history(array $data): string
         $done_by_html = '';
         $done_by = (string)($v['done_by'] ?? '');
         if ($done_by !== '' && strcasecmp($done_by, (string)($v['email'] ?? '')) !== 0) {
-            $done_by_display = display_user($done_by);
+            $done_by_display = \App\Core\App::html()->displayUser($done_by);
             $done_by_html = <<<HTML
           <div class="val-done-by"><span aria-hidden="true">👤</span> Action effectuée par : {$done_by_display}</div>
 HTML;
@@ -471,7 +471,7 @@ function render_submission_view_remind_history(array $all_tokens, array $submiss
         if (!empty($pending_tokens)) {
             $rows = '';
             foreach ($pending_tokens as $pt) {
-                $email_display = display_user((string)($pt['email'] ?? ''));
+                $email_display = \App\Core\App::html()->displayUser((string)($pt['email'] ?? ''));
                 $relance = (int)($pt['relance_count'] ?? 0);
 
                 // Date de notification initiale (sent_at)
@@ -528,7 +528,7 @@ HTML;
         foreach ($submission_reminds as $sr) {
             $detail = h((string)($sr['detail'] ?? ''));
             $date   = h(date('d/m/Y à H:i', strtotime((string)($sr['created_at'] ?? 'now'))));
-            $actor  = display_user((string)($sr['actor'] ?? ''));
+            $actor  = \App\Core\App::html()->displayUser((string)($sr['actor'] ?? ''));
             $rows .= <<<HTML
       <div class="val-item">
         <div class="val-icon" aria-hidden="true">🔔</div>
@@ -587,10 +587,10 @@ function render_submission_view_attachments(array $attachments): string
     $count = count($attachments);
     $rows = '';
     foreach ($attachments as $att) {
-        $icon         = get_file_icon((string)($att['mime_type'] ?? ''));
+        $icon         = \App\Core\App::html()->getFileIcon((string)($att['mime_type'] ?? ''));
         $name         = h((string)($att['original_name'] ?? ''));
         $mime         = h((string)($att['mime_type'] ?? ''));
-        $size         = format_file_size((int)($att['file_size'] ?? 0));
+        $size         = \App\Core\App::html()->formatFileSize((int)($att['file_size'] ?? 0));
         $date         = h(date('d/m/Y H:i', strtotime((string)($att['uploaded_at'] ?? 'now'))));
         $dl_url       = h('index.php?p=download&id=' . urlencode((string)($att['id'] ?? '')));
 

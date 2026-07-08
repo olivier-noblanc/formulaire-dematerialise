@@ -228,7 +228,7 @@ test('Runtime HTTP my_submissions.php — 200 OK, pas de "Ce script ne peut", pa
 test('Runtime HTTP changelog.php — 200 OK, contient "5.25.3", "En résumé", au moins 40 versions', function() {
     // S4-CHANGELOG a ajouté la section "En résumé" en haut de page. La version la plus
     // récente est 5.25.3. Le parser doit afficher >= 40 versions (48 attendues).
-    $admin = get_admin_email();
+    $admin = \App\Core\App::auth()->getAdminEmail();
     if (empty($admin)) return 'admin_email non configuré en DB test';
     $markers = _run_http_subprocess(dirname(__DIR__) . '/changelog.php', $admin);
     $errors = [];
@@ -268,7 +268,7 @@ test('Runtime HTTP dashboard.php (admin) — "Actions avancées" visible (refont
     // S4-UI / Action 2 (VÉTO 2 M. Robert) : le menu "Plus d'actions" caché dans
     // <details> a été remplacé par <div class="admin-actions-advanced"> visible.
     // La chaîne "Actions avancées" doit apparaître dans le HTML rendu du dashboard admin.
-    $admin = get_admin_email();
+    $admin = \App\Core\App::auth()->getAdminEmail();
     if (empty($admin)) return 'admin_email non configuré en DB test';
     $markers = _run_http_subprocess(dirname(__DIR__) . '/dashboard.php', $admin);
     $errors = [];

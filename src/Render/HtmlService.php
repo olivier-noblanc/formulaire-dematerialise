@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Contract\HtmlInterface;
+use App\Core\App;
 
 /**
  * Service de rendu HTML — échappement, icônes, jargon.
@@ -122,7 +123,7 @@ final class HtmlService implements HtmlInterface
         if ($force_email) return $this->h($email);
 
         if ($current_user === null) {
-            $current_user = function_exists('get_auth_user') ? get_auth_user() : '';
+            $current_user = App::auth()->getUser() ?: '';
         }
 
         // Cas 1 : email = user courant → "Vous"
@@ -142,6 +143,62 @@ final class HtmlService implements HtmlInterface
 
         // Cas 3 : email complet
         return $this->h($email);
+    }
+
+    /**
+     * Affiche le "local part" d'un email (sans @domaine).
+     */
+    public function displayUserShort(string $email): string
+    {
+        if ($email === '') return '';
+        $at_pos = strpos($email, '@');
+        if ($at_pos !== false) {
+            return $this->h(substr($email, 0, $at_pos));
+        }
+        if (str_contains($email, '\\')) {
+            $parts = explode('\\', $email);
+            return $this->h($parts[1] ?? $parts[0]);
+        }
+        return $this->h($email);
+    }
+
+    /**
+     * Génère la pagination HTML.
+     */
+    public function renderPagination(int $page, int $total_pages, string $base_url): string
+    {
+        if ($total_pages <= 1) return '';
+        $html = '<div class="pagination" style="display:flex;gap:.5rem;align-items:center;margin:1.5rem 0;flex-wrap:wrap;">';
+        $sep = (strpos($base_url, '?') !== false) ? '&' : '?';
+        if ($page > 1) {
+            $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page - 1)) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .75rem;">← Précédent</a>';
+        }
+        $html .= '<span style="font-size:.85rem;color:var(--c-text-secondary);">Page ' . $page . ' / ' . $total_pages . '</span>';
+        if ($page < $total_pages) {
+            $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page + 1)) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .75rem;">Suivant →</a>';
+        }
+        $html .= '</div>';
+        return $html;
+    }
+
+    /**
+     * Construit une URL en propageant automatiquement ?persona_token si présent.
+     */
+    public function buildUrl(string $url): string
+    {
+        $token = isset($_GET['persona_token']) ? (string)$_GET['persona_token'] : '';
+        if ($token === '') return $url;
+
+        $anchor = '';
+        $url_without_anchor = $url;
+        $anchor_pos = strpos($url, '#');
+        if ($anchor_pos !== false) {
+            $anchor = substr($url, $anchor_pos);
+            $url_without_anchor = substr($url, 0, $anchor_pos);
+        }
+
+        $sep = str_contains($url_without_anchor, '?') ? '&' : '?';
+        return $url_without_anchor . $sep . 'persona_token=' . urlencode($token) . $anchor;
     }
 
     /**
