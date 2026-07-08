@@ -73,11 +73,6 @@ final class AttachmentService
      */
     public function handleFileUpload(array $file, string $submissionId, string $fieldName): array
     {
-        // Sécurité (S-16) : limiter le nombre d'uploads par IP
-        if (!rate_limit_check('file_upload', 10, 60)) {
-            return ['success' => false, 'message' => 'Trop de téléchargements en peu de temps. Veuillez patienter.', 'attachment_id' => null];
-        }
-
         // Vérifier les erreurs d'upload
         if ($file['error'] !== UPLOAD_ERR_OK) {
             $errors = [

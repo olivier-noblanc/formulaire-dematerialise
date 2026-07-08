@@ -105,12 +105,6 @@ test('alert_check.php CLI : alerte J-3 envoyée et loggée avec UUID (T-01/P-01/
         ->execute([$sub_id, $onb_id, $data, 'test@dreets.gouv.fr']);
     // Nettoyer tout alert_log préexistant pour cette règle (au cas où)
     $pdo->prepare("DELETE FROM alert_log WHERE rule_id = ?")->execute([$rule_id]);
-    // Nettoyer les rate_limits pour send_mail:unknown (CLI) pour éviter que le
-    // subprocess (qui appelle send_mail pour chaque alerte) ne soit bloqué par
-    // le rate limit (20/60s) à cause d'entrées accumulées lors de précédents runs.
-    // ⚠ Sans ce nettoyage, le test devient flaky : le compteur dépasse 20 et
-    // send_mail() retourne false → aucune alerte n'est loggée → test échoue.
-    $pdo->exec("DELETE FROM rate_limits WHERE action_key = 'send_mail' AND ip = 'unknown'");
     // Construire la commande PHP subprocess :
     // - réutilise binaire + ini courants (extensions chargées)
     // - -d session.save_path pour éviter l'échec session_start() en sandbox
@@ -170,9 +164,6 @@ test('alert_check.php CLI : alerte J-3 envoyée et loggée avec UUID (T-01/P-01/
     $pdo->prepare("DELETE FROM alert_log WHERE rule_id = ?")->execute([$rule_id]);
     $pdo->prepare("DELETE FROM alert_rules WHERE id = ?")->execute([$rule_id]);
     $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$sub_id]);
-    // Nettoyer les rate_limits send_mail:unknown pour ne pas impacter les tests
-    // send_mail() des sections précédentes lors du prochain run de test_unit.php.
-    $pdo->exec("DELETE FROM rate_limits WHERE action_key = 'send_mail' AND ip = 'unknown'");
     return empty($errors) ? true : implode(' | ', $errors);
 });
 

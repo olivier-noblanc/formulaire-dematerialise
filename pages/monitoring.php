@@ -233,13 +233,8 @@ if ($audit_filters['log_date_fin'] !== '') {
 }
 $audit_where_sql = $audit_where ? ('WHERE ' . implode(' AND ', $audit_where)) : '';
 
-// Export CSV du journal filtré — sécurité (S-16) : rate limiting 10/60s par IP
+// Export CSV du journal filtré
 if (isset($_GET['export_audit']) && $_GET['export_audit'] === '1') {
-    if (!rate_limit_check('audit_csv_export', 10, 60)) {
-        render_error_page(429, 'Trop de requêtes',
-            'Vous avez effectué trop d\'exports du journal d\'audit en peu de temps.',
-            'Veuillez patienter quelques instants avant de réessayer.');
-    }
     App::audit()->log('audit_export', 'audit_log', 'Export CSV du journal d\'audit filtré');
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="audit_log_' . date('Ymd_His') . '.csv"');

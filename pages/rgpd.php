@@ -30,95 +30,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Export des données d'un utilisateur
     if ($action === 'export_user') {
-        if (!rate_limit_check('rgpd_export', 5, 60)) {
-            $error_msg = 'Trop de demandes d\'export. Veuillez patienter.';
+        $email = validate_email($_POST['export_email'] ?? '');
+        if (empty($email)) {
+            $error_msg = 'Adresse email invalide.';
         } else {
-            $email = validate_email($_POST['export_email'] ?? '');
-            if (empty($email)) {
-                $error_msg = 'Adresse email invalide.';
+            $data = rgpd_export_user_data($email);
+
+            // P2-B : Inclure les données validator (filled_by='validator')
+            // (1) Données validator remplies PAR l'agent (filled_by_email)
+            $vd_filled_stmt = $pdo->prepare(
+                "SELECT submission_id, field_name, field_label, field_type, value,\n"
+                . "       filled_at, step_id, step_label\n"
+                . "FROM submission_validator_data\n"
+                . "WHERE filled_by_email = ?\n"
+                . "ORDER BY filled_at DESC, field_name"
+            );
+            $vd_filled_stmt->execute([$email]);
+            $data['validator_data_filled'] = $vd_filled_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // (2) Données validator associées aux soumissions de l'agent (en tant que demandeur)
+            $vd_on_subs_stmt = $pdo->prepare(
+                "SELECT svd.submission_id, svd.field_name, svd.field_label, svd.field_type,\n"
+                . "       svd.value, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email\n"
+                . "FROM submission_validator_data svd\n"
+                . "JOIN submissions s ON s.id = svd.submission_id\n"
+                . "WHERE s.submitted_by = ?\n"
+                . "ORDER BY svd.submission_id, svd.filled_at, svd.field_name"
+            );
+            $vd_on_subs_stmt->execute([$email]);
+            $data['validator_data_on_submissions'] = $vd_on_subs_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($data['submissions'])
+                && empty($data['validations'])
+                && empty($data['validator_data_filled'])
+                && empty($data['validator_data_on_submissions'])) {
+                $info_msg = 'Aucune donnée trouvée pour ' . h($email) . '.';
             } else {
-                $data = rgpd_export_user_data($email);
-
-                // P2-B : Inclure les données validator (filled_by='validator')
-                // (1) Données validator remplies PAR l'agent (filled_by_email)
-                $vd_filled_stmt = $pdo->prepare(
-                    "SELECT submission_id, field_name, field_label, field_type, value,\n"
-                    . "       filled_at, step_id, step_label\n"
-                    . "FROM submission_validator_data\n"
-                    . "WHERE filled_by_email = ?\n"
-                    . "ORDER BY filled_at DESC, field_name"
-                );
-                $vd_filled_stmt->execute([$email]);
-                $data['validator_data_filled'] = $vd_filled_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                // (2) Données validator associées aux soumissions de l'agent (en tant que demandeur)
-                $vd_on_subs_stmt = $pdo->prepare(
-                    "SELECT svd.submission_id, svd.field_name, svd.field_label, svd.field_type,\n"
-                    . "       svd.value, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email\n"
-                    . "FROM submission_validator_data svd\n"
-                    . "JOIN submissions s ON s.id = svd.submission_id\n"
-                    . "WHERE s.submitted_by = ?\n"
-                    . "ORDER BY svd.submission_id, svd.filled_at, svd.field_name"
-                );
-                $vd_on_subs_stmt->execute([$email]);
-                $data['validator_data_on_submissions'] = $vd_on_subs_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                if (empty($data['submissions'])
-                    && empty($data['validations'])
-                    && empty($data['validator_data_filled'])
-                    && empty($data['validator_data_on_submissions'])) {
-                    $info_msg = 'Aucune donnée trouvée pour ' . h($email) . '.';
-                } else {
-                    App::audit()->log('rgpd_export', 'user:' . $email, 'Export des données demandé');
-                    header('Content-Type: application/json; charset=utf-8');
-                    header('Content-Disposition: attachment; filename="rgpd_export_' . str_replace(['@', '.'], '_', $email) . '_' . date('Ymd_His') . '.json"');
-                    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                    exit;
-                }
+                App::audit()->log('rgpd_export', 'user:' . $email, 'Export des données demandé');
+                header('Content-Type: application/json; charset=utf-8');
+                header('Content-Disposition: attachment; filename="rgpd_export_' . str_replace(['@', '.'], '_', $email) . '_' . date('Ymd_His') . '.json"');
+                echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                exit;
             }
         }
     }
 
     // Suppression des données d'un utilisateur
     if ($action === 'delete_user') {
-        if (!rate_limit_check('rgpd_delete', 3, 300)) {
-            $error_msg = 'Trop de demandes de suppression. Veuillez patienter.';
+        $email = validate_email($_POST['delete_email'] ?? '');
+        $confirmed = !empty($_POST['confirmed']);
+        if (empty($email)) {
+            $error_msg = 'Adresse email invalide.';
+        } elseif (!$confirmed) {
+            $error_msg = 'Veuillez confirmer la suppression en cochant la case.';
+        } elseif ($email === get_auth_user()) {
+            $error_msg = 'Vous ne pouvez pas supprimer vos propres données.';
         } else {
-            $email = validate_email($_POST['delete_email'] ?? '');
-            $confirmed = !empty($_POST['confirmed']);
-            if (empty($email)) {
-                $error_msg = 'Adresse email invalide.';
-            } elseif (!$confirmed) {
-                $error_msg = 'Veuillez confirmer la suppression en cochant la case.';
-            } elseif ($email === get_auth_user()) {
-                $error_msg = 'Vous ne pouvez pas supprimer vos propres données.';
+            // P2-B : Purger les données validator (filled_by='validator')
+            // La FK submission_validator_data.submission_id est ON DELETE CASCADE,
+            // MAIS rgpd_delete_user_data() anonymise les soumissions via UPDATE
+            // (pas DELETE) — donc il faut explicitement supprimer ces données
+            // AVANT l'anonymisation (sinon on perd le lien submitted_by).
+            $pdo->exec('PRAGMA foreign_keys = ON');
+
+            // (1) Supprimer les données validator associées aux soumissions de l'agent
+            $pdo->prepare(
+                "DELETE FROM submission_validator_data\n"
+                . "WHERE submission_id IN (SELECT id FROM submissions WHERE submitted_by = ?)"
+            )->execute([$email]);
+
+            // (2) Purger les données validator remplies PAR l'agent (filled_by_email)
+            //     — l'agent peut avoir validé des soumissions d'autres agents
+            $pdo->prepare("DELETE FROM submission_validator_data WHERE filled_by_email = ?")
+                ->execute([$email]);
+
+            // (3) Appeler la fonction helpers standard (anonymise soumissions, tokens, etc.)
+            $result = rgpd_delete_user_data($email);
+            if ($result) {
+                App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur anonymisées');
+                $success_msg = 'Données de ' . h($email) . ' supprimées (anonymisées).';
             } else {
-                // P2-B : Purger les données validator (filled_by='validator')
-                // La FK submission_validator_data.submission_id est ON DELETE CASCADE,
-                // MAIS rgpd_delete_user_data() anonymise les soumissions via UPDATE
-                // (pas DELETE) — donc il faut explicitement supprimer ces données
-                // AVANT l'anonymisation (sinon on perd le lien submitted_by).
-                $pdo->exec('PRAGMA foreign_keys = ON');
-
-                // (1) Supprimer les données validator associées aux soumissions de l'agent
-                $pdo->prepare(
-                    "DELETE FROM submission_validator_data\n"
-                    . "WHERE submission_id IN (SELECT id FROM submissions WHERE submitted_by = ?)"
-                )->execute([$email]);
-
-                // (2) Purger les données validator remplies PAR l'agent (filled_by_email)
-                //     — l'agent peut avoir validé des soumissions d'autres agents
-                $pdo->prepare("DELETE FROM submission_validator_data WHERE filled_by_email = ?")
-                    ->execute([$email]);
-
-                // (3) Appeler la fonction helpers standard (anonymise soumissions, tokens, etc.)
-                $result = rgpd_delete_user_data($email);
-                if ($result) {
-                    App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur anonymisées');
-                    $success_msg = 'Données de ' . h($email) . ' supprimées (anonymisées).';
-                } else {
-                    $error_msg = 'Erreur lors de la suppression des données.';
-                }
+                $error_msg = 'Erreur lors de la suppression des données.';
             }
         }
     }

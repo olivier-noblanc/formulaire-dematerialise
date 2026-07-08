@@ -1,5 +1,25 @@
 # Changelog — CircuitDémat
 
+## [10.3.0] — 2026-07-08
+_Résumé : Interfaces complétées + rate limiting supprimé (IIS) + SecurityService injecte HtmlService._
+
+### 🔌 Interfaces complétées
+
+- **SecurityInterface** : ajout `csrfField()`, `requireCsrf()` ; suppression `rateLimitCheck()`
+- **AuthInterface** : ajout `isAdminEffective()`, `getAdminEmail()`, `getEmailDomain()`, `isFormOwner()`, `getFormOwners()`, `getOwnedForms()`
+
+### 🔒 Rate limiting supprimé
+
+**Problème** : le rate limiting PHP (table `rate_limits`, 58+ appels) dupliquait ce qu'IIS gère nativement.
+
+**Fix** : suppression complète de `rateLimitCheck()` de SecurityService, de `rate_limit_check()` de `lib/security.php`, de la table `rate_limits` du schema, et de tous les appels dans controllers/pages/lib. IIS est l'autorité pour le rate limiting.
+
+### 🏗 SecurityService refactored
+
+- Injection de `HtmlService` pour `h()` au lieu de la fonction globale
+- Suppression de la dépendance `Database` (plus de `get_pdo()`)
+- `lib/html.php` : `h()` délègue maintenant à `App::html()->h()`
+
 ## [10.2.0] — 2026-07-06
 _Résumé : Refactoring architecture + bugs pré-existants corrigés + tests + docs._
 

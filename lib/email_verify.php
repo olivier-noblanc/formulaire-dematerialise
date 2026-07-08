@@ -25,9 +25,6 @@ function verify_email_ldap(string $email): array {
  * @return array<int, array{email: string, cn: string}>
  */
 function ldap_suggest(string $query = '', int $limit = 100): array {
-    if (!rate_limit_check('ldap_suggest', 20, 60)) {
-        return [];
-    }
     return \App\Core\App::emailVerify()->ldapSuggest($query, $limit);
 }
 

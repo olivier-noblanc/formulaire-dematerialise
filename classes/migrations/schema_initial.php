@@ -233,17 +233,6 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
         )
     ");
 
-    // Table de rate limiting (S-15)
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS rate_limits (
-            id TEXT PRIMARY KEY NOT NULL,
-            action_key TEXT NOT NULL,
-            ip TEXT NOT NULL,
-            attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ");
-    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_rate_limits_lookup ON rate_limits(action_key, ip, attempted_at)");
-
     // Table submission_validator_data (v13/v14 — champs validateur)
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS submission_validator_data (

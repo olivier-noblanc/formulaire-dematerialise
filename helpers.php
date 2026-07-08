@@ -93,11 +93,16 @@ require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/settings.php';
 require_once __DIR__ . '/lib/cache.php';
 
-// ── 6. Sécurité (headers + rate limit + CSRF) ──
+// ── 6. Sécurité (headers + CSRF) ──
 require_once __DIR__ . '/lib/security.php';
 
 // Enregistrer SecurityService AVANT d'appeler send_security_headers()
-$_app->set(\App\Security\SecurityService::class, new \App\Security\SecurityService());
+// HtmlService doit être enregistré avant (SecurityService en dépend)
+if (!$_app->has(\App\Render\HtmlService::class)) {
+    $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
+}
+$_html_svc = $_app->get(\App\Render\HtmlService::class);
+$_app->set(\App\Security\SecurityService::class, new \App\Security\SecurityService($_html_svc));
 
 // Envoyer les headers de sécurité le plus tôt possible
 if (php_sapi_name() !== 'cli') {

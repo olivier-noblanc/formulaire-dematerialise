@@ -69,10 +69,6 @@ function _resolve_card_group(): string {
 
 /** Handler : add_form — créer un formulaire */
 function handle_admin_action_add_form(PDO $pdo): array {
-    // Sécurité (S-16) : limiter les créations de formulaires
-    if (!rate_limit_check('admin_form_create', 10, 60)) {
-        return ['error' => 'Trop de requêtes. Veuillez patienter avant de réessayer.'];
-    }
     $label = trim($_POST['label'] ?? '');
     $description = trim($_POST['description'] ?? '');
     if (empty($label)) {

@@ -56,16 +56,8 @@ final class DashboardController extends BaseController
         $form_f = is_scalar($form_f) ? (string) $form_f : '';
         $search = is_scalar($search) ? (string) $search : '';
 
-        // Export CSV — Sécurité (S-16) : limiter les exports CSV par IP
+        // Export CSV
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-            if (!$this->security->rateLimitCheck('csv_export', 10, 60)) {
-                render_error_page(
-                    429,
-                    'Trop de requêtes',
-                    'Vous avez effectué trop d\'exports en peu de temps.',
-                    'Veuillez patienter quelques instants avant de réessayer.'
-                );
-            }
             $options = [];
             if ($form_f) {
                 $f_stmt = $pdo->prepare("SELECT id FROM forms WHERE slug = ?");

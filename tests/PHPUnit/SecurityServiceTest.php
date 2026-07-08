@@ -5,6 +5,7 @@ namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
 use App\Security\SecurityService;
+use App\Render\HtmlService;
 
 final class SecurityServiceTest extends TestCase
 {
@@ -12,7 +13,7 @@ final class SecurityServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->service = new SecurityService();
+        $this->service = new SecurityService(new HtmlService());
         // Start a session for CSRF tests
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

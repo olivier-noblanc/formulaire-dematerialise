@@ -37,7 +37,7 @@ test('Aucun INTEGER PRIMARY KEY AUTOINCREMENT', function() {
 
 test('Toutes les tables existent', function() {
     $pdo = get_pdo();
-    $required = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens', 'admins', 'admin_requests', 'settings', 'form_fields', 'audit_log', 'alert_rules', 'alert_log', 'form_owners', 'lazy_cron', 'rate_limits', 'delegations', 'attachments'];
+    $required = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens', 'admins', 'admin_requests', 'settings', 'form_fields', 'audit_log', 'alert_rules', 'alert_log', 'form_owners', 'lazy_cron', 'delegations', 'attachments'];
     $existing = $pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN);
     $missing = array_diff($required, $existing);
     return empty($missing) ? true : 'Tables manquantes: ' . implode(', ', $missing);

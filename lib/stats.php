@@ -23,10 +23,6 @@ use App\Core\App;
  * @return array<string, mixed>
  */
 function search_submissions(string $query, array $filters = []): array {
-    // Sécurité (S-16) : limiter le nombre de recherches par IP
-    if (!rate_limit_check('search', 30, 60)) {
-        return [];
-    }
     $service = new StatsService(App::db());
     return $service->searchSubmissions($query, $filters);
 }
