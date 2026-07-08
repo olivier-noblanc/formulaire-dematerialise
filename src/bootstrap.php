@@ -44,6 +44,7 @@ use App\Repository\TokenRepository;
 use App\Validation\ValidationService;
 use App\Export\ExportService;
 use App\Email\EmailVerificationService;
+use App\Rgpd\RgpdService;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -80,6 +81,7 @@ $app->set(PersonaService::class, new PersonaService($db));
 $settings = $app->get(SettingsService::class);
 $mail = new MailService($db, $settings);
 $app->set(MailService::class, $mail);
+$app->get(AuthService::class)->setMailer($mail);
 
 $fields = $app->get(FieldService::class);
 $conditions = $app->get(ConditionEvaluator::class);
@@ -117,6 +119,9 @@ $app->set(ExportService::class, new ExportService($db, $app->get(AuthService::cl
 
 // Email verification service
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
+
+// RGPD service
+$app->set(RgpdService::class, new RgpdService($db));
 
 // Note : les méthodes statiques App::db(), App::config(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`
