@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 use App\Stats\StatsService;
-use App\Core\Database;
+use App\Core\App;
 
 // ── FULL-TEXT SEARCH ────────────────────────────────────────
 
@@ -27,7 +27,7 @@ function search_submissions(string $query, array $filters = []): array {
     if (!rate_limit_check('search', 30, 60)) {
         return [];
     }
-    $service = new StatsService(new Database());
+    $service = new StatsService(App::db());
     return $service->searchSubmissions($query, $filters);
 }
 
@@ -38,7 +38,7 @@ function search_submissions(string $query, array $filters = []): array {
  * @return array<string, mixed>
  */
 function get_stats_by_period(string $period = 'month', int $limit = 12): array {
-    $service = new StatsService(new Database());
+    $service = new StatsService(App::db());
     return $service->getStatsByPeriod($period, $limit);
 }
 
@@ -47,6 +47,6 @@ function get_stats_by_period(string $period = 'month', int $limit = 12): array {
  * @return array<string, mixed>
  */
 function get_global_stats(): array {
-    $service = new StatsService(new Database());
+    $service = new StatsService(App::db());
     return $service->getGlobalStats();
 }

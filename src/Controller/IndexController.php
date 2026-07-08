@@ -18,8 +18,6 @@ final class IndexController extends BaseController
      */
     public function handle(): void
     {
-        $this->initServices();
-
         // Chargement du module de rendu spécifique à la page d'accueil
         // (déclare les fonctions render_index_*() et index_page_css()).
         require_once __DIR__ . '/../../lib/render_index.php';

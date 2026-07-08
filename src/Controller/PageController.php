@@ -20,8 +20,6 @@ final class PageController extends BaseController
 
     public function handle(): void
     {
-        $this->initServices();
-        
         // Rendre les services accessibles globalement pour les fonctions façade
         $GLOBALS['_app_services'] = [
             'db' => $this->db,
