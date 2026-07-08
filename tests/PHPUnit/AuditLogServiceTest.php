@@ -103,9 +103,9 @@ final class AuditLogServiceTest extends TestCase
     public function testAppLogWrapperDelegatesToService(): void
     {
         $marker = 'wrapper_' . uniqid();
-        app_log('wrapper_test', 'target:' . $marker, 'wrapper detail');
+        \App\Core\App::audit()->log('wrapper_test', 'target:' . $marker, 'wrapper detail');
 
-        $logs = get_audit_logs(5, 'wrapper_test');
+        $logs = \App\Core\App::audit()->getLogs(5, 'wrapper_test');
         $found = false;
         foreach ($logs as $log) {
             if (str_contains((string)$log['target'], $marker)) {
@@ -119,9 +119,9 @@ final class AuditLogServiceTest extends TestCase
     public function testSecurityLogWrapperDelegatesToService(): void
     {
         $marker = 'secwrap_' . uniqid();
-        security_log($marker, 'wrapper security detail');
+        \App\Core\App::audit()->securityLog($marker, 'wrapper security detail');
 
-        $logs = get_audit_logs(5, 'security_event');
+        $logs = \App\Core\App::audit()->getLogs(5, 'security_event');
         $found = false;
         foreach ($logs as $log) {
             if (str_contains((string)$log['target'], $marker)) {
@@ -134,7 +134,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testGetAuditLogsWrapperDelegatesToService(): void
     {
-        $logs = get_audit_logs(5);
+        $logs = \App\Core\App::audit()->getLogs(5);
         $this->assertIsArray($logs);
     }
 }

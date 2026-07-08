@@ -9,14 +9,14 @@ final class DatabaseLibTest extends TestCase
 {
     public function testGetPdoReturnsPdoInstance(): void
     {
-        $pdo = get_pdo();
+        $pdo = \App\Core\App::db()->getPdo();
         $this->assertInstanceOf(\PDO::class, $pdo);
     }
 
     public function testGetPdoReturnsSameInstance(): void
     {
-        $pdo1 = get_pdo();
-        $pdo2 = get_pdo();
+        $pdo1 = \App\Core\App::db()->getPdo();
+        $pdo2 = \App\Core\App::db()->getPdo();
         $this->assertSame($pdo1, $pdo2);
     }
 

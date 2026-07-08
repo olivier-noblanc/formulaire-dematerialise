@@ -19,13 +19,13 @@ echo "╚═══════════════════════�
 echo "── 1. Base de données ──\n";
 
 test('get_pdo() retourne un objet PDO', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     /** @phpstan-ignore-next-line instanceof.alwaysTrue */
     return ($pdo instanceof PDO) ? true : 'Pas un PDO';
 });
 
 test('Aucun INTEGER PRIMARY KEY AUTOINCREMENT', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $tables = $pdo->query("SELECT name, sql FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_ASSOC);
     foreach ($tables as $t) {
         if (preg_match("/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/i", $t['sql'])) {
@@ -36,7 +36,7 @@ test('Aucun INTEGER PRIMARY KEY AUTOINCREMENT', function() {
 });
 
 test('Toutes les tables existent', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $required = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens', 'admins', 'admin_requests', 'settings', 'form_fields', 'audit_log', 'alert_rules', 'alert_log', 'form_owners', 'lazy_cron', 'delegations', 'attachments'];
     $existing = $pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN);
     $missing = array_diff($required, $existing);
@@ -44,19 +44,19 @@ test('Toutes les tables existent', function() {
 });
 
 test('Formulaire onboarding existe', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug='onboarding'")->fetchColumn();
     return $count > 0 ? true : 'Formulaire onboarding absent';
 });
 
 test('Formulaire outboarding existe', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug='outboarding'")->fetchColumn();
     return $count > 0 ? true : 'Formulaire outboarding absent';
 });
 
 test('Tous les formulaires ont au moins 2 étapes', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     foreach ($pdo->query("SELECT f.slug, COUNT(s.id) as cnt FROM forms f LEFT JOIN steps s ON s.form_id = f.id GROUP BY f.id") as $row) {
         if ((int)$row['cnt'] < 2) return $row['slug'] . ' n\'a que ' . $row['cnt'] . ' étapes';
     }
@@ -64,7 +64,7 @@ test('Tous les formulaires ont au moins 2 étapes', function() {
 });
 
 test('Tous les formulaires ont des champs', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     foreach ($pdo->query("SELECT f.slug, COUNT(ff.id) as cnt FROM forms f LEFT JOIN form_fields ff ON ff.form_id = f.id GROUP BY f.id") as $row) {
         if ((int)$row['cnt'] < 1) return $row['slug'] . ' n\'a aucun champ';
     }
@@ -72,7 +72,7 @@ test('Tous les formulaires ont des champs', function() {
 });
 
 test('Tous les IDs de formulaires sont des UUIDs', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $forms = $pdo->query("SELECT id, slug FROM forms")->fetchAll(PDO::FETCH_ASSOC);
     foreach ($forms as $f) {
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $f['id'])) {
@@ -83,7 +83,7 @@ test('Tous les IDs de formulaires sont des UUIDs', function() {
 });
 
 test('Toutes les FK form_id sont des UUIDs', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // steps.form_id
     $steps = $pdo->query("SELECT form_id FROM steps")->fetchAll(PDO::FETCH_COLUMN);
     foreach ($steps as $fid) {
@@ -103,7 +103,7 @@ test('Toutes les FK form_id sont des UUIDs', function() {
 });
 
 test('4 règles d\'alerte (2 par formulaire)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $count = $pdo->query("SELECT COUNT(*) FROM alert_rules")->fetchColumn();
     return $count >= 4 ? true : "Seulement $count règles d'alerte";
 });
@@ -111,7 +111,7 @@ test('4 règles d\'alerte (2 par formulaire)', function() {
 test('Settings par défaut présents', function() {
     $required = ['smtp_host', 'smtp_port', 'delai_relance_h', 'relance_max'];
     foreach ($required as $key) {
-        $val = get_setting($key);
+        $val = \App\Core\App::settings()->get($key);
         /** @phpstan-ignore-next-line */
         if ($val === null || $val === false) return "Setting '$key' absent";
     }
@@ -194,15 +194,15 @@ test('csrf_field() génère un token', function() {
 });
 
 test('app_log() écrit dans l\'audit', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $before = $pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
-    app_log('test_action', 'test_target', 'Détail du test');
+    \App\Core\App::audit()->log('test_action', 'test_target', 'Détail du test');
     $after = $pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
     return $after > $before ? true : 'Audit log non incrémenté';
 });
 
 test('get_form_by_uuid() retrouve un formulaire', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $form = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     if (!$form) return 'Pas de formulaire onboarding';
     $found = get_form_by_uuid($form['id']);
@@ -217,7 +217,7 @@ echo "\n";
 echo "── 3. Workflow complet ──\n";
 
 // Récupérer l'ID UUID du formulaire onboarding
-$pdo = get_pdo();
+$pdo = \App\Core\App::db()->getPdo();
 $onboarding_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
 
 // Récupérer les étapes via prepared statements (UUID = string, pas int)
@@ -276,7 +276,7 @@ $submission_id = $submission_id ?? null;
 test('advance_workflow() génère les tokens de l\'étape 1', function() use ($submission_id) {
     if (!$submission_id) return 'Pas de submission_id';
     advance_workflow($submission_id);
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $tokens = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL");
     $tokens->execute([$submission_id]);
     $count = $tokens->fetchColumn();
@@ -285,7 +285,7 @@ test('advance_workflow() génère les tokens de l\'étape 1', function() use ($s
 
 test('validate_token() valide un token et avance le workflow', function() use ($submission_id) {
     if (!$submission_id) return 'Pas de submission_id';
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // Récupérer le premier token non validé
     $token_row = $pdo->prepare("SELECT token FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
     $token_row->execute([$submission_id]);
@@ -298,7 +298,7 @@ test('validate_token() valide un token et avance le workflow', function() use ($
 
 test('Après validation étape 1, étape 2 a des tokens', function() use ($submission_id, $onboarding_id) {
     if (!$submission_id) return 'Pas de submission_id';
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // Récupérer l'étape 2 via prepared statement
     $stmt = $pdo->prepare("SELECT id FROM steps WHERE form_id = ? AND ordre = 2 LIMIT 1");
     $stmt->execute([$onboarding_id]);
@@ -449,7 +449,7 @@ test('CSRF token rejeté si invalide', function() {
 });
 
 test('Requêtes préparées utilisées (pas de SQLi)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // Test simple : un paramètre malveillant ne doit pas casser la DB
     $stmt = $pdo->prepare("SELECT * FROM forms WHERE slug = ?");
     $stmt->execute(["'; DROP TABLE forms; --"]);
@@ -531,8 +531,8 @@ test('export_csv() génère du CSV (sans exit)', function() {
 });
 
 test('get_setting() / set_setting() fonctionnent', function() {
-    set_setting('test_key', 'test_value');
-    $val = get_setting('test_key');
+    \App\Core\App::settings()->set('test_key', 'test_value');
+    $val = \App\Core\App::settings()->get('test_key');
     return $val === 'test_value' ? true : "Got: $val";
 });
 
@@ -546,7 +546,7 @@ test('Fonction mail disponible (PHPMailer chargé)', function() {
 });
 
 test('generate_uuid() ne produit pas de lastInsertId()', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $uuid = generate_uuid();
     // Insérer avec l'UUID explicitement
     $stmt = $pdo->prepare("INSERT INTO audit_log (id, action, target, detail, actor, ip) VALUES (?, ?, ?, ?, ?, ?)");

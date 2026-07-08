@@ -18,7 +18,7 @@ echo "── 16. Tests Wave 8 — v5.25.3 (3 bugs prod découverts par l'utilisa
 test('Bug 1 — table drafts existe en DB test (auto-réparation)', function() {
     // Le test vérifie que la table drafts existe après db_migrate()
     // Bug v5.25.2 prod : si la migration échouait, schema_version était marquée à 12 mais la table n'existait pas
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $table_exists = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='drafts'")->fetchColumn();
     release_pdo();
     if ($table_exists !== 'drafts') {

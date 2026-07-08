@@ -222,7 +222,7 @@ test('security_log() existe et peut être appelée', function() {
 });
 
 test('security_log() écrit une ligne dans audit_log (action = security_event)', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     // Compter avant
     $count_before = (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'security_event'")->fetchColumn();
     // Écrire
@@ -236,7 +236,7 @@ test('security_log() écrit une ligne dans audit_log (action = security_event)',
 });
 
 test('security_log() stocke l\'event dans la colonne target', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $event = 'unique_event_' . bin2hex(random_bytes(4));
     security_log($event, 'test detail', 'unit_test@example.com');
     $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'security_event' AND target = ? ORDER BY created_at DESC LIMIT 1");
@@ -246,7 +246,7 @@ test('security_log() stocke l\'event dans la colonne target', function() {
 });
 
 test('security_log() stocke le detail dans la colonne detail', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $marker = 'MARKER_' . bin2hex(random_bytes(4));
     security_log('test_event', $marker, 'unit_test@example.com');
     $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'security_event' AND detail LIKE ? ORDER BY created_at DESC LIMIT 1");
@@ -256,7 +256,7 @@ test('security_log() stocke le detail dans la colonne detail', function() {
 });
 
 test('security_log() stocke l\'actor dans la colonne actor', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $actor = 'actor_' . bin2hex(random_bytes(4)) . '@example.com';
     security_log('test_event', 'detail', $actor);
     $stmt = $pdo->prepare("SELECT actor FROM audit_log WHERE action = 'security_event' AND actor = ? ORDER BY created_at DESC LIMIT 1");
@@ -276,7 +276,7 @@ test('security_log() appelle error_log (vérifié via ini_set log_errors)', func
 });
 
 test('security_log() utilise l\'utilisateur connecté si actor est vide', function() {
-    $pdo = get_pdo();
+    $pdo = \App\Core\App::db()->getPdo();
     $saved_user = $_SERVER['HTTP_X_TEST_USER'] ?? null;
     $_SERVER['HTTP_X_TEST_USER'] = 'auto_actor@example.com';
     security_log('auto_event', 'detail');  // Pas d'actor explicite

@@ -9,41 +9,41 @@ final class SettingsLibTest extends TestCase
 {
     public function testGetSettingReturnsDefaultForMissingKey(): void
     {
-        $result = get_setting('nonexistent_key_xyz_' . uniqid(), 'fallback');
+        $result = \App\Core\App::settings()->get('nonexistent_key_xyz_' . uniqid(), 'fallback');
         $this->assertSame('fallback', $result);
     }
 
     public function testSetAndGetRoundtrip(): void
     {
         $key = 'lib_test_setting_' . uniqid();
-        set_setting($key, 'hello');
-        $this->assertSame('hello', get_setting($key));
+        \App\Core\App::settings()->set($key, 'hello');
+        $this->assertSame('hello', \App\Core\App::settings()->get($key));
     }
 
     public function testSetWithUpdatedBy(): void
     {
         $key = 'lib_test_updated_' . uniqid();
-        set_setting($key, 'val', 'admin@test.com');
-        $this->assertSame('val', get_setting($key));
+        \App\Core\App::settings()->set($key, 'val', 'admin@test.com');
+        $this->assertSame('val', \App\Core\App::settings()->get($key));
     }
 
     public function testSetOverwritesPreviousValue(): void
     {
         $key = 'lib_test_overwrite_' . uniqid();
-        set_setting($key, 'first');
-        set_setting($key, 'second');
-        $this->assertSame('second', get_setting($key));
+        \App\Core\App::settings()->set($key, 'first');
+        \App\Core\App::settings()->set($key, 'second');
+        $this->assertSame('second', \App\Core\App::settings()->get($key));
     }
 
     public function testGetSettingDefaultWhenEmpty(): void
     {
-        $result = get_setting('totally_missing_' . uniqid(), 'default_val');
+        $result = \App\Core\App::settings()->get('totally_missing_' . uniqid(), 'default_val');
         $this->assertSame('default_val', $result);
     }
 
     public function testGetSettingReturnsConfigDefault(): void
     {
-        $result = get_setting('smtp_host');
+        $result = \App\Core\App::settings()->get('smtp_host');
         $this->assertIsString($result);
     }
 }
