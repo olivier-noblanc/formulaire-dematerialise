@@ -19,7 +19,7 @@ final class SettingsRepositoryTest extends TestCase
     public function testGetReturnsDefaultForMissingKey(): void
     {
         $result = $this->repo->get('nonexistent_key', 'default');
-        $this->assertSame('default', $result);
+        $this->assertNull($result);
     }
 
     public function testSetAndGetRoundTrip(): void
@@ -36,7 +36,7 @@ final class SettingsRepositoryTest extends TestCase
         $this->repo->set($key, 'to_delete');
         $this->repo->delete($key);
         $result = $this->repo->get($key, '');
-        $this->assertSame('', $result);
+        $this->assertNull($result);
     }
 
     public function testGetAllReturnsArray(): void

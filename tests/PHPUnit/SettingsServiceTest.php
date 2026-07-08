@@ -6,6 +6,7 @@ namespace App\Tests;
 use PHPUnit\Framework\TestCase;
 use App\Settings\SettingsService;
 use App\Core\Database;
+use App\Repository\SettingsRepository;
 
 final class SettingsServiceTest extends TestCase
 {
@@ -15,7 +16,7 @@ final class SettingsServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
-        $this->settings = new SettingsService($this->db);
+        $this->settings = new SettingsService($this->db, new SettingsRepository($this->db));
 
         // Reset static cache to avoid cross-test pollution
         $reflection = new \ReflectionClass(SettingsService::class);

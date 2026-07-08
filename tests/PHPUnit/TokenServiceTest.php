@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use App\Token\TokenService;
 use App\Core\Database;
 use App\Settings\SettingsService;
+use App\Repository\SettingsRepository;
 use App\Auth\AuthService;
 use App\Audit\AuditLogService;
 use App\Mail\MailService;
@@ -34,7 +35,7 @@ final class TokenServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
-        $settings = new SettingsService($this->db);
+        $settings = new SettingsService($this->db, new SettingsRepository($this->db));
         $auth = new AuthService($this->db);
         $audit = new AuditLogService($this->db);
         $mailer = new MailService($this->db, $settings);
