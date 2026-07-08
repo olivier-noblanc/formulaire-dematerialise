@@ -5,6 +5,7 @@ namespace App\Audit;
 
 use App\Contract\AuditInterface;
 use App\Core\Database;
+use App\Repository\AuditRepository;
 
 /**
  * Service de journalisation d'audit et sécurité.
@@ -12,10 +13,12 @@ use App\Core\Database;
 final class AuditLogService implements AuditInterface
 {
     private Database $db;
+    private AuditRepository $repo;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, AuditRepository $repo)
     {
         $this->db = $db;
+        $this->repo = $repo;
     }
 
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): void
@@ -30,13 +33,7 @@ final class AuditLogService implements AuditInterface
         }
 
         try {
-            $pdo = $this->db->getPdo();
-            $pdo->prepare("INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))")
-                ->execute([
-                    $this->generateUuid(),
-                    $action, $target, $detail, $actor,
-                    $_SERVER['REMOTE_ADDR'] ?? null,
-                ]);
+            $this->repo->log($action, $target, $detail, $actor);
         } catch (\Throwable $e) {
             error_log('AuditLog error: ' . $e->getMessage());
         }
@@ -54,19 +51,6 @@ final class AuditLogService implements AuditInterface
     /** @return array<int, array<string, mixed>> */
     public function getLogs(int $limit = 100, string $actionFilter = ''): array
     {
-        $pdo = $this->db->getPdo();
-        if (!empty($actionFilter)) {
-            $stmt = $pdo->prepare("SELECT * FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?");
-            $stmt->execute([$actionFilter, $limit]);
-        } else {
-            $stmt = $pdo->prepare("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?");
-            $stmt->execute([$limit]);
-        }
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
-
-    private function generateUuid(): string
-    {
-        return \generate_uuid();
+        return $this->repo->getLogs($limit, $actionFilter);
     }
 }
