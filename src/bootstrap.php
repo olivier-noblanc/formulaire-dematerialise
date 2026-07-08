@@ -56,9 +56,9 @@ $app->set(Config::class, new Config());
 $app->set(AuthService::class, new AuthService($db));
 $app->set(SettingsRepository::class, new SettingsRepository($db));
 $settingsRepo = $app->get(SettingsRepository::class);
-$app->set(SettingsService::class, new SettingsService($db, $settingsRepo));
+$app->set(SettingsService::class, new SettingsService($settingsRepo));
 $app->set(AuditRepository::class, new AuditRepository($db));
-$app->set(AdminRepository::class, new AdminRepository($db));
+$app->set(AdminRepository::class, new AdminRepository($db, $settingsRepo));
 $app->set(FormRepository::class, new FormRepository($db));
 $app->set(SubmissionRepository::class, new SubmissionRepository($db));
 $app->set(TokenRepository::class, new TokenRepository($db));
@@ -67,7 +67,7 @@ $app->set(FieldService::class, new FieldService($db));
 $app->set(HtmlService::class, new HtmlService());
 $app->set(SecurityService::class, new SecurityService($app->get(HtmlService::class)));
 $auditRepo = $app->get(AuditRepository::class);
-$app->set(AuditLogService::class, new AuditLogService($db, $auditRepo));
+$app->set(AuditLogService::class, new AuditLogService($auditRepo));
 $app->set(CacheService::class, new CacheService());
 $app->set(ConditionEvaluator::class, new ConditionEvaluator());
 $app->set(StatsService::class, new StatsService($db));
@@ -95,7 +95,7 @@ $app->set(TokenService::class, $tokenService);
 
 // Attachment service
 $attachmentRepo = $app->get(AttachmentRepository::class);
-$app->set(AttachmentService::class, new AttachmentService($db, $attachmentRepo));
+$app->set(AttachmentService::class, new AttachmentService($attachmentRepo));
 
 // Validator data service
 $app->set(ValidatorDataService::class, new ValidatorDataService($db));

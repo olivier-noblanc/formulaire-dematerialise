@@ -5,6 +5,7 @@ namespace App\Tests\Repository;
 
 use PHPUnit\Framework\TestCase;
 use App\Repository\AdminRepository;
+use App\Repository\SettingsRepository;
 use App\Core\Database;
 
 final class AdminRepositoryTest extends TestCase
@@ -13,7 +14,8 @@ final class AdminRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new AdminRepository(new Database());
+        $db = new Database();
+        $this->repo = new AdminRepository($db, new SettingsRepository($db));
     }
 
     public function testFindByEmailReturnsNullForNonexistent(): void
