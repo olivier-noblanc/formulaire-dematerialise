@@ -12,56 +12,293 @@ final class FieldServiceTest extends TestCase
     private FieldService $fields;
     private Database $db;
 
+    private string $testFormId;
+    private string $testSubmissionId;
+    private string $testStepId;
+    private string $testFieldName;
+
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->fields = new FieldService($this->db);
+        $pdo = $this->db->getPdo();
+
+        // Create test form
+        $this->testFormId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif) VALUES (?, ?, ?, ?, 1)")
+            ->execute([$this->testFormId, 'test-form-' . substr($this->testFormId, 0, 8), 'Test Form', 'Test form for unit tests']);
+
+        // Create test step
+        $this->testStepId = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, 1, 1)")
+            ->execute([$this->testStepId, $this->testFormId, 'Étape Test']);
+
+        // Create test validator field
+        $this->testFieldName = 'test_field_' . substr(\generate_uuid(), 0, 8);
+        $fieldId = \generate_uuid();
+        $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, required, ordre, filled_by, validator_step) VALUES (?, ?, ?, ?, ?, 0, 1, 'validator', ?)")
+            ->execute([$fieldId, $this->testFormId, 'Test Field', 'text', $this->testFieldName, $this->testStepId]);
+
+        // Create test submission
+        $this->testSubmissionId = \generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, ?, ?, 'en_cours')")
+            ->execute([$this->testSubmissionId, $this->testFormId, '{}', 'testeur@test.com']);
     }
+
+    protected function tearDown(): void
+    {
+        $pdo = $this->db->getPdo();
+
+        // Clean up test data in reverse dependency order
+        $pdo->prepare("DELETE FROM submission_validator_data WHERE submission_id = ?")->execute([$this->testSubmissionId]);
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$this->testSubmissionId]);
+        $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$this->testFormId]);
+        $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$this->testFormId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$this->testFormId]);
+    }
+
+    // ── getFields ──────────────────────────────────────────────
 
     public function testGetFieldsReturnsArray(): void
     {
-        // Get a form ID from the test database
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-
-        if ($formId) {
-            $fields = $this->fields->getFields($formId);
-            $this->assertIsArray($fields);
-        }
+        $fields = $this->fields->getFields($this->testFormId);
+        $this->assertIsArray($fields);
+        $this->assertNotEmpty($fields);
     }
 
     public function testGetFieldsWithFilledByFilter(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-
-        if ($formId) {
-            $fields = $this->fields->getFields($formId, 'demandeur');
-            $this->assertIsArray($fields);
+        $fields = $this->fields->getFields($this->testFormId, 'validator');
+        $this->assertIsArray($fields);
+        foreach ($fields as $field) {
+            $this->assertSame('validator', $field['filled_by']);
         }
     }
+
+    public function testGetFieldsWithNonexistentFormReturnsEmpty(): void
+    {
+        $fields = $this->fields->getFields('nonexistent-form-id');
+        $this->assertIsArray($fields);
+        $this->assertEmpty($fields);
+    }
+
+    // ── getValidatorFields ─────────────────────────────────────
 
     public function testGetValidatorFieldsReturnsArray(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-
-        if ($formId) {
-            $fields = $this->fields->getValidatorFields($formId);
-            $this->assertIsArray($fields);
+        $fields = $this->fields->getValidatorFields($this->testFormId);
+        $this->assertIsArray($fields);
+        $this->assertNotEmpty($fields);
+        foreach ($fields as $field) {
+            $this->assertSame('validator', $field['filled_by']);
         }
     }
+
+    public function testGetValidatorFieldsWithStepId(): void
+    {
+        $fields = $this->fields->getValidatorFields($this->testFormId, $this->testStepId);
+        $this->assertIsArray($fields);
+    }
+
+    public function testGetValidatorFieldsWithEmptyStepId(): void
+    {
+        $fields = $this->fields->getValidatorFields($this->testFormId, '');
+        $this->assertIsArray($fields);
+    }
+
+    // ── getValidatorData ───────────────────────────────────────
 
     public function testGetValidatorDataReturnsArray(): void
     {
-        $pdo = $this->db->getPdo();
-        $submissionId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        $this->assertIsArray($data);
+    }
 
-        if ($submissionId) {
-            $data = $this->fields->getValidatorData($submissionId);
-            $this->assertIsArray($data);
+    public function testGetValidatorDataWithStepId(): void
+    {
+        $data = $this->fields->getValidatorData($this->testSubmissionId, $this->testStepId);
+        $this->assertIsArray($data);
+    }
+
+    public function testGetValidatorDataWithEmptyStepId(): void
+    {
+        $data = $this->fields->getValidatorData($this->testSubmissionId, '');
+        $this->assertIsArray($data);
+    }
+
+    // ── saveValidatorData ──────────────────────────────────────
+
+    public function testSaveValidatorDataInsertsNewRecord(): void
+    {
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'test_value',
+            'validator',
+            $this->testStepId
+        );
+
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        $found = false;
+        foreach ($data as $row) {
+            if ($row['field_name'] === $this->testFieldName) {
+                $found = true;
+                $this->assertSame('test_value', $row['value']);
+                $this->assertSame('validator', $row['filled_by']);
+            }
+        }
+        $this->assertTrue($found, 'Saved validator data should be retrievable');
+    }
+
+    public function testSaveValidatorDataUpsertsExistingRecord(): void
+    {
+        // First save
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'original_value',
+            'validator'
+        );
+
+        // Second save (upsert)
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'updated_value',
+            'validator'
+        );
+
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        $matchingRows = array_filter($data, fn($row) => $row['field_name'] === $this->testFieldName);
+        $this->assertCount(1, $matchingRows, 'UPSERT should not create duplicate records');
+        $row = array_values($matchingRows)[0];
+        $this->assertSame('updated_value', $row['value']);
+    }
+
+    public function testSaveValidatorDataWithStepLabel(): void
+    {
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'value_with_label',
+            'validator',
+            $this->testStepId,
+            'Custom Step Label'
+        );
+
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        foreach ($data as $row) {
+            if ($row['field_name'] === $this->testFieldName) {
+                $this->assertSame('Custom Step Label', $row['step_label']);
+            }
         }
     }
+
+    public function testSaveValidatorDataResolvesStepLabelFromId(): void
+    {
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'value_resolved',
+            'validator',
+            $this->testStepId,
+            null // stepLabel = null, should resolve from stepId
+        );
+
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        foreach ($data as $row) {
+            if ($row['field_name'] === $this->testFieldName) {
+                $this->assertSame('Étape Test', $row['step_label']);
+            }
+        }
+    }
+
+    public function testSaveValidatorDataWithNullStepId(): void
+    {
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'no_step',
+            'validator',
+            null,
+            null
+        );
+
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        foreach ($data as $row) {
+            if ($row['field_name'] === $this->testFieldName) {
+                $this->assertSame('no_step', $row['value']);
+                $this->assertNull($row['step_id']);
+            }
+        }
+    }
+
+    public function testSaveValidatorDataStoresEmailAndToken(): void
+    {
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'email_value',
+            'validator',
+            $this->testStepId,
+            null,
+            'validator@test.com',
+            'token-abc-123'
+        );
+
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        foreach ($data as $row) {
+            if ($row['field_name'] === $this->testFieldName) {
+                $this->assertSame('validator@test.com', $row['filled_by_email']);
+                $this->assertSame('token-abc-123', $row['token_id']);
+            }
+        }
+    }
+
+    // ── deleteValidatorData ────────────────────────────────────
+
+    public function testDeleteValidatorDataRemovesRecord(): void
+    {
+        // Insert first
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'to_delete',
+            'validator'
+        );
+
+        // Verify it exists
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        $foundBefore = false;
+        foreach ($data as $row) {
+            if ($row['field_name'] === $this->testFieldName) {
+                $foundBefore = true;
+            }
+        }
+        $this->assertTrue($foundBefore, 'Record should exist before deletion');
+
+        // Delete
+        $this->fields->deleteValidatorData($this->testSubmissionId, $this->testFieldName);
+
+        // Verify it's gone
+        $data = $this->fields->getValidatorData($this->testSubmissionId);
+        $foundAfter = false;
+        foreach ($data as $row) {
+            if ($row['field_name'] === $this->testFieldName) {
+                $foundAfter = true;
+            }
+        }
+        $this->assertFalse($foundAfter, 'Record should be deleted');
+    }
+
+    public function testDeleteValidatorDataDoesNothingForNonexistentRecord(): void
+    {
+        // Should not throw
+        $this->fields->deleteValidatorData('nonexistent-submission', 'nonexistent-field');
+        $this->assertTrue(true, 'Deleting nonexistent record should not throw');
+    }
+
+    // ── getValidatorStatusBatch ────────────────────────────────
 
     public function testGetValidatorStatusBatchReturnsArray(): void
     {
@@ -72,13 +309,86 @@ final class FieldServiceTest extends TestCase
 
     public function testGetValidatorStatusBatchWithIds(): void
     {
-        $pdo = $this->db->getPdo();
-        $submissionId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+        // Save some validator data first
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'filled_value',
+            'validator'
+        );
 
-        if ($submissionId) {
-            $result = $this->fields->getValidatorStatusBatch([$submissionId]);
-            $this->assertIsArray($result);
-            $this->assertArrayHasKey($submissionId, $result);
-        }
+        $result = $this->fields->getValidatorStatusBatch([$this->testSubmissionId]);
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey($this->testSubmissionId, $result);
+
+        $status = $result[$this->testSubmissionId];
+        $this->assertArrayHasKey('expected', $status);
+        $this->assertArrayHasKey('filled', $status);
+        $this->assertArrayHasKey('complete', $status);
+        $this->assertIsInt($status['expected']);
+        $this->assertIsInt($status['filled']);
+        $this->assertIsBool($status['complete']);
+    }
+
+    public function testGetValidatorStatusBatchCompleteWhenAllFilled(): void
+    {
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'filled',
+            'validator'
+        );
+
+        $result = $this->fields->getValidatorStatusBatch([$this->testSubmissionId]);
+        $this->assertTrue($result[$this->testSubmissionId]['complete']);
+    }
+
+    public function testGetValidatorStatusBatchIncompleteWhenMissing(): void
+    {
+        // Add a second validator field to make expected > filled
+        $pdo = $this->db->getPdo();
+        $fieldId = \generate_uuid();
+        $secondFieldName = 'second_field_' . substr(\generate_uuid(), 0, 8);
+        $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, required, ordre, filled_by, validator_step) VALUES (?, ?, ?, ?, ?, 0, 2, 'validator', ?)")
+            ->execute([$fieldId, $this->testFormId, 'Second Field', 'text', $secondFieldName, $this->testStepId]);
+
+        // Only fill one of two fields
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'only_one_filled',
+            'validator'
+        );
+
+        $result = $this->fields->getValidatorStatusBatch([$this->testSubmissionId]);
+        $status = $result[$this->testSubmissionId];
+        $this->assertGreaterThanOrEqual(2, $status['expected']);
+        $this->assertLessThan($status['expected'], $status['filled']);
+        $this->assertFalse($status['complete']);
+    }
+
+    public function testGetValidatorStatusBatchWithMultipleSubmissions(): void
+    {
+        // Create a second submission
+        $pdo = $this->db->getPdo();
+        $secondSubId = \generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, ?, ?, 'en_cours')")
+            ->execute([$secondSubId, $this->testFormId, '{}', 'testeur2@test.com']);
+
+        // Fill validator data for first submission only
+        $this->fields->saveValidatorData(
+            $this->testSubmissionId,
+            $this->testFieldName,
+            'filled',
+            'validator'
+        );
+
+        $result = $this->fields->getValidatorStatusBatch([$this->testSubmissionId, $secondSubId]);
+        $this->assertCount(2, $result);
+        $this->assertArrayHasKey($this->testSubmissionId, $result);
+        $this->assertArrayHasKey($secondSubId, $result);
+
+        // Clean up
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$secondSubId]);
     }
 }
