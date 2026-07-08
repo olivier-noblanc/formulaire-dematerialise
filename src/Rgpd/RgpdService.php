@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Rgpd;
 
+use App\Core\App;
 use App\Core\Database;
 use PDO;
 
@@ -27,9 +28,7 @@ final class RgpdService
         $caller = function_exists('get_auth_user') ? get_auth_user() : '';
         $callerIsAdmin = (function_exists('is_admin_user') && is_admin_user()) || (function_exists('is_super_admin') && is_super_admin());
         if (!$callerIsAdmin && strtolower($email) !== strtolower($caller)) {
-            if (function_exists('app_log')) {
-                app_log('access_denied', 'rgpd:' . $email, 'Tentative d\'export RGPD non autorisée par ' . $caller);
-            }
+            App::audit()->log('access_denied', 'rgpd:' . $email, 'Tentative d\'export RGPD non autorisée par ' . $caller, '');
             return ['email' => $email, 'error' => 'Accès refusé : vous ne pouvez exporter que vos propres données.'];
         }
 
@@ -64,9 +63,7 @@ final class RgpdService
         $caller = function_exists('get_auth_user') ? get_auth_user() : '';
         $callerIsAdmin = (function_exists('is_admin_user') && is_admin_user()) || (function_exists('is_super_admin') && is_super_admin());
         if (!$callerIsAdmin && strtolower($email) !== strtolower($caller)) {
-            if (function_exists('app_log')) {
-                app_log('access_denied', 'rgpd:' . $email, 'Tentative de suppression RGPD non autorisée par ' . $caller);
-            }
+            App::audit()->log('access_denied', 'rgpd:' . $email, 'Tentative de suppression RGPD non autorisée par ' . $caller, '');
             return false;
         }
 
@@ -93,9 +90,7 @@ final class RgpdService
             $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
             $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
 
-            if (function_exists('app_log')) {
-                app_log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
-            }
+            App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
             return true;
         } catch (\Exception $e) {
             error_log('RGPD delete error: ' . $e->getMessage());
@@ -125,8 +120,8 @@ final class RgpdService
             $count++;
         }
 
-        if ($count > 0 && function_exists('app_log')) {
-            app_log('rgpd_purge', '', "Purge RGPD : {$count} soumissions de plus de {$months} mois supprimées");
+        if ($count > 0) {
+            App::audit()->log('rgpd_purge', '', "Purge RGPD : {$count} soumissions de plus de {$months} mois supprimées", '');
         }
 
         return $count;

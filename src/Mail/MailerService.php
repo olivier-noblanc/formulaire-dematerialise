@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Core\App;
 use App\Core\Database;
 use App\Settings\SettingsService;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -87,7 +88,7 @@ final class MailerService
         $dry_run = $this->settings->get('mail_dry_run', '0') === '1';
         if ($dry_run) {
             error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
-            app_log('mail_dry_run', 'mail:' . $to, "Email intercepté (dry-run) — Sujet : $subject");
+            App::audit()->log('mail_dry_run', 'mail:' . $to, "Email intercepté (dry-run) — Sujet : $subject", '');
             $this->logAttempt($to, $subject, 'dry_run', 'Mode dry-run activé (mail_dry_run=1)', '', $actor, $ip);
             return ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => 'dry_run'];
         }
@@ -99,7 +100,7 @@ final class MailerService
             if (!$verification['ok']) {
                 $msg = "Email non vérifié : " . $verification['detail'];
                 error_log("send_mail() BLOQUÉ — $msg — destinataire: $to");
-                app_log('mail_blocked', 'mail:' . $to, "Email bloqué (vérification échouée) — " . $verification['detail'] . " — Sujet : $subject");
+                App::audit()->log('mail_blocked', 'mail:' . $to, "Email bloqué (vérification échouée) — " . $verification['detail'] . " — Sujet : $subject", '');
                 $this->logAttempt($to, $subject, 'blocked', $msg, '', $actor, $ip);
                 $result['error'] = $msg;
                 $result['status'] = 'blocked';
@@ -180,14 +181,14 @@ final class MailerService
             $mail->send();
 
             $smtp_log = implode("\n", $smtp_log_buf);
-            app_log('mail_sent', 'mail:' . $to, "Email envoyé — Sujet : $subject");
+            App::audit()->log('mail_sent', 'mail:' . $to, "Email envoyé — Sujet : $subject", '');
             $this->logAttempt($to, $subject, 'sent', '', $smtp_log, $actor, $ip);
             return ['success' => true, 'error' => '', 'smtp_log' => $smtp_log, 'status' => 'sent'];
         } catch (\Exception $e) {
             $smtp_log = implode("\n", $smtp_log_buf);
             $err = $mail->ErrorInfo;
             error_log('Mail error: ' . $err);
-            app_log('mail_error', 'mail:' . $to, "Échec envoi — " . $err . " — Sujet : $subject");
+            App::audit()->log('mail_error', 'mail:' . $to, "Échec envoi — " . $err . " — Sujet : $subject", '');
             $this->logAttempt($to, $subject, 'error', $err, $smtp_log, $actor, $ip);
             return ['success' => false, 'error' => $err, 'smtp_log' => $smtp_log, 'status' => 'error'];
         }
