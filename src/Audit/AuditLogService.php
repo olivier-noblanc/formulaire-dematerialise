@@ -12,12 +12,10 @@ use App\Repository\AuditRepository;
  */
 final class AuditLogService implements AuditInterface
 {
-    private Database $db;
     private AuditRepository $repo;
 
-    public function __construct(Database $db, AuditRepository $repo)
+    public function __construct(AuditRepository $repo)
     {
-        $this->db = $db;
         $this->repo = $repo;
     }
 

@@ -12,13 +12,11 @@ use App\Repository\SettingsRepository;
  */
 final class SettingsService implements SettingsInterface
 {
-    private Database $db;
     private SettingsRepository $repo;
     private static array $cache = [];
 
-    public function __construct(Database $db, SettingsRepository $repo)
+    public function __construct(SettingsRepository $repo)
     {
-        $this->db = $db;
         $this->repo = $repo;
     }
 

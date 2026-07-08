@@ -16,12 +16,10 @@ use App\Repository\AttachmentRepository;
  */
 final class AttachmentService
 {
-    private Database $db;
     private AttachmentRepository $repo;
 
-    public function __construct(Database $db, AttachmentRepository $repo)
+    public function __construct(AttachmentRepository $repo)
     {
-        $this->db = $db;
         $this->repo = $repo;
     }
 

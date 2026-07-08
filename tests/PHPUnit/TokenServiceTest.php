@@ -35,9 +35,9 @@ final class TokenServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
-        $settings = new SettingsService($this->db, new SettingsRepository($this->db));
+        $settings = new SettingsService(new SettingsRepository($this->db));
         $auth = new AuthService($this->db);
-        $audit = new AuditLogService($this->db, new \App\Repository\AuditRepository($this->db));
+        $audit = new AuditLogService(new \App\Repository\AuditRepository($this->db));
         $mailer = new MailService($this->db, $settings);
         $fields = new FieldService($this->db);
         $conditions = new ConditionEvaluator();
