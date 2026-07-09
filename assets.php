@@ -178,7 +178,7 @@ function send_cache_headers_and_check_304(string $etag, int $lastModified): bool
     if ($ifNoneMatch !== '') {
         $etags = array_map('trim', explode(',', $ifNoneMatch));
         foreach ($etags as $clientEtag) {
-            $clientEtag = preg_replace('/^W\//', '', $clientEtag);
+            $clientEtag = preg_replace('/^W\//', '', $clientEtag) ?? $clientEtag;
             $clientEtag = trim($clientEtag, '"');
             if ($clientEtag === $etag) {
                 http_response_code(304);

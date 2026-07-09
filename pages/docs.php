@@ -3,17 +3,7 @@ require_once dirname(__DIR__) . '/helpers.php';
 use App\Core\App;
 
 // Modules de sections de documentation (P-DOCS refactor)
-require_once dirname(__DIR__) . '/lib/docs_section_start.php';
-require_once dirname(__DIR__) . '/lib/docs_section_toc.php';
-require_once dirname(__DIR__) . '/lib/docs_section_quickstart.php';
-require_once dirname(__DIR__) . '/lib/docs_section_agent.php';
-require_once dirname(__DIR__) . '/lib/docs_section_validateur.php';
-require_once dirname(__DIR__) . '/lib/docs_section_admin.php';
-require_once dirname(__DIR__) . '/lib/docs_section_features.php';
-require_once dirname(__DIR__) . '/lib/docs_section_roles.php';
-require_once dirname(__DIR__) . '/lib/docs_section_faq.php';
-require_once dirname(__DIR__) . '/lib/docs_section_rgpd.php';
-require_once dirname(__DIR__) . '/lib/docs_section_technique.php';
+require_once dirname(__DIR__) . '/lib/docs_sections.php';
 
 
 // ITER1-A (Lead Designer) — Refonte UX pour M. Robert (70 ans, non technicien).

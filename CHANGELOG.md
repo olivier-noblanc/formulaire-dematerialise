@@ -1,5 +1,66 @@
 # Changelog — CircuitDémat
 
+## [10.6.0] — 2026-07-09
+_Résumé : 19 controllers migrés, PHPStan level 8, 943 tests, PHPArkitect, lib/ réduit de 63→48 fichiers._
+
+### 🏗 Migration pages/ → Controllers OOP (19 routes)
+
+16 controllers créés dans `src/Controller/` + CONTROLLER_MAP complet (19 routes) :
+- `AdminAccessController`, `AdminAlertsController`, `AdminFormsController`, `AdminSettingsController`
+- `BackupController`, `ChangelogController`, `ConfirmActionController`, `DownloadController`
+- `FormPreviewController`, `FormTrackingController`, `HealthController`, `MonitoringController`
+- `MyFormsController`, `MySubmissionsController`, `MyValidationsController`
+- `PersonaController`, `RgpdController`, `StatsController`, `SubmissionViewController`
+
+### 🏗 BaseController DI
+
+Injection via constructor `?App $app = null` avec fallback singleton pour compatibilité. 7 repositories injectés. 3 contrôleurs enfants mis à jour (`IndexController`, `DashboardController`).
+
+### 🏗 Consolidation lib/
+
+- 12 wrappers procéduraux → `lib/service_wrappers.php` (1 fichier au lieu de 12)
+- `admin_forms_handlers*.php` → 1 fichier
+- `render_monitoring*.php` → 1 fichier
+- `render_submission_view*.php` → 1 fichier
+- `docs_sections*.php` → 1 fichier
+- **Total** : lib/ réduit de 63 à 48 fichiers
+
+### 🔧 PHPStan level 6 → 8
+
+- Niveau augmenté de 6 à 8
+- `lib/security.php` créé (wrappers CSRF/headers manquants)
+- `preg_replace()` null guards ajoutés (10 corrections)
+- Baseline régénérée : 312 erreurs
+
+### 🧪 Tests
+
+- **+219 tests** : 724 → 943
+- **0 erreurs** : HtmlLibTest réécrit pour utiliser `HtmlService`
+- **Couverture** : HtmlService 100%, FormRepository 82%, BaseRepository 81%
+
+### 🔧 Composer autoload
+
+`classmap-authoritative` + `optimize-autoloader` supprimés → PSR-4 natif
+
+### 📐 PHPArkitect
+
+5 règles architecturales ajoutées (`phparkitect.php`) :
+- Controllers : naming `*Controller`
+- Services : naming `*Service`
+- Repositories : naming `*Repository`
+- Domain services : pas de dépendance vers controllers
+- Repositories : isolation par domaine
+
+### ✅ h() validation
+
+467 call sites vérifiés, 11 faux positifs identifiés, 0 problème sécurité
+
+### 🧹 Test DB cleanup
+
+`catch(\Throwable)` dans migrations, `tearDown()` ajoutés aux tests, 130→0 erreurs DB
+
+---
+
 ## [10.5.0] — 2026-07-08
 _Résumé : Extraction services (Validation, EmailVerification, Export) + migration DI + tests découplés._
 

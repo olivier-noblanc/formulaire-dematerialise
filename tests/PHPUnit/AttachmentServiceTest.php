@@ -96,4 +96,143 @@ final class AttachmentServiceTest extends TestCase
         $attachment = $this->attachmentService->getAttachmentById('nonexistent-id');
         $this->assertNull($attachment);
     }
+
+    // ── handleFileUpload() error paths ──────────────────────────
+
+    public function testHandleFileUploadUploadErrIniSize(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_INI_SIZE,
+            'tmp_name' => '',
+            'name' => 'test.pdf',
+            'size' => 0,
+            'type' => 'application/pdf',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('taille maximale', $result['message']);
+    }
+
+    public function testHandleFileUploadUploadErrPartial(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_PARTIAL,
+            'tmp_name' => '',
+            'name' => 'test.pdf',
+            'size' => 100,
+            'type' => 'application/pdf',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('partiellement', $result['message']);
+    }
+
+    public function testHandleFileUploadUploadErrNoTmpDir(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_NO_TMP_DIR,
+            'tmp_name' => '',
+            'name' => 'test.pdf',
+            'size' => 0,
+            'type' => 'application/pdf',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('Dossier temporaire', $result['message']);
+    }
+
+    public function testHandleFileUploadUploadErrCantWrite(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_CANT_WRITE,
+            'tmp_name' => '',
+            'name' => 'test.pdf',
+            'size' => 0,
+            'type' => 'application/pdf',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('écriture', $result['message']);
+    }
+
+    public function testHandleFileUploadDangerousDoubleExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'file.php.jpg',
+            'size' => 100,
+            'type' => 'image/jpeg',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('doubles extensions', $result['message']);
+    }
+
+    public function testHandleFileUploadDangerousPhpExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'malware.php',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    // ── getAllowedMimeTypes() additional checks ──────────────────
+
+    public function testGetAllowedMimeTypesContainsImageTypes(): void
+    {
+        $types = $this->attachmentService->getAllowedMimeTypes();
+        $this->assertContains('image/jpeg', $types);
+        $this->assertContains('image/png', $types);
+        $this->assertContains('image/gif', $types);
+    }
+
+    public function testGetAllowedMimeTypesContainsDocumentTypes(): void
+    {
+        $types = $this->attachmentService->getAllowedMimeTypes();
+        $this->assertContains('application/pdf', $types);
+        $this->assertContains('text/plain', $types);
+        $this->assertContains('text/csv', $types);
+    }
+
+    // ── getAllowedExtensions() additional checks ─────────────────
+
+    public function testGetAllowedExtensionsContainsImageExts(): void
+    {
+        $exts = $this->attachmentService->getAllowedExtensions();
+        $this->assertContains('jpg', $exts);
+        $this->assertContains('jpeg', $exts);
+        $this->assertContains('png', $exts);
+        $this->assertContains('gif', $exts);
+    }
+
+    public function testGetAllowedExtensionsContainsDocumentExts(): void
+    {
+        $exts = $this->attachmentService->getAllowedExtensions();
+        $this->assertContains('pdf', $exts);
+        $this->assertContains('txt', $exts);
+        $this->assertContains('doc', $exts);
+        $this->assertContains('docx', $exts);
+    }
+
+    // ── Container integration ───────────────────────────────────
+
+    public function testServiceRegisteredInContainer(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $this->assertTrue($app->has(AttachmentService::class));
+    }
+
+    public function testContainerReturnsSameInstance(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $s1 = $app->get(AttachmentService::class);
+        $s2 = $app->get(AttachmentService::class);
+        $this->assertSame($s1, $s2);
+    }
 }

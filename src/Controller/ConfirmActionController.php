@@ -1,0 +1,180 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Core\App;
+
+/**
+ * Contrôleur de la page de confirmation pour les actions destructrices.
+ */
+final class ConfirmActionController extends BaseController
+{
+    public function handle(): void
+    {
+        $action = $_GET['action'] ?? '';
+        $from   = $this->safeRelativeUrl($_GET['from'] ?? '');
+
+        $actionsConfig = [
+            'cancel_submission' => [
+                'label'       => 'Annuler une soumission',
+                'description' => 'Voulez-vous vraiment annuler la soumission',
+                'params'      => ['submission_id'],
+                'param_label' => 'soumission',
+                'danger'      => true,
+            ],
+            'regenerate_token' => [
+                'label'       => 'Régénérer un token',
+                'description' => 'Voulez-vous vraiment régénérer le token pour',
+                'params'      => ['token_id'],
+                'param_label' => 'token',
+                'danger'      => false,
+            ],
+            'delete_rule' => [
+                'label'       => 'Supprimer une règle d\'alerte',
+                'description' => 'Voulez-vous vraiment supprimer cette règle d\'alerte',
+                'params'      => ['rule_id'],
+                'param_label' => 'règle',
+                'danger'      => true,
+            ],
+            'delete_alert_log' => [
+                'label'       => 'Supprimer une entrée de journal',
+                'description' => 'Voulez-vous vraiment supprimer cette entrée du journal d\'alertes',
+                'params'      => ['log_id'],
+                'param_label' => 'entrée',
+                'danger'      => true,
+            ],
+            'remove_admin' => [
+                'label'       => 'Retirer les droits administrateur',
+                'description' => 'Voulez-vous vraiment retirer les droits administrateur de',
+                'params'      => ['email'],
+                'param_label' => 'admin',
+                'danger'      => true,
+            ],
+            'remove_owner' => [
+                'label'       => 'Retirer un propriétaire de formulaire',
+                'description' => 'Voulez-vous vraiment retirer ce propriétaire',
+                'params'      => ['id', 'form_id'],
+                'param_label' => 'propriétaire',
+                'danger'      => true,
+            ],
+            'delete_submission' => [
+                'label'       => 'Supprimer définitivement une demande',
+                'description' => 'Voulez-vous vraiment supprimer DÉFINITIVEMENT cette demande ? Cette action est irréversible. Toutes les données (tokens, pièces jointes, historique) seront perdues.',
+                'params'      => ['submission_id'],
+                'param_label' => 'soumission',
+                'danger'      => true,
+            ],
+        ];
+
+        if (!isset($actionsConfig[$action])) {
+            $this->redirect('index.php');
+        }
+
+        $config = $actionsConfig[$action];
+
+        foreach ($config['params'] as $param) {
+            if (empty($_GET[$param])) {
+                $this->redirect('index.php');
+            }
+        }
+
+        $confirmMessage = $config['description'];
+        $detailText = '';
+        $pdo = $this->db->getPdo();
+
+        switch ($action) {
+            case 'cancel_submission':
+                $subId = trim($_GET['submission_id']);
+                $detailText = '#' . h($subId) . ' ?';
+                break;
+            case 'regenerate_token':
+                $tokenId = trim($_GET['token_id']);
+                $tokStmt = $pdo->prepare("SELECT t.email, st.label as step_label FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.id = ?");
+                $tokStmt->execute([$tokenId]);
+                $tokInfo = $tokStmt->fetch(\PDO::FETCH_ASSOC);
+                if ($tokInfo) {
+                    $detailText = App::html()->displayUser($tokInfo['email']) . ' (étape : ' . h($tokInfo['step_label']) . ') ?';
+                } else {
+                    $detailText = 'token #' . h($tokenId) . ' ?';
+                }
+                break;
+            case 'delete_rule':
+                $ruleId = trim($_GET['rule_id']);
+                $ruleStmt = $pdo->prepare("SELECT label FROM alert_rules WHERE id = ?");
+                $ruleStmt->execute([$ruleId]);
+                $ruleLabel = $ruleStmt->fetchColumn();
+                $detailText = $ruleLabel ? '"' . h((string)$ruleLabel) . '" ( #' . h((string)$ruleId) . ') ?' : '#' . h((string)$ruleId) . ' ?';
+                break;
+            case 'delete_alert_log':
+                $logId = trim($_GET['log_id']);
+                $detailText = '#' . h($logId) . ' ?';
+                break;
+            case 'remove_admin':
+                $email = $_GET['email'];
+                $detailText = h($email) . ' ?';
+                break;
+            case 'remove_owner':
+                $ownerId = trim($_GET['id']);
+                $owStmt = $pdo->prepare("SELECT email FROM form_owners WHERE id = ?");
+                $owStmt->execute([$ownerId]);
+                $owEmail = $owStmt->fetchColumn();
+                $detailText = $owEmail ? App::html()->displayUser((string)$owEmail) . ' ?' : '#' . h((string)$ownerId) . ' ?';
+                break;
+            case 'delete_submission':
+                $subId = trim($_GET['submission_id']);
+                $detailText = '#' . h(substr($subId, 0, 8)) . ' ?';
+                break;
+        }
+
+        $cancelUrl = $from ?: 'index.php';
+        $postUrl = $from ?: 'index.php';
+        if ($action === 'remove_owner' && isset($_GET['form_id'])) {
+            $postUrl = 'index.php?p=admin_forms&form_id=' . urlencode($_GET['form_id']) . '#owners';
+            $cancelUrl = $postUrl;
+        }
+
+        ob_start();
+        ?>
+  <div class="confirm-card <?= $config['danger'] ? 'danger' : 'warning' ?>">
+    <div class="confirm-icon"><?= $config['danger'] ? '⚠️' : '🔄' ?></div>
+    <div class="confirm-title <?= $config['danger'] ? '' : 'warning-title' ?>"><?= h($config['label']) ?></div>
+    <div class="confirm-message">
+      <?= $confirmMessage ?> <strong><?= $detailText ?></strong>
+    </div>
+
+    <?php if ($config['danger']): ?>
+    <div class="confirm-warning">
+      Cette action est irréversible.
+    </div>
+    <?php endif; ?>
+
+    <form method="POST" action="<?= h($postUrl) ?>">
+      <?= $this->security->csrfField() ?>
+      <input type="hidden" name="action" value="<?= h($action) ?>">
+      <input type="hidden" name="confirmed" value="1">
+      <?php foreach ($config['params'] as $param): ?>
+        <input type="hidden" name="<?= h($param) ?>" value="<?= h($_GET[$param]) ?>">
+      <?php endforeach; ?>
+
+      <div class="confirm-actions">
+        <button type="submit" class="btn btn-danger">Confirmer</button>
+        <a href="<?= h($cancelUrl) ?>" class="btn btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+<?php
+        $content = (string)ob_get_clean();
+        echo $this->renderPage('Confirmation — ' . h($config['label']), 'dashboard', '', $content);
+    }
+
+    private function safeRelativeUrl(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') return 'index.php';
+        if (preg_match('#^(https?:)?//#i', $url)) return 'index.php';
+        if (preg_match('#^(javascript|data|file):#i', $url)) return 'index.php';
+        if (!preg_match('/^[a-zA-Z0-9_\-]+\.php/', $url)) return 'index.php';
+        return $url;
+    }
+}

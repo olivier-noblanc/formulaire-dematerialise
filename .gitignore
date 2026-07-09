@@ -54,6 +54,10 @@ web.config
 
 # Code coverage
 /coverage-html/
+/coverage_html/
+
+# PHPArkitect baseline
+/phparkitect-baseline.json
 
 # Graphify
 /graphify-out/

@@ -103,9 +103,9 @@ function parse_changelog(string $filepath): array {
  */
 function inline_md(string $text): string {
     // **bold** → <strong>
-    $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text);
+    $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text) ?? $text;
     // `code` → <code>
-    $text = preg_replace('/`(.+?)`/', '<code>$1</code>', $text);
+    $text = preg_replace('/`(.+?)`/', '<code>$1</code>', $text) ?? $text;
     return $text;
 }
 

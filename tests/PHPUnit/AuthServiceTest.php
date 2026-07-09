@@ -533,4 +533,223 @@ final class AuthServiceTest extends TestCase
                 ->execute([$formId, $email1, $email2]);
         }
     }
+
+    // ── processAdminRequest() ───────────────────────────────────
+
+    public function testProcessAdminRequestReturnsSuccessWhenAlreadyAdmin(): void
+    {
+        $pdo = $this->db->getPdo();
+        $adminEmail = $this->auth->getAdminEmail();
+        $_SERVER['HTTP_X_TEST_USER'] = $adminEmail;
+        unset($_SERVER['AUTH_USER']);
+
+        $result = $this->auth->processAdminRequest($adminEmail);
+        $this->assertTrue($result['success']);
+        $this->assertSame('already_admin', $result['reason']);
+    }
+
+    public function testProcessAdminRequestReturnsPendingForDuplicateRequest(): void
+    {
+        $pdo = $this->db->getPdo();
+        $email = 'dup_' . uniqid() . '@test.com';
+
+        // Set non-admin user
+        $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
+        unset($_SERVER['AUTH_USER']);
+
+        // Insert a pending request
+        $arId = bin2hex(random_bytes(8));
+        $token = bin2hex(random_bytes(16));
+        $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, datetime('now'), 'pending', ?)")
+            ->execute([$arId, $email, $token]);
+
+        try {
+            $result = $this->auth->processAdminRequest($email);
+            $this->assertFalse($result['success']);
+            $this->assertSame('pending', $result['reason']);
+        } finally {
+            $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
+        }
+    }
+
+    public function testProcessAdminRequestCreatesRequestAndSendsMail(): void
+    {
+        $pdo = $this->db->getPdo();
+        $email = 'newadmin_' . uniqid() . '@test.com';
+
+        // Set non-admin user
+        $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
+        unset($_SERVER['AUTH_USER']);
+
+        $result = $this->auth->processAdminRequest($email);
+        // In test mode, mail is intercepted, so it should return 'sent' or 'dry_run'
+        $this->assertContains($result['reason'], ['sent', 'dry_run']);
+        $this->assertTrue($result['success']);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
+    }
+
+    // ── approveAdminRequest() ───────────────────────────────────
+
+    public function testApproveAdminRequestAddsAdmin(): void
+    {
+        $pdo = $this->db->getPdo();
+        $email = 'approved_' . uniqid() . '@test.com';
+
+        // Insert pending request
+        $arId = bin2hex(random_bytes(8));
+        $token = bin2hex(random_bytes(16));
+        $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, datetime('now'), 'pending', ?)")
+            ->execute([$arId, $email, $token]);
+
+        try {
+            $result = $this->auth->approveAdminRequest($email);
+            $this->assertTrue($result);
+
+            // Verify admin was added
+            $check = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
+            $check->execute([$email]);
+            $this->assertNotFalse($check->fetch());
+        } finally {
+            $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
+            $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
+        }
+    }
+
+    // ── rejectAdminRequest() ────────────────────────────────────
+
+    public function testRejectAdminRequestUpdatesStatus(): void
+    {
+        $pdo = $this->db->getPdo();
+        $email = 'rejected_' . uniqid() . '@test.com';
+
+        // Insert pending request
+        $arId = bin2hex(random_bytes(8));
+        $token = bin2hex(random_bytes(16));
+        $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, datetime('now'), 'pending', ?)")
+            ->execute([$arId, $email, $token]);
+
+        try {
+            $result = $this->auth->rejectAdminRequest($email);
+            $this->assertTrue($result);
+
+            // Verify status updated
+            $check = $pdo->prepare("SELECT status FROM admin_requests WHERE email = ?");
+            $check->execute([$email]);
+            $this->assertSame('rejected', $check->fetchColumn());
+        } finally {
+            $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
+        }
+    }
+
+    // ── removeAdmin() ───────────────────────────────────────────
+
+    public function testRemoveAdminCannotRemoveSuperAdmin(): void
+    {
+        $adminEmail = $this->auth->getAdminEmail();
+        $result = $this->auth->removeAdmin($adminEmail);
+        $this->assertFalse($result);
+    }
+
+    public function testRemoveAdminRemovesExistingAdmin(): void
+    {
+        $pdo = $this->db->getPdo();
+        $email = 'removable_' . uniqid() . '@test.com';
+
+        // Insert admin
+        $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))")
+            ->execute([bin2hex(random_bytes(8)), $email]);
+
+        try {
+            $result = $this->auth->removeAdmin($email);
+            $this->assertTrue($result);
+
+            // Verify admin removed
+            $check = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
+            $check->execute([$email]);
+            $this->assertFalse($check->fetch());
+        } finally {
+            $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
+        }
+    }
+
+    // ── getUser() persona token path ────────────────────────────
+
+    public function testGetUserWithPersonaTokenInGet(): void
+    {
+        $_GET['persona_token'] = 'test_persona_token';
+        $user = $this->auth->getUser();
+        // Without persona_lookup returning a valid target, it should fall back to real user
+        $this->assertIsString($user);
+        unset($_GET['persona_token']);
+    }
+
+    public function testGetUserWithPersonaTokenInPost(): void
+    {
+        $_POST['persona_token'] = 'test_persona_token';
+        $user = $this->auth->getUser();
+        $this->assertIsString($user);
+        unset($_POST['persona_token']);
+    }
+
+    // ── isAdminByEmail() via isAdmin() ──────────────────────────
+
+    public function testIsAdminReturnsTrueForExistingAdmin(): void
+    {
+        $pdo = $this->db->getPdo();
+        $email = 'admincheck_' . uniqid() . '@test.com';
+
+        $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))")
+            ->execute([bin2hex(random_bytes(8)), $email]);
+
+        $_SERVER['HTTP_X_TEST_USER'] = $email;
+        unset($_SERVER['AUTH_USER']);
+
+        try {
+            $this->assertTrue($this->auth->isAdmin());
+        } finally {
+            $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
+        }
+    }
+
+    public function testIsAdminReturnsFalseForNonAdminEmail(): void
+    {
+        $email = 'notadmin_' . uniqid() . '@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = $email;
+        unset($_SERVER['AUTH_USER']);
+
+        $this->assertFalse($this->auth->isAdmin());
+    }
+
+    // ── getAdminEmail() edge cases ──────────────────────────────
+
+    public function testGetAdminEmailReturnsString(): void
+    {
+        $email = $this->auth->getAdminEmail();
+        $this->assertIsString($email);
+    }
+
+    // ── getUser() with REMOTE_USER ──────────────────────────────
+
+    public function testGetUserFromRemoteUser(): void
+    {
+        unset($_SERVER['HTTP_X_TEST_USER']);
+        unset($_SERVER['AUTH_USER']);
+        $_SERVER['REMOTE_USER'] = 'remoteuser@domain.com';
+        $user = $this->auth->getUser();
+        $this->assertSame('remoteuser@domain.com', $user);
+        unset($_SERVER['REMOTE_USER']);
+    }
+
+    public function testGetUserFromRemoteUserWithoutAtSign(): void
+    {
+        unset($_SERVER['HTTP_X_TEST_USER']);
+        unset($_SERVER['AUTH_USER']);
+        $_SERVER['REMOTE_USER'] = 'DOMAIN\\remote.user';
+        $user = $this->auth->getUser();
+        $this->assertStringContainsString('remote.user', $user);
+        $this->assertStringContainsString('@', $user);
+        unset($_SERVER['REMOTE_USER']);
+    }
 }

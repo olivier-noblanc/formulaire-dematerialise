@@ -267,7 +267,7 @@ final class MailerService
         foreach ($data as $k => $v) {
             if (empty($v) || $k === 'validations') continue;
             if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE);
-            $label  = h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', (string)$k))));
+            $label  = h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', (string)$k) ?? (string)$k)));
             $valeur = $v === '1' ? '✓' : h((string)$v);
             $lignes .= "<tr><td style='padding:5px 8px;font-weight:bold;color:#555;'>{$label}</td><td style='padding:5px 8px;'>{$valeur}</td></tr>";
         }

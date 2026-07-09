@@ -23,6 +23,16 @@ final class RgpdServiceTest extends TestCase
     protected function tearDown(): void
     {
         $_SERVER['HTTP_X_TEST_USER'] = $this->originalUser;
+
+        // Cleanup any orphaned test data (submissions with the hardcoded test form_id)
+        $pdo = $this->db->getPdo();
+        $testFormId = 'c1896b60-710a-40d6-a954-0c8796667df2';
+        $orphaned = $pdo->query("SELECT id FROM submissions WHERE form_id = '{$testFormId}'")->fetchAll(\PDO::FETCH_COLUMN);
+        if (!empty($orphaned)) {
+            $placeholders = implode(',', array_fill(0, count($orphaned), '?'));
+            $pdo->prepare("DELETE FROM tokens WHERE submission_id IN ({$placeholders})")->execute($orphaned);
+            $pdo->prepare("DELETE FROM submissions WHERE id IN ({$placeholders})")->execute($orphaned);
+        }
     }
 
     // ── exportUserData ──────────────────────────────────────────

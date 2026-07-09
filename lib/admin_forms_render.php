@@ -28,7 +28,8 @@ declare(strict_types=1);
  * @package lib
  */
 
-// ── Chargement des sous-modules de rendu ──────────────────────
+// ── Chargement des sous-modules de rendu (consolidés) ──────────
+// Les sous-fichiers sont inclus directement pour réduire le nombre de communautés.
 require_once __DIR__ . '/admin_forms_render_css.php';
 require_once __DIR__ . '/admin_forms_render_panels.php';
 require_once __DIR__ . '/admin_forms_render_form.php';

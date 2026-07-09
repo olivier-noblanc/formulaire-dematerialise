@@ -6,7 +6,6 @@
 // (refactor « all-under-600 »). Ce fichier ne contient plus que le data fetching.
 require_once dirname(__DIR__) . '/helpers.php';
 require_once dirname(__DIR__) . '/lib/render_monitoring.php';
-require_once dirname(__DIR__) . '/lib/render_monitoring_audit.php';
 use App\Core\App;
 
 App::auth()->requireAdmin();

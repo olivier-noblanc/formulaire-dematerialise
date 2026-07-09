@@ -9,9 +9,7 @@
         }
     },
     "config": {
-        "classmap-authoritative": true,
-        "apcu-autoloader": false,
-        "optimize-autoloader": true
+        "apcu-autoloader": false
     },
     "require-dev": {
         "phpstan/phpstan": "^2.0",

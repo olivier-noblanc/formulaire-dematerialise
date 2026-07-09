@@ -299,4 +299,117 @@ final class MailerServiceTest extends TestCase
         $html = $this->mailer->buildMailHtml($submission, 'Step', 'tok');
         $this->assertIsString($html);
     }
+
+    // ── sendDetailed() additional paths ─────────────────────────
+
+    public function testSendDetailedSuccessAndDryRunInTestMode(): void
+    {
+        $result = $this->mailer->sendDetailed('test@example.com', 'Subject', '<p>Body</p>');
+        $this->assertTrue($result['success']);
+        $this->assertSame('dry_run', $result['status']);
+    }
+
+    public function testSendDetailedWithValidEmailInTestMode(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $result = $this->mailer->sendDetailed('valid@test.com', 'Test', '<p>Body</p>');
+        $this->assertTrue($result['success']);
+        $this->assertNotEmpty($GLOBALS['_test_mails']);
+    }
+
+    public function testSendDetailedStoresSubjectInMail(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $this->mailer->sendDetailed('test@test.com', 'My Subject', '<p>Body</p>');
+        $this->assertSame('My Subject', $GLOBALS['_test_mails'][0]['subject']);
+    }
+
+    public function testSendDetailedStoresBodyInMail(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $this->mailer->sendDetailed('test@test.com', 'Subject', '<p>My Body</p>');
+        $this->assertSame('<p>My Body</p>', $GLOBALS['_test_mails'][0]['body']);
+    }
+
+    public function testSendDetailedTrimsAndLowercasesEmail(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $this->mailer->sendDetailed('  TEST@EXAMPLE.COM  ', 'Subject', '<p>Body</p>');
+        $this->assertSame('test@example.com', $GLOBALS['_test_mails'][0]['to']);
+    }
+
+    // ── logAttempt() additional cases ───────────────────────────
+
+    public function testLogAttemptWithAllStatuses(): void
+    {
+        $statuses = ['sent', 'error', 'blocked', 'dry_run', 'cli_blocked', 'rate_limited'];
+        foreach ($statuses as $status) {
+            $this->mailer->logAttempt('test@test.com', 'Subj', $status, 'err', 'log', 'actor', '127.0.0.1');
+        }
+        $this->assertTrue(true);
+    }
+
+    public function testLogAttemptWithUtf8Subject(): void
+    {
+        $this->mailer->logAttempt('test@test.com', 'Sujet avec accents éèà', 'sent', '', '', 'actor', '127.0.0.1');
+        $this->assertTrue(true);
+    }
+
+    // ── getRecentLogs() additional cases ────────────────────────
+
+    public function testGetRecentLogsDefaultLimit(): void
+    {
+        $logs = $this->mailer->getRecentLogs();
+        $this->assertIsArray($logs);
+    }
+
+    public function testGetRecentLogsLargeLimit(): void
+    {
+        $logs = $this->mailer->getRecentLogs(1000);
+        $this->assertIsArray($logs);
+    }
+
+    // ── buildMailHtml() edge cases ──────────────────────────────
+
+    public function testBuildMailHtmlWithBooleanValues(): void
+    {
+        $submission = [
+            'form_label' => 'Form',
+            'data' => json_encode(['active' => '1', 'deleted' => '0']),
+        ];
+        $html = $this->mailer->buildMailHtml($submission, 'Step', 'tok');
+        $this->assertStringContainsString('Active', $html);
+    }
+
+    public function testBuildMailHtmlWithSpecialCharsInValues(): void
+    {
+        $submission = [
+            'form_label' => 'Form',
+            'data' => json_encode(['comment' => 'Line1\nLine2']),
+        ];
+        $html = $this->mailer->buildMailHtml($submission, 'Step', 'tok');
+        $this->assertIsString($html);
+    }
+
+    // ── renderEmailTemplate() additional cases ──────────────────
+
+    public function testRenderEmailTemplateWithEmptyTitle(): void
+    {
+        $html = $this->mailer->renderEmailTemplate('', '<p>Body</p>');
+        $this->assertIsString($html);
+        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+    }
+
+    public function testRenderEmailTemplateWithEmptyBody(): void
+    {
+        $html = $this->mailer->renderEmailTemplate('Title', '');
+        $this->assertIsString($html);
+        $this->assertStringContainsString('Title', $html);
+    }
+
+    public function testRenderEmailTemplateWithSpecialCharsInBody(): void
+    {
+        $html = $this->mailer->renderEmailTemplate('Title', '<p style="color:red;">Test & "quotes"</p>');
+        $this->assertStringContainsString('color:red', $html);
+    }
 }

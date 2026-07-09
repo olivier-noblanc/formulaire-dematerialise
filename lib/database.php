@@ -70,10 +70,10 @@ function generate_field_name(string $label): string {
         $name
     );
     // Remplacer tout ce qui n'est pas alphanumérique par un underscore
-    $name = preg_replace('/[^a-z0-9]+/', '_', $name);
+    $name = preg_replace('/[^a-z0-9]+/', '_', $name) ?? $name;
     // Nettoyer les underscores en double et en bordure
     $name = trim($name, '_');
-    $name = preg_replace('/_+/', '_', $name);
+    $name = preg_replace('/_+/', '_', $name) ?? $name;
     return $name ?: 'champ';
 }
 
