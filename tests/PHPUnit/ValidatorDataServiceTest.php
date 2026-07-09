@@ -18,6 +18,28 @@ final class ValidatorDataServiceTest extends TestCase
         $this->service = new ValidatorDataService($this->db);
     }
 
+    protected function tearDown(): void
+    {
+        // Cleanup test data: forms with test slugs and their dependencies
+        $pdo = $this->db->getPdo();
+        $testForms = $pdo->query("SELECT id FROM forms WHERE slug LIKE 'test-%'")->fetchAll(\PDO::FETCH_COLUMN);
+        if (!empty($testForms)) {
+            $placeholders = implode(',', array_fill(0, count($testForms), '?'));
+            $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id IN ({$placeholders})");
+            $stmt->execute($testForms);
+            $testSubs = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+            if (!empty($testSubs)) {
+                $subPH = implode(',', array_fill(0, count($testSubs), '?'));
+                $pdo->prepare("DELETE FROM submission_validator_data WHERE submission_id IN ({$subPH})")->execute($testSubs);
+                $pdo->prepare("DELETE FROM tokens WHERE submission_id IN ({$subPH})")->execute($testSubs);
+                $pdo->prepare("DELETE FROM submissions WHERE id IN ({$subPH})")->execute($testSubs);
+            }
+            $pdo->prepare("DELETE FROM form_fields WHERE form_id IN ({$placeholders})")->execute($testForms);
+            $pdo->prepare("DELETE FROM steps WHERE form_id IN ({$placeholders})")->execute($testForms);
+            $pdo->prepare("DELETE FROM forms WHERE id IN ({$placeholders})")->execute($testForms);
+        }
+    }
+
     public function testGetSubmissionValidatorDataReturnsEmptyForNonexistent(): void
     {
         $result = $this->service->getSubmissionValidatorData('nonexistent-id');

@@ -142,22 +142,22 @@ function t_jargon(string $text): string {
     //    des chaînes environnantes.
     //    S5-A — nouveaux acronymes : "SI" (majuscule uniquement — ne pas toucher
     //    "si" conditionnel), "LDAP", "SMTP" (pages admin).
-    $text = preg_replace('/\bEPI\b/u',  'Équipement de protection individuelle (EPI)', $text);
-    $text = preg_replace('/\bCSRF\b/u', 'Code de sécurité', $text);
-    $text = preg_replace('/\bRGPD\b/u', 'Protection des données (RGPD)', $text);
-    $text = preg_replace('/\bToken\b/u', 'Lien de validation', $text);
-    $text = preg_replace('/\btokens\b/u', 'liens de validation', $text);
-    $text = preg_replace('/\btoken\b/u',  'lien de validation', $text);
-    $text = preg_replace('/\bSlug\b/u',  'Nom technique', $text);
-    $text = preg_replace('/\bslug\b/u',  'nom technique', $text);
+    $text = preg_replace('/\bEPI\b/u',  'Équipement de protection individuelle (EPI)', $text) ?? $text;
+    $text = preg_replace('/\bCSRF\b/u', 'Code de sécurité', $text) ?? $text;
+    $text = preg_replace('/\bRGPD\b/u', 'Protection des données (RGPD)', $text) ?? $text;
+    $text = preg_replace('/\bToken\b/u', 'Lien de validation', $text) ?? $text;
+    $text = preg_replace('/\btokens\b/u', 'liens de validation', $text) ?? $text;
+    $text = preg_replace('/\btoken\b/u',  'lien de validation', $text) ?? $text;
+    $text = preg_replace('/\bSlug\b/u',  'Nom technique', $text) ?? $text;
+    $text = preg_replace('/\bslug\b/u',  'nom technique', $text) ?? $text;
     // S5-A — "SI" majuscule uniquement : \bSI\b ne matche pas "si", "Si", "SImplifie",
     // "EPIsode", "RSI" (pas de frontière de mot entre R et S). Le résultat
     // "systèmes d'information" ne contient pas "SI" → idempotent.
-    $text = preg_replace('/\bSI\b/u',   'systèmes d\'information', $text);
+    $text = preg_replace('/\bSI\b/u',   'systèmes d\'information', $text) ?? $text;
     // S5-A — "LDAP" réservé aux pages admin (annuaire d'entreprise).
-    $text = preg_replace('/\bLDAP\b/u', 'Annuaire d\'entreprise (LDAP)', $text);
+    $text = preg_replace('/\bLDAP\b/u', 'Annuaire d\'entreprise (LDAP)', $text) ?? $text;
     // S5-A — "SMTP" réservé aux pages admin (serveur email).
-    $text = preg_replace('/\bSMTP\b/u', 'Serveur email (SMTP)', $text);
+    $text = preg_replace('/\bSMTP\b/u', 'Serveur email (SMTP)', $text) ?? $text;
 
     // 4) Restauration des placeholders protégés au point 1.
     $text = str_replace("\x01", 'CircuitDémat', $text);

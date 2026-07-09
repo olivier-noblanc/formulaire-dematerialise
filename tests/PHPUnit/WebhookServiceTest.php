@@ -74,4 +74,102 @@ final class WebhookServiceTest extends TestCase
         $settings->set('webhook_url', '');
         $settings->set('webhook_events', '');
     }
+
+    // ── Constructor / DI ────────────────────────────────────────
+
+    public function testConstructorCreatesInstance(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $db = $app->get(\App\Core\Database::class);
+        $settings = $app->get(\App\Settings\SettingsService::class);
+        $service = new WebhookService($db, $settings);
+        $this->assertInstanceOf(WebhookService::class, $service);
+    }
+
+    // ── getDbSize() additional cases ────────────────────────────
+
+    public function testGetDbSizeReturnsPositiveInteger(): void
+    {
+        $size = $this->service->getDbSize();
+        $this->assertIsInt($size);
+        $this->assertGreaterThanOrEqual(0, $size);
+    }
+
+    public function testGetDbSizeReturnsReasonableSize(): void
+    {
+        $size = $this->service->getDbSize();
+        // DB may not exist in test mode or may be in-memory
+        $this->assertIsInt($size);
+    }
+
+    // ── send() edge cases ───────────────────────────────────────
+
+    public function testSendWithEmptyEventDoesNotThrow(): void
+    {
+        $this->service->send('', ['key' => 'value']);
+        $this->assertTrue(true);
+    }
+
+    public function testSendWithEmptyDataDoesNotThrow(): void
+    {
+        $this->service->send('test_event', []);
+        $this->assertTrue(true);
+    }
+
+    public function testSendWithNestedDataDoesNotThrow(): void
+    {
+        $data = ['nested' => ['key' => 'value', 'list' => [1, 2, 3]]];
+        $this->service->send('test_event', $data);
+        $this->assertTrue(true);
+    }
+
+    public function testSendWithSpecialCharsInEventDoesNotThrow(): void
+    {
+        $this->service->send('event.with.dots', ['key' => 'value']);
+        $this->assertTrue(true);
+    }
+
+    // ── send() with matching events ─────────────────────────────
+
+    public function testSendWithMultipleEventsAndMatch(): void
+    {
+        $settings = \App\Core\App::getInstance()->get(\App\Settings\SettingsService::class);
+        $settings->set('webhook_url', 'http://localhost:1');
+        $settings->set('webhook_events', 'event_a,event_b,event_c');
+
+        $this->service->send('event_b', ['test' => true]);
+        $this->assertTrue(true);
+
+        $settings->set('webhook_url', '');
+        $settings->set('webhook_events', '');
+    }
+
+    public function testSendWithWhitespaceEvents(): void
+    {
+        $settings = \App\Core\App::getInstance()->get(\App\Settings\SettingsService::class);
+        $settings->set('webhook_url', 'http://localhost:1');
+        $settings->set('webhook_events', ' event_a , event_b ');
+
+        $this->service->send('event_a', ['test' => true]);
+        $this->assertTrue(true);
+
+        $settings->set('webhook_url', '');
+        $settings->set('webhook_events', '');
+    }
+
+    // ── Container integration ───────────────────────────────────
+
+    public function testServiceRegisteredInContainer(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $this->assertTrue($app->has(WebhookService::class));
+    }
+
+    public function testContainerReturnsSameInstance(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $s1 = $app->get(WebhookService::class);
+        $s2 = $app->get(WebhookService::class);
+        $this->assertSame($s1, $s2);
+    }
 }

@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Core\App;
-
 /**
  * Contrôleur du tableau de bord administrateur (dashboard.php).
  *
@@ -26,7 +24,7 @@ final class DashboardController extends BaseController
         require_once __DIR__ . '/../../lib/render_dashboard.php';
 
         // Sécurité : le dashboard est réservé aux administrateurs
-        App::auth()->requireAdmin();
+        $this->auth->requireAdmin();
 
         $pdo     = $this->db->getPdo();
         $filtre  = $_GET['statut'] ?? 'tous';
@@ -74,13 +72,13 @@ final class DashboardController extends BaseController
                         ? 'valide'
                         : ($filtre === 'refuse' ? 'refuse' : ''));
             }
-            \App\Core\App::audit()->log('export_csv', '', 'Export CSV des soumissions', '');
+            $this->audit->log('export_csv', '', 'Export CSV des soumissions', '');
             export_csv($pdo, $options);
         }
 
         // Régénération de token (admin)
         $regen_msg = '';
-        if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && App::auth()->isAdmin()) {
+        if (isset($_POST['action']) && $_POST['action'] === 'regenerate_token' && $this->auth->isAdmin()) {
             $this->security->requireCsrf();
             $token_id = trim($_POST['token_id'] ?? '');
             // Sécurité (S-07) : valider le format du token_id
@@ -102,7 +100,7 @@ final class DashboardController extends BaseController
 
         // Rappel manuel (admin)
         $remind_msg = '';
-        if (isset($_POST['action']) && $_POST['action'] === 'remind_one' && App::auth()->isAdmin()) {
+        if (isset($_POST['action']) && $_POST['action'] === 'remind_one' && $this->auth->isAdmin()) {
             $this->security->requireCsrf();
             $token_id = trim($_POST['token_id'] ?? '');
             // Sécurité (S-07) : valider le format du token_id
@@ -144,7 +142,7 @@ final class DashboardController extends BaseController
                 $sub_stmt = $pdo->prepare("SELECT submitted_by FROM submissions WHERE id = ?");
                 $sub_stmt->execute([$sub_id]);
                 $sub_owner = $sub_stmt->fetchColumn();
-                if (App::auth()->isAdmin() || $sub_owner === $actor) {
+                if ($this->auth->isAdmin() || $sub_owner === $actor) {
                     $result     = cancel_submission((string) $sub_id, $actor);
                     $cancel_msg = $result['message'];
                     /** @phpstan-ignore-next-line if.alwaysTrue */

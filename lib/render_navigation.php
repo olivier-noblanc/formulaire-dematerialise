@@ -532,5 +532,5 @@ function persona_rewrite_urls(string $html): string {
             return 'href=' . $quote . $url_main . $sep . 'persona_token=' . urlencode($token) . $anchor . $quote;
         },
         $html
-    );
+    ) ?? $html;
 }

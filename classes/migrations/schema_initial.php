@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use App\Core\App;
+
 require_once __DIR__ . '/seed_default_forms.php';
 
 /**
@@ -271,14 +273,14 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
             $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
                 ->execute([generate_uuid(), App::auth()->getAdminEmail(), date('Y-m-d H:i:s')]);
         }
-    } catch (PDOException $e) {
-        // Silencieux
+    } catch (\Throwable $e) {
+        // Silencieux — App::auth() peut ne pas être disponible lors des tests
     }
 
     // ── Seed formulaires par défaut ──
     try {
         seed_default_forms($pdo);
-    } catch (PDOException $e) {
+    } catch (\Throwable $e) {
         // Silencieux
     }
 

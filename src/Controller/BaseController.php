@@ -16,9 +16,21 @@ use App\Cache\CacheService;
 use App\Render\HtmlService;
 use App\Workflow\WorkflowEngine;
 use App\Workflow\ConditionEvaluator;
+use App\Repository\FormRepository;
+use App\Repository\SubmissionRepository;
+use App\Repository\TokenRepository;
+use App\Repository\AttachmentRepository;
+use App\Repository\AdminRepository;
+use App\Repository\SettingsRepository;
+use App\Repository\AuditRepository;
 
 /**
- * Contrôleur de base — fournit l'accès aux services via DI.
+ * Contrôleur de base — fournit l'accès aux services et repositories via DI.
+ *
+ * Le container App est injecté via le constructeur (constructor injection).
+ * Par défaut, le singleton App::getInstance() est utilisé pour la compatibilité
+ * ascendante. Passer explicitement une instance App permet l'injection de
+ * dépendances (tests unitaires, contexts alternatifs).
  */
 abstract class BaseController
 {
@@ -35,21 +47,48 @@ abstract class BaseController
     protected WorkflowEngine $workflow;
     protected ConditionEvaluator $conditions;
 
-    public function __construct()
+    // Repositories
+    protected FormRepository $formRepo;
+    protected SubmissionRepository $submissionRepo;
+    protected TokenRepository $tokenRepo;
+    protected AttachmentRepository $attachmentRepo;
+    protected AdminRepository $adminRepo;
+    protected SettingsRepository $settingsRepo;
+    protected AuditRepository $auditRepo;
+
+    protected App $app;
+
+    /**
+     * @param App|null $app Container DI injecté — null par défaut pour la
+     *                      compatibilité avec les contrôleurs enfants existants.
+     *                      Passer une instance App permet l'injection explicite
+     *                      (tests, contexts alternatifs).
+     */
+    public function __construct(?App $app = null)
     {
-        $app = App::getInstance();
-        $this->db = $app->get(Database::class);
-        $this->config = $app->get(Config::class);
-        $this->settings = $app->get(SettingsService::class);
-        $this->auth = $app->get(AuthService::class);
-        $this->fields = $app->get(FieldService::class);
-        $this->security = $app->get(SecurityService::class);
-        $this->mail = $app->get(MailService::class);
-        $this->audit = $app->get(AuditLogService::class);
-        $this->cache = $app->get(CacheService::class);
-        $this->html = $app->get(HtmlService::class);
-        $this->conditions = $app->get(ConditionEvaluator::class);
-        $this->workflow = $app->get(WorkflowEngine::class);
+        $this->app = $app ?? App::getInstance();
+
+        $this->db             = $this->app->get(Database::class);
+        $this->config         = $this->app->get(Config::class);
+        $this->settings       = $this->app->get(SettingsService::class);
+        $this->auth           = $this->app->get(AuthService::class);
+        $this->fields         = $this->app->get(FieldService::class);
+        $this->security       = $this->app->get(SecurityService::class);
+        $this->mail           = $this->app->get(MailService::class);
+        $this->audit          = $this->app->get(AuditLogService::class);
+        $this->cache          = $this->app->get(CacheService::class);
+        $this->html           = $this->app->get(HtmlService::class);
+        $this->conditions     = $this->app->get(ConditionEvaluator::class);
+        $this->workflow       = $this->app->get(WorkflowEngine::class);
+
+        // Repositories
+        $this->formRepo       = $this->app->get(FormRepository::class);
+        $this->submissionRepo = $this->app->get(SubmissionRepository::class);
+        $this->tokenRepo      = $this->app->get(TokenRepository::class);
+        $this->attachmentRepo = $this->app->get(AttachmentRepository::class);
+        $this->adminRepo      = $this->app->get(AdminRepository::class);
+        $this->settingsRepo   = $this->app->get(SettingsRepository::class);
+        $this->auditRepo      = $this->app->get(AuditRepository::class);
     }
 
     protected function renderPage(string $title, string $currentPage = '', string $pageCss = '', string $content = ''): string

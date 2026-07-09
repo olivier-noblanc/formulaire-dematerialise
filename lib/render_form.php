@@ -285,7 +285,7 @@ function render_submission_data(array $data, array $exclude = ['validations', 'c
     foreach ($data as $k => $v) {
         if (empty($v)) continue;
         if (in_array($k, $exclude, true)) continue;
-        $label   = h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k))));
+        $label   = h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k) ?? $k)));
         $display = $v === '1' ? '<span aria-hidden="true">&#10003;</span>' . ($format === 'grid' ? ' Oui' : '') : h((string)$v);
         if ($format === 'inline') {
             $html .= '<strong>' . $label . ' :</strong> ' . $display . ' &nbsp;';

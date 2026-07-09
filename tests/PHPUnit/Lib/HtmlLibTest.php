@@ -4,43 +4,51 @@ declare(strict_types=1);
 namespace App\Tests\Lib;
 
 use PHPUnit\Framework\TestCase;
+use App\Render\HtmlService;
 
 final class HtmlLibTest extends TestCase
 {
-    // ── h() ──────────────────────────────────────────────────
+    private HtmlService $html;
+
+    protected function setUp(): void
+    {
+        $this->html = new HtmlService();
+    }
+
+    // ── h() / escape() ──────────────────────────────────────────
 
     public function testHEscapesHtml(): void
     {
-        $this->assertSame('&lt;script&gt;', h('<script>'));
-        $this->assertSame('&amp;', h('&'));
-        $this->assertSame('&quot;', h('"'));
+        $this->assertSame('&lt;script&gt;', $this->html->escape('<script>'));
+        $this->assertSame('&amp;', $this->html->escape('&'));
+        $this->assertSame('&quot;', $this->html->escape('"'));
     }
 
     public function testHNullReturnsEmpty(): void
     {
-        $this->assertSame('', h(null));
+        $this->assertSame('', $this->html->escape(null));
     }
 
     public function testHPreservesSafeText(): void
     {
-        $this->assertSame('hello world', h('hello world'));
+        $this->assertSame('hello world', $this->html->escape('hello world'));
     }
 
-    // ── display_user() ───────────────────────────────────────
+    // ── displayUser() ───────────────────────────────────────────
 
     public function testDisplayUserSameUser(): void
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
         $this->assertSame(
             '<strong>Vous</strong>',
-            display_user('olivier.noblanc@dreets.gouv.fr', $currentUser)
+            $this->html->displayUser('olivier.noblanc@dreets.gouv.fr', $currentUser)
         );
     }
 
     public function testDisplayUserSameDomain(): void
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
-        $result = display_user('jean.dupont@dreets.gouv.fr', $currentUser);
+        $result = $this->html->displayUser('jean.dupont@dreets.gouv.fr', $currentUser);
         $this->assertStringContainsString('jean.dupont', $result);
         $this->assertStringNotContainsString('@dreets.gouv.fr', $result);
     }
@@ -48,101 +56,98 @@ final class HtmlLibTest extends TestCase
     public function testDisplayUserDifferentDomain(): void
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
-        $result = display_user('jean@externe.fr', $currentUser);
+        $result = $this->html->displayUser('jean@externe.fr', $currentUser);
         $this->assertSame('jean@externe.fr', $result);
     }
 
     public function testDisplayUserEmpty(): void
     {
-        $this->assertSame('', display_user('', 'test@test.com'));
+        $this->assertSame('', $this->html->displayUser('', 'test@test.com'));
     }
 
     public function testDisplayUserForceEmail(): void
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
-        $result = display_user('olivier.noblanc@dreets.gouv.fr', $currentUser, true);
+        $result = $this->html->displayUser('olivier.noblanc@dreets.gouv.fr', $currentUser, true);
         $this->assertSame('olivier.noblanc@dreets.gouv.fr', $result);
     }
 
-    // ── display_user_short() ─────────────────────────────────
+    // ── displayUserShort() ─────────────────────────────────────
 
     public function testDisplayUserShortEmail(): void
     {
-        $this->assertSame('olivier.noblanc', display_user_short('olivier.noblanc@dreets.gouv.fr'));
+        $this->assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc@dreets.gouv.fr'));
     }
 
     public function testDisplayUserShortNoAt(): void
     {
-        $this->assertSame('olivier.noblanc', display_user_short('olivier.noblanc'));
+        $this->assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc'));
     }
 
     public function testDisplayUserShortWindows(): void
     {
-        $this->assertSame('olivier.noblanc', display_user_short('DREETS\\olivier.noblanc'));
+        $this->assertSame('olivier.noblanc', $this->html->displayUserShort('DREETS\\olivier.noblanc'));
     }
 
     public function testDisplayUserShortEmpty(): void
     {
-        $this->assertSame('', display_user_short(''));
+        $this->assertSame('', $this->html->displayUserShort(''));
     }
 
-    // ── format_file_size() ───────────────────────────────────
+    // ── formatFileSize() ───────────────────────────────────────
 
     public function testFormatFileSizeBytes(): void
     {
-        // lib/ uses "octets" not "o" for bytes
-        $this->assertSame('0 octets', format_file_size(0));
-        $this->assertSame('500 octets', format_file_size(500));
+        $this->assertSame('0 o', $this->html->formatFileSize(0));
+        $this->assertSame('500 o', $this->html->formatFileSize(500));
     }
 
     public function testFormatFileSizeKo(): void
     {
-        $this->assertSame('1 Ko', format_file_size(1024));
+        $this->assertSame('1 Ko', $this->html->formatFileSize(1024));
     }
 
     public function testFormatFileSizeMo(): void
     {
-        $this->assertSame('1 Mo', format_file_size(1024 * 1024));
+        $this->assertSame('1 Mo', $this->html->formatFileSize(1024 * 1024));
     }
 
     public function testFormatFileSizeLarge(): void
     {
-        // lib/ function stops at Mo, doesn't have Go unit
-        $result = format_file_size(1024 * 1024 * 1024);
-        $this->assertStringContainsString('Mo', $result);
+        $result = $this->html->formatFileSize(1024 * 1024 * 1024);
+        $this->assertStringContainsString('Go', $result);
     }
 
-    // ── get_file_icon() ──────────────────────────────────────
+    // ── getFileIcon() ──────────────────────────────────────────
 
     public function testGetFileIconImage(): void
     {
-        // lib/ uses '🖼' without variation selector
-        $icon = get_file_icon('image/png');
+        $icon = $this->html->getFileIcon('image/png');
         $this->assertNotEmpty($icon);
     }
 
     public function testGetFileIconPdf(): void
     {
-        $this->assertSame('📄', get_file_icon('application/pdf'));
+        $this->assertSame('📄', $this->html->getFileIcon('application/pdf'));
     }
 
     public function testGetFileIconZip(): void
     {
-        $this->assertSame('📦', get_file_icon('application/zip'));
+        $this->assertSame('📦', $this->html->getFileIcon('application/zip'));
     }
 
     public function testGetFileIconWord(): void
     {
-        $this->assertSame('📝', get_file_icon('application/msword'));
+        $this->assertSame('📝', $this->html->getFileIcon('application/msword'));
     }
 
     public function testGetFileIconText(): void
     {
-        $this->assertSame('📃', get_file_icon('text/plain'));
+        $this->assertSame('📃', $this->html->getFileIcon('text/plain'));
     }
 
     public function testGetFileIconDefault(): void
     {
-        $this->assertSame('📎', get_file_icon('application/octet-stream'));
+        $this->assertSame('📎', $this->html->getFileIcon('application/octet-stream'));
     }
 }

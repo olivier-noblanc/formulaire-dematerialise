@@ -18,6 +18,9 @@ abstract class BaseRepository
     public function fetchOne(string $sql, array $params = []): ?array
     {
         $stmt = $this->pdo()->prepare($sql);
+        if ($stmt === false) {
+            throw new \RuntimeException("Failed to prepare SQL: $sql");
+        }
         $stmt->execute($params);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result !== false ? $result : null;
@@ -26,6 +29,9 @@ abstract class BaseRepository
     public function fetchAll(string $sql, array $params = []): array
     {
         $stmt = $this->pdo()->prepare($sql);
+        if ($stmt === false) {
+            throw new \RuntimeException("Failed to prepare SQL: $sql");
+        }
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
@@ -33,11 +39,18 @@ abstract class BaseRepository
     public function execute(string $sql, array $params = []): bool
     {
         $stmt = $this->pdo()->prepare($sql);
+        if ($stmt === false) {
+            throw new \RuntimeException("Failed to prepare SQL: $sql");
+        }
         return $stmt->execute($params);
     }
 
     public function lastInsertId(): string
     {
-        return $this->pdo()->lastInsertId();
+        $id = $this->pdo()->lastInsertId();
+        if ($id === false) {
+            throw new \RuntimeException("Failed to get last insert ID");
+        }
+        return $id;
     }
 }

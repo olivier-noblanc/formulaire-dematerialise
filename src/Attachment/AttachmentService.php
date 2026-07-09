@@ -94,7 +94,7 @@ final class AttachmentService
 
         // Sécurité (S-06) : sanitisser le nom de fichier
         $safeName = basename($file['name']);
-        $safeName = preg_replace('/[^a-zA-Z0-9._\-\x{00C0}-\x{024F}]/u', '_', $safeName);
+        $safeName = preg_replace('/[^a-zA-Z0-9._\-\x{00C0}-\x{024F}]/u', '_', $safeName) ?? $safeName;
         $safeName = ltrim($safeName, '.');
         if (empty($safeName)) {
             $safeName = 'fichier';

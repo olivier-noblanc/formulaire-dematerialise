@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Token;
 
+use App\Core\App;
 use App\Core\Database;
 use App\Settings\SettingsService;
 use App\Auth\AuthService;
@@ -46,7 +47,7 @@ final class TokenService
      */
     public function getForSubmission(string $submissionId, array $extraFields = []): array
     {
-        $allowedFields = ['t.id', 't.token', 't.relance_count', 't.relance_at', 't.expires_at', 't.delegated_at', 't.sent_at'];
+        $allowedFields = ['t.id', 't.token', 't.relance_count', 't.relance_at', 't.expires_at', 't.sent_at'];
         if (!empty($extraFields)) {
             $extraFields = array_intersect($extraFields, $allowedFields);
         }

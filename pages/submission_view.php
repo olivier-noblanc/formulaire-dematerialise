@@ -7,7 +7,6 @@
 // et la logique métier (POST handling, accès, workflow steps, etc.).
 require_once dirname(__DIR__) . '/helpers.php';
 require_once dirname(__DIR__) . '/lib/render_submission_view.php';
-require_once dirname(__DIR__) . '/lib/render_submission_view_sections.php';
 use App\Core\App;
 
 $pdo = App::db()->getPdo();

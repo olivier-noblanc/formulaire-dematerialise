@@ -71,6 +71,37 @@ if (!array_key_exists($page, $ALLOWED_PAGES)) {
     // render_error_page appelle exit() — pas besoin de exit ici
 }
 
+// ── Mapping pages → Controllers OOP ──
+// Les contrôleurs migrés sont utilisés quand disponibles
+$CONTROLLER_MAP = [
+    'changelog' => \App\Controller\ChangelogController::class,
+    'health' => \App\Controller\HealthController::class,
+    'rgpd' => \App\Controller\RgpdController::class,
+    'backup' => \App\Controller\BackupController::class,
+    'confirm_action' => \App\Controller\ConfirmActionController::class,
+    'download' => \App\Controller\DownloadController::class,
+    'persona' => \App\Controller\PersonaController::class,
+    'my_forms' => \App\Controller\MyFormsController::class,
+    'stats' => \App\Controller\StatsController::class,
+    'form_preview' => \App\Controller\FormPreviewController::class,
+    'admin_alerts' => \App\Controller\AdminAlertsController::class,
+    'admin_settings' => \App\Controller\AdminSettingsController::class,
+    'admin_access' => \App\Controller\AdminAccessController::class,
+    'admin_forms' => \App\Controller\AdminFormsController::class,
+    'monitoring' => \App\Controller\MonitoringController::class,
+    'my_submissions' => \App\Controller\MySubmissionsController::class,
+    'my_validations' => \App\Controller\MyValidationsController::class,
+    'form_tracking' => \App\Controller\FormTrackingController::class,
+    'submission_view' => \App\Controller\SubmissionViewController::class,
+];
+
+if (array_key_exists($page, $CONTROLLER_MAP)) {
+    $controllerClass = $CONTROLLER_MAP[$page];
+    $controller = new $controllerClass();
+    $controller->handle();
+    exit;
+}
+
 $pageFile = __DIR__ . '/pages/' . $page . '.php';
 if (!file_exists($pageFile)) {
     http_response_code(404);

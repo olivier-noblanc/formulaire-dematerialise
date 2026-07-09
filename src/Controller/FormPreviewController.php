@@ -1,0 +1,116 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Core\App;
+
+/**
+ * Contrôleur de la page Prévisualisation de formulaire.
+ */
+final class FormPreviewController extends BaseController
+{
+    public function handle(): void
+    {
+        App::auth()->requireAdmin();
+
+        $pdo = $this->db->getPdo();
+        $formId = trim($_GET['form_id'] ?? '');
+
+        $form = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
+        $form->execute([$formId]);
+        $form = $form->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$form) {
+            render_error_page(404, 'Formulaire introuvable',
+                'Le formulaire demandé n\'existe pas.',
+                'Retournez au tableau de bord pour voir les formulaires disponibles.');
+        }
+
+        $formFields = get_form_fields($form['id'], 'demandeur');
+
+        $grouped = [];
+        foreach ($formFields as $field) {
+            $group = $field['card_group'] ?: 'Général';
+            $grouped[$group][] = $field;
+        }
+
+        $workflowSteps = get_workflow_steps($form['id']);
+
+        ob_start();
+        ?>
+  <div class="preview-banner"><span aria-hidden="true">👁</span> Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="index.php?p=admin_forms&form_id=<?= urlencode($form['id']) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;"><span aria-hidden="true">⚙</span> Retour à l'édition</a></div>
+
+  <h1><?= h($form['label']) ?></h1>
+  <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= h($form['description']) ?></p><?php endif; ?>
+  <p style="font-size:.85rem;color:#555;margin-bottom:1.5rem;">Formulaire rempli par : <strong><?= h(App::auth()->getUser()) ?></strong></p>
+
+  <?php if (!empty($workflowSteps)): ?>
+  <div class="workflow-preview">
+    <h3>🔀 Circuit de validation qui sera suivi</h3>
+    <div class="wf-flow">
+      <?php foreach ($workflowSteps as $i => $ws):
+        $emails = array_filter(explode('|', $ws['recipient_emails'] ?? ''));
+      ?>
+        <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
+        <div class="wf-step">
+          <div class="wf-step-label"><?= h($ws['label']) ?></div>
+          <div class="wf-step-emails">
+            <?php foreach ($emails as $email): ?>
+              <span class="wf-step-email"><?= h($email) ?></span>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <?php if (!empty($grouped)): ?>
+  <form id="preview-form" style="pointer-events:none;">
+    <?php foreach ($grouped as $groupName => $fields): ?>
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h3 style="margin-bottom:1rem;"><?= h($groupName) ?></h3>
+      <?php foreach ($fields as $field):
+        $fieldName = h($field['field_name']);
+        $fieldLabel = h($field['label']);
+        $required = !empty($field['required']) ? 'required' : '';
+        $placeholder = !empty($field['placeholder']) ? h($field['placeholder']) : '';
+      ?>
+      <div class="field">
+        <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= !empty($field['required']) ? '<span style="color:#c0392b;">*</span>' : '' ?></label>
+        <?php if ($field['field_type'] === 'textarea'): ?>
+          <textarea id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" rows="3" <?= $required ?> placeholder="<?= $placeholder ?>"></textarea>
+        <?php elseif ($field['field_type'] === 'select' && !empty($field['options'])): ?>
+          <select id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
+            <option value="">— Sélectionner —</option>
+            <?php foreach ($field['options'] as $opt): ?>
+              <option value="<?= h($opt) ?>"><?= h($opt) ?></option>
+            <?php endforeach; ?>
+          </select>
+        <?php elseif ($field['field_type'] === 'checkbox'): ?>
+          <label class="checkbox-item">
+            <input type="checkbox" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
+            <?= $fieldLabel ?>
+          </label>
+        <?php elseif ($field['field_type'] === 'date'): ?>
+          <input type="date" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
+        <?php else: ?>
+          <input type="text" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?> placeholder="<?= $placeholder ?>">
+        <?php endif; ?>
+        <?php if (!empty($field['description'])): ?>
+          <span class="hint"><?= h($field['description']) ?></span>
+        <?php endif; ?>
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <?php endforeach; ?>
+  </form>
+  <?php else: ?>
+    <p class="empty-state">Aucun champ configuré pour ce formulaire.</p>
+  <?php endif; ?>
+<?php
+        $content = (string)ob_get_clean();
+        echo $this->renderPage('Prévisualisation — ' . $form['label'], 'form_preview', '', $content);
+    }
+}

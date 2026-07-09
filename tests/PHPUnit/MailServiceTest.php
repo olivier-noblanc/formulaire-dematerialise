@@ -75,4 +75,138 @@ final class MailServiceTest extends TestCase
             $this->markTestSkipped('App container services not registered');
         }
     }
+
+    // ── Constructor / DI ────────────────────────────────────────
+
+    public function testConstructorCreatesInstance(): void
+    {
+        $mail = new MailService($this->db, $this->settings);
+        $this->assertInstanceOf(MailService::class, $mail);
+    }
+
+    public function testImplementsMailInterface(): void
+    {
+        $this->assertInstanceOf(\App\Contract\MailInterface::class, $this->mail);
+    }
+
+    // ── send() additional cases ─────────────────────────────────
+
+    public function testSendWithHtmlBodyCapturesBody(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $body = '<h1>Hello</h1><p>World</p>';
+        $this->mail->send('test@example.com', 'HTML Test', $body);
+        $this->assertSame($body, $GLOBALS['_test_mails'][0]['body']);
+    }
+
+    public function testSendCapturesSubject(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $this->mail->send('test@example.com', 'My Subject Line', '<p>Body</p>');
+        $this->assertSame('My Subject Line', $GLOBALS['_test_mails'][0]['subject']);
+    }
+
+    public function testSendCapturesTimestamp(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $this->mail->send('test@example.com', 'Subject', '<p>Body</p>');
+        $this->assertArrayHasKey('time', $GLOBALS['_test_mails'][0]);
+        $this->assertNotEmpty($GLOBALS['_test_mails'][0]['time']);
+    }
+
+    public function testSendReturnsBoolean(): void
+    {
+        $result = $this->mail->send('test@example.com', 'Subject', '<p>Body</p>');
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+    }
+
+    public function testSendMultipleMailsAccumulatesInGlobal(): void
+    {
+        $GLOBALS['_test_mails'] = [];
+        $this->mail->send('user1@test.com', 'Subj1', '<p>1</p>');
+        $this->mail->send('user2@test.com', 'Subj2', '<p>2</p>');
+        $this->assertCount(2, $GLOBALS['_test_mails']);
+    }
+
+    // ── buildValidationEmail() additional cases ─────────────────
+
+    public function testBuildValidationEmailContainsAppName(): void
+    {
+        $submission = ['form_label' => 'Test', 'submitted_by' => 'test@test.com'];
+        $html = $this->mail->buildValidationEmail($submission, 'Step', 'token');
+        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+    }
+
+    public function testBuildValidationEmailContainsValidateUrl(): void
+    {
+        $submission = ['form_label' => 'Test', 'submitted_by' => 'test@test.com'];
+        $html = $this->mail->buildValidationEmail($submission, 'Step', 'mytoken42');
+        $this->assertStringContainsString('mytoken42', $html);
+        $this->assertStringContainsString('validate', $html);
+    }
+
+    public function testBuildValidationEmailContainsStepLabelInBold(): void
+    {
+        $submission = ['form_label' => 'Form', 'submitted_by' => 'test@test.com'];
+        $html = $this->mail->buildValidationEmail($submission, 'My Step', 'tok');
+        $this->assertStringContainsString('<strong>My Step</strong>', $html);
+    }
+
+    public function testBuildValidationEmailEscapesHtmlInStepLabel(): void
+    {
+        $submission = ['form_label' => 'Form', 'submitted_by' => 'test@test.com'];
+        $html = $this->mail->buildValidationEmail($submission, '<script>alert(1)</script>', 'tok');
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
+        $this->assertStringContainsString('&lt;script&gt;', $html);
+    }
+
+    // ── renderEmailTemplate() additional cases ──────────────────
+
+    public function testRenderEmailTemplateReturnsString(): void
+    {
+        try {
+            $html = $this->mail->renderEmailTemplate('Title', '<p>Body</p>');
+            $this->assertIsString($html);
+            $this->assertNotEmpty($html);
+        } catch (\RuntimeException $e) {
+            $this->markTestSkipped('App container services not registered');
+        }
+    }
+
+    public function testRenderEmailTemplateContainsTitle(): void
+    {
+        try {
+            $html = $this->mail->renderEmailTemplate('My Title', '<p>Body</p>');
+            $this->assertStringContainsString('My Title', $html);
+        } catch (\RuntimeException $e) {
+            $this->markTestSkipped('App container services not registered');
+        }
+    }
+
+    public function testRenderEmailTemplateContainsBody(): void
+    {
+        try {
+            $html = $this->mail->renderEmailTemplate('Title', '<p>My Content</p>');
+            $this->assertStringContainsString('My Content', $html);
+        } catch (\RuntimeException $e) {
+            $this->markTestSkipped('App container services not registered');
+        }
+    }
+
+    // ── Container integration ───────────────────────────────────
+
+    public function testServiceRegisteredInContainer(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $this->assertTrue($app->has(MailService::class));
+    }
+
+    public function testContainerReturnsSameInstance(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $mail1 = $app->get(MailService::class);
+        $mail2 = $app->get(MailService::class);
+        $this->assertSame($mail1, $mail2);
+    }
 }

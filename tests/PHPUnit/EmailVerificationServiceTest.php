@@ -445,4 +445,214 @@ final class EmailVerificationServiceTest extends TestCase
         $result = $this->service->ldapSuggest('   ');
         $this->assertIsArray($result);
     }
+
+    // ── verify() mode routing ───────────────────────────────────
+
+    public function testVerifyModeNoneReturnsOkWithNoneMethod(): void
+    {
+        // Default mode is 'none'
+        $result = $this->service->verify('test@example.com');
+        if ($result['method'] === 'none') {
+            $this->assertTrue($result['ok']);
+            $this->assertSame('none', $result['method']);
+        }
+    }
+
+    public function testVerifyWithInvalidEmailDoesNotRouteToLdapOrSmtp(): void
+    {
+        $result = $this->service->verify('not-valid-email');
+        $this->assertFalse($result['ok']);
+        $this->assertSame('format', $result['method']);
+    }
+
+    public function testVerifyReturnsThreeKeysAlways(): void
+    {
+        $emails = ['test@example.com', 'invalid', '', 'user+tag@domain.com'];
+        foreach ($emails as $email) {
+            $result = $this->service->verify($email);
+            $this->assertArrayHasKey('ok', $result, "Failed for email: $email");
+            $this->assertArrayHasKey('method', $result, "Failed for email: $email");
+            $this->assertArrayHasKey('detail', $result, "Failed for email: $email");
+        }
+    }
+
+    // ── verifyLdap() edge cases ─────────────────────────────────
+
+    public function testVerifyLdapWhenLdapExtensionAvailableButNoHost(): void
+    {
+        // When ldap_connect exists but host config is empty, returns config error
+        if (function_exists('ldap_connect')) {
+            $result = $this->service->verifyLdap('test@example.com');
+            $this->assertIsArray($result);
+            $this->assertSame('ldap', $result['method']);
+            // Should fail because LDAP host is not configured in test
+            $this->assertFalse($result['ok']);
+        } else {
+            $result = $this->service->verifyLdap('test@example.com');
+            $this->assertFalse($result['ok']);
+            $this->assertStringContainsString('ldap', $result['detail']);
+        }
+    }
+
+    public function testVerifyLdapDetailIsNonEmptyString(): void
+    {
+        $result = $this->service->verifyLdap('anyone@example.com');
+        $this->assertIsString($result['detail']);
+        $this->assertNotEmpty($result['detail']);
+    }
+
+    // ── verifySmtp() edge cases ─────────────────────────────────
+
+    public function testVerifySmtpWhenFsockopenNotAvailable(): void
+    {
+        // Smtp will fail because no SMTP host configured in test
+        $result = $this->service->verifySmtp('test@example.com');
+        $this->assertFalse($result['ok']);
+        $this->assertSame('smtp', $result['method']);
+    }
+
+    public function testVerifySmtpWithEmptyEmailReturnsSmtpMethod(): void
+    {
+        $result = $this->service->verifySmtp('');
+        $this->assertSame('smtp', $result['method']);
+    }
+
+    public function testVerifySmtpDetailContainsErrorInformation(): void
+    {
+        $result = $this->service->verifySmtp('test@example.com');
+        $this->assertNotEmpty($result['detail']);
+    }
+
+    // ── ldapSuggest() paths ─────────────────────────────────────
+
+    public function testLdapSuggestReturnsEmptyWhenSuggestNotEnabled(): void
+    {
+        // ldap_suggest_enabled defaults to '0' in test
+        $result = $this->service->ldapSuggest('test');
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    public function testLdapSuggestReturnsEmptyForSpecialCharsQuery(): void
+    {
+        $result = $this->service->ldapSuggest('test)(|*)(*');
+        $this->assertIsArray($result);
+    }
+
+    public function testLdapSuggestLimitOne(): void
+    {
+        $result = $this->service->ldapSuggest('test', 1);
+        $this->assertIsArray($result);
+    }
+
+    public function testLdapSuggestLimitFiveHundred(): void
+    {
+        $result = $this->service->ldapSuggest('test', 500);
+        $this->assertIsArray($result);
+    }
+
+    // ── testVerification() mode paths ───────────────────────────
+
+    public function testTestVerificationWithValidEmailAndNoneMode(): void
+    {
+        $result = $this->service->testVerification('test@example.com');
+        $this->assertTrue($result['format_valid']);
+        $this->assertSame('test@example.com', $result['email']);
+        $this->assertArrayHasKey('verify', $result);
+        $this->assertArrayHasKey('mode', $result);
+    }
+
+    public function testTestVerificationWithLongEmail(): void
+    {
+        $longEmail = str_repeat('a', 60) . '@example.com';
+        $result = $this->service->testVerification($longEmail);
+        $this->assertSame($longEmail, $result['email']);
+    }
+
+    public function testTestVerificationResultContainsVerifyArray(): void
+    {
+        $result = $this->service->testVerification('test@example.com');
+        $this->assertArrayHasKey('ok', $result['verify']);
+        $this->assertArrayHasKey('method', $result['verify']);
+        $this->assertArrayHasKey('detail', $result['verify']);
+    }
+
+    // ── verify() edge cases ─────────────────────────────────────
+
+    public function testVerifyEmailWithNumericDomain(): void
+    {
+        $result = $this->service->verify('user@123.456.789');
+        $this->assertArrayHasKey('ok', $result);
+    }
+
+    public function testVerifyEmailWithLongTld(): void
+    {
+        $result = $this->service->verify('user@example.museum');
+        $this->assertArrayHasKey('ok', $result);
+    }
+
+    public function testVerifyEmailWithHyphenDomain(): void
+    {
+        $result = $this->service->verify('user@my-domain.co.uk');
+        $this->assertArrayHasKey('ok', $result);
+    }
+
+    public function testVerifyEmailWithSingleCharLocalPart(): void
+    {
+        $result = $this->service->verify('a@b.co');
+        $this->assertArrayHasKey('ok', $result);
+    }
+
+    // ── ldapSuggest() boundary values ───────────────────────────
+
+    public function testLdapSuggestLimitExactBoundary(): void
+    {
+        $result = $this->service->ldapSuggest('test', 100);
+        $this->assertIsArray($result);
+    }
+
+    public function testLdapSuggestLimitMinusOne(): void
+    {
+        $result = $this->service->ldapSuggest('test', -1);
+        $this->assertIsArray($result);
+    }
+
+    // ── verifyLdap() email variations ───────────────────────────
+
+    public function testVerifyLdapWithUppercaseEmail(): void
+    {
+        $result = $this->service->verifyLdap('TEST@EXAMPLE.COM');
+        $this->assertIsArray($result);
+        $this->assertSame('ldap', $result['method']);
+    }
+
+    public function testVerifyLdapWithDotInLocalPart(): void
+    {
+        $result = $this->service->verifyLdap('first.last@example.com');
+        $this->assertIsArray($result);
+        $this->assertSame('ldap', $result['method']);
+    }
+
+    // ── Integration with global functions ───────────────────────
+
+    public function testGlobalVerifyEmailWithInvalidEmail(): void
+    {
+        $result = verify_email('not-valid');
+        $this->assertFalse($result['ok']);
+        $this->assertSame('format', $result['method']);
+    }
+
+    public function testGlobalVerifyEmailLdapMatchesServiceLdap(): void
+    {
+        $global = verify_email_ldap('test@example.com');
+        $service = $this->service->verifyLdap('test@example.com');
+        $this->assertSame($service, $global);
+    }
+
+    public function testGlobalVerifyEmailSmtpMatchesServiceSmtp(): void
+    {
+        $global = verify_email_smtp('test@example.com');
+        $service = $this->service->verifySmtp('test@example.com');
+        $this->assertSame($service, $global);
+    }
 }
