@@ -15,8 +15,6 @@ final class AdminSettingsController extends BaseController
     {
         App::auth()->requireAdmin();
 
-        require_once dirname(__DIR__, 2) . '/lib/render_admin_settings.php';
-
         $postResult = AdminSettingsHandlers::handlePost();
 
         $pageCss   = admin_settings_page_css();

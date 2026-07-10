@@ -22,9 +22,6 @@ require_once __DIR__ . '/test_advanced_rgpd.php';
 require_once __DIR__ . '/test_advanced_admin.php';
 require_once __DIR__ . '/test_advanced_edge_email_stats.php';
 require_once __DIR__ . '/test_advanced_conditional_workflow.php';
-// admin_forms_json.php n'est pas chargé par helpers.php — requis pour les
-// tests validate_form_json() de la section 9 (branches conditionnelles).
-require_once __DIR__ . '/lib/admin_forms_json.php';
 
 echo "╔══════════════════════════════════════════════════╗\n";
 echo "║  Tests avancés — CircuitDémat v5.19.0          ║\n";
