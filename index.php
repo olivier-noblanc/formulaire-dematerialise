@@ -74,7 +74,10 @@ if (!array_key_exists($page, $ALLOWED_PAGES)) {
 // ── Mapping pages → Controllers OOP ──
 // Les contrôleurs migrés sont utilisés quand disponibles
 $CONTROLLER_MAP = [
+    'accueil' => \App\Controller\IndexController::class,
     'changelog' => \App\Controller\ChangelogController::class,
+    'dashboard' => \App\Controller\DashboardController::class,
+    'form' => \App\Controller\FormController::class,
     'health' => \App\Controller\HealthController::class,
     'rgpd' => \App\Controller\RgpdController::class,
     'backup' => \App\Controller\BackupController::class,
@@ -82,6 +85,7 @@ $CONTROLLER_MAP = [
     'download' => \App\Controller\DownloadController::class,
     'persona' => \App\Controller\PersonaController::class,
     'my_forms' => \App\Controller\MyFormsController::class,
+    'screenshot' => \App\Controller\ScreenshotController::class,
     'stats' => \App\Controller\StatsController::class,
     'form_preview' => \App\Controller\FormPreviewController::class,
     'admin_alerts' => \App\Controller\AdminAlertsController::class,
@@ -93,6 +97,8 @@ $CONTROLLER_MAP = [
     'my_validations' => \App\Controller\MyValidationsController::class,
     'form_tracking' => \App\Controller\FormTrackingController::class,
     'submission_view' => \App\Controller\SubmissionViewController::class,
+    'docs' => \App\Controller\DocsController::class,
+    'validate' => \App\Controller\ValidateController::class,
 ];
 
 if (array_key_exists($page, $CONTROLLER_MAP)) {

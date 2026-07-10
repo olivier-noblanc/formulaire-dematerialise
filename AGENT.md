@@ -2,6 +2,17 @@
 
 Guide technique pour agents IA travaillant sur le codebase CircuitDémat.
 
+## Superpowers
+
+Avant toute tâche, invoquer les skills superpowers si applicables :
+- `brainstorming` avant toute création/modification de feature
+- `systematic-debugging` avant de fix un bug
+- `writing-plans` avant un refactor multi-fichiers
+- `test-driven-development` avant d'écrire du code
+- `verification-before-completion` avant de claim que c'est fini
+
+Voir `~/.claude/skills/using-superpowers/SKILL.md` pour la liste complète.
+
 ---
 
 ## Repository Pattern

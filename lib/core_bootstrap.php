@@ -186,7 +186,5 @@ use PHPMailer\PHPMailer\PHPMailer;
 // Règle : 0 breaking change. Les signatures et comportements des fonctions
 // sont strictement préservés — seul l'emplacement physique change.
 // ═══════════════════════════════════════════════════════════════
-require_once __DIR__ . '/uuid.php';
-require_once __DIR__ . '/date.php';
 require_once __DIR__ . '/html.php';
-require_once __DIR__ . '/validation.php';
+require_once __DIR__ . '/../classes/DatabaseMigrations.php';

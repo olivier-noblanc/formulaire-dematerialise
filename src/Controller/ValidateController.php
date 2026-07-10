@@ -1,212 +1,203 @@
 <?php
-require_once dirname(__DIR__) . '/helpers.php';
+declare(strict_types=1);
+
+namespace App\Controller;
+
 use App\Core\App;
 
-// Initialisation par défaut — évite les variables indéfinies si aucune branche
-// ci-dessous ne les renseigne (ex: POST « refuser » sans commentaire).
-$result = ['status' => 'invalid', 'data' => null];
-$token  = '';
+/**
+ * Contrôleur de la page Validation (accept/refuse de formulaires).
+ *
+ * Gère le workflow de validation : CSRF, tokens, email, DB, pièces jointes.
+ * Routing : ?token=XXX → validate (auto-détecté dans index.php).
+ */
+final class ValidateController extends BaseController
+{
+    public function handle(): void
+    {
+        $result = ['status' => 'invalid', 'data' => null];
+        $token  = '';
 
-// Traitement du POST — exécute l'action
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Vérification CSRF
-    \App\Core\App::security()->requireCsrf();
+        // ── POST — Exécute l'action ──
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->security->requireCsrf();
 
-    $token = trim($_POST['token'] ?? '');
-    $action = trim($_POST['action'] ?? '');
-    $comment = trim($_POST['comment'] ?? '');
-    $motif = trim($_POST['motif'] ?? '');
-    // Côté serveur : préfixer le commentaire avec le motif (remplace le JS inline)
-    if ($action === 'refuser' && $motif !== '') {
-        $comment = $comment !== '' ? ($motif . ' — ' . $comment) : $motif;
-    }
-
-    // Sécurité (S-07/A-01) : valider le format du token et de l'action
-    try {
-        if ($token) $token = validate_input($token, 'token');
-        if ($action) $action = validate_input($action, 'action');
-    } catch (\InvalidArgumentException $e) {
-        $error = 'Données invalides.';
-        /** @phpstan-ignore-next-line if.alwaysTrue */
-        if (TEST_MODE) { test_json_response(['error' => 'Données invalides', 'token' => substr($token, 0, 8) . '...', 'action' => $action]); }
-    }
-    
-    if (!isset($error)) {
-    // Le refus nécessite un commentaire obligatoire
-    if ($action === 'refuser' && empty(trim($comment))) {
-        // Ne pas traiter — on affiche la page avec un message d'erreur
-        // L'utilisateur doit fournir un motif de refus
-    } elseif ($token && in_array($action, ['valider', 'refuser'])) {
-        // ── P1-C / issue #7 : pré-charger le contexte du token SANS le valider,
-        $pre_ctx = get_token_with_context((string)$token);
-        $pre_validator_fields = [];
-        if ($pre_ctx && !empty($pre_ctx['form_id'])) {
-            $pre_validator_fields = get_form_validator_fields(
-                (string)$pre_ctx['form_id'],
-                isset($pre_ctx['step_id']) ? (string)$pre_ctx['step_id'] : null
-            );
-        }
-
-        // ── P1-C / issue #7 : pour action=valider, vérifier que tous les champs
-        if ($action === 'valider' && !empty($pre_validator_fields)) {
-            $missing = [];
-            foreach ($pre_validator_fields as $vf) {
-                if (!empty($vf['required'])) {
-                    $fname = (string)($vf['field_name'] ?? '');
-                    if ($fname === '') {
-                        continue;
-                    }
-                    $val = trim((string)($_POST[$fname] ?? ''));
-                    if ($val === '') {
-                        $missing[] = App::html()->tJargon((string)($vf['label'] ?? $fname));
-                    }
-                }
+            $token = trim($_POST['token'] ?? '');
+            $action = trim($_POST['action'] ?? '');
+            $comment = trim($_POST['comment'] ?? '');
+            $motif = trim($_POST['motif'] ?? '');
+            if ($action === 'refuser' && $motif !== '') {
+                $comment = $comment !== '' ? ($motif . ' — ' . $comment) : $motif;
             }
-            if (!empty($missing)) {
-                $error = 'Champs obligatoires manquants : ' . implode(', ', $missing);
-                // Mode test : renvoyer du JSON pour permettre les tests automatisés
-                // de cette nouvelle branche d'erreur (issue #7).
+
+            try {
+                if ($token) $token = validate_input($token, 'token');
+                if ($action) $action = validate_input($action, 'action');
+            } catch (\InvalidArgumentException $e) {
+                $error = 'Données invalides.';
                 /** @phpstan-ignore-next-line if.alwaysTrue */
-                if (TEST_MODE) {
-                    test_json_response([
-                        'error'   => $error,
-                        'action'  => $action,
-                        'token'   => substr((string)$token, 0, 8) . '...',
-                        'missing' => $missing,
-                    ]);
-                }
-            }
-        }
-
-        // ── Si pas d'erreur de champs required, procéder à validate_token() ──
-        if (!isset($error)) {
-            // v10.0.2 — Passer le user logged-on (get_auth_user) à validate_token
-            // pour stocker qui a réellement cliqué (différent de l'email du token
-            // qui peut être une shared mailbox)
-            $done_by = App::auth()->getUser();
-            $result = validate_token((string)$token, (string)$action, $comment, $done_by);
-
-            // Mode test : renvoyer JSON
-            /** @phpstan-ignore-next-line if.alwaysTrue */
-            if (TEST_MODE) {
-                test_json_response([
-                    'action'  => $action,
-                    'result'  => $result,
-                    'token'   => substr((string)$token, 0, 8) . '...',
-                    'comment' => $comment,
-                ]);
+                if (TEST_MODE) { test_json_response(['error' => 'Données invalides', 'token' => substr($token, 0, 8) . '...', 'action' => $action]); }
             }
 
-            if ($result['status'] === 'ok') {
-                $success = true;
+            if (!isset($error)) {
+                if ($action === 'refuser' && empty(trim($comment))) {
+                    // Ne pas traiter — on affiche la page avec un message d'erreur
+                } elseif ($token && in_array($action, ['valider', 'refuser'])) {
+                    $pre_ctx = get_token_with_context((string)$token);
+                    $pre_validator_fields = [];
+                    if ($pre_ctx && !empty($pre_ctx['form_id'])) {
+                        $pre_validator_fields = get_form_validator_fields(
+                            (string)$pre_ctx['form_id'],
+                            isset($pre_ctx['step_id']) ? (string)$pre_ctx['step_id'] : null
+                        );
+                    }
 
-                // ── A-13 : sauvegarder les champs validator (filled_by='validator') ──
-                $token_ctx = $result['data'] ?? [];
-                if (!empty($token_ctx['form_id'])) {
-                    $form_id = (string)$token_ctx['form_id'];
-                    $step_id = isset($token_ctx['step_id']) ? (string)$token_ctx['step_id'] : null;
-                    $subm_id = isset($token_ctx['submission_id']) ? (string)$token_ctx['submission_id'] : '';
-                    $validator_fields = get_form_validator_fields($form_id, $step_id);
-                    if (!empty($validator_fields) && $subm_id !== '') {
-                        foreach ($validator_fields as $vf) {
-                            $fname = (string)($vf['field_name'] ?? '');
-                            if ($fname === '') {
-                                continue;
+                    if ($action === 'valider' && !empty($pre_validator_fields)) {
+                        $missing = [];
+                        foreach ($pre_validator_fields as $vf) {
+                            if (!empty($vf['required'])) {
+                                $fname = (string)($vf['field_name'] ?? '');
+                                if ($fname === '') {
+                                    continue;
+                                }
+                                $val = trim((string)($_POST[$fname] ?? ''));
+                                if ($val === '') {
+                                    $missing[] = App::html()->tJargon((string)($vf['label'] ?? $fname));
+                                }
                             }
-                            $val = trim((string)($_POST[$fname] ?? ''));
-                            if ($val !== '') {
-                                save_validator_data(
-                                    $subm_id,
-                                    $fname,
-                                    $val,
-                                    'validator',
-                                    $step_id,
-                                    null,                                // step_label résolu auto par save_validator_data
-                                    isset($token_ctx['email']) ? (string)$token_ctx['email'] : null,
-                                    isset($token_ctx['id']) ? (string)$token_ctx['id'] : null
-                                );
-                            } else {
-                                // P1-C / issue #8 : champ vide soumis → on efface
-                                delete_validator_data($subm_id, $fname);
+                        }
+                        if (!empty($missing)) {
+                            $error = 'Champs obligatoires manquants : ' . implode(', ', $missing);
+                            /** @phpstan-ignore-next-line if.alwaysTrue */
+                            if (TEST_MODE) {
+                                test_json_response([
+                                    'error'   => $error,
+                                    'action'  => $action,
+                                    'token'   => substr((string)$token, 0, 8) . '...',
+                                    'missing' => $missing,
+                                ]);
                             }
                         }
                     }
-                }
-            } else {
-                $error = $result['status'] === 'invalid' ? 'Lien invalide ou expiré.' :
-                         ($result['status'] === 'already_done' ? 'Cette tâche a déjà été traitée.' :
-                         ($result['status'] === 'closed' ? 'Le workflow est déjà terminé.' :
-                         ($result['status'] === 'expired' ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
-            }
-        } // fin if (!isset($error)) après pre-check required
-    } else {
-        /** @phpstan-ignore-next-line if.alwaysTrue */
-        if (TEST_MODE) { test_json_response(['error' => 'Données invalides', 'token' => $token, 'action' => $action]); }
-        $error = 'Données invalides.';
-    }
-} // fin if (!isset($error)) (L34)
-} // fin if ($_SERVER['REQUEST_METHOD'] === 'POST') (L10)
 
-// GET request — affichage uniquement (pas d'effet de bord)
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $token = trim($_GET['token'] ?? '');
+                    if (!isset($error)) {
+                        $done_by = $this->auth->getUser();
+                        $result = validate_token((string)$token, (string)$action, $comment, $done_by);
 
-    if ($token) {
-        // Sécurité (S-09) : vérifier le format du token avant la requête DB
-        if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
-            $result = ['status' => 'invalid'];
-        } else {
-            // Journaliser la consultation du token pour audit (S-09)
-            App::audit()->log('token_view', 'token:' . substr($token, 0, 8) . '...', 'Consultation page de validation', '');
+                        /** @phpstan-ignore-next-line if.alwaysTrue */
+                        if (TEST_MODE) {
+                            test_json_response([
+                                'action'  => $action,
+                                'result'  => $result,
+                                'token'   => substr((string)$token, 0, 8) . '...',
+                                'comment' => $comment,
+                            ]);
+                        }
 
-            // A-18 : utiliser la fonction centralisée au lieu de dupliquer la jointure
-            $data = get_token_with_context($token);
+                        if ($result['status'] === 'ok') {
+                            $success = true;
 
-            if (!$data) {
-                $result = ['status' => 'invalid'];
-            } elseif ($data['done_at']) {
-                $result = ['status' => 'already_done', 'data' => $data];
-            } elseif ($data['closed_at']) {
-                $result = ['status' => 'closed', 'data' => $data];
-            } elseif (!empty($data['expires_at'])) {
-                $exp_ts = strtotime($data['expires_at']);
-                if ($exp_ts !== false && $exp_ts < time()) {
-                    $result = ['status' => 'expired', 'data' => $data];
+                            $token_ctx = $result['data'] ?? [];
+                            if (!empty($token_ctx['form_id'])) {
+                                $form_id = (string)$token_ctx['form_id'];
+                                $step_id = isset($token_ctx['step_id']) ? (string)$token_ctx['step_id'] : null;
+                                $subm_id = isset($token_ctx['submission_id']) ? (string)$token_ctx['submission_id'] : '';
+                                $validator_fields = get_form_validator_fields($form_id, $step_id);
+                                if (!empty($validator_fields) && $subm_id !== '') {
+                                    foreach ($validator_fields as $vf) {
+                                        $fname = (string)($vf['field_name'] ?? '');
+                                        if ($fname === '') {
+                                            continue;
+                                        }
+                                        $val = trim((string)($_POST[$fname] ?? ''));
+                                        if ($val !== '') {
+                                            save_validator_data(
+                                                $subm_id,
+                                                $fname,
+                                                $val,
+                                                'validator',
+                                                $step_id,
+                                                null,
+                                                isset($token_ctx['email']) ? (string)$token_ctx['email'] : null,
+                                                isset($token_ctx['id']) ? (string)$token_ctx['id'] : null
+                                            );
+                                        } else {
+                                            delete_validator_data($subm_id, $fname);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            $error = $result['status'] === 'invalid' ? 'Lien invalide ou expiré.' :
+                                     ($result['status'] === 'already_done' ? 'Cette tâche a déjà été traitée.' :
+                                     ($result['status'] === 'closed' ? 'Le workflow est déjà terminé.' :
+                                     ($result['status'] === 'expired' ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
+                        }
+                    }
                 } else {
-                    $result = ['status' => 'pending', 'data' => $data];
+                    /** @phpstan-ignore-next-line if.alwaysTrue */
+                    if (TEST_MODE) { test_json_response(['error' => 'Données invalides', 'token' => $token, 'action' => $action]); }
+                    $error = 'Données invalides.';
+                }
+            }
+        }
+
+        // ── GET — Affichage uniquement ──
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $token = trim($_GET['token'] ?? '');
+
+            if ($token) {
+                if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+                    $result = ['status' => 'invalid'];
+                } else {
+                    $this->audit->log('token_view', 'token:' . substr($token, 0, 8) . '...', 'Consultation page de validation', '');
+
+                    $data = get_token_with_context($token);
+
+                    if (!$data) {
+                        $result = ['status' => 'invalid'];
+                    } elseif ($data['done_at']) {
+                        $result = ['status' => 'already_done', 'data' => $data];
+                    } elseif ($data['closed_at']) {
+                        $result = ['status' => 'closed', 'data' => $data];
+                    } elseif (!empty($data['expires_at'])) {
+                        $exp_ts = strtotime($data['expires_at']);
+                        if ($exp_ts !== false && $exp_ts < time()) {
+                            $result = ['status' => 'expired', 'data' => $data];
+                        } else {
+                            $result = ['status' => 'pending', 'data' => $data];
+                        }
+                    } else {
+                        $result = ['status' => 'ok', 'data' => $data];
+                    }
                 }
             } else {
-                $result = ['status' => 'ok', 'data' => $data];
+                $result = ['status' => 'invalid'];
             }
-        } // fin else token format valide
-    } else {
-        $result = ['status' => 'invalid'];
-    }
 
-    // Mode test : GET renvoie JSON au lieu du HTML (sauf si ?screenshot=1 pour captures d'écran)
-    /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
-    if (TEST_MODE && !isset($_GET['screenshot'])) {
-        $response = [
-            '_test_mode' => true,
-            'token_hash' => substr($token, 0, 8) . '...',
-            'result'     => $result['status'],
-        ];
-        if (isset($data)) {
-            $response['step_label']  = $data['step_label'] ?? '';
-            $response['form_label']  = $data['form_label'] ?? '';
-            $response['submission_id'] = $data['submission_id'] ?? null;
-            $response['csrf_token']  = \App\Core\App::security()->generateCsrfToken();
+            /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
+            if (TEST_MODE && !isset($_GET['screenshot'])) {
+                $response = [
+                    '_test_mode' => true,
+                    'token_hash' => substr($token, 0, 8) . '...',
+                    'result'     => $result['status'],
+                ];
+                if (isset($data)) {
+                    $response['step_label']  = $data['step_label'] ?? '';
+                    $response['form_label']  = $data['form_label'] ?? '';
+                    $response['submission_id'] = $data['submission_id'] ?? null;
+                    $response['csrf_token']  = $this->security->generateCsrfToken();
+                }
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                exit;
+            }
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        exit;
-    }
-}
-?>
-<?php
-$page_css = '';
-ob_start();
-?>
+
+        // ── Rendu HTML ──
+        $pageCss = '';
+        ob_start();
+        ?>
 <div class="card">
 
 <?php if (isset($success)): ?>
@@ -264,9 +255,8 @@ ob_start();
     $data = $result['data'] ?? [];
     $d   = json_decode($data['data'] ?? '{}', true);
     $nom = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
-    $pdo = \App\Core\App::db()->getPdo();
+    $pdo = $this->db->getPdo();
 
-    // Récupérer toutes les étapes du workflow pour afficher la progression
     $wf_steps = $pdo->prepare("
         SELECT st.id, st.label, st.ordre,
                GROUP_CONCAT(t2.done_at, '|') as dones,
@@ -278,22 +268,17 @@ ob_start();
         ORDER BY st.ordre, st.id
     ");
     $wf_steps->execute([$data['submission_id'] ?? '', $data['form_id'] ?? '']);
-    $all_wf_steps = $wf_steps->fetchAll(PDO::FETCH_ASSOC);
+    $all_wf_steps = $wf_steps->fetchAll(\PDO::FETCH_ASSOC);
   ?>
   <a href="index.php?p=my_validations" class="back-link">← Mes validations</a>
   <span class="badge"><?= h($data['step_label']) ?></span>
   <h1>Action requise</h1>
 
-  <?php // ── ITER1-C / Action C.3 : encadré « Que devez-vous faire ? » ──
-        // M. Robert (70 ans) : la page de validation était confuse (parcours 7/10).
-        // On dit clairement l'action attendue AVANT d'afficher les détails techniques. ?>
   <aside class="what-to-do-box" role="region" aria-label="Que devez-vous faire ?">
     <span class="what-to-do-title">Que devez-vous faire ?</span>
     Vous devez <strong>valider</strong> ou <strong>refuser</strong> cette demande. Choisissez une action ci-dessous.
   </aside>
 
-  <!-- ITER1-C / Action C.2 : « Progression du circuit » → « Avancement des étapes »
-       (jargon « circuit » → français courant « étapes »). -->
   <?php if (!empty($all_wf_steps)): ?>
   <div class="wf-progression">
     <h3>Avancement des étapes</h3>
@@ -316,15 +301,11 @@ ob_start();
   </div>
   <?php endif; ?>
 
-  <!-- Affichage des détails du formulaire -->
   <div class="validation-details">
     <h2>Détails du formulaire</h2>
     <p><strong>Dossier :</strong> <?= $nom ?></p>
     <p><strong>Étape :</strong> <?= h($data['step_label']) ?></p>
     <?php
-      // Exclure UNIQUEMENT les champs validateur du step COURANT de "Détails"
-      // (ils apparaissent en éditable plus bas dans "Informations à compléter").
-      // Les champs validateur des steps PRÉCÉDENTS doivent être visibles ici.
       $current_step_field_names = [];
       $vf_list = get_form_validator_fields($data['form_id'], $data['step_id'] ?? null);
       foreach ($vf_list as $vf) {
@@ -335,24 +316,18 @@ ob_start();
     <?= render_submission_data($d, $exclude_keys) ?>
   </div>
 
-  <!-- Données saisies par les validateurs précédents -->
   <?php
-    // Récupérer TOUTES les données validateur (tous steps confondus)
     $all_validator_data = get_submission_validator_data($data['submission_id'] ?? '');
-    // Indexer par field_name
     $all_vd_by_field = [];
     foreach ($all_validator_data as $avd) {
         $all_vd_by_field[$avd['field_name']] = $avd;
     }
-    // Récupérer les infos de tous les champs validateur du formulaire (tous steps)
     $all_validator_fields = get_form_validator_fields($data['form_id']);
     $field_labels = [];
     foreach ($all_validator_fields as $avf) {
         $field_labels[$avf['field_name']] = $avf['label'];
     }
 
-    // Filtrer : ne montrer que les champs qui ont une valeur ET qui ne sont PAS
-    // du step courant (ceux du step courant sont en éditable plus bas)
     $previous_vd_rows = [];
     foreach ($all_vd_by_field as $fname => $vd_row) {
         if (in_array($fname, $current_step_field_names, true)) continue;
@@ -376,10 +351,8 @@ ob_start();
   </div>
   <?php endif; ?>
 
-  <!-- Pièces jointes -->
   <?php
     $attachments = get_attachments($data['submission_id'] ?? '');
-    // FILE-VISIBILITY : filtrer les pièces jointes dont le champ correspondant
     $visible_attachments = [];
     if (!empty($attachments)) {
         $owner_only_fields = [];
@@ -405,20 +378,13 @@ ob_start();
   </div>
   <?php endif; ?>
 
-  <!-- Formulaire de validation/refus (U-04 — Refus mobile frictionnel) -->
   <form method="post" id="validation-form">
-    <?= \App\Core\App::security()->csrfField() ?>
+    <?= $this->security->csrfField() ?>
     <input type="hidden" name="token" value="<?= h((string)$token) ?>">
 
-    <!-- Champs validateur (filled_by='validator') — Option A
-         Bug #3 (P0-A) : ce bloc était rendu AVANT l'ouverture du <form>, donc
-         les <input> générés par render_field() n'étaient jamais soumis. On le
-         déplace à l'intérieur du <form>, juste après le token caché et avant
-         les motifs de refus, pour que les valeurs saisies soient bien POSTées. -->
     <?php
       $validator_fields = get_form_validator_fields($data['form_id'], $data['step_id'] ?? null);
       $validator_data = get_submission_validator_data($data['submission_id'] ?? '', $data['step_id'] ?? null);
-      // Indexer les données existantes par field_name pour lookup rapide
       $validator_data_index = [];
       foreach ($validator_data as $vd) {
           $validator_data_index[$vd['field_name']] = $vd['value'];
@@ -429,17 +395,12 @@ ob_start();
       <h2>📝 Informations à compléter</h2>
       <p class="hint" style="margin-bottom: 1rem;">Remplissez les champs ci-dessous lors de la validation.</p>
       <?php foreach ($validator_fields as $vf):
-          // Préserver la saisie utilisateur en cas d'erreur de validation :
-          // on priorise $_POST (valeurs que le validateur vient de saisir) sur
-          // les données déjà enregistrées en base (valeurs d'une précédente validation).
           $existing_val = $_POST[$vf['field_name']]
               ?? $validator_data_index[$vf['field_name']]
               ?? '';
       ?>
         <div style="margin-bottom: 1rem;">
           <?php
-              // render_field() génère déjà le <label>, l'<input>, le hint et le required.
-              // NE PAS ajouter de label ou hint manuel en plus — sinon ils apparaissent en double.
               echo render_field($vf, $existing_val, [], '', false);
           ?>
         </div>
@@ -447,7 +408,6 @@ ob_start();
     </div>
     <?php endif; ?>
 
-    <!-- Motifs de refus prédéfinis — radios touch-friendly (min 44px Apple HIG) -->
     <fieldset class="refusal-section">
       <legend class="refusal-legend">Motif du refus <span class="req" aria-hidden="true">*</span></legend>
       <span class="hint refusal-hint">Sélectionnez un motif. Vous pourrez préciser en complément ci-dessous.</span>
@@ -475,25 +435,16 @@ ob_start();
       </div>
     </fieldset>
 
-    <!-- Champ précisions complémentaires : reste le portenaire de $_POST['comment'] côté serveur.
-         Toujours visible (pas de toggle display:none) pour la cible 40-60 ans.
-         La valeur est préservée en cas d'erreur de validation pour éviter à l'utilisateur
-         de retaper son commentaire. -->
     <div class="form-group">
       <label for="comment">Précisions complémentaires <span class="hint">(recommandé pour le refus, optionnel pour la validation)</span></label>
       <textarea id="comment" name="comment" rows="4" placeholder="Ex : il manque le justificatif de domicile de moins de 3 mois..."><?= h($_POST['comment'] ?? '') ?></textarea>
     </div>
 
-    <!-- Boutons d'action : Valider (vert) + Confirmer le refus (rouge Marianne).
-         "Confirmer le refus" est type=button : il ouvre le récapitulatif, ne soumet pas. -->
     <div class="submit-buttons">
       <button type="submit" name="action" value="valider" class="btn-validate"><span aria-hidden="true">✅</span> Valider</button>
       <button type="button" id="btn-show-refusal-recap" class="btn-refuse-confirm" aria-haspopup="dialog" aria-expanded="false" aria-controls="refusal-recap"><span aria-hidden="true">❌</span> Confirmer le refus</button>
     </div>
 
-    <!-- Récapitulatif avant confirmation du refus (U-04).
-         Caché par défaut (attribut hidden), role=alert pour annoncer aux lecteurs d'écran.
-         tabindex=-1 pour permettre le focus programmatique. -->
     <div id="refusal-recap" class="refusal-summary" role="alert" aria-live="assertive" hidden tabindex="-1">
       <h3 class="refusal-summary-title"><span aria-hidden="true">⚠️</span> Confirmation du refus</h3>
       <p class="refusal-summary-text">Vous allez refuser cette demande pour le motif suivant : <strong id="refusal-recap-motif">—</strong></p>
@@ -511,6 +462,8 @@ ob_start();
 <?php endif; ?>
 
 <?php
-$content = ob_get_clean();
-if ($content === false) { $content = ''; }
-echo render_page('Validation', 'mes_validations', $page_css, $content);
+        $content = ob_get_clean();
+        if ($content === false) { $content = ''; }
+        echo $this->renderPage('Validation', 'mes_validations', $pageCss, $content);
+    }
+}
