@@ -1,5 +1,48 @@
 # Changelog — CircuitDémat
 
+## [10.7.0] — 2026-07-09
+_Résumé : Zero pages procéduraux, 27 controllers, lib/ -46% fichiers, render templates → OOP._
+
+### 🏗 Zéro pages procédurales
+
+Toutes les 25 pages de `pages/` migrées vers `src/Controller/` — le dossier `pages/` est vide.
+- 27 controllers dans `src/Controller/` (dont BaseController)
+- CONTROLLER_MAP complet dans `index.php`
+
+### 🏗 Absorbed procedural handlers
+
+4 fichiers business logic absorbés dans des classes OOP :
+- `lib/admin_forms_handlers.php` → `src/Controller/AdminFormsHandlers.php` (18 méthodes)
+- `lib/admin_forms_json.php` → `src/Forms/FormJsonValidator.php`
+- `lib/admin_forms_samples.php` → `src/Forms/SampleFormsService.php`
+- `lib/admin_settings_handlers.php` → `src/Controller/AdminSettingsHandlers.php`
+
+### 🏗 Render templates → OOP classes
+
+14 fichiers `render_*.php` convertis en classes dans `src/Render/` :
+- `NavigationRenderer`, `FormRenderer`, `ErrorRenderer`, `LdapRenderer`
+- `IndexRenderer`, `DashboardRenderer`, `MonitoringRenderer`
+- `SubmissionViewRenderer`, `BackupRenderer`, `InstallRenderer`
+- `AdminFormsRenderer`, `AdminSettingsRenderer`
+
+### 🏗 Utility files absorbed
+
+10 fichiers utility absorbés dans `src/` :
+- `UuidHelper`, `DateHelper`, `SlugHelper`, `JargonService`, `TestModeService`
+- `src/lib_wrappers.php` (aliases globaux backward-compatible)
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Pages procédurales | 25 | **0** |
+| Controllers | 11 | **27** |
+| Fichiers lib/ | 48 | **26** (tous wrappers thin) |
+| Taille max lib/ | 39KB | **14KB** (service_wrappers.php) |
+| Tests | 943 | **943** |
+
+---
+
 ## [10.6.0] — 2026-07-09
 _Résumé : 19 controllers migrés, PHPStan level 8, 943 tests, PHPArkitect, lib/ réduit de 63→48 fichiers._
 
