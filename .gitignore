@@ -70,6 +70,3 @@ web.config
 # Temporary downloads
 /pcov.zip
 /composer-setup.php
-
-# Personal TODO
-/TODO.md
