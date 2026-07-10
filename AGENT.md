@@ -73,3 +73,14 @@ Tous les services sont enregistrés dans `src/bootstrap.php` et accessibles via 
 
 ### Règle
 Toujours utiliser `App::serviceName()` ou injecter via constructeur. Ne jamais instancier un service directement (`new XxxService(...)`) hors de `src/bootstrap.php`.
+
+---
+
+## Documentation obligatoire
+
+Après chaque session de travail, TENIR À JOUR :
+
+- **`CHANGELOG.md`** — Ajouter une entrée `[x.y.z]` avec la date, un résumé, et les sections (features, fixes, refactor, tests)
+- **`TODO.md`** — Mettre à jour les métriques, cocher les tâches terminées, ajouter les nouvelles tâches restantes
+
+Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oublier.
