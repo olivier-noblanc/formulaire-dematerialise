@@ -13,6 +13,8 @@ use App\Core\DateHelper;
 use App\Core\SlugHelper;
 use App\Core\TestModeService;
 use App\Render\JargonService;
+use App\Render\AdminFormsRenderer;
+use App\Render\AdminSettingsRenderer;
 
 // ── UUID (lib/uuid.php → App\Core\UuidHelper) ─────────────────
 function generate_uuid(): string { return UuidHelper::generateUuid(); }
@@ -263,4 +265,78 @@ function handle_admin_action(\PDO $pdo, string $action, string $get_form_id = ''
 // ── ADMIN SETTINGS HANDLERS (lib/admin_settings_handlers.php → App\Controller\AdminSettingsHandlers) ──
 function handle_admin_settings_post(): array {
     return \App\Controller\AdminSettingsHandlers::handlePost();
+}
+
+// ── ADMIN FORMS RENDER (lib/admin_forms_render*.php → App\Render\AdminFormsRenderer) ──
+function get_admin_forms_page_css(): string {
+    return AdminFormsRenderer::getInstance()->getPageCss();
+}
+
+function get_admin_forms_field_types(): array {
+    return AdminFormsRenderer::getInstance()->getFormFieldTypes();
+}
+
+function field_type_icon(string $type): string {
+    return AdminFormsRenderer::getInstance()->fieldTypeIcon($type);
+}
+
+function field_type_label(string $type): string {
+    return AdminFormsRenderer::getInstance()->fieldTypeLabel($type);
+}
+
+function options_to_lines(?string $json): string {
+    return AdminFormsRenderer::getInstance()->optionsToLines($json);
+}
+
+function render_form_selector_panel(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderSelectorPanel($ctx);
+}
+
+function render_import_json_panel(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderImportJsonPanel($ctx);
+}
+
+function render_prompt_ia_panel(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderPromptIaPanel($ctx);
+}
+
+function render_new_form_panel(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderNewFormPanel($ctx);
+}
+
+function render_top_action_bar(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderTopActionBar($ctx);
+}
+
+function render_form_info_section(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderFormInfoSection($ctx);
+}
+
+function render_owners_section(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderOwnersSection($ctx);
+}
+
+function render_workflow_diagram_section(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderWorkflowDiagramSection($ctx);
+}
+
+function render_form_fields_section(array $ctx): string {
+    return AdminFormsRenderer::getInstance()->renderFormFieldsSection($ctx);
+}
+
+function render_admin_forms_page(array $ctx): void {
+    AdminFormsRenderer::getInstance()->renderPage($ctx);
+}
+
+// ── ADMIN SETTINGS RENDER (lib/render_admin_settings.php → App\Render\AdminSettingsRenderer) ──
+function admin_settings_page_css(): string {
+    return AdminSettingsRenderer::getInstance()->getPageCss();
+}
+
+function render_admin_settings_content(array $state): string {
+    return AdminSettingsRenderer::getInstance()->renderContent($state);
+}
+
+function render_admin_settings_after_main(): string {
+    return AdminSettingsRenderer::getInstance()->renderAfterMain();
 }

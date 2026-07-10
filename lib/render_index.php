@@ -2,529 +2,74 @@
 declare(strict_types=1);
 
 /**
- * Rendu de la page d'accueil (index.php).
+ * Rendu de la page d'accueil (index.php) — Wrapper backward-compatible.
  *
- * Contient toutes les fonctions de rendu HTML de la page d'accueil :
- *  - index_page_css()                       : CSS spécifique (chargé depuis lib/index_page.css)
- *  - render_index_tutorial()                : mini-tutoriel de 1ère utilisation (S4-TUTORIAL Action 6)
- *  - render_index_welcome_state()           : empty-state guidé agent (U-06 part 2)
- *  - render_index_hero()                    : hero Aurora mesh gradient
- *  - render_index_where_am_i()              : encart « Où suis-je ? » (ITER1-C / Action A.4)
- *  - render_index_quick_stats_validator()   : quick-stats validateur (tokens en attente)
- *  - render_index_quick_stats_admin()       : quick-stats administrateur (vue globale)
- *  - render_index_quick_stats_agent()       : quick-stats agent (mes demandes)
- *  - render_index_form_cards()              : cartes des formulaires actifs
- *  - render_index_nav_tiles()               : tuiles de navigation rapide
- *  - render_index_tooltips_script()         : script tooltips sidebar (ITER1-C / Action A.2)
- *
- * Le CSS volumineux (> 420 lignes) est extrait vers lib/index_page.css
- * pour garder ce fichier sous 600 lignes (refactor « all-under-600 »).
+ * Les fonctions globales déléguent à App\Render\IndexRenderer (OOP).
+ * Ce fichier assure la rétrocompatibilité avec tous les appels existants.
  *
  * @package lib
  * @see /index.php
- * @see /lib/index_page.css
+ * @see /src/Render/IndexRenderer.php
  */
 
-// ── CSS SPÉCIFIQUE PAGE D'ACCUEIL ─────────────────────────────
+use App\Render\IndexRenderer;
 
-/**
- * CSS propre à la page d'accueil : hero, quick-stats, form-cards,
- * nav-tiles, tutorial (S4-TUTORIAL), where-am-i (ITER1-C).
- *
- * Retourné sous forme de chaîne pour injection dans render_page($page_css).
- * Le contenu CSS est chargé depuis lib/index_page.css (nowdoc statique,
- * sans interpolation PHP) pour éviter de dépasser 600 lignes dans ce
- * fichier. Comportement strictement identique à l'ancien heredoc
- * <<<'CSS' inline.
- */
 function index_page_css(): string
 {
-    static $css = null;
-    if ($css === null) {
-        // Le fichier .css est livré à côté de ce module ; __DIR__ garantit
-        // la résolution même si l'include_path change.
-        $css = (string)file_get_contents(__DIR__ . '/index_page.css');
-    }
-    return $css;
+    return IndexRenderer::pageCss();
 }
 
-// ── TUTORIEL DE 1ÈRE UTILISATION ──────────────────────────────
-
-/**
- * Mini-tutoriel de 1ère utilisation (S4-TUTORIAL Action 6).
- *
- * Visible uniquement si l'agent a 0 soumission (vraie 1ère fois).
- *
- * 4e étape (ITER1-C / Action A.3) : M. Robert (70 ans) : « Mes demandes »
- * n'était pas évident (note parcours senior 6/10). On ajoute une 4e étape
- * qui pointe vers my_submissions.php + un bouton CTA dans le footer.
- */
 function render_index_tutorial(): string
 {
-    return <<<HTML
-      <!-- S4-TUTORIAL (Action 6) : Mini-tutoriel de 1ère utilisation — visible
-           uniquement si l'agent a 0 soumission (vraie 1ère fois).
-           Disparaît dès qu'au moins 1 soumission existe. -->
-      <section class="tutorial" role="region" aria-label="Tutoriel de prise en main">
-        <div class="tutorial-header">
-          <span class="tutorial-header-icon" aria-hidden="true">🎓</span>
-          <div>
-            <h2 class="tutorial-title">Premiers pas en 4 étapes</h2>
-            <p class="tutorial-subtitle">Voici comment démarrer en quelques minutes.</p>
-          </div>
-        </div>
-        <ol class="tutorial-steps">
-          <li class="tutorial-step">
-            <span class="tutorial-step-num" aria-hidden="true">1</span>
-            <span class="tutorial-step-icon" aria-hidden="true">📋</span>
-            <div class="tutorial-step-body">
-              <div class="tutorial-step-title">Choisissez un formulaire</div>
-              <div class="tutorial-step-desc">Sélectionnez le type de demande que vous voulez faire dans la liste ci-dessous.</div>
-            </div>
-          </li>
-          <li class="tutorial-step">
-            <span class="tutorial-step-num" aria-hidden="true">2</span>
-            <span class="tutorial-step-icon" aria-hidden="true">✍</span>
-            <div class="tutorial-step-body">
-              <div class="tutorial-step-title">Remplissez les champs</div>
-              <div class="tutorial-step-desc">Vous pouvez reprendre la saisie plus tard si vous devez chercher une information.</div>
-            </div>
-          </li>
-          <li class="tutorial-step">
-            <span class="tutorial-step-num" aria-hidden="true">3</span>
-            <span class="tutorial-step-icon" aria-hidden="true">📊</span>
-            <div class="tutorial-step-body">
-              <div class="tutorial-step-title">Suivez l'avancement</div>
-              <div class="tutorial-step-desc">Retrouvez vos demandes et leur statut dans « Mes demandes » à gauche.</div>
-            </div>
-          </li>
-          <li class="tutorial-step">
-            <span class="tutorial-step-num" aria-hidden="true">4</span>
-            <span class="tutorial-step-icon" aria-hidden="true">📂</span>
-            <div class="tutorial-step-body">
-              <div class="tutorial-step-title"><a href="index.php?p=my_submissions" style="color:inherit;text-decoration:underline;">Voir mes demandes</a></div>
-              <div class="tutorial-step-desc">Retrouvez vos demandes à tout moment dans la rubrique « Mes demandes » (à gauche ou ci-dessous).</div>
-            </div>
-          </li>
-        </ol>
-        <div class="tutorial-footer">
-          <a href="index.php?p=my_submissions" class="tutorial-cta"><span aria-hidden="true">📂</span> Voir mes demandes →</a>
-          <button type="button" class="tutorial-dismiss"
-                  onclick="this.closest('.tutorial').style.display='none';"
-                  aria-label="Fermer le tutoriel de prise en main">J'ai compris ✓</button>
-        </div>
-      </section>
-HTML;
+    return IndexRenderer::tutorial();
 }
 
-// ── WELCOME-STATE AGENT (U-06 part 2) ─────────────────────────
-
-/**
- * Empty-state guidé accueil agent (U-06 part 2).
- *
- * Visible uniquement si l'agent a VRAIMENT 0 soumission (pas 0 en cours
- * mais 10 archivées) ET qu'au moins un formulaire actif existe. Remplace
- * la section "Nouvelle demande" pour éviter la duplication des cartes
- * formulaire.
- *
- * @param array<int, array<string, mixed>> $welcome_forms Formulaires actifs
- *        les plus utilisés (3 max), avec slug/label/description.
- */
 function render_index_welcome_state(array $welcome_forms): string
 {
-    $cards = '';
-    foreach ($welcome_forms as $wf) {
-        $slug  = h((string)($wf['slug'] ?? ''));
-        $label = h((string)($wf['label'] ?? ''));
-        $desc_html = '';
-        if (!empty($wf['description'])) {
-            $d = h((string)$wf['description']);
-            $desc_html = "\n              <div class=\"welcome-form-desc\">{$d}</div>";
-        }
-        $cards .= <<<HTML
-          <a href="index.php?p=form&f={$slug}" class="welcome-form-card">
-            <span class="welcome-form-icon" aria-hidden="true">📝</span>
-            <div class="welcome-form-body">
-              <div class="welcome-form-title">{$label}</div>{$desc_html}
-            </div>
-            <span class="welcome-form-btn" aria-hidden="true">Remplir →</span>
-          </a>
-HTML;
-    }
-    $app_name = h(get_app_name());
-    return <<<HTML
-    <!-- U-06 (part 2) : Empty-state guidé accueil agent — visible uniquement si l'agent
-         a VRAIMENT 0 soumission (pas 0 en cours mais 10 archivées) ET qu'au moins un
-         formulaire actif existe. Remplace la section "Nouvelle demande" pour éviter
-         la duplication des cartes formulaire. -->
-    <section class="welcome-state" role="region" aria-label="Accueil agent">
-      <div class="welcome-icon" aria-hidden="true">👋</div>
-      <h2 class="welcome-title">Bienvenue sur {$app_name}</h2>
-      <p class="welcome-text">Vous n'avez pas encore de demande en cours. Choisissez un formulaire ci-dessous pour commencer.</p>
-      <div class="welcome-actions">
-{$cards}
-      </div>
-      <p class="welcome-doc-link">
-        <a href="index.php?p=docs">📖 Comment ça marche ?</a>
-      </p>
-    </section>
-HTML;
+    return IndexRenderer::welcomeState($welcome_forms);
 }
 
-// ── HERO ──────────────────────────────────────────────────────
-
-/**
- * Hero — bandeau d'accueil Aurora mesh gradient.
- */
 function render_index_hero(): string
 {
-    $app_name = h(get_app_name());
-    return <<<HTML
-  <!-- Hero -->
-  <div class="hero">
-    <h1>{$app_name}</h1>
-    <p>Bienvenue sur la plateforme de dématérialisation des circuits de validation. Choisissez un formulaire pour démarrer, ou suivez vos demandes en cours.</p>
-  </div>
-HTML;
+    return IndexRenderer::hero();
 }
 
-// ── ENCART « OÙ SUIS-JE ? » ───────────────────────────────────
-
-/**
- * Encadré discret « Où suis-je ? » sous le hero.
- *
- * ITER1-C / Action A.4 : M. Robert (70 ans) ne savait pas où il était
- * sur la page d'accueil (note parcours senior 6/10 → ≥9/10). On lui
- * indique sa localisation et la prochaine action attendue. Discrète
- * (fond chaud, bordure gauche bleu Marianne) mais visible dès le
- * chargement.
- */
 function render_index_where_am_i(): string
 {
-    return <<<HTML
-  <aside class="where-am-i" role="region" aria-label="Où suis-je ?">
-    <span class="where-am-i-icon" aria-hidden="true">📍</span>
-    <span class="where-am-i-text">Vous êtes sur la <strong>page d'accueil</strong>. Choisissez une action ci-dessous.</span>
-  </aside>
-HTML;
+    return IndexRenderer::whereAmI();
 }
 
-// ── QUICK STATS ───────────────────────────────────────────────
-
-/**
- * Quick stats — validateurs (tokens en attente).
- *
- * @param int $my_pending Nombre de tokens non validés pour l'utilisateur courant.
- */
 function render_index_quick_stats_validator(int $my_pending): string
 {
-    return <<<HTML
-  <!-- Quick stats -->
-  <div class="quick-stats">
-    <a href="index.php?p=my_validations&tab=pending" class="qs-card warning" style="text-decoration:none;color:inherit;">
-      <div class="qs-icon" aria-hidden="true">✅</div>
-      <div class="qs-value">{$my_pending}</div>
-      <div class="qs-label">Validation(s) en attente</div>
-    </a>
-  </div>
-HTML;
+    return IndexRenderer::quickStatsValidator($my_pending);
 }
 
-/**
- * Quick stats — administrateur (vue globale).
- *
- * @param array<string, int> $admin_stats Stats globales (total, en_cours, valide, bloques).
- */
 function render_index_quick_stats_admin(array $admin_stats): string
 {
-    $total    = (int)($admin_stats['total'] ?? 0);
-    $en_cours = (int)($admin_stats['en_cours'] ?? 0);
-    $valide   = (int)($admin_stats['valide'] ?? 0);
-    $bloques  = (int)($admin_stats['bloques'] ?? 0);
-    $bloques_card = '';
-    if ($bloques > 0) {
-        $bloques_card = <<<HTML
-
-    <div class="qs-card danger">
-      <div class="qs-icon" aria-hidden="true">🚨</div>
-      <div class="qs-value">{$bloques}</div>
-      <div class="qs-label">Tokens bloqués</div>
-    </div>
-HTML;
-    }
-    return <<<HTML
-  <div class="quick-stats">
-    <a href="index.php?p=dashboard" class="qs-card" style="text-decoration:none;color:inherit;">
-      <div class="qs-icon" aria-hidden="true">📊</div>
-      <div class="qs-value">{$total}</div>
-      <div class="qs-label">Soumissions totales</div>
-    </a>
-    <a href="index.php?p=dashboard&statut=en_cours" class="qs-card warning" style="text-decoration:none;color:inherit;">
-      <div class="qs-icon" aria-hidden="true">⏳</div>
-      <div class="qs-value">{$en_cours}</div>
-      <div class="qs-label">En cours</div>
-    </a>
-    <a href="index.php?p=dashboard&statut=valide" class="qs-card success" style="text-decoration:none;color:inherit;">
-      <div class="qs-icon" aria-hidden="true">✓</div>
-      <div class="qs-value">{$valide}</div>
-      <div class="qs-label">Validées</div>
-    </a>{$bloques_card}
-  </div>
-HTML;
+    return IndexRenderer::quickStatsAdmin($admin_stats);
 }
 
-/**
- * Quick stats — agent (mes demandes).
- *
- * @param int $my_total    Total des soumissions de l'agent.
- * @param int $my_en_cours Soumissions en cours.
- * @param int $my_valide   Soumissions validées.
- */
 function render_index_quick_stats_agent(int $my_total, int $my_en_cours, int $my_valide): string
 {
-    return <<<HTML
-  <div class="quick-stats">
-    <a href="index.php?p=my_submissions&statut=tous" class="qs-card" style="text-decoration:none;color:inherit;">
-      <div class="qs-icon" aria-hidden="true">📋</div>
-      <div class="qs-value">{$my_total}</div>
-      <div class="qs-label">Mes demandes</div>
-    </a>
-    <a href="index.php?p=my_submissions&statut=en_cours" class="qs-card warning" style="text-decoration:none;color:inherit;">
-      <div class="qs-icon" aria-hidden="true">⏳</div>
-      <div class="qs-value">{$my_en_cours}</div>
-      <div class="qs-label">En cours</div>
-    </a>
-    <a href="index.php?p=my_submissions&statut=valide" class="qs-card success" style="text-decoration:none;color:inherit;">
-      <div class="qs-icon" aria-hidden="true">✓</div>
-      <div class="qs-value">{$my_valide}</div>
-      <div class="qs-label">Validées</div>
-    </a>
-  </div>
-HTML;
+    return IndexRenderer::quickStatsAgent($my_total, $my_en_cours, $my_valide);
 }
 
-// ── CARTES FORMULAIRES ────────────────────────────────────────
-
-/**
- * Section « Nouvelle demande » : cartes des formulaires actifs.
- *
- * Si aucun formulaire n'est actif, affiche un message « Aucun formulaire
- * disponible pour le moment. »
- *
- * @param array<int, array<string, mixed>> $active_forms Formulaires actifs.
- */
 function render_index_form_cards(array $active_forms): string
 {
-    if (empty($active_forms)) {
-        return <<<'HTML'
-  <h2 class="section-title"><span aria-hidden="true">📝</span> Formulaires</h2>
-    <p style="color:#595959;font-style:italic;margin-bottom:2rem;">Aucun formulaire disponible pour le moment.</p>
-HTML;
-    }
-    $cards = '';
-    foreach ($active_forms as $af) {
-        $slug  = h((string)($af['slug'] ?? ''));
-        $label = h((string)($af['label'] ?? ''));
-        $desc_html = '';
-        if (!empty($af['description'])) {
-            $d = h((string)$af['description']);
-            $desc_html = "\n          <div class=\"fc-desc\">{$d}</div>";
-        }
-        $cards .= <<<HTML
-        <a href="index.php?p=form&f={$slug}" class="form-card">
-          <div class="fc-title">{$label}</div>{$desc_html}
-          <div class="fc-btn">Remplir le formulaire →</div>
-        </a>
-HTML;
-    }
-    return <<<HTML
-  <h2 class="section-title" id="form-cards"><span aria-hidden="true">📝</span> Formulaires</h2>
-  <div class="form-cards">
-{$cards}
-  </div>
-HTML;
+    return IndexRenderer::formCards($active_forms);
 }
 
-// ── NAVIGATION RAPIDE ─────────────────────────────────────────
-
-/**
- * Section « Accès rapide » : tuiles de navigation.
- *
- * Inclut toujours : Mes demandes, Mes validations, Documentation,
- * Santé système. Si l'utilisateur possède des formulaires : un lien de
- * suivi par formulaire. Si l'utilisateur est admin : dashboard,
- * monitoring, admin_forms, admin_alerts, admin_settings, backup, stats, rgpd.
- *
- * @param bool $is_admin    Utilisateur admin ?
- * @param bool $has_owned   L'utilisateur possède-t-il des formulaires ?
- * @param array<int, array<string, mixed>> $owned_forms Formulaires possédés.
- */
 function render_index_nav_tiles(bool $is_admin, bool $has_owned, array $owned_forms): string
 {
-    $owned_html = '';
-    if ($has_owned) {
-        foreach ($owned_forms as $of) {
-            $id    = urlencode((string)($of['id'] ?? ''));
-            $label = h((string)($of['label'] ?? ''));
-            $owned_html .= <<<HTML
-
-    <a href="index.php?p=form_tracking&f={$id}" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">📊</span>
-      <div>
-        <div class="nt-label">Suivi : {$label}</div>
-        <div class="nt-desc">Tableau de suivi propriétaire</div>
-      </div>
-    </a>
-HTML;
-        }
-    }
-    $admin_html = '';
-    if ($is_admin) {
-        $admin_html = <<<'HTML'
-
-    <a href="index.php?p=dashboard" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">📊</span>
-      <div>
-        <div class="nt-label">Tableau de bord admin</div>
-        <div class="nt-desc">Superviser toutes les soumissions</div>
-      </div>
-    </a>
-    <a href="index.php?p=monitoring" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">🖥</span>
-      <div>
-        <div class="nt-label">Surveillance</div>
-        <div class="nt-desc">Santé système, alertes, audit</div>
-      </div>
-    </a>
-    <a href="index.php?p=admin_forms" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">⚙</span>
-      <div>
-        <div class="nt-label">Gestion formulaires</div>
-        <div class="nt-desc">Configurer formulaires, étapes et champs</div>
-      </div>
-    </a>
-    <a href="index.php?p=admin_alerts" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">🔔</span>
-      <div>
-        <div class="nt-label">Alertes</div>
-        <div class="nt-desc">Configurer les règles d'alerte</div>
-      </div>
-    </a>
-    <a href="index.php?p=admin_settings" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">🔧</span>
-      <div>
-        <div class="nt-label">Paramètres</div>
-        <div class="nt-desc">Configuration SMTP et workflow</div>
-      </div>
-    </a>
-    <a href="index.php?p=backup" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">💾</span>
-      <div>
-        <div class="nt-label">Sauvegarde</div>
-        <div class="nt-desc">Sauvegarder et restaurer la base de données</div>
-      </div>
-    </a>
-    <a href="index.php?p=stats" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">📊</span>
-      <div>
-        <div class="nt-label">Statistiques</div>
-        <div class="nt-desc">Tableaux de bord et métriques d'utilisation</div>
-      </div>
-    </a>
-    <a href="index.php?p=rgpd" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">🔐</span>
-      <div>
-        <div class="nt-label">RGPD</div>
-        <div class="nt-desc">Conformité et gestion des données personnelles</div>
-      </div>
-    </a>
-HTML;
-    }
-    return <<<HTML
-  <!-- Navigation rapide -->
-  <h2 class="section-title"><span aria-hidden="true">🧭</span> Accès rapide</h2>
-  <div class="nav-tiles">
-    <a href="index.php?p=my_submissions" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">📋</span>
-      <div>
-        <div class="nt-label">Mes demandes</div>
-        <div class="nt-desc">Suivre l'avancement de mes soumissions</div>
-      </div>
-    </a>
-    <a href="index.php?p=my_validations" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">✅</span>
-      <div>
-        <div class="nt-label">Mes validations</div>
-        <div class="nt-desc">Voir les tâches de validation qui m'attendent</div>
-      </div>
-    </a>
-    <a href="index.php?p=docs" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">📖</span>
-      <div>
-        <div class="nt-label">Documentation</div>
-        <div class="nt-desc">Guides et aide pour utiliser la plateforme</div>
-      </div>
-    </a>{$owned_html}{$admin_html}
-    <a href="index.php?p=health" class="nav-tile">
-      <span class="nt-icon" aria-hidden="true">🏥</span>
-      <div>
-        <div class="nt-label">Santé système</div>
-        <div class="nt-desc">Vérifier l'état des services et de l'infrastructure</div>
-      </div>
-    </a>
-  </div>
-HTML;
+    return IndexRenderer::navTiles($is_admin, $has_owned, $owned_forms);
 }
 
-// ── SCRIPT TOOLTIPS SIDEBAR ───────────────────────────────────
-
-/**
- * Script d'injection des tooltips sidebar (ITER1-C / Action A.2).
- *
- * M. Robert (70 ans) : « Mes demandes » n'était pas évident dans la
- * sidebar (note parcours senior 6/10 → ≥9/10). Comme render_header()
- * est dans helpers.php (non modifiable), on injecte les title= côté
- * client au chargement de la page d'accueil. Purement cosmétique :
- * les tooltips apparaissent au survol (HTML natif title=).
- */
-/**
- * v10.1.6 — Section "Mes formulaires" pour les owners non-admin.
- * Affiche un lien vers form_tracking pour chaque formulaire dont l'user est owner.
- * Les admins ne voient pas cette section (ils y accèdent via "Gérer formulaires").
- *
- * @param array<int, array<string, mixed>> $owned_forms Formulaires dont l'user est owner
- * @return string HTML
- */
 function render_index_owner_forms(array $owned_forms): string
 {
-    if (empty($owned_forms)) return '';
-
-    $cards = '';
-    foreach ($owned_forms as $of) {
-        $id    = h((string)($of['id'] ?? ''));
-        $label = h(t_jargon((string)($of['label'] ?? '')));
-        $cards .= <<<HTML
-        <a href="index.php?p=form_tracking&f={$id}" class="form-card">
-          <div class="fc-title">📊 {$label}</div>
-          <div class="fc-desc">Suivre les demandes de ce formulaire</div>
-          <div class="fc-btn">Voir le suivi →</div>
-        </a>
-HTML;
-    }
-
-    return <<<HTML
-  <h2 class="section-title" id="owner-forms" style="margin-top:2rem;"><span aria-hidden="true">📊</span> Mes formulaires (suivi)</h2>
-  <div class="form-cards">
-{$cards}
-  </div>
-HTML;
+    return IndexRenderer::ownerForms($owned_forms);
 }
 
-/**
- * Tooltips script (cosmétique — vide depuis v10.0.6).
- */
 function render_index_tooltips_script(): string
 {
-    return <<<HTML
-HTML;
+    return IndexRenderer::tooltipsScript();
 }
