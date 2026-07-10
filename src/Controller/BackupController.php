@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Render\BackupRenderer;
 
 /**
  * Contrôleur de la page Sauvegarde et restauration de la base de données.
@@ -225,7 +226,7 @@ final class BackupController extends BaseController
 
         $purgePreview = $purgePreview ?? null;
 
-        render_backup_page($dbPath, $dbStats, $purgePreview, $successMsg, $errorMsg, $infoMsg);
+        (new BackupRenderer())->renderPage($dbPath, $dbStats, $purgePreview, $successMsg, $errorMsg, $infoMsg);
     }
 
     private function isValidSqliteDb(string $path): bool
