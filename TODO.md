@@ -1,50 +1,47 @@
 # TODO — CircuitDémat
 
-## Session 2026-07-09 — Résumé complet
-
-**Phase 1-4 terminées** | **Procédural éliminé**
+## Session 2026-07-10 — Résumé
 
 ### ✅ Terminé
 
-| Phase | Détail | Résultat |
+| Tâche | Détail | Résultat |
 |-------|--------|----------|
-| Phase 1 | Suppression pages dead code + autoloader | ✅ 18 pages + 1 fichier supprimés |
-| Phase 2 | DocsController + ValidateController | ✅ 2 controllers créés |
-| Phase 3 | Absorption handlers procéduraux | ✅ 4 classes OOP créées |
-| Phase 4 | Render templates → OOP classes | ✅ 14 renderers créés |
-| T1-T16 | Sessions précédentes | ✅ Tout terminé |
+| Nettoyage lib/ | 11 wrappers supprimés | ✅ lib/ : 14 fichiers |
+| Fix autoload IIS | vendor/composer/ commité | ✅ Erreur prod résolue |
+| BackupController | Migration vers BackupRenderer | ✅ |
+| Documentation | AGENTS.md mis à jour (règles test, réseau, IIS) | ✅ |
+| TODO.md | Retiré du .gitignore, versionné | ✅ |
 
 ---
 
-## 📊 Métriques finales
+## 📊 Métriques actuelles
 
-| Métrique | Avant (08/07) | Après (09/07) |
-|----------|---------------|---------------|
-| Pages procédurales | 25 | **0** |
-| Controllers | 0 | **27** |
-| Fichiers lib/ | 63 | **26** (wrappers thin) |
-| Taille max lib/ | 39KB | **14KB** |
-| Tests | 724 | **943** |
-| Failures | 0 | **0** |
-| PHPStan level | 6 | **8** |
-| PHPStan baseline | — | **312** erreurs |
-| Repositories | 0 | **8** |
-| Coverage HtmlService | 39% | **100%** |
-| Coverage FormRepo | 36% | **82%** |
-| Coverage BaseRepo | 67% | **81%** |
+| Métrique | Valeur |
+|----------|--------|
+| Tests | **855** (0 failures) |
+| lib/ fichiers | **14** (wrappers thin) |
+| Pages procédurales | **0** |
+| Controllers | **27** |
+| PHPStan level | **8** |
+| PHPStan baseline | **312** erreurs |
+| Repositories | **8** |
+| vendor/composer | **commité** (IIS offline) |
+| Coverage HtmlService | **100%** |
+| Coverage FormRepo | **82%** |
+| Coverage BaseRepo | **81%** |
 
 ---
 
 ## 🎯 Ce qui reste (nice-to-have)
 
-| Tâche | Effort | Bloqué par |
-|-------|--------|-----------|
-| Supprimer les wrappers lib/ (quand plus appelés) | Faible | Migration des appelants restants |
-| PHPStan : corriger baseline 312 erreurs | Moyen | method.nonObject, argument.type |
-| Coverage > 80% : AuthService (76%), AttachmentService (62%) | Moyen | Infrastructure |
+| Tâche | Effort | Impact |
+|-------|--------|--------|
+| Supprimer wrappers lib/ restants (appels → DI) | Faible | Cosmétique |
+| PHPStan baseline (312 erreurs) | Moyen | Qualité code |
+| Coverage > 80% : AuthService (76%), AttachmentService (62%) | Moyen | Fiabilité |
 | Coverage > 80% : ExportService (4%), WorkflowEngine (32%) | Élevé | exit(), network |
-| Réduire communautés < 20 | Élevé | Consolidation progressive |
+| Réduire communautés < 20 | Élevé | Architecture |
 
 ---
 
-_Dernière mise à jour : 2026-07-09_
+_Dernière mise à jour : 2026-07-10_

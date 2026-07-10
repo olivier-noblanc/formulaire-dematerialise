@@ -78,12 +78,14 @@ Toujours utiliser `App::serviceName()` ou injecter via constructeur. Ne jamais i
 
 ## Documentation obligatoire
 
-Après chaque session de travail, TENIR À JOUR :
+**Début de session** : TOUJOURS lire `CHANGELOG.md` et `TODO.md` pour connaître l'état actuel du projet.
+
+**Fin de session** : TENIR À JOUR ces fichiers :
 
 - **`CHANGELOG.md`** — Ajouter une entrée `[x.y.z]` avec la date, un résumé, et les sections (features, fixes, refactor, tests)
 - **`TODO.md`** — Mettre à jour les métriques, cocher les tâches terminées, ajouter les nouvelles tâches restantes
 
-Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oublier.
+Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oublier. Ils doivent toujours être dans le repo (pas dans le .gitignore).
 
 ---
 
@@ -93,6 +95,7 @@ Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oubl
 - **Proxy** : `http://127.0.0.1:3128` (si besoin pour curl/fetch)
 - **Codeberg** : subit des erreurs 500/504 intermittentes (issue #2596) — le push HTTPS peut échouer, réessayer plus tard
 - **Remote** : `https://codeberg.org/oliviernoblanc/formulaire-dematerialise.git` (HTTPS uniquement)
+- **IIS prod** : pas d'accès web — vendor/ doit être commit, pas de `composer install` possible en prod. Les fichiers d'autoload doivent être à jour dans le repo.
 
 ---
 

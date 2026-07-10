@@ -1,5 +1,30 @@
 # Changelog — CircuitDémat
 
+## [10.8.0] — 2026-07-10
+_Résumé : Nettoyage lib/, fix autoload IIS, vendor/composer commité, 855 tests._
+
+### 🧹 Nettoyage lib/
+
+- 11 fichiers wrappers supprimés (admin_forms_render*, admin_forms_json, admin_forms_samples, admin_settings_handlers, render_admin_settings, render_backup)
+- BackupController migré vers BackupRenderer direct
+- lib/ réduit de 15 à 14 fichiers
+
+### 🔧 Fix autoload IIS
+
+- `vendor/composer/` ajouté au repo (IIS prod sans accès web)
+- `.gitignore` : `vendor/composer/` exclu de l'ignorance
+- Résout l'erreur `Interface "App\Contract\DatabaseInterface" not found` en prod
+
+### 📝 Documentation
+
+- `AGENTS.md` : ajout règle IIS prod (vendor/ doit être commit)
+- `AGENTS.md` : ajout règles de test obligatoires
+- `AGENTS.md` : ajout contraintes réseau (SSH coupé, Codeberg 504, proxy)
+- `AGENTS.md` : ajout règle CHANGELOG + TODO à tenir à jour
+- `TODO.md` : retiré du .gitignore, maintenant versionné
+
+---
+
 ## [10.7.0] — 2026-07-09
 _Résumé : Zero pages procéduraux, 27 controllers, lib/ -46% fichiers, render templates → OOP._
 
