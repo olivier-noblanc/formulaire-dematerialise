@@ -1,6 +1,7 @@
-# Dépendances PHP (seul vendor/autoload.php et vendor/PHPMailer sont versionnés — serveur offline)
+# Dépendances PHP (seul vendor/autoload.php, vendor/composer/ et vendor/PHPMailer sont versionnés — serveur offline)
 /vendor/*
 !vendor/autoload.php
+!vendor/composer/
 !vendor/PHPMailer/
 
 # Base de données SQLite (v10.0.8 — ne JAMAIS committer la DB)
