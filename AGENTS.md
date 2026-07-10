@@ -93,3 +93,14 @@ Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oubl
 - **Proxy** : `http://127.0.0.1:3128` (si besoin pour curl/fetch)
 - **Codeberg** : subit des erreurs 500/504 intermittentes (issue #2596) — le push HTTPS peut échouer, réessayer plus tard
 - **Remote** : `https://codeberg.org/oliviernoblanc/formulaire-dematerialise.git` (HTTPS uniquement)
+
+---
+
+## Règles de test
+
+Après CHAQUE modification de code, TOUJOURS lancer les tests completset vérifier :
+1. `vendor/bin/phpunit` — 0 failures
+2. Vérifier que `vendor/composer/autoload_psr4.php` contient les nouvelles classes
+3. Vérifier que aucun fichier supprimé n'est encore requis (grep)
+4. Si modification d'un service/controller : vérifier aussi les contrôleurs enfants
+5. Ne JAMAIS claim que c'est fini sans avoir lancé les tests
