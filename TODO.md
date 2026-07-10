@@ -34,13 +34,14 @@
 
 ## 🎯 Ce qui reste (nice-to-have)
 
-| Tâche | Effort | Impact |
-|-------|--------|--------|
-| Supprimer wrappers lib/ restants (appels → DI) | Faible | Cosmétique |
-| PHPStan baseline (312 erreurs) | Moyen | Qualité code |
-| Coverage > 80% : AuthService (76%), AttachmentService (62%) | Moyen | Fiabilité |
+| Tâche | Effort | Impact | Détail |
+|-------|--------|--------|--------|
+| Supprimer service_wrappers.php | ~3h | Élevé | 54 wrappers → supprimer, remplacer ~102 appels par DI |
+| Supprimer 12 render wrappers | ~1h | Moyen | Les controllers appellent déjà les classes OOP |
+| PHPStan baseline (312 erreurs) | Moyen | Qualité code | method.nonObject, argument.type |
+| Coverage > 80% : AuthService (76%), AttachmentService (62%) | Moyen | Fiabilité | Infrastructure |
 | Coverage > 80% : ExportService (4%), WorkflowEngine (32%) | Élevé | exit(), network |
-| Réduire communautés < 20 | Élevé | Architecture |
+| Réduire communautés < 20 | Élevé | Architecture | Consolidation progressive |
 
 ---
 
