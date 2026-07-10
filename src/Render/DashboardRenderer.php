@@ -1,0 +1,477 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Render;
+
+use App\Core\App;
+
+/**
+ * Rendu de la page tableau de bord (dashboard.php).
+ *
+ * Chaque fonction render_dashboard_*() historique devient une méthode statique.
+ * Les wrappers globaux dans lib/render_dashboard.php assurent la rétrocompatibilité.
+ */
+final class DashboardRenderer
+{
+    /**
+     * CSS propre au tableau de bord (chargé depuis lib/dashboard_page.css).
+     */
+    public static function pageCss(): string
+    {
+        static $css = null;
+        if ($css === null) {
+            $css = (string)file_get_contents(__DIR__ . '/../../lib/dashboard_page.css');
+        }
+        return $css;
+    }
+
+    /**
+     * Encart « État du système » (S5-B / Action 3).
+     *
+     * @param array<string, mixed> $sys
+     */
+    public static function systemOverview(array $sys): string
+    {
+        $smtp_host   = h((string)($sys['smtp_host'] ?? ''));
+        $smtp_port   = (int)($sys['smtp_port'] ?? 0);
+        $smtp_ok     = (bool)($sys['smtp_ok'] ?? false);
+        $smtp_label  = h((string)($sys['smtp_label'] ?? 'Non configuré'));
+        $last_backup = h((string)($sys['last_backup'] ?? '—'));
+        $en_cours    = (int)($sys['en_cours'] ?? 0);
+        $smtp_dot    = $smtp_ok ? '🟢' : '🔴';
+
+        return <<<HTML
+  <aside class="system-overview" aria-label="État du système">
+    <span class="system-overview-title">État du système</span>
+    <span class="system-overview-item" title="Connexion SMTP au serveur {$smtp_host}:{$smtp_port}">
+      {$smtp_dot} SMTP : <strong>{$smtp_label}</strong>
+    </span>
+    <span class="system-overview-item" title="Base de données SQLite accessible en lecture/écriture">
+      🟢 DB : <strong>OK</strong>
+    </span>
+    <span class="system-overview-item" title="Date du dernier téléchargement ou restauration de sauvegarde">
+      📅 Dernière sauvegarde : <strong>{$last_backup}</strong>
+    </span>
+    <span class="system-overview-item" title="Demandes en cours de validation">
+      📊 Demandes en attente : <strong>{$en_cours}</strong>
+    </span>
+    <span class="system-overview-links">
+      <a href="index.php?p=health" aria-label="Voir les détails de l'état du système">Détails</a>
+      <a href="index.php?p=monitoring" aria-label="Aller à la surveillance du système">Surveillance</a>
+    </span>
+  </aside>
+
+HTML;
+    }
+
+    /**
+     * Blocs de messages d'information issus des actions POST.
+     */
+    public static function messages(string $regen_msg, string $remind_msg, string $cancel_msg): string
+    {
+        $out = '';
+        if ($regen_msg !== '') {
+            $m = h($regen_msg);
+            $out .= "<div class=\"msg-info\" role=\"status\" aria-live=\"polite\">{$m}</div>";
+        }
+        if ($remind_msg !== '') {
+            $m = h($remind_msg);
+            $out .= "<div class=\"msg-info\" role=\"status\" aria-live=\"polite\">{$m}</div>";
+        }
+        if ($cancel_msg !== '') {
+            $m = h($cancel_msg);
+            $out .= "<div class=\"msg-info\" role=\"status\" aria-live=\"polite\">{$m}</div>";
+        }
+        return $out;
+    }
+
+    /**
+     * Bandeau de 4 statistiques globales.
+     */
+    public static function stats(int $total, int $complet, int $valide, int $refuse): string
+    {
+        $en_cours = $total - $complet;
+        return <<<HTML
+  <div class="stats">
+    <div class="stat"><strong>{$total}</strong>Total</div>
+    <div class="stat"><strong style="color:#b45309;">{$en_cours}</strong>En cours</div>
+    <div class="stat"><strong style="color:#1a6b3c;">{$valide}</strong>Validés</div>
+    <div class="stat"><strong style="color:#c0392b;">{$refuse}</strong>Refusés</div>
+  </div>
+
+HTML;
+    }
+
+    /**
+     * Barre d'outils du tableau de bord (U-13 — 3 niveaux hiérarchiques).
+     */
+    public static function toolbar(string $filtre, string $form_f, string $search, array $forms): string
+    {
+        $filtre_h = h($filtre);
+        $form_h   = h($form_f);
+        $search_h = h($search);
+
+        $options = '';
+        foreach ($forms as $f) {
+            $slug  = h((string)($f['slug'] ?? ''));
+            $label = h((string)($f['label'] ?? ''));
+            $sel   = ($form_f === ($f['slug'] ?? '')) ? ' selected' : '';
+            $options .= "<option value=\"{$slug}\"{$sel}>{$label}</option>";
+        }
+
+        $search_bar = render_search_bar('index.php?p=dashboard', $search, 'Rechercher (agent, formulaire, données)...', ['statut' => $filtre, 'form' => $form_f]);
+
+        return <<<HTML
+  <div class="toolbar">
+    <div class="toolbar-filters">
+      <form method="GET" style="display:inline-flex;gap:.5rem;align-items:center;">
+        <input type="hidden" name="statut" value="{$filtre_h}">
+        <label for="filter-form" class="sr-only">Filtrer par formulaire</label>
+        <select name="form" id="filter-form" class="form-filter">
+          <option value="">Tous les formulaires</option>
+          {$options}
+        </select>
+        <button type="submit" class="btn-admin" style="padding:.3rem .8rem;font-size:.8rem;">OK</button>
+      </form>
+      {$search_bar}
+    </div>
+    <nav class="admin-actions" aria-label="Actions d'administration">
+      <!-- Niveau 1 — Primary : actions principales (90% du temps admin).
+           Gros boutons Marianne bleu (gradient) — attirent l'œil en priorité. -->
+      <div class="admin-actions-row">
+        <span class="admin-actions-label">Actions principales</span>
+        <div class="admin-actions-btns" role="group" aria-label="Actions principales">
+          <a href="index.php?p=admin_forms" class="btn-admin" aria-label="Gérer les formulaires">
+            <span aria-hidden="true">⚙</span> Formulaires
+          </a>
+          <a href="index.php?p=admin_alerts" class="btn-admin" aria-label="Configurer les alertes automatiques">
+            <span aria-hidden="true">🔔</span> Alertes
+          </a>
+        </div>
+      </div>
+      <!-- Niveau 2 — Secondary : consultation fréquente (mais pas action principale).
+           Outline Marianne bleu discret — visuellement secondaire. -->
+      <div class="admin-actions-row">
+        <span class="admin-actions-label">Consultation</span>
+        <div class="admin-actions-btns" role="group" aria-label="Consultation">
+          <a href="index.php?p=monitoring" class="btn-admin btn-admin--secondary" aria-label="Surveillance du système en temps réel">
+            <span aria-hidden="true">🖥</span> Surveillance
+          </a>
+          <a href="index.php?p=stats" class="btn-admin btn-admin--secondary" aria-label="Consulter les statistiques d'utilisation">
+            <span aria-hidden="true">📊</span> Statistiques
+          </a>
+        </div>
+      </div>
+      <!-- Niveau 3 — Tertiary : actions avancées VISIBLES (VÉTO 2 M. Robert). -->
+      <div class="admin-actions-row admin-actions-advanced">
+        <span class="admin-actions-label">Actions avancées <span class="admin-actions-label-hint">— à utiliser ponctuellement</span></span>
+        <div class="admin-actions-btns" role="group" aria-label="Actions avancées (export et protection des données)">
+          <a href="index.php?p=dashboard&export=csv&statut={$filtre_h}&form={$form_h}&search={$search_h}" class="btn-admin btn-admin--tertiary" aria-label="Exporter les soumissions filtrées au format CSV">
+            <span aria-hidden="true">📥</span> Export CSV
+          </a>
+          <a href="index.php?p=rgpd" class="btn-admin btn-admin--danger" aria-label="Gérer la protection des données (RGPD) et la purge">
+            <span aria-hidden="true">🔐</span> Protection des données
+          </a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+HTML;
+    }
+
+    /**
+     * Légende des badges de statut (ITER1-B / Action A).
+     */
+    public static function statusLegend(): string
+    {
+        return <<<HTML
+  <aside class="status-legend" aria-label="Légende des états">
+    <span class="status-legend-title">États :</span>
+    <span class="badge badge-warn">🟡 En cours</span>
+    <span class="status-legend-text">Demande en cours de validation</span>
+    <span class="badge badge-ok">🟢 Validé</span>
+    <span class="status-legend-text">Demande validée</span>
+    <span class="badge badge-err">🔴 Refusé</span>
+    <span class="status-legend-text">Demande refusée (motif indiqué)</span>
+  </aside>
+
+HTML;
+    }
+
+    /**
+     * Tableau des soumissions.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<string, array<int, array<string, mixed>>> $tokens_by_submission
+     * @param array<string, array{total: int, filled: int, complet: bool}> $validator_status_by_submission
+     */
+    public static function table(array $rows, array $tokens_by_submission, array $validator_status_by_submission = []): string
+    {
+        $html = "  <table>\n    <thead>\n      <tr>\n";
+        $html .= "        <th>Formulaire</th>\n";
+        $html .= "        <th>Agent</th>\n";
+        $html .= "        <th>Date cible</th>\n";
+        $html .= "        <th>Étapes</th>\n";
+        $html .= "        <th>Soumis le</th>\n";
+        $html .= "        <th>État</th>\n";
+        $html .= "        <th></th>\n";
+        $html .= "      </tr>\n    </thead>\n    <tbody>\n";
+
+        if (empty($rows)) {
+            $html .= "      <tr><td colspan=\"7\" style=\"text-align:center;padding:2rem;color:#595959;\">Aucune soumission.</td></tr>\n";
+        } else {
+            foreach ($rows as $i => $row) {
+                $tokens = $tokens_by_submission[$row['id']] ?? [];
+                $vstatus = $validator_status_by_submission[$row['id']] ?? null;
+                $html .= self::submissionRow($i, $row, $tokens, $vstatus);
+            }
+        }
+
+        $html .= "    </tbody>\n  </table>\n\n";
+        return $html;
+    }
+
+    /**
+     * Une ligne du tableau des soumissions + son bloc <details>.
+     *
+     * @param int               $i
+     * @param array<string, mixed> $row
+     * @param array<int, array<string, mixed>> $tokens
+     * @param array{total: int, filled: int, complet: bool}|null $vstatus
+     */
+    public static function submissionRow(int $i, array $row, array $tokens, ?array $vstatus = null): string
+    {
+        $d      = json_decode((string)($row['data'] ?? ''), true);
+        $nom    = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
+        $status = (string)($row['status'] ?? 'en_cours');
+        $deadline_field = (string)($row['deadline_field'] ?? '');
+        $deadline_val   = $deadline_field
+            ? ((string)($d[$deadline_field] ?? ''))
+            : ((string)($d['date_prise_poste'] ?? $d['date_depart'] ?? ''));
+        $dl = calculate_deadline_urgency($deadline_val ?: '', $status);
+        $deadline_urgency = (string)($dl['style'] ?? '');
+
+        $form_label = h(t_jargon((string)($row['form_label'] ?? '')));
+        $submitted_ts = strtotime((string)($row['submitted_at'] ?? ''));
+        $submitted    = $submitted_ts !== false ? h(date('d/m/Y', $submitted_ts)) : '—';
+        $view_url     = 'index.php?p=submission_view&id=' . urlencode((string)($row['id'] ?? ''));
+
+        $tokens_html = '';
+        $pending_ordres = array_column(array_filter($tokens, fn($x) => !$x['done_at']), 'ordre');
+        $min_pending = $pending_ordres !== [] ? min($pending_ordres) : 0;
+        foreach ($tokens as $t) {
+            if (!empty($t['done_at'])) {
+                $cls = 'token-ok';
+            } elseif ((int)($t['ordre'] ?? 0) === (int)$min_pending) {
+                $cls = 'token-wait';
+            } else {
+                $cls = 'token-pend';
+            }
+            $ordre = (int)($t['ordre'] ?? 0);
+            $label = h((string)($t['label'] ?? ''));
+            $check = !empty($t['done_at']) ? ' ✓' : '';
+            $tokens_html .= "<span class=\"token-badge {$cls}\">"
+                . "<span class=\"ordre-label\">{$ordre}</span>{$label}{$check}"
+                . "</span>";
+        }
+
+        if ($status === 'refuse') {
+            $etat = '<span style="color:#c0392b;font-weight:bold;"><span aria-hidden="true">❌</span> Refusé</span>';
+        } elseif ($status === 'annule') {
+            $etat = '<span style="color:#6b7280;font-weight:bold;"><span aria-hidden="true">🗑</span> Annulé</span>';
+        } elseif ($status === 'valide') {
+            $etat = '<span style="color:#1a6b3c;font-weight:bold;"><span aria-hidden="true">✓</span> Validé</span>';
+        } else {
+            $etat = '<span style="color:#b45309;"><span aria-hidden="true">⏳</span> En cours</span>';
+        }
+
+        $validator_badge = '';
+        if ($vstatus !== null && ($status === 'en_cours' || $status === 'valide')) {
+            if ($vstatus['complet']) {
+                $total = (int)$vstatus['total'];
+                $validator_badge = '<div style="margin-top:.25rem;font-size:.7rem;color:#1a6b3c;" title="Tous les champs validateur sont remplis (' . $total . ' / ' . $total . ').">'
+                    . '<span aria-hidden="true">✓</span> Complet</div>';
+            } else {
+                $filled = (int)$vstatus['filled'];
+                $total  = (int)$vstatus['total'];
+                $pending = $total - $filled;
+                $validator_badge = '<div style="margin-top:.25rem;font-size:.7rem;color:#b45309;font-weight:600;" title="Champs validateur non remplis : ' . $pending . ' / ' . $total . '.">'
+                    . '<span aria-hidden="true">🔄</span> Reste à traiter (' . $filled . '/' . $total . ')</div>';
+            }
+        }
+
+        $admin_comment_html = '';
+        $admin_comment_raw = (string)($row['admin_comment'] ?? '');
+        if ($admin_comment_raw !== '') {
+            $tooltip = $admin_comment_raw;
+            if (mb_strlen($tooltip) > 200) {
+                $tooltip = mb_substr($tooltip, 0, 200) . '…';
+            }
+            $tooltip_h = h((string)$tooltip);
+            $admin_comment_html = ' <span aria-hidden="true" title="' . $tooltip_h . '" style="cursor:help;font-size:.95rem;">💬</span>';
+        }
+
+        $detail = self::submissionDetail($d, $status, $tokens, $row, $nom);
+
+        $detail_summary = h($nom !== '' ? $nom : (string)($row['submitted_by'] ?? '')) . ' — ' . $form_label;
+
+        return <<<HTML
+      <tr>
+        <td><span style="font-size:.8rem;background:#e8eaf6;color:#003189;padding:.2rem .5rem;border-radius:3px;">{$form_label}</span></td>
+        <td><strong>{$nom}</strong></td>
+        <td style="white-space:nowrap;{$deadline_urgency}">{$deadline_val}</td>
+        <td>
+          <div class="token-grid">
+            {$tokens_html}
+          </div>
+        </td>
+        <td style="white-space:nowrap;">{$submitted}</td>
+        <td>{$etat}{$admin_comment_html}{$validator_badge}</td>
+        <td><a href="{$view_url}" style="font-size:.8rem;color:#003189;text-decoration:underline;">voir</a></td>
+      </tr>
+      <tr>
+        <td colspan="7">
+          <details>
+            <summary>Détails de la demande — {$detail_summary}</summary>
+            <div class="detail-content">
+{$detail}
+            </div>
+          </details>
+        </td>
+      </tr>
+
+HTML;
+    }
+
+    /**
+     * Contenu du bloc <details> d'une soumission.
+     *
+     * @param array<string, mixed>|null  $d
+     * @param string                     $status
+     * @param array<int, array<string, mixed>> $tokens
+     * @param array<string, mixed>      $row
+     * @param string                    $nom
+     */
+    public static function submissionDetail($d, string $status, array $tokens, array $row, string $nom): string
+    {
+        $html = '';
+
+        if (is_array($d) && isset($d['validations']) && is_array($d['validations'])) {
+            $html .= "              <h3 style=\"margin-top:0;margin-bottom:1rem;\">Historique des validations</h3>\n";
+            foreach ($d['validations'] as $validation) {
+                $step_label = h((string)($validation['step_label'] ?? ''));
+                $email      = h((string)($validation['email'] ?? ''));
+                $action     = (string)($validation['action'] ?? '');
+                $is_valide  = ($action === 'valider');
+                $color      = $is_valide ? '#1a6b3c' : '#c0392b';
+                $icon       = $is_valide ? '✅' : '❌';
+                $label      = $is_valide ? 'Validé' : 'Refusé';
+                $comment    = '';
+                if (!empty($validation['commentaire'])) {
+                    $c = h((string)$validation['commentaire']);
+                    $comment = "<br><em>Commentaire :</em> {$c}";
+                }
+                $val_date_ts = strtotime((string)($validation['date'] ?? ''));
+                $date = $val_date_ts !== false ? h(date('d/m/Y à H:i', $val_date_ts)) : '—';
+                $html .= "              <div style=\"border-left:3px solid #003189;padding-left:1rem;margin-bottom:1rem;\">\n"
+                    . "                <strong>{$step_label}</strong> - {$email} -\n"
+                    . "                <span style=\"color:{$color};\">\n"
+                    . "                  <span aria-hidden=\"true\">{$icon}</span> {$label}\n"
+                    . "                </span>\n"
+                    . "                {$comment}\n"
+                    . "                <br><small>{$date}</small>\n"
+                    . "              </div>\n";
+            }
+            $html .= "              <hr style=\"margin:1rem 0;\">\n";
+        }
+
+        $data_array = is_array($d) ? $d : [];
+        $html .= "              " . render_submission_data($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
+
+        if ($status === 'en_cours') {
+            $html .= "              <hr style=\"margin:1rem 0;\">\n";
+            $html .= "              <div style=\"display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start;\">\n";
+            if (App::auth()->isAdminEffective()) {
+                foreach ($tokens as $t) {
+                    if (!empty($t['done_at'])) {
+                        continue;
+                    }
+                    $tid   = h((string)($t['id'] ?? ''));
+                    $temail = h((string)($t['email'] ?? ''));
+                    $html .= "                <form method=\"POST\" style=\"display:inline;\">\n"
+                        . App::security()->csrfField() . "\n"
+                        . "                  <input type=\"hidden\" name=\"action\" value=\"remind_one\">\n"
+                        . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
+                        . "                  <button type=\"submit\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;\"><span aria-hidden=\"true\">📧</span> Rappeler {$temail}</button>\n"
+                        . "                </form>\n";
+                    $html .= "                <form method=\"POST\" style=\"display:inline;\">\n"
+                        . App::security()->csrfField() . "\n"
+                        . "                  <input type=\"hidden\" name=\"action\" value=\"regenerate_token\">\n"
+                        . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
+                        . "                  <button type=\"submit\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;\"><span aria-hidden=\"true\">🔄</span> Régénérer {$temail}</button>\n"
+                        . "                </form>\n";
+                }
+            }
+            $cancel_url = 'index.php?p=confirm_action&action=cancel_submission&submission_id='
+                . urlencode((string)($row['id'] ?? '')) . '&from=dashboard.phpfrom=index.php?p=dashboard';
+            $html .= "                <a href=\"{$cancel_url}\" class=\"btn btn-danger\" style=\"font-size:.75rem;padding:.3rem .6rem;text-decoration:none;\"><span aria-hidden=\"true\">🗑</span> Annuler</a>\n";
+            $html .= "              </div>\n";
+        }
+
+        return $html;
+    }
+
+    /**
+     * Compose l'ensemble du contenu HTML du tableau de bord.
+     *
+     * @param array<string, mixed> $sys
+     * @param array<string, mixed> $stats
+     * @param array<string, mixed> $filters
+     * @param array<int, array<string, mixed>> $forms
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<string, array<int, array<string, mixed>>> $tokens_by_submission
+     * @param array<string, array{total: int, filled: int, complet: bool}> $validator_status_by_submission
+     */
+    public static function content(
+        array $sys,
+        array $stats,
+        array $filters,
+        array $forms,
+        array $rows,
+        array $tokens_by_submission,
+        array $validator_status_by_submission,
+        int $page,
+        int $total_pages
+    ): string {
+        $filtre   = (string)($filters['filtre'] ?? 'tous');
+        $form_f   = (string)($filters['form'] ?? '');
+        $search   = (string)($filters['search'] ?? '');
+        $regen    = (string)($filters['regen_msg'] ?? '');
+        $remind   = (string)($filters['remind_msg'] ?? '');
+        $cancel   = (string)($filters['cancel_msg'] ?? '');
+
+        $content  = '';
+        $content .= "  <h1>Tableau de bord — Demandes en cours</h1>\n";
+
+        $content .= self::systemOverview($sys);
+        $content .= self::messages($regen, $remind, $cancel);
+        $content .= self::stats(
+            (int)($stats['total'] ?? 0),
+            (int)($stats['complet'] ?? 0),
+            (int)($stats['valide'] ?? 0),
+            (int)($stats['refuse'] ?? 0)
+        );
+        $content .= self::toolbar($filtre, $form_f, $search, $forms);
+        $content .= self::statusLegend();
+        $content .= self::table($rows, $tokens_by_submission, $validator_status_by_submission);
+
+        $content .= App::html()->renderPagination($page, $total_pages, 'index.php?p=dashboard&' . http_build_query([
+            'statut' => $filtre,
+            'form'   => $form_f,
+            'search' => $search,
+        ]));
+
+        return $content;
+    }
+}

@@ -2,37 +2,23 @@
 declare(strict_types=1);
 
 /**
- * LDAP datalist rendering.
- *
- * render_ldap_datalist() génère un <datalist> HTML pour autocomplétion
- * d'emails depuis LDAP / Active Directory.
+ * LDAP datalist rendering — thin wrapper delegating to App\Render\LdapRenderer.
  *
  * @package lib
  */
 
-// ── RENDU DATALIST LDAP ─────────────────────────────────────────
-
 /**
- * Génère le HTML d'un élément <datalist> avec les suggestions LDAP.
- * Pur HTML5 — aucun JavaScript requis. Le navigateur gère le filtrage natif.
+ * Generates the HTML of a <datalist> element with LDAP suggestions.
  *
- * @param string $list_id Identifiant HTML unique du datalist
- * @param string $query   Terme de recherche LDAP (optionnel)
- * @param int    $limit   Nombre max de résultats
- * @return string HTML du <datalist> ou chaîne vide si LDAP non configuré
+ * @param string $list_id Unique HTML identifier of the datalist
+ * @param string $query   LDAP search term (optional)
+ * @param int    $limit   Maximum number of results
+ * @return string HTML of the <datalist> or empty string if LDAP not configured
  */
 function render_ldap_datalist(string $list_id, string $query = '', int $limit = 200): string {
-    $results = ldap_suggest($query, $limit);
-    if (empty($results)) {
-        return '';
+    static $renderer = null;
+    if ($renderer === null) {
+        $renderer = new \App\Render\LdapRenderer();
     }
-
-    $html = '<datalist id="' . h($list_id) . '">';
-    foreach ($results as $entry) {
-        // La valeur est l'email, le label affiche le nom
-        $html .= '<option value="' . h($entry['email']) . '" label="' . h($entry['cn']) . '">';
-    }
-    $html .= '</datalist>';
-
-    return $html;
+    return $renderer->datalist($list_id, $query, $limit);
 }
