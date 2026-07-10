@@ -82,15 +82,10 @@ $_db_service = new \App\Core\Database();
 $_app->set(\App\Core\Database::class, $_db_service);
 $_app->set(\App\Core\Config::class, new \App\Core\Config());
 
-// ── 3. Base de données (PDO + migrations) ──
-// get_pdo() délègue à App::db() — le service est déjà enregistré ci-dessus
-require_once __DIR__ . '/lib/database.php';
-
-
-
-// ── 5. Settings + cache ──
-require_once __DIR__ . '/lib/settings.php';
-require_once __DIR__ . '/lib/cache.php';
+// ── 3. Services OOP et wrappers procéduraux ──
+// Charge toutes les fonctions globales (uuid, date, slug, jargon, cache, settings,
+// persona, conditions, validation, test_mode, database) en un seul fichier.
+require_once __DIR__ . '/src/lib_wrappers.php';
 
 // ── 6. Sécurité (headers) ──
 
@@ -110,24 +105,14 @@ if (php_sapi_name() !== 'cli') {
     send_security_headers();
 }
 
-// ── 7. Mode test ──
-require_once __DIR__ . '/lib/test_mode.php';
-
 // ── 8. Service wrappers (consolidés — audit, mail, tokens, workflow, etc.) ──
 require_once __DIR__ . '/lib/service_wrappers.php';
 
-// ── 10. Conditions (évaluation de conditions workflow) ──
-require_once __DIR__ . '/lib/conditions.php';
-
-// ── 11. Persona (refonte v10.0.0 — token-based) ──
-require_once __DIR__ . '/lib/persona.php';
-
-// ── 18. UI — navigation, errors, form, jargon, ldap ──
+// ── 18. UI — navigation, errors, form, ldap ──
 require_once __DIR__ . '/lib/render_navigation.php';
 require_once __DIR__ . '/lib/render_errors.php';
 require_once __DIR__ . '/lib/render_form.php';
 require_once __DIR__ . '/lib/render_ldap.php';
-require_once __DIR__ . '/lib/jargon.php';
 
 // ═══════════════════════════════════════════════════════════════
 // BOOTSTRAP OOP — enregistrer les services restants dans le container DI

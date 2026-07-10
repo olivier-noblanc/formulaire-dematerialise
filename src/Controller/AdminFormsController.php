@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Controller\AdminFormsHandlers;
 
 /**
  * Contrôleur de la page Gestion des formulaires (admin).
@@ -36,16 +37,13 @@ final class AdminFormsController extends BaseController
             $this->security->requireCsrf();
         }
 
-        require_once dirname(__DIR__, 2) . '/lib/admin_forms_json.php';
-        require_once dirname(__DIR__, 2) . '/lib/admin_forms_handlers.php';
-
         $errorMsg       = $errorMsg       ?? '';
         $successMsg     = $successMsg     ?? '';
         $validationHtml = $validationHtml ?? '';
         $preservedJson  = $preservedJson  ?? '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action) {
-            $result = handle_admin_action($pdo, $action, (string)$formId);
+            $result = AdminFormsHandlers::dispatch($pdo, $action, (string)$formId);
             if ($result !== null) {
                 if (isset($result['json_output']) && isset($result['filename'])) {
                     header('Content-Type: application/json; charset=utf-8');

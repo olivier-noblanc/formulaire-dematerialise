@@ -1,0 +1,266 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Global wrapper functions for lib/ utilities (absorbed into src/ services).
+ *
+ * Provides backward-compatible global function names that delegate to OOP classes.
+ * Loaded by helpers.php instead of the individual lib/ files.
+ */
+
+use App\Core\UuidHelper;
+use App\Core\DateHelper;
+use App\Core\SlugHelper;
+use App\Core\TestModeService;
+use App\Render\JargonService;
+
+// ── UUID (lib/uuid.php → App\Core\UuidHelper) ─────────────────
+function generate_uuid(): string { return UuidHelper::generateUuid(); }
+function generate_token(): string { return UuidHelper::generateToken(); }
+
+// ── DATE (lib/date.php → App\Core\DateHelper) ──────────────────
+function parse_deadline_date(string $dateStr): ?int { return DateHelper::parseDeadlineDate($dateStr); }
+function parse_date(string $date_str): ?DateTimeImmutable { return DateHelper::parseDate($date_str); }
+function calculate_deadline_urgency(string $deadlineVal, string $status = 'en_cours'): array { return DateHelper::calculateDeadlineUrgency($deadlineVal, $status); }
+
+// ── SLUG/FIELD (lib/database.php → App\Core\SlugHelper) ────────
+function generate_field_name(string $label): string { return SlugHelper::generateFieldName($label); }
+function generate_slug(string $label, ?string $exclude_form_id = null): string { return SlugHelper::generateSlug($label, $exclude_form_id); }
+function parse_options_input(string $input): ?string { return SlugHelper::parseOptionsInput($input); }
+function get_form_by_uuid(string $uuid): ?array { return SlugHelper::getFormByUuid($uuid); }
+
+// ── DATABASE (lib/database.php → App\Core\App::db()) ────────────
+function get_pdo(): PDO { return \App\Core\App::db()->getPdo(); }
+function release_pdo(): void { \App\Core\App::db()->release(); }
+
+// ── JARGON (lib/jargon.php → App\Render\JargonService) ─────────
+function t_jargon(string $text): string { return JargonService::translate($text); }
+
+// ── TEST MODE (lib/test_mode.php → App\Core\TestModeService) ────
+function get_test_mails(): array { return TestModeService::getTestMails(); }
+function reset_test_mails(): void { TestModeService::resetTestMails(); }
+function test_json_response(array $data): void { TestModeService::testJsonResponse($data); }
+
+// ── SETTINGS (lib/settings.php → App\Settings\SettingsService) ──
+function get_sensitive_setting_keys(): array {
+    return ['smtp_pass', 'ldap_bind_pass', 'webhook_secret', 'app_test_secret'];
+}
+
+function encrypt_setting(string $value): string {
+    if ($value === '') return '';
+    if (str_starts_with($value, 'enc:')) return $value;
+
+    $key = getenv('APP_ENCRYPTION_KEY');
+    if (empty($key) || strlen($key) < 32) {
+        error_log('[SECURITY] APP_ENCRYPTION_KEY non définie ou trop courte — valeur stockée en clair');
+        return $value;
+    }
+    $iv_length = openssl_cipher_iv_length('aes-256-cbc');
+    if ($iv_length === false) {
+        error_log('[SECURITY] openssl_cipher_iv_length a échoué — valeur stockée en clair');
+        return $value;
+    }
+    $iv = random_bytes($iv_length);
+    $encrypted = openssl_encrypt($value, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+    if ($encrypted === false) {
+        error_log('[SECURITY] Échec de chiffrement — valeur stockée en clair');
+        return $value;
+    }
+    return 'enc:' . base64_encode($iv . $encrypted);
+}
+
+function decrypt_setting(string $value): string {
+    if ($value === '' || !str_starts_with($value, 'enc:')) {
+        return $value;
+    }
+    $key = getenv('APP_ENCRYPTION_KEY');
+    if (empty($key)) {
+        error_log('[SECURITY] APP_ENCRYPTION_KEY non définie — impossible de déchiffrer');
+        return '[chiffré]';
+    }
+    $decoded = base64_decode(substr($value, 4), true);
+    if ($decoded === false) return '[chiffré]';
+    $iv_length = openssl_cipher_iv_length('aes-256-cbc');
+    if ($iv_length === false) return '[chiffré]';
+    $iv = substr($decoded, 0, $iv_length);
+    $ciphertext = substr($decoded, $iv_length);
+    $decrypted = openssl_decrypt($ciphertext, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+    if ($decrypted === false) {
+        error_log('[SECURITY] Échec de déchiffrement — clé probablement incorrecte');
+        return '[chiffré]';
+    }
+    return $decrypted;
+}
+
+function get_setting(string $key, string $default = ''): string {
+    return \App\Core\App::settings()->get($key, $default);
+}
+
+function set_setting(string $key, string $value, string $updated_by = ''): void {
+    \App\Core\App::settings()->set($key, $value, $updated_by);
+}
+
+// ── CACHE (lib/cache.php → App\Cache\CacheService) ──────────────
+function cache_dir(): string {
+    $cache_dir = dirname(__DIR__, 1) . '/db/cache';
+    if (!is_dir($cache_dir)) {
+        @mkdir($cache_dir, 0750, true);
+        $web_config = $cache_dir . '/web.config';
+        if (!file_exists($web_config)) {
+            @file_put_contents($web_config, '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
+                . '<configuration><system.webServer><authorization>'
+                . '<deny users="*"/>'
+                . '</authorization></system.webServer></configuration>' . "\n");
+        }
+    }
+    return $cache_dir;
+}
+
+function cache_get(string $key, int $ttl, callable $callback): mixed {
+    $cache_file = cache_dir() . '/cache_' . md5($key) . '.json';
+    if (is_readable($cache_file)) {
+        $payload = @json_decode((string)file_get_contents($cache_file), true);
+        if (is_array($payload) && array_key_exists('value', $payload)
+            && isset($payload['created_at'])
+            && (time() - (int)$payload['created_at']) < $ttl) {
+            return $payload['value'];
+        }
+    }
+    $value = $callback();
+    cache_set($key, $value, $ttl);
+    return $value;
+}
+
+function cache_set(string $key, mixed $value, int $ttl = 300): void {
+    $cache_file = cache_dir() . '/cache_' . md5($key) . '.json';
+    $payload = [
+        'value'      => $value,
+        'ttl'        => $ttl,
+        'created_at' => time(),
+    ];
+    @file_put_contents($cache_file, json_encode($payload, JSON_UNESCAPED_UNICODE), LOCK_EX);
+}
+
+function cache_clear(string $key): void {
+    $cache_file = cache_dir() . '/cache_' . md5($key) . '.json';
+    if (file_exists($cache_file)) {
+        @unlink($cache_file);
+    }
+}
+
+function get_latest_version(): string {
+    static $version = null;
+    if ($version !== null) {
+        return $version;
+    }
+    $changelog_path = dirname(__DIR__, 1) . '/CHANGELOG.md';
+    if (file_exists($changelog_path)) {
+        $content = file_get_contents($changelog_path);
+        if ($content !== false && preg_match('/^##\s*\[(\d+\.\d+\.\d+)\]/m', $content, $m)) {
+            $version = $m[1];
+            return $version;
+        }
+    }
+    $version = '0.0.0';
+    return $version;
+}
+
+// ── PERSONA (lib/persona.php → App\Persona\PersonaService) ──────
+function persona_create_token(string $admin_email, string $target_email): string {
+    $service = persona_get_service();
+    return $service->createToken($admin_email, $target_email);
+}
+
+function persona_lookup(string $token): string {
+    $service = persona_get_service();
+    return $service->lookup($token);
+}
+
+function persona_revoke(string $token): bool {
+    $service = persona_get_service();
+    return $service->revoke($token);
+}
+
+function persona_cleanup(): int {
+    $service = persona_get_service();
+    return $service->cleanup();
+}
+
+function persona_current_token(): string {
+    $service = persona_get_service();
+    return $service->currentToken();
+}
+
+function persona_current_target(): string {
+    $service = persona_get_service();
+    return $service->currentTarget();
+}
+
+function persona_get_service(): \App\Persona\PersonaService {
+    if (\App\Core\App::has(\App\Persona\PersonaService::class)) {
+        return \App\Core\App::get(\App\Persona\PersonaService::class);
+    }
+    return new \App\Persona\PersonaService(new \App\Core\Database());
+}
+
+// ── CONDITIONS (lib/conditions.php → App\Workflow\ConditionEvaluator) ──
+function evaluate_condition(?string $condition_json, array $data): bool {
+    return \App\Core\App::conditions()->evaluate($condition_json, $data);
+}
+
+function evaluate_step_condition(array $step, string $submission_id): bool {
+    $condition_json = $step['condition'] ?? '';
+    if (empty($condition_json)) return true;
+
+    $validator_data = get_submission_validator_data($submission_id);
+    $data = [];
+    foreach ($validator_data as $vd) {
+        $data[$vd['field_name'] ?? ''] = $vd['value'] ?? '';
+    }
+
+    return evaluate_condition($condition_json, $data);
+}
+
+function evaluate_field_condition(array $field, array $form_data): bool {
+    $condition_json = $field['condition'] ?? '';
+    return evaluate_condition($condition_json, $form_data);
+}
+
+// ── VALIDATION (lib/validation.php → App\Validation\ValidationService) ──
+function sanitize_input(string $input): string {
+    trigger_error('sanitize_input() is deprecated — use h() for HTML output and prepared statements for SQL', E_USER_DEPRECATED);
+    return \App\Core\App::validation()->sanitize($input);
+}
+
+function validate_email(string $email): string {
+    return \App\Core\App::validation()->validateEmail($email);
+}
+
+function validate_input(mixed $value, string $rule, array $options = []): string|int {
+    return \App\Core\App::validation()->validate($value, $rule, $options);
+}
+
+// ── FORM JSON VALIDATION (lib/admin_forms_json.php → App\Forms\FormJsonValidator) ──
+function validate_form_json(array $data): array {
+    return \App\Forms\FormJsonValidator::validate($data);
+}
+
+function format_validation_results(array $result): string {
+    return \App\Forms\FormJsonValidator::formatResults($result);
+}
+
+// ── SAMPLE FORMS (lib/admin_forms_samples.php → App\Forms\SampleFormsService) ──
+function populate_sample_forms(\PDO $pdo): string {
+    $service = new \App\Forms\SampleFormsService(\App\Core\App::db());
+    return $service->populate();
+}
+
+// ── ADMIN FORMS HANDLERS (lib/admin_forms_handlers.php → App\Controller\AdminFormsHandlers) ──
+function handle_admin_action(\PDO $pdo, string $action, string $get_form_id = ''): ?array {
+    return \App\Controller\AdminFormsHandlers::dispatch($pdo, $action, $get_form_id);
+}
+
+// ── ADMIN SETTINGS HANDLERS (lib/admin_settings_handlers.php → App\Controller\AdminSettingsHandlers) ──
+function handle_admin_settings_post(): array {
+    return \App\Controller\AdminSettingsHandlers::handlePost();
+}
