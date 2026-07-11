@@ -62,7 +62,7 @@ final class SettingsService implements SettingsInterface
     /** @return array<int, string> */
     private function getSensitiveKeys(): array
     {
-        return ['smtp_pass', 'ldap_bind_pass', 'webhook_secret', 'app_test_secret'];
+        return ['smtp_pass', 'ldap_bind_pass', 'app_test_secret'];
     }
 
     public function encrypt(string $value): string

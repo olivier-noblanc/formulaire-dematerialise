@@ -1,62 +1,13 @@
 <?php
 /**
- * tests/test_v4_webhooks_attachments.php — Phase 5 + Phase 6 : Webhooks + BLOB Attachments
+ * tests/test_v4_webhooks_attachments.php — Phase 6 : BLOB Attachments
  *
- * Teste la configuration et le test des webhooks (admin_settings.php), ainsi que
- * l'upload et le téléchargement de pièces jointes stockées en BLOB.
+ * Teste l'upload et le téléchargement de pièces jointes stockées en BLOB.
  *
  * Dépendances : test_bootstrap.php (assert_test, bold, yellow), tests/test_v4_helpers.php (api, http_request).
  */
 
 declare(strict_types=1);
-
-/**
- * Phase 5 : Webhooks (configuration + test).
- */
-function run_tests_v4_webhooks(): void {
-    echo "\n" . bold("Phase 5 : Webhooks\n");
-
-    // 5a. POST admin_settings.php avec webhook_url et webhook_events
-    $r = http_request('POST', 'index.php?p=admin_settings', [], [
-        'action'         => 'save_settings',
-        'webhook_url'    => 'https://si.dreets.gouv.fr/api/webhook',
-        'webhook_events' => 'workflow_complete,submission_cancelled',
-        // Champs SMTP requis (valeurs par défaut)
-        'smtp_host'      => 'smtp.test.gouv.fr',
-        'smtp_port'      => '25',
-        'smtp_auth'      => '0',
-        'smtp_secure'    => '',
-        'smtp_user'      => '',
-        'smtp_pass'      => '',
-        'smtp_from'      => 'workflow@dreets.gouv.fr',
-        'smtp_from_name' => 'CircuitDémat',
-        'delai_relance_h'=> '48',
-        'token_expire_days' => '30',
-        'relance_max'    => '3',
-    ], 'test.agent');
-    assert_test('POST webhook settings réussi', $r['http_code'] === 200,
-        'Code: ' . $r['http_code']);
-
-    // 5b. Vérifier que les settings sont sauvegardés en rechargeant la page
-    $r = http_request('GET', 'index.php?p=admin_settings', [], [], 'test.agent');
-    $settings_body = $r['body'] ?? '';
-    assert_test('webhook_url sauvegardé',
-        strpos($settings_body, 'si.dreets.gouv.fr') !== false,
-        'URL webhook non trouvée dans la page');
-    assert_test('webhook_events sauvegardé',
-        strpos($settings_body, 'workflow_complete') !== false,
-        'Événements webhook non trouvés dans la page');
-
-    // 5c. GET admin_settings.php?test_webhook=1
-    $r = http_request('GET', 'index.php?p=admin_settings', ['test_webhook' => '1'], [], 'test.agent');
-    assert_test('Test webhook exécuté', $r['http_code'] === 200,
-        'Code: ' . $r['http_code']);
-    // Le webhook de test peut échouer (URL factice) mais ne doit pas crasher
-    $no_crash = strpos($r['body'] ?? '', 'Fatal error') === false
-        && strpos($r['body'] ?? '', 'Parse error') === false;
-    assert_test('Test webhook ne crash pas', $no_crash,
-        'Erreur fatale détectée');
-}
 
 /**
  * Phase 6 : BLOB Attachments (upload + download).

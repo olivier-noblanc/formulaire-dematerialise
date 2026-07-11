@@ -302,7 +302,7 @@ test('get_workflow_steps() retourne un tableau pour un form_id valide', function
 });
 
 test('get_db_size() retourne un entier positif', function() {
-    $size = \App\Core\App::webhook()->getDbSize();
+    $size = (new \App\Webhook\WebhookService(\App\Core\App::db()))->getDbSize();
     return is_int($size) && $size >= 0 ? true : "Got: " . var_export($size, true);
 });
 

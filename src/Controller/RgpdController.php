@@ -125,7 +125,7 @@ final class RgpdController extends BaseController
         $totalAttachments = $this->attachmentRepo->countAll();
         $totalAudit = $this->auditRepo->countAll();
         $oldSubmissions = $this->submissionRepo->countOldByRetention($retentionMonths);
-        $dbSize = App::webhook()->getDbSize();
+        $dbSize = (new \App\Webhook\WebhookService($this->db))->getDbSize();
 
         $pageCss = '';
         $navExtra = [

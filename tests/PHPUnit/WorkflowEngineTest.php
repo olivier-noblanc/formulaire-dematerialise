@@ -1321,15 +1321,6 @@ final class WorkflowEngineTest extends TestCase
         $this->assertIsInt($count);
     }
 
-    // ── sendWebhook() indirect test ─────────────────────────────
-
-    public function testAdvanceWorkflowCallsSendWebhookWhenAllDone(): void
-    {
-        // This test verifies the webhook path is reachable
-        // sendWebhook is private, tested indirectly via advanceWorkflow
-        $this->assertTrue(method_exists($this->workflow, 'advanceWorkflow'));
-    }
-
     // ── validateToken() action validation ────────────────────────
 
     public function testValidateTokenAcceptsValiderAction(): void

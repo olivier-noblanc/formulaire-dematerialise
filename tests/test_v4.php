@@ -79,7 +79,6 @@ run_tests_v4_infrastructure();         // Phase 1 : Core Infrastructure
 run_tests_v4_rgpd();                   // Phase 2 : RGPD Compliance
 run_tests_v4_health();                 // Phase 3 : Health Check
 run_tests_v4_stats();                  // Phase 4 : Statistiques
-run_tests_v4_webhooks();               // Phase 5 : Webhooks
 run_tests_v4_attachments();            // Phase 6 : Pièces jointes BLOB
 run_tests_v4_search();                 // Phase 7 : Recherche plein texte
 run_tests_v4_relance();                // Phase 8 : Historique des relances

@@ -211,7 +211,7 @@ final class StatsController extends BaseController
         <div class="stat-label">Volume pièces jointes</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value"><?= App::html()->formatFileSize(App::webhook()->getDbSize()) ?></div>
+        <div class="stat-value"><?= App::html()->formatFileSize((new \App\Webhook\WebhookService($this->db))->getDbSize()) ?></div>
         <div class="stat-label">Taille base de données</div>
       </div>
     </div>

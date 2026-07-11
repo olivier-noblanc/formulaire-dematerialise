@@ -265,9 +265,6 @@ final class WorkflowEngine implements WorkflowInterface
             $body = $this->mail->renderEmailTemplate('Demande validée', '<p>Votre demande a été validée.</p>');
             $this->mail->send($agentEmail, $subject, $body);
         }
-
-        // Webhook
-        $this->sendWebhook('workflow_complete', ['submission_id' => $submissionId]);
     }
 
     /** @return array<string, mixed> */
@@ -329,7 +326,19 @@ final class WorkflowEngine implements WorkflowInterface
 
             $pdo->prepare("UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?")
                 ->execute([gmdate('Y-m-d H:i:s'), SubmissionStatus::REFUSE->value, $t['submission_id']]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL");
+            $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
+            if ($stmt->rowCount() === 0) { $pdo->rollBack(); return ['status' => 'already_done', 'data' => $t]; }
+        }
 
+        $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
+            ->execute([json_encode($data), $t['submission_id']]);
+
+        $pdo->commit();
+
+        // Emails et advanceWorkflow APRES le commit (side effects hors transaction)
+        if ($action === 'refuser') {
             $agentEmail = $t['submitted_by'] ?? '';
             if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
                 $subject = 'Demande refusée — ' . ($t['form_label'] ?? '');
@@ -339,24 +348,9 @@ final class WorkflowEngine implements WorkflowInterface
                 $this->mail->send($agentEmail, $subject, $this->mail->renderEmailTemplate('Demande refusée', $body));
             }
         } else {
-            $stmt = $pdo->prepare("UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL");
-            $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
-            if ($stmt->rowCount() === 0) { $pdo->rollBack(); return ['status' => 'already_done', 'data' => $t]; }
-
             $this->advanceWorkflow($t['submission_id']);
         }
 
-        $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
-            ->execute([json_encode($data), $t['submission_id']]);
-
-        $this->sendWebhook('token_validated', [
-            'submission_id' => $t['submission_id'],
-            'step_label' => $t['step_label'],
-            'email' => $t['email'],
-            'action' => $action,
-        ]);
-
-        $pdo->commit();
         $t['done_at'] = gmdate('Y-m-d H:i:s');
         return ['status' => 'ok', 'data' => $t];
     }
@@ -379,36 +373,6 @@ final class WorkflowEngine implements WorkflowInterface
         ");
         $stmt->execute([$stepId, SubmissionStatus::EN_COURS->value]);
         return (int) $stmt->fetchColumn();
-    }
-
-    private function sendWebhook(string $event, array $data): void
-    {
-        $webhookUrl = $this->settings->get('webhook_url');
-        $webhookEvents = $this->settings->get('webhook_events', '');
-        if (empty($webhookUrl)) return;
-
-        $events = array_map('trim', explode(',', $webhookEvents));
-        if (!in_array('all', $events, true) && !in_array($event, $events, true)) return;
-
-        $payload = json_encode([
-            'event' => $event,
-            'timestamp' => gmdate('c'),
-            'data' => $data,
-        ], JSON_UNESCAPED_UNICODE);
-
-        if (function_exists('curl_init')) {
-            $ch = curl_init($webhookUrl);
-            curl_setopt_array($ch, [
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => (string) $payload,
-                CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Webhook-Event: ' . $event],
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 5,
-                CURLOPT_CONNECTTIMEOUT => 3,
-            ]);
-            curl_exec($ch);
-            curl_close($ch);
-        }
     }
 
     private function generateToken(): string

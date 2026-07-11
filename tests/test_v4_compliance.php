@@ -158,7 +158,7 @@ function run_tests_v4_documentation(): void {
         'Moins de 2 captures d\'écran trouvées');
 
     // 12d. Vérifier les sections v4 dans la documentation
-    $v4_doc_keywords = ['RGPD', 'rgpd', 'webhook', 'Webhook', 'santé', 'Santé', 'statistique', 'Statistique', 'rate limit', 'consentement'];
+    $v4_doc_keywords = ['RGPD', 'rgpd', 'santé', 'Santé', 'statistique', 'Statistique', 'rate limit', 'consentement'];
     $found_keywords = 0;
     foreach ($v4_doc_keywords as $keyword) {
         if (stripos($docs_body, $keyword) !== false) {

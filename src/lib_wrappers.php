@@ -45,7 +45,7 @@ function test_json_response(array $data): void { TestModeService::testJsonRespon
 
 // ── SETTINGS (lib/settings.php → App\Settings\SettingsService) ──
 function get_sensitive_setting_keys(): array {
-    return ['smtp_pass', 'ldap_bind_pass', 'webhook_secret', 'app_test_secret'];
+    return ['smtp_pass', 'ldap_bind_pass', 'app_test_secret'];
 }
 
 function encrypt_setting(string $value): string {

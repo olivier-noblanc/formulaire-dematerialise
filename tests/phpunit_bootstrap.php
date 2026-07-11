@@ -40,7 +40,6 @@ use App\Attachment\AttachmentService;
 use App\Cron\CronService;
 use App\Forms\ValidatorDataService;
 use App\Core\MigrationService;
-use App\Webhook\WebhookService;
 use App\Validation\ValidationService;
 use App\Email\EmailVerificationService;
 use App\Export\ExportService;
@@ -97,7 +96,6 @@ $app->set(ValidatorDataService::class, new ValidatorDataService($db, $app->get(F
 $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRepository::class)));
 $app->set(CronService::class, new CronService($db));
 $app->set(MigrationService::class, new MigrationService($db));
-$app->set(WebhookService::class, new WebhookService($db, $app->get(SettingsService::class)));
 $app->set(ValidationService::class, new ValidationService());
 $app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class)));
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));

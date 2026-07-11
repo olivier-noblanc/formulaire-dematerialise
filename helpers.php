@@ -149,7 +149,6 @@ $_app->set(\App\Forms\ValidatorDataService::class, new \App\Forms\ValidatorDataS
 $_attachment_repo = $_app->get(\App\Repository\AttachmentRepository::class);
 $_app->set(\App\Attachment\AttachmentService::class, new \App\Attachment\AttachmentService($_attachment_repo));
 $_app->set(\App\Cron\CronService::class, new \App\Cron\CronService($_db_service));
-$_app->set(\App\Webhook\WebhookService::class, new \App\Webhook\WebhookService($_db_service, $_settings_svc));
 $_app->set(\App\Validation\ValidationService::class, new \App\Validation\ValidationService());
 $_app->set(\App\Export\ExportService::class, new \App\Export\ExportService($_db_service, $_app->get(\App\Auth\AuthService::class)));
 $_app->set(\App\Email\EmailVerificationService::class, new \App\Email\EmailVerificationService($_app->get(\App\Cache\CacheService::class)));

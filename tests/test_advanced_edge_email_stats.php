@@ -275,7 +275,7 @@ function run_tests_advanced_stats(): void {
     });
 
     test('get_db_size() increases after insert', function() use ($pdo) {
-        $size_before = \App\Core\App::webhook()->getDbSize();
+        $size_before = (new \App\Webhook\WebhookService(\App\Core\App::db()))->getDbSize();
 
         // Insert a bunch of data to increase DB size
         for ($i = 0; $i < 50; $i++) {
@@ -284,7 +284,7 @@ function run_tests_advanced_stats(): void {
                 ->execute([$id, 'test_db_size', 'test', str_repeat('X', 500), 'test', '127.0.0.1']);
         }
 
-        $size_after = \App\Core\App::webhook()->getDbSize();
+        $size_after = (new \App\Webhook\WebhookService(\App\Core\App::db()))->getDbSize();
 
         // Cleanup
         $pdo->prepare("DELETE FROM audit_log WHERE action = 'test_db_size'")->execute();
@@ -293,7 +293,7 @@ function run_tests_advanced_stats(): void {
     });
 
     test('get_db_size() returns reasonable value (>0, <1GB)', function() {
-        $size = \App\Core\App::webhook()->getDbSize();
+        $size = (new \App\Webhook\WebhookService(\App\Core\App::db()))->getDbSize();
         $one_gb = 1024 * 1024 * 1024;
         return ($size > 0 && $size < $one_gb) ? true : "DB size out of reasonable range: $size";
     });
