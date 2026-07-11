@@ -75,7 +75,6 @@ final class AdminSettingsRenderer
           <a href="#section-admin">👤 Admin</a>
           <a href="#section-smtp">📧 SMTP</a>
           <a href="#section-workflow">⚙️ Workflow</a>
-          <a href="#section-webhooks">🔗 Webhooks</a>
           <a href="#section-email-send">📤 Test envoi</a>
           <a href="#section-email-summary">📋 Résumé</a>
         </nav>
@@ -387,52 +386,7 @@ final class AdminSettingsRenderer
         </form>
 
         <!-- ═══════════════════════════════════════════════════════════ -->
-        <!-- SECTION 4 : Webhooks                                      -->
-        <!-- ═══════════════════════════════════════════════════════════ -->
-        <div class="card" id="section-webhooks">
-          <h2>🔗 Webhooks & Notifications SI</h2>
-          <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
-            Configurez un webhook pour notifier votre système d'information des événements du workflow.
-            Les notifications sont envoyées en POST JSON sur l'URL configurée.
-          </p>
-          <form method="POST">
-            <?= \App\Core\App::security()->csrfField() ?>
-            <input type="hidden" name="action" value="save_webhook">
-            <div class="field">
-              <label for="webhook_url">URL du webhook</label>
-              <input type="url" id="webhook_url" name="webhook_url" value="<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('webhook_url', '')) ?>" placeholder="https://si.exemple.invalid/api/webhook">
-              <span class="hint">URL recevant les notifications en POST JSON. Laissez vide pour désactiver.</span>
-            </div>
-            <div class="field">
-              <label for="webhook_events">Événements à notifier</label>
-              <input type="text" id="webhook_events" name="webhook_events" value="<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('webhook_events', 'workflow_complete,submission_cancelled')) ?>" placeholder="workflow_complete,submission_cancelled,token_validated">
-              <span class="hint">Séparés par des virgules. Événements disponibles : <code>workflow_complete</code>, <code>submission_cancelled</code>, <code>token_validated</code>, <code>all</code></span>
-            </div>
-            <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-              <button type="submit" class="btn btn-primary">Enregistrer</button>
-              <?php if (!empty(\App\Core\App::settings()->get('webhook_url', ''))): ?>
-                </form>
-                <form method="POST" style="display:inline;">
-                  <?= \App\Core\App::security()->csrfField() ?>
-                  <input type="hidden" name="action" value="test_webhook">
-                  <button type="submit" class="btn btn-test">Tester le webhook</button>
-                </form>
-              <?php else: ?>
-                </form>
-              <?php endif; ?>
-            </div>
-          <div style="margin-top:1rem;padding:1rem;background:#f5f5fe;border-radius:4px;font-size:.8rem;">
-            <strong>Format de la notification :</strong>
-            <pre style="margin:.5rem 0 0;white-space:pre-wrap;color:#555;">{
-  "event": "workflow_complete",
-  "timestamp": "2025-01-15T10:30:00+01:00",
-  "data": { "submission_id": 42, "form_label": "Onboarding", "submitted_by": "agent@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" }
-}</pre>
-          </div>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════════════ -->
-        <!-- SECTION 5 : Test email                                    -->
+        <!-- SECTION 4 : Test email                                    -->
         <!-- ═══════════════════════════════════════════════════════════ -->
         <div class="card" id="section-email-send" style="margin-top:1.5rem;">
             <h2>Test d'envoi d'email</h2>
@@ -451,7 +405,7 @@ final class AdminSettingsRenderer
         </div>
 
         <!-- ═══════════════════════════════════════════════════════════ -->
-        <!-- SECTION 6 : Résumé de sécurité email                      -->
+        <!-- SECTION 5 : Résumé de sécurité email                      -->
         <!-- ═══════════════════════════════════════════════════════════ -->
         <div class="card" id="section-email-summary" style="margin-top:1.5rem;">
             <h2><span class="icon">📋</span> Résumé de sécurité email</h2>

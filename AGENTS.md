@@ -2,16 +2,15 @@
 
 Guide technique pour agents IA travaillant sur le codebase CircuitDémat.
 
-## Superpowers
+## KISS — Projet petit intranet
 
-Avant toute tâche, invoquer les skills superpowers si applicables :
-- `brainstorming` avant toute création/modification de feature
-- `systematic-debugging` avant de fix un bug
-- `writing-plans` avant un refactor multi-fichiers
-- `test-driven-development` avant d'écrire du code
-- `verification-before-completion` avant de claim que c'est fini
+Ce projet est un **petit site intranet DREETS BFC** avec une charge utilisateur faible. Appliquer le principe KISS en permanence :
 
-Voir `~/.claude/skills/using-superpowers/SKILL.md` pour la liste complète.
+- **Pas de sur-architecture** : pas de cache superflu, pas de couches d'abstraction inutiles, pas de patterns lourds
+- **Code court et direct** : préférer la simplicité même si c'est "moins optimal"
+- **Sécurité gérée par IIS** : authentification Windows (AUTH_USER), autorisation IIS, rate limiting IIS. Le code PHP n'a pas besoin de gérer la session, le login, le logout, ni le rate limiting
+- **Pas de features inutiles** : webhooks supprimés, features qui ne servent pas sont retirées
+- **Quand c'est bon, c'est bon** : ne pas refactorer pour le plaisir, ne pas ajouter de tests edge-cases improbables
 
 ---
 
@@ -61,7 +60,7 @@ Tous les services sont enregistrés dans `src/bootstrap.php` et accessibles via 
 | ValidatorData | `App\Forms\ValidatorDataService` | `App::validatorData()` |
 | Attachment | `App\Attachment\AttachmentService` | `App::attachment()` |
 | Cron | `App\Cron\CronService` | `App::cron()` |
-| Webhook | `App\Webhook\WebhookService` | `App::webhook()` |
+| Webhook | `App\Webhook\WebhookService` | — | Supprimé (getDbSize() conservé) |
 | Fields | `App\Forms\FieldService` | `App::fields()` |
 
 ### Nouveaux services (v10.5.0)

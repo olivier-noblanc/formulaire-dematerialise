@@ -879,34 +879,6 @@ class DocumentationService
       </div>
     </div>
 
-    <!-- ── Webhooks ── -->
-    <h3><span aria-hidden="true">🔗</span> Webhooks pour l'intégration SI</h3>
-
-    <p>Les webhooks permettent de <strong>connecter l'application à votre système d'information</strong>. Quand un événement se produit (validation, refus, annulation, circuit de validation terminé), le système envoie automatiquement une notification à l'adresse configurée.</p>
-
-    <div class="step-row">
-      <span class="step-num">1</span>
-      <div class="step-text">
-        <p><strong>Configurez l'URL du webhook</strong> — Dans les paramètres (<code>index.php?p=admin_settings</code>), renseignez l'URL qui recevra les notifications.</p>
-      </div>
-    </div>
-    <div class="step-row">
-      <span class="step-num">2</span>
-      <div class="step-text">
-        <p><strong>Choisissez les événements</strong> — Sélectionnez quels événements déclencheront l'envoi : circuit de validation terminé, validation effectuée, demande annulée, etc.</p>
-      </div>
-    </div>
-    <div class="step-row">
-      <span class="step-num">3</span>
-      <div class="step-text">
-        <p><strong>Les notifications sont envoyées automatiquement</strong> — Chaque notification contient le type d'événement, l'horodatage et les données associées au format JSON.</p>
-      </div>
-    </div>
-
-    <div class="tip-box">
-      <p>Les webhooks sont optionnels. Si vous n'avez pas de système d'information à connecter, vous pouvez ignorer cette fonctionnalité.</p>
-    </div>
-
     <!-- ── Health check ── -->
     <h3><span aria-hidden="true">💚</span> Health check (vérification de santé)</h3>
 
@@ -956,15 +928,13 @@ class DocumentationService
       <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('smtp_from', 'workflow@exemple.invalid')) ?>)</li>
       <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : CircuitDémat)</li>
       <li><strong>Délai de relance</strong> — Le nombre d'heures avant l'envoi d'un rappel automatique (ex : 48h)</li>
-      <li><strong>URL du webhook</strong> — L'adresse pour les notifications automatiques</li>
-      <li><strong>Événements webhook</strong> — Les événements à notifier</li>
     </ul>
     <div class="warn-box">
       <p><strong><span aria-hidden="true">⚠</span> Accès restreint :</strong> La page de paramètres est réservée au <strong>super administrateur</strong>.</p>
     </div>
 
     <img src="index.php?p=screenshot&f=12_admin_settings.png" alt="Page des paramètres — configuration SMTP et relances" class="screenshot">
-    <p class="screenshot-caption">Paramètres — configuration SMTP, délai de relance et webhooks (réservé au super admin)</p>
+    <p class="screenshot-caption">Paramètres — configuration SMTP et délai de relance (réservé au super admin)</p>
 
     <img src="index.php?p=screenshot&f=13_docs.png" alt="Page de documentation et d'aide en ligne" class="screenshot">
     <p class="screenshot-caption">Page d'aide et documentation — guide complet accessible à tous les utilisateurs</p>
@@ -993,7 +963,6 @@ class DocumentationService
         <tr><td>Approuver / refuser les demandes d'accès</td><td></td><td>✓</td></tr>
         <tr><td>Gérer la liste des administrateurs</td><td></td><td>✓</td></tr>
         <tr><td>Configurer les paramètres SMTP</td><td></td><td>✓</td></tr>
-        <tr><td>Configurer les webhooks</td><td></td><td>✓</td></tr>
       </tbody>
     </table>
     <p>
@@ -1056,10 +1025,6 @@ class DocumentationService
       <div class="feature-item">
         <strong><span aria-hidden="true">🔒</span> Conformité RGPD</strong>
         <p>Export, suppression et purge automatique des données. Durée de conservation configurable. Droit d'accès et d'effacement garantis.</p>
-      </div>
-      <div class="feature-item">
-        <strong><span aria-hidden="true">🔗</span> Webhooks pour intégration SI</strong>
-        <p>Connectez l'application à votre système d'information. Notifications automatiques lors des événements clés.</p>
       </div>
       <div class="feature-item">
         <strong><span aria-hidden="true">💚</span> Contrôle de santé pour la surveillance</strong>
@@ -1132,7 +1097,7 @@ class DocumentationService
       <li><span aria-hidden="true">✅</span> Relancer manuellement un validateur</li>
       <li><span aria-hidden="true">✅</span> Annuler n'importe quelle demande en cours</li>
       <li><span aria-hidden="true">❌</span> Ne peut pas gérer les administrateurs</li>
-      <li><span aria-hidden="true">❌</span> Ne peut pas modifier les paramètres SMTP et webhooks</li>
+      <li><span aria-hidden="true">❌</span> Ne peut pas modifier les paramètres SMTP</li>
     </ul>
 
     <h3><span class="role-badge role-superadmin">Super admin</span> Le super administrateur</h3>
@@ -1142,7 +1107,6 @@ class DocumentationService
       <li><span aria-hidden="true">✅</span> Approuver ou refuser les demandes d'accès administrateur</li>
       <li><span aria-hidden="true">✅</span> Gérer la liste des administrateurs (ajouter, supprimer)</li>
       <li><span aria-hidden="true">✅</span> Configurer les paramètres SMTP (serveur, port, expéditeur)</li>
-      <li><span aria-hidden="true">✅</span> Configurer les webhooks (URL, événements)</li>
     </ul>
 
     <h3>Résumé des permissions</h3>
@@ -1169,7 +1133,7 @@ class DocumentationService
         <tr><td>Conformité RGPD</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
         <tr><td>Sauvegarde / restauration</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
         <tr><td>Gérer les administrateurs</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
-        <tr><td>Paramètres SMTP / webhooks</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
+        <tr><td>Paramètres SMTP</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
       </tbody>
     </table>
   </div>
@@ -1308,20 +1272,6 @@ class DocumentationService
           <li><strong>Export RGPD</strong> — Depuis la page index.php?p=rgpd, les administrateurs peuvent exporter toutes les données d'un utilisateur au format JSON (droit d'accès RGPD).</li>
           <li><strong>Sauvegarde complète</strong> — Depuis index.php?p=backup, vous pouvez télécharger une copie complète de la base de données.</li>
         </ul>
-      </div>
-    </details>
-
-    <details>
-      <summary>Qu'est-ce qu'un webhook ?</summary>
-      <div class="detail-body">
-        <p>Un <strong>webhook</strong> est un système de notification automatique. Quand un événement se produit dans l'application (validation, refus, annulation, circuit de validation terminé), le système envoie automatiquement un message à une adresse internet que vous configurez.</p>
-        <p>Cela permet de <strong>connecter l'application à d'autres systèmes</strong> de votre organisation, par exemple pour :</p>
-        <ul>
-          <li>Mettre à jour automatiquement un autre outil de suivi</li>
-          <li>Déclencher une action dans votre système d'information</li>
-          <li>Recevoir les notifications dans un canal de messagerie (Teams, etc.)</li>
-        </ul>
-        <p><strong>En résumé :</strong> Si vous ne savez pas ce qu'est un webhook, vous n'en avez probablement pas besoin. C'est une fonctionnalité optionnelle pour les équipes techniques.</p>
       </div>
     </details>
 
@@ -1636,7 +1586,7 @@ class DocumentationService
           &nbsp;&nbsp;<span class="file">index.php?p=form_tracking</span> — Tableau de suivi propriétaire (owners + admins)<br>
           &nbsp;&nbsp;<span class="file">index.php?p=admin_access</span> — Gestion des accès administrateur<br>
           &nbsp;&nbsp;<span class="file">index.php?p=admin_forms</span> — Gestion des formulaires, étapes, destinataires<br>
-          &nbsp;&nbsp;<span class="file">index.php?p=admin_settings</span> — Configuration SMTP et webhooks (super admin)<br>
+          &nbsp;&nbsp;<span class="file">index.php?p=admin_settings</span> — Configuration SMTP (super admin)<br>
           &nbsp;&nbsp;<span class="file">index.php?p=admin_alerts</span> — Configuration des alertes J-N<br>
           &nbsp;&nbsp;<span class="file">index.php?p=stats</span> — Statistiques et tableaux de bord<br>
           &nbsp;&nbsp;<span class="file">index.php?p=monitoring</span> — Tableau de bord de surveillance<br>
@@ -1732,7 +1682,7 @@ class DocumentationService
           <tbody>
             <tr><td>admins</td><td>email (UNIQUE), added_at</td><td>Liste des administrateurs</td></tr>
             <tr><td>admin_requests</td><td>email, status, token</td><td>Demandes d'accès en attente</td></tr>
-            <tr><td>settings</td><td>key (PK), value, updated_at, updated_by</td><td>Paramètres configurables (SMTP, délais, webhooks…)</td></tr>
+            <tr><td>settings</td><td>key (PK), value, updated_at, updated_by</td><td>Paramètres configurables (SMTP, délais…)</td></tr>
             <tr><td>audit_log</td><td>action, target, detail, actor, created_at</td><td>Journal d'audit complet</td></tr>
             <tr><td>alert_rules</td><td>form_id, days_before, condition_type, notify_who</td><td>Règles d'alerte de deadline</td></tr>
             <tr><td>alert_log</td><td>rule_id, submission_id, sent_at</td><td>Historique des alertes envoyées</td></tr>
@@ -1790,7 +1740,7 @@ class DocumentationService
           <li>Il valide ou refuse. <code>validate_token()</code> met à jour <code>done_at</code> et rappelle <code>advance_workflow()</code>.</li>
           <li>Si validé : les tokens de l'étape suivante sont créés et les emails envoyés.</li>
           <li>Si refusé : le statut de la demande passe à <code>refuse</code> et <code>closed_at</code> est renseigné.</li>
-          <li>Quand toutes les étapes sont validées : <code>closed_at</code> est renseigné → la demande est clôturée. Un webhook est envoyé si configuré.</li>
+          <li>Quand toutes les étapes sont validées : <code>closed_at</code> est renseigné → la demande est clôturée.</li>
           <li>En parallèle, <code>remind.php</code> tourne une fois par heure (lazy cron) et envoie des relances aux validateurs en attente depuis plus de 48h.</li>
           <li>En parallèle, <code>alert_check.php</code> tourne une fois par jour (lazy cron) et envoie les alertes J-N configurées.</li>
         </ol>

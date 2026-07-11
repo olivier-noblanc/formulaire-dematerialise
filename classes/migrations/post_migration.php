@@ -50,15 +50,4 @@ function apply_post_migration_fixes(PDO $pdo, bool $seed_needed = false): void {
     } catch (PDOException $e) {
         // Ignorer si déjà fait
     }
-
-    // ─────────────────────────────────────────────────────────────────
-    // 2. Seed webhook settings
-    // ─────────────────────────────────────────────────────────────────
-    try {
-        $webhook_check = _dbm_q($pdo, "SELECT COUNT(*) FROM settings WHERE key IN ('webhook_url', 'webhook_events')")->fetchColumn();
-        if ($webhook_check < 2) {
-            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('webhook_url', '', datetime('now'))");
-            $pdo->exec("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('webhook_events', 'workflow_complete,submission_cancelled', datetime('now'))");
-        }
-    } catch (PDOException $e) {}
 }

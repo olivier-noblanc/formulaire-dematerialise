@@ -192,8 +192,6 @@ final class TokenService
 
         $this->audit->log('submission_cancel', 'submission:' . $submissionId, 'Soumission annulée', $cancelledBy);
 
-        App::webhook()->send('submission_cancelled', ['submission_id' => $submissionId, 'form_label' => $submission['form_label'] ?? '', 'cancelled_by' => $cancelledBy]);
-
         return ['success' => true, 'message' => 'Soumission annulée avec succès.'];
     }
 

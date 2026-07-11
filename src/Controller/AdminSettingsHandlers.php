@@ -6,7 +6,7 @@ namespace App\Controller;
 use App\Core\App;
 
 /**
- * POST handlers admin_settings.php — SMTP, vérification email, webhooks.
+ * POST handlers admin_settings.php — SMTP, vérification email.
  *
  * Contrat de retour (tableau associatif) :
  *  - 'success'       (string)
@@ -44,27 +44,12 @@ final class AdminSettingsHandlers
             [$success_msg, $error_msg] = self::handleSaveEmailVerify($error_msg);
         }
 
-        if (isset($_POST['webhook_url'])) {
-            $user = App::auth()->getUser();
-            App::settings()->set('webhook_url', trim($_POST['webhook_url']), $user);
-            App::audit()->log('settings_update', 'settings:webhook_url', 'URL webhook mise à jour');
-        }
-        if (isset($_POST['webhook_events'])) {
-            $user = App::auth()->getUser();
-            App::settings()->set('webhook_events', trim($_POST['webhook_events']), $user);
-            App::audit()->log('settings_update', 'settings:webhook_events', 'Événements webhook mis à jour');
-        }
-
         if ($action === 'test_email') {
             $test_msg = self::handleTestEmail();
         }
 
         if ($action === 'test_verify_email') {
             [$verify_result, $error_msg] = self::handleTestVerifyEmail($error_msg);
-        }
-
-        if ($action === 'test_webhook') {
-            [$success_msg, $error_msg] = self::handleTestWebhook($success_msg, $error_msg);
         }
 
         return ['success' => $success_msg, 'error' => $error_msg, 'test' => $test_msg, 'verify_result' => $verify_result];
@@ -193,16 +178,4 @@ final class AdminSettingsHandlers
         return [null, $error_msg];
     }
 
-    public static function handleTestWebhook(string $success_msg, string $error_msg): array
-    {
-        $webhook_url = App::settings()->get('webhook_url', '');
-        if (empty($webhook_url)) {
-            $error_msg = 'Aucune URL webhook configurée.';
-            return [$success_msg, $error_msg];
-        }
-        App::webhook()->send('test', ['message' => 'Test webhook depuis ' . \App\Render\NavigationRenderer::getAppName(), 'version' => \get_latest_version()]);
-        $success_msg = 'Webhook de test envoyé à ' . \App\Core\App::html()->escape($webhook_url) . '.';
-        App::audit()->log('webhook_test', 'settings', 'Test webhook envoyé');
-        return [$success_msg, $error_msg];
-    }
 }

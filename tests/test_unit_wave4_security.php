@@ -151,9 +151,9 @@ test('decrypt_setting() avec mauvaise clé retourne [chiffré]', function() {
     }
 });
 
-test('get_sensitive_setting_keys() retourne les 4 clés attendues', function() {
+test('get_sensitive_setting_keys() retourne les clés attendues', function() {
     $keys = get_sensitive_setting_keys();
-    $expected = ['smtp_pass', 'ldap_bind_pass', 'webhook_secret', 'app_test_secret'];
+    $expected = ['smtp_pass', 'ldap_bind_pass', 'app_test_secret'];
     sort($keys);
     sort($expected);
     return $keys === $expected ? true : 'Clés sensibles incorrectes: ' . implode(',', $keys);

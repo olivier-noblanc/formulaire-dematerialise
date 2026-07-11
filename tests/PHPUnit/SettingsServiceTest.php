@@ -160,13 +160,6 @@ final class SettingsServiceTest extends TestCase
         $this->assertIsString($result);
     }
 
-    public function testSetWebhookSecretIsSensitive(): void
-    {
-        $this->settings->set('webhook_secret', 'webhook_value');
-        $result = $this->settings->get('webhook_secret');
-        $this->assertIsString($result);
-    }
-
     public function testSetAppTestSecretIsSensitive(): void
     {
         $this->settings->set('app_test_secret', 'test_secret_value');
