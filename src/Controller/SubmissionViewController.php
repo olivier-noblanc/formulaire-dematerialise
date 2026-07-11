@@ -23,14 +23,7 @@ final class SubmissionViewController extends BaseController
             exit;
         }
 
-        $stmt = $pdo->prepare("
-            SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
-            FROM submissions s
-            JOIN forms f ON f.id = s.form_id
-            WHERE s.id = ?
-        ");
-        $stmt->execute([$subId]);
-        $sub = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $sub = $this->submissionRepo->findByIdWithForm($subId);
 
         if (!$sub) {
             (new \App\Render\ErrorRenderer())->errorPage(404, 'Soumission introuvable',
@@ -44,21 +37,17 @@ final class SubmissionViewController extends BaseController
         $isAdmin = App::auth()->isAdminEffective();
         $isFormOwner = App::auth()->isFormOwner((string)$sub['form_id']);
 
+        $isValidator = false;
         if (!$isAdmin && $sub['submitted_by'] !== $user) {
-            $validatorCheck = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?");
-            $validatorCheck->execute([$subId, $user]);
-            if (!$validatorCheck->fetch()) {
+            if ($this->tokenRepo->existsForSubmissionAndEmail($subId, $user)) {
+                $isValidator = true;
+            } else {
                 (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès non autorisé',
                     'Vous n\'avez pas les droits pour voir cette soumission.',
                     'Seuls l\'auteur, les validateurs et les administrateurs peuvent consulter une soumission.');
             }
-        }
-
-        $isValidator = false;
-        $validatorCheck = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?");
-        $validatorCheck->execute([$subId, $user]);
-        if ($validatorCheck->fetch()) {
-            $isValidator = true;
+        } else {
+            $isValidator = $this->tokenRepo->existsForSubmissionAndEmail($subId, $user);
         }
 
         $canEditValidator = $isAdmin || $isFormOwner;
@@ -69,20 +58,14 @@ final class SubmissionViewController extends BaseController
             $action = $_POST['action'] ?? '';
 
             if ($action === 'cancel_submission' && ($isAdmin || $sub['submitted_by'] === $user)) {
-                $pdo->prepare("UPDATE submissions SET status = 'annule', closed_at = datetime('now') WHERE id = ? AND status = 'en_cours'")
-                    ->execute([$subId]);
+                $this->submissionRepo->cancelById($subId);
                 App::audit()->log('submission_cancel', 'submission:' . $subId, 'Soumission annulée par ' . $user);
                 header('Location: index.php?p=submission_view&id=' . urlencode($subId));
                 exit;
             }
 
             if ($action === 'delete_submission' && $isAdmin) {
-                $pdo->exec('PRAGMA foreign_keys = ON');
-                $pdo->prepare("DELETE FROM submission_validator_data WHERE submission_id = ?")->execute([$subId]);
-                $pdo->prepare("DELETE FROM alert_log WHERE submission_id = ?")->execute([$subId]);
-                $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
-                $pdo->prepare("DELETE FROM attachments WHERE submission_id = ?")->execute([$subId]);
-                $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+                $this->submissionRepo->deleteCascade($subId);
                 App::audit()->log('submission_delete', 'submission:' . $subId, 'Soumission supprimée par ' . $user);
                 header('Location: index.php?p=dashboard');
                 exit;
@@ -90,38 +73,16 @@ final class SubmissionViewController extends BaseController
         }
 
         $workflowSteps = App::workflow()->getWorkflowSteps($sub['form_id']);
-        $tokens = $pdo->prepare("
-            SELECT t.*, st.label as step_label, st.ordre
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            WHERE t.submission_id = ?
-            ORDER BY st.ordre ASC, t.sent_at ASC
-        ");
-        $tokens->execute([$subId]);
-        $tokens = $tokens->fetchAll(\PDO::FETCH_ASSOC);
+        $tokens = $this->tokenRepo->findDetailedWithStepsBySubmission($subId);
 
         $tokensByStep = [];
         foreach ($tokens as $tk) {
             $tokensByStep[$tk['step_id']][] = $tk;
         }
 
-        $attachments = $pdo->prepare("
-            SELECT a.*, u.display_name as uploader_name
-            FROM attachments a
-            LEFT JOIN users u ON u.email = a.uploaded_by
-            WHERE a.submission_id = ?
-            ORDER BY a.uploaded_at ASC
-        ");
-        $attachments->execute([$subId]);
-        $attachments = $attachments->fetchAll(\PDO::FETCH_ASSOC);
+        $attachments = $this->attachmentRepo->findBySubmissionWithUploader($subId);
 
-        $validatorData = $pdo->prepare("
-            SELECT * FROM submission_validator_data
-            WHERE submission_id = ?
-            ORDER BY filled_at ASC, field_name ASC
-        ");
-        $validatorData->execute([$subId]);
-        $validatorData = $validatorData->fetchAll(\PDO::FETCH_ASSOC);
+        $validatorData = $this->submissionRepo->getValidatorDataOrdered($subId);
 
         $pageCss = '';
         ob_start();

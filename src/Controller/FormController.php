@@ -39,9 +39,7 @@ final class FormController extends BaseController
             }
         }
 
-        $form_stmt = $pdo->prepare("SELECT * FROM forms WHERE slug = ? AND actif = 1");
-        $form_stmt->execute([$slug]);
-        $form = $form_stmt->fetch(\PDO::FETCH_ASSOC);
+        $form = $this->formRepo->findActiveBySlug($slug);
 
         if (!$form) {
             /** @phpstan-ignore-next-line if.alwaysTrue */
@@ -62,13 +60,7 @@ final class FormController extends BaseController
         $success      = false;
 
         // Vérifier si l'agent a déjà une soumission en cours pour ce formulaire
-        $existing_stmt = $pdo->prepare(
-            "SELECT id, submitted_at FROM submissions
-             WHERE form_id = ? AND submitted_by = ? AND status = 'en_cours'
-             ORDER BY submitted_at DESC LIMIT 1"
-        );
-        $existing_stmt->execute([$form['id'], $submitted_by]);
-        $existing_submission = $existing_stmt->fetch(\PDO::FETCH_ASSOC);
+        $existing_submission = $this->submissionRepo->findActiveByFormAndSubmitter($form['id'], $submitted_by);
 
         // Charger les champs dynamiques du formulaire, ordonnés par ordre.
         // Exclure les champs réservés aux validateurs (filled_by='validator').
@@ -141,17 +133,12 @@ final class FormController extends BaseController
                 }
 
                 $rgpd_consent  = !empty($_POST['rgpd_consent']) ? 1 : 0;
-                $submission_id = generate_uuid();
-                $pdo->prepare(
-                    "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, rgpd_consent)
-                     VALUES (?,?,?,?,?,?)"
-                )->execute([
-                    $submission_id,
-                    $form['id'],
-                    json_encode($data, JSON_UNESCAPED_UNICODE),
-                    $submitted_by,
-                    $now,
-                    $rgpd_consent,
+                $submission_id = $this->submissionRepo->createWithRgpd([
+                    'form_id'       => $form['id'],
+                    'data'          => json_encode($data, JSON_UNESCAPED_UNICODE),
+                    'submitted_by'  => $submitted_by,
+                    'submitted_at'  => $now,
+                    'rgpd_consent'  => $rgpd_consent,
                 ]);
 
                 // Traiter les fichiers uploadés — AVANT d'invoquer advance_workflow() et
@@ -177,7 +164,7 @@ final class FormController extends BaseController
                 // de soumission orpheline sans fichiers) et on retourne au formulaire.
                 if (!empty($file_errors)) {
                     // Supprimer la soumission invalide (et ses pièces jointes partielles)
-                    $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submission_id]);
+                    $this->submissionRepo->deleteById($submission_id);
                     // Note : advance_workflow() n'a pas encore été appelé → pas de tokens à nettoyer
                     // On ne set PAS $success = true → le formulaire est ré-affiché
                 } else {
@@ -205,16 +192,7 @@ final class FormController extends BaseController
                 // Mode test : renvoyer JSON au lieu du HTML
                 /** @phpstan-ignore-next-line if.alwaysTrue */
                 if (TEST_MODE) {
-                    $tok_stmt = $pdo->prepare(
-                        "SELECT t.id, t.step_id, t.email, t.token, t.sent_at,
-                                st.label as step_label, st.ordre
-                         FROM tokens t
-                         JOIN steps st ON st.id = t.step_id
-                         WHERE t.submission_id = ?
-                         ORDER BY st.ordre"
-                    );
-                    $tok_stmt->execute([$submission_id]);
-                    $generated_tokens = $tok_stmt->fetchAll(\PDO::FETCH_ASSOC);
+                    $generated_tokens = $this->tokenRepo->findWithStepsBySubmission($submission_id);
                     test_json_response([
                         'success'       => true,
                         'submission_id' => $submission_id,

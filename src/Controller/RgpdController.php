@@ -49,26 +49,8 @@ final class RgpdController extends BaseController
                     $data = App::getInstance()->get(\App\Rgpd\RgpdService::class)->exportUserData($email);
 
                     // P2-B : Inclure les données validator (filled_by='validator')
-                    $vdFilledStmt = $pdo->prepare(
-                        "SELECT submission_id, field_name, field_label, field_type, value,\n"
-                        . "       filled_at, step_id, step_label\n"
-                        . "FROM submission_validator_data\n"
-                        . "WHERE filled_by_email = ?\n"
-                        . "ORDER BY filled_at DESC, field_name"
-                    );
-                    $vdFilledStmt->execute([$email]);
-                    $data['validator_data_filled'] = $vdFilledStmt->fetchAll(\PDO::FETCH_ASSOC);
-
-                    $vdOnSubsStmt = $pdo->prepare(
-                        "SELECT svd.submission_id, svd.field_name, svd.field_label, svd.field_type,\n"
-                        . "       svd.value, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email\n"
-                        . "FROM submission_validator_data svd\n"
-                        . "JOIN submissions s ON s.id = svd.submission_id\n"
-                        . "WHERE s.submitted_by = ?\n"
-                        . "ORDER BY svd.submission_id, svd.filled_at, svd.field_name"
-                    );
-                    $vdOnSubsStmt->execute([$email]);
-                    $data['validator_data_on_submissions'] = $vdOnSubsStmt->fetchAll(\PDO::FETCH_ASSOC);
+                    $data['validator_data_filled'] = $this->submissionRepo->getValidatorDataFilledByEmail($email);
+                    $data['validator_data_on_submissions'] = $this->submissionRepo->getValidatorDataOnSubmissionsByEmail($email);
 
                     if (empty($data['submissions'])
                         && empty($data['validations'])
@@ -98,13 +80,8 @@ final class RgpdController extends BaseController
                 } else {
                     $pdo->exec('PRAGMA foreign_keys = ON');
 
-                    $pdo->prepare(
-                        "DELETE FROM submission_validator_data\n"
-                        . "WHERE submission_id IN (SELECT id FROM submissions WHERE submitted_by = ?)"
-                    )->execute([$email]);
-
-                    $pdo->prepare("DELETE FROM submission_validator_data WHERE filled_by_email = ?")
-                        ->execute([$email]);
+                    $this->submissionRepo->deleteValidatorDataBySubmitter($email);
+                    $this->submissionRepo->deleteValidatorDataByEmail($email);
 
                     $result = App::getInstance()->get(\App\Rgpd\RgpdService::class)->deleteUserData($email);
                     if ($result) {
@@ -128,10 +105,7 @@ final class RgpdController extends BaseController
 
                     $count = App::getInstance()->get(\App\Rgpd\RgpdService::class)->autoPurge($months);
 
-                    $pdo->exec(
-                        "DELETE FROM submission_validator_data\n"
-                        . "WHERE submission_id NOT IN (SELECT id FROM submissions)"
-                    );
+                    $this->submissionRepo->purgeOrphanValidatorData();
 
                     if ($count > 0) {
                         App::audit()->log('rgpd_purge', 'system', "Purge automatique : {$count} soumissions de plus de {$months} mois supprimées");
@@ -147,12 +121,10 @@ final class RgpdController extends BaseController
         $retentionMonths = (int)$this->settings->get('retention_months', '24');
         $legalMentions = $this->settings->get('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Contact : ' . $this->settings->get('rgpd_contact', 'CIL DREETS') . '.');
 
-        $totalSubmissions = (int)$pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn();
-        $totalAttachments = (int)$pdo->query("SELECT COUNT(*) FROM attachments")->fetchColumn();
-        $totalAudit = (int)$pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
-        $oldSubmissionsStmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE status != 'en_cours' AND closed_at < datetime('now', '-' || ? || ' months')");
-        $oldSubmissionsStmt->execute([$retentionMonths]);
-        $oldSubmissions = (int)$oldSubmissionsStmt->fetchColumn();
+        $totalSubmissions = $this->submissionRepo->countAll();
+        $totalAttachments = $this->attachmentRepo->countAll();
+        $totalAudit = $this->auditRepo->countAll();
+        $oldSubmissions = $this->submissionRepo->countOldByRetention($retentionMonths);
         $dbSize = App::webhook()->getDbSize();
 
         $pageCss = '';

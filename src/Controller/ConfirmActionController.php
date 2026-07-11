@@ -79,6 +79,8 @@ final class ConfirmActionController extends BaseController
             }
         }
 
+        $this->security->requireCsrf();
+
         $confirmMessage = $config['description'];
         $detailText = '';
         $pdo = $this->db->getPdo();

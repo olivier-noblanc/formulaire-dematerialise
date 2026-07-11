@@ -1,5 +1,54 @@
 # Changelog — CircuitDémat
 
+## [10.11.0] — 2026-07-11
+_Résumé : Ultrareview — 38 constats corrigés, SQL contrôleurs → repositories, FieldService/ValidatorDataService mergés._
+
+### 🐛 Bug fixes
+
+- **C-1** ConditionEvaluator : opérateurs `equals`/`not_equals`/`contains` ajoutés — les conditions workflow fonctionnent
+- **C-5** TokenService::cancel() : 3 UPDATEs enveloppés dans une transaction
+- **W-1** TokenRepository::markExpired() : `datetime('now', '-1 second')` au lieu de `datetime('now')`
+- **W-2** DashboardController : URL de redirection corrigée (`dashboard.phpfrom=` → `&from=`)
+- **W-4** SubmissionRepository::saveValidatorData() : récupère le label au lieu de stocker le nom technique
+- **W-14** SlugHelper::generateSlug() : `maxAttempts = 100` + RuntimeException
+- **W-15** MailService::buildMailHtml() : `json_decode(...) ?: []`
+
+### 🔒 Sécurité
+
+- **W-5** DownloadController : nettoyage caractères de contrôle dans Content-Disposition
+- **W-6** EmailVerificationService : filtrage `<>` dans commande SMTP RCPT TO
+- **P-7** ConfirmActionController : CSRF vérifié avant rendu
+- **P-6** ScreenshotController : check `realpath()` ajouté
+- **P-3** AdminFormsHandlers/AdminAlerts/BackupController : erreurs PDO masquées aux users
+- **W-7** SecurityService : log `error_log` quand TEST_MODE bypass CSRF
+- **P-4** SecurityService : CSP nonce aléatoire au lieu de `unsafe-inline`
+
+### ⚡ Performance
+
+- **W-8** StatsService::getGlobalStats() : 11 requêtes → 1 requête GROUP BY
+- **W-9** MonitoringController : batch query tokens pending (N+1 → 1)
+- **P-8** BackupController : COUNT×13 → UNION ALL en 1 requête
+- **C-2** ExportService : streaming CSV par batch 500 via json_each + LIMIT/OFFSET
+- **C-3** FormTrackingController : pagination ajoutée (COUNT + LIMIT/OFFSET)
+
+### 🏗 Refactor
+
+- **C-7** SQL directes déplacées de 9 contrôleurs vers repositories (+30 méthodes repo)
+- **W-17** ValidatorDataService délégué vers FieldService (4 méthodes dupliquées supprimées, -25% lignes)
+- **P-1** TokenService::remind() : `relance_at` en UTC
+- **P-2** SubmissionViewController : requête token réutilisée (suppression double exécution)
+- **P-11** SettingsService::encrypt() : vérification longueur clé ≥ 32 octets
+
+### 📊 Résultat
+
+| Métrique | Avant 10.10.0 | Après 10.11.0 |
+|----------|---------------|---------------|
+| Tests | 995 | 995 (0 failures) |
+| Constats ultrareview | 38 | 0 critiques restants |
+| Repositories | 8 | 9 (+AlertRepository) |
+
+---
+
 ## [10.10.0] — 2026-07-11
 _Résumé : Suppression wrappers + render wrappers + h(), PHPStan -54%, +62 tests, lib/ vidé._
 

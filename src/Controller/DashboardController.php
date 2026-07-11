@@ -56,9 +56,7 @@ final class DashboardController extends BaseController
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             $options = [];
             if ($form_f) {
-                $f_stmt = $pdo->prepare("SELECT id FROM forms WHERE slug = ?");
-                $f_stmt->execute([$form_f]);
-                $fid = $f_stmt->fetchColumn();
+                $fid = $this->formRepo->findIdBySlug($form_f);
                 if ($fid) {
                     $options['form_id'] = $fid;
                 }
@@ -131,15 +129,13 @@ final class DashboardController extends BaseController
                 if (!$confirmed) {
                     header(
                         'Location: index.php?p=confirm_action&action=cancel_submission&submission_id='
-                        . urlencode((string) $sub_id) . '&from=dashboard.phpfrom=index.php?p=dashboard'
+                        . urlencode((string) $sub_id) . '&from=' . urlencode('index.php?p=dashboard')
                     );
                     exit;
                 }
                 $actor = $this->auth->getUser();
                 // Vérifier que l'utilisateur est admin ou le propriétaire de la soumission
-                $sub_stmt = $pdo->prepare("SELECT submitted_by FROM submissions WHERE id = ?");
-                $sub_stmt->execute([$sub_id]);
-                $sub_owner = $sub_stmt->fetchColumn();
+                $sub_owner = $this->submissionRepo->getSubmitterById($sub_id);
                 if ($this->auth->isAdmin() || $sub_owner === $actor) {
                     $result     = \App\Core\App::token()->cancel((string) $sub_id, $actor);
                     $cancel_msg = $result['message'];
@@ -188,48 +184,22 @@ final class DashboardController extends BaseController
         $where = implode(' AND ', $where);
 
         // Count total matching rows for pagination
-        $count_stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM submissions s JOIN forms f ON f.id = s.form_id WHERE $where"
-        );
-        $count_stmt->execute($params);
-        $total_rows  = (int) $count_stmt->fetchColumn();
+        $total_rows  = $this->submissionRepo->countWithForm($where, $params);
         $total_pages = max(1, (int) ceil($total_rows / $per_page));
         if ($page > $total_pages) {
             $page = $total_pages;
         }
         $offset = ($page - 1) * $per_page;
 
-        $stmt = $pdo->prepare(
-            "SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
-             FROM submissions s
-             JOIN forms f ON f.id = s.form_id
-             WHERE $where
-             ORDER BY s.submitted_at DESC
-             LIMIT ? OFFSET ?"
-        );
-        $stmt->execute(array_merge($params, [$per_page, $offset]));
-        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $rows = $this->submissionRepo->findPaginatedWithForm($where, $params, $per_page, $offset);
 
         // A-13: optimisé — était N+1 (1 requête get_tokens_for_submission() par ligne).
         // Batch fetch all tokens for all submissions on this page in one query,
         // indexed by submission_id.
         $tokens_by_submission = [];
         if (!empty($rows)) {
-            $sub_ids      = array_column($rows, 'id');
-            $placeholders = implode(',', array_fill(0, count($sub_ids), '?'));
-            $batch_stmt = $pdo->prepare(
-                "SELECT t.submission_id, t.id, t.token, t.relance_count, t.expires_at,
-                        t.email, t.done_at, t.sent_at, t.step_id,
-                        st.label, st.label as step_label, st.ordre
-                 FROM tokens t
-                 JOIN steps st ON st.id = t.step_id
-                 WHERE t.submission_id IN ($placeholders)
-                 ORDER BY t.submission_id, st.ordre ASC, st.label ASC"
-            );
-            $batch_stmt->execute($sub_ids);
-            foreach ($batch_stmt->fetchAll(\PDO::FETCH_ASSOC) as $trow) {
-                $tokens_by_submission[$trow['submission_id']][] = $trow;
-            }
+            $sub_ids = array_column($rows, 'id');
+            $tokens_by_submission = $this->tokenRepo->findBySubmissionIds($sub_ids);
         }
 
         // BACKLOG — Indicateur "Reste à traiter" : pour chaque soumission de la
@@ -244,7 +214,7 @@ final class DashboardController extends BaseController
         }
         $validator_status_by_submission = \App\Core\App::validatorData()->getValidatorStatusBatch($rows_for_validator_status);
 
-        $forms  = _dbm_q($pdo, "SELECT * FROM forms WHERE actif=1 ORDER BY label")->fetchAll(\PDO::FETCH_ASSOC);
+        $forms  = $this->formRepo->findAll(true);
         $gstats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
         $total  = $gstats['total'];
         $complet = $gstats['valide'] + $gstats['refuse'];
@@ -263,7 +233,6 @@ final class DashboardController extends BaseController
                 $sys_smtp_ok    = true;
                 $sys_smtp_label = 'OK';
             } else {
-                // Test rapide : tentative de connexion TCP (timeout 1.5s)
                 $sys_errno  = 0;
                 $sys_errstr = '';
                 $sys_fp = @fsockopen($sys_smtp_host, $sys_smtp_port, $sys_errno, $sys_errstr, 1.5);
@@ -283,15 +252,9 @@ final class DashboardController extends BaseController
         // Dernière sauvegarde : date du dernier backup_download/backup_restore
         $sys_last_backup = '—';
         try {
-            $sys_bk_stmt = $pdo->prepare(
-                "SELECT created_at FROM audit_log
-                 WHERE action IN ('backup_download', 'backup_restore')
-                 ORDER BY created_at DESC LIMIT 1"
-            );
-            $sys_bk_stmt->execute();
-            $sys_bk_row = $sys_bk_stmt->fetchColumn();
+            $sys_bk_row = $this->auditRepo->getLastBackupDate();
             if ($sys_bk_row) {
-                $sys_bk_ts = strtotime((string) $sys_bk_row);
+                $sys_bk_ts = strtotime($sys_bk_row);
                 $sys_last_backup = $sys_bk_ts !== false ? date('d/m/Y', $sys_bk_ts) : '—';
             } else {
                 // Fallback : date de dernière modification du fichier DB

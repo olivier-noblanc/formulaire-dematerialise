@@ -5,6 +5,7 @@ namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
 use App\Forms\ValidatorDataService;
+use App\Forms\FieldService;
 use App\Core\Database;
 
 final class ValidatorDataServiceTest extends TestCase
@@ -15,7 +16,8 @@ final class ValidatorDataServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
-        $this->service = new ValidatorDataService($this->db);
+        $fields = new FieldService($this->db);
+        $this->service = new ValidatorDataService($this->db, $fields);
     }
 
     protected function tearDown(): void

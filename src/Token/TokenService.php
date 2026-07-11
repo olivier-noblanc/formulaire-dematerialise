@@ -154,23 +154,32 @@ final class TokenService
 
         $pdo = $this->db->getPdo();
         $now = gmdate('Y-m-d H:i:s');
-        $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'annule' WHERE id = ?")
-            ->execute([$now, $submissionId]);
 
-        $pdo->prepare("UPDATE tokens SET done_at = ? WHERE submission_id = ? AND done_at IS NULL")
-            ->execute([$now, $submissionId]);
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'annule' WHERE id = ?")
+                ->execute([$now, $submissionId]);
 
-        $data = json_decode($submission['data'], true) ?: [];
-        if (!isset($data['validations'])) $data['validations'] = [];
-        $data['validations'][] = [
-            'step_label' => 'Annulation',
-            'email' => $cancelledBy ?: 'system',
-            'action' => 'refuser',
-            'commentaire' => 'Soumission annulée',
-            'date' => $now,
-        ];
-        $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
-            ->execute([json_encode($data, JSON_UNESCAPED_UNICODE), $submissionId]);
+            $pdo->prepare("UPDATE tokens SET done_at = ? WHERE submission_id = ? AND done_at IS NULL")
+                ->execute([$now, $submissionId]);
+
+            $data = json_decode($submission['data'], true) ?: [];
+            if (!isset($data['validations'])) $data['validations'] = [];
+            $data['validations'][] = [
+                'step_label' => 'Annulation',
+                'email' => $cancelledBy ?: 'system',
+                'action' => 'refuser',
+                'commentaire' => 'Soumission annulée',
+                'date' => $now,
+            ];
+            $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
+                ->execute([json_encode($data, JSON_UNESCAPED_UNICODE), $submissionId]);
+
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
 
         // Notifier l'agent
         $agentEmail = $submission['submitted_by'] ?? '';
@@ -209,8 +218,8 @@ final class TokenService
         $newCount = (int)$tok['relance_count'] + 1;
         $relanceMax = (int)$this->settings->get('relance_max', '3');
 
-        $this->db->getPdo()->prepare("UPDATE tokens SET relance_count = ?, relance_at = datetime('now') WHERE id = ?")
-            ->execute([$newCount, $tokenId]);
+        $this->db->getPdo()->prepare("UPDATE tokens SET relance_count = ?, relance_at = ? WHERE id = ?")
+            ->execute([$newCount, gmdate('Y-m-d H:i:s'), $tokenId]);
 
         $submission = [
             'data' => $tok['data'],

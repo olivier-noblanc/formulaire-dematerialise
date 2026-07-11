@@ -15,6 +15,22 @@ final class FormRepository extends BaseRepository
         return $this->fetchOne("SELECT * FROM forms WHERE slug = ?", [$slug]);
     }
 
+    public function findActiveBySlug(string $slug): ?array
+    {
+        return $this->fetchOne("SELECT * FROM forms WHERE slug = ? AND actif = 1", [$slug]);
+    }
+
+    public function findIdBySlug(string $slug): ?string
+    {
+        $result = $this->fetchOne("SELECT id FROM forms WHERE slug = ?", [$slug]);
+        return $result !== null ? (string) $result['id'] : null;
+    }
+
+    public function findActiveList(): array
+    {
+        return $this->fetchAll("SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label");
+    }
+
     public function findAll(bool $activeOnly = false): array
     {
         $sql = "SELECT * FROM forms";
@@ -96,6 +112,60 @@ final class FormRepository extends BaseRepository
         return $this->execute(
             "DELETE FROM form_owners WHERE form_id = ? AND email = ?",
             [$formId, strtolower($email)]
+        );
+    }
+
+    public function getDateFields(string $formId): array
+    {
+        return $this->fetchAll(
+            "SELECT field_name, label FROM form_fields WHERE form_id = ? AND field_type = 'date' ORDER BY ordre",
+            [$formId]
+        );
+    }
+
+    public function setDeadlineField(string $formId, string $deadlineField): bool
+    {
+        return $this->execute("UPDATE forms SET deadline_field = ? WHERE id = ?", [$deadlineField, $formId]);
+    }
+
+    public function findActiveSlugsAndLabels(): array
+    {
+        return $this->fetchAll("SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label");
+    }
+
+    public function getWorkflowStepsByFormIds(array $formIds): array
+    {
+        if (empty($formIds)) return [];
+        $placeholders = implode(',', array_fill(0, count($formIds), '?'));
+        $rows = $this->fetchAll(
+            "SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.form_id,
+                    GROUP_CONCAT(sr.email, '|') as recipient_emails
+             FROM steps st
+             LEFT JOIN step_recipients sr ON sr.step_id = st.id
+             WHERE st.form_id IN ($placeholders) AND st.actif = 1
+             GROUP BY st.id
+             ORDER BY st.form_id, st.ordre ASC, st.id ASC",
+            $formIds
+        );
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row['form_id']][] = $row;
+        }
+        return $result;
+    }
+
+    public function getWorkflowStepsWithTokens(string $formId, string $submissionId): array
+    {
+        return $this->fetchAll(
+            "SELECT st.id, st.label, st.ordre,
+                    GROUP_CONCAT(t2.done_at, '|') as dones,
+                    GROUP_CONCAT(t2.email, '|') as emails
+             FROM steps st
+             LEFT JOIN tokens t2 ON t2.step_id = st.id AND t2.submission_id = ?
+             WHERE st.form_id = ? AND st.actif = 1
+             GROUP BY st.id
+             ORDER BY st.ordre, st.id",
+            [$submissionId, $formId]
         );
     }
 }

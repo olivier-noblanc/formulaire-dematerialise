@@ -48,52 +48,18 @@ final class MySubmissionsController extends BaseController
         elseif ($statusFilter === 'annule') { $where[] = "s.status = 'annule'"; }
         $whereSql = implode(' AND ', $where);
 
-        $stmt = $pdo->prepare("
-            SELECT s.id, s.form_id, s.data, s.submitted_at, s.status, s.closed_at,
-                   f.label as form_label, f.slug as form_slug, f.description as form_description, f.deadline_field
-            FROM submissions s
-            JOIN forms f ON f.id = s.form_id
-            WHERE $whereSql
-            ORDER BY s.submitted_at DESC
-        ");
-        $stmt->execute($params);
-        $submissions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $submissions = $this->submissionRepo->findPaginatedBySubmitter($user, $whereSql, $params, 0, 0);
 
         $workflowStepsByForm = [];
         $tokensBySub = [];
         if (!empty($submissions)) {
             $formIds = array_values(array_unique(array_column($submissions, 'form_id')));
             if (!empty($formIds)) {
-                $fph = implode(',', array_fill(0, count($formIds), '?'));
-                $wsStmt = $pdo->prepare("
-                    SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.form_id,
-                           GROUP_CONCAT(sr.email, '|') as recipient_emails
-                    FROM steps st
-                    LEFT JOIN step_recipients sr ON sr.step_id = st.id
-                    WHERE st.form_id IN ($fph) AND st.actif = 1
-                    GROUP BY st.id
-                    ORDER BY st.form_id, st.ordre ASC, st.id ASC
-                ");
-                $wsStmt->execute($formIds);
-                foreach ($wsStmt->fetchAll(\PDO::FETCH_ASSOC) as $wsRow) {
-                    $workflowStepsByForm[$wsRow['form_id']][] = $wsRow;
-                }
+                $workflowStepsByForm = $this->formRepo->getWorkflowStepsByFormIds($formIds);
             }
 
             $subIds = array_column($submissions, 'id');
-            $sph = implode(',', array_fill(0, count($subIds), '?'));
-            $tkStmt = $pdo->prepare("
-                SELECT t.submission_id, t.email, t.done_at, t.sent_at, t.step_id,
-                       st.label, st.label as step_label, st.ordre
-                FROM tokens t
-                JOIN steps st ON st.id = t.step_id
-                WHERE t.submission_id IN ($sph)
-                ORDER BY t.submission_id, st.ordre ASC, st.label ASC
-            ");
-            $tkStmt->execute($subIds);
-            foreach ($tkStmt->fetchAll(\PDO::FETCH_ASSOC) as $tkRow) {
-                $tokensBySub[$tkRow['submission_id']][] = $tkRow;
-            }
+            $tokensBySub = $this->tokenRepo->findBySubmissionIds($subIds);
         }
 
         foreach ($submissions as &$sub) {
@@ -136,19 +102,13 @@ final class MySubmissionsController extends BaseController
         }
         unset($sub);
 
-        $countsStmt = $pdo->prepare("
-            SELECT status, COUNT(*) as cnt
-            FROM submissions
-            WHERE submitted_by = ?
-            GROUP BY status
-        ");
-        $countsStmt->execute([$user]);
+        $statusCounts = $this->submissionRepo->getStatusCountsBySubmitter($user);
         $totalCount = 0;
         $enCoursCount = 0;
         $valideCount = 0;
         $refuseCount = 0;
         $annuleCount = 0;
-        foreach ($countsStmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+        foreach ($statusCounts as $row) {
             $totalCount += (int)$row['cnt'];
             if ($row['status'] === 'valide') $valideCount = (int)$row['cnt'];
             elseif ($row['status'] === 'refuse') $refuseCount = (int)$row['cnt'];
@@ -180,7 +140,7 @@ final class MySubmissionsController extends BaseController
       <div class="empty-icon" aria-hidden="true">📝</div>
       <p>Vous n'avez encore soumis aucune demande.</p>
       <?php
-        $activeForms = _dbm_q($pdo, "SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(\PDO::FETCH_ASSOC);
+        $activeForms = $this->formRepo->findActiveSlugsAndLabels();
         if (!empty($activeForms)):
       ?>
         <p style="font-size:.9rem;color:#555;margin-bottom:.5rem;">Formulaires disponibles :</p>

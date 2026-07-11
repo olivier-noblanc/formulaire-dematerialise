@@ -225,7 +225,7 @@ final class MailService implements MailInterface
      */
     public function buildMailHtml(array $submission, string $stepLabel, string $token): string
     {
-        $data = json_decode($submission['data'], true);
+        $data = json_decode($submission['data'], true) ?: [];
         $formLabel = (string) ($submission['form_label'] ?? '');
         $validateUrl = resolve_base_url() . '/index.php?p=validate&token=' . urlencode($token);
 

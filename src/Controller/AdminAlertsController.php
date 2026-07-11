@@ -47,13 +47,18 @@ final class AdminAlertsController extends BaseController
 
                     if (empty($errorMsg)) {
                         try {
-                            $ruleId = generate_uuid();
-                            $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, ?, 1)")
-                                ->execute([$ruleId, $formId, $daysBefore, $conditionType, $notifyWho, $label]);
+                            $ruleId = $this->alertRepo->createRule([
+                                'form_id'        => $formId,
+                                'days_before'    => $daysBefore,
+                                'condition_type' => $conditionType,
+                                'notify_who'     => $notifyWho,
+                                'label'          => $label,
+                            ]);
                             App::audit()->log('alert_rule_create', 'form:' . $formId, 'Règle d\'alerte créée : ' . $label);
                             $successMsg = 'Règle d\'alerte créée avec succès.';
                         } catch (\Exception $e) {
-                            $errorMsg = 'Erreur lors de la création : ' . $e->getMessage();
+                            error_log('alert_rule_create error: ' . $e->getMessage());
+                            $errorMsg = 'Une erreur technique est survenue.';
                         }
                     }
                 }
@@ -82,12 +87,18 @@ final class AdminAlertsController extends BaseController
 
                     if (empty($errorMsg)) {
                         try {
-                            $pdo->prepare("UPDATE alert_rules SET days_before=?, condition_type=?, notify_who=?, label=?, actif=? WHERE id=?")
-                                ->execute([$daysBefore, $conditionType, $notifyWho, $label, $actif, $ruleId]);
+                            $this->alertRepo->updateRule($ruleId, [
+                                'days_before'    => $daysBefore,
+                                'condition_type' => $conditionType,
+                                'notify_who'     => $notifyWho,
+                                'label'          => $label,
+                                'actif'          => $actif,
+                            ]);
                             App::audit()->log('alert_rule_update', 'rule:' . $ruleId, 'Règle d\'alerte modifiée : ' . $label);
                             $successMsg = 'Règle d\'alerte modifiée avec succès.';
                         } catch (\Exception $e) {
-                            $errorMsg = 'Erreur lors de la modification : ' . $e->getMessage();
+                            error_log('alert_rule_update error: ' . $e->getMessage());
+                            $errorMsg = 'Une erreur technique est survenue.';
                         }
                     }
                 }
@@ -95,11 +106,12 @@ final class AdminAlertsController extends BaseController
             elseif ($action === 'delete_rule') {
                 $ruleId = trim($_POST['rule_id'] ?? '');
                 try {
-                    $pdo->prepare("DELETE FROM alert_rules WHERE id = ?")->execute([$ruleId]);
+                    $this->alertRepo->deleteRule($ruleId);
                     App::audit()->log('alert_rule_delete', 'rule:' . $ruleId, 'Règle d\'alerte supprimée');
                     $successMsg = 'Règle d\'alerte supprimée.';
                 } catch (\Exception $e) {
-                    $errorMsg = 'Erreur lors de la suppression : ' . $e->getMessage();
+                    error_log('alert_rule_delete error: ' . $e->getMessage());
+                    $errorMsg = 'Une erreur technique est survenue.';
                 }
             }
             elseif ($action === 'update_deadline_field') {
@@ -108,55 +120,41 @@ final class AdminAlertsController extends BaseController
 
                 if (!empty($formId)) {
                     try {
-                        $pdo->prepare("UPDATE forms SET deadline_field = ? WHERE id = ?")
-                            ->execute([$deadlineField, $formId]);
+                        $this->formRepo->setDeadlineField($formId, $deadlineField);
                         App::audit()->log('deadline_field_update', 'form:' . $formId, 'Champ deadline mis à jour : ' . ($deadlineField ?: '(aucun)'));
                         $successMsg = 'Champ date limite mis à jour pour le formulaire.';
                     } catch (\Exception $e) {
-                        $errorMsg = 'Erreur : ' . $e->getMessage();
+                        error_log('deadline_field_update error: ' . $e->getMessage());
+                        $errorMsg = 'Une erreur technique est survenue.';
                     }
                 }
             }
             elseif ($action === 'delete_alert_log') {
                 $retentionDays = (int)App::settings()->get('alert_log_retention_days', '90');
                 try {
-                    $pdo->prepare("DELETE FROM alert_log WHERE sent_at < datetime('now', ?)")->execute(["-{$retentionDays} days"]);
+                    $this->alertRepo->purgeOldLogs($retentionDays);
                     App::audit()->log('alert_log_purge', 'alert_log', "Purge des logs d'alerte > {$retentionDays} jours");
                     $successMsg = "Anciens logs d'alerte purgés (plus de {$retentionDays} jours).";
                 } catch (\Exception $e) {
-                    $errorMsg = 'Erreur : ' . $e->getMessage();
+                    error_log('alert_log_purge error: ' . $e->getMessage());
+                    $errorMsg = 'Une erreur technique est survenue.';
                 }
             }
         }
 
         $editRuleId = trim($_GET['edit_rule'] ?? '');
 
-        $forms = $pdo->query("SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label")->fetchAll(\PDO::FETCH_ASSOC);
+        $forms = $this->formRepo->findActiveList();
 
-        $rules = $pdo->query("
-            SELECT ar.*, f.label as form_label, f.slug as form_slug, f.deadline_field
-            FROM alert_rules ar
-            JOIN forms f ON f.id = ar.form_id
-            ORDER BY f.label, ar.days_before DESC
-        ")->fetchAll(\PDO::FETCH_ASSOC);
+        $rules = $this->alertRepo->getAllWithForm();
 
-        $alertLogs = $pdo->query("
-            SELECT al.*, f.label as form_label, ar.label as rule_label
-            FROM alert_log al
-            JOIN submissions s ON s.id = al.submission_id
-            JOIN forms f ON f.id = s.form_id
-            LEFT JOIN alert_rules ar ON ar.id = al.rule_id
-            ORDER BY al.sent_at DESC
-            LIMIT 50
-        ")->fetchAll(\PDO::FETCH_ASSOC);
+        $alertLogs = $this->alertRepo->getLogsWithForm();
 
         $lastAlertCheck = App::settings()->get('last_alert_check', '');
 
         $dateFieldsByForm = [];
         foreach ($forms as $f) {
-            $stmt = $pdo->prepare("SELECT field_name, label FROM form_fields WHERE form_id = ? AND field_type = 'date' ORDER BY ordre");
-            $stmt->execute([$f['id']]);
-            $dateFieldsByForm[$f['id']] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $dateFieldsByForm[$f['id']] = $this->formRepo->getDateFields($f['id']);
         }
 
         $navExtra = [

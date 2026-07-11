@@ -14,12 +14,9 @@ final class FormPreviewController extends BaseController
     {
         App::auth()->requireAdmin();
 
-        $pdo = $this->db->getPdo();
         $formId = trim($_GET['form_id'] ?? '');
 
-        $form = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
-        $form->execute([$formId]);
-        $form = $form->fetch(\PDO::FETCH_ASSOC);
+        $form = $this->formRepo->findById($formId);
 
         if (!$form) {
             (new \App\Render\ErrorRenderer())->errorPage(404, 'Formulaire introuvable',

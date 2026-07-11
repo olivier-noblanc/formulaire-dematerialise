@@ -72,6 +72,10 @@ final class SettingsService implements SettingsInterface
             error_log('[SECURITY] APP_ENCRYPTION_KEY non définie — valeur stockée en clair');
             return $value;
         }
+        if (strlen($key) < 32) {
+            error_log('[SECURITY] APP_ENCRYPTION_KEY trop courte (< 32 octets) — valeur stockée en clair');
+            return $value;
+        }
 
         $ivLength = openssl_cipher_iv_length('aes-256-cbc');
         if ($ivLength === false) return $value;

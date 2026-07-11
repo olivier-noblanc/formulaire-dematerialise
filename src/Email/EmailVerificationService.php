@@ -299,7 +299,7 @@ final class EmailVerificationService
             return ['ok' => false, 'method' => 'smtp', 'detail' => 'MAIL FROM rejeté : ' . trim($resp)];
         }
 
-        $safe_email = str_replace(["\r", "\n", "\t"], '', $email);
+        $safe_email = str_replace(["\r", "\n", "\t", "<", ">"], '', $email);
         $send_smtp('RCPT TO:<' . $safe_email . '>');
         $resp = $read_smtp();
 

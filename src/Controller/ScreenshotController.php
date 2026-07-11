@@ -48,6 +48,12 @@ final class ScreenshotController extends BaseController
         }
 
         $path = dirname(__DIR__, 2) . '/docs/screenshots/' . $file;
+        $real_path = realpath($path);
+        $allowed_dir = realpath(dirname(__DIR__, 2) . '/docs/screenshots');
+        if ($real_path === false || $allowed_dir === false || strpos($real_path, $allowed_dir) !== 0) {
+            http_response_code(400);
+            exit('Chemin invalide.');
+        }
 
         if (!file_exists($path)) {
             http_response_code(404);

@@ -36,8 +36,9 @@ final class ConditionEvaluator implements ConditionInterface
         $actual = (string) $actual;
 
         return match ($op) {
-            'eq' => $actual === (string) $expected,
-            'neq' => $actual !== (string) $expected,
+            'eq', 'equals' => $actual === (string) $expected,
+            'neq', 'not_equals' => $actual !== (string) $expected,
+            'contains' => str_contains($actual, (string) $expected),
             'in' => is_array($expected)
                 ? in_array($actual, $expected, true)
                 : in_array($actual, array_map('trim', explode(',', (string) $expected)), true),

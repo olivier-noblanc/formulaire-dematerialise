@@ -93,7 +93,7 @@ $app->set(TokenService::class, new TokenService(
     $app->get(MailService::class),
     $app->get(WorkflowEngine::class)
 ));
-$app->set(ValidatorDataService::class, new ValidatorDataService($db));
+$app->set(ValidatorDataService::class, new ValidatorDataService($db, $app->get(FieldService::class)));
 $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRepository::class)));
 $app->set(CronService::class, new CronService($db));
 $app->set(MigrationService::class, new MigrationService($db));

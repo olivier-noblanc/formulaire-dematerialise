@@ -44,7 +44,9 @@ final class SlugHelper
         $slug = $base;
         $suffix = 2;
 
-        while (true) {
+        $maxAttempts = 100;
+        $attempts = 0;
+        while ($attempts < $maxAttempts) {
             $sql = "SELECT COUNT(*) FROM forms WHERE slug = ?";
             $params = [$slug];
             if ($excludeFormId !== null) {
@@ -58,7 +60,9 @@ final class SlugHelper
             }
             $slug = $base . '_' . $suffix;
             $suffix++;
+            $attempts++;
         }
+        throw new \RuntimeException('Impossible de générer un slug unique après ' . $maxAttempts . ' tentatives');
     }
 
     /**
