@@ -295,7 +295,7 @@ final class FormJsonValidator
             $html .= '<div class="msg-error" role="alert" aria-live="assertive" style="margin-bottom:.5rem;"><strong>' . count($result['errors']) . ' erreur(s)</strong> bloquante(s) :';
             $html .= '<ul style="margin:.5rem 0 0 1.2rem;font-size:.85rem;">';
             foreach ($result['errors'] as $e) {
-                $html .= '<li>' . \h($e) . '</li>';
+                $html .= '<li>' . \App\Core\App::html()->escape($e) . '</li>';
             }
             $html .= '</ul></div>';
         }
@@ -304,7 +304,7 @@ final class FormJsonValidator
             $html .= '<div class="msg-warning" role="status" aria-live="polite" style="margin-bottom:.5rem;background:#fff3cd;border:1px solid #ffc107;color:#856404;padding:.75rem 1rem;border-radius:6px;"><strong>' . count($result['warnings']) . ' avertissement(s)</strong> (non bloquant) :';
             $html .= '<ul style="margin:.5rem 0 0 1.2rem;font-size:.85rem;">';
             foreach ($result['warnings'] as $w) {
-                $html .= '<li>' . \h($w) . '</li>';
+                $html .= '<li>' . \App\Core\App::html()->escape($w) . '</li>';
             }
             $html .= '</ul></div>';
         }
@@ -327,7 +327,7 @@ final class FormJsonValidator
             $html .= '<div style="margin-top:.75rem;">';
             $html .= '<label style="font-size:.82rem;font-weight:bold;">Message à copier-coller à l\'IA pour corriger le JSON : ';
             $html .= '<button type="button" onclick="(function(btn){var txt=document.getElementById(\'validation-feedback\').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent=\'✓ Copié !\';setTimeout(function(){btn.textContent=\'📋 Copier le message\'},2000)}).catch(function(){var ta=document.createElement(\'textarea\');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand(\'copy\');document.body.removeChild(ta);btn.textContent=\'✓ Copié !\';setTimeout(function(){btn.textContent=\'📋 Copier le message\'},2000)})}catch(e){var ta=document.createElement(\'textarea\');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand(\'copy\');document.body.removeChild(ta);btn.textContent=\'✓ Copié !\';setTimeout(function(){btn.textContent=\'📋 Copier le message\'},2000)}})(this)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier le message</button></label>';
-            $html .= '<pre id="validation-feedback" style="background:#1e293b;color:#e2e8f0;padding:.75rem;border-radius:6px;font-size:.78rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:250px;overflow-y:auto;margin-top:.25rem;">' . \h($copy_text) . '</pre>';
+            $html .= '<pre id="validation-feedback" style="background:#1e293b;color:#e2e8f0;padding:.75rem;border-radius:6px;font-size:.78rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:250px;overflow-y:auto;margin-top:.25rem;">' . \App\Core\App::html()->escape($copy_text) . '</pre>';
             $html .= '</div>';
         }
 

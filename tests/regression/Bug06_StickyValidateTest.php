@@ -13,7 +13,7 @@ declare(strict_types=1);
  * Test minimal (version code-source) : vérifier que le code source de
  * validate.php contient bien, pour chaque radio motif, l'instruction PHP
  * `<?= (($_POST['motif'] ?? '') === '<value>') ? ' checked' : '' ?>`
- * ET pour le textarea comment, `<?= h($_POST['comment'] ?? '') ?>`.
+ * ET pour le textarea comment, `<?= \App\Core\App::html()->escape($_POST['comment'] ?? '') ?>`.
  *
  * Fichier : tests/regression/Bug06_StickyValidateTest.php
  *

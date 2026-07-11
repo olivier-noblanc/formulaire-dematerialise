@@ -105,7 +105,7 @@ CSS;
 
     <h1><span aria-hidden="true">💾</span> Sauvegarde et restauration</h1>
 
-    <?= render_messages(['success'=>$success_msg, 'error'=>$error_msg, 'info'=>$info_msg]) ?>
+    <?= (new ErrorRenderer())->messages(['success'=>$success_msg, 'error'=>$error_msg, 'info'=>$info_msg]) ?>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!--  4. STATISTIQUES DE LA BASE                               -->
@@ -114,14 +114,14 @@ CSS;
         <h2><span aria-hidden="true">📊</span> Statistiques de la base de données</h2>
 
         <?php if (!empty($db_stats['error'])): ?>
-            <div class="msg-error" role="alert" aria-live="assertive">Erreur lors de la lecture des statistiques : <?= h($db_stats['error']) ?></div>
+            <div class="msg-error" role="alert" aria-live="assertive">Erreur lors de la lecture des statistiques : <?= \App\Core\App::html()->escape($db_stats['error']) ?></div>
         <?php else: ?>
 
             <!-- Informations fichier -->
             <h3>Fichier</h3>
             <div class="info-row">
                 <span class="info-label">Chemin</span>
-                <span class="info-value" style="font-family:monospace;font-size:.82rem;"><?= h($db_path) ?></span>
+                <span class="info-value" style="font-family:monospace;font-size:.82rem;"><?= \App\Core\App::html()->escape($db_path) ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">Existant</span>
@@ -129,11 +129,11 @@ CSS;
             </div>
             <div class="info-row">
                 <span class="info-label">Taille sur le disque</span>
-                <span class="info-value"><?= h($db_stats['file_size_readable']) ?></span>
+                <span class="info-value"><?= \App\Core\App::html()->escape($db_stats['file_size_readable']) ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">Dernière modification</span>
-                <span class="info-value"><?= h($db_stats['file_modified']) ?></span>
+                <span class="info-value"><?= \App\Core\App::html()->escape($db_stats['file_modified']) ?></span>
             </div>
 
             <!-- Comptage par table -->
@@ -152,8 +152,8 @@ CSS;
                         if (is_int($count)) $total_rows += $count;
                     ?>
                     <tr>
-                        <td style="font-family:monospace;font-size:.82rem;"><?= h($table_name) ?></td>
-                        <td style="text-align:right;"><?= is_int($count) ? number_format($count, 0, '', ' ') : h($count) ?></td>
+                        <td style="font-family:monospace;font-size:.82rem;"><?= \App\Core\App::html()->escape($table_name) ?></td>
+                        <td style="text-align:right;"><?= is_int($count) ? number_format($count, 0, '', ' ') : \App\Core\App::html()->escape($count) ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <tr style="font-weight:bold;border-top:2px solid #003189;">
@@ -167,11 +167,11 @@ CSS;
             <h3 style="margin-top:1.25rem;">Soumissions</h3>
             <div class="info-row">
                 <span class="info-label">Plus ancienne</span>
-                <span class="info-value"><?= h($db_stats['oldest_submission'] ?? '') ?></span>
+                <span class="info-value"><?= \App\Core\App::html()->escape($db_stats['oldest_submission'] ?? '') ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">Plus récente</span>
-                <span class="info-value"><?= h($db_stats['newest_submission'] ?? '') ?></span>
+                <span class="info-value"><?= \App\Core\App::html()->escape($db_stats['newest_submission'] ?? '') ?></span>
             </div>
 
             <!-- Informations SQLite internes -->
@@ -182,11 +182,11 @@ CSS;
             </div>
             <div class="info-row">
                 <span class="info-label">Nombre de pages</span>
-                <span class="info-value"><?= number_format($db_stats['page_count'] ?? 0) ?> (<?= h($db_stats['db_size_pages'] ?? '') ?>)</span>
+                <span class="info-value"><?= number_format($db_stats['page_count'] ?? 0) ?> (<?= \App\Core\App::html()->escape($db_stats['db_size_pages'] ?? '') ?>)</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Pages libres</span>
-                <span class="info-value"><?= number_format($db_stats['freelist_count'] ?? 0) ?> (<?= h($db_stats['free_pages'] ?? '') ?>)</span>
+                <span class="info-value"><?= number_format($db_stats['freelist_count'] ?? 0) ?> (<?= \App\Core\App::html()->escape($db_stats['free_pages'] ?? '') ?>)</span>
             </div>
 
         <?php endif; ?>
@@ -341,7 +341,7 @@ CSS;
             $info_msg
         );
 
-        echo render_page(
+        echo (new NavigationRenderer())->page(
             'Sauvegarde et restauration',
             'backup',
             $page_css,

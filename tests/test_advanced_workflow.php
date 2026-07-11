@@ -26,7 +26,7 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'wf_test@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Get the first active step for onboarding
         $step = $pdo->prepare("SELECT id FROM steps WHERE form_id = ? AND actif = 1 ORDER BY ordre ASC LIMIT 1");
@@ -56,7 +56,7 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'seq_test@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Count distinct step_ids in tokens
         $stmt = $pdo->prepare("SELECT COUNT(DISTINCT step_id) FROM tokens WHERE submission_id = ?");
@@ -72,7 +72,7 @@ function run_tests_advanced_workflow(): void {
     });
 
     test('validate_token() with invalid token returns error', function() {
-        $result = validate_token('nonexistent_token_12345');
+        $result = \App\Core\App::workflow()->validateToken('nonexistent_token_12345');
         return $result['status'] === 'invalid' ? true : "Expected 'invalid', got: " . $result['status'];
     });
 
@@ -82,7 +82,7 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'ad_test@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Get first pending token
         $stmt = $pdo->prepare("SELECT token FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
@@ -90,10 +90,10 @@ function run_tests_advanced_workflow(): void {
         $token = $stmt->fetchColumn();
 
         // Validate it once
-        $result1 = validate_token($token);
+        $result1 = \App\Core\App::workflow()->validateToken($token);
 
         // Validate it again
-        $result2 = validate_token($token);
+        $result2 = \App\Core\App::workflow()->validateToken($token);
 
         // Cleanup
         $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$sub_id]);
@@ -108,7 +108,7 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'exp_test@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Set token as expired (past date)
         $pdo->prepare("UPDATE tokens SET expires_at = '2020-01-01 00:00:00' WHERE submission_id = ? AND done_at IS NULL")
@@ -119,7 +119,7 @@ function run_tests_advanced_workflow(): void {
         $stmt->execute([$sub_id]);
         $token = $stmt->fetchColumn();
 
-        $result = validate_token($token);
+        $result = \App\Core\App::workflow()->validateToken($token);
 
         // Cleanup
         $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$sub_id]);
@@ -134,14 +134,14 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'regen_test@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Get first pending token row
         $stmt = $pdo->prepare("SELECT id, email, step_id, token FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
         $stmt->execute([$sub_id]);
         $old = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $result = regenerate_token($old['id']);
+        $result = \App\Core\App::token()->regenerate($old['id']);
 
         // Check new token exists for same step and same email
         $new = $pdo->prepare("SELECT id, email, step_id, token FROM tokens WHERE submission_id = ? AND email = ? AND done_at IS NULL");
@@ -165,9 +165,9 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'cancel_test@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
-        $result = cancel_submission($sub_id, 'cancel_test@exemple.invalid');
+        $result = \App\Core\App::token()->cancel($sub_id, 'cancel_test@exemple.invalid');
 
         // Check submission status
         $stmt = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
@@ -195,7 +195,7 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'delegate_test@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Get first pending token
         $stmt = $pdo->prepare("SELECT id, email, step_id FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
@@ -203,7 +203,7 @@ function run_tests_advanced_workflow(): void {
         $tok = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $delegate_email = 'delegate_target@exemple.invalid';
-        $result = delegate_token($tok['id'], $delegate_email, 'Test delegation');
+        $result = \App\Core\App::token()->delegate($tok['id'], $delegate_email, 'Test delegation');
 
         // Old token should be done
         $old_stmt = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
@@ -232,7 +232,7 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'deleg_list@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Get first pending token
         $stmt = $pdo->prepare("SELECT id FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
@@ -240,9 +240,9 @@ function run_tests_advanced_workflow(): void {
         $tok_id = $stmt->fetchColumn();
 
         $delegate_email = 'deleg_list_target@exemple.invalid';
-        delegate_token($tok_id, $delegate_email, 'Test delegation for list');
+        \App\Core\App::token()->delegate($tok_id, $delegate_email, 'Test delegation for list');
 
-        $delegations = get_delegations($sub_id);
+        $delegations = \App\Core\App::token()->getDelegations($sub_id);
 
         // Cleanup
         $pdo->prepare("DELETE FROM delegations WHERE token_id = ?")->execute([$tok_id]);
@@ -255,15 +255,15 @@ function run_tests_advanced_workflow(): void {
 
     test('resolve_dynamic_recipient() with multiple {{}} references', function() {
         // Test that a single {{}} reference resolves correctly
-        $result = resolve_dynamic_recipient('{{email_manager}}', ['email_manager' => 'manager@exemple.invalid']);
+        $result = \App\Core\App::workflow()->resolveDynamicRecipient('{{email_manager}}', ['email_manager' => 'manager@exemple.invalid']);
         return $result === 'manager@exemple.invalid' ? true : "Expected manager@exemple.invalid, got: $result";
     });
 
     test('resolve_dynamic_recipient() with mixed static+dynamic recipients', function() {
         // Static email should pass through unchanged
-        $result1 = resolve_dynamic_recipient('static@exemple.invalid', ['email' => 'dynamic@exemple.invalid']);
+        $result1 = \App\Core\App::workflow()->resolveDynamicRecipient('static@exemple.invalid', ['email' => 'dynamic@exemple.invalid']);
         // Dynamic reference should be resolved
-        $result2 = resolve_dynamic_recipient('{{email}}', ['email' => 'dynamic@exemple.invalid']);
+        $result2 = \App\Core\App::workflow()->resolveDynamicRecipient('{{email}}', ['email' => 'dynamic@exemple.invalid']);
         return ($result1 === 'static@exemple.invalid' && $result2 === 'dynamic@exemple.invalid')
             ? true : "Static: $result1, Dynamic: $result2";
     });
@@ -274,21 +274,21 @@ function run_tests_advanced_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, 'remind_done@exemple.invalid']);
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Validate the first token
         $stmt = $pdo->prepare("SELECT token FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
         $stmt->execute([$sub_id]);
         $token_val = $stmt->fetchColumn();
 
-        validate_token($token_val);
+        \App\Core\App::workflow()->validateToken($token_val);
 
         // Get the done token's ID
         $stmt2 = $pdo->prepare("SELECT id FROM tokens WHERE token = ?");
         $stmt2->execute([$token_val]);
         $done_token_id = $stmt2->fetchColumn();
 
-        $result = remind_one($done_token_id);
+        $result = \App\Core\App::token()->remind($done_token_id);
 
         // Cleanup
         $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$sub_id]);
@@ -337,7 +337,7 @@ function run_tests_advanced_workflow(): void {
         $before->execute([$sub_id]);
         $count_before = (int)$before->fetchColumn();
 
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         $after = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
         $after->execute([$sub_id]);

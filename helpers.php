@@ -97,22 +97,10 @@ if (!$_app->has(\App\Render\HtmlService::class)) {
 $_html_svc = $_app->get(\App\Render\HtmlService::class);
 $_app->set(\App\Security\SecurityService::class, new \App\Security\SecurityService($_html_svc));
 
-// ── 6b. Wrappers procéduraux (compatibilité ascendante) ──
-require_once __DIR__ . '/lib/security.php';
-
-// Envoyer les headers de sécurité le plus tôt possible
+// ── 6b. Envoyer les headers de sécurité le plus tôt possible ──
 if (php_sapi_name() !== 'cli') {
-    send_security_headers();
+    $_app->get(\App\Security\SecurityService::class)->sendSecurityHeaders();
 }
-
-// ── 8. Service wrappers (consolidés — audit, mail, tokens, workflow, etc.) ──
-require_once __DIR__ . '/lib/service_wrappers.php';
-
-// ── 18. UI — navigation, errors, form, ldap ──
-require_once __DIR__ . '/lib/render_navigation.php';
-require_once __DIR__ . '/lib/render_errors.php';
-require_once __DIR__ . '/lib/render_form.php';
-require_once __DIR__ . '/lib/render_ldap.php';
 
 // ═══════════════════════════════════════════════════════════════
 // BOOTSTRAP OOP — enregistrer les services restants dans le container DI

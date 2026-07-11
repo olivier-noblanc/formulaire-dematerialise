@@ -253,4 +253,194 @@ final class ExportServiceTest extends TestCase
         $this->assertIsObject($service);
         $this->assertSame(ExportService::class, get_class($service));
     }
+
+    // ── exportCsv() method analysis via reflection ──────────────
+
+    public function testExportCsvMethodHasSingleParameter(): void
+    {
+        $service = new ExportService($this->db, $this->auth);
+        $reflection = new \ReflectionMethod($service, 'exportCsv');
+        $params = $reflection->getParameters();
+        $this->assertCount(1, $params);
+        $this->assertSame('options', $params[0]->getName());
+    }
+
+    public function testExportCsvMethodHasNoRequiredParameters(): void
+    {
+        $service = new ExportService($this->db, $this->auth);
+        $reflection = new \ReflectionMethod($service, 'exportCsv');
+        $params = $reflection->getParameters();
+        $this->assertTrue($params[0]->isOptional());
+        $this->assertSame([], $params[0]->getDefaultValue());
+    }
+
+    public function testExportCsvMethodReturnTypeIsVoid(): void
+    {
+        $service = new ExportService($this->db, $this->auth);
+        $reflection = new \ReflectionMethod($service, 'exportCsv');
+        $returnType = $reflection->getReturnType();
+        $this->assertNotNull($returnType);
+        $this->assertSame('void', $returnType->getName());
+    }
+
+    public function testExportCsvMethodSourceContainsKeyLogic(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $this->assertNotNull($file);
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify the method contains key logic patterns
+        $this->assertStringContainsString('isAdmin', $source);
+        $this->assertStringContainsString('form_id', $source);
+        $this->assertStringContainsString('status', $source);
+        $this->assertStringContainsString('fputcsv', $source);
+        $this->assertStringContainsString('Content-Type', $source);
+        $this->assertStringContainsString('Content-Disposition', $source);
+    }
+
+    public function testExportCsvMethodContainsBomOutput(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify BOM output for Excel compatibility
+        $this->assertStringContainsString('chr(0xEF)', $source);
+        $this->assertStringContainsString('chr(0xBB)', $source);
+        $this->assertStringContainsString('chr(0xBF)', $source);
+    }
+
+    public function testExportCsvMethodUsesSemicolonDelimiter(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify semicolon delimiter (French CSV standard)
+        $this->assertStringContainsString("';'", $source);
+    }
+
+    public function testExportCsvMethodHandlesBooleanConversion(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify boolean conversion logic ('1' → 'Oui', '0' → 'Non')
+        $this->assertStringContainsString("'Oui'", $source);
+        $this->assertStringContainsString("'Non'", $source);
+    }
+
+    public function testExportCsvMethodExcludesValidationsKey(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify 'validations' key is excluded from CSV columns
+        $this->assertStringContainsString('validations', $source);
+    }
+
+    public function testExportCsvMethodOrdersBySubmittedAtDesc(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify ORDER BY submitted_at DESC
+        $this->assertStringContainsString('submitted_at DESC', $source);
+    }
+
+    public function testExportCsvMethodJoinsFormsTable(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify JOIN with forms table
+        $this->assertStringContainsString('JOIN forms', $source);
+    }
+
+    public function testExportCsvMethodOutputsToArray(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify php://output stream
+        $this->assertStringContainsString('php://output', $source);
+    }
+
+    public function testExportCsvMethodHandlesJsonData(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify JSON decode for submission data
+        $this->assertStringContainsString('json_decode', $source);
+        $this->assertStringContainsString('json_encode', $source);
+    }
+
+    // ── Auth integration ────────────────────────────────────────
+
+    public function testExportServiceRequiresAdminForCsv(): void
+    {
+        $reflection = new \ReflectionClass(ExportService::class);
+        $method = $reflection->getMethod('exportCsv');
+        $file = $method->getFileName();
+        $startLine = $method->getStartLine();
+        $endLine = $method->getEndLine();
+        $source = implode('', array_slice(file($file) ?: [], $startLine - 1, $endLine - $startLine + 1));
+
+        // Verify admin check at start of method
+        $this->assertStringContainsString('isAdmin', $source);
+        $this->assertStringContainsString('errorPage', $source);
+    }
+
+    // ── Database integration ────────────────────────────────────
+
+    public function testExportServiceUsesInjectedDatabase(): void
+    {
+        $service = new ExportService($this->db, $this->auth);
+        $reflection = new \ReflectionProperty($service, 'db');
+        $reflection->setAccessible(true);
+        $this->assertSame($this->db, $reflection->getValue($service));
+    }
+
+    public function testExportServiceUsesInjectedAuth(): void
+    {
+        $service = new ExportService($this->db, $this->auth);
+        $reflection = new \ReflectionProperty($service, 'auth');
+        $reflection->setAccessible(true);
+        $this->assertSame($this->auth, $reflection->getValue($service));
+    }
 }

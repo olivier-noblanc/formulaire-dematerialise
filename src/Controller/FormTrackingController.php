@@ -24,7 +24,7 @@ final class FormTrackingController extends BaseController
         }
 
         if (!$form) {
-            render_error_page(404, 'Formulaire introuvable',
+            (new \App\Render\ErrorRenderer())->errorPage(404, 'Formulaire introuvable',
                 'Le formulaire que vous cherchez n\'existe pas ou a été désactivé.',
                 'Vérifiez l\'adresse dans votre navigateur.\nSi vous avez suivi un lien, contactez l\'expéditeur pour obtenir le bon lien.');
         }
@@ -35,12 +35,12 @@ final class FormTrackingController extends BaseController
         $isOwner = App::auth()->isFormOwner($formId);
 
         if (!$isAdmin && !$isOwner) {
-            render_error_page(403, 'Accès refusé',
+            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé',
                 'Vous n\'êtes pas propriétaire de ce formulaire. Seuls les propriétaires désignés et les administrateurs peuvent accéder au tableau de suivi.',
                 'Si vous pensez que vous devriez avoir accès, contactez un administrateur pour vérifier vos droits de propriétaire sur ce formulaire.');
         }
 
-        $fields = get_form_fields($formId, 'demandeur');
+        $fields = App::validatorData()->getFormFields($formId, 'demandeur');
 
         $keyFields = [];
         $allFieldNames = [];
@@ -75,7 +75,7 @@ final class FormTrackingController extends BaseController
 
         ob_start();
         ?>
-  <h1><span aria-hidden="true">📊</span> Suivi — <?= h($form['label']) ?></h1>
+  <h1><span aria-hidden="true">📊</span> Suivi — <?= \App\Core\App::html()->escape($form['label']) ?></h1>
 
   <div class="stats">
     <a href="#" class="stat active"><strong><?= $total ?></strong><span>Total</span></a>
@@ -97,7 +97,7 @@ final class FormTrackingController extends BaseController
             <th>Date</th>
             <th>Demandeur</th>
             <?php foreach ($keyFields as $kf): ?>
-              <th><?= h($kf['label']) ?></th>
+              <th><?= \App\Core\App::html()->escape($kf['label']) ?></th>
             <?php endforeach; ?>
             <th>Statut</th>
             <th>Actions</th>
@@ -111,14 +111,14 @@ final class FormTrackingController extends BaseController
           $statusLabel = $status === 'valide' ? 'Validée' : ($status === 'refuse' ? 'Refusée' : ($status === 'annule' ? 'Annulée' : 'En cours'));
         ?>
           <tr>
-            <td style="white-space:nowrap;font-size:.85rem;"><?= h(date('d/m/Y H:i', strtotime($sub['submitted_at']))) ?></td>
-            <td><?= h(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')) ?></td>
+            <td style="white-space:nowrap;font-size:.85rem;"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($sub['submitted_at']))) ?></td>
+            <td><?= \App\Core\App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')) ?></td>
             <?php foreach ($keyFields as $kf):
               $val = $data[$kf['field_name']] ?? '';
               $valStr = is_array($val) ? implode(', ', $val) : (string)$val;
               $valShort = mb_strimwidth($valStr, 0, 40, '…', 'UTF-8');
             ?>
-              <td title="<?= h($valStr) ?>"><?= h($valShort) ?></td>
+              <td title="<?= \App\Core\App::html()->escape($valStr) ?>"><?= \App\Core\App::html()->escape($valShort) ?></td>
             <?php endforeach; ?>
             <td><span class="badge <?= $badgeCls ?>"><?= $statusLabel ?></span></td>
             <td>

@@ -86,7 +86,7 @@ final class MailerService
         // Vérification de l'adresse email avant envoi
         $verify_mode = $this->settings->get('email_verify_mode', 'none');
         if ($verify_mode !== 'none') {
-            $verification = verify_email($to);
+            $verification = App::emailVerify()->verify($to);
             if (!$verification['ok']) {
                 $msg = "Email non vérifié : " . $verification['detail'];
                 error_log("send_mail() BLOQUÉ — $msg — destinataire: $to");
@@ -267,16 +267,16 @@ final class MailerService
         foreach ($data as $k => $v) {
             if (empty($v) || $k === 'validations') continue;
             if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE);
-            $label  = h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', (string)$k) ?? (string)$k)));
-            $valeur = $v === '1' ? '✓' : h((string)$v);
+            $label  = \App\Core\App::html()->escape(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', (string)$k) ?? (string)$k)));
+            $valeur = $v === '1' ? '✓' : \App\Core\App::html()->escape((string)$v);
             $lignes .= "<tr><td style='padding:5px 8px;font-weight:bold;color:#555;'>{$label}</td><td style='padding:5px 8px;'>{$valeur}</td></tr>";
         }
 
-        $body_html = '<p style="color:#555;margin-bottom:16px;">Étape : <strong>' . h($step_label) . '</strong></p>'
+        $body_html = '<p style="color:#555;margin-bottom:16px;">Étape : <strong>' . \App\Core\App::html()->escape($step_label) . '</strong></p>'
             . '<table style="border-collapse:collapse;width:100%;margin-bottom:24px;">' . $lignes . '</table>'
             . '<a href="' . $validate_url . '" style="background:#003189;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;display:inline-block;">'
             . '✓ Marquer comme effectué</a>'
-            . '<p style="font-size:12px;color:#999;margin-top:8px;">Lien à usage unique — ' . h($this->settings->get('smtp_from')) . '</p>';
+            . '<p style="font-size:12px;color:#999;margin-top:8px;">Lien à usage unique — ' . \App\Core\App::html()->escape($this->settings->get('smtp_from')) . '</p>';
 
         return $this->renderEmailTemplate($form_label . ' — Action requise', $body_html);
     }
@@ -286,12 +286,12 @@ final class MailerService
      */
     public function renderEmailTemplate(string $title, string $body_html): string
     {
-        $app_name = function_exists('get_app_name') ? get_app_name() : 'CircuitDémat';
+        $app_name = \App\Render\NavigationRenderer::getAppName();
         return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222;">
-  <h2 style="color:#003189;">' . h($title) . '</h2>
+  <h2 style="color:#003189;">' . \App\Core\App::html()->escape($title) . '</h2>
   ' . $body_html . '
-  <p style="font-size:12px;color:#999;margin-top:24px;">' . h($app_name) . ' — Ne pas répondre</p>
+  <p style="font-size:12px;color:#999;margin-top:24px;">' . \App\Core\App::html()->escape($app_name) . ' — Ne pas répondre</p>
 </body></html>';
     }
 }

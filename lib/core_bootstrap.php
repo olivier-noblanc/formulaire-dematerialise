@@ -69,8 +69,8 @@ set_exception_handler(function (\Throwable $e): never {
     $msg = htmlspecialchars($e->getMessage());
     $file = htmlspecialchars($e->getFile());
     $trace = htmlspecialchars($e->getTraceAsString());
-    if (function_exists('render_error_page')) {
-        render_error_page(500, 'Erreur interne', $msg);
+    if (class_exists(\App\Render\ErrorRenderer::class)) {
+        (new \App\Render\ErrorRenderer())->errorPage(500, 'Erreur interne', $msg);
     } else {
         echo '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Erreur 500</title></head>'
            . '<body style="font-family:Arial,sans-serif;max-width:900px;margin:2rem auto;color:#222;">'
@@ -186,5 +186,4 @@ use PHPMailer\PHPMailer\PHPMailer;
 // Règle : 0 breaking change. Les signatures et comportements des fonctions
 // sont strictement préservés — seul l'emplacement physique change.
 // ═══════════════════════════════════════════════════════════════
-require_once __DIR__ . '/html.php';
 require_once __DIR__ . '/../classes/DatabaseMigrations.php';

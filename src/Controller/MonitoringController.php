@@ -14,7 +14,6 @@ final class MonitoringController extends BaseController
     {
         App::auth()->requireAdmin();
 
-        require_once dirname(__DIR__, 2) . '/lib/render_monitoring.php';
         require_once dirname(__DIR__, 2) . '/lib/render_monitoring_audit.php';
 
         $pdo = $this->db->getPdo();
@@ -30,7 +29,7 @@ final class MonitoringController extends BaseController
         $avgHours = round($avgSeconds / 3600, 1);
         $avgDays = round($avgSeconds / 86400, 1);
 
-        $gstats = get_global_stats();
+        $gstats = App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
         $totalSub = $gstats['total'];
         $valideSub = $gstats['valide'];
         $refuseSub = $gstats['refuse'];
@@ -125,26 +124,26 @@ final class MonitoringController extends BaseController
         $smtpDebugLog = '';
         if (isset($_GET['test_smtp']) && $_GET['test_smtp'] === '1') {
             $to = App::auth()->getUser();
-            $subject = 'Test SMTP — Surveillance ' . get_app_name();
-            $body = render_email_template(
+            $subject = 'Test SMTP — Surveillance ' . \App\Render\NavigationRenderer::getAppName();
+            $body = App::mail()->renderEmailTemplate(
                 'Test SMTP',
                 '<p>Cet email confirme que le serveur SMTP est fonctionnel.</p>
-      <p>Date : ' . h(date('d/m/Y H:i:s')) . '</p>'
+      <p>Date : ' . \App\Core\App::html()->escape(date('d/m/Y H:i:s')) . '</p>'
             );
-            $smtpResult = send_mail_detailed($to, $subject, $body);
+            $smtpResult = App::mail()->sendDetailed($to, $subject, $body);
             $smtpOk = $smtpResult['success'];
             $smtpStatus = $smtpOk ? 'ok' : 'erreur';
             if ($smtpOk) {
-                $smtpDetail = 'Email de test envoyé avec succès à ' . h($to);
+                $smtpDetail = 'Email de test envoyé avec succès à ' . \App\Core\App::html()->escape($to);
             } else {
                 $err = $smtpResult['error'] !== '' ? $smtpResult['error'] : 'Erreur inconnue';
-                $smtpDetail = 'Échec de l\'envoi à ' . h($to) . ' — ' . h($err) . ' (statut: ' . h($smtpResult['status']) . ')';
+                $smtpDetail = 'Échec de l\'envoi à ' . \App\Core\App::html()->escape($to) . ' — ' . \App\Core\App::html()->escape($err) . ' (statut: ' . \App\Core\App::html()->escape($smtpResult['status']) . ')';
             }
             $smtpDebugLog = $smtpResult['smtp_log'];
             App::audit()->log('smtp_test', 'smtp', $smtpDetail);
         }
 
-        $mailLogs = get_recent_mail_logs(20);
+        $mailLogs = App::mail()->getRecentLogs(20);
         $lastRemind = App::settings()->get('last_remind_run', '');
         $lastAlertCheck = App::settings()->get('last_alert_check', '');
 
@@ -286,10 +285,10 @@ final class MonitoringController extends BaseController
             'audit_base_qs'     => $auditBaseQs,
         ];
 
-        $pageCss    = monitoring_page_css();
-        $navExtra   = monitoring_nav_extra();
-        $content    = render_monitoring_content($ctx);
+        $pageCss    = \App\Render\MonitoringRenderer::pageCss();
+        $navExtra   = \App\Render\MonitoringRenderer::navExtra();
+        $content    = \App\Render\MonitoringRenderer::content($ctx);
 
-        echo render_page('Surveillance', 'monitoring', $pageCss, $content, ['nav_extra' => $navExtra]);
+        echo (new \App\Render\NavigationRenderer())->page('Surveillance', 'monitoring', $pageCss, $content, ['nav_extra' => $navExtra]);
     }
 }

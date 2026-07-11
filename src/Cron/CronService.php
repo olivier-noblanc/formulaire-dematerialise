@@ -47,7 +47,9 @@ final class CronService
         $tasks = [
             'remind'      => ['interval' => 3600,  'file' => __DIR__ . '/../../remind.php'],
             'alert_check' => ['interval' => 86400, 'file' => __DIR__ . '/../../alert_check.php'],
-            'rgpd_purge'  => ['interval' => 86400, 'callback' => 'rgpd_auto_purge'],
+            'rgpd_purge'  => ['interval' => 86400, 'callback' => function() {
+                \App\Core\App::getInstance()->get(\App\Rgpd\RgpdService::class)->autoPurge();
+            }],
         ];
 
         $due = [];
@@ -140,7 +142,7 @@ final class CronService
     public function handlePost(): ?string
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return null;
-        require_csrf();
+        \App\Core\App::security()->requireCsrf();
         return $_POST['action'] ?? null;
     }
 }

@@ -169,30 +169,30 @@ echo "\n";
 // ════════════════════════════════════════════════════════
 // Action 3: get_global_stats()
 // ════════════════════════════════════════════════════════
-echo "── Action 3 : get_global_stats() ──\n";
+echo "── Action 3 : StatsService::getGlobalStats() ──\n";
 
-assert_test('get_global_stats() existe', function_exists('get_global_stats'),
-    'Fonction non trouvée');
+assert_test('StatsService est disponible', \App\Core\App::getInstance()->has(\App\Stats\StatsService::class),
+    'StatsService non enregistrée');
 
-$gstats = get_global_stats();
+$gstats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
 $expected_keys = ['total', 'en_cours', 'valide', 'refuse', 'taux_validation', 'avg_days',
                   'today', 'this_week', 'this_month', 'tokens_pending', 'attachments_count'];
 $missing = array_diff($expected_keys, array_keys($gstats));
-assert_test('get_global_stats() clés complètes', empty($missing),
+assert_test('StatsService::getGlobalStats() clés complètes', empty($missing),
     'Clés manquantes: ' . implode(', ', $missing));
 
-assert_test('get_global_stats() total >= 0', $gstats['total'] >= 0,
+assert_test('StatsService::getGlobalStats() total >= 0', $gstats['total'] >= 0,
     'Total: ' . $gstats['total']);
 
-assert_test('get_global_stats() taux_validation est numérique', is_numeric($gstats['taux_validation']),
+assert_test('StatsService::getGlobalStats() taux_validation est numérique', is_numeric($gstats['taux_validation']),
     'taux_validation: ' . var_export($gstats['taux_validation'], true));
 
-// Vérifier que les 3 fichiers utilisent get_global_stats()
+// Vérifier que les 3 fichiers utilisent StatsService::getGlobalStats()
 $stats_files = ['dashboard.php', 'index.php', 'monitoring.php'];
 foreach ($stats_files as $f) {
     $content = file_get_contents(__DIR__ . '/' . $f);
-    $uses_func = strpos($content, 'get_global_stats()') !== false;
-    assert_test("$f utilise get_global_stats()", $uses_func, 'Appel manquant');
+    $uses_func = strpos($content, 'StatsService::class)->getGlobalStats()') !== false;
+    assert_test("$f utilise StatsService::getGlobalStats()", $uses_func, 'Appel manquant');
 }
 
 echo "\n";

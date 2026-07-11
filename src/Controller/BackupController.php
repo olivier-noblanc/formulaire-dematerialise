@@ -64,7 +64,7 @@ final class BackupController extends BaseController
                     $origName = $_FILES['backup_file']['name'];
 
                     if (strtolower(pathinfo($origName, PATHINFO_EXTENSION)) !== 'db') {
-                        $errorMsg = 'Seuls les fichiers .db sont acceptés. Fichier fourni : ' . h($origName);
+                        $errorMsg = 'Seuls les fichiers .db sont acceptés. Fichier fourni : ' . \App\Core\App::html()->escape($origName);
                     } elseif (!$this->isValidSqliteDb($tmpPath)) {
                         $errorMsg = 'Le fichier fourni n\'est pas une base de données SQLite valide. Vérifiez le fichier et réessayez.';
                     } else {
@@ -80,15 +80,15 @@ final class BackupController extends BaseController
                                 $testPdo->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
                                 $testPdo = null;
                                 App::audit()->log('backup_restore', 'database',
-                                    'Base restaurée depuis le fichier : ' . h($origName) .
+                                    'Base restaurée depuis le fichier : ' . \App\Core\App::html()->escape($origName) .
                                     ' (sauvegarde pré-restauration : ' . basename($backupBefore) . ')');
-                                $successMsg = 'La base de données a été restaurée avec succès depuis « ' . h($origName) . ' ». ' .
-                                               'Une copie de la base précédente a été conservée : ' . h(basename($backupBefore));
+                                $successMsg = 'La base de données a été restaurée avec succès depuis « ' . \App\Core\App::html()->escape($origName) . ' ». ' .
+                                               'Une copie de la base précédente a été conservée : ' . \App\Core\App::html()->escape(basename($backupBefore));
                             } catch (\Exception $e) {
                                 if (file_exists($backupBefore)) {
                                     copy($backupBefore, $dbPath);
                                 }
-                                $errorMsg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie. Erreur : ' . h($e->getMessage());
+                                $errorMsg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie. Erreur : ' . \App\Core\App::html()->escape($e->getMessage());
                             }
                         } else {
                             $errorMsg = 'Impossible de remplacer le fichier de base de données. Vérifiez les permissions du dossier db/.';
@@ -173,7 +173,7 @@ final class BackupController extends BaseController
                                 $infoMsg = 'Aucune donnée à purger.';
                             }
                         } catch (\Exception $e) {
-                            $errorMsg = 'Erreur lors de la purge : ' . h($e->getMessage());
+                            $errorMsg = 'Erreur lors de la purge : ' . \App\Core\App::html()->escape($e->getMessage());
                         }
                     }
                 }

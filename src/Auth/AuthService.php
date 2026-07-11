@@ -150,8 +150,8 @@ final class AuthService implements AuthInterface
             if (defined('TEST_MODE') && TEST_MODE && function_exists('test_json_response')) {
                 test_json_response(['error' => 'Accès refusé', 'redirect' => 'index.php?p=admin_access']);
             }
-            if (function_exists('render_error_page')) {
-                render_error_page(403, 'Accès refusé', 'Vous devez être administrateur pour accéder à cette page.');
+            if (class_exists(\App\Render\ErrorRenderer::class)) {
+                (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous devez être administrateur pour accéder à cette page.');
             }
             exit;
         }
@@ -178,15 +178,15 @@ final class AuthService implements AuthInterface
         }
 
         // Fallback sur SETTINGS_DEFAULTS
-        return defined('SETTINGS_DEFAULTS') && isset(SETTINGS_DEFAULTS['admin_email'])
-            ? SETTINGS_DEFAULTS['admin_email']
+        return defined('SETTINGS_DEFAULTS')
+            ? (string) SETTINGS_DEFAULTS['admin_email']
             : '';
     }
 
     public function getEmailDomain(): string
     {
-        return defined('SETTINGS_DEFAULTS') && isset(SETTINGS_DEFAULTS['email_domain'])
-            ? SETTINGS_DEFAULTS['email_domain']
+        return defined('SETTINGS_DEFAULTS')
+            ? (string) SETTINGS_DEFAULTS['email_domain']
             : 'exemple.invalid';
     }
 
@@ -259,7 +259,7 @@ final class AuthService implements AuthInterface
 
             $approve_url = resolve_base_url() . '/index.php?p=admin_access&action=approve&token=' . $token;
             $reject_url = resolve_base_url() . '/index.php?p=admin_access&action=reject&token=' . $token;
-            $subject = 'Demande d\'accès admin - ' . get_app_name();
+            $subject = 'Demande d\'accès admin - ' . \App\Render\NavigationRenderer::getAppName();
             $body = '
 <!DOCTYPE html>
 <html>
@@ -269,7 +269,7 @@ final class AuthService implements AuthInterface
 <body>
     <h2>Demande d\'accès admin</h2>
     <p>Un utilisateur a demandé l\'accès admin au back office du workflow :</p>
-    <p><strong>Utilisateur :</strong> ' . h($email) . '</p>
+    <p><strong>Utilisateur :</strong> ' . \App\Core\App::html()->escape($email) . '</p>
     <p><strong>Date :</strong> ' . gmdate('d/m/Y H:i:s') . ' UTC</p>
     <p><a href="' . $approve_url . '" style="background:#1a6b3c;color:#fff;padding:10px 15px;text-decoration:none;border-radius:4px;display:inline-block;margin-right:10px;">Approuver</a>
     <a href="' . $reject_url . '" style="background:#c0392b;color:#fff;padding:10px 15px;text-decoration:none;border-radius:4px;display:inline-block;">Refuser</a></p>
@@ -308,7 +308,7 @@ final class AuthService implements AuthInterface
             $stmt = $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, ?)");
             $stmt->execute([generate_uuid(), $email, gmdate('Y-m-d H:i:s')]);
 
-            $subject = 'Accès admin approuvé - ' . get_app_name();
+            $subject = 'Accès admin approuvé - ' . \App\Render\NavigationRenderer::getAppName();
             $body = '
 <!DOCTYPE html>
 <html>
@@ -340,7 +340,7 @@ final class AuthService implements AuthInterface
             $stmt = $pdo->prepare("UPDATE admin_requests SET status = 'rejected' WHERE email = ?");
             $stmt->execute([$email]);
 
-            $subject = 'Demande d\'accès admin refusée - ' . get_app_name();
+            $subject = 'Demande d\'accès admin refusée - ' . \App\Render\NavigationRenderer::getAppName();
             $body = '
 <!DOCTYPE html>
 <html>

@@ -22,7 +22,7 @@ final class MyValidationsController extends BaseController
             $tokenId = trim($_POST['token_id'] ?? '');
             $delegateTo = trim($_POST['delegate_to'] ?? '');
             $delegateReason = trim($_POST['delegate_reason'] ?? '');
-            $result = delegate_token($tokenId, $delegateTo, $delegateReason);
+            $result = App::token()->delegate($tokenId, $delegateTo, $delegateReason);
             $delegationMsg = $result['message'];
         }
 
@@ -120,10 +120,10 @@ final class MyValidationsController extends BaseController
   </div>
 
   <?php if ($delegationMsg): ?>
-    <div class="msg-info" role="status" aria-live="polite"><?= h($delegationMsg) ?></div>
+    <div class="msg-info" role="status" aria-live="polite"><?= \App\Core\App::html()->escape($delegationMsg) ?></div>
   <?php endif; ?>
 
-  <?= render_search_bar('index.php?p=my_validations', $search, 'Rechercher un formulaire...', ['tab' => $activeTab]) ?>
+  <?= (new \App\Render\FormRenderer())->searchBar('index.php?p=my_validations', $search, 'Rechercher un formulaire...', ['tab' => $activeTab]) ?>
 
   <?php if ($activeTab === 'pending'): ?>
   <div id="tab-pending">
@@ -136,17 +136,17 @@ final class MyValidationsController extends BaseController
       <?php foreach ($pendingTokens as $tk):
           $data = json_decode($tk['data'], true) ?: [];
           $expired = !empty($tk['expires_at']) && strtotime($tk['expires_at']) < time();
-          $nomAgent = h(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
+          $nomAgent = \App\Core\App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
           $allSteps = $allStepsBySub[$tk['submission_id']] ?? [];
       ?>
       <div class="validation-card <?= $expired ? 'expired' : 'pending' ?>">
         <div class="vc-header">
           <div>
-            <div class="vc-title"><?= h($tk['form_label']) ?> — Étape <?= (int)$tk['ordre'] ?> : <?= h($tk['step_label']) ?></div>
+            <div class="vc-title"><?= \App\Core\App::html()->escape($tk['form_label']) ?> — Étape <?= (int)$tk['ordre'] ?> : <?= \App\Core\App::html()->escape($tk['step_label']) ?></div>
             <div class="vc-meta">
-              Agent : <strong><?= $nomAgent ?: h($tk['data'] ? 'Inconnu' : '') ?></strong>
-              <?php if (!empty($data['affectation'])): ?> — <?= h($data['affectation']) ?><?php endif; ?>
-              <br>Soumis le <?= h(date('d/m/Y à H:i', strtotime($tk['submitted_at']))) ?>
+              Agent : <strong><?= $nomAgent ?: \App\Core\App::html()->escape($tk['data'] ? 'Inconnu' : '') ?></strong>
+              <?php if (!empty($data['affectation'])): ?> — <?= \App\Core\App::html()->escape($data['affectation']) ?><?php endif; ?>
+              <br>Soumis le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($tk['submitted_at']))) ?>
               <?php if ($tk['relance_count'] > 0): ?>
                 <br><span style="color:#b45309;">Relance(s) : <?= (int)$tk['relance_count'] ?></span>
               <?php endif; ?>
@@ -176,7 +176,7 @@ final class MyValidationsController extends BaseController
                 }
             ?>
               <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
-              <span class="wf-step-mini <?= $cls ?>" aria-hidden="true"><?= $icon ?> <?= h($as['label']) ?></span>
+              <span class="wf-step-mini <?= $cls ?>" aria-hidden="true"><?= $icon ?> <?= \App\Core\App::html()->escape($as['label']) ?></span>
             <?php endforeach; ?>
           </div>
         </div>
@@ -192,7 +192,7 @@ final class MyValidationsController extends BaseController
             <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;padding:.75rem;background:#f8f8fc;border-radius:4px;border:1px solid #ddd;">
               <?= App::security()->csrfField() ?>
               <input type="hidden" name="action" value="delegate_token">
-              <input type="hidden" name="token_id" value="<?= h($tk['token_id']) ?>">
+              <input type="hidden" name="token_id" value="<?= \App\Core\App::html()->escape($tk['token_id']) ?>">
               <input type="email" name="delegate_to" placeholder="email@exemple.invalid" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
               <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
               <button type="submit" style="font-size:.8rem;padding:.3rem .75rem;background:#6c3483;color:#fff;border:none;border-radius:3px;cursor:pointer;">Confirmer</button>
@@ -214,7 +214,7 @@ final class MyValidationsController extends BaseController
     <?php else: ?>
       <?php foreach ($doneTokens as $tk):
           $data = json_decode($tk['data'], true) ?: [];
-          $nomAgent = h(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
+          $nomAgent = \App\Core\App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
 
           $actionLabel = 'Validé';
           $actionCls = 'badge-ok';
@@ -240,16 +240,16 @@ final class MyValidationsController extends BaseController
       <div class="validation-card done">
         <div class="vc-header">
           <div>
-            <div class="vc-title"><?= h($tk['form_label']) ?> — <?= h($tk['step_label']) ?></div>
+            <div class="vc-title"><?= \App\Core\App::html()->escape($tk['form_label']) ?> — <?= \App\Core\App::html()->escape($tk['step_label']) ?></div>
             <div class="vc-meta">
               Agent : <strong><?= $nomAgent ?></strong>
-              <br>Soumis le <?= h(date('d/m/Y à H:i', strtotime($tk['submitted_at']))) ?>
+              <br>Soumis le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($tk['submitted_at']))) ?>
             </div>
           </div>
           <span class="badge <?= $actionCls ?>"><?= $actionLabel ?></span>
         </div>
         <div class="vc-body">
-          <div class="done-info">Traitée le <strong><?= h(date('d/m/Y à H:i', strtotime($tk['done_at']))) ?></strong></div>
+          <div class="done-info">Traitée le <strong><?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($tk['done_at']))) ?></strong></div>
           <div class="done-date">Délai de traitement : <?php
             $doneTs = strtotime($tk['done_at']); $sentTs = strtotime($tk['sent_at']);
             if ($doneTs && $sentTs) {
@@ -257,14 +257,14 @@ final class MyValidationsController extends BaseController
                 if ($diffSec >= 86400) {
                     $days = (int)floor($diffSec / 86400);
                     $hours = (int)floor(($diffSec % 86400) / 3600);
-                    echo h($days . ' j ' . $hours . ' h');
+                    echo \App\Core\App::html()->escape($days . ' j ' . $hours . ' h');
                 } elseif ($diffSec >= 3600) {
                     $hours = (int)floor($diffSec / 3600);
                     $mins = (int)floor(($diffSec % 3600) / 60);
-                    echo h($hours . ' h ' . ($mins > 0 ? $mins . ' min' : ''));
+                    echo \App\Core\App::html()->escape($hours . ' h ' . ($mins > 0 ? $mins . ' min' : ''));
                 } else {
                     $mins = (int)floor($diffSec / 60);
-                    echo h($mins . ' min');
+                    echo \App\Core\App::html()->escape($mins . ' min');
                 }
             } else {
                 echo '?';
@@ -306,13 +306,13 @@ final class MyValidationsController extends BaseController
               $rValueShort = mb_strimwidth($rValue, 0, 80, '…', 'UTF-8');
           ?>
             <tr>
-              <td><?= $ts !== false ? h(date('d/m/Y H:i', $ts)) : '—' ?></td>
+              <td><?= $ts !== false ? \App\Core\App::html()->escape(date('d/m/Y H:i', $ts)) : '—' ?></td>
               <td>
-                <a href="index.php?p=submission_view&id=<?= urlencode($rSubId) ?>"><?= h($rFormLabel) ?></a>
+                <a href="index.php?p=submission_view&id=<?= urlencode($rSubId) ?>"><?= \App\Core\App::html()->escape($rFormLabel) ?></a>
               </td>
-              <td><?= h(App::html()->tJargon($rStepLabel)) ?></td>
-              <td><?= h(App::html()->tJargon($rFieldLbl !== '' ? $rFieldLbl : $rFieldName)) ?></td>
-              <td><?= h($rValueShort) ?></td>
+              <td><?= \App\Core\App::html()->escape(App::html()->tJargon($rStepLabel)) ?></td>
+              <td><?= \App\Core\App::html()->escape(App::html()->tJargon($rFieldLbl !== '' ? $rFieldLbl : $rFieldName)) ?></td>
+              <td><?= \App\Core\App::html()->escape($rValueShort) ?></td>
             </tr>
           <?php endforeach; ?>
         </tbody>

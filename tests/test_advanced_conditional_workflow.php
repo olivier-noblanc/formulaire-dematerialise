@@ -92,7 +92,7 @@ function _validate_first_pending_token(PDO $pdo, string $submission_id): bool {
     $stmt->execute([$submission_id]);
     $token = $stmt->fetchColumn();
     if (!$token) return false;
-    $result = validate_token((string)$token, 'valider', 'Validation conditionnelle test');
+    $result = \App\Core\App::workflow()->validateToken((string)$token, 'valider', 'Validation conditionnelle test');
     return ($result['status'] ?? '') === 'ok';
 }
 
@@ -160,7 +160,7 @@ function run_tests_advanced_conditional_workflow(): void {
             ->execute([$sub_id, $form_id]);
 
         // Sauvegarder decision_sg = "Acceptée"
-        save_validator_data($sub_id, 'decision_sg', 'Acceptée', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Acceptée', 'validator');
 
         // Récupère l'étape 2 (condition: decision_sg equals "Acceptée")
         $stmt = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? AND ordre = 2 AND label LIKE '%Logistique%' LIMIT 1");
@@ -182,7 +182,7 @@ function run_tests_advanced_conditional_workflow(): void {
             ->execute([$sub_id, $form_id]);
 
         // Sauvegarder decision_sg = "Refusée"
-        save_validator_data($sub_id, 'decision_sg', 'Refusée', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Refusée', 'validator');
 
         $stmt = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? AND ordre = 2 AND label LIKE '%Logistique%' LIMIT 1");
         $stmt->execute([$form_id]);
@@ -221,7 +221,7 @@ function run_tests_advanced_conditional_workflow(): void {
         $sub_id = generate_uuid();
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, '{}', 'test@e2e.test', 'en_cours', datetime('now'))")
             ->execute([$sub_id, $form_id]);
-        save_validator_data($sub_id, 'decision_sg', 'Refusée', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Refusée', 'validator');
 
         $step = [
             'id' => 'fake',
@@ -239,7 +239,7 @@ function run_tests_advanced_conditional_workflow(): void {
         $sub_id = generate_uuid();
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, '{}', 'test@e2e.test', 'en_cours', datetime('now'))")
             ->execute([$sub_id, $form_id]);
-        save_validator_data($sub_id, 'decision_sg', 'Acceptée avec réserves', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Acceptée avec réserves', 'validator');
 
         $step = [
             'id' => 'fake',
@@ -257,7 +257,7 @@ function run_tests_advanced_conditional_workflow(): void {
         $sub_id = generate_uuid();
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, '{}', 'test@e2e.test', 'en_cours', datetime('now'))")
             ->execute([$sub_id, $form_id]);
-        save_validator_data($sub_id, 'decision_sg', 'Acceptée', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Acceptée', 'validator');
 
         $step = [
             'id' => 'fake',
@@ -313,7 +313,7 @@ function run_tests_advanced_conditional_workflow(): void {
             ->execute([$sub_id, $form_id]);
 
         // 1er appel : démarre l'étape 1 (owner)
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Vérifier que seule l'étape 1 a des tokens
         $stmt = $pdo->prepare("SELECT COUNT(DISTINCT step_id) FROM tokens WHERE submission_id = ?");
@@ -326,7 +326,7 @@ function run_tests_advanced_conditional_workflow(): void {
 
         // Sauvegarder decision_sg = "Refusée" AVANT de valider l'étape 1
         // (simule le validateur qui remplit le champ puis valide)
-        save_validator_data($sub_id, 'decision_sg', 'Refusée', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Refusée', 'validator');
 
         // Valider le token de l'étape 1 → déclenche advance_workflow()
         $validated = _validate_first_pending_token($pdo, $sub_id);
@@ -367,10 +367,10 @@ function run_tests_advanced_conditional_workflow(): void {
             ->execute([$sub_id, $form_id]);
 
         // 1er appel : démarre l'étape 1
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // Sauvegarder decision_sg = "Acceptée"
-        save_validator_data($sub_id, 'decision_sg', 'Acceptée', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Acceptée', 'validator');
 
         // Valider le token de l'étape 1 → déclenche advance_workflow()
         $validated = _validate_first_pending_token($pdo, $sub_id);
@@ -434,10 +434,10 @@ function run_tests_advanced_conditional_workflow(): void {
             ->execute([$sub_id, $form_id]);
 
         // Démarrer étape 1
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
 
         // decision_sg = "Non" → étape 2 skippée
-        save_validator_data($sub_id, 'decision_sg', 'Non', 'validator');
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Non', 'validator');
 
         // Valider étape 1 → déclenche advance_workflow()
         _validate_first_pending_token($pdo, $sub_id);
@@ -491,8 +491,8 @@ function run_tests_advanced_conditional_workflow(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, '{}', 'agent@e2e.test', 'en_cours', datetime('now'))")
             ->execute([$sub_id, $form_id]);
 
-        advance_workflow($sub_id);
-        save_validator_data($sub_id, 'decision_sg', 'Non', 'validator');
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_sg', 'Non', 'validator');
         _validate_first_pending_token($pdo, $sub_id);
 
         // Vérifier qu'aucun token n'a été créé pour l'étape 2

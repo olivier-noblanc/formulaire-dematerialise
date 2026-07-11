@@ -46,7 +46,7 @@ $submission = [
     'form_label' => "Demande d'accès SI",  // apostrophe dans le label
 ];
 
-$html = build_mail_html($submission, "Validation responsable", "abc123token");
+$html = \App\Core\App::mail()->buildMailHtml($submission, "Validation responsable", "abc123token");
 
 // Vérifier que le HTML contient &#039; (simple escape, OK)
 $has_simple_escape = strpos($html, '&#039;') !== false;
@@ -75,7 +75,7 @@ check_mail(
 // ── Test 2 : render_email_template avec apostrophe dans title ──
 echo "\n── Test 2 : render_email_template avec apostrophe dans title ──\n";
 
-$html2 = render_email_template("Demande d'annulation", '<p>Corps</p>');
+$html2 = \App\Core\App::mail()->renderEmailTemplate("Demande d'annulation", '<p>Corps</p>');
 $has_simple_escape_2 = strpos($html2, "Demande d&#039;annulation") !== false;
 check_mail(
     "render_email_template échappe l'apostrophe en &#039; (simple)",
@@ -98,7 +98,7 @@ $submission2 = [
     'form_label' => "Formation à l'école",
 ];
 
-$html3 = build_mail_html($submission2, "Étape café", "token456");
+$html3 = \App\Core\App::mail()->buildMailHtml($submission2, "Étape café", "token456");
 
 // Vérifier que & dans les valeurs est échappé en &amp; (simple)
 $has_amp_simple = strpos($html3, 'Café &amp; réunion') !== false;

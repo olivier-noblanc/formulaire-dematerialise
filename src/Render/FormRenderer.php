@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Render;
 
+use App\Core\App;
+
 /**
  * Form & UI rendering helpers.
  */
@@ -20,8 +22,8 @@ final class FormRenderer
      */
     public function field(array $field, mixed $posted_val, array $field_errors, string $datalist_id = '', bool $disabled = false): string
     {
-        $name          = h($field['field_name']);
-        $label         = h(t_jargon($field['label']));
+        $name          = \App\Core\App::html()->escape($field['field_name']);
+        $label         = \App\Core\App::html()->escape(t_jargon($field['label']));
         $req_span      = $field['required'] ? ' <span class="req">*</span>' : '';
         $required_attr = (!$disabled && $field['required'] && $field['field_type'] !== 'checkbox') ? ' required aria-required="true"' : '';
         $error_class   = isset($field_errors[$field['field_name']]) ? ' field-error' : '';
@@ -65,7 +67,7 @@ final class FormRenderer
                 $auto_hint_text = 'Texte libre, maximum ' . $textarea_maxlength . ' caractères';
                 break;
             case 'file':
-                $max_size_mo    = round(get_max_file_size() / 1048576, 0);
+                $max_size_mo    = round(App::attachment()->getMaxFileSize() / 1048576, 0);
                 $auto_hint_text = 'Formats acceptés : PDF, images, Office, ZIP — Max ' . $max_size_mo . ' Mo';
                 break;
             case 'text':
@@ -89,11 +91,11 @@ final class FormRenderer
                 break;
         }
 
-        $user_hint = !empty($field['hint']) ? '<span class="hint">' . h(t_jargon($field['hint'])) . '</span>' : '';
+        $user_hint = !empty($field['hint']) ? '<span class="hint">' . \App\Core\App::html()->escape(t_jargon($field['hint'])) . '</span>' : '';
 
         $auto_hint_html = '';
         if ($auto_hint_text !== '') {
-            $auto_hint_html = '<span id="' . $auto_hint_id . '" class="field-hint">' . h($auto_hint_text) . '</span>';
+            $auto_hint_html = '<span id="' . $auto_hint_id . '" class="field-hint">' . \App\Core\App::html()->escape($auto_hint_text) . '</span>';
         }
 
         $described_ids = [];
@@ -113,22 +115,22 @@ final class FormRenderer
 
         $error_html = '';
         if (!$disabled && isset($field_errors[$field['field_name']])) {
-            $error_html = '<span id="err-' . $name . '" class="error-hint">' . h($field_errors[$field['field_name']]) . '</span>';
+            $error_html = '<span id="err-' . $name . '" class="error-hint">' . \App\Core\App::html()->escape($field_errors[$field['field_name']]) . '</span>';
         }
 
-        $placeholder_attr = $placeholder !== '' ? ' placeholder="' . h($placeholder) . '"' : '';
+        $placeholder_attr = $placeholder !== '' ? ' placeholder="' . \App\Core\App::html()->escape($placeholder) . '"' : '';
 
         switch ($field['field_type']) {
             case 'email':
-                $val       = h($posted_val ?? '');
+                $val       = \App\Core\App::html()->escape($posted_val ?? '');
                 $maxlength = ' maxlength="500"';
-                $list_attr = !empty($datalist_id) ? ' list="' . h($datalist_id) . '"' : '';
+                $list_attr = !empty($datalist_id) ? ' list="' . \App\Core\App::html()->escape($datalist_id) . '"' : '';
                 return <<<HTML
 <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="email" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$maxlength}{$placeholder_attr} pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"{$list_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
 HTML;
 
             case 'date':
-                $val = h($posted_val ?? '');
+                $val = \App\Core\App::html()->escape($posted_val ?? '');
                 return <<<HTML
 <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="date" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$placeholder_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
 HTML;
@@ -139,7 +141,7 @@ HTML;
                 $options_html = '<option value="">— Sélectionner —</option>';
                 foreach ($opts as $opt) {
                     $sel = ($posted_val === $opt) ? ' selected' : '';
-                    $options_html .= '<option value="' . h($opt) . '"' . $sel . '>' . h($opt) . '</option>';
+                    $options_html .= '<option value="' . \App\Core\App::html()->escape($opt) . '"' . $sel . '>' . \App\Core\App::html()->escape($opt) . '</option>';
                 }
                 return <<<HTML
 <div class="field"><label for="{$name}">{$label}{$req_span}</label><select id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}"{$disabled_attr}>{$options_html}</select>{$user_hint}{$error_html}</div>
@@ -152,20 +154,20 @@ HTML;
 HTML;
 
             case 'textarea':
-                $val       = h($posted_val ?? '');
+                $val       = \App\Core\App::html()->escape($posted_val ?? '');
                 $maxlength = ' maxlength="' . $textarea_maxlength . '"';
                 return <<<HTML
 <div class="field full"><label for="{$name}">{$label}{$req_span}</label><textarea id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}"{$placeholder_attr}{$maxlength}{$disabled_attr}>{$val}</textarea>{$auto_hint_html}{$user_hint}{$error_html}</div>
 HTML;
 
             case 'file':
-                $accept = implode(',', array_map(function($ext) { return '.' . $ext; }, get_allowed_extensions()));
+                $accept = implode(',', array_map(function($ext) { return '.' . $ext; }, App::attachment()->getAllowedExtensions()));
                 return <<<HTML
 <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="file" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" accept="{$accept}"{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
 HTML;
 
             default:
-                $val       = h($posted_val ?? '');
+                $val       = \App\Core\App::html()->escape($posted_val ?? '');
                 $maxlength = ' maxlength="500"';
                 return <<<HTML
 <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="{$html5_type}" id="{$name}" name="{$name}"{$required_attr}{$aria_attr}{$html5_extra} class="{$error_class}" value="{$val}"{$maxlength}{$placeholder_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
@@ -184,10 +186,10 @@ HTML;
      */
     public function searchBar(string $action_url, string $current_search, string $placeholder = 'Rechercher...', array $hidden_fields = []): string
     {
-        $html  = '<form method="GET" action="' . h($action_url) . '" class="search-bar" role="search">';
-        $html .= '<input type="text" name="search" value="' . h($current_search) . '" placeholder="' . h($placeholder) . '" aria-label="' . h($placeholder) . '" class="search-input">';
+        $html  = '<form method="GET" action="' . \App\Core\App::html()->escape($action_url) . '" class="search-bar" role="search">';
+        $html .= '<input type="text" name="search" value="' . \App\Core\App::html()->escape($current_search) . '" placeholder="' . \App\Core\App::html()->escape($placeholder) . '" aria-label="' . \App\Core\App::html()->escape($placeholder) . '" class="search-input">';
         foreach ($hidden_fields as $hname => $hval) {
-            $html .= '<input type="hidden" name="' . h($hname) . '" value="' . h($hval) . '">';
+            $html .= '<input type="hidden" name="' . \App\Core\App::html()->escape($hname) . '" value="' . \App\Core\App::html()->escape($hval) . '">';
         }
         $html .= '<button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">Rechercher</button>';
         if ($current_search !== '') {
@@ -195,12 +197,12 @@ HTML;
             $sep = (strpos($clear_url, '?') !== false) ? '&' : '?';
             $parts = [];
             foreach ($hidden_fields as $hname => $hval) {
-                $parts[] = h($hname) . '=' . urlencode($hval);
+                $parts[] = \App\Core\App::html()->escape($hname) . '=' . urlencode($hval);
             }
             if (!empty($parts)) {
                 $clear_url .= (strpos($clear_url, '?') !== false ? '&' : '?') . implode('&', $parts);
             }
-            $html .= ' <a href="' . h($clear_url) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">&#10005; Effacer</a>';
+            $html .= ' <a href="' . \App\Core\App::html()->escape($clear_url) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;">&#10005; Effacer</a>';
         }
         $html .= '</form>';
         return $html;
@@ -227,7 +229,7 @@ HTML;
         foreach ($statuses as $status => $label) {
             $sep   = (strpos($base_url, '?') !== false) ? '&' : '?';
             $active = ($current_status === $status) ? ' actif' : '';
-            $html .= '<a href="' . h($base_url . $sep . $param_name . '=' . $status) . '" class="' . $active . '">' . $label . '</a>';
+            $html .= '<a href="' . \App\Core\App::html()->escape($base_url . $sep . $param_name . '=' . $status) . '" class="' . $active . '">' . $label . '</a>';
         }
         $html .= '</div>';
         return $html;
@@ -247,8 +249,8 @@ HTML;
         foreach ($data as $k => $v) {
             if (empty($v)) continue;
             if (in_array($k, $exclude, true)) continue;
-            $label   = h(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k) ?? $k)));
-            $display = $v === '1' ? '<span aria-hidden="true">&#10003;</span>' . ($format === 'grid' ? ' Oui' : '') : h((string)$v);
+            $label   = \App\Core\App::html()->escape(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k) ?? $k)));
+            $display = $v === '1' ? '<span aria-hidden="true">&#10003;</span>' . ($format === 'grid' ? ' Oui' : '') : \App\Core\App::html()->escape((string)$v);
             if ($format === 'inline') {
                 $html .= '<strong>' . $label . ' :</strong> ' . $display . ' &nbsp;';
             } elseif ($format === 'grid') {

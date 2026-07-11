@@ -33,7 +33,7 @@ final class SubmissionViewController extends BaseController
         $sub = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$sub) {
-            render_error_page(404, 'Soumission introuvable',
+            (new \App\Render\ErrorRenderer())->errorPage(404, 'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
                 'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.');
         }
@@ -48,7 +48,7 @@ final class SubmissionViewController extends BaseController
             $validatorCheck = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?");
             $validatorCheck->execute([$subId, $user]);
             if (!$validatorCheck->fetch()) {
-                render_error_page(403, 'Accès non autorisé',
+                (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès non autorisé',
                     'Vous n\'avez pas les droits pour voir cette soumission.',
                     'Seuls l\'auteur, les validateurs et les administrateurs peuvent consulter une soumission.');
             }
@@ -89,7 +89,7 @@ final class SubmissionViewController extends BaseController
             }
         }
 
-        $workflowSteps = get_workflow_steps($sub['form_id']);
+        $workflowSteps = App::workflow()->getWorkflowSteps($sub['form_id']);
         $tokens = $pdo->prepare("
             SELECT t.*, st.label as step_label, st.ordre
             FROM tokens t
@@ -129,14 +129,14 @@ final class SubmissionViewController extends BaseController
   <h1><span aria-hidden="true">📄</span> Détail de la soumission</h1>
 
   <div class="card">
-    <h2><?= h($sub['form_label']) ?></h2>
+    <h2><?= \App\Core\App::html()->escape($sub['form_label']) ?></h2>
     <p style="font-size:.85rem;color:#555;">
-      Soumis par <strong><?= h($sub['submitted_by']) ?></strong> le <?= h(date('d/m/Y à H:i', strtotime($sub['submitted_at']))) ?>
+      Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($sub['submitted_at']))) ?>
       <?php if ($sub['closed_at']): ?>
-        — Clôturé le <?= h(date('d/m/Y à H:i', strtotime($sub['closed_at']))) ?>
+        — Clôturé le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($sub['closed_at']))) ?>
       <?php endif; ?>
     </p>
-    <p><strong>Statut :</strong> <span class="badge <?= $status === 'valide' ? 'badge-ok' : ($status === 'refuse' ? 'badge-err' : ($status === 'annule' ? 'badge-annule' : 'badge-warn')) ?>"><?= h($status) ?></span></p>
+    <p><strong>Statut :</strong> <span class="badge <?= $status === 'valide' ? 'badge-ok' : ($status === 'refuse' ? 'badge-err' : ($status === 'annule' ? 'badge-annule' : 'badge-warn')) ?>"><?= \App\Core\App::html()->escape($status) ?></span></p>
   </div>
 
   <!-- Données de la soumission -->
@@ -150,8 +150,8 @@ final class SubmissionViewController extends BaseController
         $valStr = is_array($value) ? implode(', ', $value) : (string)$value;
       ?>
         <tr>
-          <td><strong><?= h(App::html()->tJargon($key)) ?></strong></td>
-          <td><?= h($valStr) ?></td>
+          <td><strong><?= \App\Core\App::html()->escape(App::html()->tJargon($key)) ?></strong></td>
+          <td><?= \App\Core\App::html()->escape($valStr) ?></td>
         </tr>
       <?php endforeach; ?>
       </tbody>
@@ -172,12 +172,12 @@ final class SubmissionViewController extends BaseController
       ?>
         <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
         <div class="wf-step <?= $cls ?>">
-          <div class="wf-step-label"><?= h($step['label']) ?></div>
+          <div class="wf-step-label"><?= \App\Core\App::html()->escape($step['label']) ?></div>
           <?php foreach ($stepTokens as $tk): ?>
             <div class="wf-step-detail">
-              <?= h($tk['email']) ?>
+              <?= \App\Core\App::html()->escape($tk['email']) ?>
               <?php if (!empty($tk['done_at'])): ?>
-                <span class="badge badge-ok">✓ <?= h(date('d/m/Y H:i', strtotime($tk['done_at']))) ?></span>
+                <span class="badge badge-ok">✓ <?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($tk['done_at']))) ?></span>
               <?php else: ?>
                 <span class="badge badge-warn">⏳ En attente</span>
               <?php endif; ?>
@@ -197,10 +197,10 @@ final class SubmissionViewController extends BaseController
       <tbody>
       <?php foreach ($attachments as $att): ?>
         <tr>
-          <td><?= h($att['original_name']) ?></td>
-          <td><?= h(format_bytes((int)$att['file_size'])) ?></td>
-          <td><?= h($att['uploader_name'] ?? $att['uploaded_by']) ?></td>
-          <td><?= h(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
+          <td><?= \App\Core\App::html()->escape($att['original_name']) ?></td>
+          <td><?= \App\Core\App::html()->escape(format_bytes((int)$att['file_size'])) ?></td>
+          <td><?= \App\Core\App::html()->escape($att['uploader_name'] ?? $att['uploaded_by']) ?></td>
+          <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
           <td>
             <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Télécharger</a>
           </td>
@@ -220,10 +220,10 @@ final class SubmissionViewController extends BaseController
       <tbody>
       <?php foreach ($validatorData as $vd): ?>
         <tr>
-          <td><?= h($vd['field_label'] ?? $vd['field_name']) ?></td>
-          <td><?= h($vd['value']) ?></td>
-          <td><?= h($vd['filled_by_email'] ?? '') ?></td>
-          <td><?= h($vd['filled_at'] ?? '') ?></td>
+          <td><?= \App\Core\App::html()->escape($vd['field_label'] ?? $vd['field_name']) ?></td>
+          <td><?= \App\Core\App::html()->escape($vd['value']) ?></td>
+          <td><?= \App\Core\App::html()->escape($vd['filled_by_email'] ?? '') ?></td>
+          <td><?= \App\Core\App::html()->escape($vd['filled_at'] ?? '') ?></td>
         </tr>
       <?php endforeach; ?>
       </tbody>

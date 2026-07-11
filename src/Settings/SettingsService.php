@@ -43,7 +43,7 @@ final class SettingsService implements SettingsInterface
         }
 
         $defaults = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS : [];
-        $result = $defaults[$key] ?? $default;
+        $result = (string) ($defaults[$key] ?? $default);
         self::$cache[$key] = $result;
         return $result;
     }

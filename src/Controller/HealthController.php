@@ -119,7 +119,7 @@ final class HealthController extends BaseController
 
   <div class="status-banner <?= $allHealthy ? 'healthy' : 'unhealthy' ?>">
     <h2><?= $allHealthy ? '<span aria-hidden="true">✓</span> Système opérationnel' : '<span aria-hidden="true">⚠</span> Problème détecté' ?></h2>
-    <p style="margin-top:.5rem;color:#555;">v<?= h(App::cache()->getLatestVersion()) ?> — <?= h(date('d/m/Y à H:i')) ?></p>
+    <p style="margin-top:.5rem;color:#555;">v<?= \App\Core\App::html()->escape(App::cache()->getLatestVersion()) ?> — <?= \App\Core\App::html()->escape(date('d/m/Y à H:i')) ?></p>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden;">
@@ -127,8 +127,8 @@ final class HealthController extends BaseController
     <div class="check-item">
       <div class="check-icon" aria-label="<?= $check['ok'] ? 'Succès' : 'Échec' ?>"><?= $check['ok'] ? '✅' : '❌' ?></div>
       <div class="check-content">
-        <div class="check-label"><?= h($check['label']) ?></div>
-        <div class="check-detail"><?= h($check['detail']) ?></div>
+        <div class="check-label"><?= \App\Core\App::html()->escape($check['label']) ?></div>
+        <div class="check-detail"><?= \App\Core\App::html()->escape($check['detail']) ?></div>
       </div>
     </div>
     <?php endforeach; ?>

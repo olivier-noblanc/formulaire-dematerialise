@@ -113,7 +113,7 @@ final class AuditLogServiceTest extends TestCase
                 break;
             }
         }
-        $this->assertTrue($found, 'app_log() wrapper should write to audit_log via service');
+        $this->assertTrue($found, 'App::audit()->log() should write to audit_log');
     }
 
     public function testSecurityLogWrapperDelegatesToService(): void
@@ -129,7 +129,7 @@ final class AuditLogServiceTest extends TestCase
                 break;
             }
         }
-        $this->assertTrue($found, 'security_log() wrapper should write to audit_log via service');
+        $this->assertTrue($found, 'App::audit()->securityLog() should write to audit_log');
     }
 
     public function testGetAuditLogsWrapperDelegatesToService(): void

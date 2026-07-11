@@ -217,7 +217,7 @@ test('parse_date() gère les années bissextiles (29/02/2024)', function() {
 // ───────────────────────────────────────────────────────────────
 test('security_log() existe et peut être appelée', function() {
     if (!function_exists('security_log')) return 'security_log() n\'existe pas';
-    security_log('test_event', 'test detail', 'test@unit.example');
+    \App\Core\App::audit()->securityLog('test_event', 'test detail', 'test@unit.example');
     return true;
 });
 
@@ -229,7 +229,7 @@ test('security_log() écrit une ligne dans audit_log (action = security_event)',
     $event = 'test_event_' . bin2hex(random_bytes(4));
     $detail = 'Détail de test unitaire';
     $actor = 'unit_test@example.com';
-    security_log($event, $detail, $actor);
+    \App\Core\App::audit()->securityLog($event, $detail, $actor);
     // Compter après
     $count_after = (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'security_event'")->fetchColumn();
     return $count_after > $count_before ? true : "Pas d'insertion ($count_before → $count_after)";
@@ -238,7 +238,7 @@ test('security_log() écrit une ligne dans audit_log (action = security_event)',
 test('security_log() stocke l\'event dans la colonne target', function() {
     $pdo = \App\Core\App::db()->getPdo();
     $event = 'unique_event_' . bin2hex(random_bytes(4));
-    security_log($event, 'test detail', 'unit_test@example.com');
+    \App\Core\App::audit()->securityLog($event, 'test detail', 'unit_test@example.com');
     $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'security_event' AND target = ? ORDER BY created_at DESC LIMIT 1");
     $stmt->execute([$event]);
     $found = $stmt->fetchColumn();
@@ -248,7 +248,7 @@ test('security_log() stocke l\'event dans la colonne target', function() {
 test('security_log() stocke le detail dans la colonne detail', function() {
     $pdo = \App\Core\App::db()->getPdo();
     $marker = 'MARKER_' . bin2hex(random_bytes(4));
-    security_log('test_event', $marker, 'unit_test@example.com');
+    \App\Core\App::audit()->securityLog('test_event', $marker, 'unit_test@example.com');
     $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'security_event' AND detail LIKE ? ORDER BY created_at DESC LIMIT 1");
     $stmt->execute(["%$marker%"]);
     $found = $stmt->fetchColumn();
@@ -258,7 +258,7 @@ test('security_log() stocke le detail dans la colonne detail', function() {
 test('security_log() stocke l\'actor dans la colonne actor', function() {
     $pdo = \App\Core\App::db()->getPdo();
     $actor = 'actor_' . bin2hex(random_bytes(4)) . '@example.com';
-    security_log('test_event', 'detail', $actor);
+    \App\Core\App::audit()->securityLog('test_event', 'detail', $actor);
     $stmt = $pdo->prepare("SELECT actor FROM audit_log WHERE action = 'security_event' AND actor = ? ORDER BY created_at DESC LIMIT 1");
     $stmt->execute([$actor]);
     $found = $stmt->fetchColumn();
@@ -279,7 +279,7 @@ test('security_log() utilise l\'utilisateur connecté si actor est vide', functi
     $pdo = \App\Core\App::db()->getPdo();
     $saved_user = $_SERVER['HTTP_X_TEST_USER'] ?? null;
     $_SERVER['HTTP_X_TEST_USER'] = 'auto_actor@example.com';
-    security_log('auto_event', 'detail');  // Pas d'actor explicite
+    \App\Core\App::audit()->securityLog('auto_event', 'detail');  // Pas d'actor explicite
     $stmt = $pdo->prepare("SELECT actor FROM audit_log WHERE action = 'security_event' AND actor = ? ORDER BY created_at DESC LIMIT 1");
     $stmt->execute(['auto_actor@example.com']);
     $found = $stmt->fetchColumn();

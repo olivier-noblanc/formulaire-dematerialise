@@ -1,16 +1,17 @@
 # TODO — CircuitDémat
 
-## Session 2026-07-10 — Résumé
+## Session 2026-07-11 — Résumé
 
 ### ✅ Terminé
 
 | Tâche | Détail | Résultat |
 |-------|--------|----------|
-| Nettoyage lib/ | 11 wrappers supprimés | ✅ lib/ : 14 fichiers |
-| Fix autoload IIS | vendor/composer/ commité | ✅ Erreur prod résolue |
-| BackupController | Migration vers BackupRenderer | ✅ |
-| Documentation | AGENTS.md mis à jour (règles test, réseau, IIS) | ✅ |
-| TODO.md | Retiré du .gitignore, versionné | ✅ |
+| Supprimer service_wrappers.php | 54 wrappers → DI directe + fichier supprimé | ✅ |
+| Supprimer render wrappers | 10 fichiers render/ + security.php migrés | ✅ |
+| Supprimer h() wrapper | 544 call sites → App::html()->escape() | ✅ |
+| PHPStan baseline | 312 → 142 erreurs (-54%) | ✅ |
+| Tests coverage | +62 tests (Attachment, Auth, Export, Workflow) | ✅ |
+| Documentation | CHANGELOG.md mis à jour (v10.10.0) | ✅ |
 
 ---
 
@@ -18,17 +19,19 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **855** (0 failures) |
-| lib/ fichiers | **14** (wrappers thin) |
+| Tests | **995** (0 failures) |
+| lib/ fichiers | **1** (core_bootstrap uniquement) |
 | Pages procédurales | **0** |
 | Controllers | **27** |
 | PHPStan level | **8** |
-| PHPStan baseline | **312** erreurs |
+| PHPStan baseline | **142** erreurs |
 | Repositories | **8** |
 | vendor/composer | **commité** (IIS offline) |
 | Coverage HtmlService | **100%** |
 | Coverage FormRepo | **82%** |
 | Coverage BaseRepo | **81%** |
+| Coverage AuthService | **~82%** |
+| Coverage AttachmentService | **~70%** |
 
 ---
 
@@ -36,13 +39,11 @@
 
 | Tâche | Effort | Impact | Détail |
 |-------|--------|--------|--------|
-| Supprimer service_wrappers.php | ~3h | Élevé | 54 wrappers → supprimer, remplacer ~102 appels par DI |
-| Supprimer 12 render wrappers | ~1h | Moyen | Les controllers appellent déjà les classes OOP |
-| PHPStan baseline (312 erreurs) | Moyen | Qualité code | method.nonObject, argument.type |
-| Coverage > 80% : AuthService (76%), AttachmentService (62%) | Moyen | Fiabilité | Infrastructure |
-| Coverage > 80% : ExportService (4%), WorkflowEngine (32%) | Élevé | exit(), network |
-| Réduire communautés < 20 | Élevé | Architecture | Consolidation progressive |
+| PHPStan baseline (142 erreurs restantes) | Moyen | Qualité code | missingType.iterableValue (phpdoc manquants) |
+| Coverage > 80% : ExportService (~15%) | Élevé | exit() empêche le test direct |
+| Coverage > 80% : WorkflowEngine (~45%) | Moyen | Couvrir les branches restantes |
+| Coverage > 80% : AttachmentService (~70%) | Faible | fileinfo extension manquante |
 
 ---
 
-_Dernière mise à jour : 2026-07-10_
+_Dernière mise à jour : 2026-07-11_

@@ -23,6 +23,6 @@ if ($uri === '/' || $uri === '') {
 
 // 404
 require_once __DIR__ . '/helpers.php';
-render_error_page(404, 'Page introuvable',
+(new \App\Render\ErrorRenderer())->errorPage(404, 'Page introuvable',
     'La page que vous cherchez n\'existe pas sur ce serveur.',
     'Vérifiez l\'adresse dans votre navigateur. Si vous avez suivi un lien, il est peut-être obsolète.');

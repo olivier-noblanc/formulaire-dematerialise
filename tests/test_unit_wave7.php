@@ -38,13 +38,13 @@ test('get_delegations() retourne un tableau vide pour une soumission sans délé
     $sub_id = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
     if (!$sub_id) return 'Aucune soumission en DB test pour le test';
     try {
-        $result = get_delegations($sub_id);
+        $result = \App\Core\App::token()->getDelegations($sub_id);
         return is_array($result) && empty($result)
             ? true
             : 'Attendu tableau vide, obtenu : ' . substr(json_encode($result), 0, 200);
     } catch (\Throwable $e) {
         // Bug S2-TESTER : la fonction lève PDOException au lieu de retourner []
-        return 'BUG S2-TESTER — get_delegations() a levé une exception au lieu de retourner [] : '
+        return 'BUG S2-TESTER — getDelegations() a levé une exception au lieu de retourner [] : '
             . $e->getMessage()
             . ' | TODO S4 : remplacer `d.from_token_id` par `d.token_id` dans helpers.php:3034';
     }
@@ -67,7 +67,7 @@ test('get_delegations() retourne les délégations correctes pour une soumission
     try {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onb_id, $data, $user]);
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
         // Récupérer un token pending (étape 1 a normalement 1+ validateur)
         $stmt = $pdo->prepare("SELECT id FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
         $stmt->execute([$sub_id]);
@@ -75,11 +75,11 @@ test('get_delegations() retourne les délégations correctes pour une soumission
         if (!$tok_id) return 'Pas de token pending pour le test';
         // Créer une délégation via delegate_token() (insert dans `token_id` — colonne réelle)
         $delegate_email = 's3_deleg_target_' . bin2hex(random_bytes(4)) . '@exemple.invalid';
-        $r = delegate_token($tok_id, $delegate_email, 'Test delegation S3-TESTER');
+        $r = \App\Core\App::token()->delegate($tok_id, $delegate_email, 'Test delegation S3-TESTER');
         if (empty($r['success'])) return 'delegate_token a échoué : ' . ($r['message'] ?? '');
-        // Appeler get_delegations() — doit lever à cause du bug S2-TESTER
+        // Appeler getDelegations() — doit lever à cause du bug S2-TESTER
         try {
-            $delegations = get_delegations($sub_id);
+            $delegations = \App\Core\App::token()->getDelegations($sub_id);
         } catch (\Throwable $e) {
             return 'BUG S2-TESTER — get_delegations() a levé : ' . $e->getMessage()
                 . ' | TODO S4 : remplacer `d.from_token_id` par `d.token_id` dans helpers.php:3034';
@@ -121,8 +121,8 @@ test('Anti-régression bug v3.1.0 : get_delegations() utilise d.token_id (colonn
     // (colonne inexistante), corrigé en S3. Ce test garantit qu'on ne revient pas à cette erreur.
     // S4-TESTS / Action 9 : _find_function_in_libs() parcourt helpers.php + lib_*.php pour
     // rester robuste si get_delegations() est extraite vers lib_*.php un jour.
-    $body = _find_function_in_libs('get_delegations');
-    if ($body === '') return 'Fonction get_delegations() introuvable dans helpers.php + lib_*.php';
+    $body = _find_function_in_libs('getDelegations');
+    if ($body === '') return 'Méthode getDelegations() introuvable dans TokenService + lib_*.php';
     $has_token_id = (bool)preg_match('/\bd\.token_id\b/', $body);
     $has_from_token_id = strpos($body, 'd.from_token_id') !== false;
     if (!$has_token_id) {
@@ -376,21 +376,21 @@ test('Runtime anti-régression : get_delegations() retourne une délégation fac
     try {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onb_id, $data, $user]);
-        advance_workflow($sub_id);
+        \App\Core\App::workflow()->advanceWorkflow($sub_id);
         $stmt = $pdo->prepare("SELECT id FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
         $stmt->execute([$sub_id]);
         $tok_id = $stmt->fetchColumn();
         if (!$tok_id) return 'Pas de token pending pour le test';
-        $r = delegate_token($tok_id, $delegate_email, 'Test runtime S3-TESTER');
+        $r = \App\Core\App::token()->delegate($tok_id, $delegate_email, 'Test runtime S3-TESTER');
         if (empty($r['success'])) return 'delegate_token() a échoué : ' . ($r['message'] ?? '');
         // Vérifier que la délégation est bien en DB (lecture directe — colonne `token_id`)
         $count_db = (int)$pdo->query("SELECT COUNT(*) FROM delegations WHERE token_id = " . $pdo->quote($tok_id))->fetchColumn();
         if ($count_db !== 1) return 'Délégation non insérée en DB (count=' . $count_db . ')';
         // Maintenant appeler get_delegations() — doit retourner la délégation
         try {
-            $delegations = get_delegations($sub_id);
+            $delegations = \App\Core\App::token()->getDelegations($sub_id);
         } catch (\Throwable $e) {
-            return 'BUG S2-TESTER — get_delegations() lève alors que la délégation existe en DB : '
+            return 'BUG S2-TESTER — getDelegations() lève alors que la délégation existe en DB : '
                 . $e->getMessage()
                 . ' | TODO S4 : remplacer `d.from_token_id` par `d.token_id` dans helpers.php:3034';
         }

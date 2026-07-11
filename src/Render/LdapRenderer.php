@@ -19,14 +19,14 @@ final class LdapRenderer
      */
     public function datalist(string $list_id, string $query = '', int $limit = 200): string
     {
-        $results = ldap_suggest($query, $limit);
+        $results = \App\Core\App::emailVerify()->ldapSuggest($query, $limit);
         if (empty($results)) {
             return '';
         }
 
-        $html = '<datalist id="' . h($list_id) . '">';
+        $html = '<datalist id="' . \App\Core\App::html()->escape($list_id) . '">';
         foreach ($results as $entry) {
-            $html .= '<option value="' . h($entry['email']) . '" label="' . h($entry['cn']) . '">';
+            $html .= '<option value="' . \App\Core\App::html()->escape($entry['email']) . '" label="' . \App\Core\App::html()->escape($entry['cn']) . '">';
         }
         $html .= '</datalist>';
 

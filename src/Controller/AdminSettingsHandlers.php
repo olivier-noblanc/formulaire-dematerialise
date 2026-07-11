@@ -162,30 +162,30 @@ final class AdminSettingsHandlers
     public static function handleTestEmail(): string
     {
         $to      = App::auth()->getUser();
-        $subject = 'Test email — ' . \get_app_name();
+        $subject = 'Test email — ' . \App\Render\NavigationRenderer::getAppName();
         $body    = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;color:#222;">
   <h2 style="color:#003189;">Test d\'envoi d\'email</h2>
   <p>Cet email a été envoyé depuis la page de paramètres du workflow.</p>
-  <p>Date : ' . \h(date('d/m/Y H:i:s')) . '</p>
+  <p>Date : ' . \App\Core\App::html()->escape(date('d/m/Y H:i:s')) . '</p>
 </body></html>';
-        $result = \send_mail_detailed($to, $subject, $body);
+        $result = App::mail()->sendDetailed($to, $subject, $body);
         if ($result['success']) {
             $status_label = [
                 'sent'    => 'envoyé',
                 'dry_run' => 'intercepté (dry-run)',
             ][$result['status']] ?? $result['status'];
-            return 'Email de test ' . $status_label . ' avec succès à ' . \h($to);
+            return 'Email de test ' . $status_label . ' avec succès à ' . \App\Core\App::html()->escape($to);
         }
         $err = $result['error'] !== '' ? $result['error'] : 'erreur inconnue';
-        return 'Échec de l\'envoi de l\'email de test à ' . \h($to) . ' — ' . \h($err) . ' (statut: ' . \h($result['status']) . '). Vérifiez la configuration SMTP, le mode dry-run et le journal des emails dans Surveillance.';
+        return 'Échec de l\'envoi de l\'email de test à ' . \App\Core\App::html()->escape($to) . ' — ' . \App\Core\App::html()->escape($err) . ' (statut: ' . \App\Core\App::html()->escape($result['status']) . '). Vérifiez la configuration SMTP, le mode dry-run et le journal des emails dans Surveillance.';
     }
 
     public static function handleTestVerifyEmail(string $error_msg): array
     {
         $test_addr = trim($_POST['verify_test_email'] ?? '');
         if (!empty($test_addr) && filter_var($test_addr, FILTER_VALIDATE_EMAIL)) {
-            $verify_result = \test_email_verification($test_addr);
+            $verify_result = App::emailVerify()->testVerification($test_addr);
             App::audit()->log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', App::auth()->getUser());
             return [$verify_result, $error_msg];
         }
@@ -200,8 +200,8 @@ final class AdminSettingsHandlers
             $error_msg = 'Aucune URL webhook configurée.';
             return [$success_msg, $error_msg];
         }
-        \send_webhook('test', ['message' => 'Test webhook depuis ' . \get_app_name(), 'version' => \get_latest_version()]);
-        $success_msg = 'Webhook de test envoyé à ' . \h($webhook_url) . '.';
+        App::webhook()->send('test', ['message' => 'Test webhook depuis ' . \App\Render\NavigationRenderer::getAppName(), 'version' => \get_latest_version()]);
+        $success_msg = 'Webhook de test envoyé à ' . \App\Core\App::html()->escape($webhook_url) . '.';
         App::audit()->log('webhook_test', 'settings', 'Test webhook envoyé');
         return [$success_msg, $error_msg];
     }

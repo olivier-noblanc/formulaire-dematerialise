@@ -18,8 +18,8 @@ final class StatsController extends BaseController
         $period = $_GET['period'] ?? 'month';
         if (!in_array($period, ['week', 'month', 'year'])) $period = 'month';
 
-        $globalStats = get_global_stats();
-        $periodStats = get_stats_by_period($period, 12);
+        $globalStats = App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
+        $periodStats = App::getInstance()->get(\App\Stats\StatsService::class)->getStatsByPeriod($period, 12);
 
         $formStats = $pdo->query("
             SELECT f.label, f.slug, COUNT(s.id) as total,
@@ -105,7 +105,8 @@ final class StatsController extends BaseController
       <p class="empty-state">Aucune donnée pour cette période.</p>
     <?php else: ?>
       <?php
-        $maxTotal = max(array_column($periodStats, 'total')) ?: 1;
+        $column = array_column($periodStats, 'total');
+        $maxTotal = $column !== [] ? (max($column) ?: 1) : 1;
         $periodStatsAsc = array_reverse($periodStats);
       ?>
       <div class="bar-chart">
@@ -117,7 +118,7 @@ final class StatsController extends BaseController
           $avgDays = !empty($ps['avg_processing_seconds']) ? round((float)$ps['avg_processing_seconds'] / 86400, 1) : '—';
         ?>
         <div class="bar-row">
-          <div class="bar-label"><?= h($ps['period']) ?></div>
+          <div class="bar-label"><?= \App\Core\App::html()->escape($ps['period']) ?></div>
           <div class="bar-track">
             <div class="stacked-bar" style="width:<?= max($pct, 3) ?>%;">
               <div class="segment-valide" style="width:<?= $validePct ?>%;"></div>
@@ -154,7 +155,7 @@ final class StatsController extends BaseController
           $fsAvg = !empty($fs['avg_seconds']) ? round((float)$fs['avg_seconds'] / 86400, 1) . ' j' : '—';
         ?>
           <tr>
-            <td><strong><?= h($fs['label']) ?></strong></td>
+            <td><strong><?= \App\Core\App::html()->escape($fs['label']) ?></strong></td>
             <td><?= $fsTotal ?></td>
             <td><span class="badge badge-warn"><?= (int)$fs['en_cours'] ?></span></td>
             <td><span class="badge badge-ok"><?= $fsValide ?></span></td>
@@ -210,7 +211,7 @@ final class StatsController extends BaseController
         <div class="stat-label">Volume pièces jointes</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value"><?= App::html()->formatFileSize(get_db_size()) ?></div>
+        <div class="stat-value"><?= App::html()->formatFileSize(App::webhook()->getDbSize()) ?></div>
         <div class="stat-label">Taille base de données</div>
       </div>
     </div>

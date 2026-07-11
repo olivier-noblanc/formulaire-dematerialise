@@ -7,7 +7,7 @@ declare(strict_types=1);
  * Vérifie :
  *   1. Toutes les pages existent + lint PHP
  *   2. Toutes les pages sont dans la whitelist du router
- *   3. display_user() et display_user_short() (fonctions pures, pas de DB)
+ *   3. displayUser() et displayUserShort() (méthodes pures, pas de DB)
  *   4. Handlers POST : tous les case du dispatcher ont une fonction ou alias
  *   5. Migrations DB : toutes chargées
  *   6. .gitignore : fichiers sensibles non trackés
@@ -15,7 +15,6 @@ declare(strict_types=1);
 
 // Pas de test_bootstrap (évite lazy cron + get_pdo qui polluent stdout)
 // On charge manuellement les fichiers nécessaires
-require_once __DIR__ . '/../lib/html.php';
 
 $passed = 0;
 $failed = 0;

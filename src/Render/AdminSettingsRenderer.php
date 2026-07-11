@@ -80,7 +80,7 @@ final class AdminSettingsRenderer
           <a href="#section-email-summary">📋 Résumé</a>
         </nav>
 
-        <?= render_messages(['success'=>$success_msg, 'error'=>$error_msg, 'info'=>$test_msg]) ?>
+        <?= (new ErrorRenderer())->messages(['success'=>$success_msg, 'error'=>$error_msg, 'info'=>$test_msg]) ?>
 
         <?php if ($mail_dry_run === '1'): ?>
             <div class="warning-box">
@@ -149,23 +149,23 @@ final class AdminSettingsRenderer
 
                     <div class="field">
                         <label>Hôte LDAP <span class="info-tooltip" title="Adresse de l'annuaire d'entreprise (ex: ldap.exemple.invalid)" aria-label="Aide technique : Adresse de l'annuaire d'entreprise (ex: ldap.exemple.invalid)" tabindex="0" role="button">ℹ️</span> <span class="hint">(ex: ldap.exemple.invalid ou votre contrôleur de domaine)</span></label>
-                        <input type="text" name="ldap_host" value="<?= h($ldap_host) ?>" placeholder="ldap.exemple.invalid">
+                        <input type="text" name="ldap_host" value="<?= \App\Core\App::html()->escape($ldap_host) ?>" placeholder="ldap.exemple.invalid">
                     </div>
 
                     <div class="field">
                         <label>Port LDAP <span class="info-tooltip" title="Port LDAP (389=standard, 636=chiffré)" aria-label="Aide technique : Port LDAP (389=standard, 636=chiffré)" tabindex="0" role="button">ℹ️</span></label>
-                        <input type="number" name="ldap_port" value="<?= h($ldap_port) ?>" min="1" max="65535" style="max-width:150px;">
+                        <input type="number" name="ldap_port" value="<?= \App\Core\App::html()->escape($ldap_port) ?>" min="1" max="65535" style="max-width:150px;">
                         <span class="hint">389 = standard, 636 = LDAPS (chiffré)</span>
                     </div>
 
                     <div class="field">
                         <label>Base DN <span class="info-tooltip" title="Base de recherche LDAP (ex: DC=dreets,DC=gouv,DC=fr)" aria-label="Aide technique : Base de recherche LDAP (ex: DC=dreets,DC=gouv,DC=fr)" tabindex="0" role="button">ℹ️</span> <span class="hint">(racine de la recherche dans l'annuaire)</span></label>
-                        <input type="text" name="ldap_base_dn" value="<?= h($ldap_base_dn) ?>" placeholder="DC=dreets,DC=gouv,DC=fr">
+                        <input type="text" name="ldap_base_dn" value="<?= \App\Core\App::html()->escape($ldap_base_dn) ?>" placeholder="DC=dreets,DC=gouv,DC=fr">
                     </div>
 
                     <div class="field">
                         <label>Bind DN <span class="info-tooltip" title="Compte de service pour LDAP (ex: CN=svc_workflow,OU=ServiceAccounts,DC=dreets,DC=gouv,DC=fr)" aria-label="Aide technique : Compte de service pour LDAP (ex: CN=svc_workflow,OU=ServiceAccounts,DC=dreets,DC=gouv,DC=fr)" tabindex="0" role="button">ℹ️</span> <span class="hint">(compte de service en lecture seule — laisser vide pour bind anonyme)</span></label>
-                        <input type="text" name="ldap_bind_dn" value="<?= h($ldap_bind_dn) ?>" placeholder="CN=svc_workflow,OU=ServiceAccounts,DC=dreets,DC=gouv,DC=fr">
+                        <input type="text" name="ldap_bind_dn" value="<?= \App\Core\App::html()->escape($ldap_bind_dn) ?>" placeholder="CN=svc_workflow,OU=ServiceAccounts,DC=dreets,DC=gouv,DC=fr">
                     </div>
 
                     <div class="field">
@@ -175,7 +175,7 @@ final class AdminSettingsRenderer
 
                     <div class="field">
                         <label>Filtre de recherche <span class="hint">({email} sera remplacé par l'adresse à vérifier)</span></label>
-                        <input type="text" name="ldap_filter" value="<?= h($ldap_filter) ?>" placeholder="(mail={email})">
+                        <input type="text" name="ldap_filter" value="<?= \App\Core\App::html()->escape($ldap_filter) ?>" placeholder="(mail={email})">
                     </div>
 
                     <hr style="margin:1.5rem 0;border:none;border-top:1px solid #d0d0e0;">
@@ -198,7 +198,7 @@ final class AdminSettingsRenderer
                     </div>
                     <div class="field">
                         <label>Filtre de suggestion <span class="hint">({query} sera remplacé par le terme de recherche)</span></label>
-                        <input type="text" name="ldap_suggest_filter" value="<?= h($ldap_suggest_filter) ?>" placeholder="(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))">
+                        <input type="text" name="ldap_suggest_filter" value="<?= \App\Core\App::html()->escape($ldap_suggest_filter) ?>" placeholder="(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))">
                         <span class="hint">Filtre LDAP pour la recherche d'autocomplétion. Par défaut, cherche sur le nom complet (cn), l'email, le nom de famille (sn) et le prénom (givenName).</span>
                     </div>
                 </div>
@@ -242,7 +242,7 @@ final class AdminSettingsRenderer
                 <div class="field">
                     <label>Adresse email à tester</label>
                     <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-                        <input type="email" name="verify_test_email" value="<?= h($_POST['verify_test_email'] ?? '') ?>" placeholder="agent@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" style="max-width:350px;">
+                        <input type="email" name="verify_test_email" value="<?= \App\Core\App::html()->escape($_POST['verify_test_email'] ?? '') ?>" placeholder="agent@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" style="max-width:350px;">
                         <button type="submit" class="btn btn-test">Vérifier cette adresse</button>
                     </div>
                 </div>
@@ -252,7 +252,7 @@ final class AdminSettingsRenderer
                 <?php $vr = $verify_result; ?>
                 <div class="verify-result <?= $vr['verify']['ok'] ? 'ok' : 'fail' ?>">
                     <strong><?= $vr['verify']['ok'] ? '✔ Adresse vérifiée' : '✘ Adresse NON vérifiée' ?></strong>
-                    <div class="detail">Mode : <code><?= h($vr['mode']) ?></code> — <?= h($vr['verify']['detail']) ?></div>
+                    <div class="detail">Mode : <code><?= \App\Core\App::html()->escape($vr['mode']) ?></code> — <?= \App\Core\App::html()->escape($vr['verify']['detail']) ?></div>
 
                     <?php if (isset($vr['format_valid'])): ?>
                         <div class="detail">Format email : <?= $vr['format_valid'] ? '✔ Valide' : '✘ Invalide' ?></div>
@@ -260,12 +260,12 @@ final class AdminSettingsRenderer
 
                     <?php if (isset($vr['ldap'])): ?>
                         <div class="detail" style="margin-top:.5rem;font-weight:bold;">Résultat LDAP :</div>
-                        <div class="detail">✔/✘ : <?= $vr['ldap']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= h($vr['ldap']['detail']) ?></div>
+                        <div class="detail">✔/✘ : <?= $vr['ldap']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= \App\Core\App::html()->escape($vr['ldap']['detail']) ?></div>
                     <?php endif; ?>
 
                     <?php if (isset($vr['smtp'])): ?>
                         <div class="detail" style="margin-top:.5rem;font-weight:bold;">Résultat SMTP :</div>
-                        <div class="detail">✔/✘ : <?= $vr['smtp']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= h($vr['smtp']['detail']) ?></div>
+                        <div class="detail">✔/✘ : <?= $vr['smtp']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= \App\Core\App::html()->escape($vr['smtp']['detail']) ?></div>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -283,13 +283,13 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label for="app_name">Nom de l'application</label>
-                    <input type="text" id="app_name" name="app_name" value="<?= h(\App\Core\App::settings()->get('app_name', 'CircuitDémat')) ?>" placeholder="CircuitDémat">
+                    <input type="text" id="app_name" name="app_name" value="<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('app_name', 'CircuitDémat')) ?>" placeholder="CircuitDémat">
                     <span class="hint">Ce nom est affiché dans la barre latérale, les titres de pages, les emails et le pied de page. Modifiable à tout moment.</span>
                 </div>
 
                 <div class="field">
                     <label for="app_favicon">Favicon (SVG)</label>
-                    <textarea id="app_favicon" name="app_favicon" rows="3" placeholder="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>...</svg>" style="font-family:monospace;font-size:.8rem;"><?= h(\App\Core\App::settings()->get('app_favicon', '')) ?></textarea>
+                    <textarea id="app_favicon" name="app_favicon" rows="3" placeholder="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>...</svg>" style="font-family:monospace;font-size:.8rem;"><?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('app_favicon', '')) ?></textarea>
                     <span class="hint">Code SVG du favicon. Laisser vide pour le favicon par défaut (losange bleu avec la première lettre du nom). Le contenu est inséré dans <code>data:image/svg+xml,</code> — ne pas mettre l'en-tête <code>&lt;?xml</code> ni échapper les caractères.</span>
                 </div>
             </div>
@@ -299,7 +299,7 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label for="admin_email">Email de l'administrateur principal</label>
-                    <input type="email" id="admin_email" name="admin_email" value="<?= h(\App\Core\App::auth()->getAdminEmail()) ?>" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" required>
+                    <input type="email" id="admin_email" name="admin_email" value="<?= \App\Core\App::html()->escape(\App\Core\App::auth()->getAdminEmail()) ?>" placeholder="prenom.nom@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" required>
                     <span class="hint">Cet utilisateur est super-administrateur et reçoit les demandes d'accès. Modifiable depuis la base de données si l'accès est perdu.</span>
                 </div>
             </div>
@@ -309,12 +309,12 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label>SMTP Hôte <span class="info-tooltip" title="Adresse du serveur email (ex: smtp.social.gouv.fr)" aria-label="Aide technique : Adresse du serveur email (ex: smtp.social.gouv.fr)" tabindex="0" role="button">ℹ️</span></label>
-                    <input type="text" name="smtp_host" value="<?= h($smtp_host) ?>" placeholder="smtp.example.fr">
+                    <input type="text" name="smtp_host" value="<?= \App\Core\App::html()->escape($smtp_host) ?>" placeholder="smtp.example.fr">
                 </div>
 
                 <div class="field">
                     <label>SMTP Port <span class="info-tooltip" title="Port du serveur email (25=standard, 587=chiffré, 465=SSL)" aria-label="Aide technique : Port du serveur email (25=standard, 587=chiffré, 465=SSL)" tabindex="0" role="button">ℹ️</span></label>
-                    <input type="number" name="smtp_port" value="<?= h($smtp_port) ?>" min="1" max="65535">
+                    <input type="number" name="smtp_port" value="<?= \App\Core\App::html()->escape($smtp_port) ?>" min="1" max="65535">
                 </div>
 
                 <div class="field">
@@ -335,7 +335,7 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label>Utilisateur SMTP <span class="hint">(utilisé uniquement si l'authentification est activée)</span></label>
-                    <input type="text" name="smtp_user" value="<?= h($smtp_user) ?>" placeholder="utilisateur@exemple.fr">
+                    <input type="text" name="smtp_user" value="<?= \App\Core\App::html()->escape($smtp_user) ?>" placeholder="utilisateur@exemple.fr">
                 </div>
 
                 <div class="field">
@@ -345,12 +345,12 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label>Email expéditeur <span class="info-tooltip" title="Adresse email d'expéditeur (ex: workflow@exemple.invalid)" aria-label="Aide technique : Adresse email d'expéditeur (ex: workflow@exemple.invalid)" tabindex="0" role="button">ℹ️</span></label>
-                    <input type="text" name="smtp_from" value="<?= h($smtp_from) ?>" placeholder="workflow@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>">
+                    <input type="text" name="smtp_from" value="<?= \App\Core\App::html()->escape($smtp_from) ?>" placeholder="workflow@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>">
                 </div>
 
                 <div class="field">
                     <label>Nom expéditeur <span class="info-tooltip" title="Nom affiché pour l'expéditeur (ex: CircuitDémat)" aria-label="Aide technique : Nom affiché pour l'expéditeur (ex: CircuitDémat)" tabindex="0" role="button">ℹ️</span></label>
-                    <input type="text" name="smtp_from_name" value="<?= h($smtp_from_name) ?>" placeholder="CircuitDémat">
+                    <input type="text" name="smtp_from_name" value="<?= \App\Core\App::html()->escape($smtp_from_name) ?>" placeholder="CircuitDémat">
                 </div>
             </div>
 
@@ -360,22 +360,22 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label>Délai de relance en heures <span class="info-tooltip" title="Délai en heures avant envoi d'un rappel (ex: 48 pour 2 jours)" aria-label="Aide technique : Délai en heures avant envoi d'un rappel (ex: 48 pour 2 jours)" tabindex="0" role="button">ℹ️</span></label>
-                    <input type="number" name="delai_relance_h" value="<?= h($delai_relance_h) ?>" min="1">
+                    <input type="number" name="delai_relance_h" value="<?= \App\Core\App::html()->escape($delai_relance_h) ?>" min="1">
                 </div>
 
                 <div class="field">
                     <label>Expiration des tokens en jours <span class="info-tooltip" title="Durée de validité des liens de validation en jours (ex: 30)" aria-label="Aide technique : Durée de validité des liens de validation en jours (ex: 30)" tabindex="0" role="button">ℹ️</span></label>
-                    <input type="number" name="token_expire_days" value="<?= h($token_expire_days) ?>" min="1">
+                    <input type="number" name="token_expire_days" value="<?= \App\Core\App::html()->escape($token_expire_days) ?>" min="1">
                 </div>
 
                 <div class="field">
                     <label>Nombre maximum de relances par token <span class="hint">(0 = illimité)</span></label>
-                    <input type="number" name="relance_max" value="<?= h($relance_max) ?>" min="0">
+                    <input type="number" name="relance_max" value="<?= \App\Core\App::html()->escape($relance_max) ?>" min="0">
                 </div>
 
                 <div class="field">
                     <label>Durée de conservation des demandes (mois) <span class="info-tooltip" title="Durée de conservation des demandes en mois (ex: 24 pour 2 ans)" aria-label="Aide technique : Durée de conservation des demandes en mois (ex: 24 pour 2 ans)" tabindex="0" role="button">ℹ️</span></label>
-                    <input type="number" name="retention_months" value="<?= h($retention_months) ?>" min="1" max="120">
+                    <input type="number" name="retention_months" value="<?= \App\Core\App::html()->escape($retention_months) ?>" min="1" max="120">
                     <span class="hint">Conformité RGPD : les demandes clôturées sont purgées automatiquement après cette durée (voir <a href="index.php?p=rgpd">Protection des données</a>).</span>
                 </div>
             </div>
@@ -400,12 +400,12 @@ final class AdminSettingsRenderer
             <input type="hidden" name="action" value="save_webhook">
             <div class="field">
               <label for="webhook_url">URL du webhook</label>
-              <input type="url" id="webhook_url" name="webhook_url" value="<?= h(\App\Core\App::settings()->get('webhook_url', '')) ?>" placeholder="https://si.exemple.invalid/api/webhook">
+              <input type="url" id="webhook_url" name="webhook_url" value="<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('webhook_url', '')) ?>" placeholder="https://si.exemple.invalid/api/webhook">
               <span class="hint">URL recevant les notifications en POST JSON. Laissez vide pour désactiver.</span>
             </div>
             <div class="field">
               <label for="webhook_events">Événements à notifier</label>
-              <input type="text" id="webhook_events" name="webhook_events" value="<?= h(\App\Core\App::settings()->get('webhook_events', 'workflow_complete,submission_cancelled')) ?>" placeholder="workflow_complete,submission_cancelled,token_validated">
+              <input type="text" id="webhook_events" name="webhook_events" value="<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('webhook_events', 'workflow_complete,submission_cancelled')) ?>" placeholder="workflow_complete,submission_cancelled,token_validated">
               <span class="hint">Séparés par des virgules. Événements disponibles : <code>workflow_complete</code>, <code>submission_cancelled</code>, <code>token_validated</code>, <code>all</code></span>
             </div>
             <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
@@ -426,7 +426,7 @@ final class AdminSettingsRenderer
             <pre style="margin:.5rem 0 0;white-space:pre-wrap;color:#555;">{
   "event": "workflow_complete",
   "timestamp": "2025-01-15T10:30:00+01:00",
-  "data": { "submission_id": 42, "form_label": "Onboarding", "submitted_by": "agent@<?= h(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" }
+  "data": { "submission_id": 42, "form_label": "Onboarding", "submitted_by": "agent@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'exemple.invalid')) ?>" }
 }</pre>
           </div>
         </div>
@@ -436,7 +436,7 @@ final class AdminSettingsRenderer
         <!-- ═══════════════════════════════════════════════════════════ -->
         <div class="card" id="section-email-send" style="margin-top:1.5rem;">
             <h2>Test d'envoi d'email</h2>
-            <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">Envoyer un email de test à votre adresse (<?= h(\App\Core\App::auth()->getUser()) ?>) pour vérifier la configuration SMTP.</p>
+            <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">Envoyer un email de test à votre adresse (<?= \App\Core\App::html()->escape(\App\Core\App::auth()->getUser()) ?>) pour vérifier la configuration SMTP.</p>
             <?php if ($mail_dry_run === '1'): ?>
                 <div class="warning-box" style="margin-bottom:1rem;">
                     <strong>Mode Dry-Run actif</strong> — L'email sera journalisé mais <strong>pas réellement envoyé</strong>.
@@ -467,7 +467,7 @@ final class AdminSettingsRenderer
                             <span style="color:#f44336;">Désactivée</span>
                         <?php elseif ($email_verify_mode === 'ldap'): ?>
                             <span style="color:#4caf50;">LDAP / Active Directory</span>
-                            <?php if (!empty($ldap_host)): ?> (<?= h($ldap_host) ?>)<?php endif; ?>
+                            <?php if (!empty($ldap_host)): ?> (<?= \App\Core\App::html()->escape($ldap_host) ?>)<?php endif; ?>
                         <?php elseif ($email_verify_mode === 'smtp'): ?>
                             <span style="color:#2196f3;">SMTP (probe RCPT TO)</span>
                         <?php endif; ?>

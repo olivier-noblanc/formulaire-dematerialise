@@ -15,43 +15,43 @@ function run_tests_unit_basics(): void {
 echo "── 1. Utilitaires ──\n";
 
 test('h() null-safe retourne chaîne vide', function() {
-    $result = h(null);
+    $result = \App\Core\App::html()->escape(null);
     return $result === '' ? true : "Got: '$result'";
 });
 
 test('h() échappe les chevrons HTML', function() {
-    $result = h('<script>alert("xss")</script>');
+    $result = \App\Core\App::html()->escape('<script>alert("xss")</script>');
     return strpos($result, '<script>') === false ? true : "Non échappé: $result";
 });
 
 test('h() échappe les guillemets doubles', function() {
-    $result = h('a"b');
+    $result = \App\Core\App::html()->escape('a"b');
     return strpos($result, '&quot;') !== false ? true : "Non échappé: $result";
 });
 
 test('h() échappe les guillemets simples', function() {
-    $result = h("a'b");
+    $result = \App\Core\App::html()->escape("a'b");
     return strpos($result, '&#039;') !== false ? true : "Non échappé: $result";
 });
 
 test('h() préserve les accents UTF-8', function() {
-    $result = h('café résumé naïve');
+    $result = \App\Core\App::html()->escape('café résumé naïve');
     return $result === 'caf&eacute; r&eacute;sum&eacute; na&iuml;ve' || $result === 'café résumé naïve'
         ? true : "Got: $result";
 });
 
 test('h() préserve les caractères simples', function() {
-    $result = h('Hello World 123');
+    $result = \App\Core\App::html()->escape('Hello World 123');
     return $result === 'Hello World 123' ? true : "Got: $result";
 });
 
 test('h() chaîne vide retourne chaîne vide', function() {
-    $result = h('');
+    $result = \App\Core\App::html()->escape('');
     return $result === '' ? true : "Got: '$result'";
 });
 
 test('h() échappe & en &amp;', function() {
-    $result = h('a&b');
+    $result = \App\Core\App::html()->escape('a&b');
     return strpos($result, '&amp;') !== false ? true : "Non échappé: $result";
 });
 
@@ -338,31 +338,31 @@ echo "\n";
 // ═══════════════════════════════════════════════════
 echo "── 4. POST / CSRF ──\n";
 
-test('handle_post() en GET retourne null', function() {
+test('handlePost() en GET retourne null', function() {
     $prev = $_SERVER['REQUEST_METHOD'] ?? '';
     $_SERVER['REQUEST_METHOD'] = 'GET';
-    $result = handle_post();
+    $result = \App\Core\App::cron()->handlePost();
     $_SERVER['REQUEST_METHOD'] = $prev;
     return $result === null ? true : "Got: " . var_export($result, true);
 });
 
-test('handle_post() en POST avec action retourne l\'action', function() {
+test('handlePost() en POST avec action retourne l\'action', function() {
     $prev_method = $_SERVER['REQUEST_METHOD'] ?? '';
     $prev_action = $_POST['action'] ?? null;
     $_SERVER['REQUEST_METHOD'] = 'POST';
     $_POST['action'] = 'save_form';
-    $result = handle_post();
+    $result = \App\Core\App::cron()->handlePost();
     $_SERVER['REQUEST_METHOD'] = $prev_method;
     if ($prev_action !== null) $_POST['action'] = $prev_action; else unset($_POST['action']);
     return $result === 'save_form' ? true : "Got: " . var_export($result, true);
 });
 
-test('handle_post() en POST sans action retourne null', function() {
+test('handlePost() en POST sans action retourne null', function() {
     $prev_method = $_SERVER['REQUEST_METHOD'] ?? '';
     $prev_action = $_POST['action'] ?? null;
     $_SERVER['REQUEST_METHOD'] = 'POST';
     unset($_POST['action']);
-    $result = handle_post();
+    $result = \App\Core\App::cron()->handlePost();
     $_SERVER['REQUEST_METHOD'] = $prev_method;
     if ($prev_action !== null) $_POST['action'] = $prev_action; else unset($_POST['action']);
     return $result === null ? true : "Got: " . var_export($result, true);

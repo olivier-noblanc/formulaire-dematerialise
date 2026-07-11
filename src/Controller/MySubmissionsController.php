@@ -171,7 +171,7 @@ final class MySubmissionsController extends BaseController
   </div>
 
   <div style="margin-bottom:1.5rem;">
-    <?= render_search_bar('index.php?p=my_submissions', $search, 'Rechercher...', ['statut' => $statusFilter]) ?>
+    <?= (new \App\Render\FormRenderer())->searchBar('index.php?p=my_submissions', $search, 'Rechercher...', ['statut' => $statusFilter]) ?>
   </div>
   <?php endif; ?>
 
@@ -185,7 +185,7 @@ final class MySubmissionsController extends BaseController
       ?>
         <p style="font-size:.9rem;color:#555;margin-bottom:.5rem;">Formulaires disponibles :</p>
         <?php foreach ($activeForms as $af): ?>
-          <a href="index.php?p=form&f=<?= h($af['slug']) ?>" class="btn btn-primary" style="margin:.25rem;"><?= h(simplify_form_label($af['label'])) ?></a>
+          <a href="index.php?p=form&f=<?= \App\Core\App::html()->escape($af['slug']) ?>" class="btn btn-primary" style="margin:.25rem;"><?= \App\Core\App::html()->escape(simplify_form_label($af['label'])) ?></a>
         <?php endforeach; ?>
       <?php endif; ?>
     </div>
@@ -216,8 +216,8 @@ final class MySubmissionsController extends BaseController
       <a href="index.php?p=submission_view&id=<?= urlencode($sub['id']) ?>" style="text-decoration:none;color:inherit;">
       <div class="sub-card-header">
         <div>
-          <div class="sub-card-title"><?= h(simplify_form_label($sub['form_label'])) ?> <?= $deadlineBadge ?></div>
-          <div class="sub-card-date">Soumis le <?= h(date('d/m/Y à H:i', strtotime($sub['submitted_at']))) ?> — <?= h(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')) ?></div>
+          <div class="sub-card-title"><?= \App\Core\App::html()->escape(simplify_form_label($sub['form_label'])) ?> <?= $deadlineBadge ?></div>
+          <div class="sub-card-date">Soumis le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($sub['submitted_at']))) ?> — <?= \App\Core\App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')) ?></div>
         </div>
         <span class="badge <?= $badgeCls ?>"><?= $statusLabel ?></span>
       </div>
@@ -237,7 +237,7 @@ final class MySubmissionsController extends BaseController
           ?>
             <div class="tl-step <?= $cls ?>">
               <span class="tl-icon" aria-hidden="true"><?= $icon ?></span>
-              <span class="tl-label"><?= h($ws['step_label']) ?></span>
+              <span class="tl-label"><?= \App\Core\App::html()->escape($ws['step_label']) ?></span>
               <?php if (!empty($ws['step_detail'])): ?>
                 <span class="tl-detail"><?= $ws['step_detail'] ?></span>
               <?php endif; ?>
@@ -250,8 +250,8 @@ final class MySubmissionsController extends BaseController
             <?php
               foreach ($data['validations'] as $v) {
                   if ($v['action'] === 'refuser') {
-                      echo '<strong>Refusé par :</strong> ' . App::html()->displayUser($v['email']) . ' (' . h($v['step_label']) . ')';
-                      if (!empty($v['commentaire'])) echo '<br><strong>Motif :</strong> ' . h($v['commentaire']);
+                      echo '<strong>Refusé par :</strong> ' . App::html()->displayUser($v['email']) . ' (' . \App\Core\App::html()->escape($v['step_label']) . ')';
+                      if (!empty($v['commentaire'])) echo '<br><strong>Motif :</strong> ' . \App\Core\App::html()->escape($v['commentaire']);
                       break;
                   }
               }
@@ -267,8 +267,8 @@ final class MySubmissionsController extends BaseController
                   }
               }
               if ($lastValidator !== null) {
-                  echo '<strong>Validée par :</strong> ' . App::html()->displayUser($lastValidator['email']) . ' (' . h($lastValidator['step_label']) . ')';
-                  if (!empty($lastValidator['commentaire'])) echo '<br><strong>Commentaire :</strong> ' . h($lastValidator['commentaire']);
+                  echo '<strong>Validée par :</strong> ' . App::html()->displayUser($lastValidator['email']) . ' (' . \App\Core\App::html()->escape($lastValidator['step_label']) . ')';
+                  if (!empty($lastValidator['commentaire'])) echo '<br><strong>Commentaire :</strong> ' . \App\Core\App::html()->escape($lastValidator['commentaire']);
               } else {
                   echo '<strong>Demande validée</strong> — circuit complet';
               }
@@ -278,7 +278,7 @@ final class MySubmissionsController extends BaseController
 
         <div class="card-actions">
           <a href="index.php?p=submission_view&id=<?= urlencode($sub['id']) ?>" class="btn btn-primary" style="font-size:.85rem;"><span aria-hidden="true">👁</span> Voir le détail</a>
-          <a href="index.php?p=form&f=<?= h($sub['form_slug']) ?>" class="btn btn-secondary" style="font-size:.85rem;">Nouvelle demande</a>
+          <a href="index.php?p=form&f=<?= \App\Core\App::html()->escape($sub['form_slug']) ?>" class="btn btn-secondary" style="font-size:.85rem;">Nouvelle demande</a>
         </div>
       </div>
     </div>

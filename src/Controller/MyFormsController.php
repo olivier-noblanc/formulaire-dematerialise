@@ -14,7 +14,7 @@ final class MyFormsController extends BaseController
     {
         $user = App::auth()->getUser();
         if ($user === '') {
-            render_error_page(403, 'Accès refusé', 'Vous devez être connecté.', '');
+            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous devez être connecté.', '');
         }
 
         $ownedForms = App::auth()->getOwnedForms($user);
@@ -35,11 +35,11 @@ final class MyFormsController extends BaseController
     </p>
     <div class="form-cards">
       <?php foreach ($ownedForms as $of):
-        $f_id    = h((string)($of['id'] ?? ''));
-        $f_label = h(App::html()->tJargon((string)($of['label'] ?? '')));
+        $f_id    = \App\Core\App::html()->escape((string)($of['id'] ?? ''));
+        $f_label = \App\Core\App::html()->escape(App::html()->tJargon((string)($of['label'] ?? '')));
         $f_desc  = '';
         if (!empty($of['description'])) {
-          $f_desc = '<div class="fc-desc">' . h(App::html()->tJargon((string)$of['description'])) . '</div>';
+          $f_desc = '<div class="fc-desc">' . \App\Core\App::html()->escape(App::html()->tJargon((string)$of['description'])) . '</div>';
         }
       ?>
         <a href="index.php?p=form_tracking&f=<?= $f_id ?>" class="form-card">

@@ -21,7 +21,7 @@ final class ChangelogController extends BaseController
         ob_start();
         ?>
   <h1>📋 Journal des mises à jour — CircuitDémat</h1>
-  <div class="current-version">Version actuelle : v<?= h(App::cache()->getLatestVersion()) ?></div>
+  <div class="current-version">Version actuelle : v<?= \App\Core\App::html()->escape(App::cache()->getLatestVersion()) ?></div>
 
   <?php if (empty($changelog)): ?>
     <div class="empty-changelog">
@@ -32,8 +32,8 @@ final class ChangelogController extends BaseController
     <div class="changelog-explain" role="note" aria-label="À propos de cette page">
       <p>
         <span aria-hidden="true">ℹ️</span>
-        <strong><?= h(App::html()->tJargon('Cette page liste les évolutions de l\'application.')) ?></strong>
-        <?= h(App::html()->tJargon('Le résumé en français courant est en haut. Le détail technique est en bas, réservé aux experts.')) ?>
+        <strong><?= \App\Core\App::html()->escape(App::html()->tJargon('Cette page liste les évolutions de l\'application.')) ?></strong>
+        <?= \App\Core\App::html()->escape(App::html()->tJargon('Le résumé en français courant est en haut. Le détail technique est en bas, réservé aux experts.')) ?>
       </p>
     </div>
 
@@ -46,7 +46,7 @@ final class ChangelogController extends BaseController
     <?php if ($hasSummaries): ?>
     <section class="changelog-summary" aria-label="En résumé">
       <h2><span aria-hidden="true">📌</span> En résumé</h2>
-      <p class="summary-intro"><?= h(App::html()->tJargon('Vue simplifiée — le détail technique suit plus bas, réservé aux experts.')) ?></p>
+      <p class="summary-intro"><?= \App\Core\App::html()->escape(App::html()->tJargon('Vue simplifiée — le détail technique suit plus bas, réservé aux experts.')) ?></p>
       <ul class="summary-list">
         <?php
         foreach ($changelog as $v):
@@ -54,10 +54,10 @@ final class ChangelogController extends BaseController
             $badgeCls = $hasSummary ? 'version-recent' : 'version-old';
         ?>
           <li>
-            <span class="summary-version <?= $badgeCls ?>">v<?= h($v['version']) ?></span>
-            <span class="summary-date"><?= h($v['date']) ?></span>
+            <span class="summary-version <?= $badgeCls ?>">v<?= \App\Core\App::html()->escape($v['version']) ?></span>
+            <span class="summary-date"><?= \App\Core\App::html()->escape($v['date']) ?></span>
             <?php if ($hasSummary): ?>
-              <span class="summary-text"><?= h($v['summary']) ?></span>
+              <span class="summary-text"><?= \App\Core\App::html()->escape($v['summary']) ?></span>
             <?php else: ?>
               <span class="summary-text summary-empty">— Pas de résumé pour cette ancienne version</span>
             <?php endif; ?>
@@ -72,28 +72,28 @@ final class ChangelogController extends BaseController
       <div class="details-body">
         <div class="version-nav">
           <?php foreach ($changelog as $i => $v): ?>
-            <a href="#v-<?= h($v['version']) ?>" <?= $i === 0 ? 'class="active"' : '' ?>>v<?= h($v['version']) ?></a>
+            <a href="#v-<?= \App\Core\App::html()->escape($v['version']) ?>" <?= $i === 0 ? 'class="active"' : '' ?>>v<?= \App\Core\App::html()->escape($v['version']) ?></a>
           <?php endforeach; ?>
         </div>
 
         <?php foreach ($changelog as $v): ?>
-        <div class="version-card" id="v-<?= h($v['version']) ?>">
+        <div class="version-card" id="v-<?= \App\Core\App::html()->escape($v['version']) ?>">
           <div class="version-header">
-            <h2>v<?= h($v['version']) ?></h2>
-            <span class="version-date"><?= h($v['date']) ?></span>
+            <h2>v<?= \App\Core\App::html()->escape($v['version']) ?></h2>
+            <span class="version-date"><?= \App\Core\App::html()->escape($v['date']) ?></span>
           </div>
 
           <?php foreach ($v['sections'] as $sectionName => $items):
               $style = $this->sectionStyle($sectionName);
           ?>
-            <div class="section-block <?= h($style['cls']) ?>">
+            <div class="section-block <?= \App\Core\App::html()->escape($style['cls']) ?>">
               <div class="section-header">
                 <span class="section-icon"><?= $style['icon'] ?></span>
-                <?= h($sectionName) ?>
+                <?= \App\Core\App::html()->escape($sectionName) ?>
               </div>
               <ul class="section-items">
                 <?php foreach ($items as $item): ?>
-                  <li><?= $this->inlineMd(h($item)) ?></li>
+                  <li><?= $this->inlineMd(\App\Core\App::html()->escape($item)) ?></li>
                 <?php endforeach; ?>
               </ul>
             </div>

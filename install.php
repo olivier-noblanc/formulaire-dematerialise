@@ -19,7 +19,6 @@ declare(strict_types=1);
  *   3. Confirmation et écriture de config.php
  */
 
-require_once __DIR__ . '/lib/render_install.php';
 
 // ── Sécurité de base ──────────────────────────────────────────
 // Sécurité (S-17) : configurer les flags de cookie de session avant session_start()
@@ -203,11 +202,11 @@ function inst_test_smtp(string $host, int $port, string $from, string $from_name
         $mail->setFrom($from, $from_name);
         $mail->addAddress($to);
         $mail->isHTML(true);
-        $mail->Subject = 'Test SMTP — Installation ' . get_app_name();
+        $mail->Subject = 'Test SMTP — Installation ' . \App\Render\NavigationRenderer::getAppName();
         $mail->Body    = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;color:#222;">
   <h2 style="color:#003189;">Test d\'envoi d\'email</h2>
-  <p>Cet email a été envoyé depuis l\'assistant d\'installation de ' . get_app_name() . '.</p>
+  <p>Cet email a été envoyé depuis l\'assistant d\'installation de ' . \App\Render\NavigationRenderer::getAppName() . '.</p>
   <p>Date : ' . date('d/m/Y H:i:s') . '</p>
   <hr style="margin:1rem 0;border:none;border-top:1px solid #ddd;">
   <p style="font-size:.85rem;color:#595959;">Si vous recevez cet email, la configuration SMTP est correcte.</p>
@@ -472,8 +471,8 @@ foreach ($prerequisites as $check) {
 // ── Étape 3 : config à confirmer ────────────────────────────
 $confirm_config = $_SESSION['inst_config'] ?? null;
 
-// ── Rendu de la page (délégué à lib/render_install.php) ──────
-render_install_page([
+// ── Rendu de la page (délégué à App\Render\InstallRenderer) ──
+(new \App\Render\InstallRenderer())->renderPage([
     'step'            => $step,
     'messages'        => $messages,
     'error_messages'  => $error_messages,

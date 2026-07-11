@@ -22,13 +22,13 @@ function run_tests_e2e_security(): void {
     echo "── 8. Cas limites et sécurité ──\n";
 
     test('Token invalide rejeté', function() {
-        $result = validate_token('token_inexistant_1234567890abcdef');
+        $result = \App\Core\App::workflow()->validateToken('token_inexistant_1234567890abcdef');
         return $result['status'] === 'invalid' ? true : 'Status: ' . $result['status'] . ' (attendu: invalid)';
     });
 
     test('Token déjà utilisé rejeté', function() use ($first_token) {
         if (!$first_token) return 'Pas de token déjà validé';
-        $result = validate_token($first_token);
+        $result = \App\Core\App::workflow()->validateToken($first_token);
         return $result['status'] === 'already_done' ? true : 'Status: ' . $result['status'] . ' (attendu: already_done)';
     });
 
@@ -38,7 +38,7 @@ function run_tests_e2e_security(): void {
         $stmt->execute([$full_workflow_uuid]);
         $token = $stmt->fetchColumn();
         if (!$token) return true; // Pas applicable si pas de token
-        $result = validate_token($token);
+        $result = \App\Core\App::workflow()->validateToken($token);
         // Le token est déjà validé, donc should return already_done
         return in_array($result['status'], ['already_done', 'closed']) ? true : 'Status: ' . $result['status'];
     });
@@ -73,7 +73,7 @@ function run_tests_e2e_security(): void {
 
     test('XSS dans les données stockées (h() échappe)', function() {
         $xss_payload = '<script>alert("XSS")</script>';
-        $escaped = h($xss_payload);
+        $escaped = \App\Core\App::html()->escape($xss_payload);
         return strpos($escaped, '<script>') === false ? true : 'XSS non échappé: ' . $escaped;
     });
 
@@ -186,7 +186,7 @@ function run_tests_e2e_outboarding(): void {
             }
         }
 
-        advance_workflow($outboarding_uuid);
+        \App\Core\App::workflow()->advanceWorkflow($outboarding_uuid);
 
         $tokens = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
         $tokens->execute([$outboarding_uuid]);

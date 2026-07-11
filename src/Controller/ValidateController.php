@@ -43,10 +43,10 @@ final class ValidateController extends BaseController
                 if ($action === 'refuser' && empty(trim($comment))) {
                     // Ne pas traiter — on affiche la page avec un message d'erreur
                 } elseif ($token && in_array($action, ['valider', 'refuser'])) {
-                    $pre_ctx = get_token_with_context((string)$token);
+                    $pre_ctx = App::workflow()->getTokenWithContext((string)$token);
                     $pre_validator_fields = [];
                     if ($pre_ctx && !empty($pre_ctx['form_id'])) {
-                        $pre_validator_fields = get_form_validator_fields(
+                        $pre_validator_fields = App::validatorData()->getFormValidatorFields(
                             (string)$pre_ctx['form_id'],
                             isset($pre_ctx['step_id']) ? (string)$pre_ctx['step_id'] : null
                         );
@@ -82,7 +82,7 @@ final class ValidateController extends BaseController
 
                     if (!isset($error)) {
                         $done_by = $this->auth->getUser();
-                        $result = validate_token((string)$token, (string)$action, $comment, $done_by);
+                        $result = App::workflow()->validateToken((string)$token, (string)$action, $comment, $done_by);
 
                         /** @phpstan-ignore-next-line if.alwaysTrue */
                         if (TEST_MODE) {
@@ -102,7 +102,7 @@ final class ValidateController extends BaseController
                                 $form_id = (string)$token_ctx['form_id'];
                                 $step_id = isset($token_ctx['step_id']) ? (string)$token_ctx['step_id'] : null;
                                 $subm_id = isset($token_ctx['submission_id']) ? (string)$token_ctx['submission_id'] : '';
-                                $validator_fields = get_form_validator_fields($form_id, $step_id);
+                                $validator_fields = App::validatorData()->getFormValidatorFields($form_id, $step_id);
                                 if (!empty($validator_fields) && $subm_id !== '') {
                                     foreach ($validator_fields as $vf) {
                                         $fname = (string)($vf['field_name'] ?? '');
@@ -111,7 +111,7 @@ final class ValidateController extends BaseController
                                         }
                                         $val = trim((string)($_POST[$fname] ?? ''));
                                         if ($val !== '') {
-                                            save_validator_data(
+                                            App::validatorData()->saveValidatorData(
                                                 $subm_id,
                                                 $fname,
                                                 $val,
@@ -122,7 +122,7 @@ final class ValidateController extends BaseController
                                                 isset($token_ctx['id']) ? (string)$token_ctx['id'] : null
                                             );
                                         } else {
-                                            delete_validator_data($subm_id, $fname);
+                                            App::validatorData()->deleteValidatorData($subm_id, $fname);
                                         }
                                     }
                                 }
@@ -152,7 +152,7 @@ final class ValidateController extends BaseController
                 } else {
                     $this->audit->log('token_view', 'token:' . substr($token, 0, 8) . '...', 'Consultation page de validation', '');
 
-                    $data = get_token_with_context($token);
+                    $data = App::workflow()->getTokenWithContext($token);
 
                     if (!$data) {
                         $result = ['status' => 'invalid'];
@@ -210,7 +210,7 @@ final class ValidateController extends BaseController
 
 <?php elseif (isset($error)): ?>
   <h1>Erreur</h1>
-  <p class="err"><?= h($error) ?></p>
+  <p class="err"><?= \App\Core\App::html()->escape($error) ?></p>
   <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
     <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
     <a href="index.php" class="btn btn-secondary">Accueil</a>
@@ -226,9 +226,9 @@ final class ValidateController extends BaseController
 
 <?php elseif ($result['status'] === 'already_done'): ?>
   <?php $data = $result['data'] ?? []; ?>
-  <span class="badge"><?= h($data['step_label']) ?></span>
+  <span class="badge"><?= \App\Core\App::html()->escape($data['step_label']) ?></span>
   <h1>Déjà validé</h1>
-  <p class="info">Tâche validée le <?= h(date('d/m/Y à H:i', strtotime((string)($data['done_at'] ?? 'now')))) ?></p>
+  <p class="info">Tâche validée le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($data['done_at'] ?? 'now')))) ?></p>
   <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
     <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
     <a href="index.php" class="btn btn-secondary">Accueil</a>
@@ -254,7 +254,7 @@ final class ValidateController extends BaseController
   <?php
     $data = $result['data'] ?? [];
     $d   = json_decode($data['data'] ?? '{}', true);
-    $nom = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
+    $nom = \App\Core\App::html()->escape(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
     $pdo = $this->db->getPdo();
 
     $wf_steps = $pdo->prepare("
@@ -271,7 +271,7 @@ final class ValidateController extends BaseController
     $all_wf_steps = $wf_steps->fetchAll(\PDO::FETCH_ASSOC);
   ?>
   <a href="index.php?p=my_validations" class="back-link">← Mes validations</a>
-  <span class="badge"><?= h($data['step_label']) ?></span>
+  <span class="badge"><?= \App\Core\App::html()->escape($data['step_label']) ?></span>
   <h1>Action requise</h1>
 
   <aside class="what-to-do-box" role="region" aria-label="Que devez-vous faire ?">
@@ -294,7 +294,7 @@ final class ValidateController extends BaseController
       ?>
         <div class="wf-prog-step <?= $cls ?>">
           <span class="wf-prog-icon"><?= $icon ?></span>
-          <span>Étape <?= (int)$ws['ordre'] ?> — <?= h($ws['label']) ?><?= $is_current ? ' (votre tour)' : '' ?><?= $all_done ? ' — validée' : '' ?></span>
+          <span>Étape <?= (int)$ws['ordre'] ?> — <?= \App\Core\App::html()->escape($ws['label']) ?><?= $is_current ? ' (votre tour)' : '' ?><?= $all_done ? ' — validée' : '' ?></span>
         </div>
       <?php endforeach; ?>
     </div>
@@ -304,25 +304,25 @@ final class ValidateController extends BaseController
   <div class="validation-details">
     <h2>Détails du formulaire</h2>
     <p><strong>Dossier :</strong> <?= $nom ?></p>
-    <p><strong>Étape :</strong> <?= h($data['step_label']) ?></p>
+    <p><strong>Étape :</strong> <?= \App\Core\App::html()->escape($data['step_label']) ?></p>
     <?php
       $current_step_field_names = [];
-      $vf_list = get_form_validator_fields($data['form_id'], $data['step_id'] ?? null);
+      $vf_list = App::validatorData()->getFormValidatorFields($data['form_id'], $data['step_id'] ?? null);
       foreach ($vf_list as $vf) {
           $current_step_field_names[] = $vf['field_name'];
       }
       $exclude_keys = array_merge(['validations', 'csrf_token'], $current_step_field_names);
     ?>
-    <?= render_submission_data($d, $exclude_keys) ?>
+    <?= (new \App\Render\FormRenderer())->submissionData($d, $exclude_keys) ?>
   </div>
 
   <?php
-    $all_validator_data = get_submission_validator_data($data['submission_id'] ?? '');
+    $all_validator_data = App::validatorData()->getSubmissionValidatorData($data['submission_id'] ?? '');
     $all_vd_by_field = [];
     foreach ($all_validator_data as $avd) {
         $all_vd_by_field[$avd['field_name']] = $avd;
     }
-    $all_validator_fields = get_form_validator_fields($data['form_id']);
+    $all_validator_fields = App::validatorData()->getFormValidatorFields($data['form_id']);
     $field_labels = [];
     foreach ($all_validator_fields as $avf) {
         $field_labels[$avf['field_name']] = $avf['label'];
@@ -341,10 +341,10 @@ final class ValidateController extends BaseController
     <h2>📋 Informations saisies par les validateurs précédents</h2>
     <?php foreach ($previous_vd_rows as $pvd):
         $label = $field_labels[$pvd['field_name']] ?? ucfirst(str_replace('_', ' ', $pvd['field_name']));
-        $value = $pvd['value'] === '1' ? '✓ Oui' : h($pvd['value']);
-        $step_lbl = h($pvd['step_label'] ?? '');
+        $value = $pvd['value'] === '1' ? '✓ Oui' : \App\Core\App::html()->escape($pvd['value']);
+        $step_lbl = \App\Core\App::html()->escape($pvd['step_label'] ?? '');
     ?>
-      <p><strong><?= h(App::html()->tJargon($label)) ?>:</strong> <?= $value ?>
+      <p><strong><?= \App\Core\App::html()->escape(App::html()->tJargon($label)) ?>:</strong> <?= $value ?>
       <?php if ($step_lbl): ?><br><small style="color:#666;">Étape : <?= $step_lbl ?></small><?php endif; ?>
       </p>
     <?php endforeach; ?>
@@ -352,11 +352,11 @@ final class ValidateController extends BaseController
   <?php endif; ?>
 
   <?php
-    $attachments = get_attachments($data['submission_id'] ?? '');
+    $attachments = App::attachment()->getAttachments($data['submission_id'] ?? '');
     $visible_attachments = [];
     if (!empty($attachments)) {
         $owner_only_fields = [];
-        $form_fields = get_form_fields((string)($data['form_id'] ?? ''));
+        $form_fields = App::validatorData()->getFormFields((string)($data['form_id'] ?? ''));
         foreach ($form_fields as $ff) {
             if (($ff['field_type'] ?? '') === 'file' && ($ff['visibility'] ?? 'all') === 'owner_only') {
                 $owner_only_fields[] = $ff['field_name'];
@@ -373,18 +373,18 @@ final class ValidateController extends BaseController
   <div class="validation-details">
     <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($visible_attachments) ?>)</h2>
     <?php foreach ($visible_attachments as $att): ?>
-      <p><?= App::html()->getFileIcon($att['mime_type']) ?> <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" style="color:var(--c-primary-dark);text-decoration:underline;"><?= h($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= App::html()->formatFileSize((int)$att['file_size']) ?>)</span></p>
+      <p><?= App::html()->getFileIcon($att['mime_type']) ?> <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" style="color:var(--c-primary-dark);text-decoration:underline;"><?= \App\Core\App::html()->escape($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= App::html()->formatFileSize((int)$att['file_size']) ?>)</span></p>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
 
   <form method="post" id="validation-form">
     <?= $this->security->csrfField() ?>
-    <input type="hidden" name="token" value="<?= h((string)$token) ?>">
+    <input type="hidden" name="token" value="<?= \App\Core\App::html()->escape((string)$token) ?>">
 
     <?php
-      $validator_fields = get_form_validator_fields($data['form_id'], $data['step_id'] ?? null);
-      $validator_data = get_submission_validator_data($data['submission_id'] ?? '', $data['step_id'] ?? null);
+      $validator_fields = App::validatorData()->getFormValidatorFields($data['form_id'], $data['step_id'] ?? null);
+      $validator_data = App::validatorData()->getSubmissionValidatorData($data['submission_id'] ?? '', $data['step_id'] ?? null);
       $validator_data_index = [];
       foreach ($validator_data as $vd) {
           $validator_data_index[$vd['field_name']] = $vd['value'];
@@ -401,7 +401,7 @@ final class ValidateController extends BaseController
       ?>
         <div style="margin-bottom: 1rem;">
           <?php
-              echo render_field($vf, $existing_val, [], '', false);
+              echo (new \App\Render\FormRenderer())->field($vf, $existing_val, [], '', false);
           ?>
         </div>
       <?php endforeach; ?>
@@ -437,7 +437,7 @@ final class ValidateController extends BaseController
 
     <div class="form-group">
       <label for="comment">Précisions complémentaires <span class="hint">(recommandé pour le refus, optionnel pour la validation)</span></label>
-      <textarea id="comment" name="comment" rows="4" placeholder="Ex : il manque le justificatif de domicile de moins de 3 mois..."><?= h($_POST['comment'] ?? '') ?></textarea>
+      <textarea id="comment" name="comment" rows="4" placeholder="Ex : il manque le justificatif de domicile de moins de 3 mois..."><?= \App\Core\App::html()->escape($_POST['comment'] ?? '') ?></textarea>
     </div>
 
     <div class="submit-buttons">

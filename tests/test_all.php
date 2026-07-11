@@ -139,7 +139,7 @@ test('get_auth_user() normalise le login', function() {
 });
 
 test('h() échappe le HTML', function() {
-    $result = h('<script>alert("xss")</script>');
+    $result = \App\Core\App::html()->escape('<script>alert("xss")</script>');
     return strpos($result, '<script>') === false ? true : "Non échappé: $result";
 });
 
@@ -275,7 +275,7 @@ $submission_id = $submission_id ?? null;
 
 test('advance_workflow() génère les tokens de l\'étape 1', function() use ($submission_id) {
     if (!$submission_id) return 'Pas de submission_id';
-    advance_workflow($submission_id);
+    \App\Core\App::workflow()->advanceWorkflow($submission_id);
     $pdo = \App\Core\App::db()->getPdo();
     $tokens = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL");
     $tokens->execute([$submission_id]);
@@ -292,7 +292,7 @@ test('validate_token() valide un token et avance le workflow', function() use ($
     $token = $token_row->fetchColumn();
     if (!$token) return 'Pas de token à valider';
     
-    $result = validate_token($token);
+    $result = \App\Core\App::workflow()->validateToken($token);
     return $result['status'] === 'ok' ? true : "Status: " . $result['status'];
 });
 
@@ -320,7 +320,7 @@ test('Soumission refusée : status passe à "refuse"', function() use ($pdo, $on
     $sid = $refusal_uuid;
     
     // Avancer le workflow pour créer des tokens
-    advance_workflow($sid);
+    \App\Core\App::workflow()->advanceWorkflow($sid);
     
     // Récupérer un token et le refuser
     $token_row = $pdo->prepare("SELECT token FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
@@ -329,7 +329,7 @@ test('Soumission refusée : status passe à "refuse"', function() use ($pdo, $on
     
     if ($token) {
         // Simuler un refus via validate_token avec motif
-        $result = validate_token($token, 'refuser', 'Motif de test');
+        $result = \App\Core\App::workflow()->validateToken($token, 'refuser', 'Motif de test');
         // Vérifier le statut
         $status = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
         $status->execute([$sid]);
@@ -537,7 +537,7 @@ test('get_setting() / set_setting() fonctionnent', function() {
 });
 
 test('has_active_submissions() détecte les soumissions', function() use ($onboarding_id) {
-    $result = has_active_submissions($onboarding_id);
+    $result = \App\Core\App::workflow()->hasActiveSubmissions($onboarding_id);
     return $result ? true : 'Pas de soumissions actives détectées';
 });
 

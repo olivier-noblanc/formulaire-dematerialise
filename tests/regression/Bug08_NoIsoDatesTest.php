@@ -7,12 +7,12 @@ declare(strict_types=1);
  * `15/01/2024 à 10:30` dans plusieurs pages : validate.php, admin_access.php,
  * dashboard (lib/render_dashboard.php), my_validations.php.
  *
- * Cause : `h($row['xxx_at'])` affichait la valeur brute ISO de la DB
+ * Cause : `\App\Core\App::html()->escape($row['xxx_at'])` affichait la valeur brute ISO de la DB
  *         au lieu de `date('d/m/Y à H:i', strtotime(...))`.
  *
  * Test minimal (version code-source) : pour chaque fichier concerné,
  * vérifier que les emplacements sensibles utilisent bien
- * `date('d/m/Y ...)` (et non `h($row['..._at'])` sans formatage).
+ * `date('d/m/Y ...)` (et non `\App\Core\App::html()->escape($row['..._at'])` sans formatage).
  *
  * Fichiers vérifiés :
  *   - validate.php (autour de « Tâche validée le »)
@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 /**
  * Vérifie qu'un fichier source utilise bien date('d/m/Y...) pour un pattern
- * d'usage donné, et NON un h($row[...]) brut.
+ * d'usage donné, et NON un \App\Core\App::html()->escape($row[...]) brut.
  *
  * @param string $file         Chemin absolu du fichier à inspecter
  * @param string $needle       Sous-chaîne caractéristique (pour trouver la zone)
@@ -99,7 +99,7 @@ function run_bug08_test(): bool {
     else $failures[] = $r['msg'];
 
     // ── 3. admin_access.php — added_at doit utiliser date('d/m/Y à H:i', ...) ──
-    // Bug historique spécifique : ligne 222 affichait `h($admin['added_at'])` brut.
+    // Bug historique spécifique : ligne 222 affichait `\App\Core\App::html()->escape($admin['added_at'])` brut.
     $r = bug08_check_date_format(
         $root . '/pages/admin_access.php',
         'Date d\'ajout',
