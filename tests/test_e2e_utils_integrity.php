@@ -29,11 +29,11 @@ function run_tests_e2e_utils(): void {
     });
 
     test('has_active_submissions() détecte les soumissions', function() use ($onboarding_id) {
-        return has_active_submissions($onboarding_id) ? true : 'Pas de soumissions actives détectées';
+        return \App\Core\App::workflow()->hasActiveSubmissions($onboarding_id) ? true : 'Pas de soumissions actives détectées';
     });
 
     test('search_submissions() trouve des résultats', function() use ($onboarding_id) {
-        $results = search_submissions('Martin', ['form_id' => $onboarding_id]);
+        $results = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions('Martin', ['form_id' => $onboarding_id]);
         return count($results) > 0 ? true : 'Recherche "Martin" sans résultats';
     });
 
@@ -47,7 +47,7 @@ function run_tests_e2e_utils(): void {
 
     test('Audit log enregistre les actions', function() use ($pdo) {
         $before = $pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
-        app_log('e2e_test', 'test_target', 'Test E2E audit log');
+        \App\Core\App::audit()->log('e2e_test', 'test_target', 'Test E2E audit log');
         $after = $pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
         return $after > $before ? true : 'Audit log non incrémenté';
     });
@@ -189,7 +189,7 @@ function run_tests_e2e_rgpd(): void {
     });
 
     test('Audit log trace les actions RGPD', function() use ($pdo) {
-        app_log('rgpd_export', 'test_user@e2e.test', 'Export RGPD de test E2E');
+        \App\Core\App::audit()->log('rgpd_export', 'test_user@e2e.test', 'Export RGPD de test E2E');
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log WHERE action = 'rgpd_export'");
         $stmt->execute();
         $count = $stmt->fetchColumn();

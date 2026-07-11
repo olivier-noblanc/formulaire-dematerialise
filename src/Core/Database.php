@@ -31,8 +31,8 @@ final class Database implements DatabaseInterface
 
             // Lazy cron (différé)
             register_shutdown_function(function (): void {
-                if ($this->pdo !== null && function_exists('run_lazy_cron')) {
-                    run_lazy_cron($this->pdo);
+                if ($this->pdo !== null && App::getInstance()->has(\App\Cron\CronService::class)) {
+                    App::cron()->runLazyCron();
                 }
             });
         }

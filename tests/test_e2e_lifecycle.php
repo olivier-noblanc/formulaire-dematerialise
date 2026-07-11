@@ -29,7 +29,7 @@ function run_tests_e2e_refusal(): void {
     });
 
     test('Advance workflow pour soumission de refus', function() use ($refusal_uuid) {
-        advance_workflow($refusal_uuid);
+        \App\Core\App::workflow()->advanceWorkflow($refusal_uuid);
         return true;
     });
 
@@ -39,7 +39,7 @@ function run_tests_e2e_refusal(): void {
 
     test('Refus via validate_token() avec motif', function() use ($ref_token) {
         if (!$ref_token) return 'Pas de token pour le refus';
-        $result = validate_token($ref_token, 'refuser', 'Motif de refus E2E : informations incorrectes');
+        $result = \App\Core\App::workflow()->validateToken($ref_token, 'refuser', 'Motif de refus E2E : informations incorrectes');
         return $result['status'] === 'ok' ? true : 'Status: ' . $result['status'];
     });
 
@@ -91,12 +91,12 @@ function run_tests_e2e_cancel(): void {
     });
 
     test('Advance workflow pour soumission à annuler', function() use ($cancel_uuid) {
-        advance_workflow($cancel_uuid);
+        \App\Core\App::workflow()->advanceWorkflow($cancel_uuid);
         return true;
     });
 
     test('cancel_submission() annule la demande', function() use ($cancel_uuid) {
-        $result = cancel_submission($cancel_uuid);
+        $result = \App\Core\App::token()->cancel($cancel_uuid, 'cancel_agent@e2e.test');
         return $result ? true : 'cancel_submission() a échoué';
     });
 
@@ -149,7 +149,7 @@ function run_tests_e2e_delegation(): void {
     });
 
     test('Advance workflow pour soumission de délégation', function() use ($deleg_uuid) {
-        advance_workflow($deleg_uuid);
+        \App\Core\App::workflow()->advanceWorkflow($deleg_uuid);
         return true;
     });
 
@@ -159,7 +159,7 @@ function run_tests_e2e_delegation(): void {
 
     test('delegate_token() délègue la validation', function() use ($deleg_token_data) {
         if (!$deleg_token_data) return 'Pas de token pour la délégation';
-        $result = delegate_token($deleg_token_data['id'], 'delegue@e2e.test', 'Absence du validateur initial');
+        $result = \App\Core\App::token()->delegate($deleg_token_data['id'], 'delegue@e2e.test', 'Absence du validateur initial');
         return $result ? true : 'delegate_token() a échoué';
     });
 
@@ -193,7 +193,7 @@ function run_tests_e2e_delegation(): void {
 
     test('Le délégataire peut valider avec son token', function() use ($new_token) {
         if (!$new_token) return 'Pas de token délégataire';
-        $result = validate_token($new_token, 'valider', 'Validation par délégataire');
+        $result = \App\Core\App::workflow()->validateToken($new_token, 'valider', 'Validation par délégataire');
         return $result['status'] === 'ok' ? true : 'Status: ' . $result['status'];
     });
 

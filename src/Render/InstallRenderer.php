@@ -178,7 +178,7 @@ CSS;
     <div class="card">
         <h2>Étape 1 — Vérification des prérequis</h2>
         <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
-            L'assistant vérifie que votre environnement répond aux exigences minimales pour faire fonctionner <?= h(get_app_name()) ?>.
+            L'assistant vérifie que votre environnement répond aux exigences minimales pour faire fonctionner <?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>.
         </p>
         <ul class="check-list">
             <?php foreach ($prerequisites as $key => $check): ?>
@@ -393,8 +393,8 @@ CSS;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Installation — <?= h(get_app_name()) ?></title>
-    <?= render_favicon() ?>
+    <title>Installation — <?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?></title>
+    <?= NavigationRenderer::favicon() ?>
     <style>
         <?= $this->pageCss() ?>
     </style>
@@ -410,7 +410,7 @@ CSS;
     <!-- Stepper -->
     <?= $this->renderStepper($step) ?>
 
-    <h1><span aria-hidden="true">🔧</span> Installation de <?= h(get_app_name()) ?></h1>
+    <h1><span aria-hidden="true">🔧</span> Installation de <?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?></h1>
 
     <?= $this->renderMessages($messages, $error_messages) ?>
 
@@ -427,7 +427,7 @@ CSS;
 </div>
 
 <div class="footer">
-    <?= h(get_app_name()) ?> — Assistant d'installation · Version 3.0.0
+    <?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?> — Assistant d'installation · Version 3.0.0
 </div>
 
 </body>

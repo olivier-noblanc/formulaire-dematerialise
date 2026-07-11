@@ -32,7 +32,7 @@ final class ExportService
     public function exportCsv(array $options = []): void
     {
         if (!$this->auth->isAdmin()) {
-            render_error_page(403, 'Accès refusé', 'Vous n\'avez pas accès à l\'export CSV. Cette fonctionnalité est réservée aux administrateurs.');
+            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous n\'avez pas accès à l\'export CSV. Cette fonctionnalité est réservée aux administrateurs.');
         }
 
         $where = ['1=1'];

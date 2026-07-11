@@ -11,6 +11,28 @@ use App\Core\App;
 final class NavigationRenderer
 {
     /**
+     * Returns the application name from settings (cached per request).
+     */
+    public static function getAppName(): string
+    {
+        static $cache = null;
+        if ($cache !== null) return $cache;
+        $cache = App::settings()->get('app_name', 'CircuitDémat');
+        return $cache;
+    }
+
+    /**
+     * Renders the favicon link tag.
+     */
+    public static function favicon(): string
+    {
+        $svg = App::settings()->get('app_favicon', '');
+        if (!empty($svg)) {
+            return '<link rel="icon" href="data:image/svg+xml,' . \App\Core\App::html()->escape($svg) . '">';
+        }
+        return '<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'20\' fill=\'%231E40AF\'/><text x=\'50\' y=\'78\' font-size=\'80\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>&#9670;</text></svg>">';
+    }
+    /**
      * Generates the shared navigation bar.
      * Alias of header() for backward compatibility.
      *
@@ -72,8 +94,8 @@ final class NavigationRenderer
                 $stop_url = 'index.php?p=persona&action=stop&persona_token=' . urlencode($persona_current_token);
                 $persona_active = '<div class="persona-banner" role="status">'
                     . '<span aria-hidden="true">🎭</span> '
-                    . 'Mode persona : <strong>' . h($persona_display) . '</strong>'
-                    . ' <a href="' . h($stop_url) . '" class="persona-reset">✕ Quitter</a>'
+                    . 'Mode persona : <strong>' . \App\Core\App::html()->escape($persona_display) . '</strong>'
+                    . ' <a href="' . \App\Core\App::html()->escape($stop_url) . '" class="persona-reset">✕ Quitter</a>'
                     . '</div>';
             }
         }
@@ -151,7 +173,8 @@ final class NavigationRenderer
                     ORDER BY submitted_by LIMIT 50
                 ");
                 $persona_users = [];
-                foreach ($persona_stmt->fetchAll(\PDO::FETCH_COLUMN) as $u) {
+                $persona_rows = $persona_stmt !== false ? $persona_stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
+                foreach ($persona_rows as $u) {
                     $persona_users[] = [
                         'email' => $u,
                         'display' => App::html()->displayUserShort($u),
@@ -167,8 +190,8 @@ final class NavigationRenderer
         $user_short = App::html()->displayUserShort($user);
 
         $persona_active_short = $persona_active_email !== '' ? App::html()->displayUserShort($persona_active_email) : '';
-        $user_card_data_persona = $is_admin ? ' data-persona-users="' . h($persona_users_json) . '"' : '';
-        $user_card_data_active  = $persona_active_email !== '' ? ' data-persona-active="' . h($persona_active_email) . '"' : '';
+        $user_card_data_persona = $is_admin ? ' data-persona-users="' . \App\Core\App::html()->escape((string) $persona_users_json) . '"' : '';
+        $user_card_data_active  = $persona_active_email !== '' ? ' data-persona-active="' . \App\Core\App::html()->escape($persona_active_email) . '"' : '';
 
         $displayed_user_short = $persona_active_short !== '' ? $persona_active_short : $user_short;
         $displayed_user_title = $persona_active_email !== '' ? $persona_active_email : $user;
@@ -178,12 +201,12 @@ final class NavigationRenderer
             . '<div class="sidebar-user-card' . ($is_admin ? ' sidebar-user-card-admin' : '') . '"'
             . ' id="sidebar-user-card" tabindex="0" role="button"'
             . ' aria-label="' . ($is_admin ? 'Cliquer pour changer de persona' : 'Utilisateur connecté') . '"'
-            . ' title="' . h($displayed_user_title) . '"'
+            . ' title="' . \App\Core\App::html()->escape($displayed_user_title) . '"'
             . $user_card_data_persona
             . $user_card_data_active
             . '>'
             . '<span class="sidebar-user-avatar' . ($persona_active_email !== '' ? ' persona-active' : '') . '">' . $displayed_initials . '</span>'
-            . '<span class="sidebar-user-email">' . h($displayed_user_short) . '</span>'
+            . '<span class="sidebar-user-email">' . \App\Core\App::html()->escape($displayed_user_short) . '</span>'
             . ($is_admin ? '<span class="sidebar-user-chevron" aria-hidden="true">▾</span>' : '')
             . '</div>'
             . '</div>';
@@ -192,7 +215,7 @@ final class NavigationRenderer
             . '<nav class="sidebar" aria-label="Navigation principale">'
             .   '<a href="index.php" class="sidebar-brand">'
             .     '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
-            .     '<span class="sidebar-brand-text">' . h(get_app_name()) . '</span>'
+            .     '<span class="sidebar-brand-text">' . \App\Core\App::html()->escape(self::getAppName()) . '</span>'
             .   '</a>'
             .   '<div class="sidebar-nav">'
             .     $nav_html
@@ -217,11 +240,11 @@ final class NavigationRenderer
         $items = [];
         $total = count($breadcrumbs);
         foreach ($breadcrumbs as $i => $crumb) {
-            $label = h($crumb[0]);
+            $label = \App\Core\App::html()->escape($crumb[0]);
             if ($i === $total - 1) {
                 $items[] = '<span aria-current="page" class="current">' . $label . '</span>';
             } else {
-                $items[] = '<a href="' . h($crumb[1]) . '">' . $label . '</a>';
+                $items[] = '<a href="' . \App\Core\App::html()->escape($crumb[1]) . '">' . $label . '</a>';
             }
         }
 
@@ -297,8 +320,8 @@ HTML;
              . '</div><!-- /.app-layout -->'
              . $persona_js
              . '<footer>'
-             . '<a href="index.php?p=changelog" title="Voir le journal des modifications">v' . h(get_latest_version()) . '</a>'
-             . ' · ' . h(get_app_name())
+             . '<a href="index.php?p=changelog" title="Voir le journal des modifications">v' . \App\Core\App::html()->escape(get_latest_version()) . '</a>'
+             . ' · ' . \App\Core\App::html()->escape(self::getAppName())
              . '</footer>';
     }
 
@@ -332,7 +355,7 @@ HTML;
             $body_attr = 'class="' . $page_body_class . '"';
         }
 
-        $full_title = $raw_title ? $title : ($title . ' — ' . h(get_app_name()));
+        $full_title = $raw_title ? $title : ($title . ' — ' . \App\Core\App::html()->escape(self::getAppName()));
 
         ob_start();
         if (!headers_sent()) {
@@ -345,18 +368,18 @@ HTML;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= $full_title ?></title>
-  <?= render_favicon() ?>
+  <?= self::favicon() ?>
   <link rel="stylesheet" href="assets.php?type=css">
 </head>
 <body<?= $body_attr ? ' ' . $body_attr : '' ?>>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<?= render_nav($nav_key, $nav_extra) ?>
+<?= $this->nav($nav_key, $nav_extra) ?>
 <?= $before_main ?>
-<main class="<?= h($container_class) ?>" id="main-content">
+<main class="<?= \App\Core\App::html()->escape($container_class) ?>" id="main-content">
 <?= $content ?>
 </main>
 <?= $after_main ?>
-<?= render_footer() ?>
+<?= $this->footer() ?>
 </body>
 </html>
         <?php

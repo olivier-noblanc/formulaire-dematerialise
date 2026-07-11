@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Core\App;
+
 /**
  * Contrôleur du formulaire de demande (form.php?f=<slug>).
  *
@@ -28,7 +30,7 @@ final class FormController extends BaseController
             try {
                 $slug = validate_input($slug, 'slug', ['max_length' => 100]);
             } catch (\InvalidArgumentException $e) {
-                render_error_page(
+                (new \App\Render\ErrorRenderer())->errorPage(
                     400,
                     'Paramètre invalide',
                     'Le paramètre de formulaire fourni est invalide.',
@@ -46,7 +48,7 @@ final class FormController extends BaseController
             if (TEST_MODE) {
                 test_json_response(['error' => 'Formulaire introuvable', 'slug' => $slug]);
             }
-            render_error_page(
+            (new \App\Render\ErrorRenderer())->errorPage(
                 404,
                 'Formulaire introuvable',
                 'Le formulaire demandé n\'existe pas ou a été désactivé.',
@@ -70,7 +72,7 @@ final class FormController extends BaseController
 
         // Charger les champs dynamiques du formulaire, ordonnés par ordre.
         // Exclure les champs réservés aux validateurs (filled_by='validator').
-        $all_form_fields = get_form_fields($form['id']);
+        $all_form_fields = App::validatorData()->getFormFields($form['id']);
         $form_fields = array_filter($all_form_fields, function ($f): bool {
             return empty($f['filled_by']) || $f['filled_by'] === 'demandeur';
         });
@@ -163,7 +165,7 @@ final class FormController extends BaseController
                     if ($field['field_type'] === 'file') {
                         $fname = $field['field_name'];
                         if (!empty($_FILES[$fname]['name']) && $_FILES[$fname]['error'] !== UPLOAD_ERR_NO_FILE) {
-                            $upload_result = handle_file_upload($_FILES[$fname], $submission_id, $fname);
+                            $upload_result = App::attachment()->handleFileUpload($_FILES[$fname], $submission_id, $fname);
                             if (!$upload_result['success']) {
                                 $file_errors[$fname] = $upload_result['message'];
                             }
@@ -179,11 +181,11 @@ final class FormController extends BaseController
                     // Note : advance_workflow() n'a pas encore été appelé → pas de tokens à nettoyer
                     // On ne set PAS $success = true → le formulaire est ré-affiché
                 } else {
-                    advance_workflow($submission_id);
+                    App::workflow()->advanceWorkflow($submission_id);
 
                     // Envoyer un email de confirmation à l'agent
                     $confirm_subject = 'Demande enregistrée — ' . $form['label'];
-                    $confirm_body = render_email_template(
+                    $confirm_body = App::mail()->renderEmailTemplate(
                         '✓ Demande enregistrée',
                         '<p>Votre demande <strong>'
                         . $this->html->h($this->html->tJargon($form['label']))
@@ -195,7 +197,7 @@ final class FormController extends BaseController
                         ))
                         . '</p>'
                     );
-                    send_mail($submitted_by, $confirm_subject, $confirm_body);
+                    App::mail()->send($submitted_by, $confirm_subject, $confirm_body);
 
                     $success = true;
                 }
@@ -366,13 +368,13 @@ final class FormController extends BaseController
     </div>
   <?php else: ?>
     <form method="POST" action="index.php?p=form&f=<?= urlencode((string)$slug) ?>" enctype="multipart/form-data" id="form-main">
-      <?= csrf_field() ?>
+      <?= $this->security->csrfField() ?>
     <?php // ITER1-B / Action B : encadré « Aide » en haut du formulaire. ?>
     <aside class="form-help-box" aria-label="Aide pour remplir le formulaire">
       <span class="form-help-icon" aria-hidden="true">💡</span>
       <span class="form-help-text">
         <?php // U-08 : indicateur de progression (uniquement si >1 section) ?>
-        <?= render_form_progress_indicator($grouped) ?>
+        <?= (new \App\Render\FormRenderer())->formProgressIndicator($grouped) ?>
         <?php foreach ($grouped as $card_title => $card_fields): ?>
           <?php
           // Séparer les checkboxes des autres champs pour le rendu
@@ -393,7 +395,7 @@ final class FormController extends BaseController
                 <?php foreach ($non_checkboxes as $cf): ?>
                   <?php $cond = !empty($cf['condition']) ? ' data-condition="' . htmlspecialchars((string)$cf['condition'], ENT_QUOTES) . '"' : ''; ?>
                   <div<?php if ($cond) echo $cond; ?>>
-                  <?= render_field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  <?= (new \App\Render\FormRenderer())->field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>
@@ -403,7 +405,7 @@ final class FormController extends BaseController
                 <?php foreach ($checkboxes as $cf): ?>
                   <?php $cond = !empty($cf['condition']) ? ' data-condition="' . htmlspecialchars((string)$cf['condition'], ENT_QUOTES) . '"' : ''; ?>
                   <div<?php if ($cond) echo $cond; ?>>
-                  <?= render_field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  <?= (new \App\Render\FormRenderer())->field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>

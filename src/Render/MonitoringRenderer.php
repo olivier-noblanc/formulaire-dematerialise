@@ -113,19 +113,19 @@ HTML;
      */
     public static function smtpCard(string $smtp_status, string $smtp_detail, string $smtp_debug_log = ''): string
     {
-        $smtp_host    = h(App::settings()->get('smtp_host'));
-        $smtp_port    = h(App::settings()->get('smtp_port'));
-        $smtp_secure  = h(App::settings()->get('smtp_secure', '') ?: 'Aucun');
+        $smtp_host    = \App\Core\App::html()->escape(App::settings()->get('smtp_host'));
+        $smtp_port    = \App\Core\App::html()->escape(App::settings()->get('smtp_port'));
+        $smtp_secure  = \App\Core\App::html()->escape(App::settings()->get('smtp_secure', '') ?: 'Aucun');
         $mail_dry_run = App::settings()->get('mail_dry_run', '0') === '1';
 
         if ($smtp_status === 'ok') {
             $dot         = '<span class="health-dot health-ok"></span>';
             $badge       = '<span class="badge badge-ok">Fonctionnel</span>';
-            $detail_html = h($smtp_detail);
+            $detail_html = \App\Core\App::html()->escape($smtp_detail);
         } elseif ($smtp_status === 'erreur') {
             $dot         = '<span class="health-dot health-err"></span>';
             $badge       = '<span class="badge badge-err">Erreur</span>';
-            $detail_html = h($smtp_detail);
+            $detail_html = \App\Core\App::html()->escape($smtp_detail);
         } else {
             $dot         = '<span class="health-dot health-unknown"></span>';
             $badge       = '<span class="badge badge-info">Non testé</span>';
@@ -140,7 +140,7 @@ HTML;
         if ($smtp_debug_log !== '') {
             $debug_html = '<details style="margin-top:1rem;border:1px solid #ddd;border-radius:4px;padding:.75rem;background:#fafafa;">'
                 . '<summary style="cursor:pointer;font-size:.85rem;font-weight:bold;color:#003189;">📋 Conversation SMTP (debug)</summary>'
-                . '<pre style="margin-top:.75rem;max-height:300px;overflow:auto;font-size:.75rem;background:#222;color:#eee;padding:.75rem;border-radius:3px;white-space:pre-wrap;word-break:break-all;">' . h($smtp_debug_log) . '</pre>'
+                . '<pre style="margin-top:.75rem;max-height:300px;overflow:auto;font-size:.75rem;background:#222;color:#eee;padding:.75rem;border-radius:3px;white-space:pre-wrap;word-break:break-all;">' . \App\Core\App::html()->escape($smtp_debug_log) . '</pre>'
                 . '</details>';
         }
 
@@ -176,7 +176,7 @@ HTML;
             $remind_age = ($remind_ts !== false) ? (time() - $remind_ts) : 999999;
             $remind_ok  = $remind_age < 86400;
             $remind_dot_cls = $remind_ok ? 'health-ok' : 'health-warn';
-            $remind_date    = h(date('d/m/Y à H:i', $remind_ts !== false ? $remind_ts : 0));
+            $remind_date    = \App\Core\App::html()->escape(date('d/m/Y à H:i', $remind_ts !== false ? $remind_ts : 0));
             $remind_badge   = $remind_ok
                 ? '<br><span class="badge badge-ok" style="margin-top:.25rem;"><span aria-hidden="true">✓</span> Actif</span>'
                 : '<br><span class="badge badge-warn" style="margin-top:.25rem;"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
@@ -195,7 +195,7 @@ HTML;
             $alert_age = ($alert_ts !== false) ? (time() - $alert_ts) : 999999;
             $alert_ok  = $alert_age < 86400;
             $alert_dot_cls = $alert_ok ? 'health-ok' : 'health-warn';
-            $alert_date    = h(date('d/m/Y à H:i', $alert_ts !== false ? $alert_ts : 0));
+            $alert_date    = \App\Core\App::html()->escape(date('d/m/Y à H:i', $alert_ts !== false ? $alert_ts : 0));
             $alert_badge   = $alert_ok
                 ? '<br><span class="badge badge-ok" style="margin-top:.25rem;"><span aria-hidden="true">✓</span> Actif</span>'
                 : '<br><span class="badge badge-warn" style="margin-top:.25rem;"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
@@ -208,9 +208,9 @@ HTML;
             $alert_html = '<span class="health-dot health-unknown"></span><span class="badge badge-info">Jamais exécuté</span>';
         }
 
-        $delai_relance    = h(App::settings()->get('delai_relance_h', '48'));
-        $relance_max      = h(App::settings()->get('relance_max', '3'));
-        $token_expire_days = h(App::settings()->get('token_expire_days', '30'));
+        $delai_relance    = \App\Core\App::html()->escape(App::settings()->get('delai_relance_h', '48'));
+        $relance_max      = \App\Core\App::html()->escape(App::settings()->get('relance_max', '3'));
+        $token_expire_days = \App\Core\App::html()->escape(App::settings()->get('token_expire_days', '30'));
 
         return <<<HTML
     <!-- Scripts automatises -->
@@ -253,9 +253,9 @@ HTML;
             $days_cls = $days < 0 ? 'overdue' : ($days <= 2 ? 'critical' : ($days <= 5 ? 'warning' : 'ok'));
             $days_text = $days < 0 ? 'J+' . abs($days) : ($days === 0 ? "Jour J" : 'J-' . $days);
 
-            $form_label    = h((string)($aa['form_label'] ?? ''));
-            $nom_agent     = h((string)($aa['nom_agent'] ?? ''));
-            $deadline_fmt  = h((string)($aa['deadline_formatted'] ?? ''));
+            $form_label    = \App\Core\App::html()->escape((string)($aa['form_label'] ?? ''));
+            $nom_agent     = \App\Core\App::html()->escape((string)($aa['nom_agent'] ?? ''));
+            $deadline_fmt  = \App\Core\App::html()->escape((string)($aa['deadline_formatted'] ?? ''));
             $pending_steps = (int)($aa['pending_steps'] ?? 0);
 
             $rows .= <<<HTML
@@ -305,10 +305,10 @@ HTML;
 
         $rows = '';
         foreach ($recent_alerts as $ra) {
-            $date      = h(date('d/m/Y H:i', strtotime((string)($ra['sent_at'] ?? 'now'))));
-            $rule_lbl  = h((string)($ra['rule_label'] ?? 'Règle supprimée'));
-            $form_lbl  = h((string)($ra['form_label'] ?? ''));
-            $message   = h((string)($ra['message'] ?? ''));
+            $date      = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string)($ra['sent_at'] ?? 'now'))));
+            $rule_lbl  = \App\Core\App::html()->escape((string)($ra['rule_label'] ?? 'Règle supprimée'));
+            $form_lbl  = \App\Core\App::html()->escape((string)($ra['form_label'] ?? ''));
+            $message   = \App\Core\App::html()->escape((string)($ra['message'] ?? ''));
 
             $rows .= <<<HTML
         <tr>
@@ -351,7 +351,7 @@ HTML;
                 $bf_total  = (int)$bf['total'];
                 $bf_valide = (int)$bf['valide'];
                 $bf_rate   = $bf_total > 0 ? round(($bf_valide / $bf_total) * 100, 1) : 0;
-                $label     = h((string)$bf['label']);
+                $label     = \App\Core\App::html()->escape((string)$bf['label']);
                 $en_cours  = (int)$bf['en_cours'];
                 $refuse    = (int)$bf['refuse'];
 
@@ -397,12 +397,13 @@ HTML;
         if (empty($daily_stats)) {
             $body = '<p class="empty-state">Aucune soumission ces 7 derniers jours.</p>';
         } else {
-            $max_daily = max(array_column($daily_stats, 'cnt'));
+            $column = array_column($daily_stats, 'cnt');
+            $max_daily = $column !== [] ? max($column) : 0;
             $rows = '';
             foreach ($daily_stats as $ds) {
                 $cnt = (int)$ds['cnt'];
                 $pct = $max_daily > 0 ? round(($cnt / $max_daily) * 100) : 0;
-                $date = h(date('d/m/Y', strtotime((string)$ds['day'])));
+                $date = \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string)$ds['day'])));
                 $rows .= <<<HTML
           <tr>
             <td style="white-space:nowrap;">{$date}</td>
@@ -442,16 +443,16 @@ HTML;
         } else {
             $rows = '';
             foreach ($tokens_bloques as $tb) {
-                $form_label   = h((string)$tb['form_label']);
+                $form_label   = \App\Core\App::html()->escape((string)$tb['form_label']);
                 $ordre        = (int)$tb['ordre'];
-                $step_label   = h((string)$tb['step_label']);
-                $email        = h((string)$tb['email']);
-                $sent_at      = h(date('d/m/Y H:i', strtotime((string)$tb['sent_at'])));
+                $step_label   = \App\Core\App::html()->escape((string)$tb['step_label']);
+                $email        = \App\Core\App::html()->escape((string)$tb['email']);
+                $sent_at      = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string)$tb['sent_at'])));
                 $relance      = (int)$tb['relance_count'];
                 $expires      = !empty($tb['expires_at'])
-                    ? h(date('d/m/Y', strtotime((string)$tb['expires_at'])))
+                    ? \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string)$tb['expires_at'])))
                     : '—';
-                $submitted_by = h((string)$tb['submitted_by']);
+                $submitted_by = \App\Core\App::html()->escape((string)$tb['submitted_by']);
 
                 $rows .= <<<HTML
           <tr>
@@ -506,14 +507,14 @@ HTML;
 
         $rows = '';
         foreach ($mail_logs as $ml) {
-            $created_at = h((string)($ml['created_at'] ?? ''));
-            $recipient  = h((string)($ml['recipient'] ?? ''));
-            $subject    = h(mb_strimwidth((string)($ml['subject'] ?? ''), 0, 60, '…', 'UTF-8'));
+            $created_at = \App\Core\App::html()->escape((string)($ml['created_at'] ?? ''));
+            $recipient  = \App\Core\App::html()->escape((string)($ml['recipient'] ?? ''));
+            $subject    = \App\Core\App::html()->escape(mb_strimwidth((string)($ml['subject'] ?? ''), 0, 60, '…', 'UTF-8'));
             $status     = (string)($ml['status'] ?? 'unknown');
-            $error      = h((string)($ml['error_message'] ?? ''));
+            $error      = \App\Core\App::html()->escape((string)($ml['error_message'] ?? ''));
             $smtp_log   = (string)($ml['smtp_log'] ?? '');
-            $actor      = h((string)($ml['actor'] ?? ''));
-            $ip         = h((string)($ml['ip'] ?? ''));
+            $actor      = \App\Core\App::html()->escape((string)($ml['actor'] ?? ''));
+            $ip         = \App\Core\App::html()->escape((string)($ml['ip'] ?? ''));
 
             $status_labels = [
                 'sent'         => ['label' => 'Envoyé',     'cls' => 'badge-ok'],
@@ -532,14 +533,14 @@ HTML;
             if ($smtp_log !== '') {
                 $debug_html = '<details style="margin-top:.4rem;">'
                     . '<summary style="cursor:pointer;font-size:.75rem;color:#003189;">Voir la conversation SMTP</summary>'
-                    . '<pre style="margin-top:.4rem;max-height:200px;overflow:auto;font-size:.7rem;background:#222;color:#eee;padding:.5rem;border-radius:3px;white-space:pre-wrap;word-break:break-all;">' . h($smtp_log) . '</pre>'
+                    . '<pre style="margin-top:.4rem;max-height:200px;overflow:auto;font-size:.7rem;background:#222;color:#eee;padding:.5rem;border-radius:3px;white-space:pre-wrap;word-break:break-all;">' . \App\Core\App::html()->escape($smtp_log) . '</pre>'
                     . '</details>';
             }
 
             $date_fmt = '';
             $ts = strtotime($created_at);
             if ($ts !== false) {
-                $date_fmt = h(date('d/m/Y H:i:s', $ts));
+                $date_fmt = \App\Core\App::html()->escape(date('d/m/Y H:i:s', $ts));
             } else {
                 $date_fmt = $created_at;
             }
@@ -659,19 +660,19 @@ HTML;
 
         $action_options = '<option value="">Toutes les actions</option>';
         foreach ($action_types as $at) {
-            $at_h = h((string)$at);
+            $at_h = \App\Core\App::html()->escape((string)$at);
             $sel  = ($audit_filters['log_action'] ?? '') === $at ? 'selected' : '';
             $action_options .= "<option value=\"{$at_h}\" {$sel}>{$at_h}</option>";
         }
 
-        $log_date_debut = h((string)($audit_filters['log_date_debut'] ?? ''));
-        $log_date_fin   = h((string)($audit_filters['log_date_fin'] ?? ''));
-        $log_action_v   = h((string)($audit_filters['log_action'] ?? ''));
-        $log_actor_v    = h((string)($audit_filters['log_actor'] ?? ''));
-        $log_target_v   = h((string)($audit_filters['log_target'] ?? ''));
+        $log_date_debut = \App\Core\App::html()->escape((string)($audit_filters['log_date_debut'] ?? ''));
+        $log_date_fin   = \App\Core\App::html()->escape((string)($audit_filters['log_date_fin'] ?? ''));
+        $log_action_v   = \App\Core\App::html()->escape((string)($audit_filters['log_action'] ?? ''));
+        $log_actor_v    = \App\Core\App::html()->escape((string)($audit_filters['log_actor'] ?? ''));
+        $log_target_v   = \App\Core\App::html()->escape((string)($audit_filters['log_target'] ?? ''));
 
         $export_sep = $audit_base_qs ? '&' : '?';
-        $export_url = h($audit_base_url . $export_sep . 'export_audit=1');
+        $export_url = \App\Core\App::html()->escape($audit_base_url . $export_sep . 'export_audit=1');
         $s_suffix = $audit_total > 1 ? 's' : '';
 
         $export_link = '';
@@ -684,12 +685,12 @@ HTML;
         } else {
             $rows = '';
             foreach ($audit_logs as $al) {
-                $date   = h(date('d/m/Y H:i', strtotime((string)($al['created_at'] ?? 'now'))));
-                $action = h((string)($al['action'] ?? ''));
-                $actor  = h((string)($al['actor'] ?? ''));
-                $target = h((string)($al['target'] ?? ''));
-                $detail = h((string)($al['detail'] ?? ''));
-                $ip     = h((string)($al['ip'] ?? ''));
+                $date   = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string)($al['created_at'] ?? 'now'))));
+                $action = \App\Core\App::html()->escape((string)($al['action'] ?? ''));
+                $actor  = \App\Core\App::html()->escape((string)($al['actor'] ?? ''));
+                $target = \App\Core\App::html()->escape((string)($al['target'] ?? ''));
+                $detail = \App\Core\App::html()->escape((string)($al['detail'] ?? ''));
+                $ip     = \App\Core\App::html()->escape((string)($al['ip'] ?? ''));
                 $rows .= <<<HTML
           <tr>
             <td style="white-space:nowrap;font-size:.8rem;">{$date}</td>
@@ -718,12 +719,12 @@ HTML;
             $prev_link = '';
             $next_link = '';
             if ($audit_page > 1) {
-                $prev_url = h($audit_base_url) . '&log_page=' . ($audit_page - 1);
+                $prev_url = \App\Core\App::html()->escape($audit_base_url) . '&log_page=' . ($audit_page - 1);
                 $prev_link = "<a href=\"{$prev_url}\" class=\"btn btn-secondary\" style=\"font-size:.8rem;padding:.3rem .75rem;\">← Précédent</a>";
             }
             $page_info = "<span style=\"font-size:.85rem;color:#555;\">Page {$audit_page} / {$audit_total_pages}</span>";
             if ($audit_page < $audit_total_pages) {
-                $next_url = h($audit_base_url) . '&log_page=' . ($audit_page + 1);
+                $next_url = \App\Core\App::html()->escape($audit_base_url) . '&log_page=' . ($audit_page + 1);
                 $next_link = "<a href=\"{$next_url}\" class=\"btn btn-secondary\" style=\"font-size:.8rem;padding:.3rem .75rem;\">Suivant →</a>";
             }
             $pagination = <<<HTML

@@ -55,7 +55,7 @@ final class SubmissionViewRenderer
 
         $msg_html = '';
         if ($action_msg !== '') {
-            $msg_escaped = h($action_msg);
+            $msg_escaped = \App\Core\App::html()->escape($action_msg);
             $msg_html = <<<HTML
   <div class="msg-info" role="status" aria-live="polite">{$msg_escaped}</div>
 HTML;
@@ -69,12 +69,12 @@ HTML;
      */
     public function renderHeader(array $sub, string $sub_id, string $nom_agent, string $status_label, string $status_cls): string
     {
-        $form_label  = h((string)($sub['form_label'] ?? ''));
-        $submitted_by = h((string)($sub['submitted_by'] ?? ''));
-        $submitted_at = h(date('d/m/Y à H:i', strtotime((string)($sub['submitted_at'] ?? 'now'))));
+        $form_label  = \App\Core\App::html()->escape((string)($sub['form_label'] ?? ''));
+        $submitted_by = \App\Core\App::html()->escape((string)($sub['submitted_by'] ?? ''));
+        $submitted_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($sub['submitted_at'] ?? 'now'))));
         $closed_html = '';
         if (!empty($sub['closed_at'])) {
-            $closed_at = h(date('d/m/Y à H:i', strtotime((string)$sub['closed_at'])));
+            $closed_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)$sub['closed_at'])));
             $closed_html = "<br>Clôturé le : <strong>{$closed_at}</strong>";
         }
         $agent_display = $nom_agent !== '' ? $nom_agent : $submitted_by;
@@ -137,8 +137,8 @@ HTML;
             $dl_text = "Plus que {$days_remaining} jour(s)";
         }
 
-        $dl_date = h(date('d/m/Y', $deadline_ts));
-        $dl_text_h = h($dl_text);
+        $dl_date = \App\Core\App::html()->escape(date('d/m/Y', $deadline_ts));
+        $dl_text_h = \App\Core\App::html()->escape($dl_text);
 
         return <<<HTML
   <!-- Deadline -->
@@ -163,14 +163,14 @@ HTML;
 
         $items_html = '';
         foreach ($delegations as $dlg) {
-            $step_label = h((string)($dlg['step_label'] ?? ''));
-            $from       = h((string)($dlg['from_email'] ?? ''));
-            $to         = h((string)($dlg['to_email'] ?? ''));
-            $date       = h(date('d/m/Y à H:i', strtotime((string)($dlg['delegated_at'] ?? 'now'))));
+            $step_label = \App\Core\App::html()->escape((string)($dlg['step_label'] ?? ''));
+            $from       = \App\Core\App::html()->escape((string)($dlg['from_email'] ?? ''));
+            $to         = \App\Core\App::html()->escape((string)($dlg['to_email'] ?? ''));
+            $date       = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($dlg['delegated_at'] ?? 'now'))));
 
             $reason_html = '';
             if (!empty($dlg['reason'])) {
-                $reason = h((string)$dlg['reason']);
+                $reason = \App\Core\App::html()->escape((string)$dlg['reason']);
                 $reason_html = <<<HTML
           <div class="val-comment"><span aria-hidden="true">💬</span> Motif : {$reason}</div>
 HTML;
@@ -208,13 +208,13 @@ HTML;
 
         // Action 1 : Mettre à la corbeille (annuler)
         if ($status === 'en_cours' && ($is_admin || $submitted_by === $user)) {
-            $cancel_url = h('index.php?p=confirm_action&action=cancel_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
+            $cancel_url = \App\Core\App::html()->escape('index.php?p=confirm_action&action=cancel_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
             $actions[] = '<a href="' . $cancel_url . '" class="btn btn-danger" style="text-decoration:none;"><span aria-hidden="true">🗑</span> Mettre à la corbeille</a>';
         }
 
         // Action 2 : Supprimer définitivement (admin only, status=annule ou refuse)
         if (($status === 'annule' || $status === 'refuse') && $is_admin) {
-            $delete_url = h('index.php?p=confirm_action&action=delete_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
+            $delete_url = \App\Core\App::html()->escape('index.php?p=confirm_action&action=delete_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
             $actions[] = '<a href="' . $delete_url . '" class="btn btn-danger" style="text-decoration:none;background:#c0392b;"><span aria-hidden="true">⚠</span> Supprimer définitivement</a>';
         }
 
@@ -239,8 +239,8 @@ HTML;
             return '';
         }
 
-        $comment_h   = h((string)$admin_comment);
-        $sub_id_h    = h((string)$sub_id);
+        $comment_h   = \App\Core\App::html()->escape((string)$admin_comment);
+        $sub_id_h    = \App\Core\App::html()->escape((string)$sub_id);
         $csrf        = \App\Core\App::security()->csrfField();
 
         return <<<HTML
@@ -365,7 +365,7 @@ HTML;
             $connector = $i > 0 ? '<div class="wf-connector"><span class="arrow">→</span></div>' : '';
 
             $ordre      = (int)($ws['ordre'] ?? 0);
-            $step_label = h((string)($ws['step_label'] ?? ''));
+            $step_label = \App\Core\App::html()->escape((string)($ws['step_label'] ?? ''));
             $tokens     = $ws['tokens'] ?? [];
 
             $validators_html = '';
@@ -440,7 +440,7 @@ HTML;
             if (!empty($tok['done_at'])) {
                 continue;
             }
-            $tok_id  = h((string)($tok['id'] ?? ''));
+            $tok_id  = \App\Core\App::html()->escape((string)($tok['id'] ?? ''));
             $email   = \App\Core\App::html()->displayUser((string)($tok['email'] ?? ''));
             $csrf    = \App\Core\App::security()->csrfField();
 
@@ -490,7 +490,7 @@ HTML;
 
         $options_html = '';
         foreach ($my_pending as $mpt) {
-            $id    = h((string)($mpt['id'] ?? ''));
+            $id    = \App\Core\App::html()->escape((string)($mpt['id'] ?? ''));
             $ordre = (int)($mpt['ordre'] ?? 0);
             $email = \App\Core\App::html()->displayUser((string)($mpt['email'] ?? ''));
             $options_html .= "<option value=\"{$id}\">Étape {$ordre} — {$email}</option>";
@@ -534,17 +534,17 @@ HTML;
             $label = isset($field_info[$k])
                 ? $field_info[$k]['label']
                 : ucfirst(is_string($k) ? str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k) ?? $k) : '');
-            $display_val = $v === '1' ? '✓ Oui' : ($v === '0' ? 'Non' : h((string)$v));
+            $display_val = $v === '1' ? '✓ Oui' : ($v === '0' ? 'Non' : \App\Core\App::html()->escape((string)$v));
 
             if ($group !== $current_group && !empty($group)) {
                 $current_group = $group;
-                $group_h = h($group);
+                $group_h = \App\Core\App::html()->escape($group);
                 $items_html .= <<<HTML
         <div class="data-group-title">{$group_h}</div>
 HTML;
             }
 
-            $label_h = h((string)$label);
+            $label_h = \App\Core\App::html()->escape((string)$label);
             $items_html .= <<<HTML
         <div class="data-item">
           <div class="data-label">{$label_h}</div>
@@ -579,9 +579,9 @@ HTML;
             $label = isset($field_info[$field_name])
                 ? t_jargon($field_info[$field_name]['label'])
                 : t_jargon((string)($vr['field_label'] ?? $field_name));
-            $label_h = h($label);
+            $label_h = \App\Core\App::html()->escape($label);
             $value_raw = (string)($vr['value'] ?? '');
-            $display_val = h($value_raw);
+            $display_val = \App\Core\App::html()->escape($value_raw);
 
             $by_email  = isset($vr['filled_by_email']) ? (string)$vr['filled_by_email'] : '';
             $step_lab  = isset($vr['step_label']) ? (string)$vr['step_label'] : '';
@@ -592,21 +592,21 @@ HTML;
                 $audit_parts[] = ' par ' . \App\Core\App::html()->displayUser($by_email);
             }
             if ($step_lab !== '') {
-                $audit_parts[] = ' — étape : ' . h(t_jargon($step_lab));
+                $audit_parts[] = ' — étape : ' . \App\Core\App::html()->escape(t_jargon($step_lab));
             }
             if ($filled_at !== '') {
                 $ts = strtotime($filled_at);
                 if ($ts !== false) {
-                    $audit_parts[] = ' le ' . h(date('d/m/Y à H:i', $ts));
+                    $audit_parts[] = ' le ' . \App\Core\App::html()->escape(date('d/m/Y à H:i', $ts));
                 }
             }
             $audit_line = implode('', $audit_parts);
 
             if ($can_edit) {
                 $csrf         = \App\Core\App::security()->csrfField();
-                $sub_id_h     = h($sub_id);
-                $fname_h      = h($field_name);
-                $value_input  = h($value_raw);
+                $sub_id_h     = \App\Core\App::html()->escape($sub_id);
+                $fname_h      = \App\Core\App::html()->escape($field_name);
+                $value_input  = \App\Core\App::html()->escape($value_raw);
                 $value_block = <<<HTML
           <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.25rem;">
             {$csrf}
@@ -661,11 +661,11 @@ HTML;
         foreach ($data['validations'] as $v) {
             $is_valid = ($v['action'] ?? '') === 'valider';
             $icon = $is_valid ? '✅' : '❌';
-            $step_label = h((string)($v['step_label'] ?? ''));
+            $step_label = \App\Core\App::html()->escape((string)($v['step_label'] ?? ''));
             $email_display = \App\Core\App::html()->displayUser((string)($v['email'] ?? ''));
             $color = $is_valid ? '#1a6b3c' : '#c0392b';
             $action_label = $is_valid ? 'Validé' : 'Refusé';
-            $date = h((string)($v['date'] ?? ''));
+            $date = \App\Core\App::html()->escape((string)($v['date'] ?? ''));
 
             $done_by_html = '';
             $done_by = (string)($v['done_by'] ?? '');
@@ -678,7 +678,7 @@ HTML;
 
             $comment_html = '';
             if (!empty($v['commentaire'])) {
-                $comment = h((string)$v['commentaire']);
+                $comment = \App\Core\App::html()->escape((string)$v['commentaire']);
                 $comment_html = <<<HTML
           <div class="val-comment"><span aria-hidden="true">💬</span> {$comment}</div>
 HTML;
@@ -730,19 +730,19 @@ HTML;
 
                     $sent_html = '';
                     if (!empty($pt['sent_at'])) {
-                        $sent_date = h(date('d/m/Y à H:i', strtotime((string)$pt['sent_at'])));
+                        $sent_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)$pt['sent_at'])));
                         $sent_html = "<span style=\"font-size:.8rem;color:#595959;\">Notifié le : {$sent_date}</span>";
                     }
 
                     $last_remind = '';
                     if (!empty($pt['relance_at'])) {
-                        $last_remind_date = h(date('d/m/Y à H:i', strtotime((string)$pt['relance_at'])));
+                        $last_remind_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)$pt['relance_at'])));
                         $last_remind = "<span style=\"font-size:.8rem;color:#b45309;\">Dernière relance : {$last_remind_date}</span>";
                     }
 
                     $expires_html = '';
                     if (!empty($pt['expires_at'])) {
-                        $expires_date = h(date('d/m/Y', strtotime((string)$pt['expires_at'])));
+                        $expires_date = \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string)$pt['expires_at'])));
                         $expires_html = "<span style=\"font-size:.8rem;color:#595959;\">Expire le : {$expires_date}</span>";
                     }
 
@@ -775,8 +775,8 @@ HTML;
         if (!empty($submission_reminds)) {
             $rows = '';
             foreach ($submission_reminds as $sr) {
-                $detail = h((string)($sr['detail'] ?? ''));
-                $date   = h(date('d/m/Y à H:i', strtotime((string)($sr['created_at'] ?? 'now'))));
+                $detail = \App\Core\App::html()->escape((string)($sr['detail'] ?? ''));
+                $date   = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($sr['created_at'] ?? 'now'))));
                 $actor  = \App\Core\App::html()->displayUser((string)($sr['actor'] ?? ''));
                 $rows .= <<<HTML
       <div class="val-item">
@@ -832,11 +832,11 @@ HTML;
         $rows = '';
         foreach ($attachments as $att) {
             $icon         = \App\Core\App::html()->getFileIcon((string)($att['mime_type'] ?? ''));
-            $name         = h((string)($att['original_name'] ?? ''));
-            $mime         = h((string)($att['mime_type'] ?? ''));
+            $name         = \App\Core\App::html()->escape((string)($att['original_name'] ?? ''));
+            $mime         = \App\Core\App::html()->escape((string)($att['mime_type'] ?? ''));
             $size         = \App\Core\App::html()->formatFileSize((int)($att['file_size'] ?? 0));
-            $date         = h(date('d/m/Y H:i', strtotime((string)($att['uploaded_at'] ?? 'now'))));
-            $dl_url       = h('index.php?p=download&id=' . urlencode((string)($att['id'] ?? '')));
+            $date         = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string)($att['uploaded_at'] ?? 'now'))));
+            $dl_url       = \App\Core\App::html()->escape('index.php?p=download&id=' . urlencode((string)($att['id'] ?? '')));
 
             $rows .= <<<HTML
         <tr>

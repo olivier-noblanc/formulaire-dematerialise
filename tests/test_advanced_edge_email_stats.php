@@ -4,7 +4,7 @@
  *
  * Section 6 : Edge Cases & Stress (UUIDs, tokens, PDO singleton, audit log, settings, SQLi, render_field)
  * Section 7 : Email & Notifications (send_mail, build_mail_html, render_email_template, test_json_response)
- * Section 8 : Stats & Monitoring (get_global_stats, get_stats_by_period, get_db_size, run_lazy_cron)
+ * Section 8 : Stats & Monitoring (StatsService::getGlobalStats, StatsService::getStatsByPeriod, get_db_size, run_lazy_cron)
  *
  * Dépendances : test_bootstrap.php (test), helpers.php (fonctions métier).
  * Globales attendues : $pdo.
@@ -22,13 +22,13 @@ function run_tests_advanced_edge(): void {
 
     test('h() with very long string (>10000 chars)', function() {
         $long = str_repeat('A', 10001);
-        $result = h($long);
+        $result = \App\Core\App::html()->escape($long);
         return strlen($result) >= 10000 ? true : 'String was truncated unexpectedly';
     });
 
     test('h() with mixed UTF-8 multibyte characters', function() {
         $input = '日本語中文한국어العربية€¥£';
-        $result = h($input);
+        $result = \App\Core\App::html()->escape($input);
         // Should preserve these characters (they don't need HTML encoding)
         return strpos($result, '日本語') !== false ? true : "UTF-8 multibyte lost: $result";
     });
@@ -75,7 +75,7 @@ function run_tests_advanced_edge(): void {
     test('app_log() with very long message', function() use ($pdo) {
         $long_msg = str_repeat('X', 5000);
         $before = (int)$pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
-        app_log('test_long', 'test', $long_msg);
+        \App\Core\App::audit()->log('test_long', 'test', $long_msg);
         $after = (int)$pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
 
         // Cleanup
@@ -86,7 +86,7 @@ function run_tests_advanced_edge(): void {
 
     test('app_log() with special characters in message', function() use ($pdo) {
         $special_msg = "Test with <script>alert('xss')</script> & \"quotes\" 'apostrophes'";
-        app_log('test_special', 'test', $special_msg);
+        \App\Core\App::audit()->log('test_special', 'test', $special_msg);
 
         $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'test_special' ORDER BY created_at DESC LIMIT 1");
         $stmt->execute();
@@ -113,7 +113,7 @@ function run_tests_advanced_edge(): void {
     });
 
     test('search_submissions() with SQL injection attempt in search term', function() {
-        $result = search_submissions("'; DROP TABLE submissions; --");
+        $result = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions("'; DROP TABLE submissions; --");
         // Should return an array (empty or not), not crash
         /** @phpstan-ignore-next-line function.alreadyNarrowedType */
         return is_array($result) ? true : 'search_submissions did not return array for SQLi attempt';
@@ -144,9 +144,9 @@ function run_tests_advanced_email(): void {
 
     test('send_mail() with multiple recipients (test mode intercepts all)', function() {
         reset_test_mails();
-        send_mail('recipient1@dreets.gouv.fr', 'Test Subject 1', '<p>Body 1</p>');
-        send_mail('recipient2@dreets.gouv.fr', 'Test Subject 2', '<p>Body 2</p>');
-        send_mail('recipient3@dreets.gouv.fr', 'Test Subject 3', '<p>Body 3</p>');
+        \App\Core\App::mail()->send('recipient1@dreets.gouv.fr', 'Test Subject 1', '<p>Body 1</p>');
+        \App\Core\App::mail()->send('recipient2@dreets.gouv.fr', 'Test Subject 2', '<p>Body 2</p>');
+        \App\Core\App::mail()->send('recipient3@dreets.gouv.fr', 'Test Subject 3', '<p>Body 3</p>');
 
         $mails = get_test_mails();
         reset_test_mails();
@@ -157,7 +157,7 @@ function run_tests_advanced_email(): void {
     test('send_mail() with HTML body containing special characters', function() {
         reset_test_mails();
         $body = '<p>Éléphant & "Coïncidence" — café</p>';
-        send_mail('special@dreets.gouv.fr', 'Test Spécial', $body);
+        \App\Core\App::mail()->send('special@dreets.gouv.fr', 'Test Spécial', $body);
 
         $mails = get_test_mails();
         reset_test_mails();
@@ -171,7 +171,7 @@ function run_tests_advanced_email(): void {
             'form_label' => 'Test Form',
         ];
         $token = generate_token();
-        $html = build_mail_html($submission, 'Étape 1', $token);
+        $html = \App\Core\App::mail()->buildMailHtml($submission, 'Étape 1', $token);
 
         return strpos($html, 'validate.php?token=') !== false ? true : 'Validation link not found in mail HTML';
     });
@@ -182,13 +182,13 @@ function run_tests_advanced_email(): void {
             'form_label' => 'Formulaire Test Label',
         ];
         $token = generate_token();
-        $html = build_mail_html($submission, 'Étape 1', $token);
+        $html = \App\Core\App::mail()->buildMailHtml($submission, 'Étape 1', $token);
 
         return strpos($html, 'Formulaire Test Label') !== false ? true : 'Form label not found in mail HTML';
     });
 
     test('render_email_template() has proper HTML structure (html, head, body)', function() {
-        $html = render_email_template('Test Title', '<p>Body content</p>');
+        $html = \App\Core\App::mail()->renderEmailTemplate('Test Title', '<p>Body content</p>');
         $has_html = strpos($html, '<html') !== false;
         $has_head = strpos($html, '<head>') !== false;
         $has_body = strpos($html, '<body') !== false;
@@ -196,13 +196,13 @@ function run_tests_advanced_email(): void {
     });
 
     test('render_email_template() with empty title', function() {
-        $html = render_email_template('', '<p>Body</p>');
+        $html = \App\Core\App::mail()->renderEmailTemplate('', '<p>Body</p>');
         // Should not crash, should still be valid HTML
         return strpos($html, '<html') !== false ? true : 'Failed with empty title';
     });
 
     test('render_email_template() with special characters in content', function() {
-        $html = render_email_template('Titulé', '<p>Contenu avec <strong>gras</strong> & "guillemets"</p>');
+        $html = \App\Core\App::mail()->renderEmailTemplate('Titulé', '<p>Contenu avec <strong>gras</strong> & "guillemets"</p>');
         return (strpos($html, 'Contenu avec') !== false) ? true : 'Special chars lost in template';
     });
 
@@ -239,8 +239,8 @@ function run_tests_advanced_stats(): void {
 
     echo "── 8. Stats & Monitoring ──\n";
 
-    test('get_global_stats() all values are non-negative integers', function() {
-        $stats = get_global_stats();
+    test('StatsService::getGlobalStats() all values are non-negative integers', function() {
+        $stats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
         $int_fields = ['total', 'en_cours', 'valide', 'refuse', 'today', 'this_week', 'this_month', 'tokens_pending', 'attachments_count', 'attachments_size'];
         foreach ($int_fields as $field) {
             if (!isset($stats[$field])) return "Missing field: $field";
@@ -250,32 +250,32 @@ function run_tests_advanced_stats(): void {
         return true;
     });
 
-    test('get_global_stats() taux_validation is between 0 and 100', function() {
-        $stats = get_global_stats();
+    test('StatsService::getGlobalStats() taux_validation is between 0 and 100', function() {
+        $stats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
         $taux = $stats['taux_validation'] ?? -1;
         return ($taux >= 0 && $taux <= 100) ? true : "taux_validation out of range: $taux";
     });
 
-    test('get_stats_by_period() with period "day"', function() {
-        $stats = get_stats_by_period('day');
+    test('StatsService::getStatsByPeriod() with period "day"', function() {
+        $stats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getStatsByPeriod('day');
         /** @phpstan-ignore-next-line function.alreadyNarrowedType */
         return is_array($stats) ? true : 'Expected array for period day';
     });
 
-    test('get_stats_by_period() with period "week"', function() {
-        $stats = get_stats_by_period('week');
+    test('StatsService::getStatsByPeriod() with period "week"', function() {
+        $stats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getStatsByPeriod('week');
         /** @phpstan-ignore-next-line function.alreadyNarrowedType */
         return is_array($stats) ? true : 'Expected array for period week';
     });
 
-    test('get_stats_by_period() with period "year"', function() {
-        $stats = get_stats_by_period('year');
+    test('StatsService::getStatsByPeriod() with period "year"', function() {
+        $stats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getStatsByPeriod('year');
         /** @phpstan-ignore-next-line function.alreadyNarrowedType */
         return is_array($stats) ? true : 'Expected array for period year';
     });
 
     test('get_db_size() increases after insert', function() use ($pdo) {
-        $size_before = get_db_size();
+        $size_before = \App\Core\App::webhook()->getDbSize();
 
         // Insert a bunch of data to increase DB size
         for ($i = 0; $i < 50; $i++) {
@@ -284,7 +284,7 @@ function run_tests_advanced_stats(): void {
                 ->execute([$id, 'test_db_size', 'test', str_repeat('X', 500), 'test', '127.0.0.1']);
         }
 
-        $size_after = get_db_size();
+        $size_after = \App\Core\App::webhook()->getDbSize();
 
         // Cleanup
         $pdo->prepare("DELETE FROM audit_log WHERE action = 'test_db_size'")->execute();
@@ -293,15 +293,14 @@ function run_tests_advanced_stats(): void {
     });
 
     test('get_db_size() returns reasonable value (>0, <1GB)', function() {
-        $size = get_db_size();
+        $size = \App\Core\App::webhook()->getDbSize();
         $one_gb = 1024 * 1024 * 1024;
         return ($size > 0 && $size < $one_gb) ? true : "DB size out of reasonable range: $size";
     });
 
-    test('run_lazy_cron() function exists and is callable', function() {
-        /** @phpstan-ignore-next-line function.alreadyNarrowedType */
-        return function_exists('run_lazy_cron') && is_callable('run_lazy_cron')
-            ? true : 'run_lazy_cron not callable';
+    test('App::cron() is available', function() {
+        return \App\Core\App::getInstance()->has(\App\Cron\CronService::class)
+            ? true : 'CronService not registered';
     });
 
     echo "\n";

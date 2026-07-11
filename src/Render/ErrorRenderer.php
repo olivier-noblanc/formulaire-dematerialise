@@ -6,6 +6,25 @@ namespace App\Render;
 use App\Core\App;
 
 /**
+ * Exception dédiée pour les pages d'erreur (A-22).
+ */
+class ErrorResponseException extends \Exception {
+    public function __construct(
+        public readonly int $httpCode,
+        public readonly string $title,
+        string $message,
+        public readonly string $hint = '',
+        public readonly string $backUrl = 'index.php'
+    ) {
+        parent::__construct($message, $httpCode);
+    }
+
+    public function getErrorTitle(): string { return $this->title; }
+    public function getHint(): string { return $this->hint; }
+    public function getBackUrl(): string { return $this->backUrl; }
+}
+
+/**
  * Error pages & user messages rendering.
  */
 final class ErrorRenderer
@@ -33,7 +52,7 @@ final class ErrorRenderer
 
         $hint_html = '';
         if (!empty($hint)) {
-            $hint_html = '<div class="error-hint"><strong>Que faire ?</strong>' . nl2br(h($hint)) . '</div>';
+            $hint_html = '<div class="error-hint"><strong>Que faire ?</strong>' . nl2br(\App\Core\App::html()->escape($hint)) . '</div>';
         }
 
         $user = '';
@@ -41,7 +60,7 @@ final class ErrorRenderer
 
         $bandeau_links = '';
         if (!empty($user)) {
-            $bandeau_links = '<span>Connecté en tant que : <strong>' . h($user) . '</strong></span>
+            $bandeau_links = '<span>Connecté en tant que : <strong>' . \App\Core\App::html()->escape($user) . '</strong></span>
     <span><a href="index.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">Accueil</a></span>';
         }
 
@@ -52,8 +71,8 @@ final class ErrorRenderer
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>' . h($title) . ' — ' . h(get_app_name()) . '</title>
-  ' . render_favicon() . '
+  <title>' . \App\Core\App::html()->escape($title) . ' — ' . \App\Core\App::html()->escape(NavigationRenderer::getAppName()) . '</title>
+  ' . NavigationRenderer::favicon() . '
   ' . $css . '
 </head>
 <body>
@@ -66,22 +85,22 @@ final class ErrorRenderer
   <div class="error-card">
     <div class="error-illustration">' . $icon . '</div>
     <div class="error-code code-' . $code . '">' . $code . '</div>
-    <h1>' . h($title) . '</h1>
-    <p class="error-message">' . h($message) . '</p>
+    <h1>' . \App\Core\App::html()->escape($title) . '</h1>
+    <p class="error-message">' . \App\Core\App::html()->escape($message) . '</p>
     ' . $hint_html . '
     <div class="error-actions">
-      <a href="' . h($back_url) . '" class="btn btn-primary">Retour à l\'accueil</a>
+      <a href="' . \App\Core\App::html()->escape($back_url) . '" class="btn btn-primary">Retour à l\'accueil</a>
     </div>
-    <div class="error-stamp">' . h(get_app_name()) . '</div>
+    <div class="error-stamp">' . \App\Core\App::html()->escape(NavigationRenderer::getAppName()) . '</div>
   </div>
 </div>
-' . (function_exists('render_footer') ? render_footer() : '') . '
+' . (new NavigationRenderer())->footer() . '
 </body>
 </html>';
 
         /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
         if (TEST_MODE && php_sapi_name() !== "cli") {
-            throw new \ErrorResponseException($code, $title, $message, $hint, $back_url);
+            throw new ErrorResponseException($code, $title, $message, $hint, $back_url);
         }
         echo $error_html;
         exit(1);
@@ -109,7 +128,7 @@ final class ErrorRenderer
                 'success', 'info', 'warning' => ' role="status" aria-live="polite"',
                 default   => ' role="status" aria-live="polite"',
             };
-            $html .= '<div class="' . $class . '"' . $aria . '>' . h($text) . '</div>';
+            $html .= '<div class="' . $class . '"' . $aria . '>' . \App\Core\App::html()->escape($text) . '</div>';
         }
         return $html;
     }

@@ -372,7 +372,7 @@ CSS;
                 <option value="">— Sélectionner un formulaire —</option>
                 <?php foreach ($forms as $f): ?>
                     <option value="<?= $f['id'] ?>" <?= $form_id == $f['id'] ? 'selected' : '' ?>>
-                        <?= h($f['label']) ?>
+                        <?= \App\Core\App::html()->escape($f['label']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -419,7 +419,7 @@ CSS;
                     <?= \App\Core\App::security()->csrfField() ?>
                     <div class="field">
                         <label>Données JSON<span class="req">*</span></label>
-                        <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général","filled_by":"demandeur"},{"label":"Décision","field_type":"select","field_name":"decision","options":["Accepté","Refusé"],"required":1,"card_group":"Décision","filled_by":"validator","validator_step":"Validation manager"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>"]}]}' style="font-family:monospace;font-size:.8rem;"><?= h($preserved_json ?? '') ?></textarea>
+                        <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général","filled_by":"demandeur"},{"label":"Décision","field_type":"select","field_name":"decision","options":["Accepté","Refusé"],"required":1,"card_group":"Décision","filled_by":"validator","validator_step":"Validation manager"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>"]}]}' style="font-family:monospace;font-size:.8rem;"><?= \App\Core\App::html()->escape($preserved_json) ?></textarea>
                     </div>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
                         <input type="hidden" name="action" value="validate_json" id="import-action-input">
@@ -453,7 +453,7 @@ CSS;
                 <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ d'importation ci-dessus. Le JSON généré inclura les champs du formulaire <strong>et</strong> le circuit de validation (workflow).</p>
                 <div class="field">
                     <label>Prompt à copier-coller <button type="button" onclick="(function(btn){var txt=document.getElementById('ai-prompt').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)})}catch(e){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}})(this)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier</button></label>
-                    <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?= h(get_app_name()) ?>".
+                    <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>".
 
 Consignes :
 - Analyse le document administratif fourni ci-dessous.
@@ -538,7 +538,7 @@ IMPORTANT : Si tu comptes exclure une colonne du document source, signale-le EXP
   - ordre : numéro séquentiel (1 = première validation, 2 = deuxième, etc.).
   - actif : true (toujours true pour les nouvelles étapes).
   - recipients : tableau d'adresses email. Trois formats possibles :
-    1. Adresse email statique du service validateur (ex: "rh@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>", "dsi@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>").
+    1. Adresse email statique du service validateur (ex: "rh@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>", "dsi@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>").
     2. Référence dynamique vers un champ du formulaire avec la syntaxe {{field_name}} — utile quand le validateur dépend de l'agent qui remplit le formulaire. Exemple : si le formulaire a un champ "email_superieur", utilise "{{email_superieur}}" pour que la demande soit envoyée au supérieur hiérarchique saisi par l'agent.
     3. Référence spéciale {{owner}} — le propriétaire du formulaire (l'admin qui a créé le formulaire). Utiliser quand le document indique que "l'owner", "le responsable" ou "l'administrateur du formulaire" doit valider, sans préciser d'adresse email. Ne PAS demander d'email dans ce cas.
 - ATTENTION : Si le document mentionne un supérieur hiérarchique, un manager direct, ou un validateur dont l'email dépend de l'agent, il FAUT créer un champ email dans les fields ET utiliser la syntaxe {{field_name}} dans les recipients de l'étape correspondante.
@@ -611,7 +611,7 @@ IMPORTANT : Si tu comptes exclure une colonne du document source, signale-le EXP
   ],
   "steps": [
     { "label": "Validation supérieur hiérarchique", "ordre": 1, "actif": true, "recipients": ["{{email_superieur}}"] },
-    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>"] }
+    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>"] }
   ]
 }
 
@@ -733,12 +733,12 @@ Voici le document administratif à analyser :
                 <div class="form-grid">
                     <div class="field">
                         <label>Libellé (affiché dans l'interface)<span class="req">*</span></label>
-                        <input type="text" name="label" value="<?= h($form['label']) ?>" required>
-                        <span class="hint">Identifiant technique : <code><?= h($form['slug']) ?></code> (généré automatiquement)</span>
+                        <input type="text" name="label" value="<?= \App\Core\App::html()->escape($form['label']) ?>" required>
+                        <span class="hint">Identifiant technique : <code><?= \App\Core\App::html()->escape($form['slug']) ?></code> (généré automatiquement)</span>
                     </div>
                     <div class="field full-width">
                         <label>Description</label>
-                        <textarea name="description" placeholder="Description du formulaire"><?= h($form['description']) ?></textarea>
+                        <textarea name="description" placeholder="Description du formulaire"><?= \App\Core\App::html()->escape($form['description']) ?></textarea>
                     </div>
                     <div class="field">
                         <label class="checkbox-label">
@@ -775,7 +775,7 @@ Voici le document administratif à analyser :
             <h2>👥 Propriétaires du formulaire</h2>
         </div>
         <div class="section-card-body">
-        <p class="hint" style="margin-bottom:1rem;">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="index.php?p=form_tracking&f=<?= h($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
+        <p class="hint" style="margin-bottom:1rem;">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="index.php?p=form_tracking&f=<?= \App\Core\App::html()->escape($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
 
         <?php if (!empty($owners)): ?>
             <table class="data-table" style="margin-bottom:1rem;">
@@ -790,7 +790,7 @@ Voici le document administratif à analyser :
                     <?php foreach ($owners as $owner): ?>
                     <tr>
                         <td><?= \App\Core\App::html()->displayUser($owner['email']) ?></td>
-                        <td><?= h($owner['added_at']) ?></td>
+                        <td><?= \App\Core\App::html()->escape($owner['added_at']) ?></td>
                         <td>
                             <a href="index.php?p=confirm_action&action=remove_owner&id=<?= $owner['id'] ?>&form_id=<?= $form_id ?>" class="btn btn-sm btn-danger">Retirer</a>
                         </td>
@@ -807,14 +807,14 @@ Voici le document administratif à analyser :
             <input type="hidden" name="action" value="add_owner">
             <input type="hidden" name="form_id" value="<?= $form_id ?>">
             <div style="display:flex;gap:.5rem;align-items:center;">
-                <input type="email" name="owner_email" placeholder="prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required style="flex:1;">
+                <input type="email" name="owner_email" placeholder="prenom.nom@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required style="flex:1;">
                 <button type="submit" class="btn btn-primary">Ajouter un propriétaire</button>
             </div>
         </form>
 
         <?php if (!empty($owners)): ?>
             <div style="margin-top:1rem;">
-                <a href="index.php?p=form_tracking&f=<?= h($form['id'] ?? '') ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Ouvrir le tableau de suivi</a>
+                <a href="index.php?p=form_tracking&f=<?= \App\Core\App::html()->escape($form['id'] ?? '') ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Ouvrir le tableau de suivi</a>
             </div>
         <?php endif; ?>
         </div>
@@ -858,10 +858,10 @@ Voici le document administratif à analyser :
                         <div class="workflow-step-group">
                             <?php foreach ($ordre_steps as $idx => $wstep): ?>
                                 <div class="workflow-box <?= $wstep['actif'] ? '' : 'inactive' ?>" style="<?= count($ordre_steps) > 1 && $idx > 0 ? 'margin-top:.5rem;' : '' ?>">
-                                    <div class="wb-label"><?= h($wstep['label']) ?></div>
-                                    <div class="wb-ordre">Étape <?= h((string)$ordre) ?></div>
+                                    <div class="wb-label"><?= \App\Core\App::html()->escape($wstep['label']) ?></div>
+                                    <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string)$ordre) ?></div>
                                     <?php if (!empty($wstep['recipients'])): ?>
-                                        <div class="wb-emails"><?= h(implode(', ', array_column($wstep['recipients'], 'email'))) ?></div>
+                                        <div class="wb-emails"><?= \App\Core\App::html()->escape(implode(', ', array_column($wstep['recipients'], 'email'))) ?></div>
                                     <?php else: ?>
                                         <div class="wb-emails" style="font-style:italic;">Aucun destinataire</div>
                                     <?php endif; ?>
@@ -893,7 +893,8 @@ Voici le document administratif à analyser :
                         </div>
                         <div class="field">
                             <label>Ordre (numéro)<span class="req">*</span></label>
-                            <input type="number" name="ordre" required min="1" value="<?= empty($steps) ? 1 : max(array_column($steps, 'ordre')) + 1 ?>">
+                            <?php $step_column = array_column($steps, 'ordre'); ?>
+                            <input type="number" name="ordre" required min="1" value="<?= $step_column !== [] ? max($step_column) + 1 : 1 ?>">
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Ajouter l'étape</button>
@@ -906,7 +907,7 @@ Voici le document administratif à analyser :
                     <?php foreach ($steps as $step): ?>
                         <?php if ($edit_step_id === $step['id']): ?>
                             <!-- ── Edit step inline ──────────────────── -->
-                            <div class="step-card editing" id="step-<?= h($step['id']) ?>">
+                            <div class="step-card editing" id="step-<?= \App\Core\App::html()->escape($step['id']) ?>">
                                 <div class="step-info" style="width:100%;">
                                     <form method="POST">
                                         <?= \App\Core\App::security()->csrfField() ?>
@@ -916,7 +917,7 @@ Voici le document administratif à analyser :
                                         <div class="form-grid">
                                             <div class="field">
                                                 <label>Libellé<span class="req">*</span></label>
-                                                <input type="text" name="label" value="<?= h($step['label']) ?>" required>
+                                                <input type="text" name="label" value="<?= \App\Core\App::html()->escape($step['label']) ?>" required>
                                             </div>
                                             <div class="field">
                                                 <label>Ordre<span class="req">*</span></label>
@@ -944,7 +945,7 @@ Voici le document administratif à analyser :
                                             }
                                         }
 
-                                        $validator_fields = $form_id !== '' ? get_form_validator_fields((string)$form_id) : [];
+                                        $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string)$form_id) : [];
                                         ?>
 
                                         <?php if ($can_have_condition): ?>
@@ -957,8 +958,8 @@ Voici le document administratif à analyser :
                                                             <option value="">— Toujours exécuter (pas de condition) —</option>
                                                             <?php foreach ($validator_fields as $vf): ?>
                                                                 <?php $vf_name = (string)($vf['field_name'] ?? ''); ?>
-                                                                <option value="<?= h($vf_name) ?>" <?= $existing_condition['field'] === $vf_name ? 'selected' : '' ?>>
-                                                                    <?= h((string)($vf['label'] ?? $vf_name)) ?> (<?= h($vf_name) ?>)
+                                                                <option value="<?= \App\Core\App::html()->escape($vf_name) ?>" <?= $existing_condition['field'] === $vf_name ? 'selected' : '' ?>>
+                                                                    <?= \App\Core\App::html()->escape((string)($vf['label'] ?? $vf_name)) ?> (<?= \App\Core\App::html()->escape($vf_name) ?>)
                                                                 </option>
                                                             <?php endforeach; ?>
                                                         </select>
@@ -976,13 +977,13 @@ Voici le document administratif à analyser :
                                                             ];
                                                             foreach ($ops as $op_val => $op_label):
                                                             ?>
-                                                                <option value="<?= h($op_val) ?>" <?= $existing_condition['op'] === $op_val ? 'selected' : '' ?>><?= h($op_label) ?></option>
+                                                                <option value="<?= \App\Core\App::html()->escape($op_val) ?>" <?= $existing_condition['op'] === $op_val ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($op_label) ?></option>
                                                             <?php endforeach; ?>
                                                         </select>
                                                     </div>
                                                     <div class="field">
                                                         <label>Valeur attendue</label>
-                                                        <input type="text" name="condition_value" value="<?= h($existing_condition['value']) ?>" placeholder="ex: Acceptée">
+                                                        <input type="text" name="condition_value" value="<?= \App\Core\App::html()->escape($existing_condition['value']) ?>" placeholder="ex: Acceptée">
                                                         <span class="hint" style="font-size:.7rem;color:#777;">Utilisé pour « Égal à », « Différent de », « Contient ». Ignoré pour « Non vide » / « Vide ».</span>
                                                     </div>
                                                 </div>
@@ -1001,11 +1002,11 @@ Voici le document administratif à analyser :
                                 </div>
                             </div>
                         <?php else: ?>
-                            <div class="step-card" id="step-<?= h($step['id']) ?>">
+                            <div class="step-card" id="step-<?= \App\Core\App::html()->escape($step['id']) ?>">
                                 <div class="step-info">
-                                    <span class="step-label"><?= h($step['label']) ?></span>
+                                    <span class="step-label"><?= \App\Core\App::html()->escape($step['label']) ?></span>
                                     <div class="step-meta">
-                                        Ordre <?= h((string)$step['ordre']) ?>
+                                        Ordre <?= \App\Core\App::html()->escape((string)$step['ordre']) ?>
                                         <?php if ($step['actif']): ?>
                                             <span class="badge badge-ok">Actif</span>
                                         <?php else: ?>
@@ -1065,7 +1066,7 @@ Voici le document administratif à analyser :
             <?php endif; ?>
 
             <?php if (!empty($steps)): ?>
-                <?= render_ldap_datalist('ldap-recipient-suggestions', '', 300) ?>
+                <?= (new \App\Render\LdapRenderer())->datalist('ldap-recipient-suggestions', '', 300) ?>
             <?php endif; ?>
         </div>
     </div>
@@ -1129,11 +1130,11 @@ Voici le document administratif à analyser :
                                             <div class="form-grid">
                                                 <div class="field">
                                                     <label>Libellé<span class="req">*</span></label>
-                                                    <input type="text" name="ff_label" value="<?= h($ff['label']) ?>" required>
+                                                    <input type="text" name="ff_label" value="<?= \App\Core\App::html()->escape($ff['label']) ?>" required>
                                                 </div>
                                                 <div class="field">
                                                     <label>Identifiant technique <span class="hint">(auto si vide)</span></label>
-                                                    <input type="text" name="ff_field_name" value="<?= h($ff['field_name']) ?>" placeholder="Généré automatiquement depuis le libellé">
+                                                    <input type="text" name="ff_field_name" value="<?= \App\Core\App::html()->escape($ff['field_name']) ?>" placeholder="Généré automatiquement depuis le libellé">
                                                 </div>
                                                 <div class="field">
                                                     <label>Type de champ</label>
@@ -1152,7 +1153,7 @@ Voici le document administratif à analyser :
                                                     <?php if (!empty($existing_groups)): ?>
                                                         <select name="ff_card_group">
                                                             <?php foreach ($existing_groups as $g): ?>
-                                                                <option value="<?= h($g) ?>" <?= $ff['card_group'] === $g ? 'selected' : '' ?>><?= h($g) ?></option>
+                                                                <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $ff['card_group'] === $g ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>
                                                             <?php endforeach; ?>
                                                             <option value="__new__" <?= !in_array($ff['card_group'], $existing_groups) ? 'selected' : '' ?>>— Nouveau groupe —</option>
                                                         </select>
@@ -1164,11 +1165,11 @@ Voici le document administratif à analyser :
                                                 </div>
                                                 <div class="field">
                                                     <label>Options <span class="hint">(une par ligne, uniquement pour Sélecteur)</span></label>
-                                                    <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"><?= h($this->optionsToLines($ff['options'] ?? '')) ?></textarea>
+                                                    <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"><?= \App\Core\App::html()->escape($this->optionsToLines($ff['options'] ?? '')) ?></textarea>
                                                 </div>
                                                 <div class="field">
                                                     <label>Indication <span class="hint">(texte d'aide sous le champ)</span></label>
-                                                    <input type="text" name="ff_hint" value="<?= h($ff['hint'] ?? '') ?>" placeholder="ex : en euros TTC">
+                                                    <input type="text" name="ff_hint" value="<?= \App\Core\App::html()->escape($ff['hint'] ?? '') ?>" placeholder="ex : en euros TTC">
                                                 </div>
                                                 <div class="field">
                                                     <label>Rempli par</label>
@@ -1182,8 +1183,8 @@ Voici le document administratif à analyser :
                                                     <select name="ff_validator_step">
                                                         <option value="">— Champ global (toutes étapes) —</option>
                                                         <?php foreach ($steps as $s): ?>
-                                                            <option value="<?= h($s['id']) ?>" <?= (($ff['validator_step'] ?? '') === $s['id'] || ($ff['validator_step'] ?? '') === $s['label']) ? 'selected' : '' ?>>
-                                                                <?= h($s['label']) ?>
+                                                            <option value="<?= \App\Core\App::html()->escape($s['id']) ?>" <?= (($ff['validator_step'] ?? '') === $s['id'] || ($ff['validator_step'] ?? '') === $s['label']) ? 'selected' : '' ?>>
+                                                                <?= \App\Core\App::html()->escape($s['label']) ?>
                                                             </option>
                                                         <?php endforeach; ?>
                                                     </select>
@@ -1209,31 +1210,31 @@ Voici le document administratif à analyser :
                                     </td>
                                 </tr>
                             <?php else: ?>
-                                <tr id="field-<?= h($ff['id']) ?>">
-                                    <td><?= h((string)$ff['ordre']) ?></td>
-                                    <td><span style="font-size:.8rem;color:#666;"><?= h($ff['card_group']) ?></span></td>
+                                <tr id="field-<?= \App\Core\App::html()->escape($ff['id']) ?>">
+                                    <td><?= \App\Core\App::html()->escape((string)$ff['ordre']) ?></td>
+                                    <td><span style="font-size:.8rem;color:#666;"><?= \App\Core\App::html()->escape($ff['card_group']) ?></span></td>
                                     <td>
-                                        <?= h($ff['label']) ?>
+                                        <?= \App\Core\App::html()->escape($ff['label']) ?>
                                         <?php if ($ff['required']): ?>
                                             <span class="required-star" title="Champ obligatoire">*</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><code style="font-size:.78rem;background:#eef;padding:.1rem .3rem;border-radius:2px;"><?= h($ff['field_name']) ?></code></td>
+                                    <td><code style="font-size:.78rem;background:#eef;padding:.1rem .3rem;border-radius:2px;"><?= \App\Core\App::html()->escape($ff['field_name']) ?></code></td>
                                     <td>
                                         <span class="field-type-badge">
                                             <?= $this->fieldTypeIcon($ff['field_type']) ?>
                                             <?= $this->fieldTypeLabel($ff['field_type']) ?>
                                         </span>
                                     </td>
-                                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= h($ff['options'] ?? '') ?>">
+                                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= \App\Core\App::html()->escape($ff['options'] ?? '') ?>">
                                         <?php
                                         $opts = $ff['options'] ?? '';
                                         if (!empty($opts)) {
                                             $decoded = json_decode($opts, true);
                                             if (is_array($decoded)) {
-                                                echo h(implode(', ', $decoded));
+                                                echo \App\Core\App::html()->escape(implode(', ', $decoded));
                                             } else {
-                                                echo h($opts);
+                                                echo \App\Core\App::html()->escape($opts);
                                             }
                                         } else {
                                             echo '—';
@@ -1295,7 +1296,7 @@ Voici le document administratif à analyser :
                             <?php if (!empty($existing_groups)): ?>
                                 <select name="ff_card_group">
                                     <?php foreach ($existing_groups as $g): ?>
-                                        <option value="<?= h($g) ?>" <?= $g === 'Général' ? 'selected' : '' ?>><?= h($g) ?></option>
+                                        <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $g === 'Général' ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>
                                     <?php endforeach; ?>
                                     <option value="__new__">— Nouveau groupe —</option>
                                 </select>
@@ -1324,8 +1325,8 @@ Voici le document administratif à analyser :
                             <select name="ff_validator_step">
                                 <option value="">— Champ global (toutes étapes) —</option>
                                 <?php foreach ($steps as $s): ?>
-                                    <option value="<?= h($s['id']) ?>">
-                                        <?= h($s['label']) ?>
+                                    <option value="<?= \App\Core\App::html()->escape($s['id']) ?>">
+                                        <?= \App\Core\App::html()->escape($s['label']) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -1372,11 +1373,11 @@ Voici le document administratif à analyser :
         <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
 
         <?php if (!empty($success_msg)): ?>
-            <div class="msg-success" role="status" aria-live="polite"><?= h($success_msg) ?></div>
+            <div class="msg-success" role="status" aria-live="polite"><?= \App\Core\App::html()->escape($success_msg) ?></div>
         <?php endif; ?>
 
         <?php if (!empty($error_msg)): ?>
-            <div class="msg-error" role="alert" aria-live="assertive"><?= h($error_msg) ?></div>
+            <div class="msg-error" role="alert" aria-live="assertive"><?= \App\Core\App::html()->escape($error_msg) ?></div>
         <?php endif; ?>
 
         <?= $this->renderSelectorPanel($ctx) ?>
@@ -1403,6 +1404,6 @@ Voici le document administratif à analyser :
         if ($content === false) {
             $content = '';
         }
-        echo render_page('Gestion des formulaires', 'forms', $page_css, $content);
+        echo (new NavigationRenderer())->page('Gestion des formulaires', 'forms', $page_css, $content);
     }
 }

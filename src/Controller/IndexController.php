@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Core\App;
+
 /**
  * Contrôleur de la page d'accueil (index.php).
  *
@@ -18,9 +20,7 @@ final class IndexController extends BaseController
      */
     public function handle(): void
     {
-        // Chargement du module de rendu spécifique à la page d'accueil
-        // (déclare les fonctions render_index_*() et index_page_css()).
-        require_once __DIR__ . '/../../lib/render_index.php';
+
 
         $user     = $this->auth->getUser();
         $pdo      = $this->db->getPdo();
@@ -91,7 +91,7 @@ final class IndexController extends BaseController
         // Pour les admins : stats globales
         $admin_stats = [];
         if ($is_admin) {
-            $gstats = get_global_stats();
+            $gstats = App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
             $admin_stats['total']    = $gstats['total'];
             $admin_stats['en_cours'] = $gstats['en_cours'];
             $admin_stats['valide']   = $gstats['valide'];
@@ -109,19 +109,19 @@ final class IndexController extends BaseController
         }
 
         // ── RENDU ──────────────────────────────────────────────────────
-        $page_css = index_page_css();
+        $page_css = \App\Render\IndexRenderer::pageCss();
         $content  = '';
 
         if ($show_welcome_state) {
             if ($show_tutorial) {
-                $content .= render_index_tutorial();
+                $content .= \App\Render\IndexRenderer::tutorial();
             }
-            $content .= render_index_welcome_state($welcome_forms);
+            $content .= \App\Render\IndexRenderer::welcomeState($welcome_forms);
         } else {
-            $content .= render_index_form_cards($active_forms);
+            $content .= \App\Render\IndexRenderer::formCards($active_forms);
         }
 
-        $content .= render_index_tooltips_script();
+        $content .= \App\Render\IndexRenderer::tooltipsScript();
 
         echo $this->renderPage('Accueil', 'accueil', $page_css, $content);
     }

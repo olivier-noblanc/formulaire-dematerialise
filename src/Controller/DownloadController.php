@@ -19,7 +19,7 @@ final class DownloadController extends BaseController
 
         $attachmentId = (string)trim($_GET['id'] ?? '');
         if (empty($attachmentId)) {
-            render_error_page(400, 'Requête invalide',
+            (new \App\Render\ErrorRenderer())->errorPage(400, 'Requête invalide',
                 'L\'identifiant de pièce jointe fourni est invalide.',
                 'Vérifiez que le lien que vous avez utilisé est correct et complet.');
         }
@@ -28,14 +28,14 @@ final class DownloadController extends BaseController
             $attachmentId = (string)validate_input($attachmentId, 'uuid');
         } catch (\InvalidArgumentException $e) {
             App::audit()->securityLog('invalid_attachment_id', 'ID=' . substr($attachmentId, 0, 20));
-            render_error_page(400, 'Requête invalide',
+            (new \App\Render\ErrorRenderer())->errorPage(400, 'Requête invalide',
                 'L\'identifiant de pièce jointe fourni est invalide.',
                 'Vérifiez que le lien que vous avez utilisé est correct et complet.');
         }
 
-        $attachment = get_attachment_by_id($attachmentId);
+        $attachment = App::attachment()->getAttachmentById($attachmentId);
         if (!$attachment) {
-            render_error_page(404, 'Pièce jointe introuvable',
+            (new \App\Render\ErrorRenderer())->errorPage(404, 'Pièce jointe introuvable',
                 'La pièce jointe demandée n\'existe pas ou a été supprimée.',
                 'Si vous avez suivi un lien depuis un email, la pièce jointe a peut-être été supprimée. Contactez l\'expéditeur de la demande.');
         }
@@ -67,15 +67,15 @@ final class DownloadController extends BaseController
         }
 
         if (!$has_access) {
-            render_error_page(403, 'Accès non autorisé',
+            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès non autorisé',
                 'Vous n\'avez pas les droits nécessaires pour accéder à cette pièce jointe. Seuls l\'auteur de la demande, les validateurs concernés et les administrateurs peuvent la consulter.',
                 'Si vous pensez que vous devriez avoir accès, vérifiez que vous êtes bien connecté avec votre compte habituel. Contactez un administrateur si le problème persiste.');
         }
 
         $mime_type = $attachment['mime_type'];
-        $allowed_mimes = get_allowed_mime_types();
+        $allowed_mimes = App::attachment()->getAllowedMimeTypes();
         if (!in_array($mime_type, $allowed_mimes)) {
-            render_error_page(403, 'Type de fichier non autorisé',
+            (new \App\Render\ErrorRenderer())->errorPage(403, 'Type de fichier non autorisé',
                 'Le type MIME de cette pièce jointe n\'est pas dans la liste autorisée.',
                 'Contactez un administrateur si vous pensez qu\'il s\'agit d\'une erreur.');
         }
@@ -116,7 +116,7 @@ final class DownloadController extends BaseController
             }
         }
 
-        render_error_page(404, 'Fichier introuvable',
+        (new \App\Render\ErrorRenderer())->errorPage(404, 'Fichier introuvable',
             'Le fichier demandé n\'existe pas sur le serveur. Il a peut-être été supprimé ou déplacé.',
             'Contactez un administrateur si vous pensez qu\'il s\'agit d\'une erreur.');
     }
@@ -125,7 +125,7 @@ final class DownloadController extends BaseController
     {
         $submission_id = (string)trim($_GET['submission_id'] ?? '');
         if ($submission_id === '') {
-            render_error_page(400, 'Requête invalide',
+            (new \App\Render\ErrorRenderer())->errorPage(400, 'Requête invalide',
                 'L\'identifiant de soumission fourni est invalide.',
                 'Vérifiez que le lien que vous avez utilisé est correct et complet.');
         }
@@ -134,7 +134,7 @@ final class DownloadController extends BaseController
             $submission_id = (string)validate_input($submission_id, 'uuid');
         } catch (\InvalidArgumentException $e) {
             App::audit()->securityLog('invalid_submission_id', 'ID=' . substr($submission_id, 0, 20));
-            render_error_page(400, 'Requête invalide',
+            (new \App\Render\ErrorRenderer())->errorPage(400, 'Requête invalide',
                 'L\'identifiant de soumission fourni est invalide.',
                 'Vérifiez que le lien que vous avez utilisé est correct et complet.');
         }
@@ -149,7 +149,7 @@ final class DownloadController extends BaseController
         $subStmt->execute([$submission_id]);
         $submission = $subStmt->fetch(\PDO::FETCH_ASSOC);
         if ($submission === false) {
-            render_error_page(404, 'Soumission introuvable',
+            (new \App\Render\ErrorRenderer())->errorPage(404, 'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
                 'Contactez un administrateur si vous pensez qu\'il s\'agit d\'une erreur.');
         }
@@ -171,7 +171,7 @@ final class DownloadController extends BaseController
         }
 
         if (!$has_access) {
-            render_error_page(403, 'Accès non autorisé',
+            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès non autorisé',
                 'Vous n\'avez pas les droits nécessaires pour exporter cette soumission.',
                 'Seuls l\'auteur de la demande, les validateurs concernés et les administrateurs peuvent la consulter.');
         }

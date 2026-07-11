@@ -52,7 +52,7 @@ final class WebhookService
             $ch = curl_init($webhook_url);
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_POSTFIELDS => (string) $payload,
                 CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Webhook-Event: ' . $event],
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 5,

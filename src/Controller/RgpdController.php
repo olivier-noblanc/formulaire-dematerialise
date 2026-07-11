@@ -46,7 +46,7 @@ final class RgpdController extends BaseController
                 if (empty($email)) {
                     $errorMsg = 'Adresse email invalide.';
                 } else {
-                    $data = rgpd_export_user_data($email);
+                    $data = App::getInstance()->get(\App\Rgpd\RgpdService::class)->exportUserData($email);
 
                     // P2-B : Inclure les données validator (filled_by='validator')
                     $vdFilledStmt = $pdo->prepare(
@@ -74,7 +74,7 @@ final class RgpdController extends BaseController
                         && empty($data['validations'])
                         && empty($data['validator_data_filled'])
                         && empty($data['validator_data_on_submissions'])) {
-                        $infoMsg = 'Aucune donnée trouvée pour ' . h($email) . '.';
+                        $infoMsg = 'Aucune donnée trouvée pour ' . \App\Core\App::html()->escape($email) . '.';
                     } else {
                         App::audit()->log('rgpd_export', 'user:' . $email, 'Export des données demandé');
                         header('Content-Type: application/json; charset=utf-8');
@@ -106,10 +106,10 @@ final class RgpdController extends BaseController
                     $pdo->prepare("DELETE FROM submission_validator_data WHERE filled_by_email = ?")
                         ->execute([$email]);
 
-                    $result = rgpd_delete_user_data($email);
+                    $result = App::getInstance()->get(\App\Rgpd\RgpdService::class)->deleteUserData($email);
                     if ($result) {
                         App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur anonymisées');
-                        $successMsg = 'Données de ' . h($email) . ' supprimées (anonymisées).';
+                        $successMsg = 'Données de ' . \App\Core\App::html()->escape($email) . ' supprimées (anonymisées).';
                     } else {
                         $errorMsg = 'Erreur lors de la suppression des données.';
                     }
@@ -126,7 +126,7 @@ final class RgpdController extends BaseController
 
                     $pdo->exec('PRAGMA foreign_keys = ON');
 
-                    $count = rgpd_auto_purge($months);
+                    $count = App::getInstance()->get(\App\Rgpd\RgpdService::class)->autoPurge($months);
 
                     $pdo->exec(
                         "DELETE FROM submission_validator_data\n"
@@ -153,7 +153,7 @@ final class RgpdController extends BaseController
         $oldSubmissionsStmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE status != 'en_cours' AND closed_at < datetime('now', '-' || ? || ' months')");
         $oldSubmissionsStmt->execute([$retentionMonths]);
         $oldSubmissions = (int)$oldSubmissionsStmt->fetchColumn();
-        $dbSize = get_db_size();
+        $dbSize = App::webhook()->getDbSize();
 
         $pageCss = '';
         $navExtra = [
@@ -163,7 +163,7 @@ final class RgpdController extends BaseController
         ?>
   <h1><span aria-hidden="true">🔐</span> Conformité RGPD</h1>
 
-  <?= render_messages(['success'=>$successMsg, 'error'=>$errorMsg, 'info'=>$infoMsg]) ?>
+  <?= (new \App\Render\ErrorRenderer())->messages(['success'=>$successMsg, 'error'=>$errorMsg, 'info'=>$infoMsg]) ?>
 
   <!-- Statistiques des données -->
   <div class="stat-row">
@@ -187,7 +187,7 @@ final class RgpdController extends BaseController
       <input type="hidden" name="action" value="update_legal">
       <div class="field">
         <label for="legal_mentions">Mentions légales affichées aux utilisateurs</label>
-        <textarea id="legal_mentions" name="legal_mentions" rows="6" style="min-height:120px;"><?= h($legalMentions) ?></textarea>
+        <textarea id="legal_mentions" name="legal_mentions" rows="6" style="min-height:120px;"><?= \App\Core\App::html()->escape($legalMentions) ?></textarea>
         <span class="hint">Ce texte est affiché lors de la soumission des formulaires et dans la documentation.</span>
       </div>
       <div class="field">
@@ -211,7 +211,7 @@ final class RgpdController extends BaseController
       <input type="hidden" name="action" value="export_user">
       <div class="field" style="margin-bottom:0;flex:1;min-width:250px;">
         <label for="export_email">Email de l'agent</label>
-        <input type="email" id="export_email" name="export_email" placeholder="prenom.nom@<?= h($this->settings->get('email_domain', 'dreets.gouv.fr')) ?>" required>
+        <input type="email" id="export_email" name="export_email" placeholder="prenom.nom@<?= \App\Core\App::html()->escape($this->settings->get('email_domain', 'dreets.gouv.fr')) ?>" required>
       </div>
       <button type="submit" class="btn btn-primary"><span aria-hidden="true">📥</span> Exporter les données</button>
     </form>
@@ -229,7 +229,7 @@ final class RgpdController extends BaseController
       <input type="hidden" name="action" value="delete_user">
       <div class="field">
         <label for="delete_email">Email de l'agent à supprimer</label>
-        <input type="email" id="delete_email" name="delete_email" placeholder="prenom.nom@<?= h($this->settings->get('email_domain', 'dreets.gouv.fr')) ?>" required>
+        <input type="email" id="delete_email" name="delete_email" placeholder="prenom.nom@<?= \App\Core\App::html()->escape($this->settings->get('email_domain', 'dreets.gouv.fr')) ?>" required>
       </div>
       <label class="checkbox-item" style="margin-bottom:1rem;">
         <input type="checkbox" name="confirmed" value="1" required>

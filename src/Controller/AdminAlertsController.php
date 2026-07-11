@@ -170,7 +170,7 @@ final class AdminAlertsController extends BaseController
         ?>
   <h1><span aria-hidden="true">🔔</span> Alertes paramétrables</h1>
 
-  <?= render_messages(['success'=>$successMsg, 'error'=>$errorMsg]) ?>
+  <?= (new \App\Render\ErrorRenderer())->messages(['success'=>$successMsg, 'error'=>$errorMsg]) ?>
 
   <div class="card">
     <h2>Script de vérification des alertes</h2>
@@ -182,7 +182,7 @@ final class AdminAlertsController extends BaseController
       ?>
       <div class="script-status">
         <span class="health-dot <?= $checkOk ? 'health-ok' : 'health-warn' ?>"></span>
-        Dernière exécution : <strong><?= h(date('d/m/Y à H:i', $checkTs !== false ? $checkTs : 0)) ?></strong>
+        Dernière exécution : <strong><?= \App\Core\App::html()->escape(date('d/m/Y à H:i', $checkTs !== false ? $checkTs : 0)) ?></strong>
         <?php if (!$checkOk): ?>
           <span class="badge badge-warn" style="margin-left:.5rem;"><span aria-hidden="true">⚠</span> Dernière exécution il y a plus de 24h</span>
         <?php else: ?>
@@ -201,7 +201,7 @@ final class AdminAlertsController extends BaseController
       </div>
       <p style="font-size:.85rem;color:#595959;">
         Planifiez-le via Windows Task Scheduler (ex: toutes les 6h) :<br>
-        <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.8rem;">php <?= h(realpath(dirname(__DIR__, 2) . '/alert_check.php') ?: '') ?></code>
+        <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.8rem;">php <?= \App\Core\App::html()->escape(realpath(dirname(__DIR__, 2) . '/alert_check.php') ?: '') ?></code>
       </p>
     <?php endif; ?>
   </div>
@@ -220,13 +220,13 @@ final class AdminAlertsController extends BaseController
         <form method="POST" style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
           <?= $this->security->csrfField() ?>
           <input type="hidden" name="action" value="update_deadline_field">
-          <input type="hidden" name="form_id" value="<?= h($f['id']) ?>">
-          <strong style="min-width:150px;"><?= h($f['label']) ?></strong>
+          <input type="hidden" name="form_id" value="<?= \App\Core\App::html()->escape($f['id']) ?>">
+          <strong style="min-width:150px;"><?= \App\Core\App::html()->escape($f['label']) ?></strong>
           <select name="deadline_field" style="flex:1;">
             <option value="">— Aucun champ date —</option>
             <?php foreach ($dateFields as $df): ?>
-              <option value="<?= h($df['field_name']) ?>" <?= ($f['deadline_field'] ?? '') === $df['field_name'] ? 'selected' : '' ?>>
-                <?= h($df['label']) ?> (<?= h($df['field_name']) ?>)
+              <option value="<?= \App\Core\App::html()->escape($df['field_name']) ?>" <?= ($f['deadline_field'] ?? '') === $df['field_name'] ? 'selected' : '' ?>>
+                <?= \App\Core\App::html()->escape($df['label']) ?> (<?= \App\Core\App::html()->escape($df['field_name']) ?>)
               </option>
             <?php endforeach; ?>
           </select>
@@ -234,7 +234,7 @@ final class AdminAlertsController extends BaseController
         </form>
         <?php if (!empty($f['deadline_field'])): ?>
           <p style="font-size:.8rem;color:#1a6b3c;margin-top:.5rem;">
-            <span aria-hidden="true">✓</span> Champ date limite : <strong><?= h($f['deadline_field']) ?></strong>
+            <span aria-hidden="true">✓</span> Champ date limite : <strong><?= \App\Core\App::html()->escape($f['deadline_field']) ?></strong>
           </p>
         <?php else: ?>
           <p style="font-size:.8rem;color:#c0392b;margin-top:.5rem;">
@@ -258,23 +258,23 @@ final class AdminAlertsController extends BaseController
         <div class="rule-card <?= $isInactive ? 'inactive' : '' ?>">
           <div class="rule-header">
             <h3>
-              <span style="font-size:.8rem;color:#595959;"><?= h($r['form_label']) ?></span> —
-              <?= h($r['label']) ?>
+              <span style="font-size:.8rem;color:#595959;"><?= \App\Core\App::html()->escape($r['form_label']) ?></span> —
+              <?= \App\Core\App::html()->escape($r['label']) ?>
             </h3>
             <div class="rule-actions">
               <a href="index.php?p=admin_alerts&edit_rule=<?= urlencode($r['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>
               <form method="POST" style="display:inline;">
                 <?= $this->security->csrfField() ?>
                 <input type="hidden" name="action" value="delete_rule">
-                <input type="hidden" name="rule_id" value="<?= h($r['id']) ?>">
+                <input type="hidden" name="rule_id" value="<?= \App\Core\App::html()->escape($r['id']) ?>">
                 <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;" onclick="return confirm('Supprimer cette règle d\\'alerte ?');">Supprimer</button>
               </form>
             </div>
           </div>
           <div class="rule-meta">
             <span class="days-badge <?= $daysCls ?>"><?= $r['days_before'] == 0 ? 'Jour J' : 'J-' . (int)$r['days_before'] ?></span>
-            <span class="cond-badge"><?= $r['condition_type'] === 'steps_incomplete' ? 'Étapes incomplètes' : h($r['condition_type']) ?></span>
-            <span class="notify-badge"><span aria-hidden="true">📧</span> <?= h(self::notifyWhoLabel($r['notify_who'])) ?></span>
+            <span class="cond-badge"><?= $r['condition_type'] === 'steps_incomplete' ? 'Étapes incomplètes' : \App\Core\App::html()->escape($r['condition_type']) ?></span>
+            <span class="notify-badge"><span aria-hidden="true">📧</span> <?= \App\Core\App::html()->escape(self::notifyWhoLabel($r['notify_who'])) ?></span>
             <?php if ($isInactive): ?>
               <span class="badge badge-err">Inactive</span>
             <?php else: ?>
@@ -287,11 +287,11 @@ final class AdminAlertsController extends BaseController
             <form method="POST">
               <?= $this->security->csrfField() ?>
               <input type="hidden" name="action" value="update_rule">
-              <input type="hidden" name="rule_id" value="<?= h($r['id']) ?>">
+              <input type="hidden" name="rule_id" value="<?= \App\Core\App::html()->escape($r['id']) ?>">
               <div class="grid-2">
                 <div class="field">
                   <label>Libellé</label>
-                  <input type="text" name="label" value="<?= h($r['label']) ?>" required>
+                  <input type="text" name="label" value="<?= \App\Core\App::html()->escape($r['label']) ?>" required>
                 </div>
                 <div class="field">
                   <label>Jours avant la date cible</label>
@@ -318,7 +318,7 @@ final class AdminAlertsController extends BaseController
                 </div>
                 <div class="field custom-email-field">
                   <label>Courriel personnalisé <span class="hint">(si « Courriel personnalisé » sélectionné ci-dessus)</span></label>
-                  <input type="email" name="custom_email" value="<?= filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL) ? h($r['notify_who']) : '' ?>" placeholder="courriel@exemple.fr">
+                  <input type="email" name="custom_email" value="<?= filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL) ? \App\Core\App::html()->escape($r['notify_who']) : '' ?>" placeholder="courriel@exemple.fr">
                 </div>
                 <div class="field">
                   <label class="checkbox-label">
@@ -350,7 +350,7 @@ final class AdminAlertsController extends BaseController
           <select name="form_id" required>
             <option value="">— Sélectionner —</option>
             <?php foreach ($forms as $f): ?>
-              <option value="<?= h($f['id']) ?>"><?= h($f['label']) ?><?= empty($f['deadline_field']) ? ' (⚠ pas de champ date)' : '' ?></option>
+              <option value="<?= \App\Core\App::html()->escape($f['id']) ?>"><?= \App\Core\App::html()->escape($f['label']) ?><?= empty($f['deadline_field']) ? ' (⚠ pas de champ date)' : '' ?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -413,10 +413,10 @@ final class AdminAlertsController extends BaseController
         <tbody>
         <?php foreach ($alertLogs as $al): ?>
           <tr>
-            <td style="white-space:nowrap;font-size:.8rem;"><?= h(date('d/m/Y H:i', strtotime($al['sent_at']))) ?></td>
-            <td><span class="badge badge-info"><?= h($al['rule_label'] ?? 'Règle supprimée') ?></span></td>
-            <td><?= h($al['form_label']) ?></td>
-            <td style="font-size:.8rem;"><?= h($al['message']) ?></td>
+            <td style="white-space:nowrap;font-size:.8rem;"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($al['sent_at']))) ?></td>
+            <td><span class="badge badge-info"><?= \App\Core\App::html()->escape($al['rule_label'] ?? 'Règle supprimée') ?></span></td>
+            <td><?= \App\Core\App::html()->escape($al['form_label']) ?></td>
+            <td style="font-size:.8rem;"><?= \App\Core\App::html()->escape($al['message']) ?></td>
           </tr>
         <?php endforeach; ?>
         </tbody>

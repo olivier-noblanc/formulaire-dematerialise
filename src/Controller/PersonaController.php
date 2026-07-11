@@ -23,7 +23,7 @@ final class PersonaController extends BaseController
             $targetEmail = trim($_GET['email'] ?? '');
             if ($targetEmail === '') {
                 http_response_code(400);
-                render_error_page(400, 'Email manquant',
+                (new \App\Render\ErrorRenderer())->errorPage(400, 'Email manquant',
                     'Le paramètre email est requis pour action=start.',
                     '');
             }
@@ -33,18 +33,18 @@ final class PersonaController extends BaseController
                 $check = $pdo->prepare("SELECT 1 FROM submissions WHERE submitted_by = ? LIMIT 1");
                 $check->execute([$targetEmail]);
                 if (!$check->fetchColumn()) {
-                    render_error_page(404, 'Utilisateur inconnu',
-                        'Aucune soumission trouvée pour ' . h($targetEmail) . '.',
+                    (new \App\Render\ErrorRenderer())->errorPage(404, 'Utilisateur inconnu',
+                        'Aucune soumission trouvée pour ' . \App\Core\App::html()->escape($targetEmail) . '.',
                         'Le persona ne peut être activé que pour un utilisateur existant.');
                 }
             } catch (\Throwable $e) {
-                render_error_page(500, 'Erreur DB', h($e->getMessage()), '');
+                (new \App\Render\ErrorRenderer())->errorPage(500, 'Erreur DB', \App\Core\App::html()->escape($e->getMessage()), '');
             }
 
             $adminEmail = App::auth()->getUser();
             $token = persona_create_token($adminEmail, $targetEmail);
             if ($token === '') {
-                render_error_page(500, 'Erreur création token',
+                (new \App\Render\ErrorRenderer())->errorPage(500, 'Erreur création token',
                     'Impossible de créer le token persona.', '');
             }
 
@@ -56,7 +56,7 @@ final class PersonaController extends BaseController
             $redirectUrl = 'index.php';
         } else {
             http_response_code(400);
-            render_error_page(400, 'Action invalide',
+            (new \App\Render\ErrorRenderer())->errorPage(400, 'Action invalide',
                 'Action non reconnue. Utilisez ?action=start&email=XXX ou ?action=stop.',
                 '');
         }

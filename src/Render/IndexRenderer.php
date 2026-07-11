@@ -93,11 +93,11 @@ HTML;
     {
         $cards = '';
         foreach ($welcome_forms as $wf) {
-            $slug  = h((string)($wf['slug'] ?? ''));
-            $label = h((string)($wf['label'] ?? ''));
+            $slug  = \App\Core\App::html()->escape((string)($wf['slug'] ?? ''));
+            $label = \App\Core\App::html()->escape((string)($wf['label'] ?? ''));
             $desc_html = '';
             if (!empty($wf['description'])) {
-                $d = h((string)$wf['description']);
+                $d = \App\Core\App::html()->escape((string)$wf['description']);
                 $desc_html = "\n              <div class=\"welcome-form-desc\">{$d}</div>";
             }
             $cards .= <<<HTML
@@ -110,7 +110,7 @@ HTML;
           </a>
 HTML;
         }
-        $app_name = h(get_app_name());
+        $app_name = \App\Core\App::html()->escape(NavigationRenderer::getAppName());
         return <<<HTML
     <!-- U-06 (part 2) : Empty-state guidé accueil agent — visible uniquement si l'agent
          a VRAIMENT 0 soumission (pas 0 en cours mais 10 archivées) ET qu'au moins un
@@ -135,7 +135,7 @@ HTML;
      */
     public static function hero(): string
     {
-        $app_name = h(get_app_name());
+        $app_name = \App\Core\App::html()->escape(NavigationRenderer::getAppName());
         return <<<HTML
   <!-- Hero -->
   <div class="hero">
@@ -259,11 +259,11 @@ HTML;
         }
         $cards = '';
         foreach ($active_forms as $af) {
-            $slug  = h((string)($af['slug'] ?? ''));
-            $label = h((string)($af['label'] ?? ''));
+            $slug  = \App\Core\App::html()->escape((string)($af['slug'] ?? ''));
+            $label = \App\Core\App::html()->escape((string)($af['label'] ?? ''));
             $desc_html = '';
             if (!empty($af['description'])) {
-                $d = h((string)$af['description']);
+                $d = \App\Core\App::html()->escape((string)$af['description']);
                 $desc_html = "\n          <div class=\"fc-desc\">{$d}</div>";
             }
             $cards .= <<<HTML
@@ -294,7 +294,7 @@ HTML;
         if ($has_owned) {
             foreach ($owned_forms as $of) {
                 $id    = urlencode((string)($of['id'] ?? ''));
-                $label = h((string)($of['label'] ?? ''));
+                $label = \App\Core\App::html()->escape((string)($of['label'] ?? ''));
                 $owned_html .= <<<HTML
 
     <a href="index.php?p=form_tracking&f={$id}" class="nav-tile">
@@ -416,8 +416,8 @@ HTML;
 
         $cards = '';
         foreach ($owned_forms as $of) {
-            $id    = h((string)($of['id'] ?? ''));
-            $label = h(t_jargon((string)($of['label'] ?? '')));
+            $id    = \App\Core\App::html()->escape((string)($of['id'] ?? ''));
+            $label = \App\Core\App::html()->escape(t_jargon((string)($of['label'] ?? '')));
             $cards .= <<<HTML
         <a href="index.php?p=form_tracking&f={$id}" class="form-card">
           <div class="fc-title">📊 {$label}</div>

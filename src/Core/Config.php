@@ -9,7 +9,7 @@ namespace App\Core;
  */
 final class Config
 {
-    /** @return array<string, string> */
+    /** @return array<string, int|string> */
     public function getDefaults(): array
     {
         return defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS : [];
@@ -17,7 +17,7 @@ final class Config
 
     public function get(string $key, string $default = ''): string
     {
-        return $this->getDefaults()[$key] ?? $default;
+        return (string) ($this->getDefaults()[$key] ?? $default);
     }
 
     public function getBaseUrl(): string
@@ -37,8 +37,8 @@ final class Config
 
     public function getAppName(): string
     {
-        return defined('SETTINGS_DEFAULTS') && isset(SETTINGS_DEFAULTS['app_name'])
-            ? SETTINGS_DEFAULTS['app_name']
+        return defined('SETTINGS_DEFAULTS')
+            ? (string) SETTINGS_DEFAULTS['app_name']
             : 'CircuitDémat';
     }
 }

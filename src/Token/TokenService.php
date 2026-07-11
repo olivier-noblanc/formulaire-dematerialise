@@ -111,7 +111,7 @@ final class TokenService
             ->execute([$newTokenRowId, $old['submission_id'], $old['step_id'], $old['email'], $newToken, $now, $expiresAt]);
 
         // Envoyer le nouveau lien par email
-        $submission = get_submission_with_form_label($old['submission_id']);
+        $submission = App::workflow()->getSubmissionWithFormLabel($old['submission_id']);
 
         $stepStmt = $pdo->prepare("SELECT label FROM steps WHERE id = ?");
         $stepStmt->execute([$old['step_id']]);
@@ -119,7 +119,7 @@ final class TokenService
 
         if ($submission && $step) {
             $subject = '[Renvoi] ' . ($submission['form_label'] ?? '') . ' — ' . ($step['label'] ?? '');
-            $this->mail->send($old['email'], $subject, build_mail_html($submission, $step['label'], $newToken));
+            $this->mail->send($old['email'], $subject, App::mail()->buildMailHtml($submission, $step['label'], $newToken));
         }
 
         $this->audit->log('token_regenerate', 'token:' . $oldTokenId, 'Token régénéré pour ' . $old['email'] . ', nouveau token créé');
@@ -138,7 +138,7 @@ final class TokenService
         $caller = $cancelledBy ?: $this->auth->getUser();
         $callerIsAdmin = $this->auth->isAdmin();
 
-        $submission = get_submission_with_form_label($submissionId);
+        $submission = App::workflow()->getSubmissionWithFormLabel($submissionId);
 
         if (!$submission) {
             return ['success' => false, 'message' => 'Soumission introuvable.'];
@@ -175,15 +175,15 @@ final class TokenService
         // Notifier l'agent
         $agentEmail = $submission['submitted_by'] ?? '';
         if (!empty($agentEmail) && filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
-            $subject = 'Demande annulée — ' . ($submission['form_label'] ?? get_app_name());
+            $subject = 'Demande annulée — ' . ($submission['form_label'] ?? \App\Render\NavigationRenderer::getAppName());
             $bodyHtml = '<h2 style="color:#b45309;">Demande annulée</h2>'
-                . '<p>Votre demande <strong>' . h($submission['form_label'] ?? '') . '</strong> a été annulée.</p>';
-            $this->mail->send($agentEmail, $subject, render_email_template('Demande annulée', $bodyHtml));
+                . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($submission['form_label'] ?? '') . '</strong> a été annulée.</p>';
+            $this->mail->send($agentEmail, $subject, App::mail()->renderEmailTemplate('Demande annulée', $bodyHtml));
         }
 
         $this->audit->log('submission_cancel', 'submission:' . $submissionId, 'Soumission annulée', $cancelledBy);
 
-        send_webhook('submission_cancelled', ['submission_id' => $submissionId, 'form_label' => $submission['form_label'] ?? '', 'cancelled_by' => $cancelledBy]);
+        App::webhook()->send('submission_cancelled', ['submission_id' => $submissionId, 'form_label' => $submission['form_label'] ?? '', 'cancelled_by' => $cancelledBy]);
 
         return ['success' => true, 'message' => 'Soumission annulée avec succès.'];
     }
@@ -193,7 +193,7 @@ final class TokenService
      */
     public function remind(string $tokenId): array
     {
-        $tok = get_token_by_id_with_context($tokenId);
+        $tok = App::workflow()->getTokenByIdWithContext($tokenId);
 
         if (!$tok) {
             return ['success' => false, 'message' => 'Token introuvable.'];
@@ -221,7 +221,7 @@ final class TokenService
             $subject = '[Rappel ' . $newCount . '/' . $relanceMax . '] ' . $tok['form_label'] . ' — ' . $stepLabel;
         }
 
-        $mailBody = build_mail_html($submission, $stepLabel, $tok['token']);
+        $mailBody = App::mail()->buildMailHtml($submission, $stepLabel, $tok['token']);
         $rappelNotice = '<div style="background:#fff3e0;border:1px solid #b45309;border-radius:4px;padding:12px;margin-bottom:16px;">
             <strong>Rappel :</strong> Cette demande est toujours en attente de votre validation.
             <br>Ceci est le rappel n°' . $newCount . ' sur un maximum de ' . $relanceMax . '.
@@ -244,7 +244,7 @@ final class TokenService
      */
     public function delegate(string $tokenId, string $toEmail, string $reason = ''): array
     {
-        $tok = get_token_by_id_with_context($tokenId);
+        $tok = App::workflow()->getTokenByIdWithContext($tokenId);
 
         if (!$tok) {
             return ['success' => false, 'message' => 'Token introuvable.'];
@@ -295,11 +295,11 @@ final class TokenService
         ];
 
         $subject = '[Délégation] ' . $tok['form_label'] . ' — ' . $stepLabel;
-        $mailBody = build_mail_html($submission, $stepLabel, $newToken);
+        $mailBody = App::mail()->buildMailHtml($submission, $stepLabel, $newToken);
 
         $delegationNotice = '<div style="background:#e8eaf6;border:1px solid #003189;border-radius:4px;padding:12px;margin-bottom:16px;">
             <strong>Délégation :</strong> Cette validation vous a été déléguée par <strong>' . App::html()->displayUser($tok['email']) . '</strong>.
-            ' . (!empty($reason) ? '<br><em>Motif : ' . h($reason) . '</em>' : '') . '
+            ' . (!empty($reason) ? '<br><em>Motif : ' . \App\Core\App::html()->escape($reason) . '</em>' : '') . '
         </div>';
         $mailBody = str_replace('<h2 style="color:#003189;">', $delegationNotice . '<h2 style="color:#003189;">', $mailBody);
 
@@ -307,9 +307,9 @@ final class TokenService
 
         $confirmSubject = 'Délégation confirmée — ' . $tok['form_label'];
         $confirmBodyHtml = '<h2 style="color:#003189;">Délégation confirmée</h2>'
-            . '<p>Votre validation pour <strong>' . h($tok['form_label']) . '</strong> (étape ' . h($stepLabel) . ') a été déléguée à <strong>' . App::html()->displayUser($toEmail) . '</strong>.</p>'
+            . '<p>Votre validation pour <strong>' . \App\Core\App::html()->escape($tok['form_label']) . '</strong> (étape ' . \App\Core\App::html()->escape($stepLabel) . ') a été déléguée à <strong>' . App::html()->displayUser($toEmail) . '</strong>.</p>'
             . '<p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>';
-        $this->mail->send($tok['email'], $confirmSubject, render_email_template('Délégation confirmée', $confirmBodyHtml));
+        $this->mail->send($tok['email'], $confirmSubject, App::mail()->renderEmailTemplate('Délégation confirmée', $confirmBodyHtml));
 
         $this->audit->log('token_delegate', 'token:' . $tokenId, 'Token délégué de ' . $tok['email'] . ' à ' . $toEmail . ($reason ? ' — Motif : ' . $reason : ''));
 

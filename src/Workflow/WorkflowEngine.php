@@ -334,8 +334,8 @@ final class WorkflowEngine implements WorkflowInterface
             if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
                 $subject = 'Demande refusée — ' . ($t['form_label'] ?? '');
                 $body = '<h2 style="color:#c0392b;">Demande refusée</h2>'
-                    . '<p>Votre demande <strong>' . h($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . h($t['step_label']) . '</strong>.</p>'
-                    . (!empty($comment) ? '<p><strong>Motif :</strong> ' . h($comment) . '</p>' : '');
+                    . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . \App\Core\App::html()->escape($t['step_label']) . '</strong>.</p>'
+                    . (!empty($comment) ? '<p><strong>Motif :</strong> ' . \App\Core\App::html()->escape($comment) . '</p>' : '');
                 $this->mail->send($agentEmail, $subject, $this->mail->renderEmailTemplate('Demande refusée', $body));
             }
         } else {
@@ -400,7 +400,7 @@ final class WorkflowEngine implements WorkflowInterface
             $ch = curl_init($webhookUrl);
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_POSTFIELDS => (string) $payload,
                 CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Webhook-Event: ' . $event],
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 5,

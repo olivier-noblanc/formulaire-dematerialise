@@ -62,7 +62,7 @@ function encrypt_setting(string $value): string {
         error_log('[SECURITY] openssl_cipher_iv_length a échoué — valeur stockée en clair');
         return $value;
     }
-    $iv = random_bytes($iv_length);
+    $iv = random_bytes(max(1, $iv_length));
     $encrypted = openssl_encrypt($value, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
     if ($encrypted === false) {
         error_log('[SECURITY] Échec de chiffrement — valeur stockée en clair');
@@ -199,8 +199,8 @@ function persona_current_target(): string {
 }
 
 function persona_get_service(): \App\Persona\PersonaService {
-    if (\App\Core\App::has(\App\Persona\PersonaService::class)) {
-        return \App\Core\App::get(\App\Persona\PersonaService::class);
+    if (\App\Core\App::getInstance()->has(\App\Persona\PersonaService::class)) {
+        return \App\Core\App::getInstance()->get(\App\Persona\PersonaService::class);
     }
     return new \App\Persona\PersonaService(new \App\Core\Database());
 }
@@ -214,7 +214,7 @@ function evaluate_step_condition(array $step, string $submission_id): bool {
     $condition_json = $step['condition'] ?? '';
     if (empty($condition_json)) return true;
 
-    $validator_data = get_submission_validator_data($submission_id);
+    $validator_data = \App\Core\App::validatorData()->getSubmissionValidatorData($submission_id);
     $data = [];
     foreach ($validator_data as $vd) {
         $data[$vd['field_name'] ?? ''] = $vd['value'] ?? '';
@@ -230,7 +230,7 @@ function evaluate_field_condition(array $field, array $form_data): bool {
 
 // ── VALIDATION (lib/validation.php → App\Validation\ValidationService) ──
 function sanitize_input(string $input): string {
-    trigger_error('sanitize_input() is deprecated — use h() for HTML output and prepared statements for SQL', E_USER_DEPRECATED);
+    trigger_error('sanitize_input() is deprecated — use \App\Core\App::html()->escape() for HTML output and prepared statements for SQL', E_USER_DEPRECATED);
     return \App\Core\App::validation()->sanitize($input);
 }
 

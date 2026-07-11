@@ -15,8 +15,7 @@ final class DocsController extends BaseController
 {
     public function handle(): void
     {
-        // Modules de sections de documentation (P-DOCS refactor)
-        require_once dirname(__DIR__, 2) . '/lib/docs_sections.php';
+
 
         $is_logged_in = false;
         $is_admin     = false;
@@ -43,33 +42,35 @@ final class DocsController extends BaseController
         ob_start();
         ?>
   <h1>Aide et documentation</h1>
-  <p class="subtitle"><span class="version-badge">v<?= h($this->cache->getLatestVersion()) ?></span></p>
+  <p class="subtitle"><span class="version-badge">v<?= \App\Core\App::html()->escape($this->cache->getLatestVersion()) ?></span></p>
 
-<?= render_docs_section_start() ?>
+<?php $_docs = \App\Docs\DocumentationService::getInstance(); ?>
 
-<?= render_docs_section_toc() ?>
+<?= $_docs->renderStart() ?>
+
+<?= $_docs->renderToc() ?>
 
   <details class="full-doc">
     <summary><span aria-hidden="true">📖</span> Documentation complète (avancée)</summary>
     <div class="full-doc-body">
 
-<?= render_docs_section_quickstart() ?>
+<?= $_docs->renderQuickstart() ?>
 
-<?= render_docs_section_agent() ?>
+<?= $_docs->renderAgent() ?>
 
-<?= render_docs_section_validateur() ?>
+<?= $_docs->renderValidateur() ?>
 
-<?= render_docs_section_admin() ?>
+<?= $_docs->renderAdmin() ?>
 
-<?= render_docs_section_features() ?>
+<?= $_docs->renderFeatures() ?>
 
-<?= render_docs_section_roles() ?>
+<?= $_docs->renderRoles() ?>
 
-<?= render_docs_section_faq() ?>
+<?= $_docs->renderFaq() ?>
 
-<?= render_docs_section_rgpd() ?>
+<?= $_docs->renderRgpd() ?>
 
-<?= render_docs_section_technique() ?>
+<?= $_docs->renderTechnique() ?>
 
     </div>
   </details>

@@ -2,8 +2,7 @@
 /**
  * tests/test_advanced_rgpd.php — Section 3 : RGPD & Data Protection
  *
- * Teste rgpd_export_user_data(), rgpd_delete_user_data(), rgpd_auto_purge(),
- * rate_limit_check() (limite, indépendance par action/IP), get_allowed_extensions().
+ * Tests RgpdService export/delete/purge, rate_limit_check(), get_allowed_extensions().
  *
  * Dépendances : test_bootstrap.php (test), helpers.php (fonctions métier).
  * Globales attendues : $pdo, $onboarding_id.
@@ -19,14 +18,14 @@ function run_tests_advanced_rgpd(): void {
 
     echo "── 3. RGPD & Data Protection ──\n";
 
-    test('rgpd_export_user_data() returns structured array with user data', function() use ($pdo, $onboarding_id) {
+    test('RgpdService::exportUserData() returns structured array with user data', function() use ($pdo, $onboarding_id) {
         $test_email = 'rgpd_export@dreets.gouv.fr';
         $sub_id = generate_uuid();
         $data = json_encode(['nom' => 'RgpdExport', 'prenom' => 'Test']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, $test_email]);
 
-        $export = rgpd_export_user_data($test_email);
+        $export = \App\Core\App::getInstance()->get(\App\Rgpd\RgpdService::class)->exportUserData($test_email);
 
         // Cleanup
         $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$sub_id]);
@@ -40,20 +39,20 @@ function run_tests_advanced_rgpd(): void {
         return true;
     });
 
-    test('rgpd_export_user_data() for user with no data returns empty sections', function() {
-        $export = rgpd_export_user_data('nonexistent_user_99999@nodata.test');
+    test('RgpdService::exportUserData() for user with no data returns empty sections', function() {
+        $export = \App\Core\App::getInstance()->get(\App\Rgpd\RgpdService::class)->exportUserData('nonexistent_user_99999@nodata.test');
         return (empty($export['submissions']) && empty($export['validations']))
             ? true : 'Expected empty sections for non-existent user';
     });
 
-    test('rgpd_delete_user_data() anonymizes submission data', function() use ($pdo, $onboarding_id) {
+    test('RgpdService::deleteUserData() anonymizes submission data', function() use ($pdo, $onboarding_id) {
         $test_email = 'rgpd_delete@dreets.gouv.fr';
         $sub_id = generate_uuid();
         $data = json_encode(['nom' => 'ToDelete', 'prenom' => 'User', 'email' => $test_email]);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
             ->execute([$sub_id, $onboarding_id, $data, $test_email]);
 
-        $result = rgpd_delete_user_data($test_email);
+        $result = \App\Core\App::getInstance()->get(\App\Rgpd\RgpdService::class)->deleteUserData($test_email);
 
         // Check that submitted_by is anonymized
         $stmt = $pdo->prepare("SELECT submitted_by, data FROM submissions WHERE id = ?");
@@ -63,7 +62,7 @@ function run_tests_advanced_rgpd(): void {
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$sub_id]);
 
-        if (!$result) return 'rgpd_delete_user_data returned false';
+        if (!$result) return 'deleteUserData returned false';
         if ($row['submitted_by'] !== '[supprimé]') return 'submitted_by not anonymized: ' . $row['submitted_by'];
 
         $decoded = json_decode($row['data'], true);
@@ -72,7 +71,7 @@ function run_tests_advanced_rgpd(): void {
         return true;
     });
 
-    test('rgpd_auto_purge() respects retention period', function() use ($pdo, $onboarding_id) {
+    test('RgpdService::autoPurge() respects retention period', function() use ($pdo, $onboarding_id) {
         // Create an old closed submission (more than 24 months ago)
         $sub_id = generate_uuid();
         $data = json_encode(['nom' => 'OldPurge', 'prenom' => 'Test']);
@@ -80,7 +79,7 @@ function run_tests_advanced_rgpd(): void {
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at, closed_at) VALUES (?, ?, ?, ?, 'valide', ?, ?)")
             ->execute([$sub_id, $onboarding_id, $data, 'purge_test@dreets.gouv.fr', $old_date, $old_date]);
 
-        $count = rgpd_auto_purge(24);
+        $count = \App\Core\App::getInstance()->get(\App\Rgpd\RgpdService::class)->autoPurge(24);
 
         // Check the old submission was deleted
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE id = ?");
@@ -90,8 +89,8 @@ function run_tests_advanced_rgpd(): void {
         return $remaining === 0 ? true : "Old submission not purged. Purged count: $count";
     });
 
-    test('get_allowed_extensions() includes common safe formats', function() {
-        $exts = get_allowed_extensions();
+    test('AttachmentService::getAllowedExtensions() includes common safe formats', function() {
+        $exts = \App\Core\App::attachment()->getAllowedExtensions();
         $required = ['pdf', 'docx', 'xlsx', 'jpg', 'png'];
         foreach ($required as $ext) {
             if (!in_array($ext, $exts)) return "Missing extension: $ext";

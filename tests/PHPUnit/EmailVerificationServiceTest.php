@@ -329,85 +329,25 @@ final class EmailVerificationServiceTest extends TestCase
         $this->assertSame('', $result['email']);
     }
 
-    // ── Global function wrappers ───────────────────────────────
+    // ── Direct service calls (replaces removed global wrappers) ──
 
-    public function testGlobalFunctionVerifyEmailExists(): void
+    public function testDirectServiceCallsReturnArrays(): void
     {
-        $this->assertTrue(function_exists('verify_email'));
-    }
-
-    public function testGlobalFunctionVerifyEmailLdapExists(): void
-    {
-        $this->assertTrue(function_exists('verify_email_ldap'));
-    }
-
-    public function testGlobalFunctionVerifyEmailSmtpExists(): void
-    {
-        $this->assertTrue(function_exists('verify_email_smtp'));
-    }
-
-    public function testGlobalFunctionLdapSuggestExists(): void
-    {
-        $this->assertTrue(function_exists('ldap_suggest'));
-    }
-
-    public function testGlobalFunctionTestEmailVerificationExists(): void
-    {
-        $this->assertTrue(function_exists('test_email_verification'));
-    }
-
-    public function testGlobalFunctionsReturnArrays(): void
-    {
-        $result = verify_email('test@example.com');
+        $result = \App\Core\App::emailVerify()->verify('test@example.com');
         $this->assertIsArray($result);
         $this->assertArrayHasKey('ok', $result);
 
-        $result = verify_email_ldap('test@example.com');
+        $result = \App\Core\App::emailVerify()->verifyLdap('test@example.com');
         $this->assertIsArray($result);
 
-        $result = verify_email_smtp('test@example.com');
+        $result = \App\Core\App::emailVerify()->verifySmtp('test@example.com');
         $this->assertIsArray($result);
 
-        $result = ldap_suggest('test');
+        $result = \App\Core\App::emailVerify()->ldapSuggest('test');
         $this->assertIsArray($result);
 
-        $result = test_email_verification('test@example.com');
+        $result = \App\Core\App::emailVerify()->testVerification('test@example.com');
         $this->assertIsArray($result);
-    }
-
-    public function testGlobalVerifyEmailMatchesServiceMethod(): void
-    {
-        $globalResult = verify_email('test@example.com');
-        $serviceResult = $this->service->verify('test@example.com');
-        $this->assertSame($serviceResult, $globalResult);
-    }
-
-    public function testGlobalVerifyEmailLdapMatchesServiceMethod(): void
-    {
-        $globalResult = verify_email_ldap('test@example.com');
-        $serviceResult = $this->service->verifyLdap('test@example.com');
-        $this->assertSame($serviceResult, $globalResult);
-    }
-
-    public function testGlobalVerifyEmailSmtpMatchesServiceMethod(): void
-    {
-        $globalResult = verify_email_smtp('test@example.com');
-        $serviceResult = $this->service->verifySmtp('test@example.com');
-        $this->assertSame($serviceResult, $globalResult);
-    }
-
-    public function testGlobalLdapSuggestMatchesServiceMethod(): void
-    {
-        $globalResult = ldap_suggest('test');
-        $serviceResult = $this->service->ldapSuggest('test');
-        $this->assertSame($serviceResult, $globalResult);
-    }
-
-    public function testGlobalTestEmailVerificationMatchesServiceMethod(): void
-    {
-        $globalResult = test_email_verification('test@example.com');
-        $serviceResult = $this->service->testVerification('test@example.com');
-        $this->assertSame($serviceResult, $globalResult);
     }
 
     // ── Edge cases ──────────────────────────────────────────────
@@ -633,25 +573,25 @@ final class EmailVerificationServiceTest extends TestCase
         $this->assertSame('ldap', $result['method']);
     }
 
-    // ── Integration with global functions ───────────────────────
+    // ── Integration with service calls ───────────────────────
 
-    public function testGlobalVerifyEmailWithInvalidEmail(): void
+    public function testDirectVerifyEmailWithInvalidEmail(): void
     {
-        $result = verify_email('not-valid');
+        $result = \App\Core\App::emailVerify()->verify('not-valid');
         $this->assertFalse($result['ok']);
         $this->assertSame('format', $result['method']);
     }
 
-    public function testGlobalVerifyEmailLdapMatchesServiceLdap(): void
+    public function testDirectVerifyEmailLdapMatchesServiceLdap(): void
     {
-        $global = verify_email_ldap('test@example.com');
+        $global = \App\Core\App::emailVerify()->verifyLdap('test@example.com');
         $service = $this->service->verifyLdap('test@example.com');
         $this->assertSame($service, $global);
     }
 
-    public function testGlobalVerifyEmailSmtpMatchesServiceSmtp(): void
+    public function testDirectVerifyEmailSmtpMatchesServiceSmtp(): void
     {
-        $global = verify_email_smtp('test@example.com');
+        $global = \App\Core\App::emailVerify()->verifySmtp('test@example.com');
         $service = $this->service->verifySmtp('test@example.com');
         $this->assertSame($service, $global);
     }

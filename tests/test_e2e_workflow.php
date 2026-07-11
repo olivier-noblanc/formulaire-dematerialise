@@ -102,7 +102,7 @@ function run_tests_e2e_workflow_step(): void {
     echo "── 3. Workflow complet — Avancement et validation ──\n";
 
     test('advance_workflow() crée les tokens de l\'étape 1', function() use ($submission_uuid, $pdo, $steps_onboarding) {
-        advance_workflow($submission_uuid);
+        \App\Core\App::workflow()->advanceWorkflow($submission_uuid);
 
         $step1 = $steps_onboarding[0] ?? null;
         if (!$step1) return 'Pas d\'étape 1';
@@ -157,7 +157,7 @@ function run_tests_e2e_workflow_step(): void {
 
     test('validate_token() avec token valide retourne ok', function() use ($first_token) {
         if (!$first_token) return 'Pas de token à valider';
-        $result = validate_token($first_token, 'valider', 'Validation E2E test');
+        $result = \App\Core\App::workflow()->validateToken($first_token, 'valider', 'Validation E2E test');
         return $result['status'] === 'ok' ? true : 'Status: ' . $result['status'] . ' — ' . json_encode($result);
     });
 
@@ -190,7 +190,7 @@ function run_tests_e2e_workflow_step(): void {
 
     foreach ($remaining_tokens_step1 as $i => $token) {
         test("Validation token étape 1 #" . ($i + 2), function() use ($token) {
-            $result = validate_token($token, 'valider', 'Validation parallèle E2E');
+            $result = \App\Core\App::workflow()->validateToken($token, 'valider', 'Validation parallèle E2E');
             return $result['status'] === 'ok' ? true : 'Status: ' . $result['status'];
         });
     }
@@ -215,7 +215,7 @@ function run_tests_e2e_workflow_step(): void {
 
     test('Validation étape 2', function() use ($step2_token) {
         if (!$step2_token) return 'Pas de token étape 2 (ignoré si < 2 étapes)';
-        $result = validate_token($step2_token, 'valider', 'Validation étape 2 E2E');
+        $result = \App\Core\App::workflow()->validateToken($step2_token, 'valider', 'Validation étape 2 E2E');
         return $result['status'] === 'ok' ? true : 'Status: ' . $result['status'];
     });
 
@@ -245,7 +245,7 @@ function run_tests_e2e_workflow_full(): void {
     });
 
     test('Advance workflow pour soumission complète', function() use ($full_workflow_uuid) {
-        advance_workflow($full_workflow_uuid);
+        \App\Core\App::workflow()->advanceWorkflow($full_workflow_uuid);
         return true;
     });
 
@@ -264,7 +264,7 @@ function run_tests_e2e_workflow_full(): void {
         $step_tokens = $tok_stmt->fetchAll(PDO::FETCH_COLUMN);
 
         foreach ($step_tokens as $tidx => $token) {
-            $result = validate_token($token, 'valider', "Validation complète étape " . ($idx + 1));
+            $result = \App\Core\App::workflow()->validateToken($token, 'valider', "Validation complète étape " . ($idx + 1));
             if ($result['status'] !== 'ok') {
                 test("Validation étape {$step['label']} token #" . ($tidx + 1), function() use ($result) {
                     return 'Échec: ' . $result['status'];

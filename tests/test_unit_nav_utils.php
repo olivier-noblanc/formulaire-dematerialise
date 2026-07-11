@@ -167,17 +167,17 @@ test('parse_options_input() chaîne vide retourne null', function() {
 });
 
 test('resolve_dynamic_recipient() email simple inchangé', function() {
-    $result = resolve_dynamic_recipient('test@dreets.gouv.fr', []);
+    $result = \App\Core\App::workflow()->resolveDynamicRecipient('test@dreets.gouv.fr', []);
     return $result === 'test@dreets.gouv.fr' ? true : "Got: $result";
 });
 
 test('resolve_dynamic_recipient() référence dynamique résolue', function() {
-    $result = resolve_dynamic_recipient('{{email_manager}}', ['email_manager' => 'manager@dreets.gouv.fr']);
+    $result = \App\Core\App::workflow()->resolveDynamicRecipient('{{email_manager}}', ['email_manager' => 'manager@dreets.gouv.fr']);
     return $result === 'manager@dreets.gouv.fr' ? true : "Got: $result";
 });
 
 test('resolve_dynamic_recipient() référence non résolue', function() {
-    $result = resolve_dynamic_recipient('{{champ_inconnu}}', []);
+    $result = \App\Core\App::workflow()->resolveDynamicRecipient('{{champ_inconnu}}', []);
     return $result === '{{champ_inconnu}}' ? true : "Got: $result";
 });
 
@@ -203,47 +203,47 @@ test('get_owned_forms() retourne un tableau', function() {
 });
 
 test('verify_email() format invalide', function() {
-    $result = verify_email('not-an-email');
+    $result = \App\Core\App::emailVerify()->verify('not-an-email');
     return $result['ok'] === false ? true : 'Email invalide accepté';
 });
 
 test('verify_email() mode none = ok', function() {
-    $result = verify_email('valid@dreets.gouv.fr');
+    $result = \App\Core\App::emailVerify()->verify('valid@dreets.gouv.fr');
     return $result['ok'] === true ? true : 'Email valide rejeté en mode none';
 });
 
 test('get_stats_by_period() retourne un tableau', function() {
-    $result = get_stats_by_period('month', 5);
+    $result = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getStatsByPeriod('month', 5);
     return is_array($result) ? true : 'Pas un tableau';
 });
 
-test('get_tokens_for_submission() retourne un tableau', function() {
-    $result = get_tokens_for_submission('00000000-0000-4000-8000-000000000000');
+test('TokenService::getForSubmission() retourne un tableau', function() {
+    $result = \App\Core\App::token()->getForSubmission('00000000-0000-4000-8000-000000000000');
     return is_array($result) ? true : 'Pas un tableau';
 });
 
 test('send_mail() en mode test intercepte le mail', function() {
     reset_test_mails();
-    $result = send_mail('test@dreets.gouv.fr', 'Test subject', '<p>Test body</p>');
+    $result = \App\Core\App::mail()->send('test@dreets.gouv.fr', 'Test subject', '<p>Test body</p>');
     $mails = get_test_mails();
     return $result === true && count($mails) > 0 ? true : 'Mail non intercepté en mode test';
 });
 
 test('send_mail() intercepté contient les bonnes données', function() {
     reset_test_mails();
-    send_mail('dest@dreets.gouv.fr', 'Mon sujet', '<p>Mon corps</p>');
+    \App\Core\App::mail()->send('dest@dreets.gouv.fr', 'Mon sujet', '<p>Mon corps</p>');
     $mails = get_test_mails();
     $last = end($mails);
     return $last['to'] === 'dest@dreets.gouv.fr' && $last['subject'] === 'Mon sujet' ? true : 'Données du mail incorrectes';
 });
 
-test('get_attachments() retourne un tableau', function() {
-    $result = get_attachments('00000000-0000-4000-8000-000000000000');
+test('AttachmentService::getAttachments() retourne un tableau', function() {
+    $result = \App\Core\App::attachment()->getAttachments('00000000-0000-4000-8000-000000000000');
     return is_array($result) ? true : 'Pas un tableau';
 });
 
-test('get_attachment_by_id() avec ID invalide retourne null', function() {
-    $result = get_attachment_by_id('00000000-0000-4000-8000-000000000000');
+test('AttachmentService::getAttachmentById() avec ID invalide retourne null', function() {
+    $result = \App\Core\App::attachment()->getAttachmentById('00000000-0000-4000-8000-000000000000');
     return $result === null ? true : 'Pièce jointe trouvée pour ID inexistant';
 });
 
@@ -252,7 +252,7 @@ test('build_mail_html() génère du HTML', function() {
         'data' => json_encode(['nom' => 'Test', 'prenom' => 'Agent']),
         'form_label' => 'Test Form',
     ];
-    $html = build_mail_html($submission, 'Étape 1', 'abc123token');
+    $html = \App\Core\App::mail()->buildMailHtml($submission, 'Étape 1', 'abc123token');
     return strpos($html, 'DOCTYPE') !== false && strpos($html, 'Test Form') !== false ? true : 'HTML manquant';
 });
 

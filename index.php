@@ -65,10 +65,10 @@ $page = preg_replace('/[^a-z_]/', '', $page); // Sanitize : lettres + underscore
 
 if (!array_key_exists($page, $ALLOWED_PAGES)) {
     http_response_code(404);
-    render_error_page(404, 'Page introuvable',
+    (new \App\Render\ErrorRenderer())->errorPage(404, 'Page introuvable',
         'La page demandée n\'existe pas.',
         'Vérifiez l\'adresse ou retournez à l\'accueil.');
-    // render_error_page appelle exit() — pas besoin de exit ici
+    // errorPage() appelle exit() — pas besoin de exit ici
 }
 
 // ── Mapping pages → Controllers OOP ──
@@ -111,10 +111,10 @@ if (array_key_exists($page, $CONTROLLER_MAP)) {
 $pageFile = __DIR__ . '/pages/' . $page . '.php';
 if (!file_exists($pageFile)) {
     http_response_code(404);
-    render_error_page(404, 'Page introuvable',
-        'Le fichier de page n\'existe pas : pages/' . h($page) . '.php',
+    (new \App\Render\ErrorRenderer())->errorPage(404, 'Page introuvable',
+        'Le fichier de page n\'existe pas : pages/' . \App\Core\App::html()->escape($page) . '.php',
         'Contactez l\'administrateur.');
-    // render_error_page appelle exit() — pas besoin de exit ici
+    // errorPage() appelle exit() — pas besoin de exit ici
 }
 
 // ── Charger la page ──

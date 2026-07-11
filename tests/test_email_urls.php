@@ -43,7 +43,7 @@ $submission = [
     'data' => json_encode(['nom' => 'Test', 'prenom' => 'Agent']),
     'form_label' => 'Test Form',
 ];
-$html = build_mail_html($submission, 'Étape test', 'abc123token');
+$html = \App\Core\App::mail()->buildMailHtml($submission, 'Étape test', 'abc123token');
 
 // Le lien doit contenir index.php?p=validate
 $hasGoodUrl = strpos($html, 'index.php?p=validate&token=abc123token') !== false;
@@ -58,7 +58,7 @@ check('Lien ne contient PAS /validate.php', !$hasBadUrl,
 // ── Test 2 : render_email_template ne contient pas de .php ──
 echo "\n── Test 2 : render_email_template — pas de .php direct ──\n";
 
-$html2_raw = render_email_template('Test', '<p>Body</p>');
+$html2_raw = \App\Core\App::mail()->renderEmailTemplate('Test', '<p>Body</p>');
 // Nettoyer les warnings PHP qui peuvent apparaître avant le DOCTYPE
 $docPos = strpos($html2_raw, '<!DOCTYPE');
 if ($docPos !== false) {

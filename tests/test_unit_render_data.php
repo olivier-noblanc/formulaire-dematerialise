@@ -274,7 +274,7 @@ test('render_field() champ requis avec astérisque', function() {
 });
 
 test('render_email_template() format correct', function() {
-    $html = render_email_template('Bienvenue', '<p>Contenu du mail</p>');
+    $html = \App\Core\App::mail()->renderEmailTemplate('Bienvenue', '<p>Contenu du mail</p>');
     return strpos($html, 'DOCTYPE') !== false && strpos($html, 'Bienvenue') !== false && strpos($html, 'Contenu du mail') !== false ? true : "Got: " . substr($html, 0, 200);
 });
 
@@ -289,7 +289,7 @@ test('get_form_fields() retourne un tableau pour un form_id valide', function() 
     $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
-    $fields = get_form_fields($form_id);
+    $fields = \App\Core\App::validatorData()->getFormFields($form_id);
     return is_array($fields) && count($fields) > 0 ? true : 'Pas de champs: ' . count($fields);
 });
 
@@ -297,24 +297,24 @@ test('get_workflow_steps() retourne un tableau pour un form_id valide', function
     $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
-    $steps = get_workflow_steps($form_id);
+    $steps = \App\Core\App::workflow()->getWorkflowSteps($form_id);
     return is_array($steps) && count($steps) > 0 ? true : 'Pas d\'étapes: ' . count($steps);
 });
 
 test('get_db_size() retourne un entier positif', function() {
-    $size = get_db_size();
+    $size = \App\Core\App::webhook()->getDbSize();
     return is_int($size) && $size >= 0 ? true : "Got: " . var_export($size, true);
 });
 
-test('get_global_stats() retourne les clés attendues', function() {
-    $stats = get_global_stats();
+test('StatsService::getGlobalStats() retourne les clés attendues', function() {
+    $stats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
     $required_keys = ['total', 'en_cours', 'valide', 'refuse', 'avg_days', 'today', 'this_week', 'this_month', 'tokens_pending', 'taux_validation'];
     $missing = array_diff($required_keys, array_keys($stats));
     return empty($missing) ? true : 'Clés manquantes: ' . implode(', ', $missing);
 });
 
-test('get_global_stats() total = en_cours + valide + refuse', function() {
-    $stats = get_global_stats();
+test('StatsService::getGlobalStats() total = en_cours + valide + refuse', function() {
+    $stats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
     $sum = $stats['en_cours'] + $stats['valide'] + $stats['refuse'];
     return $stats['total'] === $sum ? true : "Total {$stats['total']} ≠ somme $sum";
 });
@@ -361,7 +361,7 @@ test('has_active_submissions() retourne un entier', function() {
     $pdo = \App\Core\App::db()->getPdo();
     $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
     if (!$form_id) return 'Pas de formulaire onboarding';
-    $result = has_active_submissions($form_id);
+    $result = \App\Core\App::workflow()->hasActiveSubmissions($form_id);
     return is_int($result) ? true : 'Pas un entier: ' . gettype($result);
 });
 
@@ -374,17 +374,17 @@ test('app_log() écrit dans l\'audit', function() {
 });
 
 test('get_audit_logs() retourne un tableau', function() {
-    $logs = get_audit_logs(5);
+    $logs = \App\Core\App::audit()->getLogs(5);
     return is_array($logs) ? true : 'Pas un tableau';
 });
 
-test('search_submissions() avec terme vide retourne vide', function() {
-    $results = search_submissions('');
+test('StatsService::searchSubmissions() avec terme vide retourne vide', function() {
+    $results = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions('');
     return empty($results) ? true : 'Résultats pour terme vide';
 });
 
-test('search_submissions() retourne un tableau', function() {
-    $results = search_submissions('dupont');
+test('StatsService::searchSubmissions() retourne un tableau', function() {
+    $results = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions('dupont');
     return is_array($results) ? true : 'Pas un tableau';
 });
 
@@ -493,14 +493,14 @@ test('SQL injection résistance sur get_form_by_uuid()', function() {
 });
 
 test('SQL injection résistance sur get_form_fields()', function() {
-    $result = get_form_fields("1 OR 1=1");
+    $result = \App\Core\App::validatorData()->getFormFields("1 OR 1=1");
     $pdo = \App\Core\App::db()->getPdo();
     $check = $pdo->query("SELECT COUNT(*) FROM forms")->fetchColumn();
     return $check > 0 ? true : 'Table forms potentiellement affectée';
 });
 
 test('SQL injection résistance sur get_workflow_steps()', function() {
-    $result = get_workflow_steps("'; DROP TABLE steps; --");
+    $result = \App\Core\App::workflow()->getWorkflowSteps("'; DROP TABLE steps; --");
     $pdo = \App\Core\App::db()->getPdo();
     $check = $pdo->query("SELECT COUNT(*) FROM steps")->fetchColumn();
     return $check > 0 ? true : 'Table steps potentiellement affectée';
@@ -508,13 +508,13 @@ test('SQL injection résistance sur get_workflow_steps()', function() {
 
 test('XSS résistance : h() échappe les balises script', function() {
     $malicious = '<script>alert(document.cookie)</script>';
-    $escaped = h($malicious);
+    $escaped = \App\Core\App::html()->escape($malicious);
     return strpos($escaped, '<script>') === false && strpos($escaped, 'alert') !== false ? true : "Non échappé: $escaped";
 });
 
 test('XSS résistance : h() échappe les gestionnaires d\'événements', function() {
     $malicious = '<img src=x onerror=alert(1)>';
-    $escaped = h($malicious);
+    $escaped = \App\Core\App::html()->escape($malicious);
     return strpos($escaped, 'onerror') === false || strpos($escaped, '<img') === false ? true : "Non échappé: $escaped";
 });
 
@@ -524,22 +524,22 @@ test('XSS résistance : render_submission_data() échappe les données', functio
     return strpos($html, '<script>') === false ? true : 'Script non échappé dans render_submission_data';
 });
 
-test('get_allowed_extensions() ne contient pas d\'exécutables', function() {
-    $exts = get_allowed_extensions();
+test('AttachmentService::getAllowedExtensions() ne contient pas d\'exécutables', function() {
+    $exts = \App\Core\App::attachment()->getAllowedExtensions();
     $dangerous = ['exe', 'bat', 'cmd', 'sh', 'php', 'phtml', 'js', 'vbs', 'com', 'msi'];
     $found = array_intersect($exts, $dangerous);
     return empty($found) ? true : 'Extensions dangereuses: ' . implode(', ', $found);
 });
 
-test('get_allowed_mime_types() ne contient pas de types exécutables', function() {
-    $types = get_allowed_mime_types();
+test('AttachmentService::getAllowedMimeTypes() ne contient pas de types exécutables', function() {
+    $types = \App\Core\App::attachment()->getAllowedMimeTypes();
     $dangerous = ['application/x-executable', 'application/x-shellscript', 'application/x-php'];
     $found = array_intersect($types, $dangerous);
     return empty($found) ? true : 'Types MIME dangereux: ' . implode(', ', $found);
 });
 
-test('get_max_file_size() retourne 10 Mo', function() {
-    $size = get_max_file_size();
+test('AttachmentService::getMaxFileSize() retourne 10 Mo', function() {
+    $size = \App\Core\App::attachment()->getMaxFileSize();
     $ten_mb = 10 * 1024 * 1024;
     return $size === $ten_mb ? true : "Got: $size au lieu de $ten_mb";
 });

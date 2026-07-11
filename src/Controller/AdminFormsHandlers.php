@@ -31,7 +31,7 @@ final class AdminFormsHandlers
     {
         $form_id = trim($_POST['form_id'] ?? '');
         try {
-            $form_id = \validate_input($form_id, 'uuid');
+            $form_id = (string) \validate_input($form_id, 'uuid');
             return [$form_id, null];
         } catch (\InvalidArgumentException $e) {
             return ['', 'Identifiant de formulaire invalide.'];
@@ -46,7 +46,7 @@ final class AdminFormsHandlers
     {
         $step_id = trim($_POST['step_id'] ?? '');
         try {
-            $step_id = \validate_input($step_id, 'uuid');
+            $step_id = (string) \validate_input($step_id, 'uuid');
             return [$step_id, null];
         } catch (\InvalidArgumentException $e) {
             return ['', 'Identifiant d\'étape invalide.'];
@@ -136,7 +136,7 @@ final class AdminFormsHandlers
             $result['error'] = 'Seuls les propriétaires du formulaire peuvent le supprimer.';
             return $result;
         }
-        $active_count = \has_active_submissions((string)$form_id);
+        $active_count = App::workflow()->hasActiveSubmissions((string)$form_id);
         if ($active_count > 0) {
             $result['error'] = 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.';
             return $result;
@@ -314,7 +314,7 @@ final class AdminFormsHandlers
             return ['error' => 'Le courriel du propriétaire est requis.'];
         }
         if (!filter_var($owner_email, FILTER_VALIDATE_EMAIL)) {
-            return ['error' => 'L\'adresse courriel "' . \h($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@' . App::settings()->get('email_domain', 'dreets.gouv.fr') . ''];
+            return ['error' => 'L\'adresse courriel "' . \App\Core\App::html()->escape($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@' . App::settings()->get('email_domain', 'dreets.gouv.fr') . ''];
         }
         try {
             $new_owner_id = \generate_uuid();
@@ -332,7 +332,7 @@ final class AdminFormsHandlers
         $owner_id = trim($_POST['owner_id'] ?? $_POST['id'] ?? '');
         $form_id = trim($_POST['form_id'] ?? '');
         if (empty($owner_id) || empty($form_id)) {
-            return ['error' => 'Paramètres manquants pour retirer le propriétaire (owner_id=' . \h($owner_id) . ', form_id=' . \h($form_id) . ').'];
+            return ['error' => 'Paramètres manquants pour retirer le propriétaire (owner_id=' . \App\Core\App::html()->escape($owner_id) . ', form_id=' . \App\Core\App::html()->escape($form_id) . ').'];
         }
         try {
             $pdo->prepare("DELETE FROM form_owners WHERE id = ?")->execute([$owner_id]);
@@ -434,7 +434,7 @@ final class AdminFormsHandlers
         $data = json_decode($json_input, true);
         if ($data === null) {
             return [
-                'validation_html' => '<div class="msg-error" role="alert" aria-live="assertive">JSON invalide : ' . \h(json_last_error_msg()) . '. Vérifiez la syntaxe (virgules manquantes, guillemets non fermés, etc.).</div>',
+                'validation_html' => '<div class="msg-error" role="alert" aria-live="assertive">JSON invalide : ' . \App\Core\App::html()->escape(json_last_error_msg()) . '. Vérifiez la syntaxe (virgules manquantes, guillemets non fermés, etc.).</div>',
                 'preserved_json' => $json_input,
             ];
         }
@@ -647,7 +647,7 @@ final class AdminFormsHandlers
         if (empty($step_id)) {
             return [];
         }
-        $active_count = \has_active_step_submissions((string)$step_id);
+        $active_count = App::workflow()->hasActiveStepSubmissions((string)$step_id);
         if ($active_count > 0) {
             return ['error' => 'Impossible de supprimer cette étape : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer l\'étape.'];
         }
@@ -674,7 +674,7 @@ final class AdminFormsHandlers
         }
         $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email);
         if (!$is_dynamic && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return ['error' => 'Le destinataire "' . \h($email) . '" n\'est ni une adresse email valide ni une référence dynamique {{field_name}}. Format attendu : prenom.nom@' . App::settings()->get('email_domain', 'dreets.gouv.fr') . ' ou {{nom_du_champ}}'];
+            return ['error' => 'Le destinataire "' . \App\Core\App::html()->escape($email) . '" n\'est ni une adresse email valide ni une référence dynamique {{field_name}}. Format attendu : prenom.nom@' . App::settings()->get('email_domain', 'dreets.gouv.fr') . ' ou {{nom_du_champ}}'];
         }
         try {
             $new_rcpt_id = \generate_uuid();
@@ -711,7 +711,7 @@ final class AdminFormsHandlers
     /**
      * Route une action POST vers le handler correspondant.
      *
-     * @param PDO    $pdo         Connexion PDO à la base.
+     * @param \PDO  $pdo         Connexion PDO à la base.
      * @param string $action      Valeur de $_POST['action'].
      * @param string $get_form_id form_id validé issu de $_GET.
      * @return array<string,mixed>|null

@@ -14,7 +14,7 @@ class DocumentationService
   <!-- ═══════════════════════════════════════════════════════════ -->
   <section class="start-section" aria-label="Pour commencer">
     <h2><span aria-hidden="true">🇫🇷</span> Pour commencer</h2>
-    <p class="start-intro"><?= h(t_jargon('Choisissez l\'action que vous voulez faire. Chaque carte vous explique les étapes en français courant.')) ?></p>
+    <p class="start-intro"><?= \App\Core\App::html()->escape(t_jargon('Choisissez l\'action que vous voulez faire. Chaque carte vous explique les étapes en français courant.')) ?></p>
 
     <div class="start-cards">
       <!-- Carte 1 : Comment faire une demande ? -->
@@ -64,7 +64,7 @@ class DocumentationService
         <ol class="start-card-steps">
           <li>Consultez la <strong>FAQ</strong> ci-dessous (questions fréquentes).</li>
           <li>Contactez votre <strong>administrateur</strong> DREETS.</li>
-          <li>Pour les données personnelles : <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</li>
+          <li>Pour les données personnelles : <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</li>
         </ol>
         <a class="start-card-link" href="#faq"><span aria-hidden="true">❓</span> Voir la FAQ</a>
       </div>
@@ -391,7 +391,7 @@ class DocumentationService
     <ul>
       <li><strong>Droit d'accès</strong> — Vous pouvez consulter toutes les données vous concernant depuis « Mes demandes ».</li>
       <li><strong>Droit de rectification</strong> — Contactez votre administrateur pour corriger des données erronées.</li>
-      <li><strong>Droit d'effacement</strong> — Vous pouvez demander la suppression de vos données en contactant l'administrateur ou le <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</li>
+      <li><strong>Droit d'effacement</strong> — Vous pouvez demander la suppression de vos données en contactant l'administrateur ou le <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</li>
       <li><strong>Durée de conservation</strong> — Vos données sont conservées pendant une durée limitée (par défaut 24 mois après la clôture de la demande), puis automatiquement supprimées.</li>
     </ul>
   </div>
@@ -414,7 +414,7 @@ class DocumentationService
     <!-- ── Recevoir un email ── -->
     <h3><span aria-hidden="true">📧</span> Je reçois un email de validation</h3>
 
-    <p>Quand une demande nécessite votre intervention, vous recevez un email de <strong><?= h(\App\Core\App::settings()->get('smtp_from', 'workflow@dreets.gouv.fr')) ?></strong> avec l'objet :</p>
+    <p>Quand une demande nécessite votre intervention, vous recevez un email de <strong><?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('smtp_from', 'workflow@dreets.gouv.fr')) ?></strong> avec l'objet :</p>
 
     <div class="info-box">
       <p><code>[Action requise] Nom du formulaire — Nom de l'étape</code></p>
@@ -953,7 +953,7 @@ class DocumentationService
     <ul>
       <li><strong>Serveur SMTP</strong> — L'adresse du serveur d'envoi d'emails (ex : smtp.social.gouv.fr)</li>
       <li><strong>Port SMTP</strong> — Le port du serveur (ex : 25)</li>
-      <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : <?= h(\App\Core\App::settings()->get('smtp_from', 'workflow@dreets.gouv.fr')) ?>)</li>
+      <li><strong>Expéditeur</strong> — L'adresse email d'expédition (ex : <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('smtp_from', 'workflow@dreets.gouv.fr')) ?>)</li>
       <li><strong>Nom de l'expéditeur</strong> — Le nom affiché (ex : CircuitDémat)</li>
       <li><strong>Délai de relance</strong> — Le nombre d'heures avant l'envoi d'un rappel automatique (ex : 48h)</li>
       <li><strong>URL du webhook</strong> — L'adresse pour les notifications automatiques</li>
@@ -1234,7 +1234,7 @@ class DocumentationService
       <div class="detail-body">
         <p>Les données sont conservées pendant la <strong>durée configurée par l'administrateur</strong> (par défaut : <strong>24 mois</strong> après la clôture de la demande).</p>
         <p>Après ce délai, les données sont automatiquement supprimées par la <strong>purge automatique RGPD</strong>. Cette purge s'exécute périodiquement pour garantir la conformité au RGPD.</p>
-        <p>Vous pouvez demander la suppression anticipée de vos données en contactant l'administrateur ou le <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</p>
+        <p>Vous pouvez demander la suppression anticipée de vos données en contactant l'administrateur ou le <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>.</p>
       </div>
     </details>
 
@@ -1390,7 +1390,7 @@ class DocumentationService
           <li><strong>Domaine différent</strong> — Si l'email appartient à un domaine différent (validateur externe), l'email complet est affiché car cette information est alors utile.</li>
           <li><strong>Email complet accessible</strong> — L'email complet reste accessible via le tooltip (survol de la souris) sur l'élément affiché.</li>
         </ul>
-        <p>Ce comportement est géré par la fonction PHP <code>display_user()</code> dans <code>lib/html.php</code>.</p>
+        <p>Ce comportement est géré par la méthode <code>displayUser()</code> de <code>HtmlService</code>.</p>
       </div>
     </details>
 
@@ -1549,9 +1549,9 @@ class DocumentationService
     <div class="rgpd-box">
       <h3><span aria-hidden="true">📜</span> Mentions légales</h3>
       <?php if (!empty($legal_mentions)): ?>
-        <p><?= nl2br(h($legal_mentions)) ?></p>
+        <p><?= nl2br(\App\Core\App::html()->escape($legal_mentions)) ?></p>
       <?php else: ?>
-        <p>Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et d'effacement de vos données. Contact : <?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>. Durée de conservation : <?= (int)\App\Core\App::settings()->get('retention_months', '24') ?> mois après clôture.</p>
+        <p>Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et d'effacement de vos données. Contact : <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>. Durée de conservation : <?= (int)\App\Core\App::settings()->get('retention_months', '24') ?> mois après clôture.</p>
       <?php endif; ?>
     </div>
 
@@ -1590,7 +1590,7 @@ class DocumentationService
     <h4>Responsable de traitement</h4>
     <p>
       Le responsable de traitement est la DREETS (Direction Régionale de l'Économie, de l'Emploi, du Travail et des Solidarités).
-      Pour toute question relative à la protection de vos données, contactez le <strong><?= h(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?></strong> (Correspondant Informatique et Libertés).
+      Pour toute question relative à la protection de vos données, contactez le <strong><?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?></strong> (Correspondant Informatique et Libertés).
     </p>
 
     <h4>Accessibilité (RGAA)</h4>
@@ -1751,7 +1751,7 @@ class DocumentationService
         <p>L'application s'appuie sur <strong>l'authentification Windows (IIS)</strong> :</p>
         <ul>
           <li>Le serveur web IIS fournit la variable <code>$_SERVER['AUTH_USER']</code> contenant le compte Windows de l'utilisateur (ex : <code>DREETS\prenom.nom</code>).</li>
-          <li>La fonction <code>get_auth_user()</code> transforme ce compte en adresse email (ex : <code>prenom.nom@<?= h(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?></code>).</li>
+          <li>La fonction <code>get_auth_user()</code> transforme ce compte en adresse email (ex : <code>prenom.nom@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?></code>).</li>
           <li>Les pages <code>index.php?p=form</code>, <code>index.php?p=dashboard</code>, <code>index.php?p=admin_forms</code> et <code>index.php?p=admin_access</code> nécessitent cette authentification.</li>
           <li>La page <code>index.php?p=validate</code> est accessible <strong>sans authentification</strong> (les validateurs externes n'ont pas forcément de compte DREETS).</li>
         </ul>

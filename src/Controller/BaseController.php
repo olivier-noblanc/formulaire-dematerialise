@@ -93,7 +93,7 @@ abstract class BaseController
 
     protected function renderPage(string $title, string $currentPage = '', string $pageCss = '', string $content = ''): string
     {
-        return render_page($title, $currentPage, $pageCss, $content);
+        return (new \App\Render\NavigationRenderer())->page($title, $currentPage, $pageCss, $content);
     }
 
     protected function redirect(string $url): void

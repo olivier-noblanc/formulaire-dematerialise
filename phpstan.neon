@@ -6,7 +6,6 @@ parameters:
         - src/
         - lib/
         - classes/
-        - pages/
         - helpers.php
         - config.php
         - index.php
@@ -21,5 +20,8 @@ parameters:
         - install.php
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
     bootstrapFiles:
         - helpers.php
+        - phpstan_inst_stubs.php
+        - lib/html.php

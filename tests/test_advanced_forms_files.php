@@ -21,7 +21,7 @@ function run_tests_advanced_forms(): void {
     echo "── 2. Form Builder Integration ──\n";
 
     test('get_form_fields() returns fields in correct sort_order', function() use ($onboarding_id) {
-        $fields = get_form_fields($onboarding_id);
+        $fields = \App\Core\App::validatorData()->getFormFields($onboarding_id);
         if (empty($fields)) return 'No fields returned for onboarding form';
 
         // Verify ordering: ordre should be non-decreasing
@@ -36,12 +36,12 @@ function run_tests_advanced_forms(): void {
     });
 
     test('get_form_fields() with invalid form_id returns empty array', function() {
-        $fields = get_form_fields('nonexistent-uuid-1234');
+        $fields = \App\Core\App::validatorData()->getFormFields('nonexistent-uuid-1234');
         return empty($fields) ? true : 'Expected empty array for invalid form_id';
     });
 
     test('get_workflow_steps() returns steps in step_number order', function() use ($onboarding_id) {
-        $steps = get_workflow_steps($onboarding_id);
+        $steps = \App\Core\App::workflow()->getWorkflowSteps($onboarding_id);
         if (empty($steps)) return 'No steps returned for onboarding form';
 
         $prev_ordre = -1;
@@ -55,7 +55,7 @@ function run_tests_advanced_forms(): void {
     });
 
     test('get_workflow_steps() with invalid form_id returns empty array', function() {
-        $steps = get_workflow_steps('nonexistent-uuid-1234');
+        $steps = \App\Core\App::workflow()->getWorkflowSteps('nonexistent-uuid-1234');
         return empty($steps) ? true : 'Expected empty array for invalid form_id';
     });
 
@@ -131,8 +131,8 @@ function run_tests_advanced_forms(): void {
 function run_tests_advanced_files(): void {
     echo "── 5. File Handling ──\n";
 
-    test('get_allowed_mime_types() includes PDF, images, office docs', function() {
-        $mimes = get_allowed_mime_types();
+    test('AttachmentService::getAllowedMimeTypes() includes PDF, images, office docs', function() {
+        $mimes = \App\Core\App::attachment()->getAllowedMimeTypes();
         $required = [
             'application/pdf',
             'image/jpeg',
@@ -146,8 +146,8 @@ function run_tests_advanced_files(): void {
         return true;
     });
 
-    test('get_allowed_extensions() does NOT include dangerous extensions', function() {
-        $exts = get_allowed_extensions();
+    test('AttachmentService::getAllowedExtensions() does NOT include dangerous extensions', function() {
+        $exts = \App\Core\App::attachment()->getAllowedExtensions();
         $dangerous = ['php', 'phtml', 'exe', 'bat', 'sh', 'cmd', 'com', 'js', 'html', 'hta', 'vbs', 'ps1'];
         foreach ($dangerous as $ext) {
             if (in_array($ext, $exts)) return "Dangerous extension allowed: $ext";
@@ -155,8 +155,8 @@ function run_tests_advanced_files(): void {
         return true;
     });
 
-    test('get_max_file_size() returns 10MB in bytes', function() {
-        $size = get_max_file_size();
+    test('AttachmentService::getMaxFileSize() returns 10MB in bytes', function() {
+        $size = \App\Core\App::attachment()->getMaxFileSize();
         $expected = 10 * 1024 * 1024;
         return $size === $expected ? true : "Expected $expected, got $size";
     });
@@ -198,9 +198,9 @@ function run_tests_advanced_files(): void {
         return true;
     });
 
-    test('get_attachments() returns empty array for submission with no attachments', function() {
+    test('AttachmentService::getAttachments() returns empty array for submission with no attachments', function() {
         $sub_id = generate_uuid();
-        $attachments = get_attachments($sub_id);
+        $attachments = \App\Core\App::attachment()->getAttachments($sub_id);
         return empty($attachments) ? true : 'Expected empty array for non-existent submission';
     });
 

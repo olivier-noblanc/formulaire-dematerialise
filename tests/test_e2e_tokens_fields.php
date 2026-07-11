@@ -43,7 +43,7 @@ function run_tests_e2e_tokens(): void {
         $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now', '-1 day'))")
             ->execute([$exp_uuid, $exp_sub, $step1_id, 'expire.test@e2e.test', $exp_token]);
 
-        $result = validate_token($exp_token);
+        $result = \App\Core\App::workflow()->validateToken($exp_token);
         return $result['status'] === 'expired' ? true : 'Status: ' . $result['status'] . ' (attendu: expired)';
     });
 

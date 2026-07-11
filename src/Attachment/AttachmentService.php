@@ -132,7 +132,7 @@ final class AttachmentService
         $mimeType = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
         if (!in_array($mimeType, $this->getAllowedMimeTypes())) {
-            return ['success' => false, 'message' => 'Type MIME non autorisé : ' . h($mimeType === false ? '' : $mimeType) . '.', 'attachment_id' => null];
+            return ['success' => false, 'message' => 'Type MIME non autorisé : ' . \App\Core\App::html()->escape($mimeType === false ? '' : $mimeType) . '.', 'attachment_id' => null];
         }
 
         // Sécurité (S-06) : vérifier les types MIME dangereux

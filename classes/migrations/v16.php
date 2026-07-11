@@ -34,7 +34,7 @@ function apply_migration_v16(PDO $pdo, int $current_version): int {
             $pdo->prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('mail_dry_run', '0', datetime('now'))")->execute();
 
             // 2. S'assurer que admin_email en DB correspond à SETTINGS_DEFAULTS
-            $default_admin_email = defined('SETTINGS_DEFAULTS') ? (SETTINGS_DEFAULTS['admin_email'] ?? '') : '';
+            $default_admin_email = defined('SETTINGS_DEFAULTS') ? (string) SETTINGS_DEFAULTS['admin_email'] : '';
             if ($default_admin_email !== '') {
                 $current_admin_email = (string) $pdo->query("SELECT value FROM settings WHERE key = 'admin_email'")->fetchColumn();
                 // Si admin_email est vide ou égal à l'ancienne valeur par défaut, le mettre à jour

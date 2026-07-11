@@ -66,9 +66,9 @@ function run_tests_e2e_validator_fields(): void {
 
     test('get_form_fields() filtre par filled_by', function() use ($pdo, $onboarding_id) {
         // Test via la fonction PHP
-        $all = get_form_fields($onboarding_id);
-        $validator = get_form_fields($onboarding_id, 'validator');
-        $demandeur = get_form_fields($onboarding_id, 'demandeur');
+        $all = \App\Core\App::validatorData()->getFormFields($onboarding_id);
+        $validator = \App\Core\App::validatorData()->getFormFields($onboarding_id, 'validator');
+        $demandeur = \App\Core\App::validatorData()->getFormFields($onboarding_id, 'demandeur');
         if (empty($all)) return 'Aucun champ du tout';
         if (empty($validator)) return 'get_form_fields(..., "validator") retourne rien';
         if (empty($demandeur)) return 'get_form_fields(..., "demandeur") retourne rien';
@@ -90,10 +90,10 @@ function run_tests_e2e_validator_fields(): void {
         $stmt->execute([$sub_id, $onboarding_id, json_encode(['nom_complet' => 'Test User']), 'test@e2e.test']);
 
         // Sauvegarder une donnée validator
-        save_validator_data($sub_id, 'decision_validation', 'Accepté', 'validator', null);
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_validation', 'Accepté', 'validator', null);
 
         // Récupérer
-        $data = get_submission_validator_data($sub_id);
+        $data = \App\Core\App::validatorData()->getSubmissionValidatorData($sub_id);
         if (empty($data)) { return 'get_submission_validator_data retourne rien'; }
         $found = false;
         foreach ($data as $row) {
@@ -104,8 +104,8 @@ function run_tests_e2e_validator_fields(): void {
         if (!$found) return 'Valeur "Accepté" non trouvée dans les données validator';
 
         // Upsert : modifier la valeur
-        save_validator_data($sub_id, 'decision_validation', 'Accepté avec réserves', 'validator', null);
-        $data2 = get_submission_validator_data($sub_id);
+        \App\Core\App::validatorData()->saveValidatorData($sub_id, 'decision_validation', 'Accepté avec réserves', 'validator', null);
+        $data2 = \App\Core\App::validatorData()->getSubmissionValidatorData($sub_id);
         $count = 0;
         foreach ($data2 as $row) { if ($row['field_name'] === 'decision_validation') $count++; }
         if ($count !== 1) return "Expected 1 row for decision_validation, got $count";
@@ -136,7 +136,7 @@ function run_tests_e2e_validator_fields(): void {
     test('validate.php rend les champs validator', function() use ($onboarding_id) {
         // On ne peut pas tester le rendu HTML directement ici,
         // mais on vérifie que get_form_validator_fields fonctionne
-        $fields = get_form_validator_fields($onboarding_id);
+        $fields = \App\Core\App::validatorData()->getFormValidatorFields($onboarding_id);
         if (empty($fields)) return 'get_form_validator_fields retourne rien';
         $has_decision = false;
         foreach ($fields as $f) {
@@ -217,7 +217,7 @@ function run_tests_e2e_validator_cycle(): void {
             ->execute([generate_uuid(), $form_id, $step_id]);
 
         // Vérifier que get_form_validator_fields() retrouve bien le champ
-        $validator_fields = get_form_validator_fields($form_id, $step_id);
+        $validator_fields = \App\Core\App::validatorData()->getFormValidatorFields($form_id, $step_id);
         if (empty($validator_fields)) return 'get_form_validator_fields ne retourne rien';
         $has_decision = false;
         foreach ($validator_fields as $vf) {
@@ -251,7 +251,7 @@ function run_tests_e2e_validator_cycle(): void {
             ->execute([$token_id, $sub_id, $step_id, 'validator@e2e.test', $token_value]);
 
         // Vérifier que get_token_with_context() retrouve le token
-        $ctx = get_token_with_context($token_value);
+        $ctx = \App\Core\App::workflow()->getTokenWithContext($token_value);
         if (!$ctx) return 'get_token_with_context retourne null';
         if (($ctx['id'] ?? '') !== $token_id) return 'token_id mismatch';
         if (($ctx['submission_id'] ?? '') !== $sub_id) return 'submission_id mismatch';
@@ -270,14 +270,14 @@ function run_tests_e2e_validator_cycle(): void {
 
         // ── Étape 1 : pre-check required (cf. validate.php lignes 54-82) ──
         // Charger le contexte du token (lecture pure, pas d'effet de bord).
-        $token_ctx = get_token_with_context($token_value);
+        $token_ctx = \App\Core\App::workflow()->getTokenWithContext($token_value);
         if (!$token_ctx) return 'get_token_with_context retourne null';
         if (!empty($token_ctx['done_at'])) return 'Token déjà validé (done_at non null)';
 
         // Charger les champs validator pour cette étape.
         $form_id = (string)($token_ctx['form_id'] ?? '');
         $step_id = isset($token_ctx['step_id']) ? (string)$token_ctx['step_id'] : null;
-        $validator_fields = get_form_validator_fields($form_id, $step_id);
+        $validator_fields = \App\Core\App::validatorData()->getFormValidatorFields($form_id, $step_id);
         if (empty($validator_fields)) return 'Aucun champ validator pour cette étape';
 
         // Simuler $_POST rempli (le validateur a saisi "Accepté" pour decision_vd)
@@ -298,7 +298,7 @@ function run_tests_e2e_validator_cycle(): void {
         // ── Étape 2 : validate_token() (valide le token + avance le workflow) ──
         // Le formulaire n'a qu'une seule étape → advance_workflow() va clore la
         // soumission (status='valide', closed_at=now). C'est attendu.
-        $result = validate_token($token_value, 'valider', '');
+        $result = \App\Core\App::workflow()->validateToken($token_value, 'valider', '');
         if (($result['status'] ?? '') !== 'ok') {
             return 'validate_token a échoué: ' . json_encode($result);
         }
@@ -318,7 +318,7 @@ function run_tests_e2e_validator_cycle(): void {
             if ($val !== '') {
                 // save_validator_data() fait un UPSERT (cf. helpers.php:2076).
                 // step_label=null → résolu automatiquement par la fonction via $step_id.
-                save_validator_data(
+                \App\Core\App::validatorData()->saveValidatorData(
                     $subm_id,
                     $fname,
                     $val,
@@ -370,7 +370,7 @@ function run_tests_e2e_validator_cycle(): void {
         if ($sub_id === '' || $step_id === '') return 'Contexte manquant (17.3 a échoué ?)';
 
         // Sans filtre step_id → doit retourner la donnée
-        $all = get_submission_validator_data($sub_id);
+        $all = \App\Core\App::validatorData()->getSubmissionValidatorData($sub_id);
         if (empty($all)) return 'get_submission_validator_data() retourne vide sans filtre step_id';
         $found_all = false;
         foreach ($all as $row) {
@@ -386,7 +386,7 @@ function run_tests_e2e_validator_cycle(): void {
         if (!$found_all) return 'donnée decision_vd non trouvée sans filtre';
 
         // Avec filtre step_id → doit retourner la même donnée
-        $filtered = get_submission_validator_data($sub_id, $step_id);
+        $filtered = \App\Core\App::validatorData()->getSubmissionValidatorData($sub_id, $step_id);
         if (empty($filtered)) return 'get_submission_validator_data($step_id) retourne vide';
         $found_filtered = false;
         foreach ($filtered as $row) {
@@ -439,7 +439,7 @@ function run_tests_e2e_validator_cycle(): void {
         if ($count_before !== 1) return 'Pré-condition: attendu 1 ligne, trouvé ' . $count_before;
 
         // delete_validator_data() — cf. helpers.php:2155
-        delete_validator_data($sub_id, 'decision_vd');
+        \App\Core\App::validatorData()->deleteValidatorData($sub_id, 'decision_vd');
 
         // Vérifier qu'il n'y a plus de ligne
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM submission_validator_data WHERE submission_id = ? AND field_name = 'decision_vd'");

@@ -28,7 +28,7 @@ final class AdminFormsController extends BaseController
             if ($editFieldId) $editFieldId = validate_input($editFieldId, 'uuid');
         } catch (\InvalidArgumentException $e) {
             App::audit()->securityLog('invalid_admin_forms_id', 'form_id=' . substr((string)$formId, 0, 20) . ' edit_step=' . substr((string)$editStepId, 0, 20) . ' edit_field=' . substr((string)$editFieldId, 0, 20));
-            render_error_page(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
+            (new \App\Render\ErrorRenderer())->errorPage(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
         }
 
         $action = $_POST['action'] ?? '';
@@ -37,10 +37,10 @@ final class AdminFormsController extends BaseController
             $this->security->requireCsrf();
         }
 
-        $errorMsg       = $errorMsg       ?? '';
-        $successMsg     = $successMsg     ?? '';
-        $validationHtml = $validationHtml ?? '';
-        $preservedJson  = $preservedJson  ?? '';
+        $errorMsg       = '';
+        $successMsg     = '';
+        $validationHtml = '';
+        $preservedJson  = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action) {
             $result = AdminFormsHandlers::dispatch($pdo, $action, (string)$formId);
@@ -73,8 +73,8 @@ final class AdminFormsController extends BaseController
             $selectedForm = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             if ($selectedForm) {
-                $formFields = get_form_fields($formId);
-                $workflowSteps = get_workflow_steps($formId);
+                $formFields = App::validatorData()->getFormFields($formId);
+                $workflowSteps = App::workflow()->getWorkflowSteps($formId);
             }
         }
 
@@ -83,7 +83,7 @@ final class AdminFormsController extends BaseController
         ?>
   <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
 
-  <?= render_messages(['success'=>$successMsg, 'error'=>$errorMsg]) ?>
+  <?= (new \App\Render\ErrorRenderer())->messages(['success'=>$successMsg, 'error'=>$errorMsg]) ?>
   <?= $validationHtml ?>
 
   <!-- Sélecteur de formulaire -->
@@ -94,7 +94,7 @@ final class AdminFormsController extends BaseController
       <select name="form_id" onchange="this.form.submit()" style="flex:1;min-width:250px;">
         <option value="">— Sélectionner un formulaire —</option>
         <?php foreach ($forms as $f): ?>
-          <option value="<?= h($f['id']) ?>" <?= $formId === $f['id'] ? 'selected' : '' ?>><?= h($f['label']) ?></option>
+          <option value="<?= \App\Core\App::html()->escape($f['id']) ?>" <?= $formId === $f['id'] ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($f['label']) ?></option>
         <?php endforeach; ?>
       </select>
     </form>
@@ -103,10 +103,10 @@ final class AdminFormsController extends BaseController
   <?php if ($selectedForm): ?>
   <!-- Formulaire sélectionné -->
   <div class="card">
-    <h2><?= h($selectedForm['label']) ?></h2>
+    <h2><?= \App\Core\App::html()->escape($selectedForm['label']) ?></h2>
     <div class="form-info">
-      <p><strong>Slug :</strong> <?= h($selectedForm['slug']) ?></p>
-      <p><strong>Description :</strong> <?= h($selectedForm['description'] ?? '') ?></p>
+      <p><strong>Slug :</strong> <?= \App\Core\App::html()->escape($selectedForm['slug']) ?></p>
+      <p><strong>Description :</strong> <?= \App\Core\App::html()->escape($selectedForm['description'] ?? '') ?></p>
       <p><strong>Statut :</strong> <?= $selectedForm['actif'] ? 'Actif' : 'Inactif' ?></p>
     </div>
 
@@ -130,9 +130,9 @@ final class AdminFormsController extends BaseController
         <?php foreach ($formFields as $field): ?>
           <tr>
             <td><?= (int)$field['ordre'] ?></td>
-            <td><code><?= h($field['field_name']) ?></code></td>
-            <td><?= h($field['label']) ?></td>
-            <td><?= h($field['field_type']) ?></td>
+            <td><code><?= \App\Core\App::html()->escape($field['field_name']) ?></code></td>
+            <td><?= \App\Core\App::html()->escape($field['label']) ?></td>
+            <td><?= \App\Core\App::html()->escape($field['field_type']) ?></td>
             <td><?= $field['required'] ? 'Oui' : 'Non' ?></td>
             <td>
               <a href="index.php?p=admin_forms&form_id=<?= urlencode($formId) ?>&edit_field=<?= urlencode($field['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
@@ -160,8 +160,8 @@ final class AdminFormsController extends BaseController
         ?>
           <tr>
             <td><?= (int)$step['ordre'] ?></td>
-            <td><?= h($step['label']) ?></td>
-            <td><?= h(implode(', ', $emails)) ?></td>
+            <td><?= \App\Core\App::html()->escape($step['label']) ?></td>
+            <td><?= \App\Core\App::html()->escape(implode(', ', $emails)) ?></td>
             <td><span class="badge <?= $step['actif'] ? 'badge-ok' : 'badge-err' ?>"><?= $step['actif'] ? 'Active' : 'Inactive' ?></span></td>
             <td>
               <a href="index.php?p=admin_forms&form_id=<?= urlencode($formId) ?>&edit_step=<?= urlencode($step['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>

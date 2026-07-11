@@ -32,11 +32,11 @@ final class DashboardRenderer
      */
     public static function systemOverview(array $sys): string
     {
-        $smtp_host   = h((string)($sys['smtp_host'] ?? ''));
+        $smtp_host   = \App\Core\App::html()->escape((string)($sys['smtp_host'] ?? ''));
         $smtp_port   = (int)($sys['smtp_port'] ?? 0);
         $smtp_ok     = (bool)($sys['smtp_ok'] ?? false);
-        $smtp_label  = h((string)($sys['smtp_label'] ?? 'Non configuré'));
-        $last_backup = h((string)($sys['last_backup'] ?? '—'));
+        $smtp_label  = \App\Core\App::html()->escape((string)($sys['smtp_label'] ?? 'Non configuré'));
+        $last_backup = \App\Core\App::html()->escape((string)($sys['last_backup'] ?? '—'));
         $en_cours    = (int)($sys['en_cours'] ?? 0);
         $smtp_dot    = $smtp_ok ? '🟢' : '🔴';
 
@@ -71,15 +71,15 @@ HTML;
     {
         $out = '';
         if ($regen_msg !== '') {
-            $m = h($regen_msg);
+            $m = \App\Core\App::html()->escape($regen_msg);
             $out .= "<div class=\"msg-info\" role=\"status\" aria-live=\"polite\">{$m}</div>";
         }
         if ($remind_msg !== '') {
-            $m = h($remind_msg);
+            $m = \App\Core\App::html()->escape($remind_msg);
             $out .= "<div class=\"msg-info\" role=\"status\" aria-live=\"polite\">{$m}</div>";
         }
         if ($cancel_msg !== '') {
-            $m = h($cancel_msg);
+            $m = \App\Core\App::html()->escape($cancel_msg);
             $out .= "<div class=\"msg-info\" role=\"status\" aria-live=\"polite\">{$m}</div>";
         }
         return $out;
@@ -107,19 +107,19 @@ HTML;
      */
     public static function toolbar(string $filtre, string $form_f, string $search, array $forms): string
     {
-        $filtre_h = h($filtre);
-        $form_h   = h($form_f);
-        $search_h = h($search);
+        $filtre_h = \App\Core\App::html()->escape($filtre);
+        $form_h   = \App\Core\App::html()->escape($form_f);
+        $search_h = \App\Core\App::html()->escape($search);
 
         $options = '';
         foreach ($forms as $f) {
-            $slug  = h((string)($f['slug'] ?? ''));
-            $label = h((string)($f['label'] ?? ''));
+            $slug  = \App\Core\App::html()->escape((string)($f['slug'] ?? ''));
+            $label = \App\Core\App::html()->escape((string)($f['label'] ?? ''));
             $sel   = ($form_f === ($f['slug'] ?? '')) ? ' selected' : '';
             $options .= "<option value=\"{$slug}\"{$sel}>{$label}</option>";
         }
 
-        $search_bar = render_search_bar('index.php?p=dashboard', $search, 'Rechercher (agent, formulaire, données)...', ['statut' => $filtre, 'form' => $form_f]);
+        $search_bar = (new FormRenderer())->searchBar('index.php?p=dashboard', $search, 'Rechercher (agent, formulaire, données)...', ['statut' => $filtre, 'form' => $form_f]);
 
         return <<<HTML
   <div class="toolbar">
@@ -243,7 +243,7 @@ HTML;
     public static function submissionRow(int $i, array $row, array $tokens, ?array $vstatus = null): string
     {
         $d      = json_decode((string)($row['data'] ?? ''), true);
-        $nom    = h(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
+        $nom    = \App\Core\App::html()->escape(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
         $status = (string)($row['status'] ?? 'en_cours');
         $deadline_field = (string)($row['deadline_field'] ?? '');
         $deadline_val   = $deadline_field
@@ -252,9 +252,9 @@ HTML;
         $dl = calculate_deadline_urgency($deadline_val ?: '', $status);
         $deadline_urgency = (string)($dl['style'] ?? '');
 
-        $form_label = h(t_jargon((string)($row['form_label'] ?? '')));
+        $form_label = \App\Core\App::html()->escape(t_jargon((string)($row['form_label'] ?? '')));
         $submitted_ts = strtotime((string)($row['submitted_at'] ?? ''));
-        $submitted    = $submitted_ts !== false ? h(date('d/m/Y', $submitted_ts)) : '—';
+        $submitted    = $submitted_ts !== false ? \App\Core\App::html()->escape(date('d/m/Y', $submitted_ts)) : '—';
         $view_url     = 'index.php?p=submission_view&id=' . urlencode((string)($row['id'] ?? ''));
 
         $tokens_html = '';
@@ -269,7 +269,7 @@ HTML;
                 $cls = 'token-pend';
             }
             $ordre = (int)($t['ordre'] ?? 0);
-            $label = h((string)($t['label'] ?? ''));
+            $label = \App\Core\App::html()->escape((string)($t['label'] ?? ''));
             $check = !empty($t['done_at']) ? ' ✓' : '';
             $tokens_html .= "<span class=\"token-badge {$cls}\">"
                 . "<span class=\"ordre-label\">{$ordre}</span>{$label}{$check}"
@@ -308,13 +308,13 @@ HTML;
             if (mb_strlen($tooltip) > 200) {
                 $tooltip = mb_substr($tooltip, 0, 200) . '…';
             }
-            $tooltip_h = h((string)$tooltip);
+            $tooltip_h = \App\Core\App::html()->escape((string)$tooltip);
             $admin_comment_html = ' <span aria-hidden="true" title="' . $tooltip_h . '" style="cursor:help;font-size:.95rem;">💬</span>';
         }
 
         $detail = self::submissionDetail($d, $status, $tokens, $row, $nom);
 
-        $detail_summary = h($nom !== '' ? $nom : (string)($row['submitted_by'] ?? '')) . ' — ' . $form_label;
+        $detail_summary = \App\Core\App::html()->escape($nom !== '' ? $nom : (string)($row['submitted_by'] ?? '')) . ' — ' . $form_label;
 
         return <<<HTML
       <tr>
@@ -360,8 +360,8 @@ HTML;
         if (is_array($d) && isset($d['validations']) && is_array($d['validations'])) {
             $html .= "              <h3 style=\"margin-top:0;margin-bottom:1rem;\">Historique des validations</h3>\n";
             foreach ($d['validations'] as $validation) {
-                $step_label = h((string)($validation['step_label'] ?? ''));
-                $email      = h((string)($validation['email'] ?? ''));
+                $step_label = \App\Core\App::html()->escape((string)($validation['step_label'] ?? ''));
+                $email      = \App\Core\App::html()->escape((string)($validation['email'] ?? ''));
                 $action     = (string)($validation['action'] ?? '');
                 $is_valide  = ($action === 'valider');
                 $color      = $is_valide ? '#1a6b3c' : '#c0392b';
@@ -369,11 +369,11 @@ HTML;
                 $label      = $is_valide ? 'Validé' : 'Refusé';
                 $comment    = '';
                 if (!empty($validation['commentaire'])) {
-                    $c = h((string)$validation['commentaire']);
+                    $c = \App\Core\App::html()->escape((string)$validation['commentaire']);
                     $comment = "<br><em>Commentaire :</em> {$c}";
                 }
                 $val_date_ts = strtotime((string)($validation['date'] ?? ''));
-                $date = $val_date_ts !== false ? h(date('d/m/Y à H:i', $val_date_ts)) : '—';
+                $date = $val_date_ts !== false ? \App\Core\App::html()->escape(date('d/m/Y à H:i', $val_date_ts)) : '—';
                 $html .= "              <div style=\"border-left:3px solid #003189;padding-left:1rem;margin-bottom:1rem;\">\n"
                     . "                <strong>{$step_label}</strong> - {$email} -\n"
                     . "                <span style=\"color:{$color};\">\n"
@@ -387,7 +387,7 @@ HTML;
         }
 
         $data_array = is_array($d) ? $d : [];
-        $html .= "              " . render_submission_data($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
+        $html .= "              " . (new FormRenderer())->submissionData($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
 
         if ($status === 'en_cours') {
             $html .= "              <hr style=\"margin:1rem 0;\">\n";
@@ -397,8 +397,8 @@ HTML;
                     if (!empty($t['done_at'])) {
                         continue;
                     }
-                    $tid   = h((string)($t['id'] ?? ''));
-                    $temail = h((string)($t['email'] ?? ''));
+                    $tid   = \App\Core\App::html()->escape((string)($t['id'] ?? ''));
+                    $temail = \App\Core\App::html()->escape((string)($t['email'] ?? ''));
                     $html .= "                <form method=\"POST\" style=\"display:inline;\">\n"
                         . App::security()->csrfField() . "\n"
                         . "                  <input type=\"hidden\" name=\"action\" value=\"remind_one\">\n"

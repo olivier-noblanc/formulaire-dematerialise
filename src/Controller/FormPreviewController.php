@@ -22,12 +22,12 @@ final class FormPreviewController extends BaseController
         $form = $form->fetch(\PDO::FETCH_ASSOC);
 
         if (!$form) {
-            render_error_page(404, 'Formulaire introuvable',
+            (new \App\Render\ErrorRenderer())->errorPage(404, 'Formulaire introuvable',
                 'Le formulaire demandé n\'existe pas.',
                 'Retournez au tableau de bord pour voir les formulaires disponibles.');
         }
 
-        $formFields = get_form_fields($form['id'], 'demandeur');
+        $formFields = App::validatorData()->getFormFields($form['id'], 'demandeur');
 
         $grouped = [];
         foreach ($formFields as $field) {
@@ -35,15 +35,15 @@ final class FormPreviewController extends BaseController
             $grouped[$group][] = $field;
         }
 
-        $workflowSteps = get_workflow_steps($form['id']);
+        $workflowSteps = App::workflow()->getWorkflowSteps($form['id']);
 
         ob_start();
         ?>
   <div class="preview-banner"><span aria-hidden="true">👁</span> Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="index.php?p=admin_forms&form_id=<?= urlencode($form['id']) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;"><span aria-hidden="true">⚙</span> Retour à l'édition</a></div>
 
-  <h1><?= h($form['label']) ?></h1>
-  <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= h($form['description']) ?></p><?php endif; ?>
-  <p style="font-size:.85rem;color:#555;margin-bottom:1.5rem;">Formulaire rempli par : <strong><?= h(App::auth()->getUser()) ?></strong></p>
+  <h1><?= \App\Core\App::html()->escape($form['label']) ?></h1>
+  <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= \App\Core\App::html()->escape($form['description']) ?></p><?php endif; ?>
+  <p style="font-size:.85rem;color:#555;margin-bottom:1.5rem;">Formulaire rempli par : <strong><?= \App\Core\App::html()->escape(App::auth()->getUser()) ?></strong></p>
 
   <?php if (!empty($workflowSteps)): ?>
   <div class="workflow-preview">
@@ -54,10 +54,10 @@ final class FormPreviewController extends BaseController
       ?>
         <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
         <div class="wf-step">
-          <div class="wf-step-label"><?= h($ws['label']) ?></div>
+          <div class="wf-step-label"><?= \App\Core\App::html()->escape($ws['label']) ?></div>
           <div class="wf-step-emails">
             <?php foreach ($emails as $email): ?>
-              <span class="wf-step-email"><?= h($email) ?></span>
+              <span class="wf-step-email"><?= \App\Core\App::html()->escape($email) ?></span>
             <?php endforeach; ?>
           </div>
         </div>
@@ -70,12 +70,12 @@ final class FormPreviewController extends BaseController
   <form id="preview-form" style="pointer-events:none;">
     <?php foreach ($grouped as $groupName => $fields): ?>
     <div class="card" style="margin-bottom:1.5rem;">
-      <h3 style="margin-bottom:1rem;"><?= h($groupName) ?></h3>
+      <h3 style="margin-bottom:1rem;"><?= \App\Core\App::html()->escape($groupName) ?></h3>
       <?php foreach ($fields as $field):
-        $fieldName = h($field['field_name']);
-        $fieldLabel = h($field['label']);
+        $fieldName = \App\Core\App::html()->escape($field['field_name']);
+        $fieldLabel = \App\Core\App::html()->escape($field['label']);
         $required = !empty($field['required']) ? 'required' : '';
-        $placeholder = !empty($field['placeholder']) ? h($field['placeholder']) : '';
+        $placeholder = !empty($field['placeholder']) ? \App\Core\App::html()->escape($field['placeholder']) : '';
       ?>
       <div class="field">
         <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= !empty($field['required']) ? '<span style="color:#c0392b;">*</span>' : '' ?></label>
@@ -85,7 +85,7 @@ final class FormPreviewController extends BaseController
           <select id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
             <option value="">— Sélectionner —</option>
             <?php foreach ($field['options'] as $opt): ?>
-              <option value="<?= h($opt) ?>"><?= h($opt) ?></option>
+              <option value="<?= \App\Core\App::html()->escape($opt) ?>"><?= \App\Core\App::html()->escape($opt) ?></option>
             <?php endforeach; ?>
           </select>
         <?php elseif ($field['field_type'] === 'checkbox'): ?>
@@ -99,7 +99,7 @@ final class FormPreviewController extends BaseController
           <input type="text" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?> placeholder="<?= $placeholder ?>">
         <?php endif; ?>
         <?php if (!empty($field['description'])): ?>
-          <span class="hint"><?= h($field['description']) ?></span>
+          <span class="hint"><?= \App\Core\App::html()->escape($field['description']) ?></span>
         <?php endif; ?>
       </div>
       <?php endforeach; ?>

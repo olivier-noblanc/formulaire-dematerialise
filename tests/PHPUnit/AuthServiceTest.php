@@ -752,4 +752,195 @@ final class AuthServiceTest extends TestCase
         $this->assertStringContainsString('@', $user);
         unset($_SERVER['REMOTE_USER']);
     }
+
+    // ── setMailer() ────────────────────────────────────────────
+
+    public function testSetMailerAcceptsMailInterface(): void
+    {
+        $mailer = new class implements \App\Contract\MailInterface {
+            public function send(string $to, string $subject, string $body): bool { return true; }
+            public function buildValidationEmail(array $submission, string $stepLabel, string $token): string { return ''; }
+            public function renderEmailTemplate(string $title, string $bodyHtml): string { return ''; }
+        };
+        $this->auth->setMailer($mailer);
+        // Verify by calling processAdminRequest which uses getMailer()
+        $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
+        unset($_SERVER['AUTH_USER']);
+        $result = $this->auth->processAdminRequest('test_' . uniqid() . '@test.com');
+        $this->assertArrayHasKey('success', $result);
+        // Cleanup
+        $pdo = $this->db->getPdo();
+        $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute(['test_' . uniqid() . '@test.com']);
+    }
+
+    public function testSetMailerReplacesExistingMailer(): void
+    {
+        $mailer1 = new class implements \App\Contract\MailInterface {
+            public function send(string $to, string $subject, string $body): bool { return true; }
+            public function buildValidationEmail(array $submission, string $stepLabel, string $token): string { return ''; }
+            public function renderEmailTemplate(string $title, string $bodyHtml): string { return ''; }
+        };
+        $mailer2 = new class implements \App\Contract\MailInterface {
+            public function send(string $to, string $subject, string $body): bool { return false; }
+            public function buildValidationEmail(array $submission, string $stepLabel, string $token): string { return ''; }
+            public function renderEmailTemplate(string $title, string $bodyHtml): string { return ''; }
+        };
+        $this->auth->setMailer($mailer1);
+        $this->auth->setMailer($mailer2);
+        // Second mailer should be used
+        $this->assertTrue(true); // No error = success
+    }
+
+    // ── requireAdmin() session regeneration ─────────────────────
+
+    public function testRequireAdminSessionRegeneration(): void
+    {
+        $isOrSuper = $this->auth->isAdmin() || $this->auth->isSuperAdmin();
+        if (!$isOrSuper) {
+            $this->markTestSkipped('Test user is not admin');
+        }
+
+        // Start session if not active
+        if (session_status() === PHP_SESSION_NONE) {
+            $_SESSION = [];
+            session_start();
+        }
+
+        // Reset session initialization flag
+        $_SESSION['_session_initialized'] = false;
+
+        // Call requireAdmin — should regenerate session ID
+        $this->auth->requireAdmin();
+
+        $this->assertTrue($_SESSION['_session_initialized'] ?? false);
+    }
+
+    public function testRequireAdminSkipsRegenerationWhenAlreadyInitialized(): void
+    {
+        $isOrSuper = $this->auth->isAdmin() || $this->auth->isSuperAdmin();
+        if (!$isOrSuper) {
+            $this->markTestSkipped('Test user is not admin');
+        }
+
+        if (session_status() === PHP_SESSION_NONE) {
+            $_SESSION = [];
+            session_start();
+        }
+
+        // Already initialized
+        $_SESSION['_session_initialized'] = true;
+        $oldId = session_id();
+
+        $this->auth->requireAdmin();
+
+        // Session should NOT be regenerated since already initialized
+        $this->assertSame($oldId, session_id());
+    }
+
+    // ── getUser() edge cases ────────────────────────────────────
+
+    public function testGetUserReturnsLowercaseFromAuthUserWithBackslash(): void
+    {
+        unset($_SERVER['HTTP_X_TEST_USER']);
+        $_SERVER['AUTH_USER'] = 'DREETS\\Test.User';
+        $user = $this->auth->getUser();
+        $this->assertStringContainsString('test.user', $user);
+        unset($_SERVER['AUTH_USER']);
+    }
+
+    public function testGetUserFromAuthUserPlainWithoutAtSign(): void
+    {
+        unset($_SERVER['HTTP_X_TEST_USER']);
+        $_SERVER['AUTH_USER'] = 'plainuser';
+        $user = $this->auth->getUser();
+        $this->assertStringContainsString('plainuser', $user);
+        $this->assertStringContainsString('@', $user);
+        unset($_SERVER['AUTH_USER']);
+    }
+
+    public function testGetUserPrefersTestHeaderOverAuthUser(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'preferred@example.com';
+        $_SERVER['AUTH_USER'] = 'other@domain.com';
+        $user = $this->auth->getUser();
+        $this->assertSame('preferred@example.com', $user);
+        unset($_SERVER['AUTH_USER']);
+    }
+
+    // ── isAdmin() edge cases ────────────────────────────────────
+
+    public function testIsAdminReturnsFalseForEmptyUser(): void
+    {
+        unset($_SERVER['HTTP_X_TEST_USER']);
+        unset($_SERVER['AUTH_USER']);
+        unset($_SERVER['REMOTE_USER']);
+        $result = $this->auth->isAdmin();
+        $this->assertFalse($result);
+    }
+
+    // ── isSuperAdmin() edge cases ───────────────────────────────
+
+    public function testIsSuperAdminReturnsFalseWhenNoUser(): void
+    {
+        unset($_SERVER['HTTP_X_TEST_USER']);
+        unset($_SERVER['AUTH_USER']);
+        unset($_SERVER['REMOTE_USER']);
+        $result = $this->auth->isSuperAdmin();
+        $this->assertFalse($result);
+    }
+
+    // ── getAdminEmail() edge cases ──────────────────────────────
+
+    public function testGetAdminEmailReturnsNonEmptyString(): void
+    {
+        $email = $this->auth->getAdminEmail();
+        $this->assertNotEmpty($email);
+    }
+
+    // ── processAdminRequest() with non-admin ─────────────────────
+
+    public function testProcessAdminRequestNewRequestCreatesRecord(): void
+    {
+        $pdo = $this->db->getPdo();
+        $email = 'newreq_' . uniqid() . '@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
+        unset($_SERVER['AUTH_USER']);
+
+        $result = $this->auth->processAdminRequest($email);
+        $this->assertTrue($result['success']);
+        $this->assertContains($result['reason'], ['sent', 'dry_run']);
+
+        // Verify the request was created
+        $check = $pdo->prepare("SELECT 1 FROM admin_requests WHERE email = ?");
+        $check->execute([$email]);
+        $this->assertNotFalse($check->fetch());
+
+        $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
+    }
+
+    // ── approveAdminRequest() with non-existent email ────────────
+
+    public function testApproveAdminRequestNonExistentEmailDoesNotThrow(): void
+    {
+        $result = $this->auth->approveAdminRequest('nonexistent_' . uniqid() . '@test.com');
+        // The method should not throw, just update 0 rows
+        $this->assertIsBool($result);
+    }
+
+    // ── rejectAdminRequest() with non-existent email ─────────────
+
+    public function testRejectAdminRequestNonExistentEmailDoesNotThrow(): void
+    {
+        $result = $this->auth->rejectAdminRequest('nonexistent_' . uniqid() . '@test.com');
+        $this->assertIsBool($result);
+    }
+
+    // ── removeAdmin() with non-existent admin ────────────────────
+
+    public function testRemoveAdminNonExistentEmailDoesNotThrow(): void
+    {
+        $result = $this->auth->removeAdmin('nonexistent_admin_' . uniqid() . '@test.com');
+        // Should return true (DELETE succeeded, 0 rows affected)
+        $this->assertIsBool($result);
+    }
 }

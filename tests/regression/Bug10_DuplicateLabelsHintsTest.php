@@ -31,7 +31,7 @@ function run_bug10_test(): bool {
         return false;
     }
 
-    // Chercher s'il y a encore un <label for="<?= h($vf['field_name'])" manuel
+    // Chercher s'il y a encore un <label for="<?= \App\Core\App::html()->escape($vf['field_name'])" manuel
     if (preg_match('/<label for=.*vf\[.field_name.\]/', $validate_src)) {
         echo "  ❌ Label manuel encore présent avant render_field() dans validate.php\n";
         return false;

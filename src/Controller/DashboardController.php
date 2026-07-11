@@ -19,9 +19,7 @@ final class DashboardController extends BaseController
      */
     public function handle(): void
     {
-        // Chargement du module de rendu spécifique au dashboard
-        // (déclare dashboard_page_css() et render_dashboard_content()).
-        require_once __DIR__ . '/../../lib/render_dashboard.php';
+
 
         // Sécurité : le dashboard est réservé aux administrateurs
         $this->auth->requireAdmin();
@@ -73,7 +71,7 @@ final class DashboardController extends BaseController
                         : ($filtre === 'refuse' ? 'refuse' : ''));
             }
             $this->audit->log('export_csv', '', 'Export CSV des soumissions', '');
-            export_csv($pdo, $options);
+            \App\Core\App::export()->exportCsv($options);
         }
 
         // Régénération de token (admin)
@@ -89,7 +87,7 @@ final class DashboardController extends BaseController
                 $token_id  = '';
             }
             if ($token_id) {
-                $result    = regenerate_token((string) $token_id);
+                $result    = \App\Core\App::token()->regenerate((string) $token_id);
                 $regen_msg = $result['message'];
                 /** @phpstan-ignore-next-line if.alwaysTrue */
                 if (TEST_MODE) {
@@ -111,7 +109,7 @@ final class DashboardController extends BaseController
                 $token_id   = '';
             }
             if ($token_id) {
-                $result     = remind_one((string) $token_id);
+                $result     = \App\Core\App::token()->remind((string) $token_id);
                 $remind_msg = $result['message'];
             }
         }
@@ -143,7 +141,7 @@ final class DashboardController extends BaseController
                 $sub_stmt->execute([$sub_id]);
                 $sub_owner = $sub_stmt->fetchColumn();
                 if ($this->auth->isAdmin() || $sub_owner === $actor) {
-                    $result     = cancel_submission((string) $sub_id, $actor);
+                    $result     = \App\Core\App::token()->cancel((string) $sub_id, $actor);
                     $cancel_msg = $result['message'];
                     /** @phpstan-ignore-next-line if.alwaysTrue */
                     if (TEST_MODE) {
@@ -244,10 +242,10 @@ final class DashboardController extends BaseController
                 $rows_for_validator_status[] = $r;
             }
         }
-        $validator_status_by_submission = get_validator_status_batch($pdo, $rows_for_validator_status);
+        $validator_status_by_submission = \App\Core\App::validatorData()->getValidatorStatusBatch($rows_for_validator_status);
 
         $forms  = _dbm_q($pdo, "SELECT * FROM forms WHERE actif=1 ORDER BY label")->fetchAll(\PDO::FETCH_ASSOC);
-        $gstats = get_global_stats();
+        $gstats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
         $total  = $gstats['total'];
         $complet = $gstats['valide'] + $gstats['refuse'];
         $valide  = $gstats['valide'];
@@ -333,8 +331,8 @@ final class DashboardController extends BaseController
             'cancel_msg' => $cancel_msg,
         ];
 
-        $page_css = dashboard_page_css();
-        $content  = render_dashboard_content(
+        $page_css = \App\Render\DashboardRenderer::pageCss();
+        $content  = \App\Render\DashboardRenderer::content(
             $sys,
             $stats,
             $filters,

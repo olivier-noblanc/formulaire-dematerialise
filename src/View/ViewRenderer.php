@@ -4,20 +4,26 @@ declare(strict_types=1);
 namespace App\View;
 
 use App\Render\HtmlService;
+use App\Render\FormRenderer;
+use App\Render\ErrorRenderer;
+use App\Render\NavigationRenderer;
 
 /**
- * Service de rendu de pages — enveloppe render_page(), render_header(), etc.
- *
- * Les fonctions globales render_*() restent définies dans lib/ mais cette
- * classe expose une API OOP et permet l'injection de dépendances.
+ * Service de rendu de pages — enveloppe OOP pour les renderers.
  */
 final class ViewRenderer
 {
     private HtmlService $html;
+    private FormRenderer $formRenderer;
+    private ErrorRenderer $errorRenderer;
+    private NavigationRenderer $navRenderer;
 
     public function __construct(HtmlService $html)
     {
         $this->html = $html;
+        $this->formRenderer = new FormRenderer();
+        $this->errorRenderer = new ErrorRenderer();
+        $this->navRenderer = new NavigationRenderer();
     }
 
     public function page(
@@ -26,22 +32,22 @@ final class ViewRenderer
         string $pageCss = '',
         string $content = ''
     ): string {
-        return render_page($title, $currentPage, $pageCss, $content);
+        return $this->navRenderer->page($title, $currentPage, $pageCss, $content);
     }
 
     public function header(string $currentPage = '', array $extraAdminLinks = []): string
     {
-        return render_header($currentPage, $extraAdminLinks);
+        return $this->navRenderer->header($currentPage, $extraAdminLinks);
     }
 
     public function breadcrumb(array $breadcrumbs): string
     {
-        return render_breadcrumb($breadcrumbs);
+        return $this->navRenderer->breadcrumb($breadcrumbs);
     }
 
     public function footer(): string
     {
-        return render_footer();
+        return $this->navRenderer->footer();
     }
 
     public function errorPage(
@@ -51,17 +57,17 @@ final class ViewRenderer
         string $hint = '',
         string $backUrl = 'index.php'
     ): void {
-        render_error_page($code, $title, $message, $hint, $backUrl);
+        $this->errorRenderer->errorPage($code, $title, $message, $hint, $backUrl);
     }
 
     public function messages(array $messages = []): string
     {
-        return render_messages($messages);
+        return $this->errorRenderer->messages($messages);
     }
 
     public function favicon(): string
     {
-        return render_favicon();
+        return NavigationRenderer::favicon();
     }
 
     public function field(
@@ -71,7 +77,7 @@ final class ViewRenderer
         string $datalistId = '',
         bool $disabled = false
     ): string {
-        return render_field($field, $postedVal, $fieldErrors, $datalistId, $disabled);
+        return $this->formRenderer->field($field, $postedVal, $fieldErrors, $datalistId, $disabled);
     }
 
     public function searchBar(
@@ -80,7 +86,7 @@ final class ViewRenderer
         string $placeholder = 'Rechercher...',
         array $hiddenFields = []
     ): string {
-        return render_search_bar($actionUrl, $currentSearch, $placeholder, $hiddenFields);
+        return $this->formRenderer->searchBar($actionUrl, $currentSearch, $placeholder, $hiddenFields);
     }
 
     public function statusFilter(
@@ -88,7 +94,7 @@ final class ViewRenderer
         string $baseUrl,
         string $paramName = 'statut'
     ): string {
-        return render_status_filter($currentStatus, $baseUrl, $paramName);
+        return $this->formRenderer->statusFilter($currentStatus, $baseUrl, $paramName);
     }
 
     public function submissionData(
@@ -96,17 +102,17 @@ final class ViewRenderer
         array $exclude = ['validations', 'csrf_token'],
         string $format = 'p'
     ): string {
-        return render_submission_data($data, $exclude, $format);
+        return $this->formRenderer->submissionData($data, $exclude, $format);
     }
 
     public function formProgressIndicator(array $grouped): string
     {
-        return render_form_progress_indicator($grouped);
+        return $this->formRenderer->formProgressIndicator($grouped);
     }
 
     public function ldapDatalist(string $listId, string $query = '', int $limit = 200): string
     {
-        return render_ldap_datalist($listId, $query, $limit);
+        return (new \App\Render\LdapRenderer())->datalist($listId, $query, $limit);
     }
 
     public function h(?string $val): string

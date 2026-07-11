@@ -86,7 +86,7 @@ final class ConfirmActionController extends BaseController
         switch ($action) {
             case 'cancel_submission':
                 $subId = trim($_GET['submission_id']);
-                $detailText = '#' . h($subId) . ' ?';
+                $detailText = '#' . \App\Core\App::html()->escape($subId) . ' ?';
                 break;
             case 'regenerate_token':
                 $tokenId = trim($_GET['token_id']);
@@ -94,9 +94,9 @@ final class ConfirmActionController extends BaseController
                 $tokStmt->execute([$tokenId]);
                 $tokInfo = $tokStmt->fetch(\PDO::FETCH_ASSOC);
                 if ($tokInfo) {
-                    $detailText = App::html()->displayUser($tokInfo['email']) . ' (étape : ' . h($tokInfo['step_label']) . ') ?';
+                    $detailText = App::html()->displayUser($tokInfo['email']) . ' (étape : ' . \App\Core\App::html()->escape($tokInfo['step_label']) . ') ?';
                 } else {
-                    $detailText = 'token #' . h($tokenId) . ' ?';
+                    $detailText = 'token #' . \App\Core\App::html()->escape($tokenId) . ' ?';
                 }
                 break;
             case 'delete_rule':
@@ -104,26 +104,26 @@ final class ConfirmActionController extends BaseController
                 $ruleStmt = $pdo->prepare("SELECT label FROM alert_rules WHERE id = ?");
                 $ruleStmt->execute([$ruleId]);
                 $ruleLabel = $ruleStmt->fetchColumn();
-                $detailText = $ruleLabel ? '"' . h((string)$ruleLabel) . '" ( #' . h((string)$ruleId) . ') ?' : '#' . h((string)$ruleId) . ' ?';
+                $detailText = $ruleLabel ? '"' . \App\Core\App::html()->escape((string)$ruleLabel) . '" ( #' . \App\Core\App::html()->escape((string)$ruleId) . ') ?' : '#' . \App\Core\App::html()->escape((string)$ruleId) . ' ?';
                 break;
             case 'delete_alert_log':
                 $logId = trim($_GET['log_id']);
-                $detailText = '#' . h($logId) . ' ?';
+                $detailText = '#' . \App\Core\App::html()->escape($logId) . ' ?';
                 break;
             case 'remove_admin':
                 $email = $_GET['email'];
-                $detailText = h($email) . ' ?';
+                $detailText = \App\Core\App::html()->escape($email) . ' ?';
                 break;
             case 'remove_owner':
                 $ownerId = trim($_GET['id']);
                 $owStmt = $pdo->prepare("SELECT email FROM form_owners WHERE id = ?");
                 $owStmt->execute([$ownerId]);
                 $owEmail = $owStmt->fetchColumn();
-                $detailText = $owEmail ? App::html()->displayUser((string)$owEmail) . ' ?' : '#' . h((string)$ownerId) . ' ?';
+                $detailText = $owEmail ? App::html()->displayUser((string)$owEmail) . ' ?' : '#' . \App\Core\App::html()->escape((string)$ownerId) . ' ?';
                 break;
             case 'delete_submission':
                 $subId = trim($_GET['submission_id']);
-                $detailText = '#' . h(substr($subId, 0, 8)) . ' ?';
+                $detailText = '#' . \App\Core\App::html()->escape(substr($subId, 0, 8)) . ' ?';
                 break;
         }
 
@@ -138,7 +138,7 @@ final class ConfirmActionController extends BaseController
         ?>
   <div class="confirm-card <?= $config['danger'] ? 'danger' : 'warning' ?>">
     <div class="confirm-icon"><?= $config['danger'] ? '⚠️' : '🔄' ?></div>
-    <div class="confirm-title <?= $config['danger'] ? '' : 'warning-title' ?>"><?= h($config['label']) ?></div>
+    <div class="confirm-title <?= $config['danger'] ? '' : 'warning-title' ?>"><?= \App\Core\App::html()->escape($config['label']) ?></div>
     <div class="confirm-message">
       <?= $confirmMessage ?> <strong><?= $detailText ?></strong>
     </div>
@@ -149,23 +149,23 @@ final class ConfirmActionController extends BaseController
     </div>
     <?php endif; ?>
 
-    <form method="POST" action="<?= h($postUrl) ?>">
+    <form method="POST" action="<?= \App\Core\App::html()->escape($postUrl) ?>">
       <?= $this->security->csrfField() ?>
-      <input type="hidden" name="action" value="<?= h($action) ?>">
+      <input type="hidden" name="action" value="<?= \App\Core\App::html()->escape($action) ?>">
       <input type="hidden" name="confirmed" value="1">
       <?php foreach ($config['params'] as $param): ?>
-        <input type="hidden" name="<?= h($param) ?>" value="<?= h($_GET[$param]) ?>">
+        <input type="hidden" name="<?= \App\Core\App::html()->escape($param) ?>" value="<?= \App\Core\App::html()->escape($_GET[$param]) ?>">
       <?php endforeach; ?>
 
       <div class="confirm-actions">
         <button type="submit" class="btn btn-danger">Confirmer</button>
-        <a href="<?= h($cancelUrl) ?>" class="btn btn-secondary">Annuler</a>
+        <a href="<?= \App\Core\App::html()->escape($cancelUrl) ?>" class="btn btn-secondary">Annuler</a>
       </div>
     </form>
   </div>
 <?php
         $content = (string)ob_get_clean();
-        echo $this->renderPage('Confirmation — ' . h($config['label']), 'dashboard', '', $content);
+        echo $this->renderPage('Confirmation — ' . \App\Core\App::html()->escape($config['label']), 'dashboard', '', $content);
     }
 
     private function safeRelativeUrl(string $url): string
