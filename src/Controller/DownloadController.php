@@ -82,8 +82,7 @@ final class DownloadController extends BaseController
         (string)$original_name = $attachment['original_name'];
         $file_size = (int)$attachment['file_size'];
 
-        (string)$original_name = str_replace(["\r", "\n"], '', (string)$original_name);
-        (string)$original_name = str_replace('"', '\\"', (string)$original_name);
+        (string)$original_name = preg_replace('/[^\x20-\x7E]/', '', (string)$original_name);
         $safe_name = rawurlencode($attachment['original_name']);
 
         header('Content-Type: ' . $mime_type);

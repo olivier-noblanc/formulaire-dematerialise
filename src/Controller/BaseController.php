@@ -23,6 +23,7 @@ use App\Repository\AttachmentRepository;
 use App\Repository\AdminRepository;
 use App\Repository\SettingsRepository;
 use App\Repository\AuditRepository;
+use App\Repository\AlertRepository;
 
 /**
  * Contrôleur de base — fournit l'accès aux services et repositories via DI.
@@ -55,6 +56,7 @@ abstract class BaseController
     protected AdminRepository $adminRepo;
     protected SettingsRepository $settingsRepo;
     protected AuditRepository $auditRepo;
+    protected AlertRepository $alertRepo;
 
     protected App $app;
 
@@ -89,6 +91,7 @@ abstract class BaseController
         $this->adminRepo      = $this->app->get(AdminRepository::class);
         $this->settingsRepo   = $this->app->get(SettingsRepository::class);
         $this->auditRepo      = $this->app->get(AuditRepository::class);
+        $this->alertRepo      = $this->app->get(AlertRepository::class);
     }
 
     protected function renderPage(string $title, string $currentPage = '', string $pageCss = '', string $content = ''): string

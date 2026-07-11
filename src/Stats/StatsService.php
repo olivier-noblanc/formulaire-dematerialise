@@ -117,15 +117,27 @@ final class StatsService
     {
         $pdo = $this->db->getPdo();
 
+        $row = $pdo->query("
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
+                SUM(CASE WHEN status = 'valide' THEN 1 ELSE 0 END) as valide,
+                SUM(CASE WHEN status = 'refuse' THEN 1 ELSE 0 END) as refuse,
+                SUM(CASE WHEN DATE(submitted_at) = DATE('now') THEN 1 ELSE 0 END) as today,
+                SUM(CASE WHEN submitted_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as this_week,
+                SUM(CASE WHEN submitted_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) as this_month
+            FROM submissions
+        ")->fetch(PDO::FETCH_ASSOC);
+
         $stats = [
-            'total' => (int) $pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn(),
-            'en_cours' => (int) $pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'en_cours'")->fetchColumn(),
-            'valide' => (int) $pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'valide'")->fetchColumn(),
-            'refuse' => (int) $pdo->query("SELECT COUNT(*) FROM submissions WHERE status = 'refuse'")->fetchColumn(),
+            'total' => (int) ($row['total'] ?? 0),
+            'en_cours' => (int) ($row['en_cours'] ?? 0),
+            'valide' => (int) ($row['valide'] ?? 0),
+            'refuse' => (int) ($row['refuse'] ?? 0),
+            'today' => (int) ($row['today'] ?? 0),
+            'this_week' => (int) ($row['this_week'] ?? 0),
+            'this_month' => (int) ($row['this_month'] ?? 0),
             'avg_days' => 0,
-            'today' => (int) $pdo->query("SELECT COUNT(*) FROM submissions WHERE DATE(submitted_at) = DATE('now')")->fetchColumn(),
-            'this_week' => (int) $pdo->query("SELECT COUNT(*) FROM submissions WHERE submitted_at >= datetime('now', '-7 days')")->fetchColumn(),
-            'this_month' => (int) $pdo->query("SELECT COUNT(*) FROM submissions WHERE submitted_at >= datetime('now', '-30 days')")->fetchColumn(),
             'tokens_pending' => (int) $pdo->query("SELECT COUNT(*) FROM tokens WHERE done_at IS NULL")->fetchColumn(),
             'attachments_count' => (int) $pdo->query("SELECT COUNT(*) FROM attachments")->fetchColumn(),
             'attachments_size' => (int) $pdo->query("SELECT COALESCE(SUM(file_size), 0) FROM attachments")->fetchColumn(),

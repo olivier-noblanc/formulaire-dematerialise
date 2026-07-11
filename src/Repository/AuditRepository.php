@@ -57,4 +57,20 @@ final class AuditRepository extends BaseRepository
             ['security_event', $limit]
         );
     }
+
+    public function getLastBackupDate(): ?string
+    {
+        $result = $this->fetchOne(
+            "SELECT created_at FROM audit_log
+             WHERE action IN ('backup_download', 'backup_restore')
+             ORDER BY created_at DESC LIMIT 1"
+        );
+        return $result !== null ? (string) $result['created_at'] : null;
+    }
+
+    public function countAll(): int
+    {
+        $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM audit_log");
+        return (int) ($result['cnt'] ?? 0);
+    }
 }

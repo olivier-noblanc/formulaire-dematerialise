@@ -50,6 +50,7 @@ final class MonitoringController extends BaseController
             WHERE t.done_at IS NULL AND s.status = 'en_cours'
               AND CAST(strftime('%s', 'now') AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) > ($bloqueHours * 3600)
             ORDER BY t.sent_at ASC
+            LIMIT 100
         ")->fetchAll(\PDO::FETCH_ASSOC);
 
         $tokensExpired = $pdo->query("
@@ -70,6 +71,19 @@ final class MonitoringController extends BaseController
             ")->fetchAll(\PDO::FETCH_ASSOC);
 
             $nowTs = time();
+
+            // Batch fetch pending token counts to avoid N+1
+            $alertSubIds = array_column($alertSubmissions, 'id');
+            $pendingCounts = [];
+            if (!empty($alertSubIds)) {
+                $placeholders = implode(',', array_fill(0, count($alertSubIds), '?'));
+                $pendingStmt = $pdo->prepare("SELECT submission_id, COUNT(*) as cnt FROM tokens WHERE submission_id IN ($placeholders) AND done_at IS NULL GROUP BY submission_id");
+                $pendingStmt->execute($alertSubIds);
+                foreach ($pendingStmt->fetchAll(\PDO::FETCH_ASSOC) as $pr) {
+                    $pendingCounts[$pr['submission_id']] = (int)$pr['cnt'];
+                }
+            }
+
             foreach ($alertSubmissions as $as) {
                 $data = json_decode($as['data'], true) ?: [];
                 $deadlineField = $as['deadline_field'];
@@ -80,10 +94,7 @@ final class MonitoringController extends BaseController
                 if (!$deadlineTs) continue;
 
                 $daysRemaining = (int)(($deadlineTs - $nowTs) / 86400);
-
-                $pending = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL");
-                $pending->execute([$as['id']]);
-                $pendingCount = (int)$pending->fetchColumn();
+                $pendingCount = $pendingCounts[$as['id']] ?? 0;
 
                 if ($daysRemaining <= 10) {
                     $nomAgent = ($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '');

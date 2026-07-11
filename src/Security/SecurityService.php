@@ -12,6 +12,7 @@ use App\Render\HtmlService;
 final class SecurityService implements SecurityInterface
 {
     private HtmlService $html;
+    private string $scriptNonce = '';
 
     public function __construct(HtmlService $html)
     {
@@ -28,7 +29,9 @@ final class SecurityService implements SecurityInterface
         header('Referrer-Policy: strict-origin-when-cross-origin');
         header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 
-        $csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
+        $this->scriptNonce = bin2hex(random_bytes(16));
+        $nonceAttr = "nonce=\"{$this->scriptNonce}\"";
+        $csp = "default-src 'self'; script-src 'self' {$nonceAttr}; style-src 'self' {$nonceAttr}; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
         header('Content-Security-Policy: ' . $csp);
 
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
@@ -66,6 +69,7 @@ final class SecurityService implements SecurityInterface
         // Sans ce bypass, les tests E2E/HTTP qui POST sans jeton valide échoueraient.
         /** @phpstan-ignore-next-line if.alwaysTrue */
         if (defined('TEST_MODE') && TEST_MODE) {
+            error_log('[SECURITY] TEST_MODE actif — CSRF bypassed');
             return true;
         }
 
@@ -91,5 +95,10 @@ final class SecurityService implements SecurityInterface
             }
             exit;
         }
+    }
+
+    public function getScriptNonce(): string
+    {
+        return $this->scriptNonce;
     }
 }

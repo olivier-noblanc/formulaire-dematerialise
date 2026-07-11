@@ -54,24 +54,38 @@ final class FormTrackingController extends BaseController
             }
         }
 
-        $submissions = $pdo->prepare("
-            SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.status, s.closed_at
-            FROM submissions s
-            WHERE s.form_id = ?
-            ORDER BY s.submitted_at DESC
-        ");
-        $submissions->execute([$formId]);
-        $submissions = $submissions->fetchAll(\PDO::FETCH_ASSOC);
+        // Pagination
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $per_page = 25;
+        try {
+            $page = validate_input($page, 'int', ['min' => 1, 'max' => 10000]);
+        } catch (\InvalidArgumentException $e) {
+            $page = 1;
+        }
+        $page = (int) $page;
 
-        $total = count($submissions);
+        // Count total
+        $total_rows = $this->submissionRepo->countByForm($formId);
+        $total_pages = max(1, (int) ceil($total_rows / $per_page));
+        if ($page > $total_pages) {
+            $page = $total_pages;
+        }
+        $offset = ($page - 1) * $per_page;
+
+        // Count by status (stats)
+        $statusCounts = $this->submissionRepo->getStatusCountsByForm($formId);
+        $total = $total_rows;
         $enCours = 0;
         $valide = 0;
         $refuse = 0;
-        foreach ($submissions as $s) {
-            if ($s['status'] === 'en_cours') $enCours++;
-            elseif ($s['status'] === 'valide') $valide++;
-            elseif ($s['status'] === 'refuse') $refuse++;
+        foreach ($statusCounts as $row) {
+            if ($row['status'] === 'en_cours') $enCours = (int) $row['cnt'];
+            elseif ($row['status'] === 'valide') $valide = (int) $row['cnt'];
+            elseif ($row['status'] === 'refuse') $refuse = (int) $row['cnt'];
         }
+
+        // Paginated fetch
+        $submissions = $this->submissionRepo->findPaginatedByForm($formId, $per_page, $offset);
 
         ob_start();
         ?>
@@ -130,6 +144,8 @@ final class FormTrackingController extends BaseController
       </table>
     </div>
   <?php endif; ?>
+
+  <?= \App\Core\App::html()->renderPagination($page, $total_pages, 'index.php?p=form_tracking&f=' . urlencode($formUuid)) ?>
 <?php
         $content = (string)ob_get_clean();
         echo $this->renderPage('Suivi — ' . $form['label'], 'form_tracking', '', $content);

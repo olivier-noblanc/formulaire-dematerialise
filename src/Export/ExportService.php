@@ -48,27 +48,16 @@ final class ExportService
         $where_sql = implode(' AND ', $where);
 
         $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("
-            SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status,
-                   f.label as form_label, f.slug as form_slug
-            FROM submissions s
-            JOIN forms f ON f.id = s.form_id
-            WHERE $where_sql
-            ORDER BY s.submitted_at DESC
-        ");
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Collecter toutes les clés de données pour les colonnes
-        $all_keys = [];
-        foreach ($rows as $row) {
-            $data = json_decode($row['data'], true) ?: [];
-            foreach (array_keys($data) as $k) {
-                if ($k !== 'validations' && !in_array($k, $all_keys)) {
-                    $all_keys[] = $k;
-                }
-            }
-        }
+        // Récupérer les colonnes JSON distinctes via json_each (une seule requête légère)
+        $keysStmt = $pdo->prepare("
+            SELECT DISTINCT j.key
+            FROM submissions s, json_each(s.data) j
+            JOIN forms f ON f.id = s.form_id
+            WHERE $where_sql AND j.key != 'validations'
+        ");
+        $keysStmt->execute($params);
+        $all_keys = $keysStmt->fetchAll(PDO::FETCH_COLUMN);
 
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="export_submissions_' . gmdate('Ymd_His') . '.csv"');
@@ -84,25 +73,46 @@ final class ExportService
         $headers = array_merge(['ID', 'Formulaire', 'Agent', 'Statut', 'Soumis le', 'Clôturé le'], $all_keys);
         fputcsv($out, $headers, ';', '"', '\\');
 
-        foreach ($rows as $row) {
-            $data = json_decode($row['data'], true) ?: [];
-            $line = [
-                $row['id'],
-                $row['form_label'],
-                $row['submitted_by'],
-                $row['status'],
-                $row['submitted_at'],
-                $row['closed_at'] ?? '',
-            ];
-            foreach ($all_keys as $k) {
-                $val = $data[$k] ?? '';
-                if ($val === '1') $val = 'Oui';
-                elseif ($val === '0') $val = 'Non';
-                elseif (is_array($val)) $val = json_encode($val, JSON_UNESCAPED_UNICODE);
-                $line[] = $val;
+        // Streamer les lignes par batch de 500
+        $batch_size = 500;
+        $offset = 0;
+
+        do {
+            $stmt = $pdo->prepare("
+                SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status,
+                       f.label as form_label, f.slug as form_slug
+                FROM submissions s
+                JOIN forms f ON f.id = s.form_id
+                WHERE $where_sql
+                ORDER BY s.submitted_at DESC
+                LIMIT $batch_size OFFSET $offset
+            ");
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($rows as $row) {
+                $data = json_decode($row['data'], true) ?: [];
+                $line = [
+                    $row['id'],
+                    $row['form_label'],
+                    $row['submitted_by'],
+                    $row['status'],
+                    $row['submitted_at'],
+                    $row['closed_at'] ?? '',
+                ];
+                foreach ($all_keys as $k) {
+                    $val = $data[$k] ?? '';
+                    if ($val === '1') $val = 'Oui';
+                    elseif ($val === '0') $val = 'Non';
+                    elseif (is_array($val)) $val = json_encode($val, JSON_UNESCAPED_UNICODE);
+                    $line[] = $val;
+                }
+                fputcsv($out, $line, ';', '"', '\\');
             }
-            fputcsv($out, $line, ';', '"', '\\');
-        }
+
+            $offset += $batch_size;
+        } while (count($rows) === $batch_size);
+
         fclose($out);
         exit;
     }

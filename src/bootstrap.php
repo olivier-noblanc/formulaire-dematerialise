@@ -67,6 +67,7 @@ $app->set(FormRepository::class, new FormRepository($db));
 $app->set(SubmissionRepository::class, new SubmissionRepository($db));
 $app->set(TokenRepository::class, new TokenRepository($db));
 $app->set(AttachmentRepository::class, new AttachmentRepository($db));
+$app->set(AlertRepository::class, new AlertRepository($db));
 $app->set(FieldService::class, new FieldService($db));
 $app->set(HtmlService::class, new HtmlService());
 $app->set(SecurityService::class, new SecurityService($app->get(HtmlService::class)));
@@ -103,7 +104,7 @@ $attachmentRepo = $app->get(AttachmentRepository::class);
 $app->set(AttachmentService::class, new AttachmentService($attachmentRepo));
 
 // Validator data service
-$app->set(ValidatorDataService::class, new ValidatorDataService($db));
+$app->set(ValidatorDataService::class, new ValidatorDataService($db, $fields));
 
 // Cron service
 $app->set(CronService::class, new CronService($db));

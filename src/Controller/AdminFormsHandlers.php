@@ -86,7 +86,8 @@ final class AdminFormsHandlers
             App::audit()->log('form_create', 'form:' . $new_form_id, "Formulaire '$label' créé (slug auto: $slug)");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_form_id)];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de l\'ajout du formulaire : ' . $e->getMessage()];
+            error_log('handleAddForm error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -114,7 +115,8 @@ final class AdminFormsHandlers
             App::audit()->log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id)];
         } catch (\PDOException $e) {
-            $result['error'] = 'Erreur lors de la mise à jour du formulaire : ' . $e->getMessage();
+            error_log('handleUpdateForm error: ' . $e->getMessage());
+            $result['error'] = 'Une erreur technique est survenue.';
             return $result;
         }
     }
@@ -147,7 +149,8 @@ final class AdminFormsHandlers
             App::audit()->log('form_delete', 'form:' . $form_id, "Formulaire supprimé");
             return ['redirect' => 'index.php?p=admin_forms'];
         } catch (\PDOException $e) {
-            $result['error'] = 'Erreur lors de la suppression du formulaire : ' . $e->getMessage();
+            error_log('handleDeleteForm error: ' . $e->getMessage());
+            $result['error'] = 'Une erreur technique est survenue.';
             return $result;
         }
     }
@@ -244,7 +247,8 @@ final class AdminFormsHandlers
             App::audit()->log('field_add', 'form:' . $form_id, "Champ '$ff_label' ajouté");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#field-' . urlencode($new_field_id)];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de l\'ajout du champ : ' . $e->getMessage()];
+            error_log('handleAddField error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -285,7 +289,8 @@ final class AdminFormsHandlers
             App::audit()->log('field_update', 'field:' . $field_id, "Champ '$ff_label' mis à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#field-' . urlencode($field_id)];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de la mise à jour du champ : ' . $e->getMessage()];
+            error_log('handleUpdateField error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -300,7 +305,8 @@ final class AdminFormsHandlers
             $pdo->prepare("DELETE FROM form_fields WHERE id = ?")->execute([$field_id]);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#fields'];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de la suppression du champ : ' . $e->getMessage()];
+            error_log('handleDeleteField error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -323,7 +329,8 @@ final class AdminFormsHandlers
             App::audit()->log('owner_add', 'form:' . $form_id, "Propriétaire $owner_email ajouté");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners'];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de l\'ajout du propriétaire : ' . $e->getMessage()];
+            error_log('handleAddOwner error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -339,7 +346,8 @@ final class AdminFormsHandlers
             App::audit()->log('owner_remove', 'form:' . $form_id, "Propriétaire retiré");
             return ['redirect' => App::html()->buildUrl('index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners')];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de la suppression du propriétaire : ' . $e->getMessage()];
+            error_log('handleDeleteOwner error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -558,7 +566,8 @@ final class AdminFormsHandlers
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_id)];
         } catch (\PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            return ['error' => 'Erreur lors de l\'import : ' . $e->getMessage()];
+            error_log('handleImportForm error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -587,7 +596,8 @@ final class AdminFormsHandlers
             App::audit()->log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id) . '#step-' . urlencode($new_step_id)];
         } catch (\PDOException $e) {
-            $result['error'] = 'Erreur lors de l\'ajout de l\'étape : ' . $e->getMessage();
+            error_log('handleAddStep error: ' . $e->getMessage());
+            $result['error'] = 'Une erreur technique est survenue.';
             return $result;
         }
     }
@@ -634,7 +644,8 @@ final class AdminFormsHandlers
             App::audit()->log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de la mise à jour de l\'étape : ' . $e->getMessage()];
+            error_log('handleUpdateStep error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -656,7 +667,8 @@ final class AdminFormsHandlers
             $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$step_id]);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#workflow'];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de la suppression de l\'étape : ' . $e->getMessage()];
+            error_log('handleDeleteStep error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -684,7 +696,8 @@ final class AdminFormsHandlers
             App::audit()->log('recipient_add', 'step:' . $step_id, $label);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de l\'ajout du destinataire : ' . $e->getMessage()];
+            error_log('handleAddRecipient error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -702,7 +715,8 @@ final class AdminFormsHandlers
             $anchor = $step_id_for_anchor !== '' ? '#step-' . urlencode($step_id_for_anchor) : '#workflow';
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . $anchor];
         } catch (\PDOException $e) {
-            return ['error' => 'Erreur lors de la suppression du destinataire : ' . $e->getMessage()];
+            error_log('handleDeleteRecipient error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 

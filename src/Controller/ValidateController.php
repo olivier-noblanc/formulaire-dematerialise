@@ -255,20 +255,11 @@ final class ValidateController extends BaseController
     $data = $result['data'] ?? [];
     $d   = json_decode($data['data'] ?? '{}', true);
     $nom = \App\Core\App::html()->escape(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
-    $pdo = $this->db->getPdo();
 
-    $wf_steps = $pdo->prepare("
-        SELECT st.id, st.label, st.ordre,
-               GROUP_CONCAT(t2.done_at, '|') as dones,
-               GROUP_CONCAT(t2.email, '|') as emails
-        FROM steps st
-        LEFT JOIN tokens t2 ON t2.step_id = st.id AND t2.submission_id = ?
-        WHERE st.form_id = ? AND st.actif = 1
-        GROUP BY st.id
-        ORDER BY st.ordre, st.id
-    ");
-    $wf_steps->execute([$data['submission_id'] ?? '', $data['form_id'] ?? '']);
-    $all_wf_steps = $wf_steps->fetchAll(\PDO::FETCH_ASSOC);
+    $all_wf_steps = $this->formRepo->getWorkflowStepsWithTokens(
+        (string)($data['form_id'] ?? ''),
+        (string)($data['submission_id'] ?? '')
+    );
   ?>
   <a href="index.php?p=my_validations" class="back-link">← Mes validations</a>
   <span class="badge"><?= \App\Core\App::html()->escape($data['step_label']) ?></span>

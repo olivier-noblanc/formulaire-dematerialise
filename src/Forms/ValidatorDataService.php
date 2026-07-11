@@ -8,17 +8,20 @@ use App\Core\Database;
 /**
  * Service de gestion des données validateur (filled_by).
  *
- * Extrait de lib/filled_by.php — CRUD des données validator dans
- * submission_validator_data, query des champs form_fields réservés aux validateurs.
- * Les fonctions globales dans lib/filled_by.php délèguent maintenant ici.
+ * Délègue les opérations CRUD basiques à FieldService.
+ * Conserve uniquement la logique spécifique aux validateurs :
+ * getSubmissionValidatorData (filtrage par step) et
+ * getValidatorStatusBatch (batch avec pré-résolution form_id).
  */
 final class ValidatorDataService
 {
     private Database $db;
+    private FieldService $fields;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, FieldService $fields)
     {
         $this->db = $db;
+        $this->fields = $fields;
     }
 
     /**
@@ -73,6 +76,7 @@ final class ValidatorDataService
 
     /**
      * Sauvegarde les données saisies par un validateur pour un champ (UPSERT).
+     * Délègue à FieldService.
      */
     public function saveValidatorData(
         string $submissionId,
@@ -84,108 +88,37 @@ final class ValidatorDataService
         ?string $filledByEmail = null,
         ?string $tokenId = null
     ): void {
-        $pdo = $this->db->getPdo();
-
-        $fieldStmt = $pdo->prepare("SELECT label, field_type FROM form_fields WHERE field_name = ?");
-        $fieldStmt->execute([$fieldName]);
-        $fieldInfo = $fieldStmt->fetch(\PDO::FETCH_ASSOC);
-        $fieldLabel = $fieldInfo['label'] ?? $fieldName;
-        $fieldType = $fieldInfo['field_type'] ?? 'text';
-
-        if ($stepLabel === null && $stepId !== null && $stepId !== '') {
-            $formIdStmt = $pdo->prepare("SELECT form_id FROM submissions WHERE id = ?");
-            $formIdStmt->execute([$submissionId]);
-            $formId = (string)$formIdStmt->fetchColumn();
-            if ($formId !== '') {
-                $labelStmt = $pdo->prepare("SELECT label FROM steps WHERE id = ? AND form_id = ?");
-                $labelStmt->execute([$stepId, $formId]);
-                $resolved = (string)$labelStmt->fetchColumn();
-                $stepLabel = $resolved !== '' ? $resolved : null;
-            }
-        }
-
-        $sql = "INSERT INTO submission_validator_data
-                (id, submission_id, field_name, field_label, field_type, value, filled_by, filled_at, step_id, step_label, filled_by_email, token_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(submission_id, field_name) DO UPDATE SET
-                    value = excluded.value,
-                    field_label = excluded.field_label,
-                    field_type = excluded.field_type,
-                    filled_by = excluded.filled_by,
-                    filled_at = excluded.filled_at,
-                    step_id = excluded.step_id,
-                    step_label = excluded.step_label,
-                    filled_by_email = excluded.filled_by_email,
-                    token_id = excluded.token_id";
-        $pdo->prepare($sql)->execute([
-            generate_uuid(),
-            $submissionId,
-            $fieldName,
-            $fieldLabel,
-            $fieldType,
-            $value,
-            $filledBy,
-            gmdate('Y-m-d H:i:s'),
-            $stepId,
-            $stepLabel,
-            $filledByEmail,
-            $tokenId,
-        ]);
+        $this->fields->saveValidatorData(
+            $submissionId, $fieldName, $value, $filledBy,
+            $stepId, $stepLabel, $filledByEmail, $tokenId
+        );
     }
 
     /**
      * Supprime la valeur d'un champ validator pour une soumission.
+     * Délègue à FieldService.
      */
     public function deleteValidatorData(string $submissionId, string $fieldName): void
     {
-        $this->db->getPdo()
-            ->prepare("DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?")
-            ->execute([$submissionId, $fieldName]);
+        $this->fields->deleteValidatorData($submissionId, $fieldName);
     }
 
     /**
      * Récupère les champs d'un formulaire réservés aux validateurs.
+     * Délègue à FieldService::getValidatorFields().
      */
     public function getFormValidatorFields(string $formId, ?string $stepId = null): array
     {
-        $pdo = $this->db->getPdo();
-        $sql = "SELECT * FROM form_fields
-                WHERE form_id = ?
-                  AND filled_by = 'validator'";
-        $params = [$formId];
-
-        if ($stepId !== null && $stepId !== '') {
-            $labelStmt = $pdo->prepare("SELECT label FROM steps WHERE id = ? AND form_id = ?");
-            $labelStmt->execute([$stepId, $formId]);
-            $stepLabel = (string)$labelStmt->fetchColumn();
-
-            $sql .= " AND (validator_step = ? OR validator_step = ? OR validator_step = '')";
-            $params[] = $stepId;
-            $params[] = $stepLabel;
-        }
-
-        $sql .= " ORDER BY ordre, id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->fields->getValidatorFields($formId, $stepId);
     }
 
     /**
      * Récupère les champs d'un formulaire, filtrés optionnellement par filled_by.
+     * Délègue à FieldService::getFields().
      */
     public function getFormFields(string $formId, ?string $filledBy = null): array
     {
-        $pdo = $this->db->getPdo();
-        $sql = "SELECT * FROM form_fields WHERE form_id = ?";
-        $params = [$formId];
-        if ($filledBy !== null) {
-            $sql .= " AND filled_by = ?";
-            $params[] = $filledBy;
-        }
-        $sql .= " ORDER BY ordre, id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->fields->getFields($formId, $filledBy);
     }
 
     /**

@@ -37,4 +37,22 @@ final class AttachmentRepository extends BaseRepository
     {
         return $this->execute("DELETE FROM attachments WHERE submission_id = ?", [$submissionId]);
     }
+
+    public function findBySubmissionWithUploader(string $submissionId): array
+    {
+        return $this->fetchAll(
+            "SELECT a.*, u.display_name as uploader_name
+             FROM attachments a
+             LEFT JOIN users u ON u.email = a.uploaded_by
+             WHERE a.submission_id = ?
+             ORDER BY a.uploaded_at ASC",
+            [$submissionId]
+        );
+    }
+
+    public function countAll(): int
+    {
+        $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM attachments");
+        return (int) ($result['cnt'] ?? 0);
+    }
 }

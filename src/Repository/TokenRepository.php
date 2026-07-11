@@ -44,7 +44,7 @@ final class TokenRepository extends BaseRepository
     public function markExpired(string $tokenId): bool
     {
         return $this->execute(
-            "UPDATE tokens SET expires_at = datetime('now') WHERE id = ?",
+            "UPDATE tokens SET expires_at = datetime('now', '-1 second') WHERE id = ?",
             [$tokenId]
         );
     }
@@ -73,5 +73,60 @@ final class TokenRepository extends BaseRepository
             [$stepId]
         );
         return (int)($result['count'] ?? 0);
+    }
+
+    public function findWithStepsBySubmission(string $submissionId): array
+    {
+        return $this->fetchAll(
+            "SELECT t.id, t.step_id, t.email, t.token, t.sent_at,
+                    st.label as step_label, st.ordre
+             FROM tokens t
+             JOIN steps st ON st.id = t.step_id
+             WHERE t.submission_id = ?
+             ORDER BY st.ordre",
+            [$submissionId]
+        );
+    }
+
+    public function findDetailedWithStepsBySubmission(string $submissionId): array
+    {
+        return $this->fetchAll(
+            "SELECT t.*, st.label as step_label, st.ordre
+             FROM tokens t
+             JOIN steps st ON st.id = t.step_id
+             WHERE t.submission_id = ?
+             ORDER BY st.ordre ASC, t.sent_at ASC",
+            [$submissionId]
+        );
+    }
+
+    public function findBySubmissionIds(array $submissionIds): array
+    {
+        if (empty($submissionIds)) return [];
+        $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
+        $rows = $this->fetchAll(
+            "SELECT t.submission_id, t.id, t.token, t.relance_count, t.expires_at,
+                    t.email, t.done_at, t.sent_at, t.step_id,
+                    st.label, st.label as step_label, st.ordre
+             FROM tokens t
+             JOIN steps st ON st.id = t.step_id
+             WHERE t.submission_id IN ($placeholders)
+             ORDER BY t.submission_id, st.ordre ASC, st.label ASC",
+            $submissionIds
+        );
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row['submission_id']][] = $row;
+        }
+        return $result;
+    }
+
+    public function existsForSubmissionAndEmail(string $submissionId, string $email): bool
+    {
+        $result = $this->fetchOne(
+            "SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?",
+            [$submissionId, $email]
+        );
+        return $result !== null;
     }
 }

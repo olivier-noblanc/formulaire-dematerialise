@@ -88,7 +88,8 @@ final class BackupController extends BaseController
                                 if (file_exists($backupBefore)) {
                                     copy($backupBefore, $dbPath);
                                 }
-                                $errorMsg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie. Erreur : ' . \App\Core\App::html()->escape($e->getMessage());
+                                error_log('backup_restore error: ' . $e->getMessage());
+                                $errorMsg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie.';
                             }
                         } else {
                             $errorMsg = 'Impossible de remplacer le fichier de base de données. Vérifiez les permissions du dossier db/.';
@@ -173,7 +174,8 @@ final class BackupController extends BaseController
                                 $infoMsg = 'Aucune donnée à purger.';
                             }
                         } catch (\Exception $e) {
-                            $errorMsg = 'Erreur lors de la purge : ' . \App\Core\App::html()->escape($e->getMessage());
+                            error_log('purge_confirm error: ' . $e->getMessage());
+                            $errorMsg = 'Une erreur technique est survenue.';
                         }
                     }
                 }
@@ -193,14 +195,20 @@ final class BackupController extends BaseController
         $dbStats['row_counts'] = [];
         try {
             $pdo = $this->db->getPdo();
+            $unionParts = [];
             foreach ($dbTables as $table) {
-                try {
-                    $count = (int)$pdo->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
-                    $dbStats['row_counts'][$table] = $count;
-                } catch (\Exception $e) {
-                    $dbStats['row_counts'][$table] = '—';
-                    error_log('backup row count error for ' . $table . ': ' . $e->getMessage());
+                $unionParts[] = "SELECT '" . $table . "' AS tbl, COUNT(*) AS cnt FROM " . $table;
+            }
+            try {
+                $countStmt = $pdo->query(implode(' UNION ALL ', $unionParts));
+                while ($row = $countStmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $dbStats['row_counts'][$row['tbl']] = (int)$row['cnt'];
                 }
+            } catch (\Exception $e) {
+                foreach ($dbTables as $table) {
+                    $dbStats['row_counts'][$table] = '—';
+                }
+                error_log('backup row count error: ' . $e->getMessage());
             }
 
             $oldest = $pdo->query("SELECT MIN(submitted_at) FROM submissions")->fetchColumn();
@@ -221,7 +229,8 @@ final class BackupController extends BaseController
             $dbStats['db_size_pages']  = $this->formatBytes($pageCount * $pageSize);
             $dbStats['free_pages']     = $this->formatBytes($freelistCount * $pageSize);
         } catch (\Exception $e) {
-            $dbStats['error'] = $e->getMessage();
+            error_log('dbStats error: ' . $e->getMessage());
+            $dbStats['error'] = 'Une erreur technique est survenue.';
         }
 
         $purgePreview = $purgePreview ?? null;
