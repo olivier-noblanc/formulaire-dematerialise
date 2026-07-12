@@ -1,17 +1,21 @@
 # TODO — CircuitDémat
 
-## Session 2026-07-11 — Ultrareview
+## Session 2026-07-12 — Résumé
 
 ### ✅ Terminé
 
 | Tâche | Détail | Résultat |
 |-------|--------|----------|
-| Bug fixes (C-1,C-5,W-1,W-2,W-4,W-14,W-15) | 7 bugs logiques/data corrigés | ✅ |
-| Sécurité (W-5,W-6,P-7,P-6,P-3,W-7,P-4) | CSRF, realpath, error disclosure, CSP nonce | ✅ |
-| Performance (W-8,W-9,P-8,C-2,C-3) | Queries optimisées, streaming CSV, pagination | ✅ |
-| Refactor SQL (C-7) | 9 contrôleurs → repositories, +30 méthodes repo | ✅ |
-| Merge services (W-17) | FieldService/ValidatorDataService dédupliqués | ✅ |
-| Timezone + double query (P-1,P-2,P-11) | UTC, réutilisation requête, longueur clé | ✅ |
+| Ultrareview v2 | 15 constats (3C + 10W + 2P) → 0 restants | ✅ |
+| PRAGMA foreign_keys ON global | Database.php + 9 tests adaptés | ✅ |
+| Transactions TokenService | regenerate() + delegate() wrappées | ✅ |
+| Cascade delete complète | step_recipients, form_fields, form_owners + transaction | ✅ |
+| WorkflowEngine fix | étapes conditionnelles + array_reduce + N+1 getValidatorData | ✅ |
+| Return types corrigés | : array → : ?array sur 3 handlers delete | ✅ |
+| Extraction renderers | 7 renderers créés, 7 controllers allégés | ✅ |
+| PHP 8.5+ check | install.php + HealthController mis à jour | ✅ |
+| N+1 export fix | GROUP_CONCAT au lieu de boucle SQL | ✅ |
+| Nettoyages | $pdo inutilisé, double if, rethrow, $result non initialisé | ✅ |
 
 ---
 
@@ -19,13 +23,21 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **995** (0 failures) |
+| Tests | **977** (0 failures) |
 | lib/ fichiers | **1** (core_bootstrap uniquement) |
+| Pages procédurales | **0** |
 | Controllers | **27** |
-| Repositories | **9** (+AlertRepository) |
 | PHPStan level | **8** |
-| PHPStan baseline | **142** erreurs |
-| Constats ultrareview | **0** critiques restants |
+| PHPStan baseline | **132** erreurs (annotations manquantes) |
+| Repositories | **9** |
+| Renderers | **7** |
+| PRAGMA foreign_keys | **ON global** |
+| vendor/composer | **commité** (IIS offline) |
+| Coverage HtmlService | **100%** |
+| Coverage FormRepo | **82%** |
+| Coverage BaseRepo | **81%** |
+| Coverage AuthService | **~82%** |
+| Coverage AttachmentService | **~70%** |
 
 ---
 
@@ -33,11 +45,12 @@
 
 | Tâche | Effort | Impact | Détail |
 |-------|--------|--------|--------|
-| PHPStan baseline (142 erreurs restantes) | Moyen | Qualité code | missingType.iterableValue (phpdoc manquants) |
+| PHPStan baseline (132 erreurs restantes) | Moyen | Qualité code | missingType.iterableValue (phpdoc manquants) |
+| SQL → repositories (ConfirmAction, MyValidations, Stats) | Moyen | Cohérence | 3 controllers avec SQL direct restant |
 | Coverage > 80% : ExportService (~15%) | Élevé | exit() empêche le test direct |
 | Coverage > 80% : WorkflowEngine (~45%) | Moyen | Couvrir les branches restantes |
 | Coverage > 80% : AttachmentService (~70%) | Faible | fileinfo extension manquante |
 
 ---
 
-_Dernière mise à jour : 2026-07-11_
+_Dernière mise à jour : 2026-07-12_

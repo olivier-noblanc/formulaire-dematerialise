@@ -1,0 +1,227 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Render;
+
+use App\Core\App;
+
+/**
+ * Rendu HTML de la page "Mes demandes" pour l'agent connecté.
+ */
+final class MySubmissionsRenderer
+{
+    /**
+     * Génère le HTML de la liste des soumissions de l'utilisateur.
+     */
+    public static function content(
+        array $submissions,
+        string $statusFilter,
+        int $totalCount,
+        int $enCoursCount,
+        int $valideCount,
+        int $refuseCount,
+        int $annuleCount,
+        string $search,
+        array $activeForms,
+    ): string {
+        $html = '';
+
+        $html .= '  <h1><span aria-hidden="true">📋</span> Mes demandes</h1>' . "\n";
+
+        if ($totalCount > 0) {
+            $activeTous    = $statusFilter === 'tous' ? ' active' : '';
+            $activeEnCours = $statusFilter === 'en_cours' ? ' active' : '';
+            $activeValide  = $statusFilter === 'valide' ? ' active' : '';
+            $activeRefuse  = $statusFilter === 'refuse' ? ' active' : '';
+            $activeAnnule  = $statusFilter === 'annule' ? ' active' : '';
+
+            $html .= <<<HTML
+  <div class="stats">
+    <a href="index.php?p=my_submissions&statut=tous" class="stat{$activeTous}"><strong>{$totalCount}</strong><span>Total</span></a>
+    <a href="index.php?p=my_submissions&statut=en_cours" class="stat en-cours{$activeEnCours}"><strong>{$enCoursCount}</strong><span>En cours</span></a>
+    <a href="index.php?p=my_submissions&statut=valide" class="stat valide{$activeValide}"><strong>{$valideCount}</strong><span>Validées</span></a>
+    <a href="index.php?p=my_submissions&statut=refuse" class="stat refuse{$activeRefuse}"><strong>{$refuseCount}</strong><span>Refusées</span></a>
+    <a href="index.php?p=my_submissions&statut=annule" class="stat annule{$activeAnnule}"><strong>{$annuleCount}</strong><span>Annulées</span></a>
+  </div>
+
+HTML;
+
+            $html .= '  <div style="margin-bottom:1.5rem;">' . "\n";
+            $html .= '    ' . (new FormRenderer())->searchBar('index.php?p=my_submissions', $search, 'Rechercher...', ['statut' => $statusFilter]) . "\n";
+            $html .= '  </div>' . "\n";
+        }
+
+        if (empty($submissions)) {
+            $html .= '    <div class="empty-state">' . "\n";
+            $html .= '      <div class="empty-icon" aria-hidden="true">📝</div>' . "\n";
+            $html .= '      <p>Vous n\'avez encore soumis aucune demande.</p>' . "\n";
+            if (!empty($activeForms)) {
+                $html .= '        <p style="font-size:.9rem;color:#555;margin-bottom:.5rem;">Formulaires disponibles :</p>' . "\n";
+                foreach ($activeForms as $af) {
+                    $slug  = App::html()->escape($af['slug']);
+                    $label = App::html()->escape(self::simplifyLabel($af['label']));
+                    $html .= "        <a href=\"index.php?p=form&f={$slug}\" class=\"btn btn-primary\" style=\"margin:.25rem;\">{$label}</a>\n";
+                }
+            }
+            $html .= '    </div>' . "\n";
+        } else {
+            foreach ($submissions as $sub) {
+                $data   = json_decode($sub['data'], true);
+                $status = $sub['status'] ?? 'en_cours';
+
+                $statusLabel = match ($status) {
+                    'valide'  => '✓ Validée',
+                    'refuse'  => '❌ Refusée',
+                    'annule'  => '🗑 Annulée',
+                    default   => '⏳ En cours',
+                };
+                $badgeCls = match ($status) {
+                    'valide'  => 'badge-valide',
+                    'refuse'  => 'badge-refuse',
+                    'annule'  => 'badge-annule',
+                    default   => 'badge-en-cours',
+                };
+
+                $deadlineField = $sub['deadline_field'] ?? '';
+                $deadlineVal   = $deadlineField ? ($data[$deadlineField] ?? '') : '';
+                $deadlineBadge = '';
+                if (!empty($deadlineVal) && $status === 'en_cours') {
+                    $dl     = calculate_deadline_urgency($deadlineVal, $status);
+                    $dlDays = $dl['days_left'];
+                    if ($dlDays !== null) {
+                        if ($dlDays < 0) {
+                            $deadlineBadge = '<span class="deadline-badge overdue"><span aria-hidden="true">🚨</span> J+' . abs($dlDays) . '</span>';
+                        } elseif ($dlDays <= 2) {
+                            $deadlineBadge = '<span class="deadline-badge urgent"><span aria-hidden="true">⚠️</span> J-' . $dlDays . '</span>';
+                        } elseif ($dlDays <= 5) {
+                            $deadlineBadge = '<span class="deadline-badge ok"><span aria-hidden="true">📅</span> J-' . $dlDays . '</span>';
+                        }
+                    }
+                }
+
+                $pct     = $sub['progress_pct'];
+                $fillCls = $pct === 100 ? 'complete' : 'in-progress';
+
+                $subId       = urlencode($sub['id']);
+                $formLabel   = App::html()->escape(self::simplifyLabel($sub['form_label']));
+                $submittedAt = App::html()->escape(date('d/m/Y à H:i', strtotime($sub['submitted_at'])));
+                $prenomNom   = App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
+                $formSlug    = App::html()->escape($sub['form_slug']);
+                $maxPct      = max($pct, 3);
+
+                $html .= <<<HTML
+    <div class="sub-card">
+      <a href="index.php?p=submission_view&id={$subId}" style="text-decoration:none;color:inherit;">
+      <div class="sub-card-header">
+        <div>
+          <div class="sub-card-title">{$formLabel} {$deadlineBadge}</div>
+          <div class="sub-card-date">Soumis le {$submittedAt} — {$prenomNom}</div>
+        </div>
+        <span class="badge {$badgeCls}">{$statusLabel}</span>
+      </div>
+      </a>
+      <div class="sub-card-body">
+        <div class="inline-progress">
+          <div class="inline-progress-bar">
+            <div class="inline-progress-fill {$fillCls}" style="width:{$maxPct}%;"></div>
+          </div>
+          <div class="inline-progress-text">{$sub['progress_done']}/{$sub['progress_total']} étapes ({$pct}%)</div>
+        </div>
+
+        <div class="timeline-compact">
+HTML;
+
+                foreach ($sub['workflow_steps'] as $ws) {
+                    $cls  = match ($ws['step_status']) {
+                        'validated' => 'done',
+                        'current'   => 'active',
+                        default     => 'waiting',
+                    };
+                    $icon = match ($ws['step_status']) {
+                        'validated' => '✓',
+                        'current'   => '⏳',
+                        default     => '○',
+                    };
+                    $stepLabel = App::html()->escape($ws['step_label']);
+                    $html .= "            <div class=\"tl-step {$cls}\">\n";
+                    $html .= "              <span class=\"tl-icon\" aria-hidden=\"true\">{$icon}</span>\n";
+                    $html .= "              <span class=\"tl-label\">{$stepLabel}</span>\n";
+                    if (!empty($ws['step_detail'])) {
+                        $html .= "                <span class=\"tl-detail\">{$ws['step_detail']}</span>\n";
+                    }
+                    $html .= "            </div>\n";
+                }
+
+                $html .= "        </div>\n";
+
+                // Refusal box
+                if ($status === 'refuse' && isset($data['validations'])) {
+                    foreach ($data['validations'] as $v) {
+                        if ($v['action'] === 'refuser') {
+                            $refUser  = App::html()->displayUser($v['email']);
+                            $refStep  = App::html()->escape($v['step_label']);
+                            $html .= "          <div class=\"refusal-box\">\n";
+                            $html .= "            <strong>Refusé par :</strong> {$refUser} ({$refStep})\n";
+                            if (!empty($v['commentaire'])) {
+                                $refComment = App::html()->escape($v['commentaire']);
+                                $html .= "            <br><strong>Motif :</strong> {$refComment}\n";
+                            }
+                            $html .= "          </div>\n";
+                            break;
+                        }
+                    }
+                }
+                // Validation box
+                elseif ($status === 'valide' && isset($data['validations'])) {
+                    $lastValidator = null;
+                    foreach ($data['validations'] as $v) {
+                        if ($v['action'] === 'valider') {
+                            $lastValidator = $v;
+                        }
+                    }
+                    $html .= "          <div class=\"validation-box\">\n";
+                    if ($lastValidator !== null) {
+                        $valUser  = App::html()->displayUser($lastValidator['email']);
+                        $valStep  = App::html()->escape($lastValidator['step_label']);
+                        $html .= "            <strong>Validée par :</strong> {$valUser} ({$valStep})\n";
+                        if (!empty($lastValidator['commentaire'])) {
+                            $valComment = App::html()->escape($lastValidator['commentaire']);
+                            $html .= "            <br><strong>Commentaire :</strong> {$valComment}\n";
+                        }
+                    } else {
+                        $html .= "            <strong>Demande validée</strong> — circuit complet\n";
+                    }
+                    $html .= "          </div>\n";
+                }
+
+                $html .= <<<HTML
+        <div class="card-actions">
+          <a href="index.php?p=submission_view&id={$subId}" class="btn btn-primary" style="font-size:.85rem;"><span aria-hidden="true">👁</span> Voir le détail</a>
+          <a href="index.php?p=form&f={$formSlug}" class="btn btn-secondary" style="font-size:.85rem;">Nouvelle demande</a>
+        </div>
+      </div>
+    </div>
+HTML;
+            }
+        }
+
+        return $html;
+    }
+
+    private static function simplifyLabel(string $label): string
+    {
+        $map = [
+            'Accès SI'    => 'Demande d\'accès aux outils informatiques',
+            'Onboarding'  => 'Accueil d\'un nouvel agent',
+            'Outboarding' => 'Départ d\'un agent',
+        ];
+        $trimmed = trim($label);
+        foreach ($map as $jargon => $clair) {
+            if (strcasecmp($trimmed, $jargon) === 0) {
+                $label = $clair;
+                break;
+            }
+        }
+        return App::html()->tJargon($label);
+    }
+}

@@ -39,7 +39,7 @@ final class FormController extends BaseController
             }
         }
 
-        $form = $this->formRepo->findActiveBySlug($slug);
+        $form = $this->formRepo->findActiveBySlug((string) $slug);
 
         if (!$form) {
             /** @phpstan-ignore-next-line if.alwaysTrue */
@@ -294,7 +294,7 @@ final class FormController extends BaseController
      * structure HTML historique de form.php (output buffering + inline PHP).
      *
      * @param array<string, mixed>                            $form
-     * @param array<string, mixed>|false                      $existing_submission
+     * @param array<string, mixed>|null                       $existing_submission
      * @param array<string, list<array<string, mixed>>>       $grouped  Clé=nom du groupe, valeur=liste des champs
      * @param array<string, mixed>                            $field_errors
      * @param array<string, mixed>                            $file_errors  Erreurs spécifiques aux uploads

@@ -44,7 +44,7 @@ final class DocsController extends BaseController
   <h1>Aide et documentation</h1>
   <p class="subtitle"><span class="version-badge">v<?= \App\Core\App::html()->escape($this->cache->getLatestVersion()) ?></span></p>
 
-<?php $_docs = \App\Docs\DocumentationService::getInstance(); ?>
+<?php $_docs = \App\Core\App::getInstance()->get(\App\Docs\DocumentationService::class); ?>
 
 <?= $_docs->renderStart() ?>
 

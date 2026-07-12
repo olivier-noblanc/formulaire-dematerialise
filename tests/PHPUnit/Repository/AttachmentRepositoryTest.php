@@ -31,7 +31,13 @@ final class AttachmentRepositoryTest extends TestCase
 
     public function testCreateAndReadBackRoundTrip(): void
     {
+        $pdo = $this->repo->pdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-form-' . $formId, 'Test Form', '', ]);
         $submissionId = \generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$submissionId, $formId]);
 
         $data = [
             'submission_id' => $submissionId,
@@ -64,5 +70,9 @@ final class AttachmentRepositoryTest extends TestCase
         $deleted = $this->repo->delete($id);
         $this->assertTrue($deleted);
         $this->assertNull($this->repo->findById($id));
+
+        // Cleanup parent records
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
 }

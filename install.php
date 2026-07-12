@@ -100,11 +100,11 @@ function inst_verify_csrf(): bool {
 function inst_check_prerequisites(): array {
     $checks = [];
 
-    // PHP >= 8.0
+    // PHP >= 8.5
     $php_version = PHP_VERSION;
     $checks['php_version'] = [
-        'ok'     => version_compare($php_version, '8.0.0', '>='),
-        'label'  => 'PHP version >= 8.0',
+        'ok'     => version_compare($php_version, '8.5.0', '>='),
+        'label'  => 'PHP version >= 8.5',
         'detail' => 'Version détectée : ' . $php_version,
     ];
 

@@ -33,19 +33,14 @@ final class AdminFormCrudHandler
     public static function handleUpdateForm(\PDO $pdo): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
-        $result = [];
         if ($err !== null) {
-            $result['error'] = $err;
-            $result['form_id'] = '';
-        } else {
-            $result['form_id'] = $form_id;
+            return ['error' => $err, 'form_id' => ''];
         }
         $label = trim($_POST['label'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $actif = isset($_POST['actif']) ? 1 : 0;
-        if (empty($form_id) || empty($label)) {
-            $result['error'] = 'Le libellé est requis.';
-            return $result;
+        if (empty($label)) {
+            return ['error' => 'Le libellé est requis.'];
         }
         try {
             $slug = \generate_slug($label, (string)$form_id);
@@ -55,8 +50,7 @@ final class AdminFormCrudHandler
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id)];
         } catch (\PDOException $e) {
             error_log('handleUpdateForm error: ' . $e->getMessage());
-            $result['error'] = 'Une erreur technique est survenue.';
-            return $result;
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -82,16 +76,22 @@ final class AdminFormCrudHandler
             $result['error'] = 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.';
             return $result;
         }
+        $pdo->beginTransaction();
         try {
+            $pdo->prepare("DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)")->execute([$form_id]);
+            $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$form_id]);
+            $pdo->prepare("DELETE FROM form_owners WHERE form_id = ?")->execute([$form_id]);
             $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$form_id]);
             $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$form_id]);
-            App::audit()->log('form_delete', 'form:' . $form_id, "Formulaire supprimé");
-            return ['redirect' => 'index.php?p=admin_forms'];
-        } catch (\PDOException $e) {
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
             error_log('handleDeleteForm error: ' . $e->getMessage());
-            $result['error'] = 'Une erreur technique est survenue.';
-            return $result;
+            return ['error' => 'Une erreur technique est survenue.'];
         }
+
+        App::audit()->log('form_delete', 'form:' . $form_id, "Formulaire supprimé");
+        return ['redirect' => 'index.php?p=admin_forms'];
     }
 
     public static function handleDuplicateForm(\PDO $pdo): array
@@ -112,32 +112,42 @@ final class AdminFormCrudHandler
         $new_label = $src_form['label'] . ' (copie)';
         $new_slug = \generate_slug($new_label);
         $new_id = \generate_uuid();
-        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)")
-            ->execute([$new_id, $new_slug, $new_label, $src_form['description'], $src_form['deadline_field']]);
 
-        $fields = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre");
-        $fields->execute([$source_id]);
-        foreach ($fields->fetchAll(\PDO::FETCH_ASSOC) as $f) {
-            $new_field_id = \generate_uuid();
-            $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                ->execute([$new_field_id, $new_id, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? 'demandeur', $f['validator_step'] ?? '', $f['visibility'] ?? 'all']);
-        }
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)")
+                ->execute([$new_id, $new_slug, $new_label, $src_form['description'], $src_form['deadline_field']]);
 
-        $steps = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? ORDER BY ordre");
-        $steps->execute([$source_id]);
-        foreach ($steps->fetchAll(\PDO::FETCH_ASSOC) as $s) {
-            $new_step_id = \generate_uuid();
-            $step_condition = (string)($s['condition'] ?? '');
-            $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)")
-                ->execute([$new_step_id, $new_id, $s['label'], $s['ordre'], $s['actif'], $step_condition]);
-
-            $recips = $pdo->prepare("SELECT * FROM step_recipients WHERE step_id = ?");
-            $recips->execute([$s['id']]);
-            foreach ($recips->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-                $new_recipient_id = \generate_uuid();
-                $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
-                    ->execute([$new_recipient_id, $new_step_id, $r['email']]);
+            $fields = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre");
+            $fields->execute([$source_id]);
+            foreach ($fields->fetchAll(\PDO::FETCH_ASSOC) as $f) {
+                $new_field_id = \generate_uuid();
+                $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                    ->execute([$new_field_id, $new_id, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? 'demandeur', $f['validator_step'] ?? '', $f['visibility'] ?? 'all']);
             }
+
+            $steps = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? ORDER BY ordre");
+            $steps->execute([$source_id]);
+            foreach ($steps->fetchAll(\PDO::FETCH_ASSOC) as $s) {
+                $new_step_id = \generate_uuid();
+                $step_condition = (string)($s['condition'] ?? '');
+                $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)")
+                    ->execute([$new_step_id, $new_id, $s['label'], $s['ordre'], $s['actif'], $step_condition]);
+
+                $recips = $pdo->prepare("SELECT * FROM step_recipients WHERE step_id = ?");
+                $recips->execute([$s['id']]);
+                foreach ($recips->fetchAll(\PDO::FETCH_ASSOC) as $r) {
+                    $new_recipient_id = \generate_uuid();
+                    $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
+                        ->execute([$new_recipient_id, $new_step_id, $r['email']]);
+                }
+            }
+
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            error_log('handleDuplicateForm error: ' . $e->getMessage());
+            return ['error' => 'Une erreur technique est survenue.'];
         }
 
         App::audit()->log('form_duplicate', 'form:' . $new_id, 'Formulaire dupliqué');

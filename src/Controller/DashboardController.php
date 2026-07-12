@@ -135,7 +135,7 @@ final class DashboardController extends BaseController
                 }
                 $actor = $this->auth->getUser();
                 // Vérifier que l'utilisateur est admin ou le propriétaire de la soumission
-                $sub_owner = $this->submissionRepo->getSubmitterById($sub_id);
+                $sub_owner = $this->submissionRepo->getSubmitterById((string) $sub_id);
                 if ($this->auth->isAdmin() || $sub_owner === $actor) {
                     $result     = \App\Core\App::token()->cancel((string) $sub_id, $actor);
                     $cancel_msg = $result['message'];

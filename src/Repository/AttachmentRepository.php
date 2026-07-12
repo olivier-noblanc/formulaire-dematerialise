@@ -41,9 +41,8 @@ final class AttachmentRepository extends BaseRepository
     public function findBySubmissionWithUploader(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT a.*, u.display_name as uploader_name
+            "SELECT a.*, a.uploaded_by as uploader_name
              FROM attachments a
-             LEFT JOIN users u ON u.email = a.uploaded_by
              WHERE a.submission_id = ?
              ORDER BY a.uploaded_at ASC",
             [$submissionId]

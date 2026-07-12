@@ -13,18 +13,13 @@ final class AdminStepCrudHandler
     public static function handleAddStep(\PDO $pdo): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
-        $result = [];
         if ($err !== null) {
-            $result['error'] = $err;
-            $result['form_id'] = '';
-        } else {
-            $result['form_id'] = $form_id;
+            return ['error' => $err, 'form_id' => ''];
         }
         $label = trim($_POST['label'] ?? '');
         $ordre = (int)($_POST['ordre'] ?? 0);
-        if (empty($form_id) || empty($label) || $ordre <= 0) {
-            $result['error'] = 'Les champs obligatoires ne sont pas remplis.';
-            return $result;
+        if (empty($label) || $ordre <= 0) {
+            return ['error' => 'Les champs obligatoires ne sont pas remplis.'];
         }
         try {
             $new_step_id = \generate_uuid();
@@ -34,8 +29,7 @@ final class AdminStepCrudHandler
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id) . '#step-' . urlencode($new_step_id)];
         } catch (\PDOException $e) {
             error_log('handleAddStep error: ' . $e->getMessage());
-            $result['error'] = 'Une erreur technique est survenue.';
-            return $result;
+            return ['error' => 'Une erreur technique est survenue.'];
         }
     }
 
@@ -86,14 +80,14 @@ final class AdminStepCrudHandler
         }
     }
 
-    public static function handleDeleteStep(\PDO $pdo, string $get_form_id): array
+    public static function handleDeleteStep(\PDO $pdo, string $get_form_id): ?array
     {
         [$step_id, $err] = AdminFormsHandlers::postStepId();
         if ($err !== null) {
             return ['error' => $err];
         }
         if (empty($step_id)) {
-            return [];
+            return null;
         }
         $active_count = App::workflow()->hasActiveStepSubmissions((string)$step_id);
         if ($active_count > 0) {

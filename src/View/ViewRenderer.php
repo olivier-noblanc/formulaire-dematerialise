@@ -99,10 +99,10 @@ final class ViewRenderer
 
     public function submissionData(
         array $data,
-        array $exclude = ['validations', 'csrf_token'],
+        array $exclude = [],
         string $format = 'p'
     ): string {
-        return $this->formRenderer->submissionData($data, $exclude, $format);
+        return $this->formRenderer->submissionData($data, (array) $exclude, $format);
     }
 
     public function formProgressIndicator(array $grouped): string
