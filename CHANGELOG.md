@@ -1,5 +1,45 @@
 # Changelog — CircuitDémat
 
+## [10.14.0] — 2026-07-12
+_Résumé : Ultrareview v4 — 8 bugs logiques/data corrigés, sécurité renforcée._
+
+### 🐛 Bug fixes
+
+- **WorkflowEngine** : étape avec token existant ignorée dans la création (pas de doublon)
+- **WorkflowEngine** : étape sans token (condition false) traitée comme "pas concernée" au lieu de bloquer
+- **TokenRepository** : tokens expirés plus affichés dans "Mes validations" (`expires_at > datetime('now')`)
+- **TokenService** : `relance_max` enforcé côté serveur (était juste affiché, pas vérifié)
+- **FormRepository::deleteCascade()** : supprime maintenant submissions + enfants (tokens, attachments, validator_data, alert_log)
+- **FormRepository::deleteStep()** : supprime les tokens liés avant suppression
+- **SubmissionRepository::findPaginatedBySubmitter()** : `LIMIT ? OFFSET ?` ajouté (manquait)
+
+### 🔒 Sécurité
+
+- **DownloadController** : Content-Disposition header injection corrigée (sanitize filename)
+- **RgpdController** : Content-Disposition header injection corrigée (sanitize email)
+- **lib_wrappers::encrypt_setting()** : `RuntimeException` au lieu de fallback silencieux en clair
+- **SecurityService** : TEST_MODE CSRF bypass protégé par guard production `exemple.invalid`
+- **ExportService** : `json_valid()` guard sur `json_each()` (crash sur JSON invalide)
+- **FormRepository::update()** : whitelist de colonnes autorisées (label, slug, description, actif, deadline_field)
+
+### 🏗 Refactor
+
+- **SubmissionRepository::deleteCascade()** : wrappé en transaction (`beginTransaction/commit/rollBack`)
+- **FormRepository::deleteCascade()** : wrappé en transaction
+- **PHPStan** : baseline régénérée (133 erreurs)
+- **Mémoire** : règle ajoutée — ne pas focus sur DoS/rate-limiting/sécu infrastructure (intranet IIS authentifié)
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 977 | **977** (0 failures) |
+| Assertions | 1623 | **1627** |
+| Bugs logiques corrigés | — | **8** |
+| Sécurité corrigée | — | **6** |
+
+---
+
 ## [10.13.0] — 2026-07-12
 _Résumé : PHP 8.5 exclusif — modernisation complète du codebase avec outils automatisés._
 
