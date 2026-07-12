@@ -292,6 +292,7 @@ final class FormRepository extends BaseRepository
 
     public function deleteStep(string $stepId): bool
     {
+        $this->execute('DELETE FROM tokens WHERE step_id = ?', [$stepId]);
         $this->execute('DELETE FROM step_recipients WHERE step_id = ?', [$stepId]);
         return $this->execute('DELETE FROM steps WHERE id = ?', [$stepId]);
     }
@@ -343,6 +344,13 @@ final class FormRepository extends BaseRepository
         $pdo = $this->pdo();
         $pdo->beginTransaction();
         try {
+            // Supprimer les données enfants des soumissions
+            $this->execute('DELETE FROM submission_validator_data WHERE submission_id IN (SELECT id FROM submissions WHERE form_id = ?)', [$formId]);
+            $this->execute('DELETE FROM alert_log WHERE submission_id IN (SELECT id FROM submissions WHERE form_id = ?)', [$formId]);
+            $this->execute('DELETE FROM tokens WHERE submission_id IN (SELECT id FROM submissions WHERE form_id = ?)', [$formId]);
+            $this->execute('DELETE FROM attachments WHERE submission_id IN (SELECT id FROM submissions WHERE form_id = ?)', [$formId]);
+            $this->execute('DELETE FROM submissions WHERE form_id = ?', [$formId]);
+            // Supprimer les structures du formulaire
             $this->execute('DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)', [$formId]);
             $this->execute('DELETE FROM form_fields WHERE form_id = ?', [$formId]);
             $this->execute('DELETE FROM form_owners WHERE form_id = ?', [$formId]);

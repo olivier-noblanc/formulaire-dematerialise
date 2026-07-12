@@ -176,7 +176,7 @@ final class TokenRepository extends BaseRepository
                  JOIN steps st ON st.id = t.step_id
                  JOIN submissions s ON s.id = t.submission_id
                  JOIN forms f ON f.id = s.form_id
-                 WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
+                 WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = 'en_cours'
                    AND (f.label LIKE ? OR s.data LIKE ?)
                  ORDER BY t.sent_at DESC",
                 [$email, '%' . $search . '%', '%' . $search . '%']
@@ -192,7 +192,7 @@ final class TokenRepository extends BaseRepository
              JOIN steps st ON st.id = t.step_id
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
-             WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
+             WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = 'en_cours'
              ORDER BY t.sent_at DESC",
             [$email]
         );
