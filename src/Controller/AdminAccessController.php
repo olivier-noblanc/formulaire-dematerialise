@@ -46,10 +46,8 @@ final class AdminAccessController extends BaseController
             }
             elseif ($action === 'approve' && App::auth()->isSuperAdmin()) {
                 $token = $_POST['token'] ?? '';
-                $pdo = $this->db->getPdo();
-                $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
-                $stmt->execute([$token]);
-                $request = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
+                $request = $adminRepo->findByToken($token);
                 if ($request) {
                     if (App::auth()->approveAdminRequest($request['email'])) {
                         $successMsg = 'Demande d\'accès approuvée pour ' . \App\Core\App::html()->escape($request['email']) . '.';
@@ -62,10 +60,8 @@ final class AdminAccessController extends BaseController
             }
             elseif ($action === 'reject' && App::auth()->isSuperAdmin()) {
                 $token = $_POST['token'] ?? '';
-                $pdo = $this->db->getPdo();
-                $stmt = $pdo->prepare("SELECT email FROM admin_requests WHERE token = ? AND status = 'pending'");
-                $stmt->execute([$token]);
-                $request = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
+                $request = $adminRepo->findByToken($token);
                 if ($request) {
                     if (App::auth()->rejectAdminRequest($request['email'])) {
                         $successMsg = 'Demande d\'accès refusée pour ' . \App\Core\App::html()->escape($request['email']) . '.';
@@ -97,10 +93,8 @@ final class AdminAccessController extends BaseController
         // Handle GET token link (from email)
         if (isset($_GET['token']) && App::auth()->isSuperAdmin()) {
             $token = $_GET['token'];
-            $pdo = $this->db->getPdo();
-            $stmt = $pdo->prepare("SELECT email, created_at FROM admin_requests WHERE token = ? AND status = 'pending'");
-            $stmt->execute([$token]);
-            $confirmData = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
+            $confirmData = $adminRepo->findByToken($token);
             if (!$confirmData) {
                 $errorMsg = 'Lien invalide ou demande déjà traitée.';
                 $confirmData = null;
@@ -113,14 +107,9 @@ final class AdminAccessController extends BaseController
         $currentAdmin = App::auth()->getUser();
 
         if ($isSuperAdmin) {
-            $pdo = $this->db->getPdo();
-            $pendingStmt = $pdo->prepare("SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY created_at DESC");
-            $pendingStmt->execute();
-            $pendingRequests = $pendingStmt->fetchAll(\PDO::FETCH_ASSOC);
-
-            $adminsStmt = $pdo->prepare("SELECT email, is_super_admin FROM admins ORDER BY email");
-            $adminsStmt->execute();
-            $allAdmins = $adminsStmt->fetchAll(\PDO::FETCH_ASSOC);
+            $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
+            $pendingRequests = $adminRepo->getPendingRequestsDesc();
+            $allAdmins = $adminRepo->getAll();
         }
 
         $pageTitle = $isSuperAdmin ? 'Gestion des accès administrateur' : 'Accès administrateur';
@@ -205,7 +194,7 @@ final class AdminAccessController extends BaseController
       </thead>
       <tbody>
       <?php foreach ($allAdmins as $admin):
-        $isSuper = !empty($admin['is_super_admin']);
+        $isSuper = App::getInstance()->get(\App\Repository\AdminRepository::class)->isSuperAdmin($admin['email']);
         $isCurrent = $admin['email'] === $currentAdmin;
       ?>
         <tr>

@@ -68,9 +68,7 @@ final class AdminFormsController extends BaseController
         $workflowSteps = [];
 
         if ($formId) {
-            $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
-            $stmt->execute([$formId]);
-            $selectedForm = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $selectedForm = App::getInstance()->get(\App\Repository\FormRepository::class)->findById($formId);
 
             if ($selectedForm) {
                 $formFields = App::validatorData()->getFormFields($formId);
