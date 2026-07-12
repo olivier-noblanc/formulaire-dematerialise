@@ -63,7 +63,7 @@ final class FormRepository extends BaseRepository
         $fields = [];
         $params = [];
         foreach ($data as $key => $value) {
-            $fields[] = "$key = ?";
+            $fields[] = "`$key` = ?";
             $params[] = $value;
         }
         $params[] = $id;
@@ -173,5 +173,150 @@ final class FormRepository extends BaseRepository
     {
         $result = $this->fetchOne("SELECT email FROM form_owners WHERE id = ?", [$ownerId]);
         return $result !== null ? (string) $result['email'] : null;
+    }
+
+    // ── Field CRUD ──────────────────────────────────────────────
+
+    public function createField(array $data): string
+    {
+        $id = \generate_uuid();
+        $this->execute(
+            "INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? 'text', $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $data['required'] ?? 0, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? 'demandeur', $data['validator_step'] ?? '', $data['visibility'] ?? 'all']
+        );
+        return $id;
+    }
+
+    public function updateField(string $fieldId, array $data): bool
+    {
+        $fields = [];
+        $params = [];
+        foreach ($data as $key => $value) {
+            $fields[] = "`$key` = ?";
+            $params[] = $value;
+        }
+        $params[] = $fieldId;
+        return $this->execute("UPDATE form_fields SET " . implode(', ', $fields) . " WHERE id = ?", $params);
+    }
+
+    public function deleteField(string $fieldId): bool
+    {
+        return $this->execute("DELETE FROM form_fields WHERE id = ?", [$fieldId]);
+    }
+
+    // ── Step CRUD ───────────────────────────────────────────────
+
+    public function createStep(array $data): string
+    {
+        $id = \generate_uuid();
+        $this->execute(
+            "INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)",
+            [$id, $data['form_id'], $data['label'], $data['ordre'] ?? 0, $data['actif'] ?? 1, $data['condition'] ?? '']
+        );
+        return $id;
+    }
+
+    public function updateStep(string $stepId, array $data): bool
+    {
+        $fields = [];
+        $params = [];
+        foreach ($data as $key => $value) {
+            $fields[] = "`$key` = ?";
+            $params[] = $value;
+        }
+        $params[] = $stepId;
+        return $this->execute("UPDATE steps SET " . implode(', ', $fields) . " WHERE id = ?", $params);
+    }
+
+    public function deleteStep(string $stepId): bool
+    {
+        $this->execute("DELETE FROM step_recipients WHERE step_id = ?", [$stepId]);
+        return $this->execute("DELETE FROM steps WHERE id = ?", [$stepId]);
+    }
+
+    // ── Recipient CRUD ──────────────────────────────────────────
+
+    public function createRecipient(string $stepId, string $email): string
+    {
+        $id = \generate_uuid();
+        $this->execute(
+            "INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)",
+            [$id, $stepId, $email]
+        );
+        return $id;
+    }
+
+    public function deleteRecipient(string $recipientId): bool
+    {
+        return $this->execute("DELETE FROM step_recipients WHERE id = ?", [$recipientId]);
+    }
+
+    public function findRecipientStepId(string $recipientId): ?string
+    {
+        $result = $this->fetchOne("SELECT step_id FROM step_recipients WHERE id = ?", [$recipientId]);
+        return $result !== null ? (string) $result['step_id'] : null;
+    }
+
+    // ── Owner CRUD (by id) ──────────────────────────────────────
+
+    public function createOwnerById(string $formId, string $email): string
+    {
+        $id = \generate_uuid();
+        $this->execute(
+            "INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)",
+            [$id, $formId, $email]
+        );
+        return $id;
+    }
+
+    public function deleteOwnerById(string $ownerId): bool
+    {
+        return $this->execute("DELETE FROM form_owners WHERE id = ?", [$ownerId]);
+    }
+
+    // ── Cascade delete ──────────────────────────────────────────
+
+    public function deleteCascade(string $formId): void
+    {
+        $this->execute("DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)", [$formId]);
+        $this->execute("DELETE FROM form_fields WHERE form_id = ?", [$formId]);
+        $this->execute("DELETE FROM form_owners WHERE form_id = ?", [$formId]);
+        $this->execute("DELETE FROM steps WHERE form_id = ?", [$formId]);
+        $this->execute("DELETE FROM forms WHERE id = ?", [$formId]);
+    }
+
+    // ── Duplicate ───────────────────────────────────────────────
+
+    public function duplicate(string $sourceId, string $newId, string $newLabel, string $newSlug, array $srcForm): void
+    {
+        $this->execute(
+            "INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)",
+            [$newId, $newSlug, $newLabel, $srcForm['description'], $srcForm['deadline_field']]
+        );
+
+        foreach ($this->getFields($sourceId) as $f) {
+            $newFieldId = \generate_uuid();
+            $this->execute(
+                "INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? 'demandeur', $f['validator_step'] ?? '', $f['visibility'] ?? 'all']
+            );
+        }
+
+        foreach ($this->getSteps($sourceId) as $s) {
+            $newStepId = \generate_uuid();
+            $this->execute(
+                "INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)",
+                [$newStepId, $newId, $s['label'], $s['ordre'], $s['actif'], (string)($s['condition'] ?? '')]
+            );
+
+            $recips = $this->fetchAll("SELECT * FROM step_recipients WHERE step_id = ?", [$s['id']]);
+            foreach ($recips as $r) {
+                $newRecipId = \generate_uuid();
+                $this->execute(
+                    "INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)",
+                    [$newRecipId, $newStepId, $r['email']]
+                );
+            }
+        }
     }
 }

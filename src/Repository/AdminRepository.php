@@ -35,7 +35,17 @@ final class AdminRepository extends BaseRepository
 
     public function getAll(): array
     {
-        return $this->fetchAll("SELECT * FROM admins ORDER BY email");
+        return $this->fetchAll("SELECT email FROM admins ORDER BY email");
+    }
+
+    public function findByToken(string $token): ?array
+    {
+        return $this->fetchOne("SELECT email, created_at FROM admin_requests WHERE token = ? AND status = 'pending'", [$token]);
+    }
+
+    public function getPendingRequestsDesc(): array
+    {
+        return $this->fetchAll("SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY created_at DESC");
     }
 
     public function add(string $email): bool

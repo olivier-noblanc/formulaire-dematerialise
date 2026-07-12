@@ -22,9 +22,8 @@ final class AdminStepCrudHandler
             return ['error' => 'Les champs obligatoires ne sont pas remplis.'];
         }
         try {
-            $new_step_id = \generate_uuid();
-            $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)")
-                ->execute([$new_step_id, $form_id, $label, $ordre]);
+            $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
+            $new_step_id = $repo->createStep(['form_id' => $form_id, 'label' => $label, 'ordre' => $ordre]);
             App::audit()->log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id) . '#step-' . urlencode($new_step_id)];
         } catch (\PDOException $e) {
@@ -70,8 +69,8 @@ final class AdminStepCrudHandler
         }
 
         try {
-            $pdo->prepare("UPDATE steps SET label = ?, ordre = ?, actif = ?, `condition` = ? WHERE id = ?")
-                ->execute([$label, $ordre, $actif, $condition_json, $step_id]);
+            $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
+            $repo->updateStep((string)$step_id, ['label' => $label, 'ordre' => $ordre, 'actif' => $actif, 'condition' => $condition_json]);
             App::audit()->log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
         } catch (\PDOException $e) {
@@ -94,8 +93,8 @@ final class AdminStepCrudHandler
             return ['error' => 'Impossible de supprimer cette étape : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer l\'étape.'];
         }
         try {
-            $pdo->prepare("DELETE FROM step_recipients WHERE step_id = ?")->execute([$step_id]);
-            $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$step_id]);
+            $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
+            $repo->deleteStep((string)$step_id);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#workflow'];
         } catch (\PDOException $e) {
             error_log('handleDeleteStep error: ' . $e->getMessage());

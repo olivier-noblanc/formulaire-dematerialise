@@ -105,6 +105,10 @@ final class ExportService
                     if ($val === '1') $val = 'Oui';
                     elseif ($val === '0') $val = 'Non';
                     elseif (is_array($val)) $val = json_encode($val, JSON_UNESCAPED_UNICODE);
+                    // Neutraliser injection CSV (Excel formula injection)
+                    if (is_string($val) && preg_match('/^[=\-+\@]/', $val)) {
+                        $val = "'" . $val;
+                    }
                     $line[] = $val;
                 }
                 fputcsv($out, $line, ';', '"', '\\');

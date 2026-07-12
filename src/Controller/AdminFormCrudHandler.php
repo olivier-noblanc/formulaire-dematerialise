@@ -18,12 +18,11 @@ final class AdminFormCrudHandler
             return ['error' => 'Le libellé est requis.'];
         }
         try {
-            $new_form_id = \generate_uuid();
+            $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
             $slug = \generate_slug($label);
-            $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
-                ->execute([$new_form_id, $slug, $label, $description]);
-            App::audit()->log('form_create', 'form:' . $new_form_id, "Formulaire '$label' créé (slug auto: $slug)");
-            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_form_id)];
+            $newFormId = $repo->create(['label' => $label, 'slug' => $slug, 'description' => $description]);
+            App::audit()->log('form_create', 'form:' . $newFormId, "Formulaire '$label' créé (slug auto: $slug)");
+            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($newFormId)];
         } catch (\PDOException $e) {
             error_log('handleAddForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
@@ -43,9 +42,9 @@ final class AdminFormCrudHandler
             return ['error' => 'Le libellé est requis.'];
         }
         try {
+            $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
             $slug = \generate_slug($label, (string)$form_id);
-            $pdo->prepare("UPDATE forms SET slug = ?, label = ?, description = ?, actif = ? WHERE id = ?")
-                ->execute([$slug, $label, $description, $actif, $form_id]);
+            $repo->update((string)$form_id, ['slug' => $slug, 'label' => $label, 'description' => $description, 'actif' => $actif]);
             App::audit()->log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id)];
         } catch (\PDOException $e) {
@@ -57,32 +56,23 @@ final class AdminFormCrudHandler
     public static function handleDeleteForm(\PDO $pdo): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
-        $result = [];
         if ($err !== null) {
-            $result['error'] = $err;
-            $result['form_id'] = '';
-            return $result;
+            return ['error' => $err, 'form_id' => ''];
         }
-        $result['form_id'] = $form_id;
         if (empty($form_id)) {
-            return $result;
+            return ['form_id' => ''];
         }
         if (!App::auth()->isFormOwner((string)$form_id) && !App::auth()->isSuperAdmin()) {
-            $result['error'] = 'Seuls les propriétaires du formulaire peuvent le supprimer.';
-            return $result;
+            return ['error' => 'Seuls les propriétaires du formulaire peuvent le supprimer.', 'form_id' => $form_id];
         }
         $active_count = App::workflow()->hasActiveSubmissions((string)$form_id);
         if ($active_count > 0) {
-            $result['error'] = 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.';
-            return $result;
+            return ['error' => 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.', 'form_id' => $form_id];
         }
+        $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
         $pdo->beginTransaction();
         try {
-            $pdo->prepare("DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)")->execute([$form_id]);
-            $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$form_id]);
-            $pdo->prepare("DELETE FROM form_owners WHERE form_id = ?")->execute([$form_id]);
-            $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$form_id]);
-            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$form_id]);
+            $repo->deleteCascade((string)$form_id);
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -103,9 +93,8 @@ final class AdminFormCrudHandler
         if (empty($source_id)) {
             return ['error' => 'Identifiant de formulaire source invalide.'];
         }
-        $src = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
-        $src->execute([$source_id]);
-        $src_form = $src->fetch(\PDO::FETCH_ASSOC);
+        $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
+        $src_form = $repo->findById($source_id);
         if (!$src_form) {
             return ['error' => 'Formulaire source introuvable.'];
         }
@@ -115,34 +104,7 @@ final class AdminFormCrudHandler
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)")
-                ->execute([$new_id, $new_slug, $new_label, $src_form['description'], $src_form['deadline_field']]);
-
-            $fields = $pdo->prepare("SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre");
-            $fields->execute([$source_id]);
-            foreach ($fields->fetchAll(\PDO::FETCH_ASSOC) as $f) {
-                $new_field_id = \generate_uuid();
-                $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                    ->execute([$new_field_id, $new_id, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? 'demandeur', $f['validator_step'] ?? '', $f['visibility'] ?? 'all']);
-            }
-
-            $steps = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? ORDER BY ordre");
-            $steps->execute([$source_id]);
-            foreach ($steps->fetchAll(\PDO::FETCH_ASSOC) as $s) {
-                $new_step_id = \generate_uuid();
-                $step_condition = (string)($s['condition'] ?? '');
-                $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)")
-                    ->execute([$new_step_id, $new_id, $s['label'], $s['ordre'], $s['actif'], $step_condition]);
-
-                $recips = $pdo->prepare("SELECT * FROM step_recipients WHERE step_id = ?");
-                $recips->execute([$s['id']]);
-                foreach ($recips->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-                    $new_recipient_id = \generate_uuid();
-                    $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
-                        ->execute([$new_recipient_id, $new_step_id, $r['email']]);
-                }
-            }
-
+            $repo->duplicate($source_id, $new_id, $new_label, $new_slug, $src_form);
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
