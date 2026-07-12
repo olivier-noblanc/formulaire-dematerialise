@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Render;
 
-use App\Core\App;
-
 /**
  * Rendu HTML de la page sauvegarde / restauration (backup.php).
  *
@@ -27,66 +25,66 @@ final class BackupRenderer
     public function pageCss(): string
     {
         return <<<'CSS'
-        .container { max-width: 900px; }
+                    .container { max-width: 900px; }
 
-        /* Blocs d'information dans les cartes */
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: .5rem 0;
-            border-bottom: 1px solid #eee;
-            font-size: .9rem;
-        }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: #555; font-weight: normal; }
-        .info-value { font-weight: bold; color: #1e1e1e; }
+                    /* Blocs d'information dans les cartes */
+                    .info-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: .5rem 0;
+                        border-bottom: 1px solid #eee;
+                        font-size: .9rem;
+                    }
+                    .info-row:last-child { border-bottom: none; }
+                    .info-label { color: #555; font-weight: normal; }
+                    .info-value { font-weight: bold; color: #1e1e1e; }
 
-        /* Zone de drop / upload */
-        .upload-zone {
-            border: 2px dashed var(--c-border);
-            border-radius: var(--r-md);
-            padding: 2rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            background: var(--c-bg-warm);
-        }
-        .upload-zone p { margin-bottom: .75rem; color: #666; font-size: .9rem; }
-        .upload-zone input[type="file"] { font-size: .9rem; }
+                    /* Zone de drop / upload */
+                    .upload-zone {
+                        border: 2px dashed var(--c-border);
+                        border-radius: var(--r-md);
+                        padding: 2rem;
+                        text-align: center;
+                        margin-bottom: 1rem;
+                        background: var(--c-bg-warm);
+                    }
+                    .upload-zone p { margin-bottom: .75rem; color: #666; font-size: .9rem; }
+                    .upload-zone input[type="file"] { font-size: .9rem; }
 
-        /* Purge recap table */
-        .purge-recap {
-            background: #fff3e0;
-            border: 1px solid #b45309;
-            border-radius: 4px;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-        }
-        .purge-recap h3 { color: #b45309; margin-bottom: .75rem; font-size: 1rem; }
-        .purge-recap .purge-counts { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
-        .purge-recap .purge-count { text-align: center; min-width: 100px; }
-        .purge-recap .purge-count strong { display: block; font-size: 1.6rem; color: #b45309; }
-        .purge-recap .purge-count span { font-size: .8rem; color: #666; }
+                    /* Purge recap table */
+                    .purge-recap {
+                        background: #fff3e0;
+                        border: 1px solid #b45309;
+                        border-radius: 4px;
+                        padding: 1.25rem;
+                        margin-bottom: 1rem;
+                    }
+                    .purge-recap h3 { color: #b45309; margin-bottom: .75rem; font-size: 1rem; }
+                    .purge-recap .purge-counts { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+                    .purge-recap .purge-count { text-align: center; min-width: 100px; }
+                    .purge-recap .purge-count strong { display: block; font-size: 1.6rem; color: #b45309; }
+                    .purge-recap .purge-count span { font-size: .8rem; color: #666; }
 
-        /* Section danger */
-        .danger-zone {
-            border: 2px solid #c0392b;
-            border-radius: 4px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            background: #fff8f8;
-        }
-        .danger-zone h2 {
-            color: #c0392b;
-            border-bottom-color: #c0392b;
-        }
+                    /* Section danger */
+                    .danger-zone {
+                        border: 2px solid #c0392b;
+                        border-radius: 4px;
+                        padding: 1.5rem;
+                        margin-bottom: 1.5rem;
+                        background: #fff8f8;
+                    }
+                    .danger-zone h2 {
+                        color: #c0392b;
+                        border-bottom-color: #c0392b;
+                    }
 
-        /* Stat table spécifique */
-        .stat-table { width: 100%; font-size: .85rem; }
-        .stat-table td { padding: .35rem .75rem; }
-        .stat-table tr:nth-child(even) td { background: #f7f7fb; }
-        .stat-table tr:hover td { background: #f0f0f8; }
-CSS;
+                    /* Stat table spécifique */
+                    .stat-table { width: 100%; font-size: .85rem; }
+                    .stat-table td { padding: .35rem .75rem; }
+                    .stat-table tr:nth-child(even) td { background: #f7f7fb; }
+                    .stat-table tr:hover td { background: #f0f0f8; }
+            CSS;
     }
 
     /**
@@ -105,7 +103,7 @@ CSS;
 
     <h1><span aria-hidden="true">💾</span> Sauvegarde et restauration</h1>
 
-    <?= (new ErrorRenderer())->messages(['success'=>$success_msg, 'error'=>$error_msg, 'info'=>$info_msg]) ?>
+    <?= (new ErrorRenderer())->messages(['success' => $success_msg, 'error' => $error_msg, 'info' => $info_msg]) ?>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!--  4. STATISTIQUES DE LA BASE                               -->
@@ -148,9 +146,11 @@ CSS;
                 <tbody>
                     <?php
                     $total_rows = 0;
-                    foreach ($db_stats['row_counts'] as $table_name => $count):
-                        if (is_int($count)) $total_rows += $count;
-                    ?>
+            foreach ($db_stats['row_counts'] as $table_name => $count):
+                if (is_int($count)) {
+                    $total_rows += $count;
+                }
+                ?>
                     <tr>
                         <td style="font-family:monospace;font-size:.82rem;"><?= \App\Core\App::html()->escape($table_name) ?></td>
                         <td style="text-align:right;"><?= is_int($count) ? number_format($count, 0, '', ' ') : \App\Core\App::html()->escape($count) ?></td>
@@ -251,7 +251,7 @@ CSS;
         <?php if ($purge_preview !== null): ?>
             <!-- Récapitulatif de la purge avant confirmation -->
             <div class="purge-recap">
-                <h3><span aria-hidden="true">⚠️</span> Récapitulatif de la purge — données clôturées depuis plus de <?= (int)$purge_preview['months'] ?> mois</h3>
+                <h3><span aria-hidden="true">⚠️</span> Récapitulatif de la purge — données clôturées depuis plus de <?= (int) $purge_preview['months'] ?> mois</h3>
                 <div class="purge-counts">
                     <div class="purge-count">
                         <strong><?= number_format($purge_preview['submissions'], 0, '', ' ') ?></strong>
@@ -277,7 +277,7 @@ CSS;
                     <form method="POST" style="display:flex;gap:.5rem;align-items:center;">
                         <?= \App\Core\App::security()->csrfField() ?>
                         <input type="hidden" name="action" value="purge_confirm">
-                        <input type="hidden" name="purge_months" value="<?= (int)$purge_preview['months'] ?>">
+                        <input type="hidden" name="purge_months" value="<?= (int) $purge_preview['months'] ?>">
                         <button type="submit" class="btn btn-danger"><span aria-hidden="true">✅</span> Confirmer la purge</button>
                         <a href="index.php?p=backup" class="btn btn-secondary">Annuler</a>
                     </form>
@@ -312,7 +312,7 @@ CSS;
 
     <?php
     $content = ob_get_clean();
-    return $content === false ? '' : $content;
+        return $content === false ? '' : $content;
     }
 
     /**

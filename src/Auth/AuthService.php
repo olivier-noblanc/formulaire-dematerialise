@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Auth;
@@ -13,25 +14,23 @@ use App\Core\Database;
  */
 final class AuthService implements AuthInterface
 {
-    private Database $db;
-    private ?MailInterface $mailer = null;
+    private ?MailInterface $mail = null;
 
-    public function __construct(Database $db)
+    public function __construct(private readonly Database $database)
     {
-        $this->db = $db;
     }
 
-    public function setMailer(MailInterface $mailer): void
+    public function setMailer(MailInterface $mail): void
     {
-        $this->mailer = $mailer;
+        $this->mail = $mail;
     }
 
     private function getMailer(): MailInterface
     {
-        if ($this->mailer === null) {
-            $this->mailer = App::mail();
+        if ($this->mail === null) {
+            $this->mail = App::mail();
         }
-        return $this->mailer;
+        return $this->mail;
     }
 
     /**
@@ -49,14 +48,14 @@ final class AuthService implements AuthInterface
         if ($realUser !== '' && $this->isAdminByEmail($realUser)) {
             $token = '';
             if (isset($_GET['persona_token'])) {
-                $token = (string)$_GET['persona_token'];
+                $token = (string) $_GET['persona_token'];
             } elseif (isset($_POST['persona_token'])) {
-                $token = (string)$_POST['persona_token'];
+                $token = (string) $_POST['persona_token'];
             }
             if ($token !== '' && function_exists('persona_lookup')) {
                 $target = persona_lookup($token);
                 if ($target !== '') {
-                    return strtolower(trim($target));
+                    return $target |> trim(...) |> strtolower(...);
                 }
             }
         }
@@ -71,19 +70,23 @@ final class AuthService implements AuthInterface
         if (defined('TEST_MODE') && TEST_MODE) {
             $testUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
             if (!empty($testUser)) {
-                if (str_contains($testUser, '@')) {
-                    return strtolower(trim($testUser));
+                if (str_contains((string) $testUser, '@')) {
+                    return $testUser |> trim(...) |> strtolower(...);
                 }
                 $domain = $this->getEmailDomain();
-                return strtolower(trim($testUser)) . '@' . $domain;
+                return ($testUser |> trim(...) |> strtolower(...)) . '@' . $domain;
             }
         }
 
         $authUser = $_SERVER['AUTH_USER'] ?? ($_SERVER['REMOTE_USER'] ?? '');
-        if (empty($authUser)) return '';
+        if (empty($authUser)) {
+            return '';
+        }
 
-        $authUser = trim($authUser);
-        if (str_contains($authUser, '@')) return strtolower($authUser);
+        $authUser = trim((string) $authUser);
+        if (str_contains($authUser, '@')) {
+            return strtolower($authUser);
+        }
 
         // Format DREETS\prenom.nom → prenom.nom@exemple.invalid
         $domain = $this->getEmailDomain();
@@ -102,9 +105,11 @@ final class AuthService implements AuthInterface
      */
     private function isAdminByEmail(string $email): bool
     {
-        if ($email === '') return false;
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
+        if ($email === '') {
+            return false;
+        }
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('SELECT 1 FROM admins WHERE email = ?');
         $stmt->execute([$email]);
         return $stmt->fetch() !== false;
     }
@@ -122,17 +127,17 @@ final class AuthService implements AuthInterface
      */
     public function isAdminEffective(): bool
     {
-        if (!$this->isAdmin()) return false;
+        if (!$this->isAdmin()) {
+            return false;
+        }
         $token = '';
         if (isset($_GET['persona_token'])) {
-            $token = (string)$_GET['persona_token'];
+            $token = (string) $_GET['persona_token'];
         } elseif (isset($_POST['persona_token'])) {
-            $token = (string)$_POST['persona_token'];
+            $token = (string) $_POST['persona_token'];
         }
-        if ($token !== '' && function_exists('persona_lookup')) {
-            if (persona_lookup($token) !== '') {
-                return false;
-            }
+        if ($token !== '' && function_exists('persona_lookup') && persona_lookup($token) !== '') {
+            return false;
         }
         return true;
     }
@@ -166,14 +171,14 @@ final class AuthService implements AuthInterface
     public function getAdminEmail(): string
     {
         try {
-            $pdo = $this->db->getPdo();
-            $stmt = $pdo->prepare("SELECT value FROM settings WHERE key = ?");
+            $pdo = $this->database->getPdo();
+            $stmt = $pdo->prepare('SELECT value FROM settings WHERE key = ?');
             $stmt->execute(['admin_email']);
             $val = $stmt->fetchColumn();
             if ($val && filter_var($val, FILTER_VALIDATE_EMAIL)) {
                 return (string) $val;
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // DB pas encore prête
         }
 
@@ -195,8 +200,8 @@ final class AuthService implements AuthInterface
         if ($email === null) {
             $email = $this->getUser();
         }
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT 1 FROM form_owners WHERE form_id = ? AND email = ?");
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('SELECT 1 FROM form_owners WHERE form_id = ? AND email = ?');
         $stmt->execute([$formId, $email]);
         return $stmt->fetch() !== false;
     }
@@ -204,8 +209,8 @@ final class AuthService implements AuthInterface
     /** @return array<int, array<string, mixed>> */
     public function getFormOwners(string $formId): array
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email");
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email');
         $stmt->execute([$formId]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
@@ -216,14 +221,14 @@ final class AuthService implements AuthInterface
         if ($email === null) {
             $email = $this->getUser();
         }
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('
             SELECT f.id, f.label, f.slug, f.actif
             FROM forms f
             JOIN form_owners fo ON fo.form_id = f.id
             WHERE fo.email = ?
             ORDER BY f.label
-        ");
+        ');
         $stmt->execute([$email]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
@@ -238,7 +243,7 @@ final class AuthService implements AuthInterface
     public function processAdminRequest(string $email): array
     {
         try {
-            $pdo = $this->db->getPdo();
+            $pdo = $this->database->getPdo();
 
             if ($this->isAdmin()) {
                 return ['success' => true, 'reason' => 'already_admin'];
@@ -299,13 +304,13 @@ final class AuthService implements AuthInterface
 
     public function approveAdminRequest(string $email): bool
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         try {
             $stmt = $pdo->prepare("UPDATE admin_requests SET status = 'approved' WHERE email = ?");
             $stmt->execute([$email]);
 
-            $stmt = $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, ?)");
+            $stmt = $pdo->prepare('INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, ?)');
             $stmt->execute([generate_uuid(), $email, gmdate('Y-m-d H:i:s')]);
 
             $subject = 'Accès admin approuvé - ' . \App\Render\NavigationRenderer::getAppName();
@@ -334,7 +339,7 @@ final class AuthService implements AuthInterface
 
     public function rejectAdminRequest(string $email): bool
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         try {
             $stmt = $pdo->prepare("UPDATE admin_requests SET status = 'rejected' WHERE email = ?");
@@ -364,14 +369,14 @@ final class AuthService implements AuthInterface
 
     public function removeAdmin(string $email): bool
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         if ($email === $this->getAdminEmail()) {
             return false;
         }
 
         try {
-            $stmt = $pdo->prepare("DELETE FROM admins WHERE email = ?");
+            $stmt = $pdo->prepare('DELETE FROM admins WHERE email = ?');
             $stmt->execute([$email]);
             App::audit()->log('admin_remove', 'admin:' . $email, 'Admin supprimé', $email);
             return true;

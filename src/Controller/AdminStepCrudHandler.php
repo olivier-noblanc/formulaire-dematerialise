@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -10,22 +11,22 @@ use App\Core\App;
  */
 final class AdminStepCrudHandler
 {
-    public static function handleAddStep(\PDO $pdo): array
+    public static function handleAddStep(): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
         if ($err !== null) {
             return ['error' => $err, 'form_id' => ''];
         }
         $label = trim($_POST['label'] ?? '');
-        $ordre = (int)($_POST['ordre'] ?? 0);
-        if (empty($label) || $ordre <= 0) {
+        $ordre = (int) ($_POST['ordre'] ?? 0);
+        if ($label === '' || $label === '0' || $ordre <= 0) {
             return ['error' => 'Les champs obligatoires ne sont pas remplis.'];
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
             $new_step_id = $repo->createStep(['form_id' => $form_id, 'label' => $label, 'ordre' => $ordre]);
             App::audit()->log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
-            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id) . '#step-' . urlencode($new_step_id)];
+            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string) $form_id) . '#step-' . urlencode($new_step_id)];
         } catch (\PDOException $e) {
             error_log('handleAddStep error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
@@ -39,9 +40,9 @@ final class AdminStepCrudHandler
             return ['error' => $err];
         }
         $label = trim($_POST['label'] ?? '');
-        $ordre = (int)($_POST['ordre'] ?? 0);
+        $ordre = (int) ($_POST['ordre'] ?? 0);
         $actif = isset($_POST['actif']) ? 1 : 0;
-        if (empty($step_id) || empty($label) || $ordre <= 0) {
+        if (empty($step_id) || ($label === '' || $label === '0') || $ordre <= 0) {
             return ['error' => 'Les champs obligatoires ne sont pas remplis.'];
         }
 
@@ -70,7 +71,7 @@ final class AdminStepCrudHandler
 
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
-            $repo->updateStep((string)$step_id, ['label' => $label, 'ordre' => $ordre, 'actif' => $actif, 'condition' => $condition_json]);
+            $repo->updateStep((string) $step_id, ['label' => $label, 'ordre' => $ordre, 'actif' => $actif, 'condition' => $condition_json]);
             App::audit()->log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
         } catch (\PDOException $e) {
@@ -88,13 +89,13 @@ final class AdminStepCrudHandler
         if (empty($step_id)) {
             return null;
         }
-        $active_count = App::workflow()->hasActiveStepSubmissions((string)$step_id);
+        $active_count = App::workflow()->hasActiveStepSubmissions((string) $step_id);
         if ($active_count > 0) {
             return ['error' => 'Impossible de supprimer cette étape : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer l\'étape.'];
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
-            $repo->deleteStep((string)$step_id);
+            $repo->deleteStep((string) $step_id);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#workflow'];
         } catch (\PDOException $e) {
             error_log('handleDeleteStep error: ' . $e->getMessage());

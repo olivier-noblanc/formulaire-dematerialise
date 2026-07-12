@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
@@ -8,7 +9,8 @@ use App\Core\App;
 /**
  * Exception dédiée pour les pages d'erreur (A-22).
  */
-class ErrorResponseException extends \Exception {
+class ErrorResponseException extends \Exception
+{
     public function __construct(
         public readonly int $httpCode,
         public readonly string $title,
@@ -19,9 +21,18 @@ class ErrorResponseException extends \Exception {
         parent::__construct($message, $httpCode);
     }
 
-    public function getErrorTitle(): string { return $this->title; }
-    public function getHint(): string { return $this->hint; }
-    public function getBackUrl(): string { return $this->backUrl; }
+    public function getErrorTitle(): string
+    {
+        return $this->title;
+    }
+    public function getHint(): string
+    {
+        return $this->hint;
+    }
+    public function getBackUrl(): string
+    {
+        return $this->backUrl;
+    }
 }
 
 /**
@@ -37,7 +48,6 @@ final class ErrorRenderer
      * @param string $message   Descriptive message
      * @param string $hint      Advice / next steps (optional)
      * @param string $back_url  Back button URL (default: index.php)
-     * @return never
      */
     public function errorPage(int $code, string $title, string $message, string $hint = '', string $back_url = 'index.php'): never
     {
@@ -47,19 +57,24 @@ final class ErrorRenderer
             App::security()->sendSecurityHeaders();
         }
 
-        $icons = self::getErrorIcons();
+        $icons = $this->getErrorIcons();
         $icon = $icons[$code] ?? $icons[500];
 
         $hint_html = '';
-        if (!empty($hint)) {
+        if ($hint !== '' && $hint !== '0') {
             $hint_html = '<div class="error-hint"><strong>Que faire ?</strong>' . nl2br(\App\Core\App::html()->escape($hint)) . '</div>';
         }
 
         $user = '';
-        try { $user = App::auth()->getUser(); } catch (\Throwable $e) { $user = ''; error_log('render_error_page auth error: ' . $e->getMessage()); }
+        try {
+            $user = App::auth()->getUser();
+        } catch (\Throwable $e) {
+            $user = '';
+            error_log('render_error_page auth error: ' . $e->getMessage());
+        }
 
         $bandeau_links = '';
-        if (!empty($user)) {
+        if ($user !== '' && $user !== '0') {
             $bandeau_links = '<span>Connecté en tant que : <strong>' . \App\Core\App::html()->escape($user) . '</strong></span>
     <span><a href="index.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">Accueil</a></span>';
         }
@@ -99,7 +114,7 @@ final class ErrorRenderer
 </html>';
 
         /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
-        if (TEST_MODE && php_sapi_name() !== "cli") {
+        if (TEST_MODE && php_sapi_name() !== 'cli') {
             throw new ErrorResponseException($code, $title, $message, $hint, $back_url);
         }
         echo $error_html;
@@ -115,15 +130,17 @@ final class ErrorRenderer
     {
         $html = '';
         foreach ($messages as $type => $text) {
-            if (empty($text)) continue;
-            $class = match($type) {
+            if (empty($text)) {
+                continue;
+            }
+            $class = match ($type) {
                 'success' => 'msg-success',
                 'error'   => 'msg-error',
                 'info'    => 'msg-info',
                 'warning' => 'msg-warning',
                 default   => 'msg-info',
             };
-            $aria = match($type) {
+            $aria = match ($type) {
                 'error'   => ' role="alert" aria-live="assertive"',
                 'success', 'info', 'warning' => ' role="status" aria-live="polite"',
                 default   => ' role="status" aria-live="polite"',
@@ -136,7 +153,7 @@ final class ErrorRenderer
     /**
      * @return array<int, string>
      */
-    private static function getErrorIcons(): array
+    private function getErrorIcons(): array
     {
         return [
             403 => '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="42" stroke="#c0392b" stroke-width="5" fill="#fde8e8"/><rect x="38" y="28" width="24" height="28" rx="4" fill="#c0392b"/><circle cx="50" cy="30" r="2.5" fill="#fde8e8"/><path d="M50 42v8" stroke="#fde8e8" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="56" r="2" fill="#fde8e8"/><path d="M30 72 Q50 65 70 72" stroke="#c0392b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
@@ -154,9 +171,9 @@ final class ErrorRenderer
         if (file_exists($style_file)) {
             ob_start();
             require $style_file;
-            $css = (string)ob_get_clean();
+            $css = ob_get_clean();
         }
-        if (empty(trim(strip_tags($css)))) {
+        if (in_array(trim(strip_tags($css)), ['', '0'], true)) {
             $css = '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e}.bandeau{background:#003189;color:#fff;padding:.75rem 2rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.bandeau a{color:#b3c8f0;font-size:.8rem;text-decoration:none}.btn{padding:.5rem 1rem;border:none;border-radius:3px;font-size:.85rem;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-block}.btn-primary{background:#003189;color:#fff}.btn-primary:hover{background:#002270}.skip-link{position:absolute;left:-9999px;top:0;background:#003189;color:#fff;padding:.5rem 1rem;z-index:9999}.skip-link:focus{left:0}.error-page{display:flex;min-height:calc(100vh - 120px);align-items:center;justify-content:center;padding:2rem 1rem}.error-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:3rem 2.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}.error-card .error-code{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.25rem;letter-spacing:-2px}.error-card .error-code.code-403{color:#c0392b}.error-card .error-code.code-404{color:#003189}.error-card .error-code.code-400{color:#b45309}.error-card .error-code.code-401{color:#003189}.error-card .error-code.code-500{color:#c0392b}.error-card .error-illustration{margin-bottom:1.25rem}.error-card .error-illustration svg{width:100px;height:100px}.error-card h1{font-size:1.35rem;color:#1e1e1e;margin-bottom:.75rem;border:none;padding:0}.error-card .error-message{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:1.25rem}.error-card .error-hint{font-size:.85rem;color:#666;background:#f5f5fe;border:1px solid #e0e0f0;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;text-align:left;line-height:1.55}.error-card .error-hint strong{color:#333;display:block;margin-bottom:.35rem}.error-card .error-actions{display:flex;gap:.75rem;justify-content:center;margin-bottom:1.5rem}.error-card .error-stamp{font-size:.7rem;color:#aaa;margin-top:.5rem}footer{padding:1.5rem 2rem;text-align:center;font-size:.75rem;color:#888;border-top:1px solid #eee}</style>';
         }
         return $css;

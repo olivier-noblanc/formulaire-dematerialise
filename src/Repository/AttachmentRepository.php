@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repository;
@@ -7,13 +8,13 @@ final class AttachmentRepository extends BaseRepository
 {
     public function findById(string $id): ?array
     {
-        return $this->fetchOne("SELECT * FROM attachments WHERE id = ?", [$id]);
+        return $this->fetchOne('SELECT * FROM attachments WHERE id = ?', [$id]);
     }
 
     public function findBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC",
+            'SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC',
             [$submissionId]
         );
     }
@@ -30,36 +31,36 @@ final class AttachmentRepository extends BaseRepository
 
     public function delete(string $id): bool
     {
-        return $this->execute("DELETE FROM attachments WHERE id = ?", [$id]);
+        return $this->execute('DELETE FROM attachments WHERE id = ?', [$id]);
     }
 
     public function deleteBySubmission(string $submissionId): bool
     {
-        return $this->execute("DELETE FROM attachments WHERE submission_id = ?", [$submissionId]);
+        return $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$submissionId]);
     }
 
     public function findBySubmissionWithUploader(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT a.*, a.uploaded_by as uploader_name
+            'SELECT a.*, a.uploaded_by as uploader_name
              FROM attachments a
              WHERE a.submission_id = ?
-             ORDER BY a.uploaded_at ASC",
+             ORDER BY a.uploaded_at ASC',
             [$submissionId]
         );
     }
 
     public function countAll(): int
     {
-        $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM attachments");
+        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM attachments');
         return (int) ($result['cnt'] ?? 0);
     }
 
     public function findForExport(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT id, field_name, original_name, mime_type, file_size, uploaded_at
-             FROM attachments WHERE submission_id = ? ORDER BY uploaded_at",
+            'SELECT id, field_name, original_name, mime_type, file_size, uploaded_at
+             FROM attachments WHERE submission_id = ? ORDER BY uploaded_at',
             [$submissionId]
         );
     }

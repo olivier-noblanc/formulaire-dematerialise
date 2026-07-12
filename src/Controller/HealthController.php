@@ -24,29 +24,35 @@ final class HealthController extends BaseController
         $dbDetail = '';
         try {
             $pdo = $this->db->getPdo();
-            $test = $pdo->prepare("SELECT 1");
+            $test = $pdo->prepare('SELECT 1');
             $test->execute();
             $dbOk = $test->fetchColumn() === '1';
             $dbDetail = 'Connexion SQLite OK';
         } catch (\Exception $e) {
             $dbDetail = 'Erreur : ' . $e->getMessage();
         }
-        if (!$dbOk) $allHealthy = false;
+        if (!$dbOk) {
+            $allHealthy = false;
+        }
         $checks[] = ['label' => 'Base de données SQLite', 'ok' => $dbOk, 'detail' => $dbDetail];
 
         // 2. Version PHP
         $phpVersion = PHP_VERSION;
         $phpOk = version_compare($phpVersion, '8.5.0', '>=');
         $phpDetail = 'PHP ' . $phpVersion . ($phpOk ? '' : ' (minimum requis : 8.5)');
-        if (!$phpOk) $allHealthy = false;
+        if (!$phpOk) {
+            $allHealthy = false;
+        }
         $checks[] = ['label' => 'Version PHP', 'ok' => $phpOk, 'detail' => $phpDetail];
 
         // 3. Répertoire db/ accessible en écriture
         $dbPath = defined('DB_PATH') ? DB_PATH : dirname(__DIR__, 2) . '/db/workflow.db';
-        $dbDir = dirname($dbPath);
+        $dbDir = dirname((string) $dbPath);
         $dirWritable = is_writable($dbDir);
         $dirDetail = $dirWritable ? 'Répertoire ' . basename($dbDir) . '/ accessible en écriture' : 'Répertoire ' . basename($dbDir) . '/ non accessible en écriture';
-        if (!$dirWritable) $allHealthy = false;
+        if (!$dirWritable) {
+            $allHealthy = false;
+        }
         $checks[] = ['label' => 'Répertoire de données', 'ok' => $dirWritable, 'detail' => $dirDetail];
 
         // 4. Schéma de base de données initialisé
@@ -59,7 +65,7 @@ final class HealthController extends BaseController
             $tables = $tablesStmt->fetchAll(\PDO::FETCH_COLUMN);
             $required = ['forms', 'submissions', 'tokens', 'settings', 'audit_log'];
             $missing = array_diff($required, $tables);
-            if (empty($missing)) {
+            if ($missing === []) {
                 $schemaOk = true;
                 $schemaDetail = count($tables) . ' tables présentes';
             } else {
@@ -68,7 +74,9 @@ final class HealthController extends BaseController
         } catch (\Exception $e) {
             $schemaDetail = 'Erreur : ' . $e->getMessage();
         }
-        if (!$schemaOk) $allHealthy = false;
+        if (!$schemaOk) {
+            $allHealthy = false;
+        }
         $checks[] = ['label' => 'Schéma de base de données', 'ok' => $schemaOk, 'detail' => $schemaDetail];
 
         // 5. Configuration SMTP présente
@@ -76,22 +84,26 @@ final class HealthController extends BaseController
         $smtpDetail = '';
         try {
             $smtpHost = $this->settings->get('smtp_host', '');
-            $smtpOk = !empty($smtpHost);
+            $smtpOk = $smtpHost !== '' && $smtpHost !== '0';
             $smtpDetail = $smtpOk ? 'Hôte SMTP configuré : ' . $smtpHost : 'Aucun hôte SMTP configuré';
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $smtpDetail = 'Erreur de lecture';
         }
-        if (!$smtpOk) $allHealthy = false;
+        if (!$smtpOk) {
+            $allHealthy = false;
+        }
         $checks[] = ['label' => 'Configuration SMTP', 'ok' => $smtpOk, 'detail' => $smtpDetail];
 
         // 6. Extensions PHP requises
         $requiredExt = ['mbstring', 'pdo_sqlite', 'sqlite3', 'json', 'session', 'pcre'];
         $missingExt = array_filter($requiredExt, fn($ext) => !extension_loaded($ext));
-        $extOk = empty($missingExt);
+        $extOk = $missingExt === [];
         $extDetail = $extOk
             ? 'Toutes les extensions requises sont présentes (' . count($requiredExt) . ')'
             : 'Extensions manquantes : ' . implode(', ', $missingExt);
-        if (!$extOk) $allHealthy = false;
+        if (!$extOk) {
+            $allHealthy = false;
+        }
         $checks[] = ['label' => 'Extensions PHP', 'ok' => $extOk, 'detail' => $extDetail];
 
         // Set HTTP status
@@ -105,9 +117,7 @@ final class HealthController extends BaseController
                 'status' => $allHealthy ? 'healthy' : 'unhealthy',
                 'version' => App::cache()->getLatestVersion(),
                 'timestamp' => date('c'),
-                'checks' => array_map(function ($c) {
-                    return ['label' => $c['label'], 'status' => $c['ok'] ? 'ok' : 'error', 'detail' => $c['detail']];
-                }, $checks),
+                'checks' => array_map(fn($c) => ['label' => $c['label'], 'status' => $c['ok'] ? 'ok' : 'error', 'detail' => $c['detail']], $checks),
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             exit;
         }
@@ -138,7 +148,7 @@ final class HealthController extends BaseController
     Endpoint de monitoring : <code>health.php?format=json</code>
   </p>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Santé système', 'health', $pageCss, $content);
     }
 }

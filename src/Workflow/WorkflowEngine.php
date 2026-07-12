@@ -1,45 +1,30 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Workflow;
 
+use App\Contract\WorkflowInterface;
 use App\Core\Database;
 use App\Forms\FieldService;
-use App\Settings\SettingsService;
 use App\Mail\MailService;
+use App\Settings\SettingsService;
 use App\SubmissionStatus;
-use App\Contract\WorkflowInterface;
 
 /**
  * Moteur de workflow — tokens, steps, validation.
  */
-final class WorkflowEngine implements WorkflowInterface
+final readonly class WorkflowEngine implements WorkflowInterface
 {
-    private Database $db;
-    private SettingsService $settings;
-    private MailService $mail;
-    private FieldService $fields;
-    private ConditionEvaluator $conditions;
-
-    public function __construct(
-        Database $db,
-        SettingsService $settings,
-        MailService $mail,
-        FieldService $fields,
-        ConditionEvaluator $conditions
-    ) {
-        $this->db = $db;
-        $this->settings = $settings;
-        $this->mail = $mail;
-        $this->fields = $fields;
-        $this->conditions = $conditions;
+    public function __construct(private Database $database, private SettingsService $settingsService, private MailService $mailService, private FieldService $fieldService, private ConditionEvaluator $conditionEvaluator)
+    {
     }
 
     /** @return array<string, mixed>|null */
     public function getTokenWithContext(string $tokenValue): ?array
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('
             SELECT t.*, st.label as step_label, s.form_id,
                    f.label as form_label, s.data, s.closed_at, s.status,
                    s.submitted_by
@@ -48,7 +33,7 @@ final class WorkflowEngine implements WorkflowInterface
             JOIN submissions s ON s.id = t.submission_id
             JOIN forms f ON f.id = s.form_id
             WHERE t.token = ?
-        ");
+        ');
         $stmt->execute([$tokenValue]);
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
@@ -57,8 +42,8 @@ final class WorkflowEngine implements WorkflowInterface
     /** @return array<string, mixed>|null */
     public function getTokenByIdWithContext(string $tokenId): ?array
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('
             SELECT t.*, st.label as step_label, s.form_id,
                    f.label as form_label, s.data, s.closed_at, s.status,
                    s.submitted_by
@@ -67,7 +52,7 @@ final class WorkflowEngine implements WorkflowInterface
             JOIN submissions s ON s.id = t.submission_id
             JOIN forms f ON f.id = s.form_id
             WHERE t.id = ?
-        ");
+        ');
         $stmt->execute([$tokenId]);
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
@@ -77,9 +62,11 @@ final class WorkflowEngine implements WorkflowInterface
     public function getWorkflowSteps(string $formId): array
     {
         static $cache = [];
-        if (isset($cache[$formId])) return $cache[$formId];
+        if (isset($cache[$formId])) {
+            return $cache[$formId];
+        }
 
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare("
             SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.condition,
                    GROUP_CONCAT(sr.email, '|') as recipient_emails
@@ -98,13 +85,13 @@ final class WorkflowEngine implements WorkflowInterface
     /** @return array<string, mixed>|null */
     public function getSubmissionWithFormLabel(string $submissionId): ?array
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('
             SELECT s.*, f.label as form_label
             FROM submissions s
             JOIN forms f ON f.id = s.form_id
             WHERE s.id = ?
-        ");
+        ');
         $stmt->execute([$submissionId]);
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
@@ -115,17 +102,17 @@ final class WorkflowEngine implements WorkflowInterface
         // Cas spécial : {{owner}}
         if ($recipient === '{{owner}}') {
             if ($submissionId !== null) {
-                $pdo = $this->db->getPdo();
-                $formIdStmt = $pdo->prepare("SELECT form_id FROM submissions WHERE id = ?");
+                $pdo = $this->database->getPdo();
+                $formIdStmt = $pdo->prepare('SELECT form_id FROM submissions WHERE id = ?');
                 $formIdStmt->execute([$submissionId]);
                 $fid = (string) $formIdStmt->fetchColumn();
                 if ($fid !== '') {
                     $owners = $this->getFormOwners($fid);
                     $firstOwnerEmail = $owners[0]['email'] ?? '';
-                    if (!empty($owners) && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL)) {
+                    if ($owners !== [] && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL)) {
                         return $firstOwnerEmail;
                     }
-                    $adminEmail = $this->settings->get('admin_email');
+                    $adminEmail = $this->settingsService->get('admin_email');
                     if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
                         return $adminEmail;
                     }
@@ -138,12 +125,16 @@ final class WorkflowEngine implements WorkflowInterface
             $fieldName = $m[1];
             if (isset($formData[$fieldName]) && !empty($formData[$fieldName])) {
                 $resolved = trim((string) $formData[$fieldName]);
-                if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) return $resolved;
+                if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                    return $resolved;
+                }
             }
             foreach ($formData as $key => $val) {
-                if (strtolower($key) === $fieldName && !empty($val)) {
+                if (strtolower((string) $key) === $fieldName && !empty($val)) {
                     $resolved = trim((string) $val);
-                    if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) return $resolved;
+                    if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                        return $resolved;
+                    }
                 }
             }
             return $recipient;
@@ -155,19 +146,23 @@ final class WorkflowEngine implements WorkflowInterface
     /** @return array<int, array<string, mixed>> */
     private function getFormOwners(string $formId): array
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email");
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email');
         $stmt->execute([$formId]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public function advanceWorkflow(string $submissionId): void
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         $submission = $this->getSubmissionWithFormLabel($submissionId);
-        if (!$submission) return;
-        if (!empty($submission['closed_at'])) return;
+        if (!$submission) {
+            return;
+        }
+        if (!empty($submission['closed_at'])) {
+            return;
+        }
 
         $formId = (string) $submission['form_id'];
         $allSteps = $this->getWorkflowSteps($formId);
@@ -180,7 +175,7 @@ final class WorkflowEngine implements WorkflowInterface
         ksort($byOrder);
 
         // Tokens déjà créés
-        $tokenStmt = $pdo->prepare("SELECT step_id, done_at FROM tokens WHERE submission_id = ?");
+        $tokenStmt = $pdo->prepare('SELECT step_id, done_at FROM tokens WHERE submission_id = ?');
         $tokenStmt->execute([$submissionId]);
         $tokensByStep = [];
         foreach ($tokenStmt->fetchAll(\PDO::FETCH_ASSOC) as $t) {
@@ -188,10 +183,10 @@ final class WorkflowEngine implements WorkflowInterface
         }
 
         $now = gmdate('Y-m-d H:i:s');
-        $expireDays = (int) $this->settings->get('token_expire_days', '30');
+        $expireDays = (int) $this->settingsService->get('token_expire_days', '30');
         $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
 
-        foreach ($byOrder as $ordre => $groupe) {
+        foreach ($byOrder as $groupe) {
             // Vérifier si toutes les étapes actives de ce groupe ont un token
             $stepIds = array_column($groupe, 'step_id');
             $allStarted = count(array_intersect($stepIds, array_keys($tokensByStep))) === count($groupe);
@@ -203,7 +198,7 @@ final class WorkflowEngine implements WorkflowInterface
 
                 foreach ($groupe as $step) {
                     // Évaluer la condition
-                    if (!$this->conditions->evaluate(
+                    if (!$this->conditionEvaluator->evaluate(
                         $step['condition'] ?? '',
                         $validatorData
                     )) {
@@ -212,77 +207,85 @@ final class WorkflowEngine implements WorkflowInterface
 
                     $rawEmails = explode('|', $step['recipient_emails'] ?? '');
                     $hasRecipient = false;
-                    foreach ($rawEmails as $email) {
-                        $email = trim($email);
-                        if (empty($email)) continue;
+                    foreach ($rawEmails as $rawEmail) {
+                        $rawEmail = trim($rawEmail);
+                        if ($rawEmail === '' || $rawEmail === '0') {
+                            continue;
+                        }
 
-                        $email = $this->resolveDynamicRecipient($email, $formData, $submissionId);
-                        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                            error_log("Workflow: skipping invalid recipient '$email' for step {$step['step_id']}");
+                        $rawEmail = $this->resolveDynamicRecipient($rawEmail, $formData, $submissionId);
+                        if (!filter_var($rawEmail, FILTER_VALIDATE_EMAIL)) {
+                            error_log("Workflow: skipping invalid recipient '{$rawEmail}' for step {$step['step_id']}");
                             continue;
                         }
 
                         $hasRecipient = true;
 
                         // Vérifier doublon
-                        $dupCheck = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL");
-                        $dupCheck->execute([$submissionId, $step['step_id'], $email]);
-                        if ($dupCheck->fetch()) continue;
+                        $dupCheck = $pdo->prepare('SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL');
+                        $dupCheck->execute([$submissionId, $step['step_id'], $rawEmail]);
+                        if ($dupCheck->fetch()) {
+                            continue;
+                        }
 
                         $token = $this->generateToken();
                         $tokenRowId = $this->generateUuid();
-                        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)")
-                            ->execute([$tokenRowId, $submissionId, $step['step_id'], $email, $token, $now, $expiresAt]);
+                        $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)')
+                            ->execute([$tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt]);
 
                         $subject = '[Action requise] ' . ($submission['form_label'] ?? '') . ' — ' . $step['step_label'];
-                        $mailSent = $this->mail->send($email, $subject, $this->mail->buildValidationEmail($submission, $step['step_label'], $token));
+                        $mailSent = $this->mailService->send($rawEmail, $subject, $this->mailService->buildValidationEmail($submission, $step['step_label'], $token));
                         if (!$mailSent) {
-                            error_log("Workflow: mail failed for token $token to $email");
+                            error_log("Workflow: mail failed for token $token to {$rawEmail}");
                         }
                         $tokenCreated = true;
                     }
 
                     // Étape sans recipients valides — logger et ignorer (misconfiguration)
-                    if (!$hasRecipient && !empty(trim($step['recipient_emails'] ?? ''))) {
+                    if (!$hasRecipient && !in_array(trim($step['recipient_emails'] ?? ''), ['', '0'], true)) {
                         error_log("Workflow: step {$step['step_id']} has condition true but no valid recipients — skipping");
                     }
                 }
 
                 // Si au moins un token a été créé, on attend sa validation
                 // Si aucun token (toutes les conditions false ou tous les recipients invalides), on passe au groupe suivant
-                if ($tokenCreated) return;
+                if ($tokenCreated) {
+                    return;
+                }
             }
 
             // Vérifier si toutes les étapes de cet ordre sont validées
             $allDone = true;
             foreach ($groupe as $step) {
                 $dones = $tokensByStep[$step['step_id']] ?? [];
-                if (empty($dones) || !array_all($dones, fn($d) => $d !== null)) {
+                if ($dones === [] || !array_all($dones, fn($d) => $d !== null)) {
                     $allDone = false;
                     break;
                 }
             }
 
-            if (!$allDone) return; // Attendre que toutes les étapes de cet ordre soient validées
+            if (!$allDone) {
+                return;
+            } // Attendre que toutes les étapes de cet ordre soient validées
         }
 
         // Toutes les étapes sont validées → clôturer
-        $pdo->prepare("UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?")
+        $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
             ->execute([$now, SubmissionStatus::VALIDE->value, $submissionId]);
 
         // Notifier l'agent
         $agentEmail = $submission['submitted_by'] ?? '';
         if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
             $subject = 'Demande validée — ' . ($submission['form_label'] ?? '');
-            $body = $this->mail->renderEmailTemplate('Demande validée', '<p>Votre demande a été validée.</p>');
-            $this->mail->send($agentEmail, $subject, $body);
+            $body = $this->mailService->renderEmailTemplate('Demande validée', '<p>Votre demande a été validée.</p>');
+            $this->mailService->send($agentEmail, $subject, $body);
         }
     }
 
     /** @return array<string, mixed> */
     private function getValidatorDataForEvaluation(string $submissionId): array
     {
-        $data = $this->fields->getValidatorData($submissionId);
+        $data = $this->fieldService->getValidatorData($submissionId);
         $result = [];
         foreach ($data as $vd) {
             $result[$vd['field_name'] ?? ''] = $vd['value'] ?? '';
@@ -304,13 +307,22 @@ final class WorkflowEngine implements WorkflowInterface
             return ['status' => 'invalid', 'message' => 'Action non autorisée.'];
         }
 
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         $pdo->beginTransaction();
 
         $t = $this->getTokenWithContext($token);
-        if (!$t) { $pdo->rollBack(); return ['status' => 'invalid']; }
-        if (!empty($t['done_at'])) { $pdo->rollBack(); return ['status' => 'already_done', 'data' => $t]; }
-        if (!empty($t['closed_at'])) { $pdo->rollBack(); return ['status' => 'closed', 'data' => $t]; }
+        if (!$t) {
+            $pdo->rollBack();
+            return ['status' => 'invalid'];
+        }
+        if (!empty($t['done_at'])) {
+            $pdo->rollBack();
+            return ['status' => 'already_done', 'data' => $t];
+        }
+        if (!empty($t['closed_at'])) {
+            $pdo->rollBack();
+            return ['status' => 'closed', 'data' => $t];
+        }
 
         if (!empty($t['expires_at'])) {
             $expTs = strtotime($t['expires_at']);
@@ -332,19 +344,25 @@ final class WorkflowEngine implements WorkflowInterface
         ];
 
         if ($action === 'refuser') {
-            $stmt = $pdo->prepare("UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL");
+            $stmt = $pdo->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
             $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
-            if ($stmt->rowCount() === 0) { $pdo->rollBack(); return ['status' => 'already_done', 'data' => $t]; }
+            if ($stmt->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['status' => 'already_done', 'data' => $t];
+            }
 
-            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?")
+            $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
                 ->execute([gmdate('Y-m-d H:i:s'), SubmissionStatus::REFUSE->value, $t['submission_id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL");
+            $stmt = $pdo->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
             $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
-            if ($stmt->rowCount() === 0) { $pdo->rollBack(); return ['status' => 'already_done', 'data' => $t]; }
+            if ($stmt->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['status' => 'already_done', 'data' => $t];
+            }
         }
 
-        $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
+        $pdo->prepare('UPDATE submissions SET data = ? WHERE id = ?')
             ->execute([json_encode($data), $t['submission_id']]);
 
         $pdo->commit();
@@ -356,8 +374,8 @@ final class WorkflowEngine implements WorkflowInterface
                 $subject = 'Demande refusée — ' . ($t['form_label'] ?? '');
                 $body = '<h2 style="color:#c0392b;">Demande refusée</h2>'
                     . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . \App\Core\App::html()->escape($t['step_label']) . '</strong>.</p>'
-                    . (!empty($comment) ? '<p><strong>Motif :</strong> ' . \App\Core\App::html()->escape($comment) . '</p>' : '');
-                $this->mail->send($agentEmail, $subject, $this->mail->renderEmailTemplate('Demande refusée', $body));
+                    . ($comment === '' || $comment === '0' ? '' : '<p><strong>Motif :</strong> ' . \App\Core\App::html()->escape($comment) . '</p>');
+                $this->mailService->send($agentEmail, $subject, $this->mailService->renderEmailTemplate('Demande refusée', $body));
             }
         } else {
             $this->advanceWorkflow($t['submission_id']);
@@ -369,20 +387,20 @@ final class WorkflowEngine implements WorkflowInterface
 
     public function hasActiveSubmissions(string $formId): int
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = ?");
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = ?');
         $stmt->execute([$formId, SubmissionStatus::EN_COURS->value]);
         return (int) $stmt->fetchColumn();
     }
 
     public function hasActiveStepSubmissions(string $stepId): int
     {
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare("
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('
             SELECT COUNT(*) FROM tokens t
             JOIN submissions s ON s.id = t.submission_id
             WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = ?
-        ");
+        ');
         $stmt->execute([$stepId, SubmissionStatus::EN_COURS->value]);
         return (int) $stmt->fetchColumn();
     }

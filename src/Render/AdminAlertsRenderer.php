@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
@@ -11,8 +12,6 @@ use App\Core\App;
 final class AdminAlertsRenderer
 {
     /**
-     * @param string $successMsg
-     * @param string $errorMsg
      * @param array  $forms           formulaires actifs (findActiveList)
      * @param array  $rules           règles avec form_label (getAllWithForm)
      * @param array  $alertLogs       logs avec form_label (getLogsWithForm)
@@ -30,7 +29,7 @@ final class AdminAlertsRenderer
         string $editRuleId,
         array $dateFieldsByForm,
     ): string {
-        $h = static fn (string $v): string => \App\Core\App::html()->escape($v);
+        $h = static fn(string $v): string => \App\Core\App::html()->escape($v);
 
         $purgeDays = (int) App::settings()->get('alert_log_retention_days', '90');
 
@@ -45,7 +44,7 @@ final class AdminAlertsRenderer
         $html .= '  <div class="card">' . "\n";
         $html .= '    <h2>Script de vérification des alertes</h2>' . "\n";
 
-        if ($lastAlertCheck) {
+        if ($lastAlertCheck !== '' && $lastAlertCheck !== '0') {
             $checkTs = strtotime($lastAlertCheck);
             $checkAge = ($checkTs !== false) ? (time() - $checkTs) : 999999;
             $checkOk = $checkAge < 86400;
@@ -98,10 +97,10 @@ final class AdminAlertsRenderer
             $html .= '          <strong style="min-width:150px;">' . $h($f['label']) . '</strong>' . "\n";
             $html .= '          <select name="deadline_field" style="flex:1;">' . "\n";
             $html .= '            <option value="">— Aucun champ date —</option>' . "\n";
-            foreach ($dateFields as $df) {
-                $selected = (($f['deadline_field'] ?? '') === $df['field_name']) ? ' selected' : '';
-                $html .= '              <option value="' . $h($df['field_name']) . '"' . $selected . '>' . "\n";
-                $html .= '                ' . $h($df['label']) . ' (' . $h($df['field_name']) . ')' . "\n";
+            foreach ($dateFields as $dateField) {
+                $selected = (($f['deadline_field'] ?? '') === $dateField['field_name']) ? ' selected' : '';
+                $html .= '              <option value="' . $h($dateField['field_name']) . '"' . $selected . '>' . "\n";
+                $html .= '                ' . $h($dateField['label']) . ' (' . $h($dateField['field_name']) . ')' . "\n";
                 $html .= '              </option>' . "\n";
             }
             $html .= '          </select>' . "\n";
@@ -129,33 +128,33 @@ final class AdminAlertsRenderer
         $html .= '    <h2>📏 Règles d\'alerte (' . count($rules) . ')</h2>' . "\n";
         $html .= "\n";
 
-        if (empty($rules)) {
+        if ($rules === []) {
             $html .= '      <p class="empty-state">Aucune règle d\'alerte configurée. Ajoutez-en une ci-dessous.</p>' . "\n";
         } else {
-            foreach ($rules as $r) {
-                $isInactive = empty($r['actif']);
-                $daysCls = $r['days_before'] <= 2 ? 'urgent' : ($r['days_before'] == 0 ? 'passed' : '');
+            foreach ($rules as $rule) {
+                $isInactive = empty($rule['actif']);
+                $daysCls = $rule['days_before'] <= 2 ? 'urgent' : ($rule['days_before'] == 0 ? 'passed' : '');
 
                 $html .= '        <div class="rule-card ' . ($isInactive ? 'inactive' : '') . '">' . "\n";
                 $html .= '          <div class="rule-header">' . "\n";
                 $html .= '            <h3>' . "\n";
-                $html .= '              <span style="font-size:.8rem;color:#595959;">' . $h($r['form_label']) . '</span> —' . "\n";
-                $html .= '              ' . $h($r['label']) . "\n";
+                $html .= '              <span style="font-size:.8rem;color:#595959;">' . $h($rule['form_label']) . '</span> —' . "\n";
+                $html .= '              ' . $h($rule['label']) . "\n";
                 $html .= '            </h3>' . "\n";
                 $html .= '            <div class="rule-actions">' . "\n";
-                $html .= '              <a href="index.php?p=admin_alerts&edit_rule=' . urlencode($r['id']) . '" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>' . "\n";
+                $html .= '              <a href="index.php?p=admin_alerts&edit_rule=' . urlencode($rule['id']) . '" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>' . "\n";
                 $html .= '              <form method="POST" style="display:inline;">' . "\n";
                 $html .= '                ' . App::security()->csrfField() . "\n";
                 $html .= '                <input type="hidden" name="action" value="delete_rule">' . "\n";
-                $html .= '                <input type="hidden" name="rule_id" value="' . $h($r['id']) . '">' . "\n";
+                $html .= '                <input type="hidden" name="rule_id" value="' . $h($rule['id']) . '">' . "\n";
                 $html .= '                <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;" onclick="return confirm(\'Supprimer cette règle d\\\\\'alerte ?\');">Supprimer</button>' . "\n";
                 $html .= '              </form>' . "\n";
                 $html .= '            </div>' . "\n";
                 $html .= '          </div>' . "\n";
                 $html .= '          <div class="rule-meta">' . "\n";
-                $html .= '            <span class="days-badge ' . $daysCls . '">' . ($r['days_before'] == 0 ? 'Jour J' : 'J-' . (int) $r['days_before']) . '</span>' . "\n";
-                $html .= '            <span class="cond-badge">' . ($r['condition_type'] === 'steps_incomplete' ? 'Étapes incomplètes' : $h($r['condition_type'])) . '</span>' . "\n";
-                $html .= '            <span class="notify-badge"><span aria-hidden="true">📧</span> ' . $h(self::notifyWhoLabel($r['notify_who'])) . '</span>' . "\n";
+                $html .= '            <span class="days-badge ' . $daysCls . '">' . ($rule['days_before'] == 0 ? 'Jour J' : 'J-' . (int) $rule['days_before']) . '</span>' . "\n";
+                $html .= '            <span class="cond-badge">' . ($rule['condition_type'] === 'steps_incomplete' ? 'Étapes incomplètes' : $h($rule['condition_type'])) . '</span>' . "\n";
+                $html .= '            <span class="notify-badge"><span aria-hidden="true">📧</span> ' . $h(self::notifyWhoLabel($rule['notify_who'])) . '</span>' . "\n";
                 if ($isInactive) {
                     $html .= '              <span class="badge badge-err">Inactive</span>' . "\n";
                 } else {
@@ -163,47 +162,47 @@ final class AdminAlertsRenderer
                 }
                 $html .= '          </div>' . "\n";
 
-                if ($editRuleId === $r['id']) {
+                if ($editRuleId === $rule['id']) {
                     $html .= '          <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;">' . "\n";
                     $html .= '            <form method="POST">' . "\n";
                     $html .= '              ' . App::security()->csrfField() . "\n";
                     $html .= '              <input type="hidden" name="action" value="update_rule">' . "\n";
-                    $html .= '              <input type="hidden" name="rule_id" value="' . $h($r['id']) . '">' . "\n";
+                    $html .= '              <input type="hidden" name="rule_id" value="' . $h($rule['id']) . '">' . "\n";
                     $html .= '              <div class="grid-2">' . "\n";
                     $html .= '                <div class="field">' . "\n";
                     $html .= '                  <label>Libellé</label>' . "\n";
-                    $html .= '                  <input type="text" name="label" value="' . $h($r['label']) . '" required>' . "\n";
+                    $html .= '                  <input type="text" name="label" value="' . $h($rule['label']) . '" required>' . "\n";
                     $html .= '                </div>' . "\n";
                     $html .= '                <div class="field">' . "\n";
                     $html .= '                  <label>Jours avant la date cible</label>' . "\n";
-                    $html .= '                  <input type="number" name="days_before" value="' . (int) $r['days_before'] . '" min="0" required>' . "\n";
+                    $html .= '                  <input type="number" name="days_before" value="' . (int) $rule['days_before'] . '" min="0" required>' . "\n";
                     $html .= '                  <span class="hint">0 = alerte le jour même</span>' . "\n";
                     $html .= '                </div>' . "\n";
                     $html .= '                <div class="field">' . "\n";
                     $html .= '                  <label>Condition</label>' . "\n";
                     $html .= '                  <select name="condition_type">' . "\n";
-                    $html .= '                    <option value="steps_incomplete"' . ($r['condition_type'] === 'steps_incomplete' ? ' selected' : '') . '>Étapes incomplètes</option>' . "\n";
+                    $html .= '                    <option value="steps_incomplete"' . ($rule['condition_type'] === 'steps_incomplete' ? ' selected' : '') . '>Étapes incomplètes</option>' . "\n";
                     $html .= '                  </select>' . "\n";
                     $html .= '                  <span class="hint">D\'autres conditions pourront être ajoutées ultérieurement</span>' . "\n";
                     $html .= '                </div>' . "\n";
                     $html .= '                <div class="field">' . "\n";
                     $html .= '                  <label>Notifier</label>' . "\n";
                     $html .= '                  <select name="notify_who">' . "\n";
-                    $html .= '                    <option value="admin"' . ($r['notify_who'] === 'admin' ? ' selected' : '') . '>Administrateurs</option>' . "\n";
-                    $html .= '                    <option value="submitter"' . ($r['notify_who'] === 'submitter' ? ' selected' : '') . '>Agent (demandeur)</option>' . "\n";
-                    $html .= '                    <option value="validators"' . ($r['notify_who'] === 'validators' ? ' selected' : '') . '>Validateurs en cours</option>' . "\n";
-                    $html .= '                    <option value="admin+submitter"' . ($r['notify_who'] === 'admin+submitter' ? ' selected' : '') . '>Admins + Agent</option>' . "\n";
-                    $html .= '                    <option value="admin+validators"' . ($r['notify_who'] === 'admin+validators' ? ' selected' : '') . '>Admins + Validateurs</option>' . "\n";
-                    $html .= '                    <option value="custom"' . (!in_array($r['notify_who'], ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators']) ? ' selected' : '') . '>Courriel personnalisé</option>' . "\n";
+                    $html .= '                    <option value="admin"' . ($rule['notify_who'] === 'admin' ? ' selected' : '') . '>Administrateurs</option>' . "\n";
+                    $html .= '                    <option value="submitter"' . ($rule['notify_who'] === 'submitter' ? ' selected' : '') . '>Agent (demandeur)</option>' . "\n";
+                    $html .= '                    <option value="validators"' . ($rule['notify_who'] === 'validators' ? ' selected' : '') . '>Validateurs en cours</option>' . "\n";
+                    $html .= '                    <option value="admin+submitter"' . ($rule['notify_who'] === 'admin+submitter' ? ' selected' : '') . '>Admins + Agent</option>' . "\n";
+                    $html .= '                    <option value="admin+validators"' . ($rule['notify_who'] === 'admin+validators' ? ' selected' : '') . '>Admins + Validateurs</option>' . "\n";
+                    $html .= '                    <option value="custom"' . (in_array($rule['notify_who'], ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators']) ? '' : ' selected') . '>Courriel personnalisé</option>' . "\n";
                     $html .= '                  </select>' . "\n";
                     $html .= '                </div>' . "\n";
                     $html .= '                <div class="field custom-email-field">' . "\n";
                     $html .= '                  <label>Courriel personnalisé <span class="hint">(si « Courriel personnalisé » sélectionné ci-dessus)</span></label>' . "\n";
-                    $html .= '                  <input type="email" name="custom_email" value="' . (filter_var($r['notify_who'], FILTER_VALIDATE_EMAIL) ? $h($r['notify_who']) : '') . '" placeholder="courriel@exemple.fr">' . "\n";
+                    $html .= '                  <input type="email" name="custom_email" value="' . (filter_var($rule['notify_who'], FILTER_VALIDATE_EMAIL) ? $h($rule['notify_who']) : '') . '" placeholder="courriel@exemple.fr">' . "\n";
                     $html .= '                </div>' . "\n";
                     $html .= '                <div class="field">' . "\n";
                     $html .= '                  <label class="checkbox-label">' . "\n";
-                    $html .= '                    <input type="checkbox" name="actif" value="1"' . ($r['actif'] ? ' checked' : '') . '>' . "\n";
+                    $html .= '                    <input type="checkbox" name="actif" value="1"' . ($rule['actif'] ? ' checked' : '') . '>' . "\n";
                     $html .= '                    Règle active' . "\n";
                     $html .= '                  </label>' . "\n";
                     $html .= '                </div>' . "\n";
@@ -234,8 +233,8 @@ final class AdminAlertsRenderer
         $html .= '          <label>Formulaire</label>' . "\n";
         $html .= '          <select name="form_id" required>' . "\n";
         $html .= '            <option value="">— Sélectionner —</option>' . "\n";
-        foreach ($forms as $f) {
-            $html .= '            <option value="' . $h($f['id']) . '">' . $h($f['label']) . (empty($f['deadline_field']) ? ' (⚠ pas de champ date)' : '') . '</option>' . "\n";
+        foreach ($forms as $form) {
+            $html .= '            <option value="' . $h($form['id']) . '">' . $h($form['label']) . (empty($form['deadline_field']) ? ' (⚠ pas de champ date)' : '') . '</option>' . "\n";
         }
         $html .= '          </select>' . "\n";
         $html .= '        </div>' . "\n";
@@ -290,7 +289,7 @@ final class AdminAlertsRenderer
         $html .= '    </div>' . "\n";
         $html .= "\n";
 
-        if (empty($alertLogs)) {
+        if ($alertLogs === []) {
             $html .= '      <p class="empty-state">Aucune alerte envoyée pour le moment.</p>' . "\n";
         } else {
             $html .= '      <table>' . "\n";
@@ -298,21 +297,19 @@ final class AdminAlertsRenderer
             $html .= '          <tr><th>Date</th><th>Règle</th><th>Formulaire</th><th>Message</th></tr>' . "\n";
             $html .= '        </thead>' . "\n";
             $html .= '        <tbody>' . "\n";
-            foreach ($alertLogs as $al) {
+            foreach ($alertLogs as $alertLog) {
                 $html .= '          <tr>' . "\n";
-                $html .= '            <td style="white-space:nowrap;font-size:.8rem;">' . $h(date('d/m/Y H:i', strtotime($al['sent_at']))) . '</td>' . "\n";
-                $html .= '            <td><span class="badge badge-info">' . $h($al['rule_label'] ?? 'Règle supprimée') . '</span></td>' . "\n";
-                $html .= '            <td>' . $h($al['form_label']) . '</td>' . "\n";
-                $html .= '            <td style="font-size:.8rem;">' . $h($al['message']) . '</td>' . "\n";
+                $html .= '            <td style="white-space:nowrap;font-size:.8rem;">' . $h(date('d/m/Y H:i', strtotime($alertLog['sent_at']))) . '</td>' . "\n";
+                $html .= '            <td><span class="badge badge-info">' . $h($alertLog['rule_label'] ?? 'Règle supprimée') . '</span></td>' . "\n";
+                $html .= '            <td>' . $h($alertLog['form_label']) . '</td>' . "\n";
+                $html .= '            <td style="font-size:.8rem;">' . $h($alertLog['message']) . '</td>' . "\n";
                 $html .= '          </tr>' . "\n";
             }
             $html .= '        </tbody>' . "\n";
             $html .= '      </table>' . "\n";
         }
 
-        $html .= '  </div>' . "\n";
-
-        return $html;
+        return $html . ('  </div>' . "\n");
     }
 
     private static function notifyWhoLabel(string $val): string

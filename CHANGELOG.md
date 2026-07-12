@@ -1,5 +1,30 @@
 # Changelog — CircuitDémat
 
+## [10.13.0] — 2026-07-12
+_Résumé : PHP 8.5 exclusif — modernisation complète du codebase avec outils automatisés._
+
+### 🏗 Refactor
+
+- **PHP-CS-Fixer** : 113 fichiers conformes PER-CS (`@PER-CS`, `@PHP83Migration`)
+- **Rector** : 88 fichiers modernisés (PHP 8.3+)
+  - `readonly` sur 18 classes (Services immuables)
+  - `class_property_assign_to_constructor_promotion` (promoted properties)
+  - `str_contains()` au lieu de `strpos() !== false`
+  - `SimplifyEmptyCheckOnEmptyArrayRector` (`$x === []` au lieu de `empty($x)`)
+  - `RenameForeachValueVariableToMatchExprVariableRector` (lisibilité : `$vf` → `$validator_field`)
+  - `RemoveUnusedVariableInCatchRector` (`catch (\Exception)` au lieu de `catch (\Exception $e)`)
+  - `AddTypeToConstRector` (`const array` typé)
+  - `DisallowedEmptyRuleFixerRector` (comparaisons explicites)
+
+### ⚡ PHP 8.5
+
+- **`composer.json`** : `"php": "^8.5"` exigé
+- **`array_last()`** : remplace `end()` sans effet de bord sur le pointeur (2 occurrences)
+- **Pipe operator `|>`** : `strtolower(trim($x))` → `$x |> trim(...) |> strtolower(...)` (8 occurrences)
+- **Tests** : 977 tests, 1623 assertions, 0 échec
+
+---
+
 ## [10.12.0] — 2026-07-12
 _Résumé : Ultrareview v2 — 15 constats corrigés, PRAGMA foreign_keys ON global, 7 renderers extraits._
 

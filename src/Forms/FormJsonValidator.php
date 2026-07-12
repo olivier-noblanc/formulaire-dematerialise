@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Forms;
@@ -70,9 +71,9 @@ final class FormJsonValidator
 
                 // field_type
                 if (empty($f['field_type'])) {
-                    $errors[] = "$prefix.field_type est requis. Valeurs possibles : " . implode(', ', array_map(fn($t) => '"'.$t.'"', $valid_field_types));
+                    $errors[] = "$prefix.field_type est requis. Valeurs possibles : " . implode(', ', array_map(fn($t) => '"' . $t . '"', $valid_field_types));
                 } elseif (!in_array($f['field_type'], $valid_field_types, true)) {
-                    $errors[] = "$prefix.field_type = \"{$f['field_type']}\" n'est pas valide. Valeurs possibles : " . implode(', ', array_map(fn($t) => '"'.$t.'"', $valid_field_types));
+                    $errors[] = "$prefix.field_type = \"{$f['field_type']}\" n'est pas valide. Valeurs possibles : " . implode(', ', array_map(fn($t) => '"' . $t . '"', $valid_field_types));
                 }
 
                 // field_name
@@ -97,11 +98,11 @@ final class FormJsonValidator
                     } else {
                         foreach ($f['options'] as $j => $opt) {
                             if (!is_string($opt) || trim($opt) === '') {
-                                $errors[] = "$prefix.options[" . ($j+1) . "] doit être une chaîne non vide.";
+                                $errors[] = "$prefix.options[" . ($j + 1) . '] doit être une chaîne non vide.';
                             }
                         }
                         if (count($f['options']) < 2) {
-                            $warnings[] = "$prefix : field_type = \"select\" mais options ne contient que " . count($f['options']) . " valeur(s). Un sélecteur devrait avoir au moins 2 options.";
+                            $warnings[] = "$prefix : field_type = \"select\" mais options ne contient que " . count($f['options']) . ' valeur(s). Un sélecteur devrait avoir au moins 2 options.';
                         }
                     }
                 } elseif (isset($f['options']) && $f['field_type'] !== 'select') {
@@ -211,7 +212,7 @@ final class FormJsonValidator
                 } elseif (!is_numeric($s['ordre']) || $s['ordre'] < 1) {
                     $errors[] = "$prefix.ordre doit être un entier >= 1. Trouvé : " . json_encode($s['ordre']);
                 } else {
-                    $o = (int)$s['ordre'];
+                    $o = (int) $s['ordre'];
                     if (in_array($o, $seen_ordres)) {
                         $warnings[] = "$prefix.ordre = $o est en doublon avec une autre étape. Les étapes de même ordre sont validées en parallèle — assurez-vous que c'est intentionnel.";
                     }
@@ -230,12 +231,12 @@ final class FormJsonValidator
                     if (is_array($raw_cond)) {
                         if (empty($raw_cond['field']) || !is_string($raw_cond['field'])) {
                             $errors[] = "$prefix.condition.field est requis et doit être une chaîne (nom technique du champ validateur).";
-                        } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', (string)$raw_cond['field'])) {
+                        } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $raw_cond['field'])) {
                             $warnings[] = "$prefix.condition.field = \"{$raw_cond['field']}\" n'est pas en snake_case valide. Format attendu : minuscules, chiffres et underscores, commençant par une lettre.";
                         }
                         $cond_op = $raw_cond['op'] ?? '';
                         if (!is_string($cond_op) || !in_array($cond_op, $valid_ops_json, true)) {
-                            $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn($o) => "\"$o\"", $valid_ops_json)) . ". Trouvé : " . json_encode($cond_op);
+                            $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn($o) => "\"$o\"", $valid_ops_json)) . '. Trouvé : ' . json_encode($cond_op);
                         }
                         if (isset($raw_cond['value']) && !is_string($raw_cond['value'])) {
                             $warnings[] = "$prefix.condition.value devrait être une chaîne. Trouvé : " . gettype($raw_cond['value']);
@@ -250,7 +251,7 @@ final class FormJsonValidator
                     }
 
                     $s_ordre = $s['ordre'] ?? null;
-                    if (is_numeric($s_ordre) && (int)$s_ordre === 1) {
+                    if (is_numeric($s_ordre) && (int) $s_ordre === 1) {
                         $warnings[] = "$prefix : une condition d'exécution est définie sur une étape d'ordre 1. La première étape s'exécute toujours à la création de la soumission — la condition sera évaluée mais peut ne pas avoir d'effet (le champ validateur référencé n'est pas encore rempli).";
                     }
                 }
@@ -264,11 +265,11 @@ final class FormJsonValidator
                     }
                     foreach ($s['recipients'] as $j => $email) {
                         if (!is_string($email)) {
-                            $errors[] = "$prefix.recipients[" . ($j+1) . "] doit être une chaîne (adresse email ou référence {{field_name}}).";
+                            $errors[] = "$prefix.recipients[" . ($j + 1) . '] doit être une chaîne (adresse email ou référence {{field_name}}).';
                         } elseif (preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email)) {
                             // Référence dynamique {{field_name}} — valide
                         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                            $errors[] = "$prefix.recipients[" . ($j+1) . "] = \"$email\" n'est ni une adresse email valide ni une référence {{field_name}}. Format attendu : prenom.nom@" . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . ", service@" . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . " ou {{nom_du_champ}}";
+                            $errors[] = "$prefix.recipients[" . ($j + 1) . "] = \"$email\" n'est ni une adresse email valide ni une référence {{field_name}}. Format attendu : prenom.nom@" . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . ', service@' . \App\Core\App::settings()->get('email_domain', 'exemple.invalid') . ' ou {{nom_du_champ}}';
                         }
                     }
                 }

@@ -1,29 +1,30 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Core\App;
-use App\Core\Database;
-use App\Core\Config;
-use App\Auth\AuthService;
-use App\Settings\SettingsService;
-use App\Forms\FieldService;
-use App\Security\SecurityService;
-use App\Mail\MailService;
 use App\Audit\AuditLogService;
+use App\Auth\AuthService;
 use App\Cache\CacheService;
+use App\Core\App;
+use App\Core\Config;
+use App\Core\Database;
+use App\Forms\FieldService;
+use App\Mail\MailService;
 use App\Render\HtmlService;
-use App\Workflow\WorkflowEngine;
-use App\Workflow\ConditionEvaluator;
+use App\Repository\AdminRepository;
+use App\Repository\AlertRepository;
+use App\Repository\AttachmentRepository;
+use App\Repository\AuditRepository;
 use App\Repository\FormRepository;
+use App\Repository\SettingsRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
-use App\Repository\AttachmentRepository;
-use App\Repository\AdminRepository;
-use App\Repository\SettingsRepository;
-use App\Repository\AuditRepository;
-use App\Repository\AlertRepository;
+use App\Security\SecurityService;
+use App\Settings\SettingsService;
+use App\Workflow\ConditionEvaluator;
+use App\Workflow\WorkflowEngine;
 
 /**
  * Contrôleur de base — fournit l'accès aux services et repositories via DI.

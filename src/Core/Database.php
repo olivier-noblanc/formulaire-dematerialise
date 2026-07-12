@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core;
@@ -20,7 +21,7 @@ final class Database implements DatabaseInterface
             return $this->getTestPdo();
         }
 
-        if ($this->pdo === null) {
+        if (!$this->pdo instanceof \PDO) {
             $this->pdo = new \PDO('sqlite:' . DB_PATH);
             $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $this->pdo->exec('PRAGMA foreign_keys = ON');
@@ -32,7 +33,7 @@ final class Database implements DatabaseInterface
 
             // Lazy cron (différé)
             register_shutdown_function(function (): void {
-                if ($this->pdo !== null && App::getInstance()->has(\App\Cron\CronService::class)) {
+                if ($this->pdo instanceof \PDO && App::getInstance()->has(\App\Cron\CronService::class)) {
                     App::cron()->runLazyCron();
                 }
             });
@@ -43,7 +44,7 @@ final class Database implements DatabaseInterface
 
     private function getTestPdo(): \PDO
     {
-        if ($this->pdoTest === null) {
+        if (!$this->pdoTest instanceof \PDO) {
             $testDbPath = $GLOBALS['_test_db_path'] ?? dirname(__DIR__, 2) . '/db/workflow_test.db';
             $this->pdoTest = new \PDO('sqlite:' . $testDbPath);
             $this->pdoTest->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
@@ -59,23 +60,23 @@ final class Database implements DatabaseInterface
 
     public function release(): void
     {
-        if ($this->pdo !== null) {
+        if ($this->pdo instanceof \PDO) {
             try {
                 if ($this->pdo->inTransaction()) {
                     $this->pdo->rollBack();
                 }
-            } catch (\PDOException $e) {
+            } catch (\PDOException) {
                 // Ignorer
             }
             $this->pdo = null;
         }
 
-        if ($this->pdoTest !== null) {
+        if ($this->pdoTest instanceof \PDO) {
             try {
                 if ($this->pdoTest->inTransaction()) {
                     $this->pdoTest->rollBack();
                 }
-            } catch (\PDOException $e) {
+            } catch (\PDOException) {
                 // Ignorer
             }
             $this->pdoTest = null;

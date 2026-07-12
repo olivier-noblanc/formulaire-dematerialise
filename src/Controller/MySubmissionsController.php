@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -18,24 +19,29 @@ final class MySubmissionsController extends BaseController
 
         $where = ['s.submitted_by = ?'];
         $params = [$user];
-        if ($search) {
-            $where[] = "(f.label LIKE ? OR s.data LIKE ?)";
+        if ($search !== '' && $search !== '0') {
+            $where[] = '(f.label LIKE ? OR s.data LIKE ?)';
             $params[] = '%' . $search . '%';
             $params[] = '%' . $search . '%';
         }
-        if ($statusFilter === 'en_cours') { $where[] = "s.status = 'en_cours'"; }
-        elseif ($statusFilter === 'valide') { $where[] = "s.status = 'valide'"; }
-        elseif ($statusFilter === 'refuse') { $where[] = "s.status = 'refuse'"; }
-        elseif ($statusFilter === 'annule') { $where[] = "s.status = 'annule'"; }
+        if ($statusFilter === 'en_cours') {
+            $where[] = "s.status = 'en_cours'";
+        } elseif ($statusFilter === 'valide') {
+            $where[] = "s.status = 'valide'";
+        } elseif ($statusFilter === 'refuse') {
+            $where[] = "s.status = 'refuse'";
+        } elseif ($statusFilter === 'annule') {
+            $where[] = "s.status = 'annule'";
+        }
         $whereSql = implode(' AND ', $where);
 
         $submissions = $this->submissionRepo->findPaginatedBySubmitter($user, $whereSql, $params, 0, 0);
 
         $workflowStepsByForm = [];
         $tokensBySub = [];
-        if (!empty($submissions)) {
+        if ($submissions !== []) {
             $formIds = array_values(array_unique(array_column($submissions, 'form_id')));
-            if (!empty($formIds)) {
+            if ($formIds !== []) {
                 $workflowStepsByForm = $this->formRepo->getWorkflowStepsByFormIds($formIds);
             }
 
@@ -90,11 +96,16 @@ final class MySubmissionsController extends BaseController
         $refuseCount = 0;
         $annuleCount = 0;
         foreach ($statusCounts as $row) {
-            $totalCount += (int)$row['cnt'];
-            if ($row['status'] === 'valide') $valideCount = (int)$row['cnt'];
-            elseif ($row['status'] === 'refuse') $refuseCount = (int)$row['cnt'];
-            elseif ($row['status'] === 'annule') $annuleCount = (int)$row['cnt'];
-            else $enCoursCount += (int)$row['cnt'];
+            $totalCount += (int) $row['cnt'];
+            if ($row['status'] === 'valide') {
+                $valideCount = (int) $row['cnt'];
+            } elseif ($row['status'] === 'refuse') {
+                $refuseCount = (int) $row['cnt'];
+            } elseif ($row['status'] === 'annule') {
+                $annuleCount = (int) $row['cnt'];
+            } else {
+                $enCoursCount += (int) $row['cnt'];
+            }
         }
         unset($row);
 

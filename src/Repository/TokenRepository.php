@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repository;
@@ -7,18 +8,18 @@ final class TokenRepository extends BaseRepository
 {
     public function findByValue(string $token): ?array
     {
-        return $this->fetchOne("SELECT * FROM tokens WHERE token = ?", [$token]);
+        return $this->fetchOne('SELECT * FROM tokens WHERE token = ?', [$token]);
     }
 
     public function findById(string $tokenId): ?array
     {
-        return $this->fetchOne("SELECT * FROM tokens WHERE id = ?", [$tokenId]);
+        return $this->fetchOne('SELECT * FROM tokens WHERE id = ?', [$tokenId]);
     }
 
     public function findBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT * FROM tokens WHERE submission_id = ? ORDER BY sent_at",
+            'SELECT * FROM tokens WHERE submission_id = ? ORDER BY sent_at',
             [$submissionId]
         );
     }
@@ -63,7 +64,7 @@ final class TokenRepository extends BaseRepository
             "SELECT COUNT(*) as count FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.form_id = ? AND t.done_at IS NULL AND t.expires_at > datetime('now')",
             [$formId]
         );
-        return (int)($result['count'] ?? 0);
+        return (int) ($result['count'] ?? 0);
     }
 
     public function getActiveCountByStep(string $stepId): int
@@ -72,18 +73,18 @@ final class TokenRepository extends BaseRepository
             "SELECT COUNT(*) as count FROM tokens WHERE step_id = ? AND done_at IS NULL AND expires_at > datetime('now')",
             [$stepId]
         );
-        return (int)($result['count'] ?? 0);
+        return (int) ($result['count'] ?? 0);
     }
 
     public function findWithStepsBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT t.id, t.step_id, t.email, t.token, t.sent_at,
+            'SELECT t.id, t.step_id, t.email, t.token, t.sent_at,
                     st.label as step_label, st.ordre
              FROM tokens t
              JOIN steps st ON st.id = t.step_id
              WHERE t.submission_id = ?
-             ORDER BY st.ordre",
+             ORDER BY st.ordre',
             [$submissionId]
         );
     }
@@ -91,18 +92,20 @@ final class TokenRepository extends BaseRepository
     public function findDetailedWithStepsBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT t.*, st.label as step_label, st.ordre
+            'SELECT t.*, st.label as step_label, st.ordre
              FROM tokens t
              JOIN steps st ON st.id = t.step_id
              WHERE t.submission_id = ?
-             ORDER BY st.ordre ASC, t.sent_at ASC",
+             ORDER BY st.ordre ASC, t.sent_at ASC',
             [$submissionId]
         );
     }
 
     public function findBySubmissionIds(array $submissionIds): array
     {
-        if (empty($submissionIds)) return [];
+        if ($submissionIds === []) {
+            return [];
+        }
         $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
         $rows = $this->fetchAll(
             "SELECT t.submission_id, t.id, t.token, t.relance_count, t.expires_at,
@@ -124,7 +127,7 @@ final class TokenRepository extends BaseRepository
     public function existsForSubmissionAndEmail(string $submissionId, string $email): bool
     {
         $result = $this->fetchOne(
-            "SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?",
+            'SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?',
             [$submissionId, $email]
         );
         return $result !== null;
@@ -133,7 +136,7 @@ final class TokenRepository extends BaseRepository
     public function findEmailAndStepLabelById(string $tokenId): ?array
     {
         return $this->fetchOne(
-            "SELECT t.email, st.label as step_label FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.id = ?",
+            'SELECT t.email, st.label as step_label FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.id = ?',
             [$tokenId]
         );
     }
@@ -176,7 +179,7 @@ final class TokenRepository extends BaseRepository
     public function findDoneByEmail(string $email, int $limit = 50): array
     {
         return $this->fetchAll(
-            "SELECT t.id as token_id, t.done_at, t.sent_at,
+            'SELECT t.id as token_id, t.done_at, t.sent_at,
                     st.label as step_label, st.ordre,
                     s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
                     f.label as form_label, f.slug as form_slug
@@ -186,14 +189,16 @@ final class TokenRepository extends BaseRepository
              JOIN forms f ON f.id = s.form_id
              WHERE t.email = ? AND t.done_at IS NOT NULL
              ORDER BY t.done_at DESC
-             LIMIT ?",
+             LIMIT ?',
             [$email, $limit]
         );
     }
 
     public function findStepsBySubmissionIds(array $submissionIds): array
     {
-        if (empty($submissionIds)) return [];
+        if ($submissionIds === []) {
+            return [];
+        }
         $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
         $rows = $this->fetchAll(
             "SELECT s.id as submission_id, st.id, st.label, st.ordre,
@@ -216,10 +221,10 @@ final class TokenRepository extends BaseRepository
     public function getActiveCountByEmail(string $email): int
     {
         $result = $this->fetchOne(
-            "SELECT COUNT(*) as count FROM tokens WHERE email = ? AND done_at IS NULL",
+            'SELECT COUNT(*) as count FROM tokens WHERE email = ? AND done_at IS NULL',
             [$email]
         );
-        return (int)($result['count'] ?? 0);
+        return (int) ($result['count'] ?? 0);
     }
 
     public function getBlockedCount(int $hours): int
@@ -232,14 +237,14 @@ final class TokenRepository extends BaseRepository
                    - CAST(strftime('%s', t.sent_at) AS REAL) > ?",
             [$hours * 3600]
         );
-        return (int)($result['count'] ?? 0);
+        return (int) ($result['count'] ?? 0);
     }
 
     public function findForExport(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT step_id, email, sent_at, done_at, expires_at
-             FROM tokens WHERE submission_id = ? ORDER BY sent_at",
+            'SELECT step_id, email, sent_at, done_at, expires_at
+             FROM tokens WHERE submission_id = ? ORDER BY sent_at',
             [$submissionId]
         );
     }

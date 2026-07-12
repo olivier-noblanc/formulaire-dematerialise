@@ -96,7 +96,7 @@ class DocumentationService
     </ol>
   </nav>
         <?php
-        return rtrim((string) ob_get_clean(), " \t");
+        return rtrim(ob_get_clean(), " \t");
     }
 
     public function renderQuickstart(): string
@@ -160,7 +160,7 @@ class DocumentationService
     </div>
   </div>
         <?php
-        return rtrim((string) ob_get_clean(), " \t");
+        return rtrim(ob_get_clean(), " \t");
     }
 
     public function renderAgent(): string
@@ -1045,7 +1045,7 @@ class DocumentationService
     </div>
   </div>
         <?php
-        return rtrim((string) ob_get_clean(), " \t");
+        return rtrim(ob_get_clean(), " \t");
     }
 
     public function renderRoles(): string
@@ -1138,7 +1138,7 @@ class DocumentationService
     </table>
   </div>
         <?php
-        return rtrim((string) ob_get_clean(), " \t");
+        return rtrim(ob_get_clean(), " \t");
     }
 
     public function renderFaq(): string
@@ -1498,10 +1498,10 @@ class DocumentationService
 
     <div class="rgpd-box">
       <h3><span aria-hidden="true">📜</span> Mentions légales</h3>
-      <?php if (!empty($legal_mentions)): ?>
+      <?php if ($legal_mentions !== '' && $legal_mentions !== '0'): ?>
         <p><?= nl2br(\App\Core\App::html()->escape($legal_mentions)) ?></p>
       <?php else: ?>
-        <p>Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et d'effacement de vos données. Contact : <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>. Durée de conservation : <?= (int)\App\Core\App::settings()->get('retention_months', '24') ?> mois après clôture.</p>
+        <p>Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et d'effacement de vos données. Contact : <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('rgpd_contact', 'CIL DREETS')) ?>. Durée de conservation : <?= (int) \App\Core\App::settings()->get('retention_months', '24') ?> mois après clôture.</p>
       <?php endif; ?>
     </div>
 

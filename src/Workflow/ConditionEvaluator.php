@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Workflow;
@@ -20,10 +21,14 @@ final class ConditionEvaluator implements ConditionInterface
      */
     public function evaluate(?string $conditionJson, array $data): bool
     {
-        if (empty($conditionJson)) return true;
+        if (in_array($conditionJson, [null, '', '0'], true)) {
+            return true;
+        }
 
         $condition = json_decode($conditionJson, true);
-        if (!is_array($condition) || empty($condition['field'])) return true;
+        if (!is_array($condition) || empty($condition['field'])) {
+            return true;
+        }
 
         $fieldName = (string) $condition['field'];
         $op = (string) ($condition['op'] ?? 'eq');
@@ -41,7 +46,7 @@ final class ConditionEvaluator implements ConditionInterface
             'contains' => str_contains($actual, (string) $expected),
             'in' => is_array($expected)
                 ? in_array($actual, $expected, true)
-                : in_array($actual, array_map('trim', explode(',', (string) $expected)), true),
+                : in_array($actual, array_map(trim(...), explode(',', (string) $expected)), true),
             'not_empty' => $actual !== '',
             'empty' => $actual === '',
             default => true,

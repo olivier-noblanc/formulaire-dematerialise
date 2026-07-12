@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
@@ -9,7 +10,7 @@ namespace App\Render;
 final class JargonService
 {
     /** @var array<string, string> */
-    public const JARGON_MAPPINGS = [
+    public const array JARGON_MAPPINGS = [
         'Dématérialisation'      => 'Demande en ligne',
         'dématérialisation'      => 'demande en ligne',
         'Circuit de validation'  => 'Étapes de validation',
@@ -63,15 +64,15 @@ final class JargonService
             $text
         );
 
-        $text = preg_replace('/\bEPI\b/u',  'Équipement de protection individuelle (EPI)', $text) ?? $text;
+        $text = preg_replace('/\bEPI\b/u', 'Équipement de protection individuelle (EPI)', $text) ?? $text;
         $text = preg_replace('/\bCSRF\b/u', 'Code de sécurité', $text) ?? $text;
         $text = preg_replace('/\bRGPD\b/u', 'Protection des données (RGPD)', $text) ?? $text;
         $text = preg_replace('/\bToken\b/u', 'Lien de validation', $text) ?? $text;
         $text = preg_replace('/\btokens\b/u', 'liens de validation', $text) ?? $text;
-        $text = preg_replace('/\btoken\b/u',  'lien de validation', $text) ?? $text;
-        $text = preg_replace('/\bSlug\b/u',  'Nom technique', $text) ?? $text;
-        $text = preg_replace('/\bslug\b/u',  'nom technique', $text) ?? $text;
-        $text = preg_replace('/\bSI\b/u',   'systèmes d\'information', $text) ?? $text;
+        $text = preg_replace('/\btoken\b/u', 'lien de validation', $text) ?? $text;
+        $text = preg_replace('/\bSlug\b/u', 'Nom technique', $text) ?? $text;
+        $text = preg_replace('/\bslug\b/u', 'nom technique', $text) ?? $text;
+        $text = preg_replace('/\bSI\b/u', 'systèmes d\'information', $text) ?? $text;
         $text = preg_replace('/\bLDAP\b/u', 'Annuaire d\'entreprise (LDAP)', $text) ?? $text;
         $text = preg_replace('/\bSMTP\b/u', 'Serveur email (SMTP)', $text) ?? $text;
 
@@ -80,8 +81,7 @@ final class JargonService
         $text = str_replace("\x03", 'Métier de la fonction publique', $text);
         $text = str_replace("\x04", 'métier de la fonction publique', $text);
         $text = str_replace("\x05", 'Annuaire d\'entreprise (LDAP)', $text);
-        $text = str_replace("\x06", 'Serveur email (SMTP)', $text);
 
-        return $text;
+        return str_replace("\x06", 'Serveur email (SMTP)', $text);
     }
 }

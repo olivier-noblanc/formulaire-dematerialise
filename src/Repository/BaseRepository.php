@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repository;
@@ -33,7 +34,7 @@ abstract class BaseRepository
             throw new \RuntimeException("Failed to prepare SQL: $sql");
         }
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function execute(string $sql, array $params = []): bool
@@ -49,7 +50,7 @@ abstract class BaseRepository
     {
         $id = $this->pdo()->lastInsertId();
         if ($id === false) {
-            throw new \RuntimeException("Failed to get last insert ID");
+            throw new \RuntimeException('Failed to get last insert ID');
         }
         return $id;
     }

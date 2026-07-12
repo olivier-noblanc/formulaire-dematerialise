@@ -24,7 +24,7 @@ final class AdminSettingsRenderer
     {
         static $css = null;
         if ($css === null) {
-            $css = (string)file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_page.css');
+            $css = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_page.css');
         }
         return $css;
     }
@@ -34,9 +34,9 @@ final class AdminSettingsRenderer
      */
     public function renderContent(array $state): string
     {
-        $success_msg   = (string)($state['success'] ?? '');
-        $error_msg     = (string)($state['error'] ?? '');
-        $test_msg      = (string)($state['test'] ?? '');
+        $success_msg   = (string) ($state['success'] ?? '');
+        $error_msg     = (string) ($state['error'] ?? '');
+        $test_msg      = (string) ($state['test'] ?? '');
         $verify_result = $state['verify_result'] ?? null;
 
         // Lecture des paramètres actuels
@@ -79,7 +79,7 @@ final class AdminSettingsRenderer
           <a href="#section-email-summary">📋 Résumé</a>
         </nav>
 
-        <?= (new ErrorRenderer())->messages(['success'=>$success_msg, 'error'=>$error_msg, 'info'=>$test_msg]) ?>
+        <?= (new ErrorRenderer())->messages(['success' => $success_msg, 'error' => $error_msg, 'info' => $test_msg]) ?>
 
         <?php if ($mail_dry_run === '1'): ?>
             <div class="warning-box">
@@ -169,7 +169,7 @@ final class AdminSettingsRenderer
 
                     <div class="field">
                         <label>Mot de passe Bind <span class="hint">(laisser vide pour conserver l'actuel)</span></label>
-                        <input type="password" name="ldap_bind_pass" placeholder="<?= $ldap_bind_pass ? '••••••••' : '' ?>">
+                        <input type="password" name="ldap_bind_pass" placeholder="<?= $ldap_bind_pass !== '' && $ldap_bind_pass !== '0' ? '••••••••' : '' ?>">
                     </div>
 
                     <div class="field">
@@ -339,7 +339,7 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label>Mot de passe SMTP <span class="hint">(laisser vide pour conserver l'actuel)</span></label>
-                    <input type="password" name="smtp_pass" placeholder="<?= $smtp_pass ? '••••••••' : '' ?>">
+                    <input type="password" name="smtp_pass" placeholder="<?= $smtp_pass !== '' && $smtp_pass !== '0' ? '••••••••' : '' ?>">
                 </div>
 
                 <div class="field">
@@ -421,7 +421,7 @@ final class AdminSettingsRenderer
                             <span style="color:#f44336;">Désactivée</span>
                         <?php elseif ($email_verify_mode === 'ldap'): ?>
                             <span style="color:#4caf50;">LDAP / Active Directory</span>
-                            <?php if (!empty($ldap_host)): ?> (<?= \App\Core\App::html()->escape($ldap_host) ?>)<?php endif; ?>
+                            <?php if ($ldap_host !== '' && $ldap_host !== '0'): ?> (<?= \App\Core\App::html()->escape($ldap_host) ?>)<?php endif; ?>
                         <?php elseif ($email_verify_mode === 'smtp'): ?>
                             <span style="color:#2196f3;">SMTP (probe RCPT TO)</span>
                         <?php endif; ?>
@@ -451,18 +451,27 @@ final class AdminSettingsRenderer
 
             <?php
             $security_score = 0;
-            $security_items = [];
-            if ($mail_dry_run === '1') { $security_score++; $security_items[] = 'Dry-Run activé'; }
-            if ($email_verify_mode !== 'none') { $security_score++; $security_items[] = 'Vérification destinataires'; }
-            /** @phpstan-ignore-next-line */
-            if (!method_exists('PHPMailer\PHPMailer\PHPMailer', 'getSMTPInstance')) { $security_score++; $security_items[] = 'PHPMailer en mode stub'; }
+        $security_items = [];
+        if ($mail_dry_run === '1') {
             $security_score++;
-            $security_items[] = 'Blocage CLI';
-            ?>
+            $security_items[] = 'Dry-Run activé';
+        }
+        if ($email_verify_mode !== 'none') {
+            $security_score++;
+            $security_items[] = 'Vérification destinataires';
+        }
+        /** @phpstan-ignore-next-line */
+        if (!method_exists('PHPMailer\PHPMailer\PHPMailer', 'getSMTPInstance')) {
+            $security_score++;
+            $security_items[] = 'PHPMailer en mode stub';
+        }
+        $security_score++;
+        $security_items[] = 'Blocage CLI';
+        ?>
             <div style="margin-top:1rem;padding:1rem;background:<?= $security_score >= 3 ? '#e8f5e9' : '#fff3e0' ?>;border-radius:6px;">
                 <strong>Niveau de sécurité : <?= $security_score ?>/4</strong>
                 <div style="margin-top:.3rem;color:#555;font-size:.85rem;">
-                    <?= implode(' · ', array_map(function($i) { return '✔ ' . $i; }, $security_items)) ?>
+                    <?= implode(' · ', array_map(fn($i) => '✔ ' . $i, $security_items)) ?>
                 </div>
                 <?php if ($security_score < 3): ?>
                     <div style="margin-top:.5rem;color:#e65100;font-size:.85rem;">
@@ -484,7 +493,7 @@ final class AdminSettingsRenderer
     {
         static $after_main = null;
         if ($after_main === null) {
-            $after_main = (string)file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
+            $after_main = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
         }
         return $after_main;
     }

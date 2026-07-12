@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
@@ -36,38 +37,38 @@ final class MySubmissionsRenderer
             $activeAnnule  = $statusFilter === 'annule' ? ' active' : '';
 
             $html .= <<<HTML
-  <div class="stats">
-    <a href="index.php?p=my_submissions&statut=tous" class="stat{$activeTous}"><strong>{$totalCount}</strong><span>Total</span></a>
-    <a href="index.php?p=my_submissions&statut=en_cours" class="stat en-cours{$activeEnCours}"><strong>{$enCoursCount}</strong><span>En cours</span></a>
-    <a href="index.php?p=my_submissions&statut=valide" class="stat valide{$activeValide}"><strong>{$valideCount}</strong><span>Validées</span></a>
-    <a href="index.php?p=my_submissions&statut=refuse" class="stat refuse{$activeRefuse}"><strong>{$refuseCount}</strong><span>Refusées</span></a>
-    <a href="index.php?p=my_submissions&statut=annule" class="stat annule{$activeAnnule}"><strong>{$annuleCount}</strong><span>Annulées</span></a>
-  </div>
+                  <div class="stats">
+                    <a href="index.php?p=my_submissions&statut=tous" class="stat{$activeTous}"><strong>{$totalCount}</strong><span>Total</span></a>
+                    <a href="index.php?p=my_submissions&statut=en_cours" class="stat en-cours{$activeEnCours}"><strong>{$enCoursCount}</strong><span>En cours</span></a>
+                    <a href="index.php?p=my_submissions&statut=valide" class="stat valide{$activeValide}"><strong>{$valideCount}</strong><span>Validées</span></a>
+                    <a href="index.php?p=my_submissions&statut=refuse" class="stat refuse{$activeRefuse}"><strong>{$refuseCount}</strong><span>Refusées</span></a>
+                    <a href="index.php?p=my_submissions&statut=annule" class="stat annule{$activeAnnule}"><strong>{$annuleCount}</strong><span>Annulées</span></a>
+                  </div>
 
-HTML;
+                HTML;
 
             $html .= '  <div style="margin-bottom:1.5rem;">' . "\n";
             $html .= '    ' . (new FormRenderer())->searchBar('index.php?p=my_submissions', $search, 'Rechercher...', ['statut' => $statusFilter]) . "\n";
             $html .= '  </div>' . "\n";
         }
 
-        if (empty($submissions)) {
+        if ($submissions === []) {
             $html .= '    <div class="empty-state">' . "\n";
             $html .= '      <div class="empty-icon" aria-hidden="true">📝</div>' . "\n";
             $html .= '      <p>Vous n\'avez encore soumis aucune demande.</p>' . "\n";
-            if (!empty($activeForms)) {
+            if ($activeForms !== []) {
                 $html .= '        <p style="font-size:.9rem;color:#555;margin-bottom:.5rem;">Formulaires disponibles :</p>' . "\n";
-                foreach ($activeForms as $af) {
-                    $slug  = App::html()->escape($af['slug']);
-                    $label = App::html()->escape(self::simplifyLabel($af['label']));
+                foreach ($activeForms as $activeForm) {
+                    $slug  = App::html()->escape($activeForm['slug']);
+                    $label = App::html()->escape(self::simplifyLabel($activeForm['label']));
                     $html .= "        <a href=\"index.php?p=form&f={$slug}\" class=\"btn btn-primary\" style=\"margin:.25rem;\">{$label}</a>\n";
                 }
             }
             $html .= '    </div>' . "\n";
         } else {
-            foreach ($submissions as $sub) {
-                $data   = json_decode($sub['data'], true);
-                $status = $sub['status'] ?? 'en_cours';
+            foreach ($submissions as $submission) {
+                $data   = json_decode($submission['data'], true);
+                $status = $submission['status'] ?? 'en_cours';
 
                 $statusLabel = match ($status) {
                     'valide'  => '✓ Validée',
@@ -82,7 +83,7 @@ HTML;
                     default   => 'badge-en-cours',
                 };
 
-                $deadlineField = $sub['deadline_field'] ?? '';
+                $deadlineField = $submission['deadline_field'] ?? '';
                 $deadlineVal   = $deadlineField ? ($data[$deadlineField] ?? '') : '';
                 $deadlineBadge = '';
                 if (!empty($deadlineVal) && $status === 'en_cours') {
@@ -99,39 +100,39 @@ HTML;
                     }
                 }
 
-                $pct     = $sub['progress_pct'];
+                $pct     = $submission['progress_pct'];
                 $fillCls = $pct === 100 ? 'complete' : 'in-progress';
 
-                $subId       = urlencode($sub['id']);
-                $formLabel   = App::html()->escape(self::simplifyLabel($sub['form_label']));
-                $submittedAt = App::html()->escape(date('d/m/Y à H:i', strtotime($sub['submitted_at'])));
+                $subId       = urlencode($submission['id']);
+                $formLabel   = App::html()->escape(self::simplifyLabel($submission['form_label']));
+                $submittedAt = App::html()->escape(date('d/m/Y à H:i', strtotime($submission['submitted_at'])));
                 $prenomNom   = App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
-                $formSlug    = App::html()->escape($sub['form_slug']);
+                $formSlug    = App::html()->escape($submission['form_slug']);
                 $maxPct      = max($pct, 3);
 
                 $html .= <<<HTML
-    <div class="sub-card">
-      <a href="index.php?p=submission_view&id={$subId}" style="text-decoration:none;color:inherit;">
-      <div class="sub-card-header">
-        <div>
-          <div class="sub-card-title">{$formLabel} {$deadlineBadge}</div>
-          <div class="sub-card-date">Soumis le {$submittedAt} — {$prenomNom}</div>
-        </div>
-        <span class="badge {$badgeCls}">{$statusLabel}</span>
-      </div>
-      </a>
-      <div class="sub-card-body">
-        <div class="inline-progress">
-          <div class="inline-progress-bar">
-            <div class="inline-progress-fill {$fillCls}" style="width:{$maxPct}%;"></div>
-          </div>
-          <div class="inline-progress-text">{$sub['progress_done']}/{$sub['progress_total']} étapes ({$pct}%)</div>
-        </div>
+                        <div class="sub-card">
+                          <a href="index.php?p=submission_view&id={$subId}" style="text-decoration:none;color:inherit;">
+                          <div class="sub-card-header">
+                            <div>
+                              <div class="sub-card-title">{$formLabel} {$deadlineBadge}</div>
+                              <div class="sub-card-date">Soumis le {$submittedAt} — {$prenomNom}</div>
+                            </div>
+                            <span class="badge {$badgeCls}">{$statusLabel}</span>
+                          </div>
+                          </a>
+                          <div class="sub-card-body">
+                            <div class="inline-progress">
+                              <div class="inline-progress-bar">
+                                <div class="inline-progress-fill {$fillCls}" style="width:{$maxPct}%;"></div>
+                              </div>
+                              <div class="inline-progress-text">{$submission['progress_done']}/{$submission['progress_total']} étapes ({$pct}%)</div>
+                            </div>
 
-        <div class="timeline-compact">
-HTML;
+                            <div class="timeline-compact">
+                    HTML;
 
-                foreach ($sub['workflow_steps'] as $ws) {
+                foreach ($submission['workflow_steps'] as $ws) {
                     $cls  = match ($ws['step_status']) {
                         'validated' => 'done',
                         'current'   => 'active',
@@ -195,13 +196,13 @@ HTML;
                 }
 
                 $html .= <<<HTML
-        <div class="card-actions">
-          <a href="index.php?p=submission_view&id={$subId}" class="btn btn-primary" style="font-size:.85rem;"><span aria-hidden="true">👁</span> Voir le détail</a>
-          <a href="index.php?p=form&f={$formSlug}" class="btn btn-secondary" style="font-size:.85rem;">Nouvelle demande</a>
-        </div>
-      </div>
-    </div>
-HTML;
+                            <div class="card-actions">
+                              <a href="index.php?p=submission_view&id={$subId}" class="btn btn-primary" style="font-size:.85rem;"><span aria-hidden="true">👁</span> Voir le détail</a>
+                              <a href="index.php?p=form&f={$formSlug}" class="btn btn-secondary" style="font-size:.85rem;">Nouvelle demande</a>
+                            </div>
+                          </div>
+                        </div>
+                    HTML;
             }
         }
 

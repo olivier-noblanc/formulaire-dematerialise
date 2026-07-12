@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -31,49 +32,55 @@ final class ValidateController extends BaseController
             }
 
             try {
-                if ($token) $token = validate_input($token, 'token');
-                if ($action) $action = validate_input($action, 'action');
-            } catch (\InvalidArgumentException $e) {
+                if ($token !== '' && $token !== '0') {
+                    $token = validate_input($token, 'token');
+                }
+                if ($action !== '' && $action !== '0') {
+                    $action = validate_input($action, 'action');
+                }
+            } catch (\InvalidArgumentException) {
                 $error = 'Données invalides.';
                 /** @phpstan-ignore-next-line if.alwaysTrue */
-                if (TEST_MODE) { test_json_response(['error' => 'Données invalides', 'token' => substr($token, 0, 8) . '...', 'action' => $action]); }
+                if (TEST_MODE) {
+                    test_json_response(['error' => 'Données invalides', 'token' => substr((string) $token, 0, 8) . '...', 'action' => $action]);
+                }
             }
 
             if (!isset($error)) {
-                if ($action === 'refuser' && empty(trim($comment))) {
+                if ($action === 'refuser' && in_array(trim($comment), ['', '0'], true)) {
                     // Ne pas traiter — on affiche la page avec un message d'erreur
                 } elseif ($token && in_array($action, ['valider', 'refuser'])) {
-                    $pre_ctx = App::workflow()->getTokenWithContext((string)$token);
+                    $pre_ctx = App::workflow()->getTokenWithContext((string) $token);
                     $pre_validator_fields = [];
                     if ($pre_ctx && !empty($pre_ctx['form_id'])) {
                         $pre_validator_fields = App::validatorData()->getFormValidatorFields(
-                            (string)$pre_ctx['form_id'],
-                            isset($pre_ctx['step_id']) ? (string)$pre_ctx['step_id'] : null
+                            (string) $pre_ctx['form_id'],
+                            isset($pre_ctx['step_id']) ? (string) $pre_ctx['step_id'] : null
                         );
                     }
 
-                    if ($action === 'valider' && !empty($pre_validator_fields)) {
+                    if ($action === 'valider' && $pre_validator_fields !== []) {
                         $missing = [];
-                        foreach ($pre_validator_fields as $vf) {
-                            if (!empty($vf['required'])) {
-                                $fname = (string)($vf['field_name'] ?? '');
+                        foreach ($pre_validator_fields as $pre_validator_field) {
+                            if (!empty($pre_validator_field['required'])) {
+                                $fname = (string) ($pre_validator_field['field_name'] ?? '');
                                 if ($fname === '') {
                                     continue;
                                 }
-                                $val = trim((string)($_POST[$fname] ?? ''));
+                                $val = trim((string) ($_POST[$fname] ?? ''));
                                 if ($val === '') {
-                                    $missing[] = App::html()->tJargon((string)($vf['label'] ?? $fname));
+                                    $missing[] = App::html()->tJargon((string) ($pre_validator_field['label'] ?? $fname));
                                 }
                             }
                         }
-                        if (!empty($missing)) {
+                        if ($missing !== []) {
                             $error = 'Champs obligatoires manquants : ' . implode(', ', $missing);
                             /** @phpstan-ignore-next-line if.alwaysTrue */
                             if (TEST_MODE) {
                                 test_json_response([
                                     'error'   => $error,
                                     'action'  => $action,
-                                    'token'   => substr((string)$token, 0, 8) . '...',
+                                    'token'   => substr((string) $token, 0, 8) . '...',
                                     'missing' => $missing,
                                 ]);
                             }
@@ -82,14 +89,14 @@ final class ValidateController extends BaseController
 
                     if (!isset($error)) {
                         $done_by = $this->auth->getUser();
-                        $result = App::workflow()->validateToken((string)$token, (string)$action, $comment, $done_by);
+                        $result = App::workflow()->validateToken((string) $token, (string) $action, $comment, $done_by);
 
                         /** @phpstan-ignore-next-line if.alwaysTrue */
                         if (TEST_MODE) {
                             test_json_response([
                                 'action'  => $action,
                                 'result'  => $result,
-                                'token'   => substr((string)$token, 0, 8) . '...',
+                                'token'   => substr((string) $token, 0, 8) . '...',
                                 'comment' => $comment,
                             ]);
                         }
@@ -99,17 +106,17 @@ final class ValidateController extends BaseController
 
                             $token_ctx = $result['data'] ?? [];
                             if (!empty($token_ctx['form_id'])) {
-                                $form_id = (string)$token_ctx['form_id'];
-                                $step_id = isset($token_ctx['step_id']) ? (string)$token_ctx['step_id'] : null;
-                                $subm_id = isset($token_ctx['submission_id']) ? (string)$token_ctx['submission_id'] : '';
+                                $form_id = (string) $token_ctx['form_id'];
+                                $step_id = isset($token_ctx['step_id']) ? (string) $token_ctx['step_id'] : null;
+                                $subm_id = isset($token_ctx['submission_id']) ? (string) $token_ctx['submission_id'] : '';
                                 $validator_fields = App::validatorData()->getFormValidatorFields($form_id, $step_id);
-                                if (!empty($validator_fields) && $subm_id !== '') {
-                                    foreach ($validator_fields as $vf) {
-                                        $fname = (string)($vf['field_name'] ?? '');
+                                if ($validator_fields !== [] && $subm_id !== '') {
+                                    foreach ($validator_fields as $validator_field) {
+                                        $fname = (string) ($validator_field['field_name'] ?? '');
                                         if ($fname === '') {
                                             continue;
                                         }
-                                        $val = trim((string)($_POST[$fname] ?? ''));
+                                        $val = trim((string) ($_POST[$fname] ?? ''));
                                         if ($val !== '') {
                                             App::validatorData()->saveValidatorData(
                                                 $subm_id,
@@ -118,8 +125,8 @@ final class ValidateController extends BaseController
                                                 'validator',
                                                 $step_id,
                                                 null,
-                                                isset($token_ctx['email']) ? (string)$token_ctx['email'] : null,
-                                                isset($token_ctx['id']) ? (string)$token_ctx['id'] : null
+                                                isset($token_ctx['email']) ? (string) $token_ctx['email'] : null,
+                                                isset($token_ctx['id']) ? (string) $token_ctx['id'] : null
                                             );
                                         } else {
                                             App::validatorData()->deleteValidatorData($subm_id, $fname);
@@ -128,15 +135,17 @@ final class ValidateController extends BaseController
                                 }
                             }
                         } else {
-                            $error = $result['status'] === 'invalid' ? 'Lien invalide ou expiré.' :
-                                     ($result['status'] === 'already_done' ? 'Cette tâche a déjà été traitée.' :
-                                     ($result['status'] === 'closed' ? 'Le workflow est déjà terminé.' :
-                                     ($result['status'] === 'expired' ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
+                            $error = $result['status'] === 'invalid' ? 'Lien invalide ou expiré.'
+                                     : ($result['status'] === 'already_done' ? 'Cette tâche a déjà été traitée.'
+                                     : ($result['status'] === 'closed' ? 'Le workflow est déjà terminé.'
+                                     : ($result['status'] === 'expired' ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
                         }
                     }
                 } else {
                     /** @phpstan-ignore-next-line if.alwaysTrue */
-                    if (TEST_MODE) { test_json_response(['error' => 'Données invalides', 'token' => $token, 'action' => $action]); }
+                    if (TEST_MODE) {
+                        test_json_response(['error' => 'Données invalides', 'token' => $token, 'action' => $action]);
+                    }
                     $error = 'Données invalides.';
                 }
             }
@@ -146,7 +155,7 @@ final class ValidateController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $token = trim($_GET['token'] ?? '');
 
-            if ($token) {
+            if ($token !== '' && $token !== '0') {
                 if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
                     $result = ['status' => 'invalid'];
                 } else {
@@ -207,9 +216,9 @@ final class ValidateController extends BaseController
 
         if ($result['status'] === 'pending' || $result['status'] === 'ok') {
             $rdata = $result['data'] ?? [];
-            $form_id = (string)($rdata['form_id'] ?? '');
-            $step_id = isset($rdata['step_id']) ? (string)$rdata['step_id'] : null;
-            $subm_id = (string)($rdata['submission_id'] ?? '');
+            $form_id = (string) ($rdata['form_id'] ?? '');
+            $step_id = isset($rdata['step_id']) ? (string) $rdata['step_id'] : null;
+            $subm_id = (string) ($rdata['submission_id'] ?? '');
 
             $all_wf_steps = $this->formRepo->getWorkflowStepsWithTokens($form_id, $subm_id);
 
@@ -225,29 +234,33 @@ final class ValidateController extends BaseController
             }
             $all_validator_fields = App::validatorData()->getFormValidatorFields($form_id);
             $field_labels = [];
-            foreach ($all_validator_fields as $avf) {
-                $field_labels[$avf['field_name']] = $avf['label'];
+            foreach ($all_validator_fields as $all_validator_field) {
+                $field_labels[$all_validator_field['field_name']] = $all_validator_field['label'];
             }
             $previous_vd_rows = [];
             foreach ($all_vd_by_field as $fname => $vd_row) {
-                if (in_array($fname, $current_step_field_names, true)) continue;
-                if (empty($vd_row['value'])) continue;
+                if (in_array($fname, $current_step_field_names, true)) {
+                    continue;
+                }
+                if (empty($vd_row['value'])) {
+                    continue;
+                }
                 $previous_vd_rows[] = $vd_row;
             }
 
             $attachments = App::attachment()->getAttachments($subm_id);
             $visible_attachments = [];
-            if (!empty($attachments)) {
+            if ($attachments !== []) {
                 $owner_only_fields = [];
                 $form_fields = App::validatorData()->getFormFields($form_id);
-                foreach ($form_fields as $ff) {
-                    if (($ff['field_type'] ?? '') === 'file' && ($ff['visibility'] ?? 'all') === 'owner_only') {
-                        $owner_only_fields[] = $ff['field_name'];
+                foreach ($form_fields as $form_field) {
+                    if (($form_field['field_type'] ?? '') === 'file' && ($form_field['visibility'] ?? 'all') === 'owner_only') {
+                        $owner_only_fields[] = $form_field['field_name'];
                     }
                 }
-                foreach ($attachments as $att) {
-                    if (!in_array($att['field_name'] ?? '', $owner_only_fields, true)) {
-                        $visible_attachments[] = $att;
+                foreach ($attachments as $attachment) {
+                    if (!in_array($attachment['field_name'] ?? '', $owner_only_fields, true)) {
+                        $visible_attachments[] = $attachment;
                     }
                 }
             }

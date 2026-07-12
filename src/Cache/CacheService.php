@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Cache;
@@ -14,20 +15,18 @@ use App\Contract\CacheInterface;
  * - Max cache size enforcement (default 50 MB)
  * - Corrupted file graceful handling
  */
-final class CacheService implements CacheInterface
+final readonly class CacheService implements CacheInterface
 {
     private string $cacheDir;
-    private int $maxSizeBytes;
 
     /** @var int Default max cache size: 50 MB */
     private const DEFAULT_MAX_SIZE = 50 * 1024 * 1024;
 
-    public function __construct(?string $cacheDir = null, int $maxSizeBytes = self::DEFAULT_MAX_SIZE)
+    public function __construct(?string $cacheDir = null, private int $maxSizeBytes = self::DEFAULT_MAX_SIZE)
     {
         $this->cacheDir = $cacheDir ?? dirname(__DIR__, 2) . '/db/cache';
-        $this->maxSizeBytes = $maxSizeBytes;
         if (!is_dir($this->cacheDir)) {
-            @mkdir($this->cacheDir, 0775, true);
+            @mkdir($this->cacheDir, 0o775, true);
             @file_put_contents($this->cacheDir . '/web.config', '<?xml version="1.0"?><configuration><system.webServer><staticContent><clear /></staticContent></system.webServer></configuration>');
         }
     }
@@ -99,21 +98,31 @@ final class CacheService implements CacheInterface
     public function clear(string $key): void
     {
         $file = $this->cacheDir . '/' . md5($key) . '.json';
-        if (file_exists($file)) @unlink($file);
+        if (file_exists($file)) {
+            @unlink($file);
+        }
         $lockFile = $file . '.lock';
-        if (file_exists($lockFile)) @unlink($lockFile);
+        if (file_exists($lockFile)) {
+            @unlink($lockFile);
+        }
     }
 
     public function getLatestVersion(): string
     {
         static $version = null;
-        if ($version !== null) return $version;
+        if ($version !== null) {
+            return $version;
+        }
 
         $changelog = dirname(__DIR__, 2) . '/CHANGELOG.md';
-        if (!file_exists($changelog)) return '0.0.0';
+        if (!file_exists($changelog)) {
+            return '0.0.0';
+        }
 
         $content = file_get_contents($changelog);
-        if ($content === false) return '0.0.0';
+        if ($content === false) {
+            return '0.0.0';
+        }
 
         $lines = explode("\n", $content);
         foreach ($lines as $line) {
@@ -121,7 +130,7 @@ final class CacheService implements CacheInterface
             if (str_starts_with($t, '## [')) {
                 $open = strpos($t, '[') + 1;
                 $close = strpos($t, ']');
-                if ($open > 0 && $close > $open) {
+                if ($close > $open) {
                     $v = trim(substr($t, $open, $close - $open));
                     if (preg_match('/^\d+\.\d+\.\d+$/', $v)) {
                         $version = $v;
@@ -149,7 +158,7 @@ final class CacheService implements CacheInterface
             $files[] = ['path' => $f, 'size' => $size, 'mtime' => filemtime($f)];
         }
 
-        if ($totalSize <= $this->maxSizeBytes || empty($files)) {
+        if ($totalSize <= $this->maxSizeBytes || $files === []) {
             return;
         }
 

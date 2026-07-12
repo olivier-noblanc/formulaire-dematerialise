@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
@@ -20,16 +21,15 @@ final class LdapRenderer
     public function datalist(string $list_id, string $query = '', int $limit = 200): string
     {
         $results = \App\Core\App::emailVerify()->ldapSuggest($query, $limit);
-        if (empty($results)) {
+        if ($results === []) {
             return '';
         }
 
         $html = '<datalist id="' . \App\Core\App::html()->escape($list_id) . '">';
-        foreach ($results as $entry) {
-            $html .= '<option value="' . \App\Core\App::html()->escape($entry['email']) . '" label="' . \App\Core\App::html()->escape($entry['cn']) . '">';
+        foreach ($results as $result) {
+            $html .= '<option value="' . \App\Core\App::html()->escape($result['email']) . '" label="' . \App\Core\App::html()->escape($result['cn']) . '">';
         }
-        $html .= '</datalist>';
 
-        return $html;
+        return $html . '</datalist>';
     }
 }

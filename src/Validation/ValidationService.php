@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Validation;
@@ -25,7 +26,7 @@ final class ValidationService
      */
     public function validate(mixed $value, string $rule, array $options = []): string|int
     {
-        $strValue = is_string($value) ? trim($value) : (string)$value;
+        $strValue = is_string($value) ? trim($value) : (string) $value;
         $maxLength = $options['max_length'] ?? 0;
 
         return match ($rule) {
@@ -48,7 +49,7 @@ final class ValidationService
      */
     public function validateEmail(string $email): string
     {
-        $email = strtolower(trim($email));
+        $email = $email |> trim(...) |> strtolower(...);
         return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
     }
 
@@ -60,8 +61,7 @@ final class ValidationService
     {
         $input = trim($input);
         $input = stripslashes($input);
-        $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
-        return $input;
+        return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
     }
 
     // ── Private rule implementations ──────────────────────────────
@@ -99,7 +99,7 @@ final class ValidationService
 
     private function validateAction(string $value, int $maxLength): string
     {
-        if (!preg_match('/^[a-zA-Z0-9_]+$/', $value)) {
+        if (!preg_match('/^\w+$/', $value)) {
             throw new \InvalidArgumentException('Nom d\'action invalide');
         }
         if ($maxLength > 0) {

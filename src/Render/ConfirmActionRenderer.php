@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
@@ -16,7 +17,7 @@ final class ConfirmActionRenderer
         string $postUrl,
         array $getParams,
     ): string {
-        $e = [App::class, 'html'];
+        $e = App::html(...);
         $escape = static fn(string $s): string => $e()->escape($s);
 
         $cardClass = $config['danger'] ? 'danger' : 'warning';
@@ -34,26 +35,26 @@ final class ConfirmActionRenderer
         }
 
         return <<<HTML
-  <div class="confirm-card {$cardClass}">
-    <div class="confirm-icon">{$icon}</div>
-    <div class="confirm-title {$titleClass}">{$escape($config['label'])}</div>
-    <div class="confirm-message">
-      {$confirmMessage} <strong>{$detailText}</strong>
-    </div>
+              <div class="confirm-card {$cardClass}">
+                <div class="confirm-icon">{$icon}</div>
+                <div class="confirm-title {$titleClass}">{$escape($config['label'])}</div>
+                <div class="confirm-message">
+                  {$confirmMessage} <strong>{$detailText}</strong>
+                </div>
 
-    {$warningBlock}
+                {$warningBlock}
 
-    <form method="POST" action="{$escape($postUrl)}">
-      {$csrf}
-      <input type="hidden" name="action" value="{$escape($action)}">
-      <input type="hidden" name="confirmed" value="1">
-{$hiddenInputs}
-      <div class="confirm-actions">
-        <button type="submit" class="btn btn-danger">Confirmer</button>
-        <a href="{$escape($cancelUrl)}" class="btn btn-secondary">Annuler</a>
-      </div>
-    </form>
-  </div>
-HTML;
+                <form method="POST" action="{$escape($postUrl)}">
+                  {$csrf}
+                  <input type="hidden" name="action" value="{$escape($action)}">
+                  <input type="hidden" name="confirmed" value="1">
+            {$hiddenInputs}
+                  <div class="confirm-actions">
+                    <button type="submit" class="btn btn-danger">Confirmer</button>
+                    <a href="{$escape($cancelUrl)}" class="btn btn-secondary">Annuler</a>
+                  </div>
+                </form>
+              </div>
+            HTML;
     }
 }

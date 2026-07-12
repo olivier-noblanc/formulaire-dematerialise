@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -10,11 +11,11 @@ use App\Core\App;
  */
 final class AdminFormCrudHandler
 {
-    public static function handleAddForm(\PDO $pdo): array
+    public static function handleAddForm(): array
     {
         $label = trim($_POST['label'] ?? '');
         $description = trim($_POST['description'] ?? '');
-        if (empty($label)) {
+        if ($label === '' || $label === '0') {
             return ['error' => 'Le libellé est requis.'];
         }
         try {
@@ -29,7 +30,7 @@ final class AdminFormCrudHandler
         }
     }
 
-    public static function handleUpdateForm(\PDO $pdo): array
+    public static function handleUpdateForm(): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
         if ($err !== null) {
@@ -38,15 +39,15 @@ final class AdminFormCrudHandler
         $label = trim($_POST['label'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $actif = isset($_POST['actif']) ? 1 : 0;
-        if (empty($label)) {
+        if ($label === '' || $label === '0') {
             return ['error' => 'Le libellé est requis.'];
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
-            $slug = \generate_slug($label, (string)$form_id);
-            $repo->update((string)$form_id, ['slug' => $slug, 'label' => $label, 'description' => $description, 'actif' => $actif]);
+            $slug = \generate_slug($label, (string) $form_id);
+            $repo->update((string) $form_id, ['slug' => $slug, 'label' => $label, 'description' => $description, 'actif' => $actif]);
             App::audit()->log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
-            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string)$form_id)];
+            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string) $form_id)];
         } catch (\PDOException $e) {
             error_log('handleUpdateForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
@@ -62,17 +63,17 @@ final class AdminFormCrudHandler
         if (empty($form_id)) {
             return ['form_id' => ''];
         }
-        if (!App::auth()->isFormOwner((string)$form_id) && !App::auth()->isSuperAdmin()) {
+        if (!App::auth()->isFormOwner((string) $form_id) && !App::auth()->isSuperAdmin()) {
             return ['error' => 'Seuls les propriétaires du formulaire peuvent le supprimer.', 'form_id' => $form_id];
         }
-        $active_count = App::workflow()->hasActiveSubmissions((string)$form_id);
+        $active_count = App::workflow()->hasActiveSubmissions((string) $form_id);
         if ($active_count > 0) {
             return ['error' => 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.', 'form_id' => $form_id];
         }
-        $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
+        $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
         $pdo->beginTransaction();
         try {
-            $repo->deleteCascade((string)$form_id);
+            $formRepository->deleteCascade((string) $form_id);
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -80,21 +81,23 @@ final class AdminFormCrudHandler
             return ['error' => 'Une erreur technique est survenue.'];
         }
 
-        App::audit()->log('form_delete', 'form:' . $form_id, "Formulaire supprimé");
+        App::audit()->log('form_delete', 'form:' . $form_id, 'Formulaire supprimé');
         return ['redirect' => 'index.php?p=admin_forms'];
     }
 
     public static function handleDuplicateForm(\PDO $pdo): array
     {
         $source_id = trim($_POST['source_form_id'] ?? '');
-        try { $source_id = \validate_input($source_id, 'uuid'); } catch (\InvalidArgumentException $e) {
+        try {
+            $source_id = \validate_input($source_id, 'uuid');
+        } catch (\InvalidArgumentException $e) {
             return ['error' => 'Identifiant de formulaire source invalide.'];
         }
-        if (empty($source_id)) {
+        if (in_array($source_id, ['', '0', 0], true)) {
             return ['error' => 'Identifiant de formulaire source invalide.'];
         }
-        $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
-        $src_form = $repo->findById($source_id);
+        $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
+        $src_form = $formRepository->findById($source_id);
         if (!$src_form) {
             return ['error' => 'Formulaire source introuvable.'];
         }
@@ -104,7 +107,7 @@ final class AdminFormCrudHandler
 
         $pdo->beginTransaction();
         try {
-            $repo->duplicate($source_id, $new_id, $new_label, $new_slug, $src_form);
+            $formRepository->duplicate($source_id, $new_id, $new_label, $new_slug, $src_form);
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();

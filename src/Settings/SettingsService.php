@@ -1,10 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Settings;
 
 use App\Contract\SettingsInterface;
-use App\Core\Database;
 use App\Repository\SettingsRepository;
 
 /**
@@ -12,12 +12,10 @@ use App\Repository\SettingsRepository;
  */
 final class SettingsService implements SettingsInterface
 {
-    private SettingsRepository $repo;
     private static array $cache = [];
 
-    public function __construct(SettingsRepository $repo)
+    public function __construct(private readonly SettingsRepository $settingsRepository)
     {
-        $this->repo = $repo;
     }
 
     public function get(string $key, string $default = ''): string
@@ -27,18 +25,14 @@ final class SettingsService implements SettingsInterface
         }
 
         try {
-            $val = $this->repo->get($key);
+            $val = $this->settingsRepository->get($key);
 
             if ($val !== null) {
-                if (in_array($key, $this->getSensitiveKeys(), true)) {
-                    $result = $this->decrypt($val);
-                } else {
-                    $result = $val;
-                }
+                $result = in_array($key, $this->getSensitiveKeys(), true) ? $this->decrypt($val) : $val;
                 self::$cache[$key] = $result;
                 return $result;
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // DB pas encore prête
         }
 
@@ -54,7 +48,7 @@ final class SettingsService implements SettingsInterface
             $value = $this->encrypt($value);
         }
 
-        $this->repo->set($key, $value, $updatedBy);
+        $this->settingsRepository->set($key, $value, $updatedBy);
 
         self::$cache[$key] = $value;
     }
@@ -78,27 +72,39 @@ final class SettingsService implements SettingsInterface
         }
 
         $ivLength = openssl_cipher_iv_length('aes-256-cbc');
-        if ($ivLength === false) return $value;
+        if ($ivLength === false) {
+            return $value;
+        }
 
         $iv = random_bytes($ivLength);
         $encrypted = openssl_encrypt($value, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
-        if ($encrypted === false) return $value;
+        if ($encrypted === false) {
+            return $value;
+        }
 
         return 'enc:' . base64_encode($iv . $encrypted);
     }
 
     public function decrypt(string $value): string
     {
-        if (!str_starts_with($value, 'enc:')) return $value;
+        if (!str_starts_with($value, 'enc:')) {
+            return $value;
+        }
 
         $key = getenv('APP_ENCRYPTION_KEY') ?: '';
-        if ($key === '') return '[chiffré]';
+        if ($key === '') {
+            return '[chiffré]';
+        }
 
         $decoded = base64_decode(substr($value, 4), true);
-        if ($decoded === false) return '[chiffré]';
+        if ($decoded === false) {
+            return '[chiffré]';
+        }
 
         $ivLength = openssl_cipher_iv_length('aes-256-cbc');
-        if ($ivLength === false) return '[chiffré]';
+        if ($ivLength === false) {
+            return '[chiffré]';
+        }
 
         $iv = substr($decoded, 0, $ivLength);
         $ciphertext = substr($decoded, $ivLength);

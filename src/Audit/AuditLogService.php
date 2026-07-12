@@ -1,28 +1,25 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Audit;
 
 use App\Contract\AuditInterface;
 use App\Core\App;
-use App\Core\Database;
 use App\Repository\AuditRepository;
 
 /**
  * Service de journalisation d'audit et sécurité.
  */
-final class AuditLogService implements AuditInterface
+final readonly class AuditLogService implements AuditInterface
 {
-    private AuditRepository $repo;
-
-    public function __construct(AuditRepository $repo)
+    public function __construct(private AuditRepository $auditRepository)
     {
-        $this->repo = $repo;
     }
 
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): void
     {
-        if (empty($actor)) {
+        if ($actor === '' || $actor === '0') {
             $actor = App::auth()->getUser() ?: 'system';
         }
 
@@ -32,7 +29,7 @@ final class AuditLogService implements AuditInterface
         }
 
         try {
-            $this->repo->log($action, $target, $detail, $actor);
+            $this->auditRepository->log($action, $target, $detail, $actor);
         } catch (\Throwable $e) {
             error_log('AuditLog error: ' . $e->getMessage());
         }
@@ -40,7 +37,7 @@ final class AuditLogService implements AuditInterface
 
     public function securityLog(string $event, string $detail = '', string $actor = ''): void
     {
-        if (empty($actor)) {
+        if ($actor === '' || $actor === '0') {
             $actor = App::auth()->getUser() ?: 'system';
         }
         error_log('[SECURITY] ' . $event . ': ' . $detail . ' (actor: ' . $actor . ')');
@@ -50,6 +47,6 @@ final class AuditLogService implements AuditInterface
     /** @return array<int, array<string, mixed>> */
     public function getLogs(int $limit = 100, string $actionFilter = ''): array
     {
-        return $this->repo->getLogs($limit, $actionFilter);
+        return $this->auditRepository->getLogs($limit, $actionFilter);
     }
 }

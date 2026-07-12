@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repository;
@@ -6,15 +7,15 @@ namespace App\Repository;
 final class AdminRepository extends BaseRepository
 {
     public function __construct(
-        \App\Core\Database $db,
-        private SettingsRepository $settings,
+        \App\Core\Database $database,
+        private readonly SettingsRepository $settingsRepository,
     ) {
-        parent::__construct($db);
+        parent::__construct($database);
     }
 
     public function findByEmail(string $email): ?array
     {
-        return $this->fetchOne("SELECT * FROM admins WHERE email = ?", [strtolower($email)]);
+        return $this->fetchOne('SELECT * FROM admins WHERE email = ?', [strtolower($email)]);
     }
 
     public function isAdmin(string $email): bool
@@ -30,12 +31,12 @@ final class AdminRepository extends BaseRepository
 
     public function getSuperAdminEmail(): string
     {
-        return $this->settings->get('admin_email') ?? '';
+        return $this->settingsRepository->get('admin_email') ?? '';
     }
 
     public function getAll(): array
     {
-        return $this->fetchAll("SELECT email FROM admins ORDER BY email");
+        return $this->fetchAll('SELECT email FROM admins ORDER BY email');
     }
 
     public function findByToken(string $token): ?array
@@ -58,7 +59,7 @@ final class AdminRepository extends BaseRepository
 
     public function remove(string $email): bool
     {
-        return $this->execute("DELETE FROM admins WHERE email = ?", [strtolower($email)]);
+        return $this->execute('DELETE FROM admins WHERE email = ?', [strtolower($email)]);
     }
 
     public function getPendingRequests(): array
@@ -70,8 +71,10 @@ final class AdminRepository extends BaseRepository
 
     public function approveRequest(string $requestId, string $approvedBy): bool
     {
-        $request = $this->fetchOne("SELECT * FROM admin_requests WHERE id = ?", [$requestId]);
-        if ($request === null) return false;
+        $request = $this->fetchOne('SELECT * FROM admin_requests WHERE id = ?', [$requestId]);
+        if ($request === null) {
+            return false;
+        }
 
         $this->add($request['email']);
         return $this->execute(

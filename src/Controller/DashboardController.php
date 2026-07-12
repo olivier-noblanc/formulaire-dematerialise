@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -24,7 +25,7 @@ final class DashboardController extends BaseController
         // Sécurité : le dashboard est réservé aux administrateurs
         $this->auth->requireAdmin();
 
-        $pdo     = $this->db->getPdo();
+        $this->db->getPdo();
         $filtre  = $_GET['statut'] ?? 'tous';
         $form_f  = $_GET['form']   ?? '';
         $search  = $_GET['search'] ?? '';
@@ -40,7 +41,7 @@ final class DashboardController extends BaseController
                 $form_f = validate_input($form_f, 'slug', ['max_length' => 100]);
             }
             $page = validate_input($page, 'int', ['min' => 1, 'max' => 10000]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException) {
             $filtre = 'tous';
             $form_f = '';
             $page   = 1;
@@ -55,7 +56,7 @@ final class DashboardController extends BaseController
         // Export CSV
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             $options = [];
-            if ($form_f) {
+            if ($form_f !== '' && $form_f !== '0') {
                 $fid = $this->formRepo->findIdBySlug($form_f);
                 if ($fid) {
                     $options['form_id'] = $fid;
@@ -80,7 +81,7 @@ final class DashboardController extends BaseController
             // Sécurité (S-07) : valider le format du token_id
             try {
                 $token_id = validate_input($token_id, 'uuid');
-            } catch (\InvalidArgumentException $e) {
+            } catch (\InvalidArgumentException) {
                 $regen_msg = 'Identifiant de token invalide.';
                 $token_id  = '';
             }
@@ -102,7 +103,7 @@ final class DashboardController extends BaseController
             // Sécurité (S-07) : valider le format du token_id
             try {
                 $token_id = validate_input($token_id, 'uuid');
-            } catch (\InvalidArgumentException $e) {
+            } catch (\InvalidArgumentException) {
                 $remind_msg = 'Identifiant de token invalide.';
                 $token_id   = '';
             }
@@ -120,7 +121,7 @@ final class DashboardController extends BaseController
             // Sécurité (S-07) : valider le format du submission_id
             try {
                 $sub_id = validate_input($sub_id, 'uuid');
-            } catch (\InvalidArgumentException $e) {
+            } catch (\InvalidArgumentException) {
                 $cancel_msg = 'Identifiant de soumission invalide.';
                 $sub_id     = '';
             }
@@ -171,11 +172,11 @@ final class DashboardController extends BaseController
             $where[]  = 's.status != ?';
             $params[] = 'en_cours';
         }
-        if ($form_f) {
+        if ($form_f !== '' && $form_f !== '0') {
             $where[]  = 'f.slug = ?';
             $params[] = $form_f;
         }
-        if ($search) {
+        if ($search !== '' && $search !== '0') {
             $where[]  = '(s.submitted_by LIKE ? OR s.data LIKE ? OR f.label LIKE ?)';
             $params[] = '%' . $search . '%';
             $params[] = '%' . $search . '%';
@@ -197,7 +198,7 @@ final class DashboardController extends BaseController
         // Batch fetch all tokens for all submissions on this page in one query,
         // indexed by submission_id.
         $tokens_by_submission = [];
-        if (!empty($rows)) {
+        if ($rows !== []) {
             $sub_ids = array_column($rows, 'id');
             $tokens_by_submission = $this->tokenRepo->findBySubmissionIds($sub_ids);
         }
@@ -206,10 +207,10 @@ final class DashboardController extends BaseController
         // page courante, détermine si des champs validator ne sont pas encore
         // remplis. Batch (2 requêtes SQL pour N soumissions) pour éviter le N+1.
         $rows_for_validator_status = [];
-        foreach ($rows as $r) {
-            $st = (string) ($r['status'] ?? 'en_cours');
+        foreach ($rows as $row) {
+            $st = (string) ($row['status'] ?? 'en_cours');
             if ($st === 'en_cours' || $st === 'valide') {
-                $rows_for_validator_status[] = $r;
+                $rows_for_validator_status[] = $row;
             }
         }
         $validator_status_by_submission = \App\Core\App::validatorData()->getValidatorStatusBatch($rows_for_validator_status);
@@ -246,9 +247,6 @@ final class DashboardController extends BaseController
             }
         }
 
-        // DB : OK par construction (la page s'est chargée → PDO fonctionne)
-        $sys_db_ok = true;
-
         // Dernière sauvegarde : date du dernier backup_download/backup_restore
         $sys_last_backup = '—';
         try {
@@ -264,7 +262,7 @@ final class DashboardController extends BaseController
                     $sys_last_backup = $sys_db_mtime !== false ? date('d/m/Y', $sys_db_mtime) : '—';
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $sys_last_backup = '—';
         }
 

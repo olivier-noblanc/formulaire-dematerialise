@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Rgpd;
@@ -10,13 +11,10 @@ use PDO;
 /**
  * Service RGPD — export, suppression, purge automatique.
  */
-final class RgpdService
+final readonly class RgpdService
 {
-    private Database $db;
-
-    public function __construct(Database $db)
+    public function __construct(private Database $database)
     {
-        $this->db = $db;
     }
 
     /**
@@ -32,10 +30,10 @@ final class RgpdService
             return ['email' => $email, 'error' => 'Accès refusé : vous ne pouvez exporter que vos propres données.'];
         }
 
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         $data = ['email' => $email, 'export_date' => gmdate('c'), 'submissions' => [], 'validations' => []];
 
-        $stmt = $pdo->prepare("SELECT s.*, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.submitted_by = ? ORDER BY s.submitted_at DESC");
+        $stmt = $pdo->prepare('SELECT s.*, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.submitted_by = ? ORDER BY s.submitted_at DESC');
         $stmt->execute([$email]);
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $data['submissions'][] = [
@@ -48,7 +46,7 @@ final class RgpdService
             ];
         }
 
-        $stmt2 = $pdo->prepare("SELECT t.*, st.label as step_label, f.label as form_label FROM tokens t JOIN steps st ON st.id = t.step_id JOIN submissions s ON s.id = t.submission_id JOIN forms f ON f.id = s.form_id WHERE t.email = ? AND t.done_at IS NOT NULL ORDER BY t.done_at DESC");
+        $stmt2 = $pdo->prepare('SELECT t.*, st.label as step_label, f.label as form_label FROM tokens t JOIN steps st ON st.id = t.step_id JOIN submissions s ON s.id = t.submission_id JOIN forms f ON f.id = s.form_id WHERE t.email = ? AND t.done_at IS NOT NULL ORDER BY t.done_at DESC');
         $stmt2->execute([$email]);
         $data['validations'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
@@ -67,10 +65,10 @@ final class RgpdService
             return false;
         }
 
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         try {
-            $stmt = $pdo->prepare("SELECT id, data FROM submissions WHERE submitted_by = ?");
+            $stmt = $pdo->prepare('SELECT id, data FROM submissions WHERE submitted_by = ?');
             $stmt->execute([$email]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $submissionData = json_decode($row['data'], true) ?: [];
@@ -79,16 +77,16 @@ final class RgpdService
                         $submissionData[$field] = '[supprimé]';
                     }
                 }
-                $pdo->prepare("UPDATE submissions SET submitted_by = ?, data = ? WHERE id = ?")
+                $pdo->prepare('UPDATE submissions SET submitted_by = ?, data = ? WHERE id = ?')
                     ->execute(['[supprimé]', json_encode($submissionData, JSON_UNESCAPED_UNICODE), $row['id']]);
-                $pdo->prepare("DELETE FROM attachments WHERE submission_id = ?")->execute([$row['id']]);
+                $pdo->prepare('DELETE FROM attachments WHERE submission_id = ?')->execute([$row['id']]);
             }
 
             $pdo->prepare("UPDATE tokens SET email = '[supprimé]' WHERE email = ?")->execute([$email]);
             $pdo->prepare("UPDATE delegations SET from_email = '[supprimé]' WHERE from_email = ?")->execute([$email]);
             $pdo->prepare("UPDATE delegations SET to_email = '[supprimé]' WHERE to_email = ?")->execute([$email]);
-            $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
-            $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
+            $pdo->prepare('DELETE FROM admin_requests WHERE email = ?')->execute([$email]);
+            $pdo->prepare('DELETE FROM admins WHERE email = ?')->execute([$email]);
 
             App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
             return true;
@@ -103,7 +101,7 @@ final class RgpdService
      */
     public function autoPurge(int $months = 24): int
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         $cutoff = gmdate('Y-m-d H:i:s', strtotime("-{$months} months") ?: time());
 
         $stmt = $pdo->prepare("SELECT id FROM submissions WHERE status != 'en_cours' AND closed_at < ?");
@@ -111,12 +109,12 @@ final class RgpdService
         $oldIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         $count = 0;
-        foreach ($oldIds as $sid) {
-            $pdo->prepare("DELETE FROM attachments WHERE submission_id = ?")->execute([$sid]);
-            $pdo->prepare("DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)")->execute([$sid]);
-            $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$sid]);
-            $pdo->prepare("DELETE FROM alert_log WHERE submission_id = ?")->execute([$sid]);
-            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$sid]);
+        foreach ($oldIds as $oldId) {
+            $pdo->prepare('DELETE FROM attachments WHERE submission_id = ?')->execute([$oldId]);
+            $pdo->prepare('DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)')->execute([$oldId]);
+            $pdo->prepare('DELETE FROM tokens WHERE submission_id = ?')->execute([$oldId]);
+            $pdo->prepare('DELETE FROM alert_log WHERE submission_id = ?')->execute([$oldId]);
+            $pdo->prepare('DELETE FROM submissions WHERE id = ?')->execute([$oldId]);
             $count++;
         }
 

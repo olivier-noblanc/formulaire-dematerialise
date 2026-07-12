@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -10,12 +11,9 @@ namespace App\Controller;
  */
 final class PageController extends BaseController
 {
-    private string $pageFile;
-
-    public function __construct(string $pageFile)
+    public function __construct(private readonly string $pageFile)
     {
         parent::__construct();
-        $this->pageFile = $pageFile;
     }
 
     public function handle(): void

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core;
@@ -32,7 +33,9 @@ final class TestModeService
     public static function testJsonResponse(array $data): void
     {
         /** @phpstan-ignore-next-line booleanNot.alwaysFalse */
-        if (!TEST_MODE) return;
+        if (!TEST_MODE) {
+            return;
+        }
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(array_merge(['_test_mode' => true], $data), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         exit;

@@ -22,14 +22,14 @@ final class FormController extends BaseController
      */
     public function handle(): void
     {
-        $pdo  = $this->db->getPdo();
+        $this->db->getPdo();
         $slug = trim($_GET['f'] ?? '');
 
         // Sécurité (A-01) : valider le slug du formulaire
-        if ($slug) {
+        if ($slug !== '' && $slug !== '0') {
             try {
                 $slug = validate_input($slug, 'slug', ['max_length' => 100]);
-            } catch (\InvalidArgumentException $e) {
+            } catch (\InvalidArgumentException) {
                 (new \App\Render\ErrorRenderer())->errorPage(
                     400,
                     'Paramètre invalide',
@@ -65,9 +65,7 @@ final class FormController extends BaseController
         // Charger les champs dynamiques du formulaire, ordonnés par ordre.
         // Exclure les champs réservés aux validateurs (filled_by='validator').
         $all_form_fields = App::validatorData()->getFormFields($form['id']);
-        $form_fields = array_filter($all_form_fields, function ($f): bool {
-            return empty($f['filled_by']) || $f['filled_by'] === 'demandeur';
-        });
+        $form_fields = array_filter($all_form_fields, fn($f): bool => empty($f['filled_by']) || $f['filled_by'] === 'demandeur');
 
         // Pour les champs avec condition : préparer les données pour le JS
         // Les champs conditionnels sont affichés mais masqués par le JS
@@ -87,10 +85,8 @@ final class FormController extends BaseController
 
             // Validation dynamique des champs obligatoires
             foreach ($form_fields as $field) {
-                if ($field['required'] && $field['field_type'] !== 'checkbox') {
-                    if (empty(trim($_POST[$field['field_name']] ?? ''))) {
-                        $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
-                    }
+                if ($field['required'] && $field['field_type'] !== 'checkbox' && in_array(trim($_POST[$field['field_name']] ?? ''), ['', '0'], true)) {
+                    $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
                 }
             }
 
@@ -110,7 +106,7 @@ final class FormController extends BaseController
                 $field_errors['rgpd_consent'] = 'Vous devez accepter le traitement de vos données pour soumettre le formulaire.';
             }
 
-            if (empty($field_errors) && empty($file_errors)) {
+            if ($field_errors === [] && $file_errors === []) {
                 $now  = date('Y-m-d H:i:s');
                 $data = [];
                 // Sécurité : exclure les champs internes du JSON de données métier
@@ -119,7 +115,7 @@ final class FormController extends BaseController
                     if (in_array($k, $exclude_keys, true)) {
                         continue;
                     }
-                    $data[$k] = is_array($v) ? implode(', ', $v) : trim($v);
+                    $data[$k] = is_array($v) ? implode(', ', $v) : trim((string) $v);
                 }
 
                 // Ajouter les noms de fichiers uploadés dans les données
@@ -132,7 +128,7 @@ final class FormController extends BaseController
                     }
                 }
 
-                $rgpd_consent  = !empty($_POST['rgpd_consent']) ? 1 : 0;
+                $rgpd_consent  = empty($_POST['rgpd_consent']) ? 0 : 1;
                 $submission_id = $this->submissionRepo->createWithRgpd([
                     'form_id'       => $form['id'],
                     'data'          => json_encode($data, JSON_UNESCAPED_UNICODE),
@@ -148,9 +144,9 @@ final class FormController extends BaseController
                 // à côté du champ fichier, et la soumission est marquée "incomplète".
                 // La soumission reste en base (traçabilité) mais son statut est forcé
                 // à "en_cours" sans tokens générés.
-                foreach ($form_fields as $field) {
-                    if ($field['field_type'] === 'file') {
-                        $fname = $field['field_name'];
+                foreach ($form_fields as $form_field) {
+                    if ($form_field['field_type'] === 'file') {
+                        $fname = $form_field['field_name'];
                         if (!empty($_FILES[$fname]['name']) && $_FILES[$fname]['error'] !== UPLOAD_ERR_NO_FILE) {
                             $upload_result = App::attachment()->handleFileUpload($_FILES[$fname], $submission_id, $fname);
                             if (!$upload_result['success']) {
@@ -162,7 +158,7 @@ final class FormController extends BaseController
 
                 // Si un upload a échoué, on nettoie la soumission (pour ne pas laisser
                 // de soumission orpheline sans fichiers) et on retourne au formulaire.
-                if (!empty($file_errors)) {
+                if ($file_errors !== []) {
                     // Supprimer la soumission invalide (et ses pièces jointes partielles)
                     $this->submissionRepo->deleteById($submission_id);
                     // Note : advance_workflow() n'a pas encore été appelé → pas de tokens à nettoyer
@@ -215,14 +211,14 @@ final class FormController extends BaseController
         if (TEST_MODE && $_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['screenshot'])) {
             header('Content-Type: application/json; charset=utf-8');
             $fields_list = [];
-            foreach ($form_fields as $f) {
+            foreach ($form_fields as $form_field) {
                 $fields_list[] = [
-                    'field_name' => $f['field_name'],
-                    'label'      => $f['label'],
-                    'field_type' => $f['field_type'],
-                    'required'   => (bool) $f['required'],
-                    'options'    => $f['options'] ? json_decode($f['options'], true) : null,
-                    'card_group' => $f['card_group'],
+                    'field_name' => $form_field['field_name'],
+                    'label'      => $form_field['label'],
+                    'field_type' => $form_field['field_type'],
+                    'required'   => (bool) $form_field['required'],
+                    'options'    => $form_field['options'] ? json_decode($form_field['options'], true) : null,
+                    'card_group' => $form_field['card_group'],
                 ];
             }
             echo json_encode([
@@ -243,22 +239,20 @@ final class FormController extends BaseController
         // Regrouper les champs par card_group pour le rendu visuel
         $grouped       = [];
         $field_labels  = [];
-        foreach ($form_fields as $field) {
-            $group = $field['card_group'] ?: 'Général';
-            $grouped[$group][] = $field;
-            $field_labels[$field['field_name']] = $field['label'];
+        foreach ($form_fields as $form_field) {
+            $group = $form_field['card_group'] ?: 'Général';
+            $grouped[$group][] = $form_field;
+            $field_labels[$form_field['field_name']] = $form_field['label'];
         }
 
         // Valeurs à pré-remplir — prioriser $_POST (ré-affichage après erreur de validation)
         $field_values       = $_POST;
         $ldap_datalist_id   = '';
         $ldap_datalist_html = '';
-        $form_label         = $form['label'] ?? 'Formulaire';
 
         $page_css = $this->renderPageCss();
         $content  = $this->renderContent(
             $form,
-            $form_label,
             $submitted_by,
             $existing_submission,
             $success,
@@ -302,7 +296,6 @@ final class FormController extends BaseController
      */
     private function renderContent(
         array $form,
-        string $form_label,
         string $submitted_by,
         $existing_submission,
         bool $success,
@@ -316,12 +309,12 @@ final class FormController extends BaseController
         string $slug
     ): string {
         // Les variables locales sont nécessaires pour le template inline ci-dessous.
-        $h        = [$this->html, 'h'];
-        $tJargon  = [$this->html, 'tJargon'];
+        $h        = $this->html->h(...);
+        $tJargon  = $this->html->tJargon(...);
 
         ob_start();
         ?>
-  <?php // S4-UI / Action 1 : anti-jargon sur le titre + description du formulaire. ?>
+  <?php // S4-UI / Action 1 : anti-jargon sur le titre + description du formulaire.?>
   <h1><?= $h($tJargon($form['label'])) ?></h1>
   <?php if ($form['description']): ?><p class="agent-info"><?= $h($tJargon($form['description'])) ?></p><?php endif; ?>
   <p class="agent-info">Formulaire rempli par : <strong><?= $h($submitted_by) ?></strong></p>
@@ -345,45 +338,51 @@ final class FormController extends BaseController
       <a href="index.php" class="btn btn-secondary">Accueil</a>
     </div>
   <?php else: ?>
-    <form method="POST" action="index.php?p=form&f=<?= urlencode((string)$slug) ?>" enctype="multipart/form-data" id="form-main">
+    <form method="POST" action="index.php?p=form&f=<?= urlencode($slug) ?>" enctype="multipart/form-data" id="form-main">
       <?= $this->security->csrfField() ?>
-    <?php // ITER1-B / Action B : encadré « Aide » en haut du formulaire. ?>
+    <?php // ITER1-B / Action B : encadré « Aide » en haut du formulaire.?>
     <aside class="form-help-box" aria-label="Aide pour remplir le formulaire">
       <span class="form-help-icon" aria-hidden="true">💡</span>
       <span class="form-help-text">
-        <?php // U-08 : indicateur de progression (uniquement si >1 section) ?>
+        <?php // U-08 : indicateur de progression (uniquement si >1 section)?>
         <?= (new \App\Render\FormRenderer())->formProgressIndicator($grouped) ?>
         <?php foreach ($grouped as $card_title => $card_fields): ?>
           <?php
           // Séparer les checkboxes des autres champs pour le rendu
           $checkboxes = [];
-          $non_checkboxes = [];
-          foreach ($card_fields as $cf) {
-              if ($cf['field_type'] === 'checkbox') {
-                  $checkboxes[] = $cf;
-              } else {
-                  $non_checkboxes[] = $cf;
-              }
-          }
-          ?>
+            $non_checkboxes = [];
+            foreach ($card_fields as $card_field) {
+                if ($card_field['field_type'] === 'checkbox') {
+                    $checkboxes[] = $card_field;
+                } else {
+                    $non_checkboxes[] = $card_field;
+                }
+            }
+            ?>
           <fieldset class="card">
             <legend><?= $h($card_title) ?></legend>
-            <?php if (!empty($non_checkboxes)): ?>
+            <?php if ($non_checkboxes !== []): ?>
               <div class="grid-2">
-                <?php foreach ($non_checkboxes as $cf): ?>
-                  <?php $cond = !empty($cf['condition']) ? ' data-condition="' . htmlspecialchars((string)$cf['condition'], ENT_QUOTES) . '"' : ''; ?>
-                  <div<?php if ($cond) echo $cond; ?>>
-                  <?= (new \App\Render\FormRenderer())->field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                <?php foreach ($non_checkboxes as $non_checkbox): ?>
+                  <?php $cond = empty($non_checkbox['condition']) ? '' : ' data-condition="' . htmlspecialchars((string) $non_checkbox['condition'], ENT_QUOTES) . '"'; ?>
+                  <div<?php if ($cond !== '' && $cond !== '0') {
+                      echo $cond;
+                  } ?>>
+                  <?= (new \App\Render\FormRenderer())->field($non_checkbox, $field_values[$non_checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>
             <?php endif; ?>
-            <?php if (!empty($checkboxes)): ?>
-              <div class="checkboxes"<?php if (!empty($non_checkboxes)) echo ' style="margin-top:1rem;"'; ?>>
-                <?php foreach ($checkboxes as $cf): ?>
-                  <?php $cond = !empty($cf['condition']) ? ' data-condition="' . htmlspecialchars((string)$cf['condition'], ENT_QUOTES) . '"' : ''; ?>
-                  <div<?php if ($cond) echo $cond; ?>>
-                  <?= (new \App\Render\FormRenderer())->field($cf, $field_values[$cf['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+            <?php if ($checkboxes !== []): ?>
+              <div class="checkboxes"<?php if ($non_checkboxes !== []) {
+                  echo ' style="margin-top:1rem;"';
+              } ?>>
+                <?php foreach ($checkboxes as $checkbox): ?>
+                  <?php $cond = empty($checkbox['condition']) ? '' : ' data-condition="' . htmlspecialchars((string) $checkbox['condition'], ENT_QUOTES) . '"'; ?>
+                  <div<?php if ($cond !== '' && $cond !== '0') {
+                      echo $cond;
+                  } ?>>
+                  <?= (new \App\Render\FormRenderer())->field($checkbox, $field_values[$checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>
@@ -394,20 +393,20 @@ final class FormController extends BaseController
 
       <?= $ldap_datalist_html ?>
 
-      <?php if (!empty($grouped)): ?>
+      <?php if ($grouped !== []): ?>
         <div class="card" style="background:#f8f8ff;border-color:#003189;">
           <label class="checkbox-item" style="font-size:.85rem;line-height:1.5;">
-            <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true"<?= !empty($_POST['rgpd_consent']) ? ' checked' : '' ?>>
+            <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true"<?= empty($_POST['rgpd_consent']) ? '' : ' checked' ?>>
             J'accepte le traitement de mes données personnelles dans le cadre de cette procédure.
           </label>
-          <?php // Message d'erreur si le consentement RGPD a été oublié lors d'une soumission précédente ?>
+          <?php // Message d'erreur si le consentement RGPD a été oublié lors d'une soumission précédente?>
           <?php if (!empty($field_errors['rgpd_consent'])): ?>
             <p class="error-hint" style="margin-top:.5rem;margin-left:1.7rem;color:#c0392b;font-size:.8rem;" role="alert">
               <?= $h($field_errors['rgpd_consent']) ?>
             </p>
           <?php endif; ?>
           <p style="font-size:.75rem;color:#595959;margin-top:.5rem;margin-left:1.7rem;">
-            <?php // S4-UI / Action 1 : la mention légale contient « dématérialisation » → on traduit. ?>
+            <?php // S4-UI / Action 1 : la mention légale contient « dématérialisation » → on traduit.?>
             <?= $h($tJargon($this->settings->get('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Durée de conservation : 24 mois après clôture.'))) ?>
           </p>
         </div>

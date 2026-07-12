@@ -23,7 +23,7 @@ final class MyFormsController extends BaseController
         ?>
   <h1><span aria-hidden="true">📊</span> Mes formulaires</h1>
 
-  <?php if (empty($ownedForms)): ?>
+  <?php if ($ownedForms === []): ?>
     <div class="empty-state">
       <div class="empty-icon" aria-hidden="true">📋</div>
       <p>Vous n'êtes propriétaire d'aucun formulaire.</p>
@@ -34,14 +34,14 @@ final class MyFormsController extends BaseController
       Vous êtes propriétaire de <?= count($ownedForms) ?> formulaire(s). Cliquez sur un formulaire pour voir le suivi des demandes.
     </p>
     <div class="form-cards">
-      <?php foreach ($ownedForms as $of):
-        $f_id    = \App\Core\App::html()->escape((string)($of['id'] ?? ''));
-        $f_label = \App\Core\App::html()->escape(App::html()->tJargon((string)($of['label'] ?? '')));
-        $f_desc  = '';
-        if (!empty($of['description'])) {
-          $f_desc = '<div class="fc-desc">' . \App\Core\App::html()->escape(App::html()->tJargon((string)$of['description'])) . '</div>';
-        }
-      ?>
+      <?php foreach ($ownedForms as $ownedForm):
+          $f_id    = \App\Core\App::html()->escape((string) ($ownedForm['id'] ?? ''));
+          $f_label = \App\Core\App::html()->escape(App::html()->tJargon((string) ($ownedForm['label'] ?? '')));
+          $f_desc  = '';
+          if (!empty($ownedForm['description'])) {
+              $f_desc = '<div class="fc-desc">' . \App\Core\App::html()->escape(App::html()->tJargon((string) $ownedForm['description'])) . '</div>';
+          }
+          ?>
         <a href="index.php?p=form_tracking&f=<?= $f_id ?>" class="form-card">
           <div class="fc-title"><?= $f_label ?></div>
           <?= $f_desc ?>
@@ -50,7 +50,7 @@ final class MyFormsController extends BaseController
     </div>
   <?php endif; ?>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Mes formulaires', 'mes_formulaires', '', $content);
     }
 }

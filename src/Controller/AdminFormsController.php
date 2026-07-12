@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
-use App\Controller\AdminFormsHandlers;
 
 /**
  * Contrôleur de la page Gestion des formulaires (admin).
@@ -22,11 +21,17 @@ final class AdminFormsController extends BaseController
         $editFieldId = trim($_GET['edit_field'] ?? '');
 
         try {
-            if ($formId) $formId = validate_input($formId, 'uuid');
-            if ($editStepId) $editStepId = validate_input($editStepId, 'uuid');
-            if ($editFieldId) $editFieldId = validate_input($editFieldId, 'uuid');
-        } catch (\InvalidArgumentException $e) {
-            App::audit()->securityLog('invalid_admin_forms_id', 'form_id=' . substr((string)$formId, 0, 20) . ' edit_step=' . substr((string)$editStepId, 0, 20) . ' edit_field=' . substr((string)$editFieldId, 0, 20));
+            if ($formId !== '' && $formId !== '0') {
+                $formId = validate_input($formId, 'uuid');
+            }
+            if ($editStepId !== '' && $editStepId !== '0') {
+                $editStepId = validate_input($editStepId, 'uuid');
+            }
+            if ($editFieldId !== '' && $editFieldId !== '0') {
+                $editFieldId = validate_input($editFieldId, 'uuid');
+            }
+        } catch (\InvalidArgumentException) {
+            App::audit()->securityLog('invalid_admin_forms_id', 'form_id=' . substr((string) $formId, 0, 20) . ' edit_step=' . substr((string) $editStepId, 0, 20) . ' edit_field=' . substr($editFieldId, 0, 20));
             (new \App\Render\ErrorRenderer())->errorPage(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
         }
 
@@ -42,7 +47,7 @@ final class AdminFormsController extends BaseController
         $preservedJson  = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action) {
-            $result = AdminFormsHandlers::dispatch($pdo, $action, (string)$formId);
+            $result = AdminFormsHandlers::dispatch($pdo, $action, (string) $formId);
             if ($result !== null) {
                 if (isset($result['json_output']) && isset($result['filename'])) {
                     header('Content-Type: application/json; charset=utf-8');
@@ -54,11 +59,21 @@ final class AdminFormsController extends BaseController
                     header('Location: ' . $result['redirect']);
                     exit;
                 }
-                if (isset($result['error']))           $errorMsg       = $result['error'];
-                if (isset($result['success']))         $successMsg     = $result['success'];
-                if (isset($result['validation_html'])) $validationHtml = $result['validation_html'];
-                if (isset($result['preserved_json']))  $preservedJson  = $result['preserved_json'];
-                if (isset($result['form_id']))         $formId         = $result['form_id'];
+                if (isset($result['error'])) {
+                    $errorMsg       = $result['error'];
+                }
+                if (isset($result['success'])) {
+                    $successMsg     = $result['success'];
+                }
+                if (isset($result['validation_html'])) {
+                    $validationHtml = $result['validation_html'];
+                }
+                if (isset($result['preserved_json'])) {
+                    $preservedJson  = $result['preserved_json'];
+                }
+                if (isset($result['form_id'])) {
+                    $formId         = $result['form_id'];
+                }
             }
         }
 
@@ -80,7 +95,7 @@ final class AdminFormsController extends BaseController
         ?>
   <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
 
-  <?= (new \App\Render\ErrorRenderer())->messages(['success'=>$successMsg, 'error'=>$errorMsg]) ?>
+  <?= (new \App\Render\ErrorRenderer())->messages(['success' => $successMsg, 'error' => $errorMsg]) ?>
   <?= $validationHtml ?>
 
   <!-- Sélecteur de formulaire -->
@@ -90,8 +105,8 @@ final class AdminFormsController extends BaseController
       <input type="hidden" name="p" value="admin_forms">
       <select name="form_id" onchange="this.form.submit()" style="flex:1;min-width:250px;">
         <option value="">— Sélectionner un formulaire —</option>
-        <?php foreach ($forms as $f): ?>
-          <option value="<?= \App\Core\App::html()->escape($f['id']) ?>" <?= $formId === $f['id'] ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($f['label']) ?></option>
+        <?php foreach ($forms as $form): ?>
+          <option value="<?= \App\Core\App::html()->escape($form['id']) ?>" <?= $formId === $form['id'] ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($form['label']) ?></option>
         <?php endforeach; ?>
       </select>
     </form>
@@ -108,15 +123,15 @@ final class AdminFormsController extends BaseController
     </div>
 
     <div style="display:flex;gap:.5rem;margin-top:1rem;">
-      <a href="index.php?p=form_preview&form_id=<?= urlencode($formId) ?>" class="btn btn-secondary"><span aria-hidden="true">👁</span> Prévisualiser</a>
-      <a href="index.php?p=form_tracking&f=<?= urlencode($formId) ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Suivi</a>
+      <a href="index.php?p=form_preview&form_id=<?= urlencode((string) $formId) ?>" class="btn btn-secondary"><span aria-hidden="true">👁</span> Prévisualiser</a>
+      <a href="index.php?p=form_tracking&f=<?= urlencode((string) $formId) ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Suivi</a>
     </div>
   </div>
 
   <!-- Champs du formulaire -->
   <div class="card">
     <h2>Champs du formulaire (<?= count($formFields) ?>)</h2>
-    <?php if (empty($formFields)): ?>
+    <?php if ($formFields === []): ?>
       <p class="empty-state">Aucun champ configuré.</p>
     <?php else: ?>
       <table>
@@ -124,15 +139,15 @@ final class AdminFormsController extends BaseController
           <tr><th>Ordre</th><th>Nom</th><th>Label</th><th>Type</th><th>Obligatoire</th><th>Actions</th></tr>
         </thead>
         <tbody>
-        <?php foreach ($formFields as $field): ?>
+        <?php foreach ($formFields as $formField): ?>
           <tr>
-            <td><?= (int)$field['ordre'] ?></td>
-            <td><code><?= \App\Core\App::html()->escape($field['field_name']) ?></code></td>
-            <td><?= \App\Core\App::html()->escape($field['label']) ?></td>
-            <td><?= \App\Core\App::html()->escape($field['field_type']) ?></td>
-            <td><?= $field['required'] ? 'Oui' : 'Non' ?></td>
+            <td><?= (int) $formField['ordre'] ?></td>
+            <td><code><?= \App\Core\App::html()->escape($formField['field_name']) ?></code></td>
+            <td><?= \App\Core\App::html()->escape($formField['label']) ?></td>
+            <td><?= \App\Core\App::html()->escape($formField['field_type']) ?></td>
+            <td><?= $formField['required'] ? 'Oui' : 'Non' ?></td>
             <td>
-              <a href="index.php?p=admin_forms&form_id=<?= urlencode($formId) ?>&edit_field=<?= urlencode($field['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
+              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_field=<?= urlencode($formField['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -144,7 +159,7 @@ final class AdminFormsController extends BaseController
   <!-- Étapes du workflow -->
   <div class="card">
     <h2>Étapes du circuit de validation (<?= count($workflowSteps) ?>)</h2>
-    <?php if (empty($workflowSteps)): ?>
+    <?php if ($workflowSteps === []): ?>
       <p class="empty-state">Aucune étape configurée.</p>
     <?php else: ?>
       <table>
@@ -152,16 +167,16 @@ final class AdminFormsController extends BaseController
           <tr><th>Ordre</th><th>Label</th><th>Destinataires</th><th>Statut</th><th>Actions</th></tr>
         </thead>
         <tbody>
-        <?php foreach ($workflowSteps as $step):
-          $emails = array_filter(explode('|', $step['recipient_emails'] ?? ''));
-        ?>
+        <?php foreach ($workflowSteps as $workflowStep):
+            $emails = array_filter(explode('|', $workflowStep['recipient_emails'] ?? ''));
+            ?>
           <tr>
-            <td><?= (int)$step['ordre'] ?></td>
-            <td><?= \App\Core\App::html()->escape($step['label']) ?></td>
+            <td><?= (int) $workflowStep['ordre'] ?></td>
+            <td><?= \App\Core\App::html()->escape($workflowStep['label']) ?></td>
             <td><?= \App\Core\App::html()->escape(implode(', ', $emails)) ?></td>
-            <td><span class="badge <?= $step['actif'] ? 'badge-ok' : 'badge-err' ?>"><?= $step['actif'] ? 'Active' : 'Inactive' ?></span></td>
+            <td><span class="badge <?= $workflowStep['actif'] ? 'badge-ok' : 'badge-err' ?>"><?= $workflowStep['actif'] ? 'Active' : 'Inactive' ?></span></td>
             <td>
-              <a href="index.php?p=admin_forms&form_id=<?= urlencode($formId) ?>&edit_step=<?= urlencode($step['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
+              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_step=<?= urlencode($workflowStep['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -171,7 +186,7 @@ final class AdminFormsController extends BaseController
   </div>
   <?php endif; ?>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Gestion des formulaires', 'admin_forms', $pageCss, $content);
     }
 }

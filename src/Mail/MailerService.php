@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Mail;
@@ -15,15 +16,10 @@ use PHPMailer\PHPMailer\PHPMailer;
  * log_mail_attempt(), get_recent_mail_logs(), build_mail_html(),
  * render_email_template() dans une classe injectable.
  */
-final class MailerService
+final readonly class MailerService
 {
-    private Database $db;
-    private SettingsService $settings;
-
-    public function __construct(Database $db, SettingsService $settings)
+    public function __construct(private Database $database, private SettingsService $settingsService)
     {
-        $this->db = $db;
-        $this->settings = $settings;
     }
 
     /**
@@ -47,7 +43,7 @@ final class MailerService
     public function sendDetailed(string $to, string $subject, string $body): array
     {
         $result = ['success' => false, 'error' => '', 'smtp_log' => '', 'status' => 'error'];
-        $to = strtolower(trim($to));
+        $to = $to |> trim(...) |> strtolower(...);
         $actor = App::auth()->getUser();
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'CLI';
 
@@ -75,7 +71,7 @@ final class MailerService
         }
 
         // Mode dry-run : aucun email réel n'est envoyé, tout est journalisé
-        $dry_run = $this->settings->get('mail_dry_run', '0') === '1';
+        $dry_run = $this->settingsService->get('mail_dry_run', '0') === '1';
         if ($dry_run) {
             error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
             App::audit()->log('mail_dry_run', 'mail:' . $to, "Email intercepté (dry-run) — Sujet : $subject", '');
@@ -84,13 +80,13 @@ final class MailerService
         }
 
         // Vérification de l'adresse email avant envoi
-        $verify_mode = $this->settings->get('email_verify_mode', 'none');
+        $verify_mode = $this->settingsService->get('email_verify_mode', 'none');
         if ($verify_mode !== 'none') {
             $verification = App::emailVerify()->verify($to);
             if (!$verification['ok']) {
-                $msg = "Email non vérifié : " . $verification['detail'];
+                $msg = 'Email non vérifié : ' . $verification['detail'];
                 error_log("send_mail() BLOQUÉ — $msg — destinataire: $to");
-                App::audit()->log('mail_blocked', 'mail:' . $to, "Email bloqué (vérification échouée) — " . $verification['detail'] . " — Sujet : $subject", '');
+                App::audit()->log('mail_blocked', 'mail:' . $to, 'Email bloqué (vérification échouée) — ' . $verification['detail'] . " — Sujet : $subject", '');
                 $this->logAttempt($to, $subject, 'blocked', $msg, '', $actor, $ip);
                 $result['error'] = $msg;
                 $result['status'] = 'blocked';
@@ -100,7 +96,7 @@ final class MailerService
 
         // Sécurité CLI : ne jamais envoyer d'emails réels depuis un contexte CLI
         if (php_sapi_name() === 'cli' && !defined('CLI_MAIL_ALLOWED')) {
-            $msg = "Envoi bloqué en CLI sans CLI_MAIL_ALLOWED";
+            $msg = 'Envoi bloqué en CLI sans CLI_MAIL_ALLOWED';
             error_log("send_mail() $msg (destinataire: $to)");
             $this->logAttempt($to, $subject, 'cli_blocked', $msg, '', $actor, $ip);
             $result['error'] = $msg;
@@ -109,17 +105,17 @@ final class MailerService
         }
 
         // ── Configuration SMTP ──
-        $smtp_host = $this->settings->get('smtp_host');
-        $smtp_port = (int) $this->settings->get('smtp_port', '25');
-        $smtp_auth = $this->settings->get('smtp_auth', '0') === '1';
-        $smtp_user = $this->settings->get('smtp_user', '');
-        $smtp_pass = $this->settings->get('smtp_pass', '');
-        $smtp_secure = $this->settings->get('smtp_secure', '');
-        $smtp_from = $this->settings->get('smtp_from');
-        $smtp_from_name = $this->settings->get('smtp_from_name');
+        $smtp_host = $this->settingsService->get('smtp_host');
+        $smtp_port = (int) $this->settingsService->get('smtp_port', '25');
+        $smtp_auth = $this->settingsService->get('smtp_auth', '0') === '1';
+        $smtp_user = $this->settingsService->get('smtp_user', '');
+        $smtp_pass = $this->settingsService->get('smtp_pass', '');
+        $smtp_secure = $this->settingsService->get('smtp_secure', '');
+        $smtp_from = $this->settingsService->get('smtp_from');
+        $smtp_from_name = $this->settingsService->get('smtp_from_name');
 
         if (empty($smtp_host)) {
-            $msg = "Aucun hôte SMTP configuré (smtp_host vide)";
+            $msg = 'Aucun hôte SMTP configuré (smtp_host vide)';
             error_log("send_mail() BLOQUÉ — $msg");
             $this->logAttempt($to, $subject, 'blocked', $msg, '', $actor, $ip);
             $result['error'] = $msg;
@@ -127,7 +123,7 @@ final class MailerService
             return $result;
         }
         if (empty($smtp_from)) {
-            $msg = "Aucune adresse From configurée (smtp_from vide)";
+            $msg = 'Aucune adresse From configurée (smtp_from vide)';
             error_log("send_mail() BLOQUÉ — $msg");
             $this->logAttempt($to, $subject, 'blocked', $msg, '', $actor, $ip);
             $result['error'] = $msg;
@@ -137,48 +133,48 @@ final class MailerService
 
         // ── Capture de la conversation SMTP pour debug ──
         $smtp_log_buf = [];
-        $mail = new PHPMailer(true);
+        $phpMailer = new PHPMailer(true);
         try {
-            $mail->isSMTP();
-            $mail->Host       = $smtp_host;
-            $mail->Port       = $smtp_port;
-            $mail->SMTPAuth   = $smtp_auth;
-            if ($mail->SMTPAuth) {
-                $mail->Username = $smtp_user;
-                $mail->Password = $smtp_pass;
+            $phpMailer->isSMTP();
+            $phpMailer->Host       = $smtp_host;
+            $phpMailer->Port       = $smtp_port;
+            $phpMailer->SMTPAuth   = $smtp_auth;
+            if ($phpMailer->SMTPAuth) {
+                $phpMailer->Username = $smtp_user;
+                $phpMailer->Password = $smtp_pass;
             }
             if ($smtp_secure === 'tls') {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $phpMailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             } elseif ($smtp_secure === 'ssl') {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $phpMailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             }
-            $mail->SMTPAutoTLS = ($smtp_secure === 'tls' || $smtp_secure === 'ssl');
+            $phpMailer->SMTPAutoTLS = ($smtp_secure === 'tls' || $smtp_secure === 'ssl');
 
-            $mail->Timeout = 30;
-            $mail->getSMTPInstance()->Timelimit = 15;
+            $phpMailer->Timeout = 30;
+            $phpMailer->getSMTPInstance()->Timelimit = 15;
 
-            $mail->SMTPDebug  = 3;
-            $mail->Debugoutput = function(string $str, int $level) use (&$smtp_log_buf): void {
+            $phpMailer->SMTPDebug  = 3;
+            $phpMailer->Debugoutput = function (string $str, int $level) use (&$smtp_log_buf): void {
                 $smtp_log_buf[] = '[' . $level . '] ' . rtrim($str);
             };
 
-            $mail->CharSet  = 'UTF-8';
-            $mail->setFrom($smtp_from, $smtp_from_name);
-            $mail->addAddress($to);
-            $mail->isHTML(true);
-            $mail->Subject  = $subject;
-            $mail->Body     = $body;
-            $mail->send();
+            $phpMailer->CharSet  = 'UTF-8';
+            $phpMailer->setFrom($smtp_from, $smtp_from_name);
+            $phpMailer->addAddress($to);
+            $phpMailer->isHTML(true);
+            $phpMailer->Subject  = $subject;
+            $phpMailer->Body     = $body;
+            $phpMailer->send();
 
             $smtp_log = implode("\n", $smtp_log_buf);
             App::audit()->log('mail_sent', 'mail:' . $to, "Email envoyé — Sujet : $subject", '');
             $this->logAttempt($to, $subject, 'sent', '', $smtp_log, $actor, $ip);
             return ['success' => true, 'error' => '', 'smtp_log' => $smtp_log, 'status' => 'sent'];
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $smtp_log = implode("\n", $smtp_log_buf);
-            $err = $mail->ErrorInfo;
+            $err = $phpMailer->ErrorInfo;
             error_log('Mail error: ' . $err);
-            App::audit()->log('mail_error', 'mail:' . $to, "Échec envoi — " . $err . " — Sujet : $subject", '');
+            App::audit()->log('mail_error', 'mail:' . $to, 'Échec envoi — ' . $err . " — Sujet : $subject", '');
             $this->logAttempt($to, $subject, 'error', $err, $smtp_log, $actor, $ip);
             return ['success' => false, 'error' => $err, 'smtp_log' => $smtp_log, 'status' => 'error'];
         }
@@ -191,15 +187,17 @@ final class MailerService
     {
         static $table_exists = null;
         try {
-            $pdo = $this->db->getPdo();
+            $pdo = $this->database->getPdo();
             if ($table_exists === null) {
                 $stmt = $pdo->query(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='mail_log'"
                 );
-                $cnt = $stmt !== false ? (int)$stmt->fetchColumn() : 0;
+                $cnt = $stmt !== false ? (int) $stmt->fetchColumn() : 0;
                 $table_exists = ($cnt > 0);
             }
-            if (!$table_exists) return;
+            if (!$table_exists) {
+                return;
+            }
 
             if (strlen($smtp_log) > 32000) {
                 $smtp_log = substr($smtp_log, 0, 32000) . "\n... (tronqué)";
@@ -207,7 +205,7 @@ final class MailerService
             $subject = mb_substr($subject, 0, 500, 'UTF-8');
             $error = mb_substr($error, 0, 2000, 'UTF-8');
 
-            $pdo->prepare("INSERT INTO mail_log (id, created_at, recipient, subject, status, error_message, smtp_log, actor, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            $pdo->prepare('INSERT INTO mail_log (id, created_at, recipient, subject, status, error_message, smtp_log, actor, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
                 ->execute([
                     generate_uuid(),
                     gmdate('Y-m-d H:i:s'),
@@ -233,17 +231,19 @@ final class MailerService
     {
         static $table_exists = null;
         try {
-            $pdo = $this->db->getPdo();
+            $pdo = $this->database->getPdo();
             if ($table_exists === null) {
                 $stmt = $pdo->query(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='mail_log'"
                 );
-                $cnt = $stmt !== false ? (int)$stmt->fetchColumn() : 0;
+                $cnt = $stmt !== false ? (int) $stmt->fetchColumn() : 0;
                 $table_exists = ($cnt > 0);
             }
-            if (!$table_exists) return [];
+            if (!$table_exists) {
+                return [];
+            }
 
-            $stmt = $pdo->prepare("SELECT * FROM mail_log ORDER BY created_at DESC LIMIT ?");
+            $stmt = $pdo->prepare('SELECT * FROM mail_log ORDER BY created_at DESC LIMIT ?');
             $stmt->execute([$limit]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
@@ -260,15 +260,19 @@ final class MailerService
     public function buildMailHtml(array $submission, string $step_label, string $token): string
     {
         $data         = json_decode($submission['data'], true);
-        $form_label   = (string)($submission['form_label'] ?? '');
+        $form_label   = (string) ($submission['form_label'] ?? '');
         $validate_url = resolve_base_url() . '/index.php?p=validate&token=' . urlencode($token);
 
         $lignes = '';
         foreach ($data as $k => $v) {
-            if (empty($v) || $k === 'validations') continue;
-            if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE);
-            $label  = \App\Core\App::html()->escape(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', (string)$k) ?? (string)$k)));
-            $valeur = $v === '1' ? '✓' : \App\Core\App::html()->escape((string)$v);
+            if (empty($v) || $k === 'validations') {
+                continue;
+            }
+            if (is_array($v)) {
+                $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+            }
+            $label  = \App\Core\App::html()->escape(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', (string) $k) ?? (string) $k)));
+            $valeur = $v === '1' ? '✓' : \App\Core\App::html()->escape((string) $v);
             $lignes .= "<tr><td style='padding:5px 8px;font-weight:bold;color:#555;'>{$label}</td><td style='padding:5px 8px;'>{$valeur}</td></tr>";
         }
 
@@ -276,7 +280,7 @@ final class MailerService
             . '<table style="border-collapse:collapse;width:100%;margin-bottom:24px;">' . $lignes . '</table>'
             . '<a href="' . $validate_url . '" style="background:#003189;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;display:inline-block;">'
             . '✓ Marquer comme effectué</a>'
-            . '<p style="font-size:12px;color:#999;margin-top:8px;">Lien à usage unique — ' . \App\Core\App::html()->escape($this->settings->get('smtp_from')) . '</p>';
+            . '<p style="font-size:12px;color:#999;margin-top:8px;">Lien à usage unique — ' . \App\Core\App::html()->escape($this->settingsService->get('smtp_from')) . '</p>';
 
         return $this->renderEmailTemplate($form_label . ' — Action requise', $body_html);
     }

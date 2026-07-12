@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core;
@@ -7,13 +8,10 @@ namespace App\Core;
  * Service de migrations SQLite.
  * Wraps the global db_migrate() function for testability and DI.
  */
-final class MigrationService
+final readonly class MigrationService
 {
-    private Database $db;
-
-    public function __construct(Database $db)
+    public function __construct(private Database $database)
     {
-        $this->db = $db;
     }
 
     /**
@@ -21,7 +19,7 @@ final class MigrationService
      */
     public function migrate(): void
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         if (function_exists('db_migrate')) {
             db_migrate($pdo);
         }

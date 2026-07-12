@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -31,11 +32,15 @@ final class RgpdController extends BaseController
             // Mise à jour des mentions légales
             if ($action === 'update_legal') {
                 $legalText = trim($_POST['legal_mentions'] ?? '');
-                $retention = (int)($_POST['retention_months'] ?? 24);
-                if ($retention < 1) $retention = 1;
-                if ($retention > 120) $retention = 120;
+                $retention = (int) ($_POST['retention_months'] ?? 24);
+                if ($retention < 1) {
+                    $retention = 1;
+                }
+                if ($retention > 120) {
+                    $retention = 120;
+                }
                 $this->settings->set('legal_mentions', $legalText, App::auth()->getUser());
-                $this->settings->set('retention_months', (string)$retention, App::auth()->getUser());
+                $this->settings->set('retention_months', (string) $retention, App::auth()->getUser());
                 App::audit()->log('rgpd_settings', 'settings', 'Mentions légales et durée de conservation mises à jour');
                 $successMsg = 'Mentions légales et durée de conservation mises à jour.';
             }
@@ -43,7 +48,7 @@ final class RgpdController extends BaseController
             // Export des données d'un utilisateur
             if ($action === 'export_user') {
                 $email = validate_email($_POST['export_email'] ?? '');
-                if (empty($email)) {
+                if ($email === '' || $email === '0') {
                     $errorMsg = 'Adresse email invalide.';
                 } else {
                     $data = App::getInstance()->get(\App\Rgpd\RgpdService::class)->exportUserData($email);
@@ -71,7 +76,7 @@ final class RgpdController extends BaseController
             if ($action === 'delete_user') {
                 $email = validate_email($_POST['delete_email'] ?? '');
                 $confirmed = !empty($_POST['confirmed']);
-                if (empty($email)) {
+                if ($email === '' || $email === '0') {
                     $errorMsg = 'Adresse email invalide.';
                 } elseif (!$confirmed) {
                     $errorMsg = 'Veuillez confirmer la suppression en cochant la case.';
@@ -99,7 +104,7 @@ final class RgpdController extends BaseController
                 if (!$confirmed) {
                     $errorMsg = 'Veuillez confirmer la purge en cochant la case de confirmation.';
                 } else {
-                    $months = (int)$this->settings->get('retention_months', '24');
+                    $months = (int) $this->settings->get('retention_months', '24');
 
                     $pdo->exec('PRAGMA foreign_keys = ON');
 
@@ -118,7 +123,7 @@ final class RgpdController extends BaseController
         }
 
         // Statistiques RGPD
-        $retentionMonths = (int)$this->settings->get('retention_months', '24');
+        $retentionMonths = (int) $this->settings->get('retention_months', '24');
         $legalMentions = $this->settings->get('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Contact : ' . $this->settings->get('rgpd_contact', 'CIL DREETS') . '.');
 
         $totalSubmissions = $this->submissionRepo->countAll();
@@ -128,9 +133,6 @@ final class RgpdController extends BaseController
         $dbSize = (new \App\Webhook\WebhookService($this->db))->getDbSize();
 
         $pageCss = '';
-        $navExtra = [
-            'rgpd' => ['href' => 'index.php?p=rgpd', 'label' => 'RGPD', 'icon' => '🔐'],
-        ];
         $content = \App\Render\RgpdRenderer::content(
             $successMsg,
             $errorMsg,
@@ -144,6 +146,6 @@ final class RgpdController extends BaseController
             $legalMentions,
             $this->settings->get('email_domain', 'exemple.invalid')
         );
-        echo $this->renderPage('RGPD', 'rgpd', $pageCss, $content, ['nav_extra' => $navExtra]);
+        echo $this->renderPage('RGPD', 'rgpd', $pageCss, $content);
     }
 }

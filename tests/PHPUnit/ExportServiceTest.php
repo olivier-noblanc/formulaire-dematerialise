@@ -99,8 +99,8 @@ final class ExportServiceTest extends TestCase
 
         $params = $constructor->getParameters();
         $this->assertCount(2, $params);
-        $this->assertSame('db', $params[0]->getName());
-        $this->assertSame('auth', $params[1]->getName());
+        $this->assertSame('database', $params[0]->getName());
+        $this->assertSame('authService', $params[1]->getName());
     }
 
     public function testConstructorParamTypes(): void
@@ -124,30 +124,30 @@ final class ExportServiceTest extends TestCase
     public function testClassHasDbProperty(): void
     {
         $reflection = new \ReflectionClass(ExportService::class);
-        $this->assertTrue($reflection->hasProperty('db'));
+        $this->assertTrue($reflection->hasProperty('database'));
     }
 
     public function testClassHasAuthProperty(): void
     {
         $reflection = new \ReflectionClass(ExportService::class);
-        $this->assertTrue($reflection->hasProperty('auth'));
+        $this->assertTrue($reflection->hasProperty('authService'));
     }
 
     public function testDbPropertyIsPrivate(): void
     {
-        $reflection = new \ReflectionProperty(ExportService::class, 'db');
+        $reflection = new \ReflectionProperty(ExportService::class, 'database');
         $this->assertTrue($reflection->isPrivate());
     }
 
     public function testAuthPropertyIsPrivate(): void
     {
-        $reflection = new \ReflectionProperty(ExportService::class, 'auth');
+        $reflection = new \ReflectionProperty(ExportService::class, 'authService');
         $this->assertTrue($reflection->isPrivate());
     }
 
     public function testDbPropertyHasCorrectType(): void
     {
-        $reflection = new \ReflectionProperty(ExportService::class, 'db');
+        $reflection = new \ReflectionProperty(ExportService::class, 'database');
         $type = $reflection->getType();
         $this->assertNotNull($type);
         $this->assertSame(Database::class, $type->getName());
@@ -155,7 +155,7 @@ final class ExportServiceTest extends TestCase
 
     public function testAuthPropertyHasCorrectType(): void
     {
-        $reflection = new \ReflectionProperty(ExportService::class, 'auth');
+        $reflection = new \ReflectionProperty(ExportService::class, 'authService');
         $type = $reflection->getType();
         $this->assertNotNull($type);
         $this->assertSame(AuthService::class, $type->getName());
@@ -180,7 +180,7 @@ final class ExportServiceTest extends TestCase
     public function testServiceUsesInjectedDatabase(): void
     {
         $service = new ExportService($this->db, $this->auth);
-        $reflection = new \ReflectionProperty($service, 'db');
+        $reflection = new \ReflectionProperty($service, 'database');
         $reflection->setAccessible(true);
         $this->assertSame($this->db, $reflection->getValue($service));
     }
@@ -188,7 +188,7 @@ final class ExportServiceTest extends TestCase
     public function testServiceUsesInjectedAuth(): void
     {
         $service = new ExportService($this->db, $this->auth);
-        $reflection = new \ReflectionProperty($service, 'auth');
+        $reflection = new \ReflectionProperty($service, 'authService');
         $reflection->setAccessible(true);
         $this->assertSame($this->auth, $reflection->getValue($service));
     }
@@ -431,7 +431,7 @@ final class ExportServiceTest extends TestCase
     public function testExportServiceUsesInjectedDatabase(): void
     {
         $service = new ExportService($this->db, $this->auth);
-        $reflection = new \ReflectionProperty($service, 'db');
+        $reflection = new \ReflectionProperty($service, 'database');
         $reflection->setAccessible(true);
         $this->assertSame($this->db, $reflection->getValue($service));
     }
@@ -439,7 +439,7 @@ final class ExportServiceTest extends TestCase
     public function testExportServiceUsesInjectedAuth(): void
     {
         $service = new ExportService($this->db, $this->auth);
-        $reflection = new \ReflectionProperty($service, 'auth');
+        $reflection = new \ReflectionProperty($service, 'authService');
         $reflection->setAccessible(true);
         $this->assertSame($this->auth, $reflection->getValue($service));
     }

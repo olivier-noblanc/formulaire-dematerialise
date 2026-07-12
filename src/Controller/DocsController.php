@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Core\App;
-
 /**
  * Contrôleur de la page Aide et documentation.
  *
@@ -23,7 +21,7 @@ final class DocsController extends BaseController
 
         try {
             $user_email = $this->auth->getUser();
-            $is_logged_in = !empty($user_email);
+            $is_logged_in = $user_email !== '' && $user_email !== '0';
             $is_admin = $this->auth->isAdminEffective();
         } catch (\RuntimeException $e) {
             $is_logged_in = false;
@@ -44,33 +42,33 @@ final class DocsController extends BaseController
   <h1>Aide et documentation</h1>
   <p class="subtitle"><span class="version-badge">v<?= \App\Core\App::html()->escape($this->cache->getLatestVersion()) ?></span></p>
 
-<?php $_docs = \App\Core\App::getInstance()->get(\App\Docs\DocumentationService::class); ?>
+<?php $documentationService = \App\Core\App::getInstance()->get(\App\Docs\DocumentationService::class); ?>
 
-<?= $_docs->renderStart() ?>
+<?= $documentationService->renderStart() ?>
 
-<?= $_docs->renderToc() ?>
+<?= $documentationService->renderToc() ?>
 
   <details class="full-doc">
     <summary><span aria-hidden="true">📖</span> Documentation complète (avancée)</summary>
     <div class="full-doc-body">
 
-<?= $_docs->renderQuickstart() ?>
+<?= $documentationService->renderQuickstart() ?>
 
-<?= $_docs->renderAgent() ?>
+<?= $documentationService->renderAgent() ?>
 
-<?= $_docs->renderValidateur() ?>
+<?= $documentationService->renderValidateur() ?>
 
-<?= $_docs->renderAdmin() ?>
+<?= $documentationService->renderAdmin() ?>
 
-<?= $_docs->renderFeatures() ?>
+<?= $documentationService->renderFeatures() ?>
 
-<?= $_docs->renderRoles() ?>
+<?= $documentationService->renderRoles() ?>
 
-<?= $_docs->renderFaq() ?>
+<?= $documentationService->renderFaq() ?>
 
-<?= $_docs->renderRgpd() ?>
+<?= $documentationService->renderRgpd() ?>
 
-<?= $_docs->renderTechnique() ?>
+<?= $documentationService->renderTechnique() ?>
 
     </div>
   </details>
@@ -79,7 +77,7 @@ final class DocsController extends BaseController
 
 <a href="#top" class="back-to-top" title="Retour en haut de page">↑</a>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Documentation', 'docs', $pageCss, $content);
     }
 }

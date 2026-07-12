@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -101,7 +102,7 @@ final class ConfirmActionController extends BaseController
             case 'delete_rule':
                 $ruleId = trim($_GET['rule_id']);
                 $ruleLabel = App::getInstance()->get(\App\Repository\AlertRepository::class)->findLabelById($ruleId);
-                $detailText = $ruleLabel ? '"' . \App\Core\App::html()->escape($ruleLabel) . '" ( #' . \App\Core\App::html()->escape((string)$ruleId) . ') ?' : '#' . \App\Core\App::html()->escape((string)$ruleId) . ' ?';
+                $detailText = $ruleLabel ? '"' . \App\Core\App::html()->escape($ruleLabel) . '" ( #' . \App\Core\App::html()->escape($ruleId) . ') ?' : '#' . \App\Core\App::html()->escape($ruleId) . ' ?';
                 break;
             case 'delete_alert_log':
                 $logId = trim($_GET['log_id']);
@@ -114,7 +115,7 @@ final class ConfirmActionController extends BaseController
             case 'remove_owner':
                 $ownerId = trim($_GET['id']);
                 $owEmail = App::getInstance()->get(\App\Repository\FormRepository::class)->findOwnerEmailById($ownerId);
-                $detailText = $owEmail ? App::html()->displayUser($owEmail) . ' ?' : '#' . \App\Core\App::html()->escape((string)$ownerId) . ' ?';
+                $detailText = $owEmail ? App::html()->displayUser($owEmail) . ' ?' : '#' . \App\Core\App::html()->escape($ownerId) . ' ?';
                 break;
             case 'delete_submission':
                 $subId = trim($_GET['submission_id']);
@@ -136,10 +137,18 @@ final class ConfirmActionController extends BaseController
     private function safeRelativeUrl(string $url): string
     {
         $url = trim($url);
-        if ($url === '') return 'index.php';
-        if (preg_match('#^(https?:)?//#i', $url)) return 'index.php';
-        if (preg_match('#^(javascript|data|file):#i', $url)) return 'index.php';
-        if (!preg_match('/^[a-zA-Z0-9_\-]+\.php/', $url)) return 'index.php';
+        if ($url === '') {
+            return 'index.php';
+        }
+        if (preg_match('#^(https?:)?//#i', $url)) {
+            return 'index.php';
+        }
+        if (preg_match('#^(javascript|data|file):#i', $url)) {
+            return 'index.php';
+        }
+        if (!preg_match('/^[a-zA-Z0-9_\-]+\.php/', $url)) {
+            return 'index.php';
+        }
         return $url;
     }
 }

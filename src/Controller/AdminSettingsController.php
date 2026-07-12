@@ -1,10 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
 
 use App\Core\App;
-use App\Controller\AdminSettingsHandlers;
 
 /**
  * Contrôleur de la page Paramètres admin (SMTP, vérification email, etc.).

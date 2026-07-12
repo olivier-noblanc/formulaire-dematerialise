@@ -1,64 +1,65 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Workflow;
 
-use App\Core\Database;
-use App\Settings\SettingsService;
-use App\Repository\SettingsRepository;
-use App\Mail\MailService;
-use App\Forms\FieldService;
 use App\Contract\WorkflowInterface;
+use App\Core\Database;
+use App\Forms\FieldService;
+use App\Mail\MailService;
+use App\Repository\SettingsRepository;
+use App\Settings\SettingsService;
 
 /**
  * Facade — wraps WorkflowEngine, single entry point for procedural API.
  */
-final class WorkflowService implements WorkflowInterface
+final readonly class WorkflowService implements WorkflowInterface
 {
-    private WorkflowEngine $engine;
+    private WorkflowEngine $workflowEngine;
 
-    public function __construct(Database $db)
+    public function __construct(Database $database)
     {
-        $settingsRepo = new SettingsRepository($db);
-        $settings = new SettingsService($settingsRepo);
-        $mail     = new MailService($db, $settings);
-        $fields   = new FieldService($db);
-        $conditions = new ConditionEvaluator();
-        $this->engine = new WorkflowEngine($db, $settings, $mail, $fields, $conditions);
+        $settingsRepository = new SettingsRepository($database);
+        $settingsService = new SettingsService($settingsRepository);
+        $mailService     = new MailService($database, $settingsService);
+        $fieldService   = new FieldService($database);
+        $conditionEvaluator = new ConditionEvaluator();
+        $this->workflowEngine = new WorkflowEngine($database, $settingsService, $mailService, $fieldService, $conditionEvaluator);
     }
 
     /** @return array<string, mixed>|null */
     public function getTokenWithContext(string $tokenValue): ?array
     {
-        return $this->engine->getTokenWithContext($tokenValue);
+        return $this->workflowEngine->getTokenWithContext($tokenValue);
     }
 
     /** @return array<string, mixed>|null */
     public function getTokenByIdWithContext(string $tokenId): ?array
     {
-        return $this->engine->getTokenByIdWithContext($tokenId);
+        return $this->workflowEngine->getTokenByIdWithContext($tokenId);
     }
 
     /** @return array<int, array<string, mixed>> */
     public function getWorkflowSteps(string $formId): array
     {
-        return $this->engine->getWorkflowSteps($formId);
+        return $this->workflowEngine->getWorkflowSteps($formId);
     }
 
     /** @return array<string, mixed>|null */
     public function getSubmissionWithFormLabel(string $submissionId): ?array
     {
-        return $this->engine->getSubmissionWithFormLabel($submissionId);
+        return $this->workflowEngine->getSubmissionWithFormLabel($submissionId);
     }
 
     public function resolveDynamicRecipient(string $recipient, array $formData, ?string $submissionId = null): string
     {
-        return $this->engine->resolveDynamicRecipient($recipient, $formData, $submissionId);
+        return $this->workflowEngine->resolveDynamicRecipient($recipient, $formData, $submissionId);
     }
 
     public function advanceWorkflow(string $submissionId): void
     {
-        $this->engine->advanceWorkflow($submissionId);
+        $this->workflowEngine->advanceWorkflow($submissionId);
     }
 
     /**
@@ -67,16 +68,16 @@ final class WorkflowService implements WorkflowInterface
      */
     public function validateToken(string $token, string $action = 'valider', string $comment = '', string $doneBy = ''): array
     {
-        return $this->engine->validateToken($token, $action, $comment, $doneBy);
+        return $this->workflowEngine->validateToken($token, $action, $comment, $doneBy);
     }
 
     public function hasActiveSubmissions(string $formId): int
     {
-        return $this->engine->hasActiveSubmissions($formId);
+        return $this->workflowEngine->hasActiveSubmissions($formId);
     }
 
     public function hasActiveStepSubmissions(string $stepId): int
     {
-        return $this->engine->hasActiveStepSubmissions($stepId);
+        return $this->workflowEngine->hasActiveStepSubmissions($stepId);
     }
 }

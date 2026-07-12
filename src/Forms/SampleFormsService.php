@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Forms;
@@ -8,13 +9,10 @@ use App\Core\Database;
 /**
  * Service de peuplement des formulaires d'exemple (onboarding, outboarding, etc.).
  */
-final class SampleFormsService
+final readonly class SampleFormsService
 {
-    private Database $db;
-
-    public function __construct(Database $db)
+    public function __construct(private Database $database)
     {
-        $this->db = $db;
     }
 
     /**
@@ -26,7 +24,7 @@ final class SampleFormsService
      */
     public function populate(): string
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         try {
             $pdo->beginTransaction();
@@ -83,7 +81,7 @@ final class SampleFormsService
                     'description' => "Demande de création, modification ou suppression d'un accès au système d'information",
                     'fields' => [
                         ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité'],
-                        ['label' => "Type de demande", 'field_type' => 'select', 'field_name' => 'type_demande', 'options' => ['Création', 'Modification', 'Suppression'], 'required' => 1, 'card_group' => 'Demande'],
+                        ['label' => 'Type de demande', 'field_type' => 'select', 'field_name' => 'type_demande', 'options' => ['Création', 'Modification', 'Suppression'], 'required' => 1, 'card_group' => 'Demande'],
                         ['label' => 'Application / SI concerné', 'field_type' => 'text', 'field_name' => 'application_si', 'required' => 1, 'card_group' => 'Demande'],
                         ['label' => 'Justification', 'field_type' => 'textarea', 'field_name' => 'justification', 'required' => 0, 'card_group' => 'Demande'],
                         ['label' => 'Date souhaitée', 'field_type' => 'date', 'field_name' => 'date_souhaitee', 'required' => 0, 'card_group' => 'Demande'],
@@ -176,9 +174,9 @@ final class SampleFormsService
 
             $created = 0;
             $skipped = 0;
-            foreach ($sample_forms as $sf) {
-                $chk = $pdo->prepare("SELECT COUNT(*) FROM forms WHERE slug = ?");
-                $chk->execute([$sf['slug']]);
+            foreach ($sample_forms as $sample_form) {
+                $chk = $pdo->prepare('SELECT COUNT(*) FROM forms WHERE slug = ?');
+                $chk->execute([$sample_form['slug']]);
                 if ($chk->fetchColumn() > 0) {
                     $skipped++;
                     continue;
@@ -186,17 +184,17 @@ final class SampleFormsService
 
                 $form_uuid = \generate_uuid();
                 $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
-                    ->execute([$form_uuid, $sf['slug'], $sf['label'], $sf['description']]);
+                    ->execute([$form_uuid, $sample_form['slug'], $sample_form['label'], $sample_form['description']]);
 
-                if (!empty($sf['fields'])) {
-                    $field_stmt = $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, required, ordre, card_group, hint, filled_by, validator_step) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                if (isset($sample_form['fields']) && !in_array($sample_form['fields'], ['', '0', []], true)) {
+                    $field_stmt = $pdo->prepare('INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, required, ordre, card_group, hint, filled_by, validator_step) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                     $ordre = 1;
-                    foreach ($sf['fields'] as $f) {
+                    foreach ($sample_form['fields'] as $f) {
                         $options_json = null;
-                        if (!empty($f['options'])) {
+                        if (isset($f['options']) && $f['options'] !== []) {
                             $options_json = json_encode($f['options'], JSON_UNESCAPED_UNICODE);
                         }
-                        $filled_by = !empty($f['filled_by']) ? $f['filled_by'] : 'demandeur';
+                        $filled_by = empty($f['filled_by']) ? 'demandeur' : $f['filled_by'];
                         if (!in_array($filled_by, ['demandeur', 'validator'])) {
                             $filled_by = 'demandeur';
                         }
@@ -204,7 +202,7 @@ final class SampleFormsService
                             \generate_uuid(), $form_uuid,
                             $f['label'], $f['field_type'] ?? '', $f['field_name'] ?? '',
                             $options_json,
-                            (int)($f['required'] ?? 0),
+                            (int) ($f['required'] ?? 0),
                             $ordre,
                             $f['card_group'] ?? 'Général',
                             $f['hint'] ?? '',
@@ -215,14 +213,14 @@ final class SampleFormsService
                     }
                 }
 
-                if (!empty($sf['steps'])) {
-                    foreach ($sf['steps'] as $s) {
+                if (isset($sample_form['steps']) && !in_array($sample_form['steps'], ['', '0', []], true)) {
+                    foreach ($sample_form['steps'] as $s) {
                         $step_uuid = \generate_uuid();
-                        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)")
+                        $pdo->prepare('INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)')
                             ->execute([$step_uuid, $form_uuid, $s['label'], $s['ordre'] ?? 0]);
 
                         if (!empty($s['recipients'])) {
-                            $recip_stmt = $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)");
+                            $recip_stmt = $pdo->prepare('INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)');
                             foreach ($s['recipients'] as $email) {
                                 $recip_stmt->execute([\generate_uuid(), $step_uuid, $email]);
                             }
