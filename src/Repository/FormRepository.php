@@ -16,6 +16,9 @@ final class FormRepository extends BaseRepository
         return $this->fetchOne('SELECT * FROM forms WHERE slug = ?', [$slug]);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findActiveBySlug(string $slug): ?array
     {
         return $this->fetchOne('SELECT * FROM forms WHERE slug = ? AND actif = 1', [$slug]);
@@ -27,11 +30,17 @@ final class FormRepository extends BaseRepository
         return $result !== null ? (string) $result['id'] : null;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findActiveList(): array
     {
         return $this->fetchAll('SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label');
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findAll(bool $activeOnly = false): array
     {
         $sql = 'SELECT * FROM forms';
@@ -41,6 +50,9 @@ final class FormRepository extends BaseRepository
         return $this->fetchAll($sql . ' ORDER BY label');
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findOwnedBy(string $email): array
     {
         return $this->fetchAll(
@@ -49,6 +61,9 @@ final class FormRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function create(array $data): string
     {
         $id = \generate_uuid();
@@ -59,6 +74,9 @@ final class FormRepository extends BaseRepository
         return $id;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function update(string $id, array $data): bool
     {
         $fields = [];
@@ -76,6 +94,9 @@ final class FormRepository extends BaseRepository
         return $this->execute('DELETE FROM forms WHERE id = ?', [$id]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getFields(string $formId): array
     {
         return $this->fetchAll(
@@ -84,6 +105,9 @@ final class FormRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getSteps(string $formId): array
     {
         return $this->fetchAll(
@@ -92,6 +116,9 @@ final class FormRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getOwners(string $formId): array
     {
         return $this->fetchAll(
@@ -116,6 +143,9 @@ final class FormRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getDateFields(string $formId): array
     {
         return $this->fetchAll(
@@ -129,11 +159,18 @@ final class FormRepository extends BaseRepository
         return $this->execute('UPDATE forms SET deadline_field = ? WHERE id = ?', [$deadlineField, $formId]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findActiveSlugsAndLabels(): array
     {
         return $this->fetchAll('SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label');
     }
 
+    /**
+     * @param array<int, string> $formIds
+     * @return array<string, array<int, array<string, mixed>>>
+     */
     public function getWorkflowStepsByFormIds(array $formIds): array
     {
         if ($formIds === []) {
@@ -157,6 +194,9 @@ final class FormRepository extends BaseRepository
         return $result;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getWorkflowStepsWithTokens(string $formId, string $submissionId): array
     {
         return $this->fetchAll(
@@ -180,6 +220,9 @@ final class FormRepository extends BaseRepository
 
     // ── Field CRUD ──────────────────────────────────────────────
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function createField(array $data): string
     {
         $id = \generate_uuid();
@@ -190,6 +233,9 @@ final class FormRepository extends BaseRepository
         return $id;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function updateField(string $fieldId, array $data): bool
     {
         $fields = [];
@@ -209,6 +255,9 @@ final class FormRepository extends BaseRepository
 
     // ── Step CRUD ───────────────────────────────────────────────
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function createStep(array $data): string
     {
         $id = \generate_uuid();
@@ -219,6 +268,9 @@ final class FormRepository extends BaseRepository
         return $id;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function updateStep(string $stepId, array $data): bool
     {
         $fields = [];
@@ -290,6 +342,9 @@ final class FormRepository extends BaseRepository
 
     // ── Duplicate ───────────────────────────────────────────────
 
+    /**
+     * @param array<string, mixed> $srcForm
+     */
     public function duplicate(string $sourceId, string $newId, string $newLabel, string $newSlug, array $srcForm): void
     {
         $this->execute(

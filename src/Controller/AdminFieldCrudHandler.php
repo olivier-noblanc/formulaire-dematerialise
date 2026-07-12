@@ -11,6 +11,9 @@ use App\Core\App;
  */
 final class AdminFieldCrudHandler
 {
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleAddField(): array
     {
         $form_id = trim($_POST['form_id'] ?? '');
@@ -55,6 +58,9 @@ final class AdminFieldCrudHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleUpdateField(): array
     {
         $field_id = trim($_POST['field_id'] ?? '');
@@ -100,6 +106,9 @@ final class AdminFieldCrudHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public static function handleDeleteField(): ?array
     {
         $field_id = trim($_POST['field_id'] ?? '');

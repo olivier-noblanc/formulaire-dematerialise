@@ -36,6 +36,9 @@ function parse_date(string $date_str): ?DateTimeImmutable
 {
     return DateHelper::parseDate($date_str);
 }
+/**
+ * @return array<string, mixed>
+ */
 function calculate_deadline_urgency(string $deadlineVal, string $status = 'en_cours'): array
 {
     return DateHelper::calculateDeadlineUrgency($deadlineVal, $status);
@@ -54,6 +57,9 @@ function parse_options_input(string $input): ?string
 {
     return SlugHelper::parseOptionsInput($input);
 }
+/**
+ * @return array<string, mixed>|null
+ */
 function get_form_by_uuid(string $uuid): ?array
 {
     return SlugHelper::getFormByUuid($uuid);
@@ -76,6 +82,9 @@ function t_jargon(string $text): string
 }
 
 // ── TEST MODE (lib/test_mode.php → App\Core\TestModeService) ────
+/**
+ * @return array<string, mixed>
+ */
 function get_test_mails(): array
 {
     return TestModeService::getTestMails();
@@ -84,12 +93,18 @@ function reset_test_mails(): void
 {
     TestModeService::resetTestMails();
 }
+/**
+ * @param array<string, mixed> $data
+ */
 function test_json_response(array $data): void
 {
     TestModeService::testJsonResponse($data);
 }
 
 // ── SETTINGS (lib/settings.php → App\Settings\SettingsService) ──
+/**
+ * @return array<int, string>
+ */
 function get_sensitive_setting_keys(): array
 {
     return ['smtp_pass', 'ldap_bind_pass', 'app_test_secret'];
@@ -277,11 +292,17 @@ function persona_get_service(): \App\Persona\PersonaService
 }
 
 // ── CONDITIONS (lib/conditions.php → App\Workflow\ConditionEvaluator) ──
+/**
+ * @param array<string, mixed> $data
+ */
 function evaluate_condition(?string $condition_json, array $data): bool
 {
     return \App\Core\App::conditions()->evaluate($condition_json, $data);
 }
 
+/**
+ * @param array<string, mixed> $step
+ */
 function evaluate_step_condition(array $step, string $submission_id): bool
 {
     $condition_json = $step['condition'] ?? '';
@@ -298,6 +319,10 @@ function evaluate_step_condition(array $step, string $submission_id): bool
     return evaluate_condition($condition_json, $data);
 }
 
+/**
+ * @param array<string, mixed> $field
+ * @param array<string, mixed> $form_data
+ */
 function evaluate_field_condition(array $field, array $form_data): bool
 {
     $condition_json = $field['condition'] ?? '';
@@ -316,17 +341,27 @@ function validate_email(string $email): string
     return \App\Core\App::validation()->validateEmail($email);
 }
 
+/**
+ * @param array<string, mixed> $options
+ */
 function validate_input(mixed $value, string $rule, array $options = []): string|int
 {
     return \App\Core\App::validation()->validate($value, $rule, $options);
 }
 
 // ── FORM JSON VALIDATION (lib/admin_forms_json.php → App\Forms\FormJsonValidator) ──
+/**
+ * @param array<string, mixed> $data
+ * @return array<string, mixed>
+ */
 function validate_form_json(array $data): array
 {
     return \App\Forms\FormJsonValidator::validate($data);
 }
 
+/**
+ * @param array<string, mixed> $result
+ */
 function format_validation_results(array $result): string
 {
     return \App\Forms\FormJsonValidator::formatResults($result);
@@ -340,12 +375,18 @@ function populate_sample_forms(\PDO $pdo): string
 }
 
 // ── ADMIN FORMS HANDLERS (lib/admin_forms_handlers.php → App\Controller\AdminFormsHandlers) ──
+/**
+ * @return array<string, mixed>|null
+ */
 function handle_admin_action(\PDO $pdo, string $action, string $get_form_id = ''): ?array
 {
-    return \App\Controller\AdminFormsHandlers::dispatch($pdo, $action, $get_form_id);
+    return \App\Controller\AdminFormsHandlers::dispatch($action, $get_form_id);
 }
 
 // ── ADMIN SETTINGS HANDLERS (lib/admin_settings_handlers.php → App\Controller\AdminSettingsHandlers) ──
+/**
+ * @return array<string, mixed>
+ */
 function handle_admin_settings_post(): array
 {
     return \App\Controller\AdminSettingsHandlers::handlePost();
@@ -357,6 +398,9 @@ function get_admin_forms_page_css(): string
     return AdminFormsRenderer::getInstance()->getPageCss();
 }
 
+/**
+ * @return array<string, string>
+ */
 function get_admin_forms_field_types(): array
 {
     return AdminFormsRenderer::getInstance()->getFormFieldTypes();
@@ -377,51 +421,81 @@ function options_to_lines(?string $json): string
     return AdminFormsRenderer::getInstance()->optionsToLines($json);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_form_selector_panel(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderSelectorPanel($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_import_json_panel(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderImportJsonPanel($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_prompt_ia_panel(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderPromptIaPanel($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_new_form_panel(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderNewFormPanel($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_top_action_bar(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderTopActionBar($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_form_info_section(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderFormInfoSection($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_owners_section(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderOwnersSection($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_workflow_diagram_section(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderWorkflowDiagramSection($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_form_fields_section(array $ctx): string
 {
     return AdminFormsRenderer::getInstance()->renderFormFieldsSection($ctx);
 }
 
+/**
+ * @param array<string, mixed> $ctx
+ */
 function render_admin_forms_page(array $ctx): void
 {
     AdminFormsRenderer::getInstance()->renderPage($ctx);
@@ -433,6 +507,9 @@ function admin_settings_page_css(): string
     return AdminSettingsRenderer::getInstance()->getPageCss();
 }
 
+/**
+ * @param array<string, mixed> $state
+ */
 function render_admin_settings_content(array $state): string
 {
     return AdminSettingsRenderer::getInstance()->renderContent($state);

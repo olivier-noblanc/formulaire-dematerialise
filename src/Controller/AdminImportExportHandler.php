@@ -11,6 +11,9 @@ use App\Core\App;
  */
 final class AdminImportExportHandler
 {
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleExportForm(\PDO $pdo): array
     {
         $export_id = trim($_POST['form_id'] ?? '');
@@ -90,6 +93,9 @@ final class AdminImportExportHandler
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleValidateJson(): array
     {
         $json_input = trim($_POST['json_data'] ?? '');
@@ -119,6 +125,9 @@ final class AdminImportExportHandler
         return ['validation_html' => $validation_html, 'preserved_json' => $json_input];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleImportForm(\PDO $pdo): array
     {
         $json_input = trim($_POST['json_data'] ?? '');

@@ -105,6 +105,8 @@ final class DashboardRenderer
 
     /**
      * Barre d'outils du tableau de bord (U-13 — 3 niveaux hiérarchiques).
+     *
+     * @param array<int, array<string, mixed>> $forms
      */
     public static function toolbar(string $filtre, string $form_f, string $search, array $forms): string
     {

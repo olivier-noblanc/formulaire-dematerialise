@@ -1,0 +1,83 @@
+phpstan: 177 errors in 37 files
+
+src/lib_wrappers.php (27 errors)
+  :39 Function calculate_deadline_urgency() return type has no value type specified in iterable type array.
+  :57 Function get_form_by_uuid() return type has no value type specified in iterable type array.
+  :79 Function get_test_mails() return type has no value type specified in iterable type array.
+  :87 Function test_json_response() has parameter $data with no value type specified in iterable type array.
+  :93 Function get_sensitive_setting_keys() return type has no value type specified in iterable type array.
+  ... +22 more
+
+Render/SubmissionViewRenderer.php (16 errors)
+  :69 Method App\Render\SubmissionViewRenderer::renderHeader() has parameter $sub with no value type specified in iterable type array.
+  :121 Method App\Render\SubmissionViewRenderer::renderDeadline() has parameter $dl_info with no value type specified in iterable type array.
+  :157 Method App\Render\SubmissionViewRenderer::renderDelegations() has parameter $delegations with no value type specified in iterable type array.
+  :269 Method App\Render\SubmissionViewRenderer::renderContent() has parameter $ctx with no value type specified in iterable type array.
+  :357 Method App\Render\SubmissionViewRenderer::renderWorkflowDiagram() has parameter $workflow_steps with no value type specified in iterable type array.
+  ... +11 more
+
+Repository/SubmissionRepository.php (14 errors)
+  :33 Method App\Repository\SubmissionRepository::findActiveByFormAndSubmitter() return type has no value type specified in iterable type array.
+  :43 Method App\Repository\SubmissionRepository::createWithRgpd() has parameter $data with no value type specified in iterable type array.
+  :85 Method App\Repository\SubmissionRepository::countWithForm() has parameter $params with no value type specified in iterable type array.
+  :94 Method App\Repository\SubmissionRepository::findByIdWithForm() return type has no value type specified in iterable type array.
+  :129 Method App\Repository\SubmissionRepository::getStatusCountsByForm() return type has no value type specified in iterable type array.
+  ... +9 more
+
+Repository/FormRepository.php (12 errors)
+  :19 Method App\Repository\FormRepository::findActiveBySlug() return type has no value type specified in iterable type array.
+  :30 Method App\Repository\FormRepository::findActiveList() return type has no value type specified in iterable type array.
+  :119 Method App\Repository\FormRepository::getDateFields() return type has no value type specified in iterable type array.
+  :132 Method App\Repository\FormRepository::findActiveSlugsAndLabels() return type has no value type specified in iterable type array.
+  :137 Method App\Repository\FormRepository::getWorkflowStepsByFormIds() has parameter $formIds with no value type specified in iterable type array.
+  ... +7 more
+
+Render/AdminFormsRenderer.php (11 errors)
+  :298 Method App\Render\AdminFormsRenderer::getFormFieldTypes() return type has no value type specified in iterable type array.
+  :361 Method App\Render\AdminFormsRenderer::renderSelectorPanel() has parameter $ctx with no value type specified in iterable type array.
+  :398 Method App\Render\AdminFormsRenderer::renderImportJsonPanel() has parameter $ctx with no value type specified in iterable type array.
+  :442 Method App\Render\AdminFormsRenderer::renderPromptIaPanel() has parameter $ctx with no value type specified in iterable type array.
+  :633 Method App\Render\AdminFormsRenderer::renderNewFormPanel() has parameter $ctx with no value type specified in iterable type array.
+  ... +6 more
+
+Repository/TokenRepository.php (10 errors)
+  :79 Method App\Repository\TokenRepository::findWithStepsBySubmission() return type has no value type specified in iterable type array.
+  :92 Method App\Repository\TokenRepository::findDetailedWithStepsBySubmission() return type has no value type specified in iterable type array.
+  :104 Method App\Repository\TokenRepository::findBySubmissionIds() has parameter $submissionIds with no value type specified in iterable type array.
+  :104 Method App\Repository\TokenRepository::findBySubmissionIds() return type has no value type specified in iterable type array.
+  :136 Method App\Repository\TokenRepository::findEmailAndStepLabelById() return type has no value type specified in iterable type array.
+  ... +5 more
+
+Controller/AdminFormsHandlers.php (9 errors)
+  :84 Static method App\Controller\AdminFormCrudHandler::handleAddForm() invoked with 1 parameter, 0 required.
+  :85 Static method App\Controller\AdminFormCrudHandler::handleUpdateForm() invoked with 1 parameter, 0 required.
+  :88 Static method App\Controller\AdminStepCrudHandler::handleAddStep() invoked with 1 parameter, 0 required.
+  :93 Static method App\Controller\AdminFieldCrudHandler::handleAddField() invoked with 1 parameter, 0 required.
+  :94 Static method App\Controller\AdminFieldCrudHandler::handleUpdateField() invoked with 1 parameter, 0 required.
+  ... +4 more
+
+Controller/AdminFormCrudHandler.php (6 errors)
+  :14 Method App\Controller\AdminFormCrudHandler::handleAddForm() return type has no value type specified in iterable type array.
+  :33 Method App\Controller\AdminFormCrudHandler::handleUpdateForm() return type has no value type specified in iterable type array.
+  :57 Method App\Controller\AdminFormCrudHandler::handleDeleteForm() return type has no value type specified in iterable type array.
+  :88 Method App\Controller\AdminFormCrudHandler::handleDuplicateForm() return type has no value type specified in iterable type array.
+  :100 Parameter #1 $id of method App\Repository\FormRepository::findById() expects string, int<min, -1>|int<1, max>|string given.
+  ... +1 more
+
+Render/InstallRenderer.php (6 errors)
+  :155 Method App\Render\InstallRenderer::renderMessages() has parameter $error_messages with no value type specified in iterable type array.
+  :155 Method App\Render\InstallRenderer::renderMessages() has parameter $messages with no value type specified in iterable type array.
+  :171 Method App\Render\InstallRenderer::renderStep1() has parameter $prerequisites with no value type specified in iterable type array.
+  :220 Method App\Render\InstallRenderer::renderStep2() has parameter $d with no value type specified in iterable type array.
+  :319 Method App\Render\InstallRenderer::renderStep3() has parameter $confirm_config with no value type specified in iterable type array.
+  ... +1 more
+
+Stats/StatsService.php (5 errors)
+  :128 Cannot call method fetch() on PDOStatement|false.
+  :157 Method App\Stats\StatsService::getFormStats() return type has no value type specified in iterable type array.
+  :172 Cannot call method fetchAll() on PDOStatement|false.
+  :175 Method App\Stats\StatsService::getValidatorStats() return type has no value type specified in iterable type array.
+  :192 Cannot call method fetchAll() on PDOStatement|false.
+
+... +27 more files
+[full output: ~/AppData\Local\rtk\tee\1783855478_phpstan.log]

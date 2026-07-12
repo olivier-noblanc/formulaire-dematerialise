@@ -12,12 +12,12 @@ use App\Core\App;
 final class AdminAlertsRenderer
 {
     /**
-     * @param array  $forms           formulaires actifs (findActiveList)
-     * @param array  $rules           règles avec form_label (getAllWithForm)
-     * @param array  $alertLogs       logs avec form_label (getLogsWithForm)
+     * @param array<int, array<string, mixed>> $forms           formulaires actifs (findActiveList)
+     * @param array<int, array<string, mixed>> $rules           règles avec form_label (getAllWithForm)
+     * @param array<int, array<string, mixed>> $alertLogs       logs avec form_label (getLogsWithForm)
      * @param string $lastAlertCheck  date dernière exécution du script
      * @param string $editRuleId      id de la règle en cours d'édition (GET)
-     * @param array  $dateFieldsByForm  champs date par formulaire, clé = form id
+     * @param array<string, array<int, array<string, mixed>>> $dateFieldsByForm  champs date par formulaire, clé = form id
      */
     public static function content(
         string $successMsg,

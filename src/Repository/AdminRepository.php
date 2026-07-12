@@ -13,6 +13,9 @@ final class AdminRepository extends BaseRepository
         parent::__construct($database);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findByEmail(string $email): ?array
     {
         return $this->fetchOne('SELECT * FROM admins WHERE email = ?', [strtolower($email)]);
@@ -34,16 +37,25 @@ final class AdminRepository extends BaseRepository
         return $this->settingsRepository->get('admin_email') ?? '';
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getAll(): array
     {
         return $this->fetchAll('SELECT email FROM admins ORDER BY email');
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findByToken(string $token): ?array
     {
         return $this->fetchOne("SELECT email, created_at FROM admin_requests WHERE token = ? AND status = 'pending'", [$token]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getPendingRequestsDesc(): array
     {
         return $this->fetchAll("SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY created_at DESC");
@@ -62,6 +74,9 @@ final class AdminRepository extends BaseRepository
         return $this->execute('DELETE FROM admins WHERE email = ?', [strtolower($email)]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getPendingRequests(): array
     {
         return $this->fetchAll(

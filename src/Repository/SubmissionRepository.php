@@ -30,6 +30,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findActiveByFormAndSubmitter(string $formId, string $submittedBy): ?array
     {
         return $this->fetchOne(
@@ -40,6 +43,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function createWithRgpd(array $data): string
     {
         $id = \generate_uuid();
@@ -82,6 +88,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<int, mixed> $params
+     */
     public function countWithForm(string $whereSql, array $params): int
     {
         $result = $this->fetchOne(
@@ -91,6 +100,9 @@ final class SubmissionRepository extends BaseRepository
         return (int) ($result['cnt'] ?? 0);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findByIdWithForm(string $id): ?array
     {
         return $this->fetchOne(
@@ -126,6 +138,9 @@ final class SubmissionRepository extends BaseRepository
         return (int) ($result['cnt'] ?? 0);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getStatusCountsByForm(string $formId): array
     {
         return $this->fetchAll(
@@ -134,6 +149,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findPaginatedByForm(string $formId, int $limit, int $offset): array
     {
         return $this->fetchAll(
@@ -146,6 +164,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getStatusCountsBySubmitter(string $email): array
     {
         return $this->fetchAll(
@@ -154,6 +175,10 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<int, mixed> $params
+     * @return array<int, array<string, mixed>>
+     */
     public function findPaginatedBySubmitter(string $email, string $whereSql, array $params, int $limit, int $offset): array
     {
         return $this->fetchAll(
@@ -167,6 +192,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getValidatorDataFilledByEmail(string $email): array
     {
         return $this->fetchAll(
@@ -179,6 +207,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getValidatorDataOnSubmissionsByEmail(string $email): array
     {
         return $this->fetchAll(
@@ -233,6 +264,9 @@ final class SubmissionRepository extends BaseRepository
         return (int) ($result['cnt'] ?? 0);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findPendingForValidator(string $email): array
     {
         return $this->fetchAll(
@@ -245,6 +279,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function create(array $data): string
     {
         $id = \generate_uuid();
@@ -263,6 +300,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getValidatorData(string $submissionId, ?string $stepId = null): array
     {
         $sql = 'SELECT * FROM submission_validator_data WHERE submission_id = ?';
@@ -274,6 +314,9 @@ final class SubmissionRepository extends BaseRepository
         return $this->fetchAll($sql . ' ORDER BY filled_at', $params);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getValidatorDataOrdered(string $submissionId): array
     {
         return $this->fetchAll(
@@ -302,6 +345,9 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findValidatorDataByEmail(string $email, int $limit = 50): array
     {
         return $this->fetchAll(
@@ -322,6 +368,9 @@ final class SubmissionRepository extends BaseRepository
         return $result !== null;
     }
 
+    /**
+     * @return array<string, int>
+     */
     public function countByStatusForSubmitter(string $email): array
     {
         $rows = $this->fetchAll(

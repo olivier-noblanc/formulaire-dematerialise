@@ -16,6 +16,9 @@ final class TokenRepository extends BaseRepository
         return $this->fetchOne('SELECT * FROM tokens WHERE id = ?', [$tokenId]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
@@ -24,6 +27,9 @@ final class TokenRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function create(array $data): string
     {
         $id = \generate_uuid();
@@ -76,6 +82,9 @@ final class TokenRepository extends BaseRepository
         return (int) ($result['count'] ?? 0);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findWithStepsBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
@@ -89,6 +98,9 @@ final class TokenRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findDetailedWithStepsBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
@@ -101,6 +113,10 @@ final class TokenRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<int, string> $submissionIds
+     * @return array<string, array<int, array<string, mixed>>>
+     */
     public function findBySubmissionIds(array $submissionIds): array
     {
         if ($submissionIds === []) {
@@ -133,6 +149,9 @@ final class TokenRepository extends BaseRepository
         return $result !== null;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findEmailAndStepLabelById(string $tokenId): ?array
     {
         return $this->fetchOne(
@@ -141,6 +160,9 @@ final class TokenRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findPendingByEmail(string $email, string $search = ''): array
     {
         if ($search !== '') {
@@ -176,6 +198,9 @@ final class TokenRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findDoneByEmail(string $email, int $limit = 50): array
     {
         return $this->fetchAll(
@@ -194,6 +219,10 @@ final class TokenRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<int, string> $submissionIds
+     * @return array<string, array<int, array<string, mixed>>>
+     */
     public function findStepsBySubmissionIds(array $submissionIds): array
     {
         if ($submissionIds === []) {
@@ -240,6 +269,9 @@ final class TokenRepository extends BaseRepository
         return (int) ($result['count'] ?? 0);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findForExport(string $submissionId): array
     {
         return $this->fetchAll(

@@ -11,6 +11,9 @@ use App\Core\App;
  */
 final class AdminRecipientHandler
 {
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleAddRecipient(\PDO $pdo, string $get_form_id): array
     {
         [$step_id, $err] = AdminFormsHandlers::postStepId();
@@ -37,6 +40,9 @@ final class AdminRecipientHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public static function handleDeleteRecipient(\PDO $pdo, string $get_form_id): ?array
     {
         $recipient_id = trim($_POST['recipient_id'] ?? '');
@@ -55,6 +61,9 @@ final class AdminRecipientHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleAddOwner(): array
     {
         $form_id = trim($_POST['form_id'] ?? '');
@@ -76,6 +85,9 @@ final class AdminRecipientHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleDeleteOwner(): array
     {
         $owner_id = trim($_POST['owner_id'] ?? '');

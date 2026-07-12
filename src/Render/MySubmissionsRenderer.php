@@ -13,6 +13,9 @@ final class MySubmissionsRenderer
 {
     /**
      * Génère le HTML de la liste des soumissions de l'utilisateur.
+     *
+     * @param array<int, array<string, mixed>> $submissions
+     * @param array<int, array<string, mixed>> $activeForms
      */
     public static function content(
         array $submissions,

@@ -6,11 +6,17 @@ namespace App\Repository;
 
 final class AttachmentRepository extends BaseRepository
 {
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findById(string $id): ?array
     {
         return $this->fetchOne('SELECT * FROM attachments WHERE id = ?', [$id]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findBySubmission(string $submissionId): array
     {
         return $this->fetchAll(
@@ -19,6 +25,9 @@ final class AttachmentRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function create(array $data): string
     {
         $id = \generate_uuid();
@@ -39,6 +48,9 @@ final class AttachmentRepository extends BaseRepository
         return $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$submissionId]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findBySubmissionWithUploader(string $submissionId): array
     {
         return $this->fetchAll(
@@ -56,6 +68,9 @@ final class AttachmentRepository extends BaseRepository
         return (int) ($result['cnt'] ?? 0);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function findForExport(string $submissionId): array
     {
         return $this->fetchAll(

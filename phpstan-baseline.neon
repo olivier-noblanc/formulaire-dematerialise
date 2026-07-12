@@ -37,12 +37,6 @@ parameters:
 			path: classes/migrations/v16.php
 
 		-
-			message: '#^Offset ''admin_email'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@test\.local'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: classes/migrations/v16.php
-
-		-
 			message: '#^Cannot call method fetchColumn\(\) on PDOStatement\|false\.$#'
 			identifier: method.nonObject
 			count: 4
@@ -133,582 +127,6 @@ parameters:
 			path: classes/migrations/v26.php
 
 		-
-			message: '#^Function _post_form_id\(\) should return array\{string, string\|null\} but returns array\{int\|string, null\}\.$#'
-			identifier: return.type
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function _post_step_id\(\) should return array\{string, string\|null\} but returns array\{int\|string, null\}\.$#'
-			identifier: return.type
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_add_field\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_add_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_add_owner\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_add_recipient\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_add_step\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_delete_field\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_delete_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_delete_owner\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_delete_recipient\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_delete_step\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_duplicate_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_export_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_import_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_update_field\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_update_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_update_step\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function handle_admin_action_validate_json\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers.php
-
-		-
-			message: '#^Function _post_form_id\(\) should return array\{string, string\|null\} but returns array\{int\|string, null\}\.$#'
-			identifier: return.type
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function _post_step_id\(\) should return array\{string, string\|null\} but returns array\{int\|string, null\}\.$#'
-			identifier: return.type
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_add_field\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_add_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_add_owner\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_delete_field\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_delete_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_delete_owner\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_duplicate_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_export_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_import_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_update_field\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_update_form\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_validate_json\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_forms.php
-
-		-
-			message: '#^Function handle_admin_action_add_recipient\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_steps.php
-
-		-
-			message: '#^Function handle_admin_action_add_step\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_steps.php
-
-		-
-			message: '#^Function handle_admin_action_delete_recipient\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_steps.php
-
-		-
-			message: '#^Function handle_admin_action_delete_step\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_steps.php
-
-		-
-			message: '#^Function handle_admin_action_update_step\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_handlers_steps.php
-
-		-
-			message: '#^Function get_admin_forms_field_types\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/admin_forms_render.php
-
-		-
-			message: '#^Variable \$preserved_json on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.variable
-			count: 1
-			path: lib/admin_forms_render_panels.php
-
-		-
-			message: '#^Parameter \#1 \.\.\.\$arg1 of function max expects non\-empty\-array, list given\.$#'
-			identifier: argument.type
-			count: 1
-			path: lib/admin_forms_render_workflow.php
-
-		-
-			message: '#^Function get_allowed_extensions\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/attachments.php
-
-		-
-			message: '#^Function get_allowed_mime_types\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/attachments.php
-
-		-
-			message: '#^Function get_attachment_by_id\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/attachments.php
-
-		-
-			message: '#^Function get_attachments\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/attachments.php
-
-		-
-			message: '#^Function handle_file_upload\(\) has parameter \$file with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/attachments.php
-
-		-
-			message: '#^Function handle_file_upload\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/attachments.php
-
-		-
-			message: '#^Function export_csv\(\) has parameter \$options with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/export_csv.php
-
-		-
-			message: '#^Function get_form_fields\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/filled_by.php
-
-		-
-			message: '#^Function get_form_validator_fields\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/filled_by.php
-
-		-
-			message: '#^Static call to instance method App\\Core\\App\:\:get\(\)\.$#'
-			identifier: method.staticCall
-			count: 1
-			path: lib/persona.php
-
-		-
-			message: '#^Static call to instance method App\\Core\\App\:\:has\(\)\.$#'
-			identifier: method.staticCall
-			count: 1
-			path: lib/persona.php
-
-		-
-			message: '#^Function render_dashboard_toolbar\(\) has parameter \$forms with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/render_dashboard.php
-
-		-
-			message: '#^Constant INST_DEFAULT_EMAIL_DOMAIN not found\.$#'
-			identifier: constant.notFound
-			count: 1
-			path: lib/render_install.php
-
-		-
-			message: '#^Constant INST_DEFAULT_SMTP_FROM not found\.$#'
-			identifier: constant.notFound
-			count: 1
-			path: lib/render_install.php
-
-		-
-			message: '#^Constant INST_DEFAULT_SMTP_FROM_NAME not found\.$#'
-			identifier: constant.notFound
-			count: 1
-			path: lib/render_install.php
-
-		-
-			message: '#^Constant INST_DEFAULT_SMTP_HOST not found\.$#'
-			identifier: constant.notFound
-			count: 1
-			path: lib/render_install.php
-
-		-
-			message: '#^Function inst_csrf_field not found\.$#'
-			identifier: function.notFound
-			count: 4
-			path: lib/render_install.php
-
-		-
-			message: '#^Function inst_h not found\.$#'
-			identifier: function.notFound
-			count: 25
-			path: lib/render_install.php
-
-		-
-			message: '#^Parameter \#1 \.\.\.\$arg1 of function max expects non\-empty\-array, list\<mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: lib/render_monitoring.php
-
-		-
-			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
-			identifier: argument.type
-			count: 4
-			path: lib/render_monitoring.php
-
-		-
-			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: lib/render_monitoring_audit.php
-
-		-
-			message: '#^Cannot call method fetchAll\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: lib/render_navigation.php
-
-		-
-			message: '#^Parameter \#1 \$val of function h expects string\|null, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: lib/render_navigation.php
-
-		-
-			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
-			identifier: argument.type
-			count: 3
-			path: lib/render_submission_view.php
-
-		-
-			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
-			identifier: argument.type
-			count: 5
-			path: lib/render_submission_view_sections.php
-
-		-
-			message: '#^Function rgpd_export_user_data\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/rgpd.php
-
-		-
-			message: '#^Parameter \#1 \$length of function random_bytes expects int\<1, max\>, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: lib/settings.php
-
-		-
-			message: '#^Function get_global_stats\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/stats.php
-
-		-
-			message: '#^Function get_stats_by_period\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/stats.php
-
-		-
-			message: '#^Function search_submissions\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/stats.php
-
-		-
-			message: '#^Function search_submissions\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/stats.php
-
-		-
-			message: '#^Function cancel_submission\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/tokens.php
-
-		-
-			message: '#^Function delegate_token\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/tokens.php
-
-		-
-			message: '#^Function get_delegations\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/tokens.php
-
-		-
-			message: '#^Function get_tokens_for_submission\(\) has parameter \$extra_fields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/tokens.php
-
-		-
-			message: '#^Function get_tokens_for_submission\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/tokens.php
-
-		-
-			message: '#^Function regenerate_token\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/tokens.php
-
-		-
-			message: '#^Function remind_one\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/tokens.php
-
-		-
-			message: '#^Function send_webhook\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/webhook.php
-
-		-
-			message: '#^Function get_submission_with_form_label\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/workflow.php
-
-		-
-			message: '#^Function get_token_by_id_with_context\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/workflow.php
-
-		-
-			message: '#^Function get_token_with_context\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/workflow.php
-
-		-
-			message: '#^Function get_workflow_steps\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/workflow.php
-
-		-
-			message: '#^Function resolve_dynamic_recipient\(\) has parameter \$form_data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: lib/workflow.php
-
-		-
-			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
-			identifier: argument.type
-			count: 2
-			path: pages/admin_access.php
-
-		-
-			message: '#^Cannot call method fetchAll\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: pages/admin_alerts.php
-
-		-
-			message: '#^Cannot call method fetchColumn\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 7
-			path: pages/backup.php
-
-		-
-			message: '#^Parameter \#1 \$bytes of function format_bytes expects int, int\<0, max\>\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: pages/backup.php
-
-		-
-			message: '#^Cannot call method fetchAll\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 6
-			path: pages/monitoring.php
-
-		-
-			message: '#^Cannot call method fetchColumn\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: pages/monitoring.php
-
-		-
-			message: '#^Cannot call method fetchColumn\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: pages/rgpd.php
-
-		-
-			message: '#^Cannot call method fetchAll\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: pages/stats.php
-
-		-
-			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: pages/validate.php
-
-		-
-			message: '#^Offset ''admin_email'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@test\.local'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
-			identifier: isset.offset
-			count: 1
-			path: src/Auth/AuthService.php
-
-		-
-			message: '#^Offset ''email_domain'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@test\.local'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
-			identifier: isset.offset
-			count: 1
-			path: src/Auth/AuthService.php
-
-		-
 			message: '#^Right side of && is always true\.$#'
 			identifier: booleanAnd.rightAlwaysTrue
 			count: 2
@@ -717,12 +135,6 @@ parameters:
 		-
 			message: '#^Argument of an invalid type list\<string\>\|false supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 1
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
-			identifier: greater.alwaysTrue
 			count: 1
 			path: src/Cache/CacheService.php
 
@@ -751,21 +163,99 @@ parameters:
 			path: src/Contract/WorkflowInterface.php
 
 		-
-			message: '#^Cannot call method fetchAll\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: src/Controller/AdminAlertsController.php
+			message: '#^Parameter \#1 \$id of method App\\Repository\\FormRepository\:\:findById\(\) expects string, int\<min, \-1\>\|int\<1, max\>\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/AdminFormCrudHandler.php
 
 		-
-			message: '#^Method App\\Controller\\BaseController\:\:renderPage\(\) invoked with 5 parameters, 1\-4 required\.$#'
+			message: '#^Parameter \#1 \$sourceId of method App\\Repository\\FormRepository\:\:duplicate\(\) expects string, int\<min, \-1\>\|int\<1, max\>\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/AdminFormCrudHandler.php
+
+		-
+			message: '#^Parameter \#1 \$pdo of static method App\\Controller\\AdminRecipientHandler\:\:handleAddRecipient\(\) expects PDO, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Parameter \#1 \$pdo of static method App\\Controller\\AdminRecipientHandler\:\:handleDeleteRecipient\(\) expects PDO, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Parameter \#1 \$pdo of static method App\\Controller\\AdminStepCrudHandler\:\:handleDeleteStep\(\) expects PDO, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Parameter \#1 \$pdo of static method App\\Controller\\AdminStepCrudHandler\:\:handleUpdateStep\(\) expects PDO, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminFormCrudHandler\:\:handleDeleteForm\(\) invoked with 0 parameters, 1 required\.$#'
 			identifier: arguments.count
 			count: 1
-			path: src/Controller/AdminAlertsController.php
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminFormCrudHandler\:\:handleDuplicateForm\(\) invoked with 0 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminImportExportHandler\:\:handleExportForm\(\) invoked with 0 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminImportExportHandler\:\:handleImportForm\(\) invoked with 0 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminRecipientHandler\:\:handleAddRecipient\(\) invoked with 1 parameter, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminRecipientHandler\:\:handleDeleteRecipient\(\) invoked with 1 parameter, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminStepCrudHandler\:\:handleDeleteStep\(\) invoked with 1 parameter, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Static method App\\Controller\\AdminStepCrudHandler\:\:handleUpdateStep\(\) invoked with 1 parameter, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Controller/AdminFormsHandlers.php
+
+		-
+			message: '#^Offset ''admin_email'' on array\{app_name\: string, app_favicon\: string, admin_email\: string, smtp_host\: string, smtp_port\: string, smtp_auth\: ''0''\|''1'', smtp_secure\: string, smtp_user\: string, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Controller/AdminSettingsHandlers.php
 
 		-
 			message: '#^Cannot call method fetchColumn\(\) on PDOStatement\|false\.$#'
 			identifier: method.nonObject
-			count: 7
+			count: 6
 			path: src/Controller/BackupController.php
 
 		-
@@ -787,7 +277,7 @@ parameters:
 			path: src/Controller/BaseController.php
 
 		-
-			message: '#^Parameter \#13 \$slug of method App\\Controller\\FormController\:\:renderContent\(\) expects string, int\|string given\.$#'
+			message: '#^Parameter \#12 \$slug of method App\\Controller\\FormController\:\:renderContent\(\) expects string, int\|string given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Controller/FormController.php
@@ -805,46 +295,16 @@ parameters:
 			path: src/Controller/MonitoringController.php
 
 		-
-			message: '#^Ternary operator condition is always true\.$#'
-			identifier: ternary.alwaysTrue
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Inner named functions are not supported by PHPStan\. Consider refactoring to an anonymous function, class method, or a top\-level\-defined function\. See issue \#165 \(https\://github\.com/phpstan/phpstan/issues/165\) for more details\.$#'
-			identifier: function.inner
-			count: 1
-			path: src/Controller/MySubmissionsController.php
-
-		-
 			message: '#^Offset mixed on non\-empty\-array\<non\-empty\-list\> in empty\(\) always exists and is not falsy\.$#'
 			identifier: empty.offset
 			count: 1
 			path: src/Controller/MySubmissionsController.php
 
 		-
-			message: '#^Cannot call method fetchColumn\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: src/Controller/RgpdController.php
-
-		-
-			message: '#^Method App\\Controller\\BaseController\:\:renderPage\(\) invoked with 5 parameters, 1\-4 required\.$#'
-			identifier: arguments.count
+			message: '#^Parameter \#8 \$allStepsBySub of static method App\\Render\\MyValidationsRenderer\:\:content\(\) expects array\<string, list\<array\<string, mixed\>\>\>, array\<string, array\<int, array\<string, mixed\>\>\> given\.$#'
+			identifier: argument.type
 			count: 1
-			path: src/Controller/RgpdController.php
-
-		-
-			message: '#^Cannot call method fetchAll\(\) on PDOStatement\|false\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: src/Controller/StatsController.php
-
-		-
-			message: '#^Method App\\Controller\\BaseController\:\:renderPage\(\) invoked with 5 parameters, 1\-4 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: src/Controller/StatsController.php
+			path: src/Controller/MyValidationsController.php
 
 		-
 			message: '#^Right side of \|\| is always true\.$#'
@@ -853,16 +313,22 @@ parameters:
 			path: src/Controller/SubmissionViewController.php
 
 		-
+			message: '#^Parameter \#1 \$token of static method App\\Render\\ValidateRenderer\:\:content\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/ValidateController.php
+
+		-
+			message: '#^Parameter \#5 \$result of static method App\\Render\\ValidateRenderer\:\:content\(\) expects array\{status\: string, data\: mixed\}, array\{status\: string, data\?\: array\<string, mixed\>\|null\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/ValidateController.php
+
+		-
 			message: '#^Method App\\Core\\App\:\:get\(\) should return T of object but returns object\.$#'
 			identifier: return.type
 			count: 1
 			path: src/Core/App.php
-
-		-
-			message: '#^Offset ''app_name'' on array\{smtp_host\: ''localhost'', smtp_port\: ''25'', smtp_from\: ''test@localhost'', smtp_from_name\: ''CircuitDemat Test'', delai_relance_h\: ''48'', admin_email\: ''admin@test\.local'', token_expire_days\: ''30'', relance_max\: ''3'', \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
-			identifier: isset.offset
-			count: 1
-			path: src/Core/Config.php
 
 		-
 			message: '#^Right side of && is always true\.$#'
@@ -877,10 +343,10 @@ parameters:
 			path: src/Core/Database.php
 
 		-
-			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
-			identifier: greater.alwaysTrue
+			message: '#^Strict comparison using \!\=\= between array\{''Accepté'', ''Accepté avec…'', ''Refusé''\}\|array\{''Création'', ''Modification'', ''Suppression''\}\|array\{''Démission'', ''Retraite'', ''Mutation sortante'', ''Fin de contrat'', ''Licenciement''\}\|array\{''Nouveau recruté'', ''Mutation entrante'', ''Contrat temporaire'', ''Stage''\}\|array\{''PC portable'', ''PC fixe'', ''Tablette'', ''Aucun''\}\|array\{''PC portable'', ''PC fixe'', ''Écran'', ''Imprimante'', ''Clavier/Souris'', ''Autre''\}\|array\{''Remboursement'', ''Avance''\} and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
 			count: 1
-			path: src/Cron/CronService.php
+			path: src/Forms/SampleFormsService.php
 
 		-
 			message: '#^Method App\\Forms\\ValidatorDataService\:\:getFormFields\(\) return type has no value type specified in iterable type array\.$#'
@@ -919,12 +385,6 @@ parameters:
 			path: src/Mail/MailService.php
 
 		-
-			message: '#^Property App\\Mail\\MailService\:\:\$db is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Mail/MailService.php
-
-		-
 			message: '#^Right side of && is always true\.$#'
 			identifier: booleanAnd.rightAlwaysTrue
 			count: 1
@@ -937,88 +397,40 @@ parameters:
 			path: src/Mail/MailerService.php
 
 		-
+			message: '#^Method App\\Render\\AdminSettingsRenderer\:\:renderContent\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/AdminSettingsRenderer.php
+
+		-
+			message: '#^Static method App\\Render\\DashboardRenderer\:\:submissionDetail\(\) invoked with 5 parameters, 4 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Render/DashboardRenderer.php
+
+		-
 			message: '#^Parameter \#2 \$offset of function substr expects int, int\|false given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Render/HtmlService.php
 
 		-
-			message: '#^Method App\\Repository\\AdminRepository\:\:findByEmail\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Call to method App\\Render\\HtmlService\:\:escape\(\) on a separate line has no effect\.$#'
+			identifier: method.resultUnused
 			count: 1
-			path: src/Repository/AdminRepository.php
+			path: src/Render/MonitoringRenderer.php
 
 		-
-			message: '#^Method App\\Repository\\AdminRepository\:\:getAll\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
+			identifier: argument.type
 			count: 1
-			path: src/Repository/AdminRepository.php
-
-		-
-			message: '#^Method App\\Repository\\AdminRepository\:\:getPendingRequests\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/AdminRepository.php
-
-		-
-			message: '#^Method App\\Repository\\AttachmentRepository\:\:create\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/AttachmentRepository.php
-
-		-
-			message: '#^Method App\\Repository\\AttachmentRepository\:\:findById\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/AttachmentRepository.php
-
-		-
-			message: '#^Method App\\Repository\\AttachmentRepository\:\:findBySubmission\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/AttachmentRepository.php
+			path: src/Render/MonitoringRenderer.php
 
 		-
 			message: '#^Method App\\Repository\\BaseRepository\:\:execute\(\) has parameter \$params with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Method App\\Repository\\BaseRepository\:\:fetchAll\(\) has parameter \$params with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Method App\\Repository\\BaseRepository\:\:fetchAll\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Method App\\Repository\\BaseRepository\:\:fetchOne\(\) has parameter \$params with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Method App\\Repository\\BaseRepository\:\:fetchOne\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Method App\\Repository\\FormRepository\:\:create\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Method App\\Repository\\FormRepository\:\:findAll\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/FormRepository.php
 
 		-
 			message: '#^Method App\\Repository\\FormRepository\:\:findById\(\) return type has no value type specified in iterable type array\.$#'
@@ -1031,48 +443,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Method App\\Repository\\FormRepository\:\:findOwnedBy\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Method App\\Repository\\FormRepository\:\:getFields\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Method App\\Repository\\FormRepository\:\:getOwners\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Method App\\Repository\\FormRepository\:\:getSteps\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Method App\\Repository\\FormRepository\:\:update\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Method App\\Repository\\SettingsRepository\:\:getAll\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/SettingsRepository.php
-
-		-
-			message: '#^Method App\\Repository\\SubmissionRepository\:\:create\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/SubmissionRepository.php
 
 		-
 			message: '#^Method App\\Repository\\SubmissionRepository\:\:findByForm\(\) return type has no value type specified in iterable type array\.$#'
@@ -1093,31 +463,7 @@ parameters:
 			path: src/Repository/SubmissionRepository.php
 
 		-
-			message: '#^Method App\\Repository\\SubmissionRepository\:\:findPendingForValidator\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/SubmissionRepository.php
-
-		-
-			message: '#^Method App\\Repository\\SubmissionRepository\:\:getValidatorData\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/SubmissionRepository.php
-
-		-
-			message: '#^Method App\\Repository\\TokenRepository\:\:create\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/TokenRepository.php
-
-		-
 			message: '#^Method App\\Repository\\TokenRepository\:\:findById\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Repository/TokenRepository.php
-
-		-
-			message: '#^Method App\\Repository\\TokenRepository\:\:findBySubmission\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Repository/TokenRepository.php
@@ -1149,7 +495,7 @@ parameters:
 		-
 			message: '#^Cannot call method fetchColumn\(\) on PDOStatement\|false\.$#'
 			identifier: method.nonObject
-			count: 11
+			count: 4
 			path: src/Stats/StatsService.php
 
 		-
@@ -1191,12 +537,6 @@ parameters:
 		-
 			message: '#^Method App\\Token\\TokenService\:\:remind\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Property App\\Token\\TokenService\:\:\$workflow is never read, only written\.$#'
-			identifier: property.onlyWritten
 			count: 1
 			path: src/Token/TokenService.php
 
@@ -1273,25 +613,13 @@ parameters:
 			path: src/View/ViewRenderer.php
 
 		-
-			message: '#^Parameter \#2 \$exclude of function render_submission_data expects list\<string\>, array given\.$#'
+			message: '#^Parameter \#2 \$exclude of method App\\Render\\FormRenderer\:\:submissionData\(\) expects list\<string\>, array given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/View/ViewRenderer.php
 
 		-
-			message: '#^Property App\\Webhook\\WebhookService\:\:\$db is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Webhook/WebhookService.php
-
-		-
 			message: '#^Method App\\Workflow\\WorkflowEngine\:\:resolveDynamicRecipient\(\) has parameter \$formData with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Method App\\Workflow\\WorkflowEngine\:\:sendWebhook\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Workflow/WorkflowEngine.php

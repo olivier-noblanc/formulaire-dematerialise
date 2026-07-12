@@ -89,6 +89,9 @@ final class BackupRenderer
 
     /**
      * Rend le contenu HTML principal de la page sauvegarde.
+     *
+     * @param array<string, mixed> $db_stats
+     * @param array<string, mixed>|null $purge_preview
      */
     public function renderContent(
         string $db_path,
@@ -317,6 +320,9 @@ final class BackupRenderer
 
     /**
      * Compose et affiche la page sauvegarde complète.
+     *
+     * @param array<string, mixed> $db_stats
+     * @param array<string, mixed>|null $purge_preview
      */
     public function renderPage(
         string $db_path,

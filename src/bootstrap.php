@@ -30,6 +30,7 @@ use App\Mail\MailService;
 use App\Persona\PersonaService;
 use App\Render\HtmlService;
 use App\Repository\AdminRepository;
+use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;
 use App\Repository\AuditRepository;
 use App\Repository\FormRepository;
@@ -97,7 +98,7 @@ $app->set(ViewRenderer::class, $view);
 $app->set(EmailView::class, new EmailView());
 
 // Token lifecycle service
-$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $workflow);
+$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail);
 $app->set(TokenService::class, $tokenService);
 
 // Attachment service
