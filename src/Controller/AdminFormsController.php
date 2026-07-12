@@ -15,8 +15,7 @@ final class AdminFormsController extends BaseController
     {
         App::auth()->requireAdmin();
 
-        $pdo = $this->db->getPdo();
-        $forms = _dbm_q($pdo, "SELECT id, label FROM forms ORDER BY label")->fetchAll(\PDO::FETCH_ASSOC);
+        $forms = App::getInstance()->get(\App\Repository\FormRepository::class)->findAll();
 
         $formId = trim($_GET['form_id'] ?? '');
         $editStepId = trim($_GET['edit_step'] ?? '');

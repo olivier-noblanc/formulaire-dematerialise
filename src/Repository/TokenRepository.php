@@ -212,4 +212,35 @@ final class TokenRepository extends BaseRepository
         }
         return $result;
     }
+
+    public function getActiveCountByEmail(string $email): int
+    {
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as count FROM tokens WHERE email = ? AND done_at IS NULL",
+            [$email]
+        );
+        return (int)($result['count'] ?? 0);
+    }
+
+    public function getBlockedCount(int $hours): int
+    {
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as count FROM tokens t
+             JOIN submissions s ON s.id = t.submission_id
+             WHERE t.done_at IS NULL AND s.status = 'en_cours'
+               AND CAST(strftime('%s', 'now') AS REAL)
+                   - CAST(strftime('%s', t.sent_at) AS REAL) > ?",
+            [$hours * 3600]
+        );
+        return (int)($result['count'] ?? 0);
+    }
+
+    public function findForExport(string $submissionId): array
+    {
+        return $this->fetchAll(
+            "SELECT step_id, email, sent_at, done_at, expires_at
+             FROM tokens WHERE submission_id = ? ORDER BY sent_at",
+            [$submissionId]
+        );
+    }
 }

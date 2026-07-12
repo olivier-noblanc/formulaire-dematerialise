@@ -316,4 +316,25 @@ final class SubmissionRepository extends BaseRepository
             [$email, $limit]
         );
     }
+
+    public function existsBySubmitter(string $email): bool
+    {
+        $result = $this->fetchOne("SELECT 1 FROM submissions WHERE submitted_by = ? LIMIT 1", [$email]);
+        return $result !== null;
+    }
+
+    public function countByStatusForSubmitter(string $email): array
+    {
+        $rows = $this->fetchAll(
+            "SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status",
+            [$email]
+        );
+        $result = ['total' => 0, 'en_cours' => 0, 'valide' => 0];
+        foreach ($rows as $row) {
+            $result['total'] += (int) $row['cnt'];
+            if ($row['status'] === 'en_cours') $result['en_cours'] = (int) $row['cnt'];
+            elseif ($row['status'] === 'valide') $result['valide'] = (int) $row['cnt'];
+        }
+        return $result;
+    }
 }

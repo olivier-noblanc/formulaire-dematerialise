@@ -54,4 +54,13 @@ final class AttachmentRepository extends BaseRepository
         $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM attachments");
         return (int) ($result['cnt'] ?? 0);
     }
+
+    public function findForExport(string $submissionId): array
+    {
+        return $this->fetchAll(
+            "SELECT id, field_name, original_name, mime_type, file_size, uploaded_at
+             FROM attachments WHERE submission_id = ? ORDER BY uploaded_at",
+            [$submissionId]
+        );
+    }
 }

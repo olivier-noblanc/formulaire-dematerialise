@@ -48,19 +48,15 @@ final class DownloadController extends BaseController
         if ($is_admin) {
             $has_access = true;
         } else {
-            $pdo = $this->db->getPdo();
-
-            $subStmt = $pdo->prepare("SELECT submitted_by FROM submissions WHERE id = ?");
-            $subStmt->execute([$attachment['submission_id']]);
-            $owner = $subStmt->fetchColumn();
+            $subRepo = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
+            $owner = $subRepo->getSubmitterById($attachment['submission_id']);
             if ($owner === $user) {
                 $has_access = true;
             }
 
             if (!$has_access) {
-                $valStmt = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?");
-                $valStmt->execute([$attachment['submission_id'], $user]);
-                if ($valStmt->fetch()) {
+                $tokenRepo = App::getInstance()->get(\App\Repository\TokenRepository::class);
+                if ($tokenRepo->existsForSubmissionAndEmail($attachment['submission_id'], $user)) {
                     $has_access = true;
                 }
             }
@@ -138,16 +134,9 @@ final class DownloadController extends BaseController
                 'Vérifiez que le lien que vous avez utilisé est correct et complet.');
         }
 
-        $pdo = $this->db->getPdo();
-
-        $subStmt = $pdo->prepare(
-            "SELECT s.*, f.label AS form_label "
-            . "FROM submissions s JOIN forms f ON f.id = s.form_id "
-            . "WHERE s.id = ?"
-        );
-        $subStmt->execute([$submission_id]);
-        $submission = $subStmt->fetch(\PDO::FETCH_ASSOC);
-        if ($submission === false) {
+        $subRepo = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
+        $submission = $subRepo->findByIdWithForm($submission_id);
+        if ($submission === null) {
             (new \App\Render\ErrorRenderer())->errorPage(404, 'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
                 'Contactez un administrateur si vous pensez qu\'il s\'agit d\'une erreur.');
@@ -162,9 +151,8 @@ final class DownloadController extends BaseController
         } elseif ((string)($submission['submitted_by'] ?? '') === $user) {
             $has_access = true;
         } else {
-            $valStmt = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ?");
-            $valStmt->execute([$submission_id, $user]);
-            if ($valStmt->fetch() !== false) {
+            $tokenRepo = App::getInstance()->get(\App\Repository\TokenRepository::class);
+            if ($tokenRepo->existsForSubmissionAndEmail($submission_id, $user)) {
                 $has_access = true;
             }
         }
@@ -195,29 +183,13 @@ final class DownloadController extends BaseController
             'validator_data' => [],
         ];
 
-        $tokensStmt = $pdo->prepare(
-            "SELECT step_id, email, role, sent_at, done_at, expires_at "
-            . "FROM tokens WHERE submission_id = ? ORDER BY sent_at"
-        );
-        $tokensStmt->execute([$submission_id]);
-        $export['tokens'] = $tokensStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $tokenRepo = App::getInstance()->get(\App\Repository\TokenRepository::class);
+        $export['tokens'] = $tokenRepo->findForExport($submission_id);
 
-        $attsStmt = $pdo->prepare(
-            "SELECT id, field_name, original_name, mime_type, file_size, uploaded_at "
-            . "FROM attachments WHERE submission_id = ? ORDER BY uploaded_at"
-        );
-        $attsStmt->execute([$submission_id]);
-        $export['attachments'] = $attsStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $attRepo = App::getInstance()->get(\App\Repository\AttachmentRepository::class);
+        $export['attachments'] = $attRepo->findForExport($submission_id);
 
-        $vdStmt = $pdo->prepare(
-            "SELECT field_name, field_label, field_type, value, filled_by, filled_at, "
-            . "       step_id, step_label, filled_by_email "
-            . "FROM submission_validator_data "
-            . "WHERE submission_id = ? "
-            . "ORDER BY filled_at, field_name"
-        );
-        $vdStmt->execute([$submission_id]);
-        $export['validator_data'] = $vdStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $export['validator_data'] = $subRepo->getValidatorData($submission_id);
 
         App::audit()->log('export_submission', 'submission:' . $submission_id, 'Export JSON de la soumission par ' . $user, '');
 
