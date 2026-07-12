@@ -23,7 +23,6 @@ final class IndexController extends BaseController
 
 
         $user     = $this->auth->getUser();
-        $pdo      = $this->db->getPdo();
         // v9.9.0 — is_admin_effective() = false si persona actif → l'admin
         // en mode persona voit la page d'accueil comme un user simple.
         $is_admin = $this->auth->isAdminEffective();
@@ -33,34 +32,26 @@ final class IndexController extends BaseController
         $has_owned   = !empty($owned_forms);
 
         // Récupérer les formulaires actifs
-        $active_forms = _dbm_q(
-            $pdo,
-            "SELECT id, slug, label, description FROM forms WHERE actif = 1 ORDER BY label"
-        )->fetchAll(\PDO::FETCH_ASSOC);
+        $formRepo = App::getInstance()->get(\App\Repository\FormRepository::class);
+        $active_forms = $formRepo->findActiveList();
 
         // Pour les agents : compter leurs soumissions
         $my_total    = 0;
         $my_en_cours = 0;
         $my_valide   = 0;
         if (!$is_admin) {
-            $stmt = $pdo->prepare(
-                "SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status"
-            );
-            $stmt->execute([$user]);
-            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-                $my_total += (int) $row['cnt'];
-                if ($row['status'] === 'en_cours') {
-                    $my_en_cours = (int) $row['cnt'];
-                } elseif ($row['status'] === 'valide') {
-                    $my_valide = (int) $row['cnt'];
-                }
-            }
+            $subRepo = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
+            $counts = $subRepo->countByStatusForSubmitter($user);
+            $my_total    = $counts['total'];
+            $my_en_cours = $counts['en_cours'];
+            $my_valide   = $counts['valide'];
         }
 
         // U-06 (part 2) : empty-state guidé pour agent sans aucune demande.
         // Détecté uniquement quand l'agent a VRAIMENT 0 soumission.
         $welcome_forms = [];
         if (!$is_admin && $my_total === 0) {
+            $pdo = $this->db->getPdo();
             $welcome_forms = _dbm_q(
                 $pdo,
                 "SELECT f.id, f.slug, f.label, f.description, COUNT(s.id) AS nb_soumissions
@@ -81,12 +72,8 @@ final class IndexController extends BaseController
         $show_tutorial = $show_welcome_state;
 
         // Pour les validateurs : compter les tokens en attente
-        $my_pending = 0;
-        $pending_stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM tokens WHERE email = ? AND done_at IS NULL"
-        );
-        $pending_stmt->execute([$user]);
-        $my_pending = (int) $pending_stmt->fetchColumn();
+        $tokenRepo = App::getInstance()->get(\App\Repository\TokenRepository::class);
+        $my_pending = $tokenRepo->getActiveCountByEmail($user);
 
         // Pour les admins : stats globales
         $admin_stats = [];
@@ -97,15 +84,7 @@ final class IndexController extends BaseController
             $admin_stats['valide']   = $gstats['valide'];
             $admin_stats['bloques']  = 0;
             $delai   = (int) $this->settings->get('delai_relance_h', '48');
-            $bloque_h = $delai * 2;
-            $admin_stats['bloques'] = (int) _dbm_q(
-                $pdo,
-                "SELECT COUNT(*) FROM tokens t
-                 JOIN submissions s ON s.id = t.submission_id
-                 WHERE t.done_at IS NULL AND s.status = 'en_cours'
-                   AND CAST(strftime('%s', 'now') AS REAL)
-                       - CAST(strftime('%s', t.sent_at) AS REAL) > ($bloque_h * 3600)"
-            )->fetchColumn();
+            $admin_stats['bloques'] = $tokenRepo->getBlockedCount($delai * 2);
         }
 
         // ── RENDU ──────────────────────────────────────────────────────

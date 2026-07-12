@@ -29,10 +29,8 @@ final class PersonaController extends BaseController
             }
 
             try {
-                $pdo = $this->db->getPdo();
-                $check = $pdo->prepare("SELECT 1 FROM submissions WHERE submitted_by = ? LIMIT 1");
-                $check->execute([$targetEmail]);
-                if (!$check->fetchColumn()) {
+                $subRepo = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
+                if (!$subRepo->existsBySubmitter($targetEmail)) {
                     (new \App\Render\ErrorRenderer())->errorPage(404, 'Utilisateur inconnu',
                         'Aucune soumission trouvée pour ' . \App\Core\App::html()->escape($targetEmail) . '.',
                         'Le persona ne peut être activé que pour un utilisateur existant.');
