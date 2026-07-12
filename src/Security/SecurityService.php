@@ -70,6 +70,9 @@ final class SecurityService implements SecurityInterface
         // Sans ce bypass, les tests E2E/HTTP qui POST sans jeton valide échoueraient.
         /** @phpstan-ignore-next-line if.alwaysTrue */
         if (defined('TEST_MODE') && TEST_MODE) {
+            if (str_contains($_SERVER['HTTP_HOST'] ?? '', 'dreets.gouv.fr')) {
+                throw new \RuntimeException('TEST_MODE ne doit pas être actif en production');
+            }
             error_log('[SECURITY] TEST_MODE actif — CSRF bypassed');
             return true;
         }

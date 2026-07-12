@@ -104,10 +104,11 @@ final class DownloadController extends BaseController
         header('Pragma: no-cache');
         header('Expires: 0');
 
+        $safe_filename = preg_replace('/[^a-zA-Z0-9_\-.]/', '_', (string) $original_name);
         if ($mime_type === 'application/pdf') {
-            header("Content-Disposition: inline; filename=\"(string)$original_name\"; filename*=UTF-8''$safe_name");
+            header('Content-Disposition: inline; filename="' . $safe_filename . '"; filename*=UTF-8\'\'' . $safe_name);
         } else {
-            header("Content-Disposition: attachment; filename=\"(string)$original_name\"; filename*=UTF-8''$safe_name");
+            header('Content-Disposition: attachment; filename="' . $safe_filename . '"; filename*=UTF-8\'\'' . $safe_name);
         }
 
         if (!empty($attachment['file_data'])) {
