@@ -59,4 +59,10 @@ final class AlertRepository extends BaseRepository
             ["-{$retentionDays} days"]
         );
     }
+
+    public function findLabelById(string $ruleId): ?string
+    {
+        $result = $this->fetchOne("SELECT label FROM alert_rules WHERE id = ?", [$ruleId]);
+        return $result !== null ? (string) $result['label'] : null;
+    }
 }

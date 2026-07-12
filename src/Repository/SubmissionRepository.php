@@ -302,4 +302,18 @@ final class SubmissionRepository extends BaseRepository
             [$submissionId, $fieldName]
         );
     }
+
+    public function findValidatorDataByEmail(string $email, int $limit = 50): array
+    {
+        return $this->fetchAll(
+            "SELECT svd.*, s.form_id, f.label as form_label
+             FROM submission_validator_data svd
+             JOIN submissions s ON s.id = svd.submission_id
+             JOIN forms f ON f.id = s.form_id
+             WHERE svd.filled_by_email = ?
+             ORDER BY svd.filled_at DESC
+             LIMIT ?",
+            [$email, $limit]
+        );
+    }
 }

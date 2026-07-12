@@ -168,4 +168,10 @@ final class FormRepository extends BaseRepository
             [$submissionId, $formId]
         );
     }
+
+    public function findOwnerEmailById(string $ownerId): ?string
+    {
+        $result = $this->fetchOne("SELECT email FROM form_owners WHERE id = ?", [$ownerId]);
+        return $result !== null ? (string) $result['email'] : null;
+    }
 }

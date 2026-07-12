@@ -83,7 +83,6 @@ final class ConfirmActionController extends BaseController
 
         $confirmMessage = $config['description'];
         $detailText = '';
-        $pdo = $this->db->getPdo();
 
         switch ($action) {
             case 'cancel_submission':
@@ -92,9 +91,7 @@ final class ConfirmActionController extends BaseController
                 break;
             case 'regenerate_token':
                 $tokenId = trim($_GET['token_id']);
-                $tokStmt = $pdo->prepare("SELECT t.email, st.label as step_label FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.id = ?");
-                $tokStmt->execute([$tokenId]);
-                $tokInfo = $tokStmt->fetch(\PDO::FETCH_ASSOC);
+                $tokInfo = App::getInstance()->get(\App\Repository\TokenRepository::class)->findEmailAndStepLabelById($tokenId);
                 if ($tokInfo) {
                     $detailText = App::html()->displayUser($tokInfo['email']) . ' (étape : ' . \App\Core\App::html()->escape($tokInfo['step_label']) . ') ?';
                 } else {
@@ -103,10 +100,8 @@ final class ConfirmActionController extends BaseController
                 break;
             case 'delete_rule':
                 $ruleId = trim($_GET['rule_id']);
-                $ruleStmt = $pdo->prepare("SELECT label FROM alert_rules WHERE id = ?");
-                $ruleStmt->execute([$ruleId]);
-                $ruleLabel = $ruleStmt->fetchColumn();
-                $detailText = $ruleLabel ? '"' . \App\Core\App::html()->escape((string)$ruleLabel) . '" ( #' . \App\Core\App::html()->escape((string)$ruleId) . ') ?' : '#' . \App\Core\App::html()->escape((string)$ruleId) . ' ?';
+                $ruleLabel = App::getInstance()->get(\App\Repository\AlertRepository::class)->findLabelById($ruleId);
+                $detailText = $ruleLabel ? '"' . \App\Core\App::html()->escape($ruleLabel) . '" ( #' . \App\Core\App::html()->escape((string)$ruleId) . ') ?' : '#' . \App\Core\App::html()->escape((string)$ruleId) . ' ?';
                 break;
             case 'delete_alert_log':
                 $logId = trim($_GET['log_id']);
@@ -118,10 +113,8 @@ final class ConfirmActionController extends BaseController
                 break;
             case 'remove_owner':
                 $ownerId = trim($_GET['id']);
-                $owStmt = $pdo->prepare("SELECT email FROM form_owners WHERE id = ?");
-                $owStmt->execute([$ownerId]);
-                $owEmail = $owStmt->fetchColumn();
-                $detailText = $owEmail ? App::html()->displayUser((string)$owEmail) . ' ?' : '#' . \App\Core\App::html()->escape((string)$ownerId) . ' ?';
+                $owEmail = App::getInstance()->get(\App\Repository\FormRepository::class)->findOwnerEmailById($ownerId);
+                $detailText = $owEmail ? App::html()->displayUser($owEmail) . ' ?' : '#' . \App\Core\App::html()->escape((string)$ownerId) . ' ?';
                 break;
             case 'delete_submission':
                 $subId = trim($_GET['submission_id']);
