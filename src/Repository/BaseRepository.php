@@ -16,6 +16,10 @@ abstract class BaseRepository
         return $this->db->getPdo();
     }
 
+    /**
+     * @param array<int, mixed> $params
+     * @return array<string, mixed>|null
+     */
     public function fetchOne(string $sql, array $params = []): ?array
     {
         $stmt = $this->pdo()->prepare($sql);
@@ -27,6 +31,10 @@ abstract class BaseRepository
         return $result !== false ? $result : null;
     }
 
+    /**
+     * @param array<int, mixed> $params
+     * @return array<int, array<string, mixed>>
+     */
     public function fetchAll(string $sql, array $params = []): array
     {
         $stmt = $this->pdo()->prepare($sql);

@@ -11,6 +11,9 @@ use App\Core\App;
  */
 final class AdminFormCrudHandler
 {
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleAddForm(): array
     {
         $label = trim($_POST['label'] ?? '');
@@ -30,6 +33,9 @@ final class AdminFormCrudHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleUpdateForm(): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
@@ -54,6 +60,9 @@ final class AdminFormCrudHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleDeleteForm(\PDO $pdo): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
@@ -85,6 +94,9 @@ final class AdminFormCrudHandler
         return ['redirect' => 'index.php?p=admin_forms'];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleDuplicateForm(\PDO $pdo): array
     {
         $source_id = trim($_POST['source_form_id'] ?? '');

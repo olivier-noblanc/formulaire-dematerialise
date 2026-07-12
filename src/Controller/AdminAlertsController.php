@@ -45,7 +45,7 @@ final class AdminAlertsController extends BaseController
                         }
                     }
 
-                    if ($errorMsg === '' || $errorMsg === '0') {
+                    if ($errorMsg === '') {
                         try {
                             $ruleId = $this->alertRepo->createRule([
                                 'form_id'        => $formId,
@@ -84,7 +84,7 @@ final class AdminAlertsController extends BaseController
                         }
                     }
 
-                    if ($errorMsg === '' || $errorMsg === '0') {
+                    if ($errorMsg === '') {
                         try {
                             $this->alertRepo->updateRule($ruleId, [
                                 'days_before'    => $daysBefore,

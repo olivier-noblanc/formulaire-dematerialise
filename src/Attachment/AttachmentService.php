@@ -164,7 +164,7 @@ final readonly class AttachmentService
      * Récupère les pièces jointes d'une soumission.
      *
      * @param string $submissionId ID de la soumission
-     * @return array<string, mixed> Liste des pièces jointes
+     * @return array<int, array<string, mixed>> Liste des pièces jointes
      */
     public function getAttachments(string $submissionId): array
     {

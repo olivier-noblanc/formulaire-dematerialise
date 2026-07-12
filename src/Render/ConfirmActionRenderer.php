@@ -8,6 +8,10 @@ use App\Core\App;
 
 final class ConfirmActionRenderer
 {
+    /**
+     * @param array<string, mixed> $config
+     * @param array<string, string> $getParams
+     */
     public static function content(
         string $action,
         array $config,

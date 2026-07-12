@@ -11,6 +11,9 @@ use App\Core\App;
  */
 final class AdminStepCrudHandler
 {
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleAddStep(): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
@@ -33,6 +36,9 @@ final class AdminStepCrudHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function handleUpdateStep(\PDO $pdo, string $get_form_id): array
     {
         [$step_id, $err] = AdminFormsHandlers::postStepId();
@@ -80,6 +86,9 @@ final class AdminStepCrudHandler
         }
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public static function handleDeleteStep(\PDO $pdo, string $get_form_id): ?array
     {
         [$step_id, $err] = AdminFormsHandlers::postStepId();

@@ -73,32 +73,31 @@ final class AdminFormsHandlers
     /**
      * Route une action POST vers le handler correspondant.
      *
-     * @param \PDO  $pdo         Connexion PDO à la base.
      * @param string $action      Valeur de $_POST['action'].
      * @param string $get_form_id form_id validé issu de $_GET.
      * @return array<string,mixed>|null
      */
-    public static function dispatch(\PDO $pdo, string $action, string $get_form_id = ''): ?array
+    public static function dispatch(string $action, string $get_form_id = ''): ?array
     {
         return match ($action) {
-            'add_form'         => AdminFormCrudHandler::handleAddForm($pdo),
-            'update_form'      => AdminFormCrudHandler::handleUpdateForm($pdo),
-            'delete_form'      => AdminFormCrudHandler::handleDeleteForm($pdo),
-            'duplicate_form'   => AdminFormCrudHandler::handleDuplicateForm($pdo),
-            'add_step'         => AdminStepCrudHandler::handleAddStep($pdo),
-            'update_step'      => AdminStepCrudHandler::handleUpdateStep($pdo, $get_form_id),
-            'delete_step'      => AdminStepCrudHandler::handleDeleteStep($pdo, $get_form_id),
-            'add_recipient'    => AdminRecipientHandler::handleAddRecipient($pdo, $get_form_id),
-            'delete_recipient' => AdminRecipientHandler::handleDeleteRecipient($pdo, $get_form_id),
-            'add_field'        => AdminFieldCrudHandler::handleAddField($pdo),
-            'update_field'     => AdminFieldCrudHandler::handleUpdateField($pdo),
-            'delete_field'     => AdminFieldCrudHandler::handleDeleteField($pdo),
-            'add_owner'        => AdminRecipientHandler::handleAddOwner($pdo),
-            'delete_owner'     => AdminRecipientHandler::handleDeleteOwner($pdo),
-            'remove_owner'     => AdminRecipientHandler::handleDeleteOwner($pdo),
-            'export_form'      => AdminImportExportHandler::handleExportForm($pdo),
+            'add_form'         => AdminFormCrudHandler::handleAddForm(),
+            'update_form'      => AdminFormCrudHandler::handleUpdateForm(),
+            'delete_form'      => AdminFormCrudHandler::handleDeleteForm(),
+            'duplicate_form'   => AdminFormCrudHandler::handleDuplicateForm(),
+            'add_step'         => AdminStepCrudHandler::handleAddStep(),
+            'update_step'      => AdminStepCrudHandler::handleUpdateStep($get_form_id),
+            'delete_step'      => AdminStepCrudHandler::handleDeleteStep($get_form_id),
+            'add_recipient'    => AdminRecipientHandler::handleAddRecipient($get_form_id),
+            'delete_recipient' => AdminRecipientHandler::handleDeleteRecipient($get_form_id),
+            'add_field'        => AdminFieldCrudHandler::handleAddField(),
+            'update_field'     => AdminFieldCrudHandler::handleUpdateField(),
+            'delete_field'     => AdminFieldCrudHandler::handleDeleteField(),
+            'add_owner'        => AdminRecipientHandler::handleAddOwner(),
+            'delete_owner'     => AdminRecipientHandler::handleDeleteOwner(),
+            'remove_owner'     => AdminRecipientHandler::handleDeleteOwner(),
+            'export_form'      => AdminImportExportHandler::handleExportForm(),
             'validate_json'    => AdminImportExportHandler::handleValidateJson(),
-            'import_form'      => AdminImportExportHandler::handleImportForm($pdo),
+            'import_form'      => AdminImportExportHandler::handleImportForm(),
             default            => null,
         };
     }

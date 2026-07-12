@@ -108,7 +108,7 @@ final class MonitoringController extends BaseController
                         'form_label' => $alertSubmission['form_label'],
                         'nom_agent' => $nomAgent,
                         'deadline' => trim((string) $deadlineStr),
-                        'deadline_formatted' => $deadlineTs !== 0 ? date('d/m/Y', $deadlineTs) : $deadlineStr,
+                        'deadline_formatted' => date('d/m/Y', $deadlineTs),
                         'days_remaining' => $daysRemaining,
                         'pending_steps' => $pendingCount,
                         'submitted_by' => $alertSubmission['submitted_by'],

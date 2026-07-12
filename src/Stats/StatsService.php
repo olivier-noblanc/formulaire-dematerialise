@@ -115,7 +115,7 @@ final readonly class StatsService
     {
         $pdo = $this->database->getPdo();
 
-        $row = $pdo->query("
+        $rowStmt = $pdo->query("
             SELECT
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
@@ -125,7 +125,9 @@ final readonly class StatsService
                 SUM(CASE WHEN submitted_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as this_week,
                 SUM(CASE WHEN submitted_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) as this_month
             FROM submissions
-        ")->fetch(PDO::FETCH_ASSOC) ?: [];
+        ");
+        assert($rowStmt !== false);
+        $row = $rowStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
         $stats = [
             'total' => (int) ($row['total'] ?? 0),
@@ -154,10 +156,13 @@ final readonly class StatsService
         return $stats;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getFormStats(): array
     {
         $pdo = $this->database->getPdo();
-        return $pdo->query("
+        $stmt = $pdo->query("
             SELECT f.label, f.slug, COUNT(s.id) as total,
                    SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
                    SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
@@ -169,13 +174,18 @@ final readonly class StatsService
             LEFT JOIN submissions s ON s.form_id = f.id
             GROUP BY f.id
             ORDER BY total DESC
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        ");
+        assert($stmt !== false);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getValidatorStats(): array
     {
         $pdo = $this->database->getPdo();
-        return $pdo->query("
+        $stmt = $pdo->query("
             SELECT t.email,
                    COUNT(t.id) as total,
                    SUM(CASE WHEN t.done_at IS NOT NULL THEN 1 ELSE 0 END) as done,
@@ -189,6 +199,8 @@ final readonly class StatsService
             GROUP BY t.email
             ORDER BY total DESC
             LIMIT 20
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        ");
+        assert($stmt !== false);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

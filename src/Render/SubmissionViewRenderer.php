@@ -65,6 +65,8 @@ final class SubmissionViewRenderer
 
     /**
      * En-tête de la soumission : titre, agent, dates, badge statut.
+     *
+     * @param array<string, mixed> $sub
      */
     public function renderHeader(array $sub, string $sub_id, string $nom_agent, string $status_label, string $status_cls): string
     {
@@ -117,6 +119,8 @@ final class SubmissionViewRenderer
 
     /**
      * Carte date cible (urgence) — affichée uniquement si deadline + en_cours.
+     *
+     * @param array<string, mixed> $dl_info
      */
     public function renderDeadline(array $dl_info, ?int $deadline_ts, int $days_remaining, string $status): string
     {
@@ -153,6 +157,8 @@ final class SubmissionViewRenderer
 
     /**
      * Carte délégations effectuées.
+     *
+     * @param array<int, array<string, mixed>> $delegations
      */
     public function renderDelegations(array $delegations): string
     {
@@ -265,6 +271,8 @@ final class SubmissionViewRenderer
 
     /**
      * Compose l'ensemble du contenu HTML de la page Détail soumission.
+     *
+     * @param array<string, mixed> $ctx
      */
     public function renderContent(array $ctx): string
     {
@@ -353,6 +361,8 @@ final class SubmissionViewRenderer
 
     /**
      * Diagramme workflow — circuit de validation.
+     *
+     * @param array<int, array<string, mixed>> $workflow_steps
      */
     public function renderWorkflowDiagram(array $workflow_steps, string $status): string
     {
@@ -429,6 +439,8 @@ final class SubmissionViewRenderer
 
     /**
      * Actions admin (rappeler / régénérer).
+     *
+     * @param array<int, array<string, mixed>> $all_tokens
      */
     public function renderWorkflowActions(array $all_tokens, bool $is_admin, string $status): string
     {
@@ -474,6 +486,8 @@ final class SubmissionViewRenderer
 
     /**
      * Formulaire de délégation.
+     *
+     * @param array<int, array<string, mixed>> $all_tokens
      */
     public function renderDelegationForm(array $all_tokens, string $user, bool $is_admin, string $status): string
     {
@@ -516,6 +530,9 @@ final class SubmissionViewRenderer
 
     /**
      * Données du formulaire.
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, array<string, mixed>> $field_info
      */
     public function renderFormData(array $data, array $field_info): string
     {
@@ -565,6 +582,9 @@ final class SubmissionViewRenderer
 
     /**
      * Données des validateurs.
+     *
+     * @param array<int, array<string, mixed>> $validator_data_rows
+     * @param array<string, array<string, mixed>> $field_info
      */
     public function renderValidatorData(array $validator_data_rows, array $field_info, bool $can_edit = false, string $sub_id = ''): string
     {
@@ -649,6 +669,8 @@ final class SubmissionViewRenderer
 
     /**
      * Historique des validations.
+     *
+     * @param array<string, mixed> $data
      */
     public function renderValidationHistory(array $data): string
     {
@@ -712,6 +734,10 @@ final class SubmissionViewRenderer
 
     /**
      * Historique des relances / notifications envoyées.
+     *
+     * @param array<int, array<string, mixed>> $all_tokens
+     * @param array<int, array<string, mixed>> $submission_reminds
+     * @param array<int, array<string, mixed>> $pending_with_relance
      */
     public function renderRemindHistory(array $all_tokens, array $submission_reminds, int $total_relances, array $pending_with_relance, bool $is_admin, string $status): string
     {
@@ -818,6 +844,8 @@ final class SubmissionViewRenderer
 
     /**
      * Pièces jointes.
+     *
+     * @param array<int, array<string, mixed>> $attachments
      */
     public function renderAttachments(array $attachments): string
     {

@@ -47,7 +47,7 @@ final class AdminFormsController extends BaseController
         $preservedJson  = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action) {
-            $result = AdminFormsHandlers::dispatch($pdo, $action, (string) $formId);
+            $result = AdminFormsHandlers::dispatch($action, (string) $formId);
             if ($result !== null) {
                 if (isset($result['json_output']) && isset($result['filename'])) {
                     header('Content-Type: application/json; charset=utf-8');

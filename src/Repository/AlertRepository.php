@@ -6,6 +6,9 @@ namespace App\Repository;
 
 final class AlertRepository extends BaseRepository
 {
+    /**
+     * @param array<string, mixed> $data
+     */
     public function createRule(array $data): string
     {
         $id = \generate_uuid();
@@ -16,6 +19,9 @@ final class AlertRepository extends BaseRepository
         return $id;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function updateRule(string $ruleId, array $data): bool
     {
         return $this->execute(
@@ -29,6 +35,9 @@ final class AlertRepository extends BaseRepository
         return $this->execute('DELETE FROM alert_rules WHERE id = ?', [$ruleId]);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getAllWithForm(): array
     {
         return $this->fetchAll(
@@ -39,6 +48,9 @@ final class AlertRepository extends BaseRepository
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getLogsWithForm(int $limit = 50): array
     {
         return $this->fetchAll(

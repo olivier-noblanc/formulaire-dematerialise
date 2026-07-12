@@ -56,6 +56,9 @@ final class AdminSettingsHandlers
         return ['success' => $success_msg, 'error' => $error_msg, 'test' => $test_msg, 'verify_result' => $verify_result];
     }
 
+    /**
+     * @return array{0:string,1:string}
+     */
     public static function handleSaveSettings(): array
     {
         $success_msg = '';
@@ -100,6 +103,9 @@ final class AdminSettingsHandlers
         return [$success_msg, $error_msg];
     }
 
+    /**
+     * @return array{0:string,1:string}
+     */
     public static function handleSaveEmailVerify(string $error_msg): array
     {
         $success_msg = '';
@@ -167,6 +173,9 @@ final class AdminSettingsHandlers
         return 'Échec de l\'envoi de l\'email de test à ' . \App\Core\App::html()->escape($to) . ' — ' . \App\Core\App::html()->escape($err) . ' (statut: ' . \App\Core\App::html()->escape($result['status']) . '). Vérifiez la configuration SMTP, le mode dry-run et le journal des emails dans Surveillance.';
     }
 
+    /**
+     * @return array{0: mixed, 1: string}
+     */
     public static function handleTestVerifyEmail(string $error_msg): array
     {
         $test_addr = trim($_POST['verify_test_email'] ?? '');

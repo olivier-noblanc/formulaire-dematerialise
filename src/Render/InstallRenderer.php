@@ -152,6 +152,10 @@ final class InstallRenderer
     /**
      * Bandeau de messages succès et erreur.
      */
+    /**
+     * @param array<int, string> $messages
+     * @param array<int, string> $error_messages
+     */
     public function renderMessages(array $messages, array $error_messages): string
     {
         ob_start();
@@ -167,6 +171,9 @@ final class InstallRenderer
 
     /**
      * Rendu de l'étape 1 — vérification des prérequis.
+     */
+    /**
+     * @param array<int, array<string, mixed>> $prerequisites
      */
     public function renderStep1(array $prerequisites, bool $all_prereqs_ok): string
     {
@@ -216,6 +223,9 @@ final class InstallRenderer
 
     /**
      * Rendu de l'étape 2 — formulaire de configuration + test SMTP.
+     */
+    /**
+     * @param array<string, mixed> $d
      */
     public function renderStep2(array $d): string
     {
@@ -316,6 +326,9 @@ final class InstallRenderer
     /**
      * Rendu de l'étape 3 — confirmation et installation.
      */
+    /**
+     * @param array<string, mixed>|null $confirm_config
+     */
     public function renderStep3(?array $confirm_config, string $install_dir = ''): string
     {
         ob_start();
@@ -376,6 +389,9 @@ final class InstallRenderer
 
     /**
      * Compose et affiche la page complète de l'assistant d'installation.
+     */
+    /**
+     * @param array<string, mixed> $p
      */
     public function renderPage(array $p): void
     {

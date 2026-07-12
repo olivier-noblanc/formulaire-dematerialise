@@ -11,6 +11,12 @@ use App\Core\App;
  */
 final class StatsRenderer
 {
+    /**
+     * @param array<string, mixed> $globalStats
+     * @param array<int, array<string, mixed>> $periodStats
+     * @param array<int, array<string, mixed>> $formStats
+     * @param array<int, array<string, mixed>> $validatorStats
+     */
     public static function content(
         string $period,
         array $globalStats,
