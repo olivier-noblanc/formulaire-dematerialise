@@ -79,11 +79,18 @@ final class FormRepository extends BaseRepository
      */
     public function update(string $id, array $data): bool
     {
+        $allowed = ['label', 'slug', 'description', 'actif', 'deadline_field'];
         $fields = [];
         $params = [];
         foreach ($data as $key => $value) {
+            if (!in_array($key, $allowed, true)) {
+                continue;
+            }
             $fields[] = "`$key` = ?";
             $params[] = $value;
+        }
+        if ($fields === []) {
+            return false;
         }
         $params[] = $id;
         return $this->execute('UPDATE forms SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);
@@ -333,11 +340,19 @@ final class FormRepository extends BaseRepository
 
     public function deleteCascade(string $formId): void
     {
-        $this->execute('DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)', [$formId]);
-        $this->execute('DELETE FROM form_fields WHERE form_id = ?', [$formId]);
-        $this->execute('DELETE FROM form_owners WHERE form_id = ?', [$formId]);
-        $this->execute('DELETE FROM steps WHERE form_id = ?', [$formId]);
-        $this->execute('DELETE FROM forms WHERE id = ?', [$formId]);
+        $pdo = $this->pdo();
+        $pdo->beginTransaction();
+        try {
+            $this->execute('DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)', [$formId]);
+            $this->execute('DELETE FROM form_fields WHERE form_id = ?', [$formId]);
+            $this->execute('DELETE FROM form_owners WHERE form_id = ?', [$formId]);
+            $this->execute('DELETE FROM steps WHERE form_id = ?', [$formId]);
+            $this->execute('DELETE FROM forms WHERE id = ?', [$formId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
     }
 
     // ── Duplicate ───────────────────────────────────────────────

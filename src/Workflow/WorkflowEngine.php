@@ -257,8 +257,12 @@ final readonly class WorkflowEngine implements WorkflowInterface
             // Vérifier si toutes les étapes de cet ordre sont validées
             $allDone = true;
             foreach ($groupe as $step) {
-                $dones = $tokensByStep[$step['step_id']] ?? [];
-                if ($dones === [] || !array_all($dones, fn($d) => $d !== null)) {
+                // Étape sans token = condition false ou recipients invalides → pas concernée
+                if (!isset($tokensByStep[$step['step_id']])) {
+                    continue;
+                }
+                $dones = $tokensByStep[$step['step_id']];
+                if (!array_all($dones, fn($d) => $d !== null)) {
                     $allDone = false;
                     break;
                 }

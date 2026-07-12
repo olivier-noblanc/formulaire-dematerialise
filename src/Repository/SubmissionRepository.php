@@ -124,12 +124,20 @@ final class SubmissionRepository extends BaseRepository
 
     public function deleteCascade(string $id): bool
     {
-        $this->pdo()->exec('PRAGMA foreign_keys = ON');
-        $this->execute('DELETE FROM submission_validator_data WHERE submission_id = ?', [$id]);
-        $this->execute('DELETE FROM alert_log WHERE submission_id = ?', [$id]);
-        $this->execute('DELETE FROM tokens WHERE submission_id = ?', [$id]);
-        $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$id]);
-        return $this->execute('DELETE FROM submissions WHERE id = ?', [$id]);
+        $pdo = $this->pdo();
+        $pdo->beginTransaction();
+        try {
+            $this->execute('DELETE FROM submission_validator_data WHERE submission_id = ?', [$id]);
+            $this->execute('DELETE FROM alert_log WHERE submission_id = ?', [$id]);
+            $this->execute('DELETE FROM tokens WHERE submission_id = ?', [$id]);
+            $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$id]);
+            $result = $this->execute('DELETE FROM submissions WHERE id = ?', [$id]);
+            $pdo->commit();
+            return $result;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
     }
 
     public function countByForm(string $formId): int

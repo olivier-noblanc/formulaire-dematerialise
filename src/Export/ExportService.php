@@ -50,7 +50,7 @@ final readonly class ExportService
             SELECT DISTINCT j.key
             FROM submissions s, json_each(s.data) j
             JOIN forms f ON f.id = s.form_id
-            WHERE $where_sql AND j.key != 'validations'
+            WHERE $where_sql AND json_valid(s.data) AND j.key != 'validations'
         ");
         $keysStmt->execute($params);
         $all_keys = $keysStmt->fetchAll(PDO::FETCH_COLUMN);

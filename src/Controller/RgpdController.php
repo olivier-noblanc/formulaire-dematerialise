@@ -65,7 +65,8 @@ final class RgpdController extends BaseController
                     } else {
                         App::audit()->log('rgpd_export', 'user:' . $email, 'Export des données demandé');
                         header('Content-Type: application/json; charset=utf-8');
-                        header('Content-Disposition: attachment; filename="rgpd_export_' . str_replace(['@', '.'], '_', $email) . '_' . date('Ymd_His') . '.json"');
+                        $safeEmail = preg_replace('/[^a-zA-Z0-9_-]/', '_', $email);
+                        header('Content-Disposition: attachment; filename="rgpd_export_' . $safeEmail . '_' . date('Ymd_His') . '.json"');
                         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                         exit;
                     }

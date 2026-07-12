@@ -121,19 +121,16 @@ function encrypt_setting(string $value): string
 
     $key = getenv('APP_ENCRYPTION_KEY');
     if (empty($key) || strlen($key) < 32) {
-        error_log('[SECURITY] APP_ENCRYPTION_KEY non définie ou trop courte — valeur stockée en clair');
-        return $value;
+        throw new \RuntimeException('APP_ENCRYPTION_KEY manquante ou trop courte (< 32 chars) — impossible de chiffrer les secrets');
     }
     $iv_length = openssl_cipher_iv_length('aes-256-cbc');
     if ($iv_length === false) {
-        error_log('[SECURITY] openssl_cipher_iv_length a échoué — valeur stockée en clair');
-        return $value;
+        throw new \RuntimeException('openssl_cipher_iv_length a échoué — chiffrement indisponible');
     }
     $iv = random_bytes(max(1, $iv_length));
     $encrypted = openssl_encrypt($value, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
     if ($encrypted === false) {
-        error_log('[SECURITY] Échec de chiffrement — valeur stockée en clair');
-        return $value;
+        throw new \RuntimeException('Échec de chiffrement OpenSSL');
     }
     return 'enc:' . base64_encode($iv . $encrypted);
 }
