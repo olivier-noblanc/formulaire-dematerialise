@@ -13,7 +13,6 @@ final class MyValidationsController extends BaseController
     public function handle(): void
     {
         $user = App::auth()->getUser();
-        $pdo  = $this->db->getPdo();
         $search = trim($_GET['search'] ?? '');
 
         $delegationMsg = '';
@@ -26,55 +25,9 @@ final class MyValidationsController extends BaseController
             $delegationMsg = $result['message'];
         }
 
-        $pendingStmt = $pdo->prepare("
-            SELECT t.id as token_id, t.token, t.sent_at, t.expires_at, t.relance_count,
-                   t.step_id, t.email,
-                   st.label as step_label, st.ordre,
-                   s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
-                   f.label as form_label, f.slug as form_slug
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
-            ORDER BY t.sent_at DESC
-        ");
-        if ($search) {
-            $pendingStmt = $pdo->prepare("
-                SELECT t.id as token_id, t.token, t.sent_at, t.expires_at, t.relance_count,
-                       t.step_id, t.email,
-                       st.label as step_label, st.ordre,
-                       s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
-                       f.label as form_label, f.slug as form_slug
-                FROM tokens t
-                JOIN steps st ON st.id = t.step_id
-                JOIN submissions s ON s.id = t.submission_id
-                JOIN forms f ON f.id = s.form_id
-                WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
-                  AND (f.label LIKE ? OR s.data LIKE ?)
-                ORDER BY t.sent_at DESC
-            ");
-            $pendingStmt->execute([$user, '%' . $search . '%', '%' . $search . '%']);
-        } else {
-            $pendingStmt->execute([$user]);
-        }
-        $pendingTokens = $pendingStmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        $doneStmt = $pdo->prepare("
-            SELECT t.id as token_id, t.done_at, t.sent_at,
-                   st.label as step_label, st.ordre,
-                   s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
-                   f.label as form_label, f.slug as form_slug
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            WHERE t.email = ? AND t.done_at IS NOT NULL
-            ORDER BY t.done_at DESC
-            LIMIT 50
-        ");
-        $doneStmt->execute([$user]);
-        $doneTokens = $doneStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $tokenRepo = App::getInstance()->get(\App\Repository\TokenRepository::class);
+        $pendingTokens = $tokenRepo->findPendingByEmail($user, $search);
+        $doneTokens = $tokenRepo->findDoneByEmail($user);
 
         $pendingCount = count($pendingTokens);
         $doneCount = count($doneTokens);
@@ -83,32 +36,10 @@ final class MyValidationsController extends BaseController
         $allStepsBySub = [];
         if (!empty($pendingTokens)) {
             $pendingSubIds = array_values(array_unique(array_column($pendingTokens, 'submission_id')));
-            $psph = implode(',', array_fill(0, count($pendingSubIds), '?'));
-            $batchStepsStmt = $pdo->prepare("
-                SELECT s.id as submission_id, st.id, st.label, st.ordre,
-                       GROUP_CONCAT(t2.done_at, '|') as dones
-                FROM submissions s
-                JOIN steps st ON st.form_id = s.form_id AND st.actif = 1
-                LEFT JOIN tokens t2 ON t2.step_id = st.id AND t2.submission_id = s.id
-                WHERE s.id IN ($psph)
-                GROUP BY s.id, st.id
-                ORDER BY s.id, st.ordre
-            ");
-            $batchStepsStmt->execute($pendingSubIds);
-            foreach ($batchStepsStmt->fetchAll(\PDO::FETCH_ASSOC) as $asRow) {
-                $allStepsBySub[$asRow['submission_id']][] = $asRow;
-            }
+            $allStepsBySub = $tokenRepo->findStepsBySubmissionIds($pendingSubIds);
         }
 
-        $myVdStmt = $pdo->prepare("SELECT svd.*, s.form_id, f.label as form_label
-                                    FROM submission_validator_data svd
-                                    JOIN submissions s ON s.id = svd.submission_id
-                                    JOIN forms f ON f.id = s.form_id
-                                    WHERE svd.filled_by_email = ?
-                                    ORDER BY svd.filled_at DESC
-                                    LIMIT 50");
-        $myVdStmt->execute([$user]);
-        $myVdRows = $myVdStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $myVdRows = App::getInstance()->get(\App\Repository\SubmissionRepository::class)->findValidatorDataByEmail($user);
 
         $content = \App\Render\MyValidationsRenderer::content(
             $pendingTokens,

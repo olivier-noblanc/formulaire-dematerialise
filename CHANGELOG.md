@@ -33,6 +33,8 @@ _Résumé : Ultrareview v2 — 15 constats corrigés, PRAGMA foreign_keys ON glo
 - **remind()** : double if ($mailSent) redondant fusionné
 - **AdminAlertsController/MySubmissionsController** : $pdo inutilisé supprimé
 - **install.php/HealthController** : version check PHP 8.0+ → 8.5+
+- **SQL → repositories** : ConfirmActionController (3 requêtes → TokenRepo/AlertRepo/FormRepo), MyValidationsController (4 requêtes → TokenRepo/SubmissionRepo), StatsController (2 requêtes → StatsService)
+- **+9 méthodes repository** : findEmailAndStepLabelById, findPendingByEmail, findDoneByEmail, findStepsBySubmissionIds, findLabelById, findOwnerEmailById, findValidatorDataByEmail, getFormStats, getValidatorStats
 
 ### 🎨 Renderers (extraction HTML des controllers)
 

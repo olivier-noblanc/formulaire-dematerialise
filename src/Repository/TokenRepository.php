@@ -129,4 +129,87 @@ final class TokenRepository extends BaseRepository
         );
         return $result !== null;
     }
+
+    public function findEmailAndStepLabelById(string $tokenId): ?array
+    {
+        return $this->fetchOne(
+            "SELECT t.email, st.label as step_label FROM tokens t JOIN steps st ON st.id = t.step_id WHERE t.id = ?",
+            [$tokenId]
+        );
+    }
+
+    public function findPendingByEmail(string $email, string $search = ''): array
+    {
+        if ($search !== '') {
+            return $this->fetchAll(
+                "SELECT t.id as token_id, t.token, t.sent_at, t.expires_at, t.relance_count,
+                        t.step_id, t.email,
+                        st.label as step_label, st.ordre,
+                        s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
+                        f.label as form_label, f.slug as form_slug
+                 FROM tokens t
+                 JOIN steps st ON st.id = t.step_id
+                 JOIN submissions s ON s.id = t.submission_id
+                 JOIN forms f ON f.id = s.form_id
+                 WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
+                   AND (f.label LIKE ? OR s.data LIKE ?)
+                 ORDER BY t.sent_at DESC",
+                [$email, '%' . $search . '%', '%' . $search . '%']
+            );
+        }
+        return $this->fetchAll(
+            "SELECT t.id as token_id, t.token, t.sent_at, t.expires_at, t.relance_count,
+                    t.step_id, t.email,
+                    st.label as step_label, st.ordre,
+                    s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
+                    f.label as form_label, f.slug as form_slug
+             FROM tokens t
+             JOIN steps st ON st.id = t.step_id
+             JOIN submissions s ON s.id = t.submission_id
+             JOIN forms f ON f.id = s.form_id
+             WHERE t.email = ? AND t.done_at IS NULL AND s.status = 'en_cours'
+             ORDER BY t.sent_at DESC",
+            [$email]
+        );
+    }
+
+    public function findDoneByEmail(string $email, int $limit = 50): array
+    {
+        return $this->fetchAll(
+            "SELECT t.id as token_id, t.done_at, t.sent_at,
+                    st.label as step_label, st.ordre,
+                    s.id as submission_id, s.data, s.submitted_at, s.status as sub_status,
+                    f.label as form_label, f.slug as form_slug
+             FROM tokens t
+             JOIN steps st ON st.id = t.step_id
+             JOIN submissions s ON s.id = t.submission_id
+             JOIN forms f ON f.id = s.form_id
+             WHERE t.email = ? AND t.done_at IS NOT NULL
+             ORDER BY t.done_at DESC
+             LIMIT ?",
+            [$email, $limit]
+        );
+    }
+
+    public function findStepsBySubmissionIds(array $submissionIds): array
+    {
+        if (empty($submissionIds)) return [];
+        $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
+        $rows = $this->fetchAll(
+            "SELECT s.id as submission_id, st.id, st.label, st.ordre,
+                    GROUP_CONCAT(t2.done_at, '|') as dones
+             FROM submissions s
+             JOIN steps st ON st.form_id = s.form_id AND st.actif = 1
+             LEFT JOIN tokens t2 ON t2.step_id = st.id AND t2.submission_id = s.id
+             WHERE s.id IN ($placeholders)
+             GROUP BY s.id, st.id
+             ORDER BY s.id, st.ordre",
+            $submissionIds
+        );
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row['submission_id']][] = $row;
+        }
+        return $result;
+    }
 }
