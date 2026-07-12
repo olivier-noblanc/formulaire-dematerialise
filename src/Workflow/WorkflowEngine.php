@@ -197,6 +197,11 @@ final readonly class WorkflowEngine implements WorkflowInterface
                 $tokenCreated = false;
 
                 foreach ($groupe as $step) {
+                    // Étape déjà démarrée (a au moins un token) → ne pas créer de doublon
+                    if (isset($tokensByStep[$step['step_id']])) {
+                        continue;
+                    }
+
                     // Évaluer la condition
                     if (!$this->conditionEvaluator->evaluate(
                         $step['condition'] ?? '',

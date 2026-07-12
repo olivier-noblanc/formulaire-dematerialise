@@ -207,6 +207,10 @@ final readonly class TokenService
         $newCount = (int) $tok['relance_count'] + 1;
         $relanceMax = (int) $this->settingsService->get('relance_max', '3');
 
+        if ($newCount > $relanceMax) {
+            return ['success' => false, 'message' => 'Maximum de rappels atteint (' . $relanceMax . ').'];
+        }
+
         $submission = [
             'data' => $tok['data'],
             'form_label' => $tok['form_label'],

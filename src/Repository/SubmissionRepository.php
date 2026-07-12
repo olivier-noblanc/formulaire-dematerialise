@@ -195,8 +195,9 @@ final class SubmissionRepository extends BaseRepository
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
              WHERE $whereSql
-             ORDER BY s.submitted_at DESC",
-            $params
+             ORDER BY s.submitted_at DESC
+             LIMIT ? OFFSET ?",
+            array_merge($params, [$limit, $offset])
         );
     }
 
