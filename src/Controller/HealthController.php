@@ -36,8 +36,8 @@ final class HealthController extends BaseController
 
         // 2. Version PHP
         $phpVersion = PHP_VERSION;
-        $phpOk = version_compare($phpVersion, '8.0.0', '>=');
-        $phpDetail = 'PHP ' . $phpVersion . ($phpOk ? '' : ' (minimum requis : 8.0)');
+        $phpOk = version_compare($phpVersion, '8.5.0', '>=');
+        $phpDetail = 'PHP ' . $phpVersion . ($phpOk ? '' : ' (minimum requis : 8.5)');
         if (!$phpOk) $allHealthy = false;
         $checks[] = ['label' => 'Version PHP', 'ok' => $phpOk, 'detail' => $phpDetail];
 

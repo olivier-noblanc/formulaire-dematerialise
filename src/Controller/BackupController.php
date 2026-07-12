@@ -201,7 +201,7 @@ final class BackupController extends BaseController
             }
             try {
                 $countStmt = $pdo->query(implode(' UNION ALL ', $unionParts));
-                while ($row = $countStmt->fetch(\PDO::FETCH_ASSOC)) {
+                while ($countStmt !== false && $row = $countStmt->fetch(\PDO::FETCH_ASSOC)) {
                     $dbStats['row_counts'][$row['tbl']] = (int)$row['cnt'];
                 }
             } catch (\Exception $e) {

@@ -196,265 +196,85 @@ final class ValidateController extends BaseController
 
         // ── Rendu HTML ──
         $pageCss = '';
-        ob_start();
-        ?>
-<div class="card">
+        $all_wf_steps = [];
+        $validator_fields = [];
+        $validator_data_index = [];
+        $previous_vd_rows = [];
+        $visible_attachments = [];
+        $current_step_field_names = [];
+        $existing_comment = $_POST['comment'] ?? '';
+        $existing_motif = $_POST['motif'] ?? '';
 
-<?php if (isset($success)): ?>
-  <h1>Validation effectuée</h1>
-  <p class="ok">Action effectuée avec succès.</p>
-  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
-    <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
-    <a href="index.php" class="btn btn-secondary">Accueil</a>
-  </div>
+        if ($result['status'] === 'pending' || $result['status'] === 'ok') {
+            $rdata = $result['data'] ?? [];
+            $form_id = (string)($rdata['form_id'] ?? '');
+            $step_id = isset($rdata['step_id']) ? (string)$rdata['step_id'] : null;
+            $subm_id = (string)($rdata['submission_id'] ?? '');
 
-<?php elseif (isset($error)): ?>
-  <h1>Erreur</h1>
-  <p class="err"><?= \App\Core\App::html()->escape($error) ?></p>
-  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
-    <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
-    <a href="index.php" class="btn btn-secondary">Accueil</a>
-  </div>
+            $all_wf_steps = $this->formRepo->getWorkflowStepsWithTokens($form_id, $subm_id);
 
-<?php elseif ($result['status'] === 'invalid'): ?>
-  <h1>Lien invalide</h1>
-  <p class="err">Ce lien est introuvable ou expiré.</p>
-  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
-    <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
-    <a href="index.php" class="btn btn-secondary">Accueil</a>
-  </div>
+            $vf_list = App::validatorData()->getFormValidatorFields($form_id, $step_id);
+            foreach ($vf_list as $vf) {
+                $current_step_field_names[] = $vf['field_name'] ?? '';
+            }
 
-<?php elseif ($result['status'] === 'already_done'): ?>
-  <?php $data = $result['data'] ?? []; ?>
-  <span class="badge"><?= \App\Core\App::html()->escape($data['step_label']) ?></span>
-  <h1>Déjà validé</h1>
-  <p class="info">Tâche validée le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($data['done_at'] ?? 'now')))) ?></p>
-  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
-    <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
-    <a href="index.php" class="btn btn-secondary">Accueil</a>
-  </div>
+            $all_validator_data = App::validatorData()->getSubmissionValidatorData($subm_id);
+            $all_vd_by_field = [];
+            foreach ($all_validator_data as $avd) {
+                $all_vd_by_field[$avd['field_name']] = $avd;
+            }
+            $all_validator_fields = App::validatorData()->getFormValidatorFields($form_id);
+            $field_labels = [];
+            foreach ($all_validator_fields as $avf) {
+                $field_labels[$avf['field_name']] = $avf['label'];
+            }
+            $previous_vd_rows = [];
+            foreach ($all_vd_by_field as $fname => $vd_row) {
+                if (in_array($fname, $current_step_field_names, true)) continue;
+                if (empty($vd_row['value'])) continue;
+                $previous_vd_rows[] = $vd_row;
+            }
 
-<?php elseif ($result['status'] === 'closed'): ?>
-  <h1>Workflow terminé</h1>
-  <p class="info">Ce dossier est déjà clôturé.</p>
-  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
-    <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
-    <a href="index.php" class="btn btn-secondary">Accueil</a>
-  </div>
+            $attachments = App::attachment()->getAttachments($subm_id);
+            $visible_attachments = [];
+            if (!empty($attachments)) {
+                $owner_only_fields = [];
+                $form_fields = App::validatorData()->getFormFields($form_id);
+                foreach ($form_fields as $ff) {
+                    if (($ff['field_type'] ?? '') === 'file' && ($ff['visibility'] ?? 'all') === 'owner_only') {
+                        $owner_only_fields[] = $ff['field_name'];
+                    }
+                }
+                foreach ($attachments as $att) {
+                    if (!in_array($att['field_name'] ?? '', $owner_only_fields, true)) {
+                        $visible_attachments[] = $att;
+                    }
+                }
+            }
 
-<?php elseif ($result['status'] === 'expired'): ?>
-  <h1>Lien expiré</h1>
-  <p class="err">Ce lien de validation a expiré. Veuillez contacter l'expéditeur pour obtenir un nouveau lien.</p>
-  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
-    <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>
-    <a href="index.php" class="btn btn-secondary">Accueil</a>
-  </div>
-
-<?php elseif ($result['status'] === 'pending' || $result['status'] === 'ok'): ?>
-  <?php
-    $data = $result['data'] ?? [];
-    $d   = json_decode($data['data'] ?? '{}', true);
-    $nom = \App\Core\App::html()->escape(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
-
-    $all_wf_steps = $this->formRepo->getWorkflowStepsWithTokens(
-        (string)($data['form_id'] ?? ''),
-        (string)($data['submission_id'] ?? '')
-    );
-  ?>
-  <a href="index.php?p=my_validations" class="back-link">← Mes validations</a>
-  <span class="badge"><?= \App\Core\App::html()->escape($data['step_label']) ?></span>
-  <h1>Action requise</h1>
-
-  <aside class="what-to-do-box" role="region" aria-label="Que devez-vous faire ?">
-    <span class="what-to-do-title">Que devez-vous faire ?</span>
-    Vous devez <strong>valider</strong> ou <strong>refuser</strong> cette demande. Choisissez une action ci-dessous.
-  </aside>
-
-  <?php if (!empty($all_wf_steps)): ?>
-  <div class="wf-progression">
-    <h3>Avancement des étapes</h3>
-    <div class="wf-steps">
-      <?php foreach ($all_wf_steps as $ws):
-          $dones_arr = array_filter(explode('|', $ws['dones'] ?? ''), fn($x) => !empty($x));
-          $all_done = count($dones_arr) > 0 && count(array_filter(explode('|', $ws['dones'] ?? ''))) === count(array_filter(explode('|', $ws['emails'] ?? '')));
-          $is_current = ($ws['id'] == ($data['step_id'] ?? 0));
-
-          if ($all_done) { $cls = 'wf-prog-done'; $icon = '<span aria-hidden="true">✓</span>'; }
-          elseif ($is_current) { $cls = 'wf-prog-current'; $icon = '<span aria-hidden="true">⏳</span>'; }
-          else { $cls = 'wf-prog-upcoming'; $icon = '○'; }
-      ?>
-        <div class="wf-prog-step <?= $cls ?>">
-          <span class="wf-prog-icon"><?= $icon ?></span>
-          <span>Étape <?= (int)$ws['ordre'] ?> — <?= \App\Core\App::html()->escape($ws['label']) ?><?= $is_current ? ' (votre tour)' : '' ?><?= $all_done ? ' — validée' : '' ?></span>
-        </div>
-      <?php endforeach; ?>
-    </div>
-  </div>
-  <?php endif; ?>
-
-  <div class="validation-details">
-    <h2>Détails du formulaire</h2>
-    <p><strong>Dossier :</strong> <?= $nom ?></p>
-    <p><strong>Étape :</strong> <?= \App\Core\App::html()->escape($data['step_label']) ?></p>
-    <?php
-      $current_step_field_names = [];
-      $vf_list = App::validatorData()->getFormValidatorFields($data['form_id'], $data['step_id'] ?? null);
-      foreach ($vf_list as $vf) {
-          $current_step_field_names[] = $vf['field_name'];
-      }
-      $exclude_keys = array_merge(['validations', 'csrf_token'], $current_step_field_names);
-    ?>
-    <?= (new \App\Render\FormRenderer())->submissionData($d, $exclude_keys) ?>
-  </div>
-
-  <?php
-    $all_validator_data = App::validatorData()->getSubmissionValidatorData($data['submission_id'] ?? '');
-    $all_vd_by_field = [];
-    foreach ($all_validator_data as $avd) {
-        $all_vd_by_field[$avd['field_name']] = $avd;
-    }
-    $all_validator_fields = App::validatorData()->getFormValidatorFields($data['form_id']);
-    $field_labels = [];
-    foreach ($all_validator_fields as $avf) {
-        $field_labels[$avf['field_name']] = $avf['label'];
-    }
-
-    $previous_vd_rows = [];
-    foreach ($all_vd_by_field as $fname => $vd_row) {
-        if (in_array($fname, $current_step_field_names, true)) continue;
-        if (empty($vd_row['value'])) continue;
-        $previous_vd_rows[] = $vd_row;
-    }
-
-    if (!empty($previous_vd_rows)):
-  ?>
-  <div class="validation-details" style="border-left: 4px solid var(--c-success);">
-    <h2>📋 Informations saisies par les validateurs précédents</h2>
-    <?php foreach ($previous_vd_rows as $pvd):
-        $label = $field_labels[$pvd['field_name']] ?? ucfirst(str_replace('_', ' ', $pvd['field_name']));
-        $value = $pvd['value'] === '1' ? '✓ Oui' : \App\Core\App::html()->escape($pvd['value']);
-        $step_lbl = \App\Core\App::html()->escape($pvd['step_label'] ?? '');
-    ?>
-      <p><strong><?= \App\Core\App::html()->escape(App::html()->tJargon($label)) ?>:</strong> <?= $value ?>
-      <?php if ($step_lbl): ?><br><small style="color:#666;">Étape : <?= $step_lbl ?></small><?php endif; ?>
-      </p>
-    <?php endforeach; ?>
-  </div>
-  <?php endif; ?>
-
-  <?php
-    $attachments = App::attachment()->getAttachments($data['submission_id'] ?? '');
-    $visible_attachments = [];
-    if (!empty($attachments)) {
-        $owner_only_fields = [];
-        $form_fields = App::validatorData()->getFormFields((string)($data['form_id'] ?? ''));
-        foreach ($form_fields as $ff) {
-            if (($ff['field_type'] ?? '') === 'file' && ($ff['visibility'] ?? 'all') === 'owner_only') {
-                $owner_only_fields[] = $ff['field_name'];
+            $validator_fields = App::validatorData()->getFormValidatorFields($form_id, $step_id);
+            $validator_data = App::validatorData()->getSubmissionValidatorData($subm_id, $step_id);
+            $validator_data_index = [];
+            foreach ($validator_data as $vd) {
+                $validator_data_index[$vd['field_name']] = $vd['value'];
             }
         }
-        foreach ($attachments as $att) {
-            if (!in_array($att['field_name'] ?? '', $owner_only_fields, true)) {
-                $visible_attachments[] = $att;
-            }
-        }
-    }
-    if (!empty($visible_attachments)):
-  ?>
-  <div class="validation-details">
-    <h2><span aria-hidden="true">📎</span> Pièces jointes (<?= count($visible_attachments) ?>)</h2>
-    <?php foreach ($visible_attachments as $att): ?>
-      <p><?= App::html()->getFileIcon($att['mime_type']) ?> <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" style="color:var(--c-primary-dark);text-decoration:underline;"><?= \App\Core\App::html()->escape($att['original_name']) ?></a> <span style="color:#595959;font-size:.85rem;">(<?= App::html()->formatFileSize((int)$att['file_size']) ?>)</span></p>
-    <?php endforeach; ?>
-  </div>
-  <?php endif; ?>
 
-  <form method="post" id="validation-form">
-    <?= $this->security->csrfField() ?>
-    <input type="hidden" name="token" value="<?= \App\Core\App::html()->escape((string)$token) ?>">
-
-    <?php
-      $validator_fields = App::validatorData()->getFormValidatorFields($data['form_id'], $data['step_id'] ?? null);
-      $validator_data = App::validatorData()->getSubmissionValidatorData($data['submission_id'] ?? '', $data['step_id'] ?? null);
-      $validator_data_index = [];
-      foreach ($validator_data as $vd) {
-          $validator_data_index[$vd['field_name']] = $vd['value'];
-      }
-      if (!empty($validator_fields)):
-    ?>
-    <div class="validation-details" style="border-left: 4px solid var(--c-primary);">
-      <h2>📝 Informations à compléter</h2>
-      <p class="hint" style="margin-bottom: 1rem;">Remplissez les champs ci-dessous lors de la validation.</p>
-      <?php foreach ($validator_fields as $vf):
-          $existing_val = $_POST[$vf['field_name']]
-              ?? $validator_data_index[$vf['field_name']]
-              ?? '';
-      ?>
-        <div style="margin-bottom: 1rem;">
-          <?php
-              echo (new \App\Render\FormRenderer())->field($vf, $existing_val, [], '', false);
-          ?>
-        </div>
-      <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-
-    <fieldset class="refusal-section">
-      <legend class="refusal-legend">Motif du refus <span class="req" aria-hidden="true">*</span></legend>
-      <span class="hint refusal-hint">Sélectionnez un motif. Vous pourrez préciser en complément ci-dessous.</span>
-      <div class="refusal-motif-list" role="radiogroup" aria-label="Motif du refus">
-        <label class="refusal-motif-radio">
-          <input type="radio" name="motif" value="Information manquante"<?= (($_POST['motif'] ?? '') === 'Information manquante') ? ' checked' : '' ?>>
-          <span class="refusal-motif-icon" aria-hidden="true">📄</span>
-          <span class="refusal-motif-label">Information manquante</span>
-        </label>
-        <label class="refusal-motif-radio">
-          <input type="radio" name="motif" value="Hors périmètre"<?= (($_POST['motif'] ?? '') === 'Hors périmètre') ? ' checked' : '' ?>>
-          <span class="refusal-motif-icon" aria-hidden="true">🚫</span>
-          <span class="refusal-motif-label">Hors périmètre</span>
-        </label>
-        <label class="refusal-motif-radio">
-          <input type="radio" name="motif" value="Non conforme"<?= (($_POST['motif'] ?? '') === 'Non conforme') ? ' checked' : '' ?>>
-          <span class="refusal-motif-icon" aria-hidden="true">⚠️</span>
-          <span class="refusal-motif-label">Non conforme</span>
-        </label>
-        <label class="refusal-motif-radio">
-          <input type="radio" name="motif" value="Autre motif"<?= (($_POST['motif'] ?? '') === 'Autre motif') ? ' checked' : '' ?>>
-          <span class="refusal-motif-icon" aria-hidden="true">✏️</span>
-          <span class="refusal-motif-label">Autre motif</span>
-        </label>
-      </div>
-    </fieldset>
-
-    <div class="form-group">
-      <label for="comment">Précisions complémentaires <span class="hint">(recommandé pour le refus, optionnel pour la validation)</span></label>
-      <textarea id="comment" name="comment" rows="4" placeholder="Ex : il manque le justificatif de domicile de moins de 3 mois..."><?= \App\Core\App::html()->escape($_POST['comment'] ?? '') ?></textarea>
-    </div>
-
-    <div class="submit-buttons">
-      <button type="submit" name="action" value="valider" class="btn-validate"><span aria-hidden="true">✅</span> Valider</button>
-      <button type="button" id="btn-show-refusal-recap" class="btn-refuse-confirm" aria-haspopup="dialog" aria-expanded="false" aria-controls="refusal-recap"><span aria-hidden="true">❌</span> Confirmer le refus</button>
-    </div>
-
-    <div id="refusal-recap" class="refusal-summary" role="alert" aria-live="assertive" hidden tabindex="-1">
-      <h3 class="refusal-summary-title"><span aria-hidden="true">⚠️</span> Confirmation du refus</h3>
-      <p class="refusal-summary-text">Vous allez refuser cette demande pour le motif suivant : <strong id="refusal-recap-motif">—</strong></p>
-      <p class="refusal-summary-warning">Cette action est <strong>irréversible</strong>. Le demandeur sera notifié par email.</p>
-      <div class="refusal-summary-actions">
-        <button type="submit" name="action" value="refuser" class="btn-refuse-definitive" formnovalidate><span aria-hidden="true">✓</span> Oui, refuser définitivement</button>
-        <button type="button" id="btn-cancel-refusal" class="btn-refuse-cancel">Annuler</button>
-      </div>
-    </div>
-
-    <?php if (isset($_POST['action']) && $_POST['action'] === 'refuser' && empty($comment)): ?>
-    <div class="msg-error" role="alert" aria-live="assertive" style="margin-top:1rem;">Veuillez sélectionner un motif de refus et/ou saisir des précisions avant de confirmer.</div>
-    <?php endif; ?>
-  </form>
-<?php endif; ?>
-
-<?php
-        $content = ob_get_clean();
-        if ($content === false) { $content = ''; }
+        $content = \App\Render\ValidateRenderer::content(
+            $token,
+            $pageCss,
+            $success ?? null,
+            $error ?? null,
+            $result,
+            $all_wf_steps,
+            $validator_fields,
+            $validator_data_index,
+            $previous_vd_rows,
+            $visible_attachments,
+            $current_step_field_names,
+            $existing_comment,
+            $existing_motif,
+        );
         echo $this->renderPage('Validation', 'mes_validations', $pageCss, $content);
     }
 }

@@ -127,7 +127,7 @@ final class StatsService
                 SUM(CASE WHEN submitted_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as this_week,
                 SUM(CASE WHEN submitted_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) as this_month
             FROM submissions
-        ")->fetch(PDO::FETCH_ASSOC);
+        ")->fetch(PDO::FETCH_ASSOC) ?: [];
 
         $stats = [
             'total' => (int) ($row['total'] ?? 0),

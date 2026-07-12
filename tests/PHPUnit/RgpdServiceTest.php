@@ -174,10 +174,24 @@ final class RgpdServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $testEmail = 'deleg_test_' . uniqid() . '@test.com';
 
+        // Create parent records for FK constraints
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-deleg-form-' . $formId, 'Test Deleg Form', '']);
+        $submissionId = \generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$submissionId, $formId]);
+        $stepId = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, 1, 1)")
+            ->execute([$stepId, $formId, 'Test Step']);
+        $tokenId = \generate_uuid();
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at) VALUES (?, ?, ?, ?, ?, datetime('now'))")
+            ->execute([$tokenId, $submissionId, $stepId, 'test@test.com', \generate_token()]);
+
         // Add delegation records
         $delId = 'del-' . uniqid();
-        $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, '', ?, ?, '', datetime('now'), '')")
-            ->execute([$delId, $testEmail, 'target@test.com']);
+        $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, '', datetime('now'), '')")
+            ->execute([$delId, $tokenId, $testEmail, 'target@test.com']);
 
         $result = $this->service->deleteUserData($testEmail);
         $this->assertTrue($result);
@@ -189,6 +203,10 @@ final class RgpdServiceTest extends TestCase
 
         // Cleanup
         $pdo->prepare("DELETE FROM delegations WHERE id = ?")->execute([$delId]);
+        $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$tokenId]);
+        $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$stepId]);
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
 
     // ── autoPurge ───────────────────────────────────────────────

@@ -136,37 +136,7 @@ final class ConfirmActionController extends BaseController
             $cancelUrl = $postUrl;
         }
 
-        ob_start();
-        ?>
-  <div class="confirm-card <?= $config['danger'] ? 'danger' : 'warning' ?>">
-    <div class="confirm-icon"><?= $config['danger'] ? '⚠️' : '🔄' ?></div>
-    <div class="confirm-title <?= $config['danger'] ? '' : 'warning-title' ?>"><?= \App\Core\App::html()->escape($config['label']) ?></div>
-    <div class="confirm-message">
-      <?= $confirmMessage ?> <strong><?= $detailText ?></strong>
-    </div>
-
-    <?php if ($config['danger']): ?>
-    <div class="confirm-warning">
-      Cette action est irréversible.
-    </div>
-    <?php endif; ?>
-
-    <form method="POST" action="<?= \App\Core\App::html()->escape($postUrl) ?>">
-      <?= $this->security->csrfField() ?>
-      <input type="hidden" name="action" value="<?= \App\Core\App::html()->escape($action) ?>">
-      <input type="hidden" name="confirmed" value="1">
-      <?php foreach ($config['params'] as $param): ?>
-        <input type="hidden" name="<?= \App\Core\App::html()->escape($param) ?>" value="<?= \App\Core\App::html()->escape($_GET[$param]) ?>">
-      <?php endforeach; ?>
-
-      <div class="confirm-actions">
-        <button type="submit" class="btn btn-danger">Confirmer</button>
-        <a href="<?= \App\Core\App::html()->escape($cancelUrl) ?>" class="btn btn-secondary">Annuler</a>
-      </div>
-    </form>
-  </div>
-<?php
-        $content = (string)ob_get_clean();
+        $content = \App\Render\ConfirmActionRenderer::content($action, $config, $confirmMessage, $detailText, $cancelUrl, $postUrl, $_GET);
         echo $this->renderPage('Confirmation — ' . \App\Core\App::html()->escape($config['label']), 'dashboard', '', $content);
     }
 

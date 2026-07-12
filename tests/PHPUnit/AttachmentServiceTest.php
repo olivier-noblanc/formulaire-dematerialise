@@ -417,7 +417,12 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAttachmentsReturnsArrayForExistingSubmission(): void
     {
         $pdo = \App\Core\App::getInstance()->get(\App\Core\Database::class)->getPdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-att-form-' . $formId, 'Test Att Form', '']);
         $submissionId = 'test-sub-' . uniqid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$submissionId, $formId]);
         $attId = bin2hex(random_bytes(8));
 
         $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
@@ -429,13 +434,20 @@ final class AttachmentServiceTest extends TestCase
             $this->assertNotEmpty($attachments);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
         }
     }
 
     public function testGetAttachmentByIdReturnsDataForExistingAttachment(): void
     {
         $pdo = \App\Core\App::getInstance()->get(\App\Core\Database::class)->getPdo();
+        $formId2 = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId2, 'test-att-form2-' . $formId2, 'Test Att Form 2', '']);
         $submissionId = 'test-sub-byid-' . uniqid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$submissionId, $formId2]);
         $attId = bin2hex(random_bytes(8));
 
         $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
@@ -447,6 +459,8 @@ final class AttachmentServiceTest extends TestCase
             $this->assertSame('lookup.pdf', $attachment['original_name']);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId2]);
         }
     }
 

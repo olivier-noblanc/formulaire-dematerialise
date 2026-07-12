@@ -1,0 +1,158 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Render;
+
+use App\Core\App;
+
+/**
+ * Rendu de la page Statistiques.
+ */
+final class StatsRenderer
+{
+    public static function content(
+        string $period,
+        array $globalStats,
+        array $periodStats,
+        array $formStats,
+        array $validatorStats,
+        string $periodLabel,
+        int $dbSize
+    ): string {
+        $h = App::html()->escape(...);
+
+        // Period tabs
+        $weekActive  = $period === 'week' ? 'active' : '';
+        $monthActive = $period === 'month' ? 'active' : '';
+        $yearActive  = $period === 'year' ? 'active' : '';
+
+        // Global stats values
+        $total        = (int)($globalStats['total'] ?? 0);
+        $valide       = (int)($globalStats['valide'] ?? 0);
+        $enCours      = (int)($globalStats['en_cours'] ?? 0);
+        $refuse       = (int)($globalStats['refuse'] ?? 0);
+        $taux         = $h((string)($globalStats['taux_validation'] ?? '0'));
+        $avgDays      = $h((string)($globalStats['avg_days'] ?? '—'));
+        $today        = (int)($globalStats['today'] ?? 0);
+        $thisWeek     = (int)($globalStats['this_week'] ?? 0);
+        $thisMonth    = (int)($globalStats['this_month'] ?? 0);
+        $tokensPend   = (int)($globalStats['tokens_pending'] ?? 0);
+        $attachCount  = (int)($globalStats['attachments_count'] ?? 0);
+        $attachSize   = (int)($globalStats['attachments_size'] ?? 0);
+
+        $html = '<h1><span aria-hidden="true">📊</span> Statistiques</h1>';
+
+        $html .= '<div class="period-tabs">';
+        $html .= '<a href="index.php?p=stats&period=week" class="' . $weekActive . '">Par semaine</a>';
+        $html .= '<a href="index.php?p=stats&period=month" class="' . $monthActive . '">Par mois</a>';
+        $html .= '<a href="index.php?p=stats&period=year" class="' . $yearActive . '">Par année</a>';
+        $html .= '</div>';
+
+        $html .= '<div class="grid-3">';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $total . '</div><div class="stat-label">Soumissions totales</div></div>';
+        $html .= '<div class="stat-card success"><div class="stat-value">' . $taux . '%</div><div class="stat-label">Taux de validation</div></div>';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $avgDays . ' j</div><div class="stat-label">Temps moyen de traitement</div></div>';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $today . '</div><div class="stat-label">Aujourd\'hui</div></div>';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $thisWeek . '</div><div class="stat-label">Cette semaine</div></div>';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $thisMonth . '</div><div class="stat-label">Ce mois</div></div>';
+        $html .= '</div>';
+
+        // Donut chart
+        $html .= '<div class="card"><h2>Répartition des statuts</h2>';
+        $html .= App::html()->renderDonutChart($total, $valide, $enCours, $refuse);
+        $html .= '</div>';
+
+        // Period chart
+        $html .= '<div class="card"><h2>Évolution par ' . $periodLabel . '</h2>';
+        if (empty($periodStats)) {
+            $html .= '<p class="empty-state">Aucune donnée pour cette période.</p>';
+        } else {
+            $column = array_column($periodStats, 'total');
+            $maxTotal = $column !== [] ? (max($column) ?: 1) : 1;
+            $periodStatsAsc = array_reverse($periodStats);
+            $html .= '<div class="bar-chart">';
+            foreach ($periodStatsAsc as $ps) {
+                $pct = round(($ps['total'] / $maxTotal) * 100);
+                $validePct  = $ps['total'] > 0 ? round(($ps['valide'] / $ps['total']) * 100) : 0;
+                $enCoursPct = $ps['total'] > 0 ? round(($ps['en_cours'] / $ps['total']) * 100) : 0;
+                $refusePct  = max(0, 100 - $validePct - $enCoursPct);
+                $barWidth   = max($pct, 3);
+                $periodStr  = $h((string)$ps['period']);
+                $totalInt   = (int)$ps['total'];
+                $html .= '<div class="bar-row">';
+                $html .= '<div class="bar-label">' . $periodStr . '</div>';
+                $html .= '<div class="bar-track"><div class="stacked-bar" style="width:' . $barWidth . '%;">';
+                $html .= '<div class="segment-valide" style="width:' . $validePct . '%;"></div>';
+                $html .= '<div class="segment-en_cours" style="width:' . $enCoursPct . '%;"></div>';
+                $html .= '<div class="segment-refuse" style="width:' . $refusePct . '%;"></div>';
+                $html .= '</div></div>';
+                $html .= '<div class="bar-value">' . $totalInt . '</div>';
+                $html .= '</div>';
+            }
+            $html .= '</div>';
+            $html .= '<div class="chart-legend" style="flex-direction:row;gap:1.5rem;margin-top:1rem;">';
+            $html .= '<div class="legend-item"><span class="legend-dot" style="background:#1a6b3c;"></span>Validées</div>';
+            $html .= '<div class="legend-item"><span class="legend-dot" style="background:#b45309;"></span>En cours</div>';
+            $html .= '<div class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span>Refusées</div>';
+            $html .= '</div>';
+        }
+        $html .= '</div>';
+
+        // Form stats table
+        $html .= '<div class="card"><h2>Performance par formulaire</h2>';
+        if (empty($formStats) || (count($formStats) === 1 && ($formStats[0]['total'] ?? 0) == 0)) {
+            $html .= '<p class="empty-state">Aucune soumission enregistrée.</p>';
+        } else {
+            $html .= '<table><thead><tr><th>Formulaire</th><th>Total</th><th>En cours</th><th>Validées</th><th>Refusées</th><th>Taux</th><th>Temps moyen</th></tr></thead><tbody>';
+            foreach ($formStats as $fs) {
+                $fsTotal  = (int)$fs['total'];
+                $fsValide = (int)$fs['valide'];
+                $fsRate   = $fsTotal > 0 ? round(($fsValide / $fsTotal) * 100, 1) : 0;
+                $fsAvg    = !empty($fs['avg_seconds']) ? round((float)$fs['avg_seconds'] / 86400, 1) . ' j' : '—';
+                $fsLabel  = $h((string)$fs['label']);
+                $fsEnC    = (int)$fs['en_cours'];
+                $fsRef    = (int)$fs['refuse'];
+                $html .= '<tr><td><strong>' . $fsLabel . '</strong></td><td>' . $fsTotal . '</td>';
+                $html .= '<td><span class="badge badge-warn">' . $fsEnC . '</span></td>';
+                $html .= '<td><span class="badge badge-ok">' . $fsValide . '</span></td>';
+                $html .= '<td><span class="badge badge-err">' . $fsRef . '</span></td>';
+                $html .= '<td><strong>' . $fsRate . '%</strong></td><td>' . $fsAvg . '</td></tr>';
+            }
+            $html .= '</tbody></table>';
+        }
+        $html .= '</div>';
+
+        // Validator stats table
+        $html .= '<div class="card"><h2>Performance par validateur</h2>';
+        if (empty($validatorStats)) {
+            $html .= '<p class="empty-state">Aucune donnée de validation.</p>';
+        } else {
+            $html .= '<table><thead><tr><th>Validateur</th><th>Total assigné</th><th>Traitées</th><th>En attente</th><th>Temps de réponse moyen</th></tr></thead><tbody>';
+            foreach ($validatorStats as $vs) {
+                $vsAvg   = !empty($vs['avg_response_seconds']) ? round((float)$vs['avg_response_seconds'] / 3600, 1) . ' h' : '—';
+                $vsEmail = App::html()->displayUser((string)$vs['email']);
+                $vsTotal = (int)$vs['total'];
+                $vsDone  = (int)$vs['done'];
+                $vsPend  = (int)$vs['pending'];
+                $html .= '<tr><td>' . $vsEmail . '</td><td>' . $vsTotal . '</td>';
+                $html .= '<td><span class="badge badge-ok">' . $vsDone . '</span></td>';
+                $html .= '<td><span class="badge badge-warn">' . $vsPend . '</span></td>';
+                $html .= '<td>' . $vsAvg . '</td></tr>';
+            }
+            $html .= '</tbody></table>';
+        }
+        $html .= '</div>';
+
+        // Data volume
+        $dbSizeFormatted = App::html()->formatFileSize($dbSize);
+        $attachSizeFormatted = App::html()->formatFileSize($attachSize);
+        $html .= '<div class="card"><h2>Volume de données</h2><div class="grid-2">';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $tokensPend . '</div><div class="stat-label">Tokens en attente</div></div>';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $attachCount . '</div><div class="stat-label">Pièces jointes</div></div>';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $attachSizeFormatted . '</div><div class="stat-label">Volume pièces jointes</div></div>';
+        $html .= '<div class="stat-card"><div class="stat-value">' . $dbSizeFormatted . '</div><div class="stat-label">Taille base de données</div></div>';
+        $html .= '</div></div>';
+
+        return $html;
+    }
+}

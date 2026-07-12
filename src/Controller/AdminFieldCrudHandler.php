@@ -94,12 +94,12 @@ final class AdminFieldCrudHandler
         }
     }
 
-    public static function handleDeleteField(\PDO $pdo): array
+    public static function handleDeleteField(\PDO $pdo): ?array
     {
         $field_id = trim($_POST['field_id'] ?? '');
         $form_id = trim($_POST['form_id'] ?? '');
         if (empty($field_id)) {
-            return [];
+            return null;
         }
         try {
             $pdo->prepare("DELETE FROM form_fields WHERE id = ?")->execute([$field_id]);

@@ -290,9 +290,9 @@ function build_alert_html(array $sub, string $nom_agent, string $deadline_format
     <h1 style="margin:0;font-size:1.3rem;">&#9888; Alerte Workflow — ' . $urgency . '</h1>
   </div>
   <div style="border:1px solid #ddd;border-top:none;padding:20px;border-radius:0 0 4px 4px;">
-    <h2 style="color:' . $alert_color . ';font-size:1.1rem;margin-top:0;">' . h($rule['form_label']) . '</h2>
+    <h2 style="color:' . $alert_color . ';font-size:1.1rem;margin-top:0;">' . htmlspecialchars($rule['form_label'], ENT_QUOTES, 'UTF-8') . '</h2>
     <table style="width:100%;margin-bottom:16px;border-collapse:collapse;">
-      <tr><td style="padding:5px 0;font-weight:bold;color:#555;width:40%;">Agent :</td><td style="padding:5px 0;">' . h($nom_agent) . '</td></tr>
+      <tr><td style="padding:5px 0;font-weight:bold;color:#555;width:40%;">Agent :</td><td style="padding:5px 0;">' . htmlspecialchars($nom_agent, ENT_QUOTES, 'UTF-8') . '</td></tr>
       <tr><td style="padding:5px 0;font-weight:bold;color:#555;">Date cible :</td><td style="padding:5px 0;"><strong>' . $deadline_formatted . '</strong></td></tr>
       <tr><td style="padding:5px 0;font-weight:bold;color:#555;">Jours restants :</td><td style="padding:5px 0;color:' . $alert_color . ';font-weight:bold;">' . $urgency . '</td></tr>
       <tr><td style="padding:5px 0;font-weight:bold;color:#555;">Avancement :</td><td style="padding:5px 0;">' . $done_count . ' valid&eacute;(s) / ' . ($done_count + $pending_count) . ' total</td></tr>

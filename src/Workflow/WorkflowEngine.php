@@ -192,25 +192,26 @@ final class WorkflowEngine implements WorkflowInterface
         $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
 
         foreach ($byOrder as $ordre => $groupe) {
-            $allStarted = array_reduce($groupe, function (bool $carry, array $step) use ($tokensByStep, $groupe): bool {
-                $stepIds = array_column($groupe, 'step_id');
-                $allStarted = count(array_intersect($stepIds, array_keys($tokensByStep))) === count($groupe);
-                return $carry && $allStarted;
-            }, true);
+            // Vérifier si toutes les étapes actives de ce groupe ont un token
+            $stepIds = array_column($groupe, 'step_id');
+            $allStarted = count(array_intersect($stepIds, array_keys($tokensByStep))) === count($groupe);
 
             if (!$allStarted) {
                 $formData = json_decode($submission['data'] ?? '{}', true) ?: [];
+                $validatorData = $this->getValidatorDataForEvaluation($submissionId);
+                $tokenCreated = false;
 
                 foreach ($groupe as $step) {
                     // Évaluer la condition
                     if (!$this->conditions->evaluate(
                         $step['condition'] ?? '',
-                        $this->getValidatorDataForEvaluation($submissionId)
+                        $validatorData
                     )) {
-                        continue; // Skip cette étape
+                        continue; // Skip cette étape (condition non remplie)
                     }
 
                     $rawEmails = explode('|', $step['recipient_emails'] ?? '');
+                    $hasRecipient = false;
                     foreach ($rawEmails as $email) {
                         $email = trim($email);
                         if (empty($email)) continue;
@@ -220,6 +221,8 @@ final class WorkflowEngine implements WorkflowInterface
                             error_log("Workflow: skipping invalid recipient '$email' for step {$step['step_id']}");
                             continue;
                         }
+
+                        $hasRecipient = true;
 
                         // Vérifier doublon
                         $dupCheck = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL");
@@ -236,9 +239,18 @@ final class WorkflowEngine implements WorkflowInterface
                         if (!$mailSent) {
                             error_log("Workflow: mail failed for token $token to $email");
                         }
+                        $tokenCreated = true;
+                    }
+
+                    // Étape sans recipients valides — logger et ignorer (misconfiguration)
+                    if (!$hasRecipient && !empty(trim($step['recipient_emails'] ?? ''))) {
+                        error_log("Workflow: step {$step['step_id']} has condition true but no valid recipients — skipping");
                     }
                 }
-                return; // On a démarré cette étape — attendre validation
+
+                // Si au moins un token a été créé, on attend sa validation
+                // Si aucun token (toutes les conditions false ou tous les recipients invalides), on passe au groupe suivant
+                if ($tokenCreated) return;
             }
 
             // Vérifier si toutes les étapes de cet ordre sont validées

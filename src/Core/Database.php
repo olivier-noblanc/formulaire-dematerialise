@@ -23,6 +23,7 @@ final class Database implements DatabaseInterface
         if ($this->pdo === null) {
             $this->pdo = new \PDO('sqlite:' . DB_PATH);
             $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->pdo->exec('PRAGMA foreign_keys = ON');
 
             // Migrations
             if (function_exists('db_migrate')) {
@@ -46,6 +47,7 @@ final class Database implements DatabaseInterface
             $testDbPath = $GLOBALS['_test_db_path'] ?? dirname(__DIR__, 2) . '/db/workflow_test.db';
             $this->pdoTest = new \PDO('sqlite:' . $testDbPath);
             $this->pdoTest->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->pdoTest->exec('PRAGMA foreign_keys = ON');
 
             if (function_exists('db_migrate')) {
                 db_migrate($this->pdoTest);

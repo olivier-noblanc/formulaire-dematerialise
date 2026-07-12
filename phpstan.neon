@@ -24,4 +24,3 @@ parameters:
     bootstrapFiles:
         - helpers.php
         - phpstan_inst_stubs.php
-        - lib/html.php

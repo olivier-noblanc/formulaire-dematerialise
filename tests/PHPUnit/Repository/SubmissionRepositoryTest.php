@@ -58,6 +58,11 @@ final class SubmissionRepositoryTest extends TestCase
         $id = \generate_uuid();
         $formId = \generate_uuid();
 
+        // Create parent form
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-form-' . $formId, 'Test Form', '']);
+
         $data = [
             'form_id' => $formId,
             'data' => json_encode(['field1' => 'value1']),
@@ -83,6 +88,10 @@ final class SubmissionRepositoryTest extends TestCase
         $this->assertTrue($updated);
         $fetched2 = $this->repo->findById($createdId);
         $this->assertSame('validated', $fetched2['status']);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$createdId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
 
     // ── findByForm() with status filter ─────────────────────────
@@ -90,6 +99,9 @@ final class SubmissionRepositoryTest extends TestCase
     public function testFindByFormWithStatusReturnsFilteredResults(): void
     {
         $formId = \generate_uuid();
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-filter-' . $formId, 'Test Filter', '']);
         $subId = $this->repo->create([
             'form_id' => $formId,
             'data' => '{}',
@@ -108,6 +120,7 @@ final class SubmissionRepositoryTest extends TestCase
         $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
         $pdo->prepare("DELETE FROM submission_validator_data WHERE submission_id = ?")->execute([$subId]);
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
 
     // ── findBySubmitter() ───────────────────────────────────────
@@ -122,6 +135,9 @@ final class SubmissionRepositoryTest extends TestCase
     public function testFindBySubmitterReturnsSubmissionsForEmail(): void
     {
         $formId = \generate_uuid();
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-submitter-' . $formId, 'Test Submitter', '']);
         $email = 'submitter_' . uniqid() . '@test.com';
         $subId = $this->repo->create([
             'form_id' => $formId,
@@ -138,6 +154,7 @@ final class SubmissionRepositoryTest extends TestCase
         $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
         $pdo->prepare("DELETE FROM submission_validator_data WHERE submission_id = ?")->execute([$subId]);
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
 
     // ── findPendingForValidator() ───────────────────────────────
@@ -215,6 +232,9 @@ final class SubmissionRepositoryTest extends TestCase
     public function testCreateWithDefaultStatus(): void
     {
         $formId = \generate_uuid();
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-default-' . $formId, 'Test Default', '']);
         $subId = $this->repo->create([
             'form_id' => $formId,
             'data' => '{}',
@@ -229,6 +249,7 @@ final class SubmissionRepositoryTest extends TestCase
         $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
         $pdo->prepare("DELETE FROM submission_validator_data WHERE submission_id = ?")->execute([$subId]);
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
 
     // ── updateStatus() ──────────────────────────────────────────

@@ -54,15 +54,17 @@ final class AdminImportExportHandler
             ];
         }
 
-        $s_stmt = $pdo->prepare("SELECT * FROM steps WHERE form_id = ? ORDER BY ordre");
+        $s_stmt = $pdo->prepare("
+            SELECT s.*, GROUP_CONCAT(sr.email, '|') as recipient_emails
+            FROM steps s
+            LEFT JOIN step_recipients sr ON sr.step_id = s.id
+            WHERE s.form_id = ?
+            GROUP BY s.id
+            ORDER BY s.ordre
+        ");
         $s_stmt->execute([$export_id]);
         foreach ($s_stmt->fetchAll(\PDO::FETCH_ASSOC) as $s) {
-            $recipients = [];
-            $r_stmt = $pdo->prepare("SELECT email FROM step_recipients WHERE step_id = ?");
-            $r_stmt->execute([$s['id']]);
-            foreach ($r_stmt->fetchAll(\PDO::FETCH_COLUMN) as $email) {
-                $recipients[] = $email;
-            }
+            $recipients = $s['recipient_emails'] ? explode('|', $s['recipient_emails']) : [];
             $raw_condition = (string)($s['condition'] ?? '');
             $condition_export = null;
             if ($raw_condition !== '') {

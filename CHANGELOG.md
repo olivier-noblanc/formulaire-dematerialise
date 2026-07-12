@@ -1,7 +1,59 @@
 # Changelog — CircuitDémat
 
+## [10.12.0] — 2026-07-12
+_Résumé : Ultrareview v2 — 15 constats corrigés, PRAGMA foreign_keys ON global, 7 renderers extraits._
+
+### 🐛 Bug fixes
+
+- **C1** WorkflowEngine : étapes conditionnelles permanently false ne bloquent plus le workflow
+- **C2** TokenService::regenerate() : transaction ajoutée (UPDATE + INSERT atomiques)
+- **C3** TokenService::delegate() : transaction ajoutée (UPDATE + 2× INSERT atomiques)
+- **W1** AdminFormCrudHandler::handleUpdateForm() : erreur UUID non plus écrasée par "libellé requis"
+- **W2** AdminStepCrudHandler::handleAddStep() : même fix que W1
+- **W3** WorkflowEngine : array_reduce redondant remplacé par count(array_intersect)
+- **W4** handleDeleteField/Step/Recipient : retournent null au lieu de [] (contrat conforme)
+
+### 🔒 Sécurité
+
+- **PRAGMA foreign_keys = ON** activé globalement dans Database.php (prod + test)
+- **AdminFormCrudHandler::handleDeleteForm()** : cascade delete complète (step_recipients, form_fields, form_owners) + transaction
+- **AttachmentRepository::findBySubmissionWithUploader()** : JOIN sur table users inexistante supprimé
+- **9 tests** adaptés pour créer les records parents (FK constraints respectées)
+
+### ⚡ Performance
+
+- **AdminImportExportHandler** : N+1 query step_recipients → GROUP_CONCAT en 1 requête
+- **WorkflowEngine::advanceWorkflow()** : getValidatorDataForEvaluation() sorti de la boucle (1 appel au lieu de N)
+
+### 🏗 Refactor
+
+- **TokenService::remind()** : relance_count incrémenté APRÈS vérification envoi mail (avant = compteur consommé même si échec)
+- **AdminFormsHandlers** : return types `: array` → `: ?array` sur handleDeleteStep/Field/Recipient
+- **handleDuplicateForm()** : rethrow remplacé par catch + retour error array
+- **remind()** : double if ($mailSent) redondant fusionné
+- **AdminAlertsController/MySubmissionsController** : $pdo inutilisé supprimé
+- **install.php/HealthController** : version check PHP 8.0+ → 8.5+
+
+### 🎨 Renderers (extraction HTML des controllers)
+
+- **7 renderers créés** : AdminAlertsRenderer, ConfirmActionRenderer, MySubmissionsRenderer, MyValidationsRenderer, RgpdRenderer, StatsRenderer, ValidateRenderer
+- **7 controllers allégés** : HTML déplacé vers renderers (ob_start → string concat)
+- Pattern cohérent : `final class` + `public static function content(...)`
+- Aucun renderer n'importe les controllers (pas de dépendance circulaire)
+
+### 📊 Résultat
+
+| Métrique | Avant 10.11.0 | Après 10.12.0 |
+|----------|---------------|---------------|
+| Tests | 977 | 977 (0 failures) |
+| Constats ultrareview | 15 | 0 critiques/avertissements |
+| PRAGMA foreign_keys | local (3 fichiers) | ON global |
+| Renderers | 0 | 7 |
+
+---
+
 ## [10.11.0] — 2026-07-11
-_Résumé : Ultrareview — 38 constats corrigés, SQL contrôleurs → repositories, FieldService/ValidatorDataService mergés._
+_Résumé : Ultrareview complet — webhooks supprimés, 38 constats corrigés, SQL → repositories, AdminFormsHandlers splitté._
 
 ### 🐛 Bug fixes
 

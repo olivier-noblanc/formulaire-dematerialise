@@ -37,11 +37,11 @@ final class AdminRecipientHandler
         }
     }
 
-    public static function handleDeleteRecipient(\PDO $pdo, string $get_form_id): array
+    public static function handleDeleteRecipient(\PDO $pdo, string $get_form_id): ?array
     {
         $recipient_id = trim($_POST['recipient_id'] ?? '');
         if (empty($recipient_id)) {
-            return [];
+            return null;
         }
         try {
             $stmt = $pdo->prepare("SELECT step_id FROM step_recipients WHERE id = ?");

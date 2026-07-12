@@ -38,8 +38,17 @@ final class TokenRepositoryTest extends TestCase
 
     public function testCreateAndReadBackRoundTrip(): void
     {
+        $pdo = $this->repo->pdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-token-form-' . $formId, 'Test Token Form', '']);
         $submissionId = \generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$submissionId, $formId]);
         $stepId = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, 1, 1)")
+            ->execute([$stepId, $formId, 'Test Step']);
+
         $tokenValue = 'tok-' . \generate_uuid();
 
         $data = [
@@ -74,5 +83,11 @@ final class TokenRepositoryTest extends TestCase
 
         $expired = $this->repo->markExpired($createdId);
         $this->assertTrue($expired);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$createdId]);
+        $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$stepId]);
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
 }

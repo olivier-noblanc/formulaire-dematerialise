@@ -96,19 +96,26 @@ final class TokenService
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
 
-        // Marquer l'ancien token comme traité (invalidé)
-        $pdo->prepare("UPDATE tokens SET done_at = ? WHERE id = ?")
-            ->execute([gmdate('Y-m-d H:i:s'), $oldTokenId]);
-
-        // Créer un nouveau token
+        // Marquer l'ancien token comme traité (invalidé) + créer le nouveau — transactionnellement
         $newToken = generate_token();
         $expireDays = (int)$this->settings->get('token_expire_days', '30');
         $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
         $now = gmdate('Y-m-d H:i:s');
-
         $newTokenRowId = generate_uuid();
-        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$newTokenRowId, $old['submission_id'], $old['step_id'], $old['email'], $newToken, $now, $expiresAt]);
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("UPDATE tokens SET done_at = ? WHERE id = ?")
+                ->execute([gmdate('Y-m-d H:i:s'), $oldTokenId]);
+
+            $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$newTokenRowId, $old['submission_id'], $old['step_id'], $old['email'], $newToken, $now, $expiresAt]);
+
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
 
         // Envoyer le nouveau lien par email
         $submission = App::workflow()->getSubmissionWithFormLabel($old['submission_id']);
@@ -216,9 +223,6 @@ final class TokenService
         $newCount = (int)$tok['relance_count'] + 1;
         $relanceMax = (int)$this->settings->get('relance_max', '3');
 
-        $this->db->getPdo()->prepare("UPDATE tokens SET relance_count = ?, relance_at = ? WHERE id = ?")
-            ->execute([$newCount, gmdate('Y-m-d H:i:s'), $tokenId]);
-
         $submission = [
             'data' => $tok['data'],
             'form_label' => $tok['form_label'],
@@ -237,13 +241,14 @@ final class TokenService
 
         $mailSent = $this->mail->send($tok['email'], $subject, $mailBody);
 
-        $this->audit->log('manual_remind', 'token:' . $tokenId, 'Rappel manuel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')');
-
         if ($mailSent) {
+            $this->db->getPdo()->prepare("UPDATE tokens SET relance_count = ?, relance_at = ? WHERE id = ?")
+                ->execute([$newCount, gmdate('Y-m-d H:i:s'), $tokenId]);
+            $this->audit->log('manual_remind', 'token:' . $tokenId, 'Rappel manuel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')');
             return ['success' => true, 'message' => 'Rappel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')'];
-        } else {
-            return ['success' => false, 'message' => 'Erreur lors de l\'envoi de l\'email à ' . $tok['email'] . '. Vérifiez la configuration SMTP.'];
         }
+
+        return ['success' => false, 'message' => 'Erreur lors de l\'envoi de l\'email à ' . $tok['email'] . '. Vérifiez la configuration SMTP.'];
     }
 
     /**
@@ -279,21 +284,29 @@ final class TokenService
             return ['success' => false, 'message' => 'Un token de validation est déjà actif pour ' . $toEmail . ' sur cette étape.'];
         }
 
-        $pdo->prepare("UPDATE tokens SET done_at = datetime('now') WHERE id = ?")
-            ->execute([$tokenId]);
-
         $newToken = generate_token();
         $expireDays = (int)$this->settings->get('token_expire_days', '30');
         $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
         $now = gmdate('Y-m-d H:i:s');
-
         $newTokenRowId = generate_uuid();
-        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$newTokenRowId, $tok['submission_id'], $tok['step_id'], $toEmail, $newToken, $now, $expiresAt]);
-
         $delegationId = generate_uuid();
-        $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
-            ->execute([$delegationId, $tokenId, $tok['email'], $toEmail, $reason, $newTokenRowId]);
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("UPDATE tokens SET done_at = datetime('now') WHERE id = ?")
+                ->execute([$tokenId]);
+
+            $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$newTokenRowId, $tok['submission_id'], $tok['step_id'], $toEmail, $newToken, $now, $expiresAt]);
+
+            $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+                ->execute([$delegationId, $tokenId, $tok['email'], $toEmail, $reason, $newTokenRowId]);
+
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
 
         $stepLabel = $tok['step_label'] ?? 'Validation requise';
         $submission = [
