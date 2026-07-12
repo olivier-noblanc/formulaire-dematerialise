@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -81,7 +82,7 @@ final class AdminSettingsHandlers
         if (empty($settings['smtp_pass'])) {
             $settings['smtp_pass'] = App::settings()->get('smtp_pass', '');
         }
-        if (!empty($settings['admin_email']) && !filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL)) {
+        if (isset($settings['admin_email']) && ($settings['admin_email'] !== '' && $settings['admin_email'] !== '0') && !filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL)) {
             $error_msg = 'L\'adresse email de l\'administrateur principal est invalide.';
             unset($settings['admin_email']);
         }
@@ -116,7 +117,7 @@ final class AdminSettingsHandlers
         ];
 
         $ldap_bind_pass = trim($_POST['ldap_bind_pass'] ?? '');
-        if (!empty($ldap_bind_pass)) {
+        if ($ldap_bind_pass !== '' && $ldap_bind_pass !== '0') {
             $ev_settings['ldap_bind_pass'] = $ldap_bind_pass;
         }
 
@@ -134,7 +135,7 @@ final class AdminSettingsHandlers
                 App::settings()->set($key, $value, $updated_by);
             }
             App::audit()->log('settings_update', 'settings:email_verify', 'Paramètres de vérification email mis à jour', $updated_by);
-            if (empty($error_msg)) {
+            if ($error_msg === '' || $error_msg === '0') {
                 $success_msg = 'Paramètres de vérification email enregistrés avec succès.';
             }
         } catch (\Exception $e) {
@@ -169,7 +170,7 @@ final class AdminSettingsHandlers
     public static function handleTestVerifyEmail(string $error_msg): array
     {
         $test_addr = trim($_POST['verify_test_email'] ?? '');
-        if (!empty($test_addr) && filter_var($test_addr, FILTER_VALIDATE_EMAIL)) {
+        if ($test_addr !== '' && $test_addr !== '0' && filter_var($test_addr, FILTER_VALIDATE_EMAIL)) {
             $verify_result = App::emailVerify()->testVerification($test_addr);
             App::audit()->log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', App::auth()->getUser());
             return [$verify_result, $error_msg];

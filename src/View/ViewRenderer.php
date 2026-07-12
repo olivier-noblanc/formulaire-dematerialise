@@ -1,29 +1,28 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\View;
 
-use App\Render\HtmlService;
-use App\Render\FormRenderer;
 use App\Render\ErrorRenderer;
+use App\Render\FormRenderer;
+use App\Render\HtmlService;
 use App\Render\NavigationRenderer;
 
 /**
  * Service de rendu de pages — enveloppe OOP pour les renderers.
  */
-final class ViewRenderer
+final readonly class ViewRenderer
 {
-    private HtmlService $html;
     private FormRenderer $formRenderer;
     private ErrorRenderer $errorRenderer;
-    private NavigationRenderer $navRenderer;
+    private NavigationRenderer $navigationRenderer;
 
-    public function __construct(HtmlService $html)
+    public function __construct(private HtmlService $htmlService)
     {
-        $this->html = $html;
         $this->formRenderer = new FormRenderer();
         $this->errorRenderer = new ErrorRenderer();
-        $this->navRenderer = new NavigationRenderer();
+        $this->navigationRenderer = new NavigationRenderer();
     }
 
     public function page(
@@ -32,22 +31,22 @@ final class ViewRenderer
         string $pageCss = '',
         string $content = ''
     ): string {
-        return $this->navRenderer->page($title, $currentPage, $pageCss, $content);
+        return $this->navigationRenderer->page($title, $currentPage, $pageCss, $content);
     }
 
     public function header(string $currentPage = '', array $extraAdminLinks = []): string
     {
-        return $this->navRenderer->header($currentPage, $extraAdminLinks);
+        return $this->navigationRenderer->header($currentPage, $extraAdminLinks);
     }
 
     public function breadcrumb(array $breadcrumbs): string
     {
-        return $this->navRenderer->breadcrumb($breadcrumbs);
+        return $this->navigationRenderer->breadcrumb($breadcrumbs);
     }
 
     public function footer(): string
     {
-        return $this->navRenderer->footer();
+        return $this->navigationRenderer->footer();
     }
 
     public function errorPage(
@@ -56,7 +55,7 @@ final class ViewRenderer
         string $message,
         string $hint = '',
         string $backUrl = 'index.php'
-    ): void {
+    ): never {
         $this->errorRenderer->errorPage($code, $title, $message, $hint, $backUrl);
     }
 
@@ -102,7 +101,7 @@ final class ViewRenderer
         array $exclude = [],
         string $format = 'p'
     ): string {
-        return $this->formRenderer->submissionData($data, (array) $exclude, $format);
+        return $this->formRenderer->submissionData($data, $exclude, $format);
     }
 
     public function formProgressIndicator(array $grouped): string
@@ -117,11 +116,11 @@ final class ViewRenderer
 
     public function h(?string $val): string
     {
-        return $this->html->h($val);
+        return $this->htmlService->h($val);
     }
 
     public function tJargon(string $text): string
     {
-        return $this->html->tJargon($text);
+        return $this->htmlService->tJargon($text);
     }
 }

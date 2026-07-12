@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
-
-use App\Core\App;
 
 /**
  * Contrôleur pour servir les captures d'écran depuis docs/screenshots/.
@@ -18,7 +17,7 @@ final class ScreenshotController extends BaseController
     public function handle(): void
     {
         // Access control: only authenticated users can view screenshots
-        if (!$this->auth->getUser()) {
+        if ($this->auth->getUser() === '' || $this->auth->getUser() === '0') {
             http_response_code(403);
             exit('Accès refusé');
         }
@@ -26,7 +25,7 @@ final class ScreenshotController extends BaseController
         $file = $_GET['f'] ?? '';
 
         // Sécurité : uniquement un nom de fichier simple (pas de traversal)
-        if (empty($file) || basename($file) !== $file) {
+        if (empty($file) || basename((string) $file) !== $file) {
             http_response_code(400);
             exit('Fichier invalide.');
         }
@@ -50,7 +49,7 @@ final class ScreenshotController extends BaseController
         $path = dirname(__DIR__, 2) . '/docs/screenshots/' . $file;
         $real_path = realpath($path);
         $allowed_dir = realpath(dirname(__DIR__, 2) . '/docs/screenshots');
-        if ($real_path === false || $allowed_dir === false || strpos($real_path, $allowed_dir) !== 0) {
+        if ($real_path === false || $allowed_dir === false || !str_starts_with($real_path, $allowed_dir)) {
             http_response_code(400);
             exit('Chemin invalide.');
         }
@@ -66,7 +65,7 @@ final class ScreenshotController extends BaseController
         header('Content-Length: ' . filesize($path));
         header('Cache-Control: public, max-age=' . $expires);
         header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT');
-        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int)filemtime($path)) . ' GMT');
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int) filemtime($path)) . ' GMT');
 
         readfile($path);
         exit;

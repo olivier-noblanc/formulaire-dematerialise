@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core;
@@ -38,7 +39,9 @@ final class SlugHelper
     public static function generateSlug(string $label, ?string $excludeFormId = null): string
     {
         $base = self::generateFieldName($label);
-        if (empty($base)) $base = 'formulaire';
+        if ($base === '' || $base === '0') {
+            $base = 'formulaire';
+        }
 
         $pdo = \App\Core\App::db()->getPdo();
         $slug = $base;
@@ -47,15 +50,15 @@ final class SlugHelper
         $maxAttempts = 100;
         $attempts = 0;
         while ($attempts < $maxAttempts) {
-            $sql = "SELECT COUNT(*) FROM forms WHERE slug = ?";
+            $sql = 'SELECT COUNT(*) FROM forms WHERE slug = ?';
             $params = [$slug];
             if ($excludeFormId !== null) {
-                $sql .= " AND id != ?";
+                $sql .= ' AND id != ?';
                 $params[] = $excludeFormId;
             }
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
-            if ((int)$stmt->fetchColumn() === 0) {
+            if ((int) $stmt->fetchColumn() === 0) {
                 return $slug;
             }
             $slug = $base . '_' . $suffix;
@@ -71,15 +74,19 @@ final class SlugHelper
     public static function parseOptionsInput(string $input): ?string
     {
         $input = trim($input);
-        if (empty($input)) return null;
+        if ($input === '' || $input === '0') {
+            return null;
+        }
 
         $decoded = json_decode($input, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             return $input;
         }
 
-        $lines = array_filter(array_map('trim', explode("\n", $input)));
-        if (empty($lines)) return null;
+        $lines = array_filter(array_map(trim(...), explode("\n", $input)));
+        if ($lines === []) {
+            return null;
+        }
 
         $result = json_encode($lines, JSON_UNESCAPED_UNICODE);
         return $result === false ? null : $result;
@@ -92,7 +99,7 @@ final class SlugHelper
     public static function getFormByUuid(string $uuid): ?array
     {
         $pdo = \App\Core\App::db()->getPdo();
-        $stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ?");
+        $stmt = $pdo->prepare('SELECT * FROM forms WHERE id = ?');
         $stmt->execute([$uuid]);
         $form = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $form ?: null;

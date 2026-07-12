@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Stats;
@@ -9,13 +10,10 @@ use PDO;
 /**
  * Service de statistiques et recherche plein texte.
  */
-final class StatsService
+final readonly class StatsService
 {
-    private Database $db;
-
-    public function __construct(Database $db)
+    public function __construct(private Database $database)
     {
-        $this->db = $db;
     }
 
     /**
@@ -26,7 +24,7 @@ final class StatsService
      */
     public function searchSubmissions(string $query, array $filters = []): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         $query = trim($query);
         if ($query === '') {
             return [];
@@ -36,7 +34,7 @@ final class StatsService
         $where = ['1=1'];
         $params = [];
 
-        $where[] = "(s.submitted_by LIKE ? OR s.data LIKE ? OR f.label LIKE ?)";
+        $where[] = '(s.submitted_by LIKE ? OR s.data LIKE ? OR f.label LIKE ?)';
         $searchTerm = '%' . $query . '%';
         $params[] = $searchTerm;
         $params[] = $searchTerm;
@@ -72,7 +70,7 @@ final class StatsService
      */
     public function getStatsByPeriod(string $period = 'month', int $limit = 12): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         switch ($period) {
             case 'week':
@@ -115,7 +113,7 @@ final class StatsService
      */
     public function getGlobalStats(): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         $row = $pdo->query("
             SELECT
@@ -138,9 +136,9 @@ final class StatsService
             'this_week' => (int) ($row['this_week'] ?? 0),
             'this_month' => (int) ($row['this_month'] ?? 0),
             'avg_days' => 0,
-            'tokens_pending' => (int) $pdo->query("SELECT COUNT(*) FROM tokens WHERE done_at IS NULL")->fetchColumn(),
-            'attachments_count' => (int) $pdo->query("SELECT COUNT(*) FROM attachments")->fetchColumn(),
-            'attachments_size' => (int) $pdo->query("SELECT COALESCE(SUM(file_size), 0) FROM attachments")->fetchColumn(),
+            'tokens_pending' => (int) $pdo->query('SELECT COUNT(*) FROM tokens WHERE done_at IS NULL')->fetchColumn(),
+            'attachments_count' => (int) $pdo->query('SELECT COUNT(*) FROM attachments')->fetchColumn(),
+            'attachments_size' => (int) $pdo->query('SELECT COALESCE(SUM(file_size), 0) FROM attachments')->fetchColumn(),
         ];
 
         $avgStmt = $pdo->query("
@@ -158,7 +156,7 @@ final class StatsService
 
     public function getFormStats(): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         return $pdo->query("
             SELECT f.label, f.slug, COUNT(s.id) as total,
                    SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
@@ -176,7 +174,7 @@ final class StatsService
 
     public function getValidatorStats(): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         return $pdo->query("
             SELECT t.email,
                    COUNT(t.id) as total,

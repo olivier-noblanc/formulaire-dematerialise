@@ -14,44 +14,42 @@ final class SubmissionViewController extends BaseController
     {
         require_once dirname(__DIR__, 2) . '/lib/render_submission_view.php';
         require_once dirname(__DIR__, 2) . '/lib/render_submission_view_sections.php';
-
         $pdo = $this->db->getPdo();
         $subId = trim($_GET['id'] ?? '');
-
-        if (empty($subId)) {
+        if ($subId === '' || $subId === '0') {
             header('Location: index.php?p=dashboard');
             exit;
         }
-
         $sub = $this->submissionRepo->findByIdWithForm($subId);
-
         if (!$sub) {
-            (new \App\Render\ErrorRenderer())->errorPage(404, 'Soumission introuvable',
+            (new \App\Render\ErrorRenderer())->errorPage(
+                404,
+                'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
-                'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.');
+                'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.'
+            );
         }
-
         $data = json_decode($sub['data'], true) ?: [];
         $status = $sub['status'] ?? 'en_cours';
         $user = App::auth()->getUser();
         $isAdmin = App::auth()->isAdminEffective();
-        $isFormOwner = App::auth()->isFormOwner((string)$sub['form_id']);
-
+        $isFormOwner = App::auth()->isFormOwner((string) $sub['form_id']);
         $isValidator = false;
         if (!$isAdmin && $sub['submitted_by'] !== $user) {
             if ($this->tokenRepo->existsForSubmissionAndEmail($subId, $user)) {
                 $isValidator = true;
             } else {
-                (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès non autorisé',
+                (new \App\Render\ErrorRenderer())->errorPage(
+                    403,
+                    'Accès non autorisé',
                     'Vous n\'avez pas les droits pour voir cette soumission.',
-                    'Seuls l\'auteur, les validateurs et les administrateurs peuvent consulter une soumission.');
+                    'Seuls l\'auteur, les validateurs et les administrateurs peuvent consulter une soumission.'
+                );
             }
         } else {
             $isValidator = $this->tokenRepo->existsForSubmissionAndEmail($subId, $user);
         }
-
         $canEditValidator = $isAdmin || $isFormOwner;
-
         // Handle POST actions
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->security->requireCsrf();
@@ -71,33 +69,41 @@ final class SubmissionViewController extends BaseController
                 exit;
             }
         }
-
         $workflowSteps = App::workflow()->getWorkflowSteps($sub['form_id']);
         $tokens = $this->tokenRepo->findDetailedWithStepsBySubmission($subId);
-
         $tokensByStep = [];
         foreach ($tokens as $tk) {
             $tokensByStep[$tk['step_id']][] = $tk;
         }
-
         $attachments = $this->attachmentRepo->findBySubmissionWithUploader($subId);
-
         $validatorData = $this->submissionRepo->getValidatorDataOrdered($subId);
-
         $pageCss = '';
         ob_start();
         ?>
   <h1><span aria-hidden="true">📄</span> Détail de la soumission</h1>
 
   <div class="card">
-    <h2><?= \App\Core\App::html()->escape($sub['form_label']) ?></h2>
+    <h2><?php 
+        <?= \App\Core\App::html()->escape($sub['form_label']) ?>
+        ?></h2>
     <p style="font-size:.85rem;color:#555;">
-      Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($sub['submitted_at']))) ?>
-      <?php if ($sub['closed_at']): ?>
+      Soumis par <strong><?php 
+        <?= \App\Core\App::html()->escape($sub['submitted_by']) ?>
+        ?></strong> le <?php 
+        <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($sub['submitted_at']))) ?>
+
+        ?>
+      <?php 
+        if ($sub['closed_at']): ?>
         — Clôturé le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', strtotime($sub['closed_at']))) ?>
-      <?php endif; ?>
+      <?php endif;
+        ?>
     </p>
-    <p><strong>Statut :</strong> <span class="badge <?= $status === 'valide' ? 'badge-ok' : ($status === 'refuse' ? 'badge-err' : ($status === 'annule' ? 'badge-annule' : 'badge-warn')) ?>"><?= \App\Core\App::html()->escape($status) ?></span></p>
+    <p><strong>Statut :</strong> <span class="badge <?php 
+        <?= $status === 'valide' ? 'badge-ok' : ($status === 'refuse' ? 'badge-err' : ($status === 'annule' ? 'badge-annule' : 'badge-warn')) ?>
+        ?>"><?php 
+        <?= \App\Core\App::html()->escape($status) ?>
+        ?></span></p>
   </div>
 
   <!-- Données de la soumission -->
@@ -106,15 +112,19 @@ final class SubmissionViewController extends BaseController
     <table>
       <thead><tr><th>Champ</th><th>Valeur</th></tr></thead>
       <tbody>
-      <?php foreach ($data as $key => $value):
-        if (in_array($key, ['validations', 'submitted_at', 'closed_at'])) continue;
-        $valStr = is_array($value) ? implode(', ', $value) : (string)$value;
-      ?>
+      <?php 
+        foreach ($data as $key => $value):
+          if (in_array($key, ['validations', 'submitted_at', 'closed_at'])) {
+              continue;
+          }
+          $valStr = is_array($value) ? implode(', ', $value) : (string) $value;
+          ?>
         <tr>
           <td><strong><?= \App\Core\App::html()->escape(App::html()->tJargon($key)) ?></strong></td>
           <td><?= \App\Core\App::html()->escape($valStr) ?></td>
         </tr>
-      <?php endforeach; ?>
+      <?php endforeach;
+        ?>
       </tbody>
     </table>
   </div>
@@ -123,90 +133,101 @@ final class SubmissionViewController extends BaseController
   <div class="card">
     <h2>Circuit de validation</h2>
     <div class="workflow">
-      <?php foreach ($workflowSteps as $i => $step):
+      <?php 
+        foreach ($workflowSteps as $i => $step):
         $stepTokens = $tokensByStep[$step['id']] ?? [];
-        $allDone = true;
-        foreach ($stepTokens as $tk) {
-            if (empty($tk['done_at'])) { $allDone = false; break; }
-        }
-        $cls = $allDone && !empty($stepTokens) ? 'done' : (!empty($stepTokens) ? 'current' : 'upcoming');
-      ?>
+        $allDone = array_all($stepTokens, fn($tk) => !empty($tk['done_at']));
+        $cls = $allDone && $stepTokens !== [] ? 'done' : ($stepTokens === [] ? 'upcoming' : 'current');
+        ?>
         <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
         <div class="wf-step <?= $cls ?>">
-          <div class="wf-step-label"><?= \App\Core\App::html()->escape($step['label']) ?></div>
-          <?php foreach ($stepTokens as $tk): ?>
+        <div class="wf-step-label"><?= \App\Core\App::html()->escape($step['label']) ?></div>
+        <?php foreach ($stepTokens as $stepToken): ?>
             <div class="wf-step-detail">
-              <?= \App\Core\App::html()->escape($tk['email']) ?>
-              <?php if (!empty($tk['done_at'])): ?>
-                <span class="badge badge-ok">✓ <?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($tk['done_at']))) ?></span>
-              <?php else: ?>
+            <?= \App\Core\App::html()->escape($stepToken['email']) ?>
+              <?php if (!empty($stepToken['done_at'])): ?>
+                <span class="badge badge-ok">✓ <?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($stepToken['done_at']))) ?></span>
+            <?php else: ?>
                 <span class="badge badge-warn">⏳ En attente</span>
-              <?php endif; ?>
+            <?php endif; ?>
             </div>
-          <?php endforeach; ?>
+        <?php endforeach; ?>
         </div>
-      <?php endforeach; ?>
+    <?php endforeach;
+        ?>
     </div>
   </div>
 
   <!-- Pièces jointes -->
-  <?php if (!empty($attachments)): ?>
+  <?php 
+        if ($attachments !== []): ?>
   <div class="card">
-    <h2>Pièces jointes (<?= count($attachments) ?>)</h2>
-    <table>
-      <thead><tr><th>Fichier</th><th>Taille</th><th>Ajouté par</th><th>Date</th><th>Action</th></tr></thead>
-      <tbody>
-      <?php foreach ($attachments as $att): ?>
+  <h2>Pièces jointes (<?= count($attachments) ?>)</h2>
+  <table>
+    <thead><tr><th>Fichier</th><th>Taille</th><th>Ajouté par</th><th>Date</th><th>Action</th></tr></thead>
+    <tbody>
+    <?php foreach ($attachments as $attachment): ?>
         <tr>
-          <td><?= \App\Core\App::html()->escape($att['original_name']) ?></td>
-          <td><?= \App\Core\App::html()->escape(format_bytes((int)$att['file_size'])) ?></td>
-          <td><?= \App\Core\App::html()->escape($att['uploader_name'] ?? $att['uploaded_by']) ?></td>
-          <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
-          <td>
-            <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Télécharger</a>
-          </td>
-        </tr>
-      <?php endforeach; ?>
+        <td><?= \App\Core\App::html()->escape($attachment['original_name']) ?></td>
+        <td><?= \App\Core\App::html()->escape(format_bytes((int) $attachment['file_size'])) ?></td>
+        <td><?= \App\Core\App::html()->escape($attachment['uploader_name'] ?? $attachment['uploaded_by']) ?></td>
+        <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($attachment['uploaded_at']))) ?></td>
+        <td>
+          <a href="index.php?p=download&id=<?= urlencode($attachment['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Télécharger</a>
+        </td>
+      </tr>
+    <?php endforeach; ?>
       </tbody>
-    </table>
-  </div>
-  <?php endif; ?>
+  </table>
+</div>
+<?php endif;
+        ?>
 
   <!-- Données validateur -->
-  <?php if (!empty($validatorData) && $canEditValidator): ?>
+  <?php 
+        if ($validatorData !== [] && $canEditValidator): ?>
   <div class="card">
-    <h2>Données validateur</h2>
-    <table>
-      <thead><tr><th>Champ</th><th>Valeur</th><th>Rempli par</th><th>Date</th></tr></thead>
-      <tbody>
-      <?php foreach ($validatorData as $vd): ?>
+  <h2>Données validateur</h2>
+  <table>
+    <thead><tr><th>Champ</th><th>Valeur</th><th>Rempli par</th><th>Date</th></tr></thead>
+    <tbody>
+    <?php foreach ($validatorData as $vd): ?>
         <tr>
-          <td><?= \App\Core\App::html()->escape($vd['field_label'] ?? $vd['field_name']) ?></td>
-          <td><?= \App\Core\App::html()->escape($vd['value']) ?></td>
-          <td><?= \App\Core\App::html()->escape($vd['filled_by_email'] ?? '') ?></td>
-          <td><?= \App\Core\App::html()->escape($vd['filled_at'] ?? '') ?></td>
-        </tr>
-      <?php endforeach; ?>
+        <td><?= \App\Core\App::html()->escape($vd['field_label'] ?? $vd['field_name']) ?></td>
+        <td><?= \App\Core\App::html()->escape($vd['value']) ?></td>
+        <td><?= \App\Core\App::html()->escape($vd['filled_by_email'] ?? '') ?></td>
+        <td><?= \App\Core\App::html()->escape($vd['filled_at'] ?? '') ?></td>
+      </tr>
+    <?php endforeach; ?>
       </tbody>
-    </table>
-  </div>
-  <?php endif; ?>
+  </table>
+</div>
+<?php endif;
+        ?>
 
   <!-- Actions -->
   <div class="card-actions" style="margin-top:1.5rem;">
     <a href="index.php?p=my_submissions" class="btn btn-secondary"><span aria-hidden="true">←</span> Retour</a>
-    <?php if ($status === 'en_cours' && ($isAdmin || $sub['submitted_by'] === $user)): ?>
+    <?php 
+        if ($status === 'en_cours' && ($isAdmin || $sub['submitted_by'] === $user)): ?>
       <a href="index.php?p=confirm_action&action=cancel_submission&submission_id=<?= urlencode($subId) ?>&from=<?= urlencode('index.php?p=submission_view&id=' . $subId) ?>" class="btn btn-danger"><span aria-hidden="true">🗑</span> Annuler</a>
-    <?php endif; ?>
-    <?php if ($isAdmin): ?>
+  <?php endif;
+        ?>
+    <?php 
+        if ($isAdmin): ?>
       <a href="index.php?p=confirm_action&action=delete_submission&submission_id=<?= urlencode($subId) ?>&from=<?= urlencode('index.php?p=dashboard') ?>" class="btn btn-danger"><span aria-hidden="true">🗑</span> Supprimer</a>
-    <?php endif; ?>
-    <?php if (!empty($attachments) || true): ?>
-      <a href="index.php?p=download&mode=export_submission&submission_id=<?= urlencode($subId) ?>" class="btn btn-secondary"><span aria-hidden="true">📥</span> Exporter JSON</a>
-    <?php endif; ?>
+  <?php endif;
+        ?>
+    <?php 
+        ?>
+      <a href="index.php?p=download&mode=export_submission&submission_id=<?php 
+        <?= urlencode($subId) ?>
+        ?>" class="btn btn-secondary"><span aria-hidden="true">📥</span> Exporter JSON</a>
+    <?php 
+        ?>
   </div>
-<?php
-        $content = (string)ob_get_clean();
+<?php 
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Détail soumission', 'submission_view', $pageCss, $content);
     }
 }

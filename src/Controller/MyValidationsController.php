@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -25,9 +26,9 @@ final class MyValidationsController extends BaseController
             $delegationMsg = $result['message'];
         }
 
-        $tokenRepo = App::getInstance()->get(\App\Repository\TokenRepository::class);
-        $pendingTokens = $tokenRepo->findPendingByEmail($user, $search);
-        $doneTokens = $tokenRepo->findDoneByEmail($user);
+        $tokenRepository = App::getInstance()->get(\App\Repository\TokenRepository::class);
+        $pendingTokens = $tokenRepository->findPendingByEmail($user, $search);
+        $doneTokens = $tokenRepository->findDoneByEmail($user);
 
         $pendingCount = count($pendingTokens);
         $doneCount = count($doneTokens);
@@ -36,7 +37,7 @@ final class MyValidationsController extends BaseController
         $allStepsBySub = [];
         if (!empty($pendingTokens)) {
             $pendingSubIds = array_values(array_unique(array_column($pendingTokens, 'submission_id')));
-            $allStepsBySub = $tokenRepo->findStepsBySubmissionIds($pendingSubIds);
+            $allStepsBySub = $tokenRepository->findStepsBySubmissionIds($pendingSubIds);
         }
 
         $myVdRows = App::getInstance()->get(\App\Repository\SubmissionRepository::class)->findValidatorDataByEmail($user);

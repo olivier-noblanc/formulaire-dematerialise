@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 /**
  * Bootstrap OOP — initialise tous les services dans le container DI.
- * 
+ *
  * Usage:
  *   require_once 'src/bootstrap.php';
  *   $auth = \App\Core\App::auth();
@@ -12,39 +13,39 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Core\App;
-use App\Core\Database;
-use App\Core\Config;
-use App\Auth\AuthService;
-use App\Settings\SettingsService;
-use App\Forms\FieldService;
-use App\Security\SecurityService;
-use App\Mail\MailService;
-use App\Audit\AuditLogService;
-use App\Cache\CacheService;
-use App\Render\HtmlService;
-use App\Repository\SettingsRepository;
-use App\Repository\AuditRepository;
-use App\Repository\AdminRepository;
-use App\Repository\FormRepository;
-use App\Repository\AttachmentRepository;
-use App\View\ViewRenderer;
-use App\View\EmailView;
-use App\Stats\StatsService;
-use App\Workflow\WorkflowEngine;
-use App\Workflow\ConditionEvaluator;
-use App\Persona\PersonaService;
-use App\Token\TokenService;
 use App\Attachment\AttachmentService;
-use App\Cron\CronService;
-use App\Forms\ValidatorDataService;
+use App\Audit\AuditLogService;
+use App\Auth\AuthService;
+use App\Cache\CacheService;
+use App\Core\App;
+use App\Core\Config;
+use App\Core\Database;
 use App\Core\MigrationService;
+use App\Cron\CronService;
+use App\Email\EmailVerificationService;
+use App\Export\ExportService;
+use App\Forms\FieldService;
+use App\Forms\ValidatorDataService;
+use App\Mail\MailService;
+use App\Persona\PersonaService;
+use App\Render\HtmlService;
+use App\Repository\AdminRepository;
+use App\Repository\AttachmentRepository;
+use App\Repository\AuditRepository;
+use App\Repository\FormRepository;
+use App\Repository\SettingsRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
-use App\Validation\ValidationService;
-use App\Export\ExportService;
-use App\Email\EmailVerificationService;
 use App\Rgpd\RgpdService;
+use App\Security\SecurityService;
+use App\Settings\SettingsService;
+use App\Stats\StatsService;
+use App\Token\TokenService;
+use App\Validation\ValidationService;
+use App\View\EmailView;
+use App\View\ViewRenderer;
+use App\Workflow\ConditionEvaluator;
+use App\Workflow\WorkflowEngine;
 
 // Charger la config traditionnelle (définit BASE_URL, DB_PATH, etc.)
 require_once __DIR__ . '/../config.php';
@@ -128,4 +129,3 @@ $app->set(RgpdService::class, new RgpdService($db));
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`
 // historique a été supprimé en v9.1.1 : il était vide et la méthode existe
 // toujours → code mort + erreur PHPStan (function.alreadyNarrowedType).
-

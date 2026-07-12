@@ -43,8 +43,7 @@ final class AdminAccessController extends BaseController
                         $errorMsg = 'Une erreur est survenue. Contactez l\'administrateur : ' . \App\Core\App::html()->escape(App::auth()->getAdminEmail());
                     }
                 }
-            }
-            elseif ($action === 'approve' && App::auth()->isSuperAdmin()) {
+            } elseif ($action === 'approve' && App::auth()->isSuperAdmin()) {
                 $token = $_POST['token'] ?? '';
                 $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
                 $request = $adminRepo->findByToken($token);
@@ -57,8 +56,7 @@ final class AdminAccessController extends BaseController
                 } else {
                     $errorMsg = 'Demande invalide ou déjà traitée.';
                 }
-            }
-            elseif ($action === 'reject' && App::auth()->isSuperAdmin()) {
+            } elseif ($action === 'reject' && App::auth()->isSuperAdmin()) {
                 $token = $_POST['token'] ?? '';
                 $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
                 $request = $adminRepo->findByToken($token);
@@ -71,16 +69,14 @@ final class AdminAccessController extends BaseController
                 } else {
                     $errorMsg = 'Demande invalide ou déjà traitée.';
                 }
-            }
-            elseif ($action === 'approve_request' && App::auth()->isSuperAdmin()) {
+            } elseif ($action === 'approve_request' && App::auth()->isSuperAdmin()) {
                 $email = $_POST['email'] ?? '';
                 if (App::auth()->approveAdminRequest($email)) {
                     $successMsg = 'Demande d\'accès approuvée.';
                 } else {
                     $errorMsg = 'Erreur lors de l\'approbation de la demande.';
                 }
-            }
-            elseif ($action === 'reject_request' && App::auth()->isSuperAdmin()) {
+            } elseif ($action === 'reject_request' && App::auth()->isSuperAdmin()) {
                 $email = $_POST['email'] ?? '';
                 if (App::auth()->rejectAdminRequest($email)) {
                     $successMsg = 'Demande d\'accès refusée.';
@@ -118,7 +114,7 @@ final class AdminAccessController extends BaseController
         ?>
   <h1><span aria-hidden="true">🔐</span> <?= \App\Core\App::html()->escape($pageTitle) ?></h1>
 
-  <?= (new \App\Render\ErrorRenderer())->messages(['success'=>$successMsg, 'error'=>$errorMsg, 'warning'=>$warningMsg]) ?>
+  <?= (new \App\Render\ErrorRenderer())->messages(['success' => $successMsg, 'error' => $errorMsg, 'warning' => $warningMsg]) ?>
 
   <?php if ($confirmData): ?>
   <div class="card">
@@ -161,23 +157,23 @@ final class AdminAccessController extends BaseController
   <?php if (!empty($pendingRequests)): ?>
   <div class="card">
     <h2>Demandes en attente (<?= count($pendingRequests) ?>)</h2>
-    <?php foreach ($pendingRequests as $req): ?>
+    <?php foreach ($pendingRequests as $pendingRequest): ?>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;border-bottom:1px solid #eee;">
       <div>
-        <strong><?= \App\Core\App::html()->escape($req['email']) ?></strong>
-        <div style="font-size:.8rem;color:#555;">Demandé le <?= \App\Core\App::html()->escape($req['created_at']) ?></div>
+        <strong><?= \App\Core\App::html()->escape($pendingRequest['email']) ?></strong>
+        <div style="font-size:.8rem;color:#555;">Demandé le <?= \App\Core\App::html()->escape($pendingRequest['created_at']) ?></div>
       </div>
       <div style="display:flex;gap:.5rem;">
         <form method="POST" style="display:inline;">
           <?= $this->security->csrfField() ?>
           <input type="hidden" name="action" value="approve_request">
-          <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($req['email']) ?>">
+          <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($pendingRequest['email']) ?>">
           <button type="submit" class="btn btn-primary" style="font-size:.8rem;padding:.3rem .6rem;">Approuver</button>
         </form>
         <form method="POST" style="display:inline;">
           <?= $this->security->csrfField() ?>
           <input type="hidden" name="action" value="reject_request">
-          <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($req['email']) ?>">
+          <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($pendingRequest['email']) ?>">
           <button type="submit" class="btn btn-danger" style="font-size:.8rem;padding:.3rem .6rem;">Refuser</button>
         </form>
       </div>
@@ -193,20 +189,20 @@ final class AdminAccessController extends BaseController
         <tr><th>Email</th><th>Rôle</th><th>Actions</th></tr>
       </thead>
       <tbody>
-      <?php foreach ($allAdmins as $admin):
-        $isSuper = App::getInstance()->get(\App\Repository\AdminRepository::class)->isSuperAdmin($admin['email']);
-        $isCurrent = $admin['email'] === $currentAdmin;
-      ?>
+      <?php foreach ($allAdmins as $allAdmin):
+          $isSuper = App::getInstance()->get(\App\Repository\AdminRepository::class)->isSuperAdmin($allAdmin['email']);
+          $isCurrent = $allAdmin['email'] === $currentAdmin;
+          ?>
         <tr>
-          <td><?= \App\Core\App::html()->escape($admin['email']) ?> <?= $isCurrent ? '(vous)' : '' ?></td>
+          <td><?= \App\Core\App::html()->escape($allAdmin['email']) ?> <?= $isCurrent ? '(vous)' : '' ?></td>
           <td><span class="badge <?= $isSuper ? 'badge-ok' : 'badge-info' ?>"><?= $isSuper ? 'Super Admin' : 'Admin' ?></span></td>
           <td>
             <?php if (!$isCurrent && !$isSuper): ?>
             <form method="POST" style="display:inline;">
               <?= $this->security->csrfField() ?>
               <input type="hidden" name="action" value="remove_admin">
-              <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($admin['email']) ?>">
-              <a href="index.php?p=confirm_action&action=remove_admin&email=<?= urlencode($admin['email']) ?>" class="btn btn-danger" style="font-size:.75rem;padding:.2rem .5rem;">Retirer</a>
+              <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($allAdmin['email']) ?>">
+              <a href="index.php?p=confirm_action&action=remove_admin&email=<?= urlencode($allAdmin['email']) ?>" class="btn btn-danger" style="font-size:.75rem;padding:.2rem .5rem;">Retirer</a>
             </form>
             <?php endif; ?>
           </td>
@@ -217,7 +213,7 @@ final class AdminAccessController extends BaseController
   </div>
   <?php endif; ?>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage($pageTitle, 'admin_access', '', $content);
     }
 }

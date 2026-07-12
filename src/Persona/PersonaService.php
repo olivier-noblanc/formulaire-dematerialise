@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Persona;
@@ -22,15 +23,12 @@ use App\Core\Database;
  *   - Même si le token fuite, l'attaquant ne fait que visualiser en user
  *   - Un token ne peut être créé que par un admin (vérifié par l'appelant)
  */
-final class PersonaService
+final readonly class PersonaService
 {
-    public const TOKEN_TTL = 28800; // 8h en secondes
+    public const int TOKEN_TTL = 28800;
 
-    private Database $db;
-
-    public function __construct(Database $db)
+    public function __construct(private Database $database)
     {
-        $this->db = $db;
     }
 
     /**
@@ -42,18 +40,20 @@ final class PersonaService
      */
     public function createToken(string $admin_email, string $target_email): string
     {
-        if ($admin_email === '' || $target_email === '') return '';
+        if ($admin_email === '' || $target_email === '') {
+            return '';
+        }
 
         try {
-            $pdo = $this->db->getPdo();
+            $pdo = $this->database->getPdo();
             $token = bin2hex(random_bytes(16));
             $id = generate_uuid();
             $expires_at = gmdate('Y-m-d H:i:s', time() + self::TOKEN_TTL);
 
-            $stmt = $pdo->prepare("
+            $stmt = $pdo->prepare('
                 INSERT INTO persona_tokens (id, token, admin_email, target_email, expires_at)
                 VALUES (?, ?, ?, ?, ?)
-            ");
+            ');
             $stmt->execute([$id, $token, $admin_email, $target_email, $expires_at]);
 
             App::audit()->log('persona_create', 'admin:' . $admin_email, "Persona créé pour $target_email (expire $expires_at)", '');
@@ -78,30 +78,40 @@ final class PersonaService
      */
     public function lookup(string $token): string
     {
-        if ($token === '') return '';
+        if ($token === '') {
+            return '';
+        }
 
         try {
-            $pdo = $this->db->getPdo();
-            $stmt = $pdo->prepare("
+            $pdo = $this->database->getPdo();
+            $stmt = $pdo->prepare('
                 SELECT pt.target_email, pt.expires_at, pt.revoked_at, pt.admin_email
                 FROM persona_tokens pt
                 WHERE pt.token = ?
                 LIMIT 1
-            ");
+            ');
             $stmt->execute([$token]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if (!$row) return '';
+            if (!$row) {
+                return '';
+            }
 
-            if (!empty($row['revoked_at'])) return '';
+            if (!empty($row['revoked_at'])) {
+                return '';
+            }
 
             $now = gmdate('Y-m-d H:i:s');
-            if ($row['expires_at'] <= $now) return '';
+            if ($row['expires_at'] <= $now) {
+                return '';
+            }
 
-            $admin_check = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
+            $admin_check = $pdo->prepare('SELECT 1 FROM admins WHERE email = ?');
             $admin_check->execute([$row['admin_email']]);
-            if (!$admin_check->fetchColumn()) return '';
+            if (!$admin_check->fetchColumn()) {
+                return '';
+            }
 
-            return (string)$row['target_email'];
+            return (string) $row['target_email'];
         } catch (\Throwable $e) {
             error_log('persona_lookup error: ' . $e->getMessage());
             return '';
@@ -116,10 +126,12 @@ final class PersonaService
      */
     public function revoke(string $token): bool
     {
-        if ($token === '') return false;
+        if ($token === '') {
+            return false;
+        }
 
         try {
-            $pdo = $this->db->getPdo();
+            $pdo = $this->database->getPdo();
             $stmt = $pdo->prepare("
                 UPDATE persona_tokens
                 SET revoked_at = datetime('now')
@@ -128,7 +140,7 @@ final class PersonaService
             $stmt->execute([$token]);
             $revoked = $stmt->rowCount() > 0;
             if ($revoked) {
-                App::audit()->log('persona_revoke', 'token:' . substr($token, 0, 8) . '…', "Persona révoqué", '');
+                App::audit()->log('persona_revoke', 'token:' . substr($token, 0, 8) . '…', 'Persona révoqué', '');
             }
             return $revoked;
         } catch (\Throwable $e) {
@@ -146,24 +158,23 @@ final class PersonaService
     public function cleanup(): int
     {
         try {
-            $pdo = $this->db->getPdo();
+            $pdo = $this->database->getPdo();
             $cutoff = gmdate('Y-m-d H:i:s', time() - 30 * 86400);
 
-            $stmt = $pdo->prepare("
+            $stmt = $pdo->prepare('
                 DELETE FROM persona_tokens
                 WHERE revoked_at IS NOT NULL AND revoked_at < ?
-            ");
+            ');
             $stmt->execute([$cutoff]);
             $deleted = $stmt->rowCount();
 
-            $stmt2 = $pdo->prepare("
+            $stmt2 = $pdo->prepare('
                 DELETE FROM persona_tokens
                 WHERE revoked_at IS NULL AND expires_at < ?
-            ");
+            ');
             $stmt2->execute([$cutoff]);
-            $deleted += $stmt2->rowCount();
 
-            return $deleted;
+            return $deleted + $stmt2->rowCount();
         } catch (\Throwable $e) {
             error_log('persona_cleanup error: ' . $e->getMessage());
             return 0;
@@ -172,23 +183,21 @@ final class PersonaService
 
     /**
      * Retourne le token persona actif depuis $_GET, ou '' si aucun.
-     *
-     * @return string
      */
     public function currentToken(): string
     {
-        return isset($_GET['persona_token']) ? (string)$_GET['persona_token'] : '';
+        return isset($_GET['persona_token']) ? (string) $_GET['persona_token'] : '';
     }
 
     /**
      * Retourne l'email du persona actif (target_email), ou '' si aucun.
-     *
-     * @return string
      */
     public function currentTarget(): string
     {
         $token = $this->currentToken();
-        if ($token === '') return '';
+        if ($token === '') {
+            return '';
+        }
         return $this->lookup($token);
     }
 }

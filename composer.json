@@ -3,6 +3,9 @@
     "description": "Formulaire dematerialise - Circuit de validation",
     "type": "project",
     "license": "proprietary",
+    "require": {
+        "php": "^8.5"
+    },
     "autoload": {
         "psr-4": {
             "App\\": "src/"
@@ -13,6 +16,8 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^2.0",
-        "phpunit/phpunit": "*"
+        "phpunit/phpunit": "*",
+        "php-cs-fixer/shim": "^3.95",
+        "rector/rector": "^2.5"
     }
 }

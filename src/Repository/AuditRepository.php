@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repository;
@@ -38,13 +39,13 @@ final class AuditRepository extends BaseRepository
     /** @return array<int, array<string, mixed>> */
     public function getLogs(int $limit = 100, string $actionFilter = ''): array
     {
-        $sql = "SELECT * FROM audit_log";
+        $sql = 'SELECT * FROM audit_log';
         $params = [];
         if ($actionFilter !== '') {
-            $sql .= " WHERE action = ?";
+            $sql .= ' WHERE action = ?';
             $params[] = $actionFilter;
         }
-        $sql .= " ORDER BY created_at DESC LIMIT ?";
+        $sql .= ' ORDER BY created_at DESC LIMIT ?';
         $params[] = $limit;
         return $this->fetchAll($sql, $params);
     }
@@ -53,7 +54,7 @@ final class AuditRepository extends BaseRepository
     public function getSecurityLogs(int $limit = 100): array
     {
         return $this->fetchAll(
-            "SELECT * FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?",
+            'SELECT * FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?',
             ['security_event', $limit]
         );
     }
@@ -70,7 +71,7 @@ final class AuditRepository extends BaseRepository
 
     public function countAll(): int
     {
-        $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM audit_log");
+        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM audit_log');
         return (int) ($result['cnt'] ?? 0);
     }
 }

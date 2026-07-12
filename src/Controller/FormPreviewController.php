@@ -19,9 +19,12 @@ final class FormPreviewController extends BaseController
         $form = $this->formRepo->findById($formId);
 
         if (!$form) {
-            (new \App\Render\ErrorRenderer())->errorPage(404, 'Formulaire introuvable',
+            (new \App\Render\ErrorRenderer())->errorPage(
+                404,
+                'Formulaire introuvable',
                 'Le formulaire demandé n\'existe pas.',
-                'Retournez au tableau de bord pour voir les formulaires disponibles.');
+                'Retournez au tableau de bord pour voir les formulaires disponibles.'
+            );
         }
 
         $formFields = App::validatorData()->getFormFields($form['id'], 'demandeur');
@@ -42,13 +45,13 @@ final class FormPreviewController extends BaseController
   <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= \App\Core\App::html()->escape($form['description']) ?></p><?php endif; ?>
   <p style="font-size:.85rem;color:#555;margin-bottom:1.5rem;">Formulaire rempli par : <strong><?= \App\Core\App::html()->escape(App::auth()->getUser()) ?></strong></p>
 
-  <?php if (!empty($workflowSteps)): ?>
+  <?php if ($workflowSteps !== []): ?>
   <div class="workflow-preview">
     <h3>🔀 Circuit de validation qui sera suivi</h3>
     <div class="wf-flow">
       <?php foreach ($workflowSteps as $i => $ws):
-        $emails = array_filter(explode('|', $ws['recipient_emails'] ?? ''));
-      ?>
+          $emails = array_filter(explode('|', $ws['recipient_emails'] ?? ''));
+          ?>
         <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
         <div class="wf-step">
           <div class="wf-step-label"><?= \App\Core\App::html()->escape($ws['label']) ?></div>
@@ -63,19 +66,19 @@ final class FormPreviewController extends BaseController
   </div>
   <?php endif; ?>
 
-  <?php if (!empty($grouped)): ?>
+  <?php if ($grouped !== []): ?>
   <form id="preview-form" style="pointer-events:none;">
     <?php foreach ($grouped as $groupName => $fields): ?>
     <div class="card" style="margin-bottom:1.5rem;">
       <h3 style="margin-bottom:1rem;"><?= \App\Core\App::html()->escape($groupName) ?></h3>
       <?php foreach ($fields as $field):
-        $fieldName = \App\Core\App::html()->escape($field['field_name']);
-        $fieldLabel = \App\Core\App::html()->escape($field['label']);
-        $required = !empty($field['required']) ? 'required' : '';
-        $placeholder = !empty($field['placeholder']) ? \App\Core\App::html()->escape($field['placeholder']) : '';
-      ?>
+          $fieldName = \App\Core\App::html()->escape($field['field_name']);
+          $fieldLabel = \App\Core\App::html()->escape($field['label']);
+          $required = empty($field['required']) ? '' : 'required';
+          $placeholder = empty($field['placeholder']) ? '' : \App\Core\App::html()->escape($field['placeholder']);
+          ?>
       <div class="field">
-        <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= !empty($field['required']) ? '<span style="color:#c0392b;">*</span>' : '' ?></label>
+        <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= empty($field['required']) ? '' : '<span style="color:#c0392b;">*</span>' ?></label>
         <?php if ($field['field_type'] === 'textarea'): ?>
           <textarea id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" rows="3" <?= $required ?> placeholder="<?= $placeholder ?>"></textarea>
         <?php elseif ($field['field_type'] === 'select' && !empty($field['options'])): ?>
@@ -107,7 +110,7 @@ final class FormPreviewController extends BaseController
     <p class="empty-state">Aucun champ configuré pour ce formulaire.</p>
   <?php endif; ?>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Prévisualisation — ' . $form['label'], 'form_preview', '', $content);
     }
 }

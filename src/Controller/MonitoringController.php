@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -25,7 +26,7 @@ final class MonitoringController extends BaseController
             FROM submissions s
             WHERE s.status = 'valide' AND s.closed_at IS NOT NULL
         ");
-        $avgSeconds = (float)($avgTimeStmt->fetchColumn() ?: 0);
+        $avgSeconds = (float) ($avgTimeStmt->fetchColumn() ?: 0);
         $avgHours = round($avgSeconds / 3600, 1);
         $avgDays = round($avgSeconds / 86400, 1);
 
@@ -36,7 +37,7 @@ final class MonitoringController extends BaseController
         $enCoursSub = $gstats['en_cours'];
         $tauxValidation = $gstats['taux_validation'];
 
-        $delaiRelance = (int)App::settings()->get('delai_relance_h', '48');
+        $delaiRelance = (int) App::settings()->get('delai_relance_h', '48');
         $bloqueHours = $delaiRelance * 2;
         $tokensBloques = $pdo->query("
             SELECT t.id, t.email, t.sent_at, t.relance_count, t.expires_at,
@@ -75,38 +76,42 @@ final class MonitoringController extends BaseController
             // Batch fetch pending token counts to avoid N+1
             $alertSubIds = array_column($alertSubmissions, 'id');
             $pendingCounts = [];
-            if (!empty($alertSubIds)) {
+            if ($alertSubIds !== []) {
                 $placeholders = implode(',', array_fill(0, count($alertSubIds), '?'));
                 $pendingStmt = $pdo->prepare("SELECT submission_id, COUNT(*) as cnt FROM tokens WHERE submission_id IN ($placeholders) AND done_at IS NULL GROUP BY submission_id");
                 $pendingStmt->execute($alertSubIds);
                 foreach ($pendingStmt->fetchAll(\PDO::FETCH_ASSOC) as $pr) {
-                    $pendingCounts[$pr['submission_id']] = (int)$pr['cnt'];
+                    $pendingCounts[$pr['submission_id']] = (int) $pr['cnt'];
                 }
             }
 
-            foreach ($alertSubmissions as $as) {
-                $data = json_decode($as['data'], true) ?: [];
-                $deadlineField = $as['deadline_field'];
+            foreach ($alertSubmissions as $alertSubmission) {
+                $data = json_decode($alertSubmission['data'], true) ?: [];
+                $deadlineField = $alertSubmission['deadline_field'];
                 $deadlineStr = $data[$deadlineField] ?? '';
-                if (empty($deadlineStr)) continue;
+                if (empty($deadlineStr)) {
+                    continue;
+                }
 
                 $deadlineTs = parse_deadline_date($deadlineStr);
-                if (!$deadlineTs) continue;
+                if (!$deadlineTs) {
+                    continue;
+                }
 
-                $daysRemaining = (int)(($deadlineTs - $nowTs) / 86400);
-                $pendingCount = $pendingCounts[$as['id']] ?? 0;
+                $daysRemaining = (int) (($deadlineTs - $nowTs) / 86400);
+                $pendingCount = $pendingCounts[$alertSubmission['id']] ?? 0;
 
                 if ($daysRemaining <= 10) {
                     $nomAgent = ($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '');
                     $activeAlerts[] = [
-                        'submission_id' => $as['id'],
-                        'form_label' => $as['form_label'],
+                        'submission_id' => $alertSubmission['id'],
+                        'form_label' => $alertSubmission['form_label'],
                         'nom_agent' => $nomAgent,
-                        'deadline' => trim($deadlineStr),
-                        'deadline_formatted' => $deadlineTs ? date('d/m/Y', $deadlineTs) : $deadlineStr,
+                        'deadline' => trim((string) $deadlineStr),
+                        'deadline_formatted' => $deadlineTs !== 0 ? date('d/m/Y', $deadlineTs) : $deadlineStr,
                         'days_remaining' => $daysRemaining,
                         'pending_steps' => $pendingCount,
-                        'submitted_by' => $as['submitted_by'],
+                        'submitted_by' => $alertSubmission['submitted_by'],
                     ];
                 }
             }
@@ -117,7 +122,7 @@ final class MonitoringController extends BaseController
 
         $recentAlerts = [];
         try {
-            $recentAlerts = $pdo->query("
+            $recentAlerts = $pdo->query('
                 SELECT al.*, f.label as form_label, ar.label as rule_label
                 FROM alert_log al
                 JOIN submissions s ON s.id = al.submission_id
@@ -125,8 +130,8 @@ final class MonitoringController extends BaseController
                 LEFT JOIN alert_rules ar ON ar.id = al.rule_id
                 ORDER BY al.sent_at DESC
                 LIMIT 20
-            ")->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Exception $e) {
+            ')->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Exception) {
             $recentAlerts = [];
         }
 
@@ -192,7 +197,7 @@ final class MonitoringController extends BaseController
             }
         }
 
-        $auditPage = max(1, (int)($_GET['log_page'] ?? 1));
+        $auditPage = max(1, (int) ($_GET['log_page'] ?? 1));
         $auditPerPage = 50;
 
         $auditWhere = [];
@@ -217,7 +222,7 @@ final class MonitoringController extends BaseController
             $auditWhere[]  = 'date(created_at) <= ?';
             $auditParams[] = $auditFilters['log_date_fin'];
         }
-        $auditWhereSql = $auditWhere ? ('WHERE ' . implode(' AND ', $auditWhere)) : '';
+        $auditWhereSql = $auditWhere !== [] ? ('WHERE ' . implode(' AND ', $auditWhere)) : '';
 
         if (isset($_GET['export_audit']) && $_GET['export_audit'] === '1') {
             App::audit()->log('audit_export', 'audit_log', 'Export CSV du journal d\'audit filtré');
@@ -246,16 +251,18 @@ final class MonitoringController extends BaseController
 
         $auditCountStmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log $auditWhereSql");
         $auditCountStmt->execute($auditParams);
-        $auditTotal = (int)$auditCountStmt->fetchColumn();
-        $auditTotalPages = max(1, (int)ceil($auditTotal / $auditPerPage));
-        if ($auditPage > $auditTotalPages) $auditPage = $auditTotalPages;
+        $auditTotal = (int) $auditCountStmt->fetchColumn();
+        $auditTotalPages = max(1, (int) ceil($auditTotal / $auditPerPage));
+        if ($auditPage > $auditTotalPages) {
+            $auditPage = $auditTotalPages;
+        }
         $auditOffset = ($auditPage - 1) * $auditPerPage;
 
         $auditStmt = $pdo->prepare("SELECT * FROM audit_log $auditWhereSql ORDER BY created_at DESC LIMIT ? OFFSET ?");
         $auditStmt->execute(array_merge($auditParams, [$auditPerPage, $auditOffset]));
         $auditLogs = $auditStmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $actionTypes = $pdo->query("SELECT DISTINCT action FROM audit_log ORDER BY action")->fetchAll(\PDO::FETCH_COLUMN);
+        $actionTypes = $pdo->query('SELECT DISTINCT action FROM audit_log ORDER BY action')->fetchAll(\PDO::FETCH_COLUMN);
 
         $auditBaseQs = http_build_query(array_filter([
             'log_action'     => $auditFilters['log_action'],
@@ -264,7 +271,7 @@ final class MonitoringController extends BaseController
             'log_date_debut' => $auditFilters['log_date_debut'],
             'log_date_fin'   => $auditFilters['log_date_fin'],
         ], fn($v) => $v !== ''));
-        $auditBaseUrl = 'index.php?p=monitoring' . ($auditBaseQs ? '?' . $auditBaseQs : '');
+        $auditBaseUrl = 'index.php?p=monitoring' . ($auditBaseQs !== '' && $auditBaseQs !== '0' ? '?' . $auditBaseQs : '');
 
         $ctx = [
             'total_sub'         => $totalSub,

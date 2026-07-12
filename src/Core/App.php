@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core;
@@ -12,7 +13,7 @@ namespace App\Core;
  */
 final class App
 {
-    private static ?App $instance = null;
+    private static ?App $app = null;
 
     /** @var array<string, object> */
     private array $services = [];
@@ -25,10 +26,10 @@ final class App
 
     public static function getInstance(): self
     {
-        if (self::$instance === null) {
-            self::$instance = new self();
+        if (self::$app === null) {
+            self::$app = new self();
         }
-        return self::$instance;
+        return self::$app;
     }
 
     /**

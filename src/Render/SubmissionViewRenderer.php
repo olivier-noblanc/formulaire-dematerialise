@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
-
-use App\Core\App;
 
 /**
  * Rendu de la page de détail d'une soumission (submission_view.php).
@@ -39,7 +38,7 @@ final class SubmissionViewRenderer
     {
         static $css = null;
         if ($css === null) {
-            $css = (string)file_get_contents(__DIR__ . '/../../lib/submission_view_page.css');
+            $css = (string) file_get_contents(__DIR__ . '/../../lib/submission_view_page.css');
         }
         return $css;
     }
@@ -57,8 +56,8 @@ final class SubmissionViewRenderer
         if ($action_msg !== '') {
             $msg_escaped = \App\Core\App::html()->escape($action_msg);
             $msg_html = <<<HTML
-  <div class="msg-info" role="status" aria-live="polite">{$msg_escaped}</div>
-HTML;
+                  <div class="msg-info" role="status" aria-live="polite">{$msg_escaped}</div>
+                HTML;
         }
 
         return $back_link . "\n" . $msg_html;
@@ -69,30 +68,30 @@ HTML;
      */
     public function renderHeader(array $sub, string $sub_id, string $nom_agent, string $status_label, string $status_cls): string
     {
-        $form_label  = \App\Core\App::html()->escape((string)($sub['form_label'] ?? ''));
-        $submitted_by = \App\Core\App::html()->escape((string)($sub['submitted_by'] ?? ''));
-        $submitted_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($sub['submitted_at'] ?? 'now'))));
+        $form_label  = \App\Core\App::html()->escape((string) ($sub['form_label'] ?? ''));
+        $submitted_by = \App\Core\App::html()->escape((string) ($sub['submitted_by'] ?? ''));
+        $submitted_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($sub['submitted_at'] ?? 'now'))));
         $closed_html = '';
         if (!empty($sub['closed_at'])) {
-            $closed_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)$sub['closed_at'])));
+            $closed_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $sub['closed_at'])));
             $closed_html = "<br>Clôturé le : <strong>{$closed_at}</strong>";
         }
         $agent_display = $nom_agent !== '' ? $nom_agent : $submitted_by;
 
         return <<<HTML
-  <!-- Header -->
-  <div class="sub-header">
-    <div>
-      <div class="sub-title">Soumission #{$sub_id} — {$form_label}</div>
-      <div class="sub-meta">
-        Agent : <strong>{$agent_display}</strong><br>
-        Soumis le : <strong>{$submitted_at}</strong>
-        {$closed_html}
-      </div>
-    </div>
-    <span class="badge {$status_cls}" style="font-size:1rem;padding:.5rem 1.25rem;">{$status_label}</span>
-  </div>
-HTML;
+              <!-- Header -->
+              <div class="sub-header">
+                <div>
+                  <div class="sub-title">Soumission #{$sub_id} — {$form_label}</div>
+                  <div class="sub-meta">
+                    Agent : <strong>{$agent_display}</strong><br>
+                    Soumis le : <strong>{$submitted_at}</strong>
+                    {$closed_html}
+                  </div>
+                </div>
+                <span class="badge {$status_cls}" style="font-size:1rem;padding:.5rem 1.25rem;">{$status_label}</span>
+              </div>
+            HTML;
     }
 
     /**
@@ -104,16 +103,16 @@ HTML;
         $width    = max($progress_pct, 8);
 
         return <<<HTML
-  <!-- Progression -->
-  <div class="progress-section">
-    <div class="progress-bar-container">
-      <div class="progress-bar-fill {$fill_cls}" style="width:{$width}%;">
-        {$progress_pct}%
-      </div>
-    </div>
-    <div class="progress-label">{$done_steps} / {$total_steps} étapes validées</div>
-  </div>
-HTML;
+              <!-- Progression -->
+              <div class="progress-section">
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill {$fill_cls}" style="width:{$width}%;">
+                    {$progress_pct}%
+                  </div>
+                </div>
+                <div class="progress-label">{$done_steps} / {$total_steps} étapes validées</div>
+              </div>
+            HTML;
     }
 
     /**
@@ -125,7 +124,7 @@ HTML;
             return '';
         }
 
-        $urgency = (string)($dl_info['urgency'] ?? '');
+        $urgency = (string) ($dl_info['urgency'] ?? '');
         $dl_cls  = $urgency === 'overdue' ? 'overdue' : ($urgency === 'critical' ? 'urgent' : 'ok');
         $dl_icon = $urgency === 'overdue' ? '🚨' : ($urgency === 'critical' ? '⚠️' : '📅');
 
@@ -141,15 +140,15 @@ HTML;
         $dl_text_h = \App\Core\App::html()->escape($dl_text);
 
         return <<<HTML
-  <!-- Deadline -->
-  <div class="deadline-card {$dl_cls}">
-    <div class="dl-icon"><span aria-hidden="true">{$dl_icon}</span></div>
-    <div class="dl-text">
-      <div class="dl-date">Date cible : {$dl_date}</div>
-      <div class="dl-remaining {$dl_cls}">{$dl_text_h}</div>
-    </div>
-  </div>
-HTML;
+              <!-- Deadline -->
+              <div class="deadline-card {$dl_cls}">
+                <div class="dl-icon"><span aria-hidden="true">{$dl_icon}</span></div>
+                <div class="dl-text">
+                  <div class="dl-date">Date cible : {$dl_date}</div>
+                  <div class="dl-remaining {$dl_cls}">{$dl_text_h}</div>
+                </div>
+              </div>
+            HTML;
     }
 
     /**
@@ -157,46 +156,46 @@ HTML;
      */
     public function renderDelegations(array $delegations): string
     {
-        if (empty($delegations)) {
+        if ($delegations === []) {
             return '';
         }
 
         $items_html = '';
-        foreach ($delegations as $dlg) {
-            $step_label = \App\Core\App::html()->escape((string)($dlg['step_label'] ?? ''));
-            $from       = \App\Core\App::html()->escape((string)($dlg['from_email'] ?? ''));
-            $to         = \App\Core\App::html()->escape((string)($dlg['to_email'] ?? ''));
-            $date       = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($dlg['delegated_at'] ?? 'now'))));
+        foreach ($delegations as $delegation) {
+            $step_label = \App\Core\App::html()->escape((string) ($delegation['step_label'] ?? ''));
+            $from       = \App\Core\App::html()->escape((string) ($delegation['from_email'] ?? ''));
+            $to         = \App\Core\App::html()->escape((string) ($delegation['to_email'] ?? ''));
+            $date       = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($delegation['delegated_at'] ?? 'now'))));
 
             $reason_html = '';
-            if (!empty($dlg['reason'])) {
-                $reason = \App\Core\App::html()->escape((string)$dlg['reason']);
+            if (!empty($delegation['reason'])) {
+                $reason = \App\Core\App::html()->escape((string) $delegation['reason']);
                 $reason_html = <<<HTML
-          <div class="val-comment"><span aria-hidden="true">💬</span> Motif : {$reason}</div>
-HTML;
+                              <div class="val-comment"><span aria-hidden="true">💬</span> Motif : {$reason}</div>
+                    HTML;
             }
 
             $items_html .= <<<HTML
-    <div class="val-item">
-      <div class="val-icon" aria-hidden="true">🔄</div>
-      <div class="val-content">
-        <div class="val-header">
-          {$step_label} : {$from} → {$to}
-        </div>
-        <div class="val-detail">{$date}</div>
-        {$reason_html}
-      </div>
-    </div>
-HTML;
+                    <div class="val-item">
+                      <div class="val-icon" aria-hidden="true">🔄</div>
+                      <div class="val-content">
+                        <div class="val-header">
+                          {$step_label} : {$from} → {$to}
+                        </div>
+                        <div class="val-detail">{$date}</div>
+                        {$reason_html}
+                      </div>
+                    </div>
+                HTML;
         }
 
         return <<<HTML
-  <!-- Délégations -->
-  <div class="card">
-    <h2><span aria-hidden="true">🔄</span> Délégations</h2>
-    {$items_html}
-  </div>
-HTML;
+              <!-- Délégations -->
+              <div class="card">
+                <h2><span aria-hidden="true">🔄</span> Délégations</h2>
+                {$items_html}
+              </div>
+            HTML;
     }
 
     /**
@@ -218,16 +217,18 @@ HTML;
             $actions[] = '<a href="' . $delete_url . '" class="btn btn-danger" style="text-decoration:none;background:#c0392b;"><span aria-hidden="true">⚠</span> Supprimer définitivement</a>';
         }
 
-        if (empty($actions)) return '';
+        if ($actions === []) {
+            return '';
+        }
 
         $actions_html = implode('<br><br>', $actions);
         return <<<HTML
-  <!-- Actions -->
-  <div class="card">
-    <h2><span aria-hidden="true">⚙</span> Actions</h2>
-    {$actions_html}
-  </div>
-HTML;
+              <!-- Actions -->
+              <div class="card">
+                <h2><span aria-hidden="true">⚙</span> Actions</h2>
+                {$actions_html}
+              </div>
+            HTML;
     }
 
     /**
@@ -239,27 +240,27 @@ HTML;
             return '';
         }
 
-        $comment_h   = \App\Core\App::html()->escape((string)$admin_comment);
-        $sub_id_h    = \App\Core\App::html()->escape((string)$sub_id);
+        $comment_h   = \App\Core\App::html()->escape($admin_comment);
+        $sub_id_h    = \App\Core\App::html()->escape($sub_id);
         $csrf        = \App\Core\App::security()->csrfField();
 
         return <<<HTML
-  <!-- Commentaire admin -->
-  <div class="card" id="admin-comment" style="border-left: 4px solid #b45309;">
-    <h2><span aria-hidden="true">💬</span> Commentaire (admin / propriétaire)</h2>
-    <p class="hint" style="margin-bottom: 1rem;">Annotation libre post-soumission, indépendante des champs validateur. Visible uniquement par les administrateurs et propriétaires du formulaire.</p>
-    <form method="POST" style="display:flex;flex-direction:column;gap:.5rem;">
-      {$csrf}
-      <input type="hidden" name="action" value="update_admin_comment">
-      <input type="hidden" name="sub_id" value="{$sub_id_h}">
-      <label for="admin_comment" class="sr-only">Commentaire</label>
-      <textarea name="admin_comment" id="admin_comment" rows="4" style="padding:.5rem;font-size:.9rem;border:1px solid #aaa;border-radius:3px;font-family:inherit;" placeholder="Ajouter une note, un suivi, un contexte de clôture...">{$comment_h}</textarea>
-      <div>
-        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;padding:.4rem .8rem;"><span aria-hidden="true">💾</span> Enregistrer le commentaire</button>
-      </div>
-    </form>
-  </div>
-HTML;
+              <!-- Commentaire admin -->
+              <div class="card" id="admin-comment" style="border-left: 4px solid #b45309;">
+                <h2><span aria-hidden="true">💬</span> Commentaire (admin / propriétaire)</h2>
+                <p class="hint" style="margin-bottom: 1rem;">Annotation libre post-soumission, indépendante des champs validateur. Visible uniquement par les administrateurs et propriétaires du formulaire.</p>
+                <form method="POST" style="display:flex;flex-direction:column;gap:.5rem;">
+                  {$csrf}
+                  <input type="hidden" name="action" value="update_admin_comment">
+                  <input type="hidden" name="sub_id" value="{$sub_id_h}">
+                  <label for="admin_comment" class="sr-only">Commentaire</label>
+                  <textarea name="admin_comment" id="admin_comment" rows="4" style="padding:.5rem;font-size:.9rem;border:1px solid #aaa;border-radius:3px;font-family:inherit;" placeholder="Ajouter une note, un suivi, un contexte de clôture...">{$comment_h}</textarea>
+                  <div>
+                    <button type="submit" class="btn btn-secondary" style="font-size:.85rem;padding:.4rem .8rem;"><span aria-hidden="true">💾</span> Enregistrer le commentaire</button>
+                  </div>
+                </form>
+              </div>
+            HTML;
     }
 
     /**
@@ -267,33 +268,33 @@ HTML;
      */
     public function renderContent(array $ctx): string
     {
-        $sub_id         = (string)($ctx['sub_id'] ?? '');
+        $sub_id         = (string) ($ctx['sub_id'] ?? '');
         $sub            = $ctx['sub'] ?? [];
         $data           = $ctx['data'] ?? [];
-        $status         = (string)($ctx['status'] ?? 'en_cours');
-        $status_label   = (string)($ctx['status_label'] ?? '');
-        $status_cls     = (string)($ctx['status_cls'] ?? '');
-        $user           = (string)($ctx['user'] ?? '');
-        $is_admin       = (bool)($ctx['is_admin'] ?? false);
-        $is_form_owner  = (bool)($ctx['is_form_owner'] ?? false);
-        $nom_agent      = (string)($ctx['nom_agent'] ?? '');
+        $status         = (string) ($ctx['status'] ?? 'en_cours');
+        $status_label   = (string) ($ctx['status_label'] ?? '');
+        $status_cls     = (string) ($ctx['status_cls'] ?? '');
+        $user           = (string) ($ctx['user'] ?? '');
+        $is_admin       = (bool) ($ctx['is_admin'] ?? false);
+        $is_form_owner  = (bool) ($ctx['is_form_owner'] ?? false);
+        $nom_agent      = (string) ($ctx['nom_agent'] ?? '');
         $workflow_steps = $ctx['workflow_steps'] ?? [];
         $all_tokens     = $ctx['all_tokens'] ?? [];
-        $total_steps    = (int)($ctx['total_steps'] ?? 0);
-        $done_steps     = (int)($ctx['done_steps'] ?? 0);
-        $progress_pct   = (int)($ctx['progress_pct'] ?? 0);
+        $total_steps    = (int) ($ctx['total_steps'] ?? 0);
+        $done_steps     = (int) ($ctx['done_steps'] ?? 0);
+        $progress_pct   = (int) ($ctx['progress_pct'] ?? 0);
         $dl_info        = $ctx['dl_info'] ?? [];
         $deadline_ts    = $ctx['deadline_ts'] ?? null;
-        $days_remaining = (int)($ctx['days_remaining'] ?? 0);
-        $action_msg     = (string)($ctx['action_msg'] ?? '');
+        $days_remaining = (int) ($ctx['days_remaining'] ?? 0);
+        $action_msg     = (string) ($ctx['action_msg'] ?? '');
         $field_info     = $ctx['field_info'] ?? [];
         $validator_rows = $ctx['validator_data_rows'] ?? [];
         $submission_reminds = $ctx['submission_reminds'] ?? [];
-        $total_relances     = (int)($ctx['total_relances'] ?? 0);
+        $total_relances     = (int) ($ctx['total_relances'] ?? 0);
         $pending_with_relance = $ctx['pending_with_relance'] ?? [];
         $attachments    = $ctx['attachments'] ?? [];
         $delegations    = $ctx['delegations'] ?? [];
-        $admin_comment  = (string)($ctx['admin_comment'] ?? '');
+        $admin_comment  = (string) ($ctx['admin_comment'] ?? '');
 
         $can_edit_validator = $is_admin || $is_form_owner;
 
@@ -310,40 +311,40 @@ HTML;
         $remind_history_html = $this->renderRemindHistory($all_tokens, $submission_reminds, $total_relances, $pending_with_relance, $is_admin, $status);
         $attachments_html    = $this->renderAttachments($attachments);
         $delegations_html    = $this->renderDelegations($delegations);
-        $actions_html        = $this->renderActions($status, $is_admin, (string)($sub['submitted_by'] ?? ''), $user, $sub_id);
+        $actions_html        = $this->renderActions($status, $is_admin, (string) ($sub['submitted_by'] ?? ''), $user, $sub_id);
         $admin_comment_html  = $this->renderAdminComment($admin_comment, $can_edit_validator, $sub_id);
 
         return <<<HTML
 
-  {$back_link_html}
+              {$back_link_html}
 
-  {$header_html}
+              {$header_html}
 
-  {$progress_html}
+              {$progress_html}
 
-  {$deadline_html}
+              {$deadline_html}
 
-  {$workflow_html}
-    {$wf_actions_html}
-    {$delegation_html}
-  </div>
+              {$workflow_html}
+                {$wf_actions_html}
+                {$delegation_html}
+              </div>
 
-  {$form_data_html}
+              {$form_data_html}
 
-  {$validator_data_html}
+              {$validator_data_html}
 
-  {$validation_history_html}
+              {$validation_history_html}
 
-  {$remind_history_html}
+              {$remind_history_html}
 
-  {$attachments_html}
+              {$attachments_html}
 
-  {$delegations_html}
+              {$delegations_html}
 
-  {$admin_comment_html}
+              {$admin_comment_html}
 
-  {$actions_html}
-HTML;
+              {$actions_html}
+            HTML;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -357,23 +358,23 @@ HTML;
     {
         $steps_html = '';
         foreach ($workflow_steps as $i => $ws) {
-            $step_cls = (string)($ws['step_status'] ?? 'upcoming');
+            $step_cls = (string) ($ws['step_status'] ?? 'upcoming');
             if ($status === 'refuse' && ($ws['step_status'] ?? '') === 'current') {
                 $step_cls = 'refused';
             }
 
             $connector = $i > 0 ? '<div class="wf-connector"><span class="arrow">→</span></div>' : '';
 
-            $ordre      = (int)($ws['ordre'] ?? 0);
-            $step_label = \App\Core\App::html()->escape((string)($ws['step_label'] ?? ''));
+            $ordre      = (int) ($ws['ordre'] ?? 0);
+            $step_label = \App\Core\App::html()->escape((string) ($ws['step_label'] ?? ''));
             $tokens     = $ws['tokens'] ?? [];
 
             $validators_html = '';
             if (!empty($tokens)) {
-                foreach ($tokens as $tok) {
-                    $email        = \App\Core\App::html()->displayUser((string)($tok['email'] ?? ''));
-                    $relance      = (int)($tok['relance_count'] ?? 0);
-                    $done         = !empty($tok['done_at']);
+                foreach ($tokens as $token) {
+                    $email        = \App\Core\App::html()->displayUser((string) ($token['email'] ?? ''));
+                    $relance      = (int) ($token['relance_count'] ?? 0);
+                    $done         = !empty($token['done_at']);
                     $is_current   = ($ws['step_status'] ?? '') === 'current';
 
                     if ($done) {
@@ -391,39 +392,39 @@ HTML;
                     }
 
                     $validators_html .= <<<HTML
-                  <div class="wf-validator-item">
-                    {$icon}
-                    <span>{$email}</span>
-                    {$relance_html}
-                  </div>
-HTML;
+                                          <div class="wf-validator-item">
+                                            {$icon}
+                                            <span>{$email}</span>
+                                            {$relance_html}
+                                          </div>
+                        HTML;
                 }
             } else {
                 $validators_html = '<span class="wf-waiting">En attente de démarrage</span>';
             }
 
             $steps_html .= <<<HTML
-          {$connector}
-          <div class="wf-step {$step_cls}">
-            <div class="wf-ordre">Étape {$ordre}</div>
-            <div class="wf-label">{$step_label}</div>
-            <div class="wf-validators">
-              {$validators_html}
-            </div>
-          </div>
-HTML;
+                          {$connector}
+                          <div class="wf-step {$step_cls}">
+                            <div class="wf-ordre">Étape {$ordre}</div>
+                            <div class="wf-label">{$step_label}</div>
+                            <div class="wf-validators">
+                              {$validators_html}
+                            </div>
+                          </div>
+                HTML;
         }
 
         return <<<HTML
-  <!-- Workflow diagram -->
-  <div class="card">
-    <h2><span aria-hidden="true">🔀</span> Circuit de validation</h2>
-    <div class="workflow-diagram">
-      <div class="wf-flow">
-        {$steps_html}
-      </div>
-    </div>
-HTML;
+              <!-- Workflow diagram -->
+              <div class="card">
+                <h2><span aria-hidden="true">🔀</span> Circuit de validation</h2>
+                <div class="workflow-diagram">
+                  <div class="wf-flow">
+                    {$steps_html}
+                  </div>
+                </div>
+            HTML;
     }
 
     /**
@@ -436,28 +437,28 @@ HTML;
         }
 
         $forms_html = '';
-        foreach ($all_tokens as $tok) {
-            if (!empty($tok['done_at'])) {
+        foreach ($all_tokens as $all_token) {
+            if (!empty($all_token['done_at'])) {
                 continue;
             }
-            $tok_id  = \App\Core\App::html()->escape((string)($tok['id'] ?? ''));
-            $email   = \App\Core\App::html()->displayUser((string)($tok['email'] ?? ''));
+            $tok_id  = \App\Core\App::html()->escape((string) ($all_token['id'] ?? ''));
+            $email   = \App\Core\App::html()->displayUser((string) ($all_token['email'] ?? ''));
             $csrf    = \App\Core\App::security()->csrfField();
 
             $forms_html .= <<<HTML
-          <form method="POST" style="display:inline;">
-            {$csrf}
-            <input type="hidden" name="action" value="remind_one">
-            <input type="hidden" name="token_id" value="{$tok_id}">
-            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📧</span> Rappeler {$email}</button>
-          </form>
-          <form method="POST" style="display:inline;">
-            {$csrf}
-            <input type="hidden" name="action" value="regenerate_token">
-            <input type="hidden" name="token_id" value="{$tok_id}">
-            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">🔄</span> Régénérer {$email}</button>
-          </form>
-HTML;
+                          <form method="POST" style="display:inline;">
+                            {$csrf}
+                            <input type="hidden" name="action" value="remind_one">
+                            <input type="hidden" name="token_id" value="{$tok_id}">
+                            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">📧</span> Rappeler {$email}</button>
+                          </form>
+                          <form method="POST" style="display:inline;">
+                            {$csrf}
+                            <input type="hidden" name="action" value="regenerate_token">
+                            <input type="hidden" name="token_id" value="{$tok_id}">
+                            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;"><span aria-hidden="true">🔄</span> Régénérer {$email}</button>
+                          </form>
+                HTML;
         }
 
         if ($forms_html === '') {
@@ -465,10 +466,10 @@ HTML;
         }
 
         return <<<HTML
-    <div class="actions-bar">
-      {$forms_html}
-    </div>
-HTML;
+                <div class="actions-bar">
+                  {$forms_html}
+                </div>
+            HTML;
     }
 
     /**
@@ -480,39 +481,37 @@ HTML;
             return '';
         }
 
-        $my_pending = array_filter($all_tokens, function ($tok) use ($user, $is_admin) {
-            return empty($tok['done_at']) && ($is_admin || $tok['email'] === $user);
-        });
+        $my_pending = array_filter($all_tokens, fn($tok) => empty($tok['done_at']) && ($is_admin || $tok['email'] === $user));
 
-        if (empty($my_pending)) {
+        if ($my_pending === []) {
             return '';
         }
 
         $options_html = '';
         foreach ($my_pending as $mpt) {
-            $id    = \App\Core\App::html()->escape((string)($mpt['id'] ?? ''));
-            $ordre = (int)($mpt['ordre'] ?? 0);
-            $email = \App\Core\App::html()->displayUser((string)($mpt['email'] ?? ''));
+            $id    = \App\Core\App::html()->escape((string) ($mpt['id'] ?? ''));
+            $ordre = (int) ($mpt['ordre'] ?? 0);
+            $email = \App\Core\App::html()->displayUser((string) ($mpt['email'] ?? ''));
             $options_html .= "<option value=\"{$id}\">Étape {$ordre} — {$email}</option>";
         }
 
         $csrf = \App\Core\App::security()->csrfField();
 
         return <<<HTML
-    <div class="actions-bar" style="margin-top:0;">
-      <strong style="font-size:.85rem;color:#003189;"><span aria-hidden="true">🔄</span> Déléguer ma validation :</strong>
-      <form method="POST" style="display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-        {$csrf}
-        <input type="hidden" name="action" value="delegate_token">
-        <select name="token_id" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;">
-          {$options_html}
-        </select>
-        <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
-        <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
-        <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;background:#6c3483;color:#fff;"><span aria-hidden="true">🔄</span> Déléguer</button>
-      </form>
-    </div>
-HTML;
+                <div class="actions-bar" style="margin-top:0;">
+                  <strong style="font-size:.85rem;color:#003189;"><span aria-hidden="true">🔄</span> Déléguer ma validation :</strong>
+                  <form method="POST" style="display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                    {$csrf}
+                    <input type="hidden" name="action" value="delegate_token">
+                    <select name="token_id" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;">
+                      {$options_html}
+                    </select>
+                    <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">
+                    <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">
+                    <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;background:#6c3483;color:#fff;"><span aria-hidden="true">🔄</span> Déléguer</button>
+                  </form>
+                </div>
+            HTML;
     }
 
     /**
@@ -534,34 +533,34 @@ HTML;
             $label = isset($field_info[$k])
                 ? $field_info[$k]['label']
                 : ucfirst(is_string($k) ? str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k) ?? $k) : '');
-            $display_val = $v === '1' ? '✓ Oui' : ($v === '0' ? 'Non' : \App\Core\App::html()->escape((string)$v));
+            $display_val = $v === '1' ? '✓ Oui' : ($v === '0' ? 'Non' : \App\Core\App::html()->escape((string) $v));
 
             if ($group !== $current_group && !empty($group)) {
                 $current_group = $group;
                 $group_h = \App\Core\App::html()->escape($group);
                 $items_html .= <<<HTML
-        <div class="data-group-title">{$group_h}</div>
-HTML;
+                            <div class="data-group-title">{$group_h}</div>
+                    HTML;
             }
 
-            $label_h = \App\Core\App::html()->escape((string)$label);
+            $label_h = \App\Core\App::html()->escape((string) $label);
             $items_html .= <<<HTML
-        <div class="data-item">
-          <div class="data-label">{$label_h}</div>
-          <div class="data-value">{$display_val}</div>
-        </div>
-HTML;
+                        <div class="data-item">
+                          <div class="data-label">{$label_h}</div>
+                          <div class="data-value">{$display_val}</div>
+                        </div>
+                HTML;
         }
 
         return <<<HTML
-  <!-- Données du formulaire -->
-  <div class="card">
-    <h2><span aria-hidden="true">📋</span> Données du formulaire</h2>
-    <div class="data-grid">
-      {$items_html}
-    </div>
-  </div>
-HTML;
+              <!-- Données du formulaire -->
+              <div class="card">
+                <h2><span aria-hidden="true">📋</span> Données du formulaire</h2>
+                <div class="data-grid">
+                  {$items_html}
+                </div>
+              </div>
+            HTML;
     }
 
     /**
@@ -569,23 +568,23 @@ HTML;
      */
     public function renderValidatorData(array $validator_data_rows, array $field_info, bool $can_edit = false, string $sub_id = ''): string
     {
-        if (empty($validator_data_rows)) {
+        if ($validator_data_rows === []) {
             return '';
         }
 
         $items_html = '';
-        foreach ($validator_data_rows as $vr) {
-            $field_name = (string)($vr['field_name'] ?? '');
+        foreach ($validator_data_rows as $validator_data_row) {
+            $field_name = (string) ($validator_data_row['field_name'] ?? '');
             $label = isset($field_info[$field_name])
                 ? t_jargon($field_info[$field_name]['label'])
-                : t_jargon((string)($vr['field_label'] ?? $field_name));
+                : t_jargon((string) ($validator_data_row['field_label'] ?? $field_name));
             $label_h = \App\Core\App::html()->escape($label);
-            $value_raw = (string)($vr['value'] ?? '');
+            $value_raw = (string) ($validator_data_row['value'] ?? '');
             $display_val = \App\Core\App::html()->escape($value_raw);
 
-            $by_email  = isset($vr['filled_by_email']) ? (string)$vr['filled_by_email'] : '';
-            $step_lab  = isset($vr['step_label']) ? (string)$vr['step_label'] : '';
-            $filled_at = isset($vr['filled_at']) ? (string)$vr['filled_at'] : '';
+            $by_email  = isset($validator_data_row['filled_by_email']) ? (string) $validator_data_row['filled_by_email'] : '';
+            $step_lab  = isset($validator_data_row['step_label']) ? (string) $validator_data_row['step_label'] : '';
+            $filled_at = isset($validator_data_row['filled_at']) ? (string) $validator_data_row['filled_at'] : '';
 
             $audit_parts   = ['Rempli'];
             if ($by_email !== '') {
@@ -608,28 +607,28 @@ HTML;
                 $fname_h      = \App\Core\App::html()->escape($field_name);
                 $value_input  = \App\Core\App::html()->escape($value_raw);
                 $value_block = <<<HTML
-          <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.25rem;">
-            {$csrf}
-            <input type="hidden" name="action" value="update_validator_field">
-            <input type="hidden" name="sub_id" value="{$sub_id_h}">
-            <input type="hidden" name="field_name" value="{$fname_h}">
-            <input type="text" name="value" value="{$value_input}" style="flex:1;min-width:200px;padding:.3rem .5rem;font-size:.85rem;border:1px solid #aaa;border-radius:3px;" aria-label="Valeur du champ">
-            <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;"><span aria-hidden="true">✏️</span> Modifier</button>
-          </form>
-HTML;
+                              <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.25rem;">
+                                {$csrf}
+                                <input type="hidden" name="action" value="update_validator_field">
+                                <input type="hidden" name="sub_id" value="{$sub_id_h}">
+                                <input type="hidden" name="field_name" value="{$fname_h}">
+                                <input type="text" name="value" value="{$value_input}" style="flex:1;min-width:200px;padding:.3rem .5rem;font-size:.85rem;border:1px solid #aaa;border-radius:3px;" aria-label="Valeur du champ">
+                                <button type="submit" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;"><span aria-hidden="true">✏️</span> Modifier</button>
+                              </form>
+                    HTML;
             } else {
                 $value_block = <<<HTML
-          <div class="data-value">{$display_val}</div>
-HTML;
+                              <div class="data-value">{$display_val}</div>
+                    HTML;
             }
 
             $items_html .= <<<HTML
-        <div class="data-item" style="grid-column: 1 / -1; background: var(--c-primary-50); border-radius: var(--r-sm); padding: .75rem 1rem;">
-          <div class="data-label">{$label_h}</div>
-          {$value_block}
-          <div style="font-size: .75rem; color: #888; margin-top: .25rem;">{$audit_line}</div>
-        </div>
-HTML;
+                        <div class="data-item" style="grid-column: 1 / -1; background: var(--c-primary-50); border-radius: var(--r-sm); padding: .75rem 1rem;">
+                          <div class="data-label">{$label_h}</div>
+                          {$value_block}
+                          <div style="font-size: .75rem; color: #888; margin-top: .25rem;">{$audit_line}</div>
+                        </div>
+                HTML;
         }
 
         $edit_hint = $can_edit
@@ -637,15 +636,15 @@ HTML;
             : '<p class="hint" style="margin-bottom: 1rem;">Informations saisies par les validateurs au cours du circuit.</p>';
 
         return <<<HTML
-  <!-- Données des validateurs (filled_by='validator') — Option A -->
-  <div class="card" id="validator-data" style="border-left: 4px solid var(--c-primary);">
-    <h2><span aria-hidden="true">🛡️</span> Données des validateurs</h2>
-    {$edit_hint}
-    <div class="data-grid">
-      {$items_html}
-    </div>
-  </div>
-HTML;
+              <!-- Données des validateurs (filled_by='validator') — Option A -->
+              <div class="card" id="validator-data" style="border-left: 4px solid var(--c-primary);">
+                <h2><span aria-hidden="true">🛡️</span> Données des validateurs</h2>
+                {$edit_hint}
+                <div class="data-grid">
+                  {$items_html}
+                </div>
+              </div>
+            HTML;
     }
 
     /**
@@ -661,54 +660,54 @@ HTML;
         foreach ($data['validations'] as $v) {
             $is_valid = ($v['action'] ?? '') === 'valider';
             $icon = $is_valid ? '✅' : '❌';
-            $step_label = \App\Core\App::html()->escape((string)($v['step_label'] ?? ''));
-            $email_display = \App\Core\App::html()->displayUser((string)($v['email'] ?? ''));
+            $step_label = \App\Core\App::html()->escape((string) ($v['step_label'] ?? ''));
+            $email_display = \App\Core\App::html()->displayUser((string) ($v['email'] ?? ''));
             $color = $is_valid ? '#1a6b3c' : '#c0392b';
             $action_label = $is_valid ? 'Validé' : 'Refusé';
-            $date = \App\Core\App::html()->escape((string)($v['date'] ?? ''));
+            $date = \App\Core\App::html()->escape((string) ($v['date'] ?? ''));
 
             $done_by_html = '';
-            $done_by = (string)($v['done_by'] ?? '');
-            if ($done_by !== '' && strcasecmp($done_by, (string)($v['email'] ?? '')) !== 0) {
+            $done_by = (string) ($v['done_by'] ?? '');
+            if ($done_by !== '' && strcasecmp($done_by, (string) ($v['email'] ?? '')) !== 0) {
                 $done_by_display = \App\Core\App::html()->displayUser($done_by);
                 $done_by_html = <<<HTML
-          <div class="val-done-by"><span aria-hidden="true">👤</span> Action effectuée par : {$done_by_display}</div>
-HTML;
+                              <div class="val-done-by"><span aria-hidden="true">👤</span> Action effectuée par : {$done_by_display}</div>
+                    HTML;
             }
 
             $comment_html = '';
             if (!empty($v['commentaire'])) {
-                $comment = \App\Core\App::html()->escape((string)$v['commentaire']);
+                $comment = \App\Core\App::html()->escape((string) $v['commentaire']);
                 $comment_html = <<<HTML
-          <div class="val-comment"><span aria-hidden="true">💬</span> {$comment}</div>
-HTML;
+                              <div class="val-comment"><span aria-hidden="true">💬</span> {$comment}</div>
+                    HTML;
             }
 
             $items_html .= <<<HTML
-    <div class="val-item">
-      <div class="val-icon"><span aria-hidden="true">{$icon}</span></div>
-      <div class="val-content">
-        <div class="val-header">
-          {$step_label} — {$email_display}
-          <span style="color:{$color};">
-            {$action_label}
-          </span>
-        </div>
-        <div class="val-detail">{$date}</div>
-        {$done_by_html}
-        {$comment_html}
-      </div>
-    </div>
-HTML;
+                    <div class="val-item">
+                      <div class="val-icon"><span aria-hidden="true">{$icon}</span></div>
+                      <div class="val-content">
+                        <div class="val-header">
+                          {$step_label} — {$email_display}
+                          <span style="color:{$color};">
+                            {$action_label}
+                          </span>
+                        </div>
+                        <div class="val-detail">{$date}</div>
+                        {$done_by_html}
+                        {$comment_html}
+                      </div>
+                    </div>
+                HTML;
         }
 
         return <<<HTML
-  <!-- Historique des validations -->
-  <div class="card">
-    <h2><span aria-hidden="true">📝</span> Historique des validations</h2>
-    {$items_html}
-  </div>
-HTML;
+              <!-- Historique des validations -->
+              <div class="card">
+                <h2><span aria-hidden="true">📝</span> Historique des validations</h2>
+                {$items_html}
+              </div>
+            HTML;
     }
 
     /**
@@ -717,32 +716,30 @@ HTML;
     public function renderRemindHistory(array $all_tokens, array $submission_reminds, int $total_relances, array $pending_with_relance, bool $is_admin, string $status): string
     {
         $pending_html = '';
-        if (!empty($pending_with_relance) || ($status === 'en_cours' && !empty($all_tokens))) {
-            $pending_tokens = array_filter($all_tokens, function ($t) {
-                return empty($t['done_at']);
-            });
+        if ($pending_with_relance !== [] || ($status === 'en_cours' && $all_tokens !== [])) {
+            $pending_tokens = array_filter($all_tokens, fn($t) => empty($t['done_at']));
 
-            if (!empty($pending_tokens)) {
+            if ($pending_tokens !== []) {
                 $rows = '';
-                foreach ($pending_tokens as $pt) {
-                    $email_display = \App\Core\App::html()->displayUser((string)($pt['email'] ?? ''));
-                    $relance = (int)($pt['relance_count'] ?? 0);
+                foreach ($pending_tokens as $pending_token) {
+                    $email_display = \App\Core\App::html()->displayUser((string) ($pending_token['email'] ?? ''));
+                    $relance = (int) ($pending_token['relance_count'] ?? 0);
 
                     $sent_html = '';
-                    if (!empty($pt['sent_at'])) {
-                        $sent_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)$pt['sent_at'])));
+                    if (!empty($pending_token['sent_at'])) {
+                        $sent_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['sent_at'])));
                         $sent_html = "<span style=\"font-size:.8rem;color:#595959;\">Notifié le : {$sent_date}</span>";
                     }
 
                     $last_remind = '';
-                    if (!empty($pt['relance_at'])) {
-                        $last_remind_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)$pt['relance_at'])));
+                    if (!empty($pending_token['relance_at'])) {
+                        $last_remind_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['relance_at'])));
                         $last_remind = "<span style=\"font-size:.8rem;color:#b45309;\">Dernière relance : {$last_remind_date}</span>";
                     }
 
                     $expires_html = '';
-                    if (!empty($pt['expires_at'])) {
-                        $expires_date = \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string)$pt['expires_at'])));
+                    if (!empty($pending_token['expires_at'])) {
+                        $expires_date = \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $pending_token['expires_at'])));
                         $expires_html = "<span style=\"font-size:.8rem;color:#595959;\">Expire le : {$expires_date}</span>";
                     }
 
@@ -753,70 +750,70 @@ HTML;
                     }
 
                     $rows .= <<<HTML
-          <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
-            <span style="font-size:1.1rem;" aria-hidden="true">⏳</span>
-            <strong style="font-size:.85rem;">{$email_display}</strong>
-            {$relance_badge}
-            {$sent_html}
-            {$last_remind}
-            {$expires_html}
-          </div>
-HTML;
+                                  <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+                                    <span style="font-size:1.1rem;" aria-hidden="true">⏳</span>
+                                    <strong style="font-size:.85rem;">{$email_display}</strong>
+                                    {$relance_badge}
+                                    {$sent_html}
+                                    {$last_remind}
+                                    {$expires_html}
+                                  </div>
+                        HTML;
                 }
                 $pending_html = <<<HTML
-      <div style="margin-bottom:1rem;">
-        {$rows}
-      </div>
-HTML;
+                          <div style="margin-bottom:1rem;">
+                            {$rows}
+                          </div>
+                    HTML;
             }
         }
 
         $detail_html = '';
-        if (!empty($submission_reminds)) {
+        if ($submission_reminds !== []) {
             $rows = '';
-            foreach ($submission_reminds as $sr) {
-                $detail = \App\Core\App::html()->escape((string)($sr['detail'] ?? ''));
-                $date   = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string)($sr['created_at'] ?? 'now'))));
-                $actor  = \App\Core\App::html()->displayUser((string)($sr['actor'] ?? ''));
+            foreach ($submission_reminds as $submission_remind) {
+                $detail = \App\Core\App::html()->escape((string) ($submission_remind['detail'] ?? ''));
+                $date   = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($submission_remind['created_at'] ?? 'now'))));
+                $actor  = \App\Core\App::html()->displayUser((string) ($submission_remind['actor'] ?? ''));
                 $rows .= <<<HTML
-      <div class="val-item">
-        <div class="val-icon" aria-hidden="true">🔔</div>
-        <div class="val-content">
-          <div class="val-header">{$detail}</div>
-          <div class="val-detail">{$date} — par {$actor}</div>
-        </div>
-      </div>
-HTML;
+                          <div class="val-item">
+                            <div class="val-icon" aria-hidden="true">🔔</div>
+                            <div class="val-content">
+                              <div class="val-header">{$detail}</div>
+                              <div class="val-detail">{$date} — par {$actor}</div>
+                            </div>
+                          </div>
+                    HTML;
             }
             $detail_html = <<<HTML
-      <h3 style="font-size:.9rem;color:#555;margin-bottom:.75rem;">Détail des notifications envoyées</h3>
-      {$rows}
-HTML;
+                      <h3 style="font-size:.9rem;color:#555;margin-bottom:.75rem;">Détail des notifications envoyées</h3>
+                      {$rows}
+                HTML;
         }
 
         $action_html = '';
         if ($is_admin && $status === 'en_cours') {
             $csrf = \App\Core\App::security()->csrfField();
             $action_html = <<<HTML
-    <div class="actions-bar">
-      <form method="POST">
-        {$csrf}
-        <input type="hidden" name="action" value="remind_all">
-        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;"><span aria-hidden="true">📧</span> Rappeler tous les validateurs en attente</button>
-      </form>
-    </div>
-HTML;
+                    <div class="actions-bar">
+                      <form method="POST">
+                        {$csrf}
+                        <input type="hidden" name="action" value="remind_all">
+                        <button type="submit" class="btn btn-secondary" style="font-size:.85rem;"><span aria-hidden="true">📧</span> Rappeler tous les validateurs en attente</button>
+                      </form>
+                    </div>
+                HTML;
         }
 
         return <<<HTML
-  <!-- v10.1.5 — "Historique des relances" → "Notifications envoyées" -->
-  <div class="card">
-    <h2><span aria-hidden="true">🔔</span> Notifications envoyées</h2>
-    {$pending_html}
-    {$detail_html}
-    {$action_html}
-  </div>
-HTML;
+              <!-- v10.1.5 — "Historique des relances" → "Notifications envoyées" -->
+              <div class="card">
+                <h2><span aria-hidden="true">🔔</span> Notifications envoyées</h2>
+                {$pending_html}
+                {$detail_html}
+                {$action_html}
+              </div>
+            HTML;
     }
 
     /**
@@ -824,55 +821,55 @@ HTML;
      */
     public function renderAttachments(array $attachments): string
     {
-        if (empty($attachments)) {
+        if ($attachments === []) {
             return '';
         }
 
         $count = count($attachments);
         $rows = '';
-        foreach ($attachments as $att) {
-            $icon         = \App\Core\App::html()->getFileIcon((string)($att['mime_type'] ?? ''));
-            $name         = \App\Core\App::html()->escape((string)($att['original_name'] ?? ''));
-            $mime         = \App\Core\App::html()->escape((string)($att['mime_type'] ?? ''));
-            $size         = \App\Core\App::html()->formatFileSize((int)($att['file_size'] ?? 0));
-            $date         = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string)($att['uploaded_at'] ?? 'now'))));
-            $dl_url       = \App\Core\App::html()->escape('index.php?p=download&id=' . urlencode((string)($att['id'] ?? '')));
+        foreach ($attachments as $attachment) {
+            $icon         = \App\Core\App::html()->getFileIcon((string) ($attachment['mime_type'] ?? ''));
+            $name         = \App\Core\App::html()->escape((string) ($attachment['original_name'] ?? ''));
+            $mime         = \App\Core\App::html()->escape((string) ($attachment['mime_type'] ?? ''));
+            $size         = \App\Core\App::html()->formatFileSize((int) ($attachment['file_size'] ?? 0));
+            $date         = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string) ($attachment['uploaded_at'] ?? 'now'))));
+            $dl_url       = \App\Core\App::html()->escape('index.php?p=download&id=' . urlencode((string) ($attachment['id'] ?? '')));
 
             $rows .= <<<HTML
-        <tr>
-          <td style="padding:.5rem;border-bottom:1px solid #eee;">
-            {$icon}
-            <strong>{$name}</strong>
-          </td>
-          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;color:#595959;">{$mime}</td>
-          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;">{$size}</td>
-          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;">{$date}</td>
-          <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">
-            <a href="{$dl_url}" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;"><span aria-hidden="true">📥</span> Télécharger</a>
-          </td>
-        </tr>
-HTML;
+                        <tr>
+                          <td style="padding:.5rem;border-bottom:1px solid #eee;">
+                            {$icon}
+                            <strong>{$name}</strong>
+                          </td>
+                          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;color:#595959;">{$mime}</td>
+                          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;">{$size}</td>
+                          <td style="padding:.5rem;border-bottom:1px solid #eee;font-size:.85rem;">{$date}</td>
+                          <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">
+                            <a href="{$dl_url}" class="btn btn-secondary" style="font-size:.75rem;padding:.25rem .6rem;text-decoration:none;"><span aria-hidden="true">📥</span> Télécharger</a>
+                          </td>
+                        </tr>
+                HTML;
         }
 
         return <<<HTML
-  <!-- Pièces jointes -->
-  <div class="card">
-    <h2><span aria-hidden="true">📎</span> Pièces jointes ({$count})</h2>
-    <table style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Fichier</th>
-          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Type</th>
-          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Taille</th>
-          <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Date</th>
-          <th style="text-align:right;padding:.5rem;border-bottom:2px solid #003189;"></th>
-        </tr>
-      </thead>
-      <tbody>
-      {$rows}
-      </tbody>
-    </table>
-  </div>
-HTML;
+              <!-- Pièces jointes -->
+              <div class="card">
+                <h2><span aria-hidden="true">📎</span> Pièces jointes ({$count})</h2>
+                <table style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Fichier</th>
+                      <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Type</th>
+                      <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Taille</th>
+                      <th style="text-align:left;padding:.5rem;border-bottom:2px solid #003189;">Date</th>
+                      <th style="text-align:right;padding:.5rem;border-bottom:2px solid #003189;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {$rows}
+                  </tbody>
+                </table>
+              </div>
+            HTML;
     }
 }

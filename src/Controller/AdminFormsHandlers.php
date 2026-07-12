@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -31,7 +32,7 @@ final class AdminFormsHandlers
         try {
             $form_id = (string) \validate_input($form_id, 'uuid');
             return [$form_id, null];
-        } catch (\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException) {
             return ['', 'Identifiant de formulaire invalide.'];
         }
     }
@@ -46,7 +47,7 @@ final class AdminFormsHandlers
         try {
             $step_id = (string) \validate_input($step_id, 'uuid');
             return [$step_id, null];
-        } catch (\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException) {
             return ['', 'Identifiant d\'étape invalide.'];
         }
     }
@@ -58,10 +59,10 @@ final class AdminFormsHandlers
     {
         $ff_card_group_raw = trim($_POST['ff_card_group'] ?? '');
         $ff_card_group_new = trim($_POST['ff_card_group_new'] ?? '');
-        if (!empty($ff_card_group_new)) {
+        if ($ff_card_group_new !== '' && $ff_card_group_new !== '0') {
             return $ff_card_group_new;
         }
-        if ($ff_card_group_raw === '__new__' || empty($ff_card_group_raw)) {
+        if ($ff_card_group_raw === '__new__' || ($ff_card_group_raw === '' || $ff_card_group_raw === '0')) {
             return 'Général';
         }
         return $ff_card_group_raw;

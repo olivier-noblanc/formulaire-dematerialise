@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Render;
@@ -61,7 +62,7 @@ final class HtmlService implements HtmlInterface
      * Dictionnaire anti-jargon — traduit le jargon administratif.
      * @var array<string, string>
      */
-    private const JARGON_MAPPINGS = [
+    private const array JARGON_MAPPINGS = [
         'Workflow' => 'Parcours',
         'workflow' => 'parcours',
         'EPI' => 'Équipement de protection individuelle (EPI)',
@@ -103,15 +104,16 @@ final class HtmlService implements HtmlInterface
         $text = str_replace('Fonction publique', "\x02", $text);
 
         foreach (self::JARGON_MAPPINGS as $jargon => $replacement) {
-            if ($jargon === 'CircuitDémat') continue;
+            if ($jargon === 'CircuitDémat') {
+                continue;
+            }
             $text = preg_replace('/\b' . preg_quote($jargon, '/') . '\b/u', $replacement, $text) ?? $text;
         }
 
         // Restaurer les placeholders
         $text = str_replace("\x01", 'CircuitDémat', $text);
-        $text = str_replace("\x02", 'Fonction publique', $text);
 
-        return $text;
+        return str_replace("\x02", 'Fonction publique', $text);
     }
 
     /**
@@ -119,8 +121,12 @@ final class HtmlService implements HtmlInterface
      */
     public function displayUser(string $email, ?string $current_user = null, bool $force_email = false): string
     {
-        if ($email === '') return '';
-        if ($force_email) return $this->h($email);
+        if ($email === '') {
+            return '';
+        }
+        if ($force_email) {
+            return $this->h($email);
+        }
 
         if ($current_user === null) {
             $current_user = App::auth()->getUser() ?: '';
@@ -150,7 +156,9 @@ final class HtmlService implements HtmlInterface
      */
     public function displayUserShort(string $email): string
     {
-        if ($email === '') return '';
+        if ($email === '') {
+            return '';
+        }
         $at_pos = strpos($email, '@');
         if ($at_pos !== false) {
             return $this->h(substr($email, 0, $at_pos));
@@ -167,9 +175,11 @@ final class HtmlService implements HtmlInterface
      */
     public function renderPagination(int $page, int $total_pages, string $base_url): string
     {
-        if ($total_pages <= 1) return '';
+        if ($total_pages <= 1) {
+            return '';
+        }
         $html = '<div class="pagination" style="display:flex;gap:.5rem;align-items:center;margin:1.5rem 0;flex-wrap:wrap;">';
-        $sep = (strpos($base_url, '?') !== false) ? '&' : '?';
+        $sep = (str_contains($base_url, '?')) ? '&' : '?';
         if ($page > 1) {
             $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page - 1)) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .75rem;">← Précédent</a>';
         }
@@ -177,8 +187,7 @@ final class HtmlService implements HtmlInterface
         if ($page < $total_pages) {
             $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page + 1)) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .75rem;">Suivant →</a>';
         }
-        $html .= '</div>';
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -186,8 +195,10 @@ final class HtmlService implements HtmlInterface
      */
     public function buildUrl(string $url): string
     {
-        $token = isset($_GET['persona_token']) ? (string)$_GET['persona_token'] : '';
-        if ($token === '') return $url;
+        $token = isset($_GET['persona_token']) ? (string) $_GET['persona_token'] : '';
+        if ($token === '') {
+            return $url;
+        }
 
         $anchor = '';
         $url_without_anchor = $url;

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Forms;
@@ -9,13 +10,10 @@ use App\Core\Database;
 /**
  * Service de gestion des champs de formulaire (demandeur + validateur).
  */
-final class FieldService implements FieldInterface
+final readonly class FieldService implements FieldInterface
 {
-    private Database $db;
-
-    public function __construct(Database $db)
+    public function __construct(private Database $database)
     {
-        $this->db = $db;
     }
 
     /**
@@ -26,18 +24,20 @@ final class FieldService implements FieldInterface
     {
         static $cache = [];
         $cacheKey = $formId . ($filledBy !== null ? ':' . $filledBy : '');
-        if (isset($cache[$cacheKey])) return $cache[$cacheKey];
+        if (isset($cache[$cacheKey])) {
+            return $cache[$cacheKey];
+        }
 
-        $pdo = $this->db->getPdo();
-        $sql = "SELECT * FROM form_fields WHERE form_id = ?";
+        $pdo = $this->database->getPdo();
+        $sql = 'SELECT * FROM form_fields WHERE form_id = ?';
         $params = [$formId];
 
         if ($filledBy !== null) {
-            $sql .= " AND filled_by = ?";
+            $sql .= ' AND filled_by = ?';
             $params[] = $filledBy;
         }
 
-        $sql .= " ORDER BY ordre, id";
+        $sql .= ' ORDER BY ordre, id';
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -51,13 +51,13 @@ final class FieldService implements FieldInterface
      */
     public function getValidatorFields(string $formId, ?string $stepId = null): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         $sql = "SELECT * FROM form_fields WHERE form_id = ? AND filled_by = 'validator'";
         $params = [$formId];
 
         if ($stepId !== null && $stepId !== '') {
             $stepLabel = '';
-            $labelStmt = $pdo->prepare("SELECT label FROM steps WHERE id = ? AND form_id = ?");
+            $labelStmt = $pdo->prepare('SELECT label FROM steps WHERE id = ? AND form_id = ?');
             $labelStmt->execute([$stepId, $formId]);
             $stepLabel = (string) ($labelStmt->fetchColumn() ?? '');
 
@@ -66,7 +66,7 @@ final class FieldService implements FieldInterface
             $params[] = $stepLabel;
         }
 
-        $sql .= " ORDER BY ordre, id";
+        $sql .= ' ORDER BY ordre, id';
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -78,8 +78,8 @@ final class FieldService implements FieldInterface
      */
     public function getValidatorData(string $submissionId, ?string $stepId = null): array
     {
-        $pdo = $this->db->getPdo();
-        $sql = "SELECT svd.* FROM submission_validator_data svd WHERE svd.submission_id = ?";
+        $pdo = $this->database->getPdo();
+        $sql = 'SELECT svd.* FROM submission_validator_data svd WHERE svd.submission_id = ?';
         $params = [$submissionId];
 
         if ($stepId !== null && $stepId !== '') {
@@ -92,7 +92,7 @@ final class FieldService implements FieldInterface
             $params[] = $submissionId;
             $params[] = $stepId;
 
-            $labelStmt = $pdo->prepare("SELECT label FROM steps WHERE id = ?");
+            $labelStmt = $pdo->prepare('SELECT label FROM steps WHERE id = ?');
             $labelStmt->execute([$stepId]);
             $stepLabel = (string) ($labelStmt->fetchColumn() ?? '');
             $params[] = $stepLabel;
@@ -116,21 +116,21 @@ final class FieldService implements FieldInterface
         ?string $filledByEmail = null,
         ?string $tokenId = null
     ): void {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
-        $fieldStmt = $pdo->prepare("SELECT label, field_type FROM form_fields WHERE field_name = ?");
+        $fieldStmt = $pdo->prepare('SELECT label, field_type FROM form_fields WHERE field_name = ?');
         $fieldStmt->execute([$fieldName]);
         $fieldInfo = $fieldStmt->fetch(\PDO::FETCH_ASSOC);
         $fieldLabel = $fieldInfo['label'] ?? $fieldName;
         $fieldType = $fieldInfo['field_type'] ?? 'text';
 
         if ($stepLabel === null && $stepId !== null) {
-            $labelStmt = $pdo->prepare("SELECT label FROM steps WHERE id = ?");
+            $labelStmt = $pdo->prepare('SELECT label FROM steps WHERE id = ?');
             $labelStmt->execute([$stepId]);
             $stepLabel = (string) ($labelStmt->fetchColumn() ?? '');
         }
 
-        $sql = "INSERT INTO submission_validator_data
+        $sql = 'INSERT INTO submission_validator_data
             (id, submission_id, field_name, field_label, field_type, value, filled_by, filled_at, step_id, step_label, filled_by_email, token_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(submission_id, field_name) DO UPDATE SET
@@ -142,7 +142,7 @@ final class FieldService implements FieldInterface
                 step_id = excluded.step_id,
                 step_label = excluded.step_label,
                 filled_by_email = excluded.filled_by_email,
-                token_id = excluded.token_id";
+                token_id = excluded.token_id';
 
         $pdo->prepare($sql)->execute([
             $this->generateUuid(),
@@ -154,8 +154,8 @@ final class FieldService implements FieldInterface
 
     public function deleteValidatorData(string $submissionId, string $fieldName): void
     {
-        $pdo = $this->db->getPdo();
-        $pdo->prepare("DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?")
+        $pdo = $this->database->getPdo();
+        $pdo->prepare('DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?')
             ->execute([$submissionId, $fieldName]);
     }
 
@@ -166,9 +166,11 @@ final class FieldService implements FieldInterface
      */
     public function getValidatorStatusBatch(array $submissionIds): array
     {
-        if (empty($submissionIds)) return [];
+        if ($submissionIds === []) {
+            return [];
+        }
 
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
         $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
 
         // Champs validator attendus par form_id
@@ -203,11 +205,11 @@ final class FieldService implements FieldInterface
 
         // Construire le résultat
         $result = [];
-        foreach ($submissionIds as $subId) {
-            $formId = $formBySub[$subId] ?? null;
+        foreach ($submissionIds as $submissionId) {
+            $formId = $formBySub[$submissionId] ?? null;
             $expected = $formId !== null ? ($expectedByForm[$formId] ?? 0) : 0;
-            $filled = $filledBySub[$subId] ?? 0;
-            $result[$subId] = [
+            $filled = $filledBySub[$submissionId] ?? 0;
+            $result[$submissionId] = [
                 'expected' => $expected,
                 'filled' => $filled,
                 'complete' => $expected === 0 || $filled >= $expected,

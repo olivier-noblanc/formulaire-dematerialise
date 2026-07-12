@@ -26,268 +26,268 @@ final class AdminFormsRenderer
     public function getPageCss(): string
     {
         return <<<'CSS'
-        .container { max-width: 1200px; }
+                    .container { max-width: 1200px; }
 
-        /* ── Section cards with colored headers ──────────────── */
-        .section-card {
-            background: var(--c-surface);
-            border: 1px solid var(--c-border);
-            border-radius: var(--r-md);
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-        }
-        .section-card-header {
-            background: var(--c-primary-dark);
-            color: var(--c-text-inverse);
-            padding: .75rem 1.25rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .section-card-header h2 {
-            color: var(--c-text-inverse);
-            border: none;
-            margin: 0;
-            padding: 0;
-            font-size: 1.05rem;
-        }
-        .section-card-header a {
-            color: var(--c-text-inverse);
-            text-decoration: none;
-            font-size: .82rem;
-            opacity: .85;
-        }
-        .section-card-header a:hover {
-            opacity: 1;
-        }
-        .section-card-header button.btn-secondary {
-            color: var(--c-sidebar-text);
-            background: var(--c-surface);
-            border: 1px solid var(--c-border);
-            font-size: .82rem;
-            opacity: .95;
-        }
-        .section-card-header button.btn-secondary:hover {
-            opacity: 1;
-            background: var(--c-primary-50);
-        }
-        .section-card-header button:not(.btn-secondary) {
-            color: var(--c-text-inverse);
-            font-size: .82rem;
-            opacity: .85;
-        }
-        .section-card-header button:not(.btn-secondary):hover {
-            opacity: 1;
-        }
-        .section-card-body {
-            padding: 1.25rem;
-        }
+                    /* ── Section cards with colored headers ──────────────── */
+                    .section-card {
+                        background: var(--c-surface);
+                        border: 1px solid var(--c-border);
+                        border-radius: var(--r-md);
+                        margin-bottom: 1.5rem;
+                        overflow: hidden;
+                    }
+                    .section-card-header {
+                        background: var(--c-primary-dark);
+                        color: var(--c-text-inverse);
+                        padding: .75rem 1.25rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .section-card-header h2 {
+                        color: var(--c-text-inverse);
+                        border: none;
+                        margin: 0;
+                        padding: 0;
+                        font-size: 1.05rem;
+                    }
+                    .section-card-header a {
+                        color: var(--c-text-inverse);
+                        text-decoration: none;
+                        font-size: .82rem;
+                        opacity: .85;
+                    }
+                    .section-card-header a:hover {
+                        opacity: 1;
+                    }
+                    .section-card-header button.btn-secondary {
+                        color: var(--c-sidebar-text);
+                        background: var(--c-surface);
+                        border: 1px solid var(--c-border);
+                        font-size: .82rem;
+                        opacity: .95;
+                    }
+                    .section-card-header button.btn-secondary:hover {
+                        opacity: 1;
+                        background: var(--c-primary-50);
+                    }
+                    .section-card-header button:not(.btn-secondary) {
+                        color: var(--c-text-inverse);
+                        font-size: .82rem;
+                        opacity: .85;
+                    }
+                    .section-card-header button:not(.btn-secondary):hover {
+                        opacity: 1;
+                    }
+                    .section-card-body {
+                        padding: 1.25rem;
+                    }
 
-        /* ── Workflow diagram ────────────────────────────────── */
-        .workflow-diagram {
-            display: flex;
-            align-items: flex-start;
-            gap: 0;
-            padding: 1.5rem 0.5rem;
-            overflow-x: auto;
-        }
-        .workflow-step-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 150px;
-            max-width: 200px;
-            flex-shrink: 0;
-        }
-        .workflow-arrow {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            flex-shrink: 0;
-            padding-top: 0;
-            align-self: stretch;
-            display: flex;
-            align-items: center;
-        }
-        .workflow-arrow::after {
-            content: '→';
-            font-size: 1.8rem;
-            color: var(--c-primary-dark);
-            font-weight: bold;
-        }
-        .workflow-box {
-            background: var(--c-primary-dark);
-            color: var(--c-text-inverse);
-            border-radius: var(--r-md);
-            padding: .75rem 1rem;
-            text-align: center;
-            width: 100%;
-            margin-bottom: .5rem;
-            box-shadow: var(--shadow-colored);
-        }
-        .workflow-box.inactive {
-            background: #b0b0b0;
-            box-shadow: none;
-        }
-        .workflow-box .wb-label {
-            font-weight: bold;
-            font-size: .88rem;
-            margin-bottom: .25rem;
-        }
-        .workflow-box .wb-ordre {
-            font-size: .72rem;
-            opacity: .8;
-            margin-bottom: .35rem;
-        }
-        .workflow-box .wb-emails {
-            font-size: .72rem;
-            opacity: .75;
-            line-height: 1.4;
-            word-break: break-all;
-        }
-        .workflow-box.inactive .wb-label { opacity: .7; }
-        .workflow-box.inactive .wb-ordre { opacity: .5; }
-        .workflow-box.inactive .wb-emails { opacity: .5; }
-        .workflow-empty {
-            text-align: center;
-            padding: 2rem;
-            color: #888;
-            font-style: italic;
-        }
+                    /* ── Workflow diagram ────────────────────────────────── */
+                    .workflow-diagram {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 0;
+                        padding: 1.5rem 0.5rem;
+                        overflow-x: auto;
+                    }
+                    .workflow-step-group {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        min-width: 150px;
+                        max-width: 200px;
+                        flex-shrink: 0;
+                    }
+                    .workflow-arrow {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 40px;
+                        flex-shrink: 0;
+                        padding-top: 0;
+                        align-self: stretch;
+                        display: flex;
+                        align-items: center;
+                    }
+                    .workflow-arrow::after {
+                        content: '→';
+                        font-size: 1.8rem;
+                        color: var(--c-primary-dark);
+                        font-weight: bold;
+                    }
+                    .workflow-box {
+                        background: var(--c-primary-dark);
+                        color: var(--c-text-inverse);
+                        border-radius: var(--r-md);
+                        padding: .75rem 1rem;
+                        text-align: center;
+                        width: 100%;
+                        margin-bottom: .5rem;
+                        box-shadow: var(--shadow-colored);
+                    }
+                    .workflow-box.inactive {
+                        background: #b0b0b0;
+                        box-shadow: none;
+                    }
+                    .workflow-box .wb-label {
+                        font-weight: bold;
+                        font-size: .88rem;
+                        margin-bottom: .25rem;
+                    }
+                    .workflow-box .wb-ordre {
+                        font-size: .72rem;
+                        opacity: .8;
+                        margin-bottom: .35rem;
+                    }
+                    .workflow-box .wb-emails {
+                        font-size: .72rem;
+                        opacity: .75;
+                        line-height: 1.4;
+                        word-break: break-all;
+                    }
+                    .workflow-box.inactive .wb-label { opacity: .7; }
+                    .workflow-box.inactive .wb-ordre { opacity: .5; }
+                    .workflow-box.inactive .wb-emails { opacity: .5; }
+                    .workflow-empty {
+                        text-align: center;
+                        padding: 2rem;
+                        color: #888;
+                        font-style: italic;
+                    }
 
-        /* ── Step list items ─────────────────────────────────── */
-        .step-card {
-            border: 1px solid var(--c-border);
-            border-radius: var(--r-sm);
-            padding: .75rem 1rem;
-            margin-bottom: .75rem;
-            background: var(--c-bg-warm);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-        .step-card.editing {
-            background: #f0f4ff;
-            border-color: var(--c-primary-dark);
-        }
-        .step-info { flex: 1; }
-        .step-info .step-label { font-weight: bold; color: var(--c-primary-dark); }
-        .step-info .step-meta { font-size: .82rem; color: #666; margin-top: .25rem; }
-        .step-info .step-meta .badge-ok { margin-left: .5rem; }
-        .step-actions { display: flex; gap: .4rem; flex-shrink: 0; }
-        .recipient-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
-        .recipient-chip {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            border-radius: 12px;
-            padding: .15rem .6rem;
-            font-size: .76rem;
-            color: #1565c0;
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-        }
-        .recipient-chip form {
-            display: inline;
-        }
-        .recipient-chip .chip-delete {
-            background: none;
-            border: none;
-            color: #c0392b;
-            cursor: pointer;
-            font-size: .9rem;
-            padding: 0;
-            line-height: 1;
-        }
+                    /* ── Step list items ─────────────────────────────────── */
+                    .step-card {
+                        border: 1px solid var(--c-border);
+                        border-radius: var(--r-sm);
+                        padding: .75rem 1rem;
+                        margin-bottom: .75rem;
+                        background: var(--c-bg-warm);
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        gap: 1rem;
+                    }
+                    .step-card.editing {
+                        background: #f0f4ff;
+                        border-color: var(--c-primary-dark);
+                    }
+                    .step-info { flex: 1; }
+                    .step-info .step-label { font-weight: bold; color: var(--c-primary-dark); }
+                    .step-info .step-meta { font-size: .82rem; color: #666; margin-top: .25rem; }
+                    .step-info .step-meta .badge-ok { margin-left: .5rem; }
+                    .step-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+                    .recipient-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
+                    .recipient-chip {
+                        background: #e3f2fd;
+                        border: 1px solid #90caf9;
+                        border-radius: 12px;
+                        padding: .15rem .6rem;
+                        font-size: .76rem;
+                        color: #1565c0;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: .3rem;
+                    }
+                    .recipient-chip form {
+                        display: inline;
+                    }
+                    .recipient-chip .chip-delete {
+                        background: none;
+                        border: none;
+                        color: #c0392b;
+                        cursor: pointer;
+                        font-size: .9rem;
+                        padding: 0;
+                        line-height: 1;
+                    }
 
-        /* ── Field table improvements ────────────────────────── */
-        .fields-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-        .fields-table thead th {
-            background: var(--c-primary-dark);
-            color: var(--c-text-inverse);
-            padding: .55rem .6rem;
-            text-align: left;
-            font-weight: normal;
-            white-space: nowrap;
-        }
-        .fields-table tbody td {
-            padding: .5rem .6rem;
-            border-bottom: 1px solid #eee;
-            vertical-align: middle;
-        }
-        .fields-table tbody tr:hover { background: #f0f4ff; }
-        .field-type-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-            background: #e8eaf6;
-            color: var(--c-primary-dark);
-            border-radius: var(--r-sm);
-            padding: .2rem .5rem;
-            font-size: .78rem;
-            font-weight: bold;
-        }
-        .required-star {
-            color: #c0392b;
-            font-weight: bold;
-            font-size: 1rem;
-            margin-left: 2px;
-        }
+                    /* ── Field table improvements ────────────────────────── */
+                    .fields-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+                    .fields-table thead th {
+                        background: var(--c-primary-dark);
+                        color: var(--c-text-inverse);
+                        padding: .55rem .6rem;
+                        text-align: left;
+                        font-weight: normal;
+                        white-space: nowrap;
+                    }
+                    .fields-table tbody td {
+                        padding: .5rem .6rem;
+                        border-bottom: 1px solid #eee;
+                        vertical-align: middle;
+                    }
+                    .fields-table tbody tr:hover { background: #f0f4ff; }
+                    .field-type-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: .3rem;
+                        background: #e8eaf6;
+                        color: var(--c-primary-dark);
+                        border-radius: var(--r-sm);
+                        padding: .2rem .5rem;
+                        font-size: .78rem;
+                        font-weight: bold;
+                    }
+                    .required-star {
+                        color: #c0392b;
+                        font-weight: bold;
+                        font-size: 1rem;
+                        margin-left: 2px;
+                    }
 
-        /* ── Preview button ──────────────────────────────────── */
-        .btn-preview {
-            background: var(--c-success);
-            color: var(--c-text-inverse);
-            padding: .5rem 1rem;
-            border: none;
-            border-radius: var(--r-sm);
-            font-size: .85rem;
-            font-family: inherit;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-        }
-        .btn-preview:hover { background: #219a52; }
+                    /* ── Preview button ──────────────────────────────────── */
+                    .btn-preview {
+                        background: var(--c-success);
+                        color: var(--c-text-inverse);
+                        padding: .5rem 1rem;
+                        border: none;
+                        border-radius: var(--r-sm);
+                        font-size: .85rem;
+                        font-family: inherit;
+                        cursor: pointer;
+                        text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: .3rem;
+                    }
+                    .btn-preview:hover { background: #219a52; }
 
-        /* ── Form grid ───────────────────────────────────────── */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: .75rem;
-        }
-        .form-grid .full-width {
-            grid-column: 1 / -1;
-        }
-        @media (max-width: 768px) {
-            .form-grid { grid-template-columns: 1fr; }
-        }
+                    /* ── Form grid ───────────────────────────────────────── */
+                    .form-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: .75rem;
+                    }
+                    .form-grid .full-width {
+                        grid-column: 1 / -1;
+                    }
+                    @media (max-width: 768px) {
+                        .form-grid { grid-template-columns: 1fr; }
+                    }
 
-        /* ── Step recipient section ──────────────────────────── */
-        .step-recipient-picker {
-            margin-top: 1rem;
-        }
-        .step-recipient-picker select {
-            max-width: 350px;
-        }
+                    /* ── Step recipient section ──────────────────────────── */
+                    .step-recipient-picker {
+                        margin-top: 1rem;
+                    }
+                    .step-recipient-picker select {
+                        max-width: 350px;
+                    }
 
-        /* ── Add forms ───────────────────────────────────────── */
-        .add-sub-card {
-            background: #f9f9ff;
-            border: 1px dashed #aab;
-            border-radius: 5px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-        .add-sub-card h4 {
-            font-size: .92rem;
-            color: var(--c-primary-dark);
-            margin-bottom: .75rem;
-        }
-CSS;
+                    /* ── Add forms ───────────────────────────────────────── */
+                    .add-sub-card {
+                        background: #f9f9ff;
+                        border: 1px dashed #aab;
+                        border-radius: 5px;
+                        padding: 1rem;
+                        margin-top: 1rem;
+                    }
+                    .add-sub-card h4 {
+                        font-size: .92rem;
+                        color: var(--c-primary-dark);
+                        margin-bottom: .75rem;
+                    }
+            CSS;
     }
 
     // ── Field type helpers ───────────────────────────────────────
@@ -347,9 +347,13 @@ CSS;
      */
     public function optionsToLines(?string $json): string
     {
-        if (empty($json)) return '';
+        if (in_array($json, [null, '', '0'], true)) {
+            return '';
+        }
         $decoded = json_decode($json, true);
-        if (is_array($decoded)) return implode("\n", $decoded);
+        if (is_array($decoded)) {
+            return implode("\n", $decoded);
+        }
         return $json;
     }
 
@@ -370,9 +374,9 @@ CSS;
         <form method="GET" style="display:inline-flex;gap:.5rem;align-items:center;">
             <select name="form_id">
                 <option value="">— Sélectionner un formulaire —</option>
-                <?php foreach ($forms as $f): ?>
-                    <option value="<?= $f['id'] ?>" <?= $form_id == $f['id'] ? 'selected' : '' ?>>
-                        <?= \App\Core\App::html()->escape($f['label']) ?>
+                <?php foreach ($forms as $form): ?>
+                    <option value="<?= $form['id'] ?>" <?= $form_id == $form['id'] ? 'selected' : '' ?>>
+                        <?= \App\Core\App::html()->escape($form['label']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -403,7 +407,7 @@ CSS;
         ob_start();
         ?>
     <!-- ── Import JSON panel ──────────────────────────────────── -->
-    <div id="import-panel" class="<?= !empty($preserved_json) ? '' : 'hidden' ?>" style="margin-bottom:1.5rem;">
+    <div id="import-panel" class="<?= empty($preserved_json) ? 'hidden' : '' ?>" style="margin-bottom:1.5rem;">
         <div class="section-card">
             <div class="section-card-header">
                 <h2><span aria-hidden="true">📥</span> Importer un formulaire depuis JSON</h2>
@@ -439,7 +443,7 @@ CSS;
     /**
      * Panneau « Prompt IA » : prompt pré-rempli à copier-coller.
      */
-    public function renderPromptIaPanel(array $ctx): string
+    public function renderPromptIaPanel(): string
     {
         ob_start();
         ?>
@@ -453,7 +457,9 @@ CSS;
                 <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ d'importation ci-dessus. Le JSON généré inclura les champs du formulaire <strong>et</strong> le circuit de validation (workflow).</p>
                 <div class="field">
                     <label>Prompt à copier-coller <button type="button" onclick="(function(btn){var txt=document.getElementById('ai-prompt').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)})}catch(e){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}})(this)" style="font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px;">📋 Copier</button></label>
-                    <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>".
+                    <pre id="ai-prompt" style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:6px;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:500px;overflow-y:auto;">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?php 
+        <?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>
+        ?>".
 
 Consignes :
 - Analyse le document administratif fourni ci-dessous.
@@ -538,7 +544,11 @@ IMPORTANT : Si tu comptes exclure une colonne du document source, signale-le EXP
   - ordre : numéro séquentiel (1 = première validation, 2 = deuxième, etc.).
   - actif : true (toujours true pour les nouvelles étapes).
   - recipients : tableau d'adresses email. Trois formats possibles :
-    1. Adresse email statique du service validateur (ex: "rh@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>", "dsi@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>").
+    1. Adresse email statique du service validateur (ex: "rh@<?php 
+        <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>
+        ?>", "dsi@<?php 
+        <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>
+        ?>").
     2. Référence dynamique vers un champ du formulaire avec la syntaxe {{field_name}} — utile quand le validateur dépend de l'agent qui remplit le formulaire. Exemple : si le formulaire a un champ "email_superieur", utilise "{{email_superieur}}" pour que la demande soit envoyée au supérieur hiérarchique saisi par l'agent.
     3. Référence spéciale {{owner}} — le propriétaire du formulaire (l'admin qui a créé le formulaire). Utiliser quand le document indique que "l'owner", "le responsable" ou "l'administrateur du formulaire" doit valider, sans préciser d'adresse email. Ne PAS demander d'email dans ce cas.
 - ATTENTION : Si le document mentionne un supérieur hiérarchique, un manager direct, ou un validateur dont l'email dépend de l'agent, il FAUT créer un champ email dans les fields ET utiliser la syntaxe {{field_name}} dans les recipients de l'étape correspondante.
@@ -611,7 +621,9 @@ IMPORTANT : Si tu comptes exclure une colonne du document source, signale-le EXP
   ],
   "steps": [
     { "label": "Validation supérieur hiérarchique", "ordre": 1, "actif": true, "recipients": ["{{email_superieur}}"] },
-    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>"] }
+    { "label": "Validation RH", "ordre": 2, "actif": true, "recipients": ["rh@<?php 
+        <?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>
+        ?>"] }
   ]
 }
 
@@ -622,7 +634,7 @@ Voici le document administratif à analyser :
             </div>
         </div>
     </div>
-    <?php
+    <?php 
         $html = ob_get_clean();
         return $html === false ? '' : $html;
     }
@@ -630,7 +642,7 @@ Voici le document administratif à analyser :
     /**
      * Panneau « Créer un nouveau formulaire ».
      */
-    public function renderNewFormPanel(array $ctx): string
+    public function renderNewFormPanel(): string
     {
         ob_start();
         ?>
@@ -641,7 +653,10 @@ Voici le document administratif à analyser :
         </div>
         <div class="section-card-body">
             <form method="POST">
-                <?= \App\Core\App::security()->csrfField() ?>
+                <?php 
+        <?= \App\Core\App::security()->csrfField() ?>
+
+        ?>
                 <input type="hidden" name="action" value="add_form">
                 <div class="form-grid">
                     <div class="field">
@@ -658,7 +673,7 @@ Voici le document administratif à analyser :
             </form>
         </div>
     </div>
-    <?php
+    <?php 
         $html = ob_get_clean();
         return $html === false ? '' : $html;
     }
@@ -852,14 +867,14 @@ Voici le document administratif à analyser :
                 <div class="workflow-diagram">
                     <?php
                     $ordre_keys = array_keys($steps_by_ordre);
-                    $last_key = end($ordre_keys);
-                    ?>
+                $last_key = array_last($ordre_keys);
+                ?>
                     <?php foreach ($steps_by_ordre as $ordre => $ordre_steps): ?>
                         <div class="workflow-step-group">
                             <?php foreach ($ordre_steps as $idx => $wstep): ?>
                                 <div class="workflow-box <?= $wstep['actif'] ? '' : 'inactive' ?>" style="<?= count($ordre_steps) > 1 && $idx > 0 ? 'margin-top:.5rem;' : '' ?>">
                                     <div class="wb-label"><?= \App\Core\App::html()->escape($wstep['label']) ?></div>
-                                    <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string)$ordre) ?></div>
+                                    <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string) $ordre) ?></div>
                                     <?php if (!empty($wstep['recipients'])): ?>
                                         <div class="wb-emails"><?= \App\Core\App::html()->escape(implode(', ', array_column($wstep['recipients'], 'email'))) ?></div>
                                     <?php else: ?>
@@ -931,22 +946,22 @@ Voici le document administratif à analyser :
                                         </div>
 
                                         <?php
-                                        $step_ordre_int = (int)($step['ordre'] ?? 0);
-                                        $can_have_condition = $step_ordre_int > 1;
+                                    $step_ordre_int = (int) ($step['ordre'] ?? 0);
+                            $can_have_condition = $step_ordre_int > 1;
 
-                                        $existing_condition = ['field' => '', 'op' => '', 'value' => ''];
-                                        $raw_condition = (string)($step['condition'] ?? '');
-                                        if ($raw_condition !== '') {
-                                            $decoded = json_decode($raw_condition, true);
-                                            if (is_array($decoded)) {
-                                                $existing_condition['field'] = (string)($decoded['field'] ?? '');
-                                                $existing_condition['op']   = (string)($decoded['op'] ?? '');
-                                                $existing_condition['value'] = (string)($decoded['value'] ?? '');
-                                            }
-                                        }
+                            $existing_condition = ['field' => '', 'op' => '', 'value' => ''];
+                            $raw_condition = (string) ($step['condition'] ?? '');
+                            if ($raw_condition !== '') {
+                                $decoded = json_decode($raw_condition, true);
+                                if (is_array($decoded)) {
+                                    $existing_condition['field'] = (string) ($decoded['field'] ?? '');
+                                    $existing_condition['op']   = (string) ($decoded['op'] ?? '');
+                                    $existing_condition['value'] = (string) ($decoded['value'] ?? '');
+                                }
+                            }
 
-                                        $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string)$form_id) : [];
-                                        ?>
+                            $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string) $form_id) : [];
+                            ?>
 
                                         <?php if ($can_have_condition): ?>
                                             <details style="margin-top:.5rem;border-top:1px dashed #dde;padding-top:.5rem;">
@@ -956,10 +971,10 @@ Voici le document administratif à analyser :
                                                         <label>Champ validateur à tester</label>
                                                         <select name="condition_field">
                                                             <option value="">— Toujours exécuter (pas de condition) —</option>
-                                                            <?php foreach ($validator_fields as $vf): ?>
-                                                                <?php $vf_name = (string)($vf['field_name'] ?? ''); ?>
+                                                            <?php foreach ($validator_fields as $validator_field): ?>
+                                                                <?php $vf_name = (string) ($validator_field['field_name'] ?? ''); ?>
                                                                 <option value="<?= \App\Core\App::html()->escape($vf_name) ?>" <?= $existing_condition['field'] === $vf_name ? 'selected' : '' ?>>
-                                                                    <?= \App\Core\App::html()->escape((string)($vf['label'] ?? $vf_name)) ?> (<?= \App\Core\App::html()->escape($vf_name) ?>)
+                                                                    <?= \App\Core\App::html()->escape((string) ($validator_field['label'] ?? $vf_name)) ?> (<?= \App\Core\App::html()->escape($vf_name) ?>)
                                                                 </option>
                                                             <?php endforeach; ?>
                                                         </select>
@@ -968,15 +983,15 @@ Voici le document administratif à analyser :
                                                         <label>Opérateur</label>
                                                         <select name="condition_op">
                                                             <?php
-                                                            $ops = [
-                                                                'equals'     => 'Égal à',
-                                                                'not_equals' => 'Différent de',
-                                                                'contains'   => 'Contient',
-                                                                'not_empty'  => 'Non vide',
-                                                                'empty'      => 'Vide',
-                                                            ];
-                                                            foreach ($ops as $op_val => $op_label):
-                                                            ?>
+                                                $ops = [
+                                                    'equals'     => 'Égal à',
+                                                    'not_equals' => 'Différent de',
+                                                    'contains'   => 'Contient',
+                                                    'not_empty'  => 'Non vide',
+                                                    'empty'      => 'Vide',
+                                                ];
+                                            foreach ($ops as $op_val => $op_label):
+                                                ?>
                                                                 <option value="<?= \App\Core\App::html()->escape($op_val) ?>" <?= $existing_condition['op'] === $op_val ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($op_label) ?></option>
                                                             <?php endforeach; ?>
                                                         </select>
@@ -1006,7 +1021,7 @@ Voici le document administratif à analyser :
                                 <div class="step-info">
                                     <span class="step-label"><?= \App\Core\App::html()->escape($step['label']) ?></span>
                                     <div class="step-meta">
-                                        Ordre <?= \App\Core\App::html()->escape((string)$step['ordre']) ?>
+                                        Ordre <?= \App\Core\App::html()->escape((string) $step['ordre']) ?>
                                         <?php if ($step['actif']): ?>
                                             <span class="badge badge-ok">Actif</span>
                                         <?php else: ?>
@@ -1116,8 +1131,8 @@ Voici le document administratif à analyser :
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($form_fields as $ff): ?>
-                            <?php if ($edit_field_id === $ff['id']): ?>
+                        <?php foreach ($form_fields as $form_field): ?>
+                            <?php if ($edit_field_id === $form_field['id']): ?>
                                 <!-- ── Edit field inline ──────────────── -->
                                 <tr>
                                     <td colspan="7" style="background:#f0f4ff;padding:1rem;">
@@ -1125,37 +1140,37 @@ Voici le document administratif à analyser :
                                         <form method="POST">
                                             <?= \App\Core\App::security()->csrfField() ?>
                                             <input type="hidden" name="action" value="update_field">
-                                            <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
+                                            <input type="hidden" name="field_id" value="<?= $form_field['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
                                             <div class="form-grid">
                                                 <div class="field">
                                                     <label>Libellé<span class="req">*</span></label>
-                                                    <input type="text" name="ff_label" value="<?= \App\Core\App::html()->escape($ff['label']) ?>" required>
+                                                    <input type="text" name="ff_label" value="<?= \App\Core\App::html()->escape($form_field['label']) ?>" required>
                                                 </div>
                                                 <div class="field">
                                                     <label>Identifiant technique <span class="hint">(auto si vide)</span></label>
-                                                    <input type="text" name="ff_field_name" value="<?= \App\Core\App::html()->escape($ff['field_name']) ?>" placeholder="Généré automatiquement depuis le libellé">
+                                                    <input type="text" name="ff_field_name" value="<?= \App\Core\App::html()->escape($form_field['field_name']) ?>" placeholder="Généré automatiquement depuis le libellé">
                                                 </div>
                                                 <div class="field">
                                                     <label>Type de champ</label>
                                                     <select name="ff_field_type">
                                                         <?php foreach ($field_types as $val => $lbl): ?>
-                                                            <option value="<?= $val ?>" <?= $ff['field_type'] === $val ? 'selected' : '' ?>><?= $lbl ?></option>
+                                                            <option value="<?= $val ?>" <?= $form_field['field_type'] === $val ? 'selected' : '' ?>><?= $lbl ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                                 <div class="field">
                                                     <label>Ordre</label>
-                                                    <input type="number" name="ff_ordre" value="<?= $ff['ordre'] ?>" min="0">
+                                                    <input type="number" name="ff_ordre" value="<?= $form_field['ordre'] ?>" min="0">
                                                 </div>
                                                 <div class="field">
                                                     <label>Groupe (carte)</label>
                                                     <?php if (!empty($existing_groups)): ?>
                                                         <select name="ff_card_group">
-                                                            <?php foreach ($existing_groups as $g): ?>
-                                                                <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $ff['card_group'] === $g ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>
+                                                            <?php foreach ($existing_groups as $existing_group): ?>
+                                                                <option value="<?= \App\Core\App::html()->escape($existing_group) ?>" <?= $form_field['card_group'] === $existing_group ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($existing_group) ?></option>
                                                             <?php endforeach; ?>
-                                                            <option value="__new__" <?= !in_array($ff['card_group'], $existing_groups) ? 'selected' : '' ?>>— Nouveau groupe —</option>
+                                                            <option value="__new__" <?= in_array($form_field['card_group'], $existing_groups) ? '' : 'selected' ?>>— Nouveau groupe —</option>
                                                         </select>
                                                     <?php endif; ?>
                                                     <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" style="margin-top:.3rem;" value="">
@@ -1165,26 +1180,26 @@ Voici le document administratif à analyser :
                                                 </div>
                                                 <div class="field">
                                                     <label>Options <span class="hint">(une par ligne, uniquement pour Sélecteur)</span></label>
-                                                    <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"><?= \App\Core\App::html()->escape($this->optionsToLines($ff['options'] ?? '')) ?></textarea>
+                                                    <textarea name="ff_options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"><?= \App\Core\App::html()->escape($this->optionsToLines($form_field['options'] ?? '')) ?></textarea>
                                                 </div>
                                                 <div class="field">
                                                     <label>Indication <span class="hint">(texte d'aide sous le champ)</span></label>
-                                                    <input type="text" name="ff_hint" value="<?= \App\Core\App::html()->escape($ff['hint'] ?? '') ?>" placeholder="ex : en euros TTC">
+                                                    <input type="text" name="ff_hint" value="<?= \App\Core\App::html()->escape($form_field['hint'] ?? '') ?>" placeholder="ex : en euros TTC">
                                                 </div>
                                                 <div class="field">
                                                     <label>Rempli par</label>
                                                     <select name="ff_filled_by">
-                                                        <option value="demandeur" <?= ($ff['filled_by'] ?? '') === 'demandeur' || ($ff['filled_by'] ?? '') === '' ? 'selected' : '' ?>>Demandeur</option>
-                                                        <option value="validator" <?= ($ff['filled_by'] ?? '') === 'validator' ? 'selected' : '' ?>>Validateur</option>
+                                                        <option value="demandeur" <?= ($form_field['filled_by'] ?? '') === 'demandeur' || ($form_field['filled_by'] ?? '') === '' ? 'selected' : '' ?>>Demandeur</option>
+                                                        <option value="validator" <?= ($form_field['filled_by'] ?? '') === 'validator' ? 'selected' : '' ?>>Validateur</option>
                                                     </select>
                                                 </div>
                                                 <div class="field">
                                                     <label>Étape de validation <span class="hint">(obligatoire si "Validateur" ; laisser vide pour toutes les étapes)</span></label>
                                                     <select name="ff_validator_step">
                                                         <option value="">— Champ global (toutes étapes) —</option>
-                                                        <?php foreach ($steps as $s): ?>
-                                                            <option value="<?= \App\Core\App::html()->escape($s['id']) ?>" <?= (($ff['validator_step'] ?? '') === $s['id'] || ($ff['validator_step'] ?? '') === $s['label']) ? 'selected' : '' ?>>
-                                                                <?= \App\Core\App::html()->escape($s['label']) ?>
+                                                        <?php foreach ($steps as $step): ?>
+                                                            <option value="<?= \App\Core\App::html()->escape($step['id']) ?>" <?= (($form_field['validator_step'] ?? '') === $step['id'] || ($form_field['validator_step'] ?? '') === $step['label']) ? 'selected' : '' ?>>
+                                                                <?= \App\Core\App::html()->escape($step['label']) ?>
                                                             </option>
                                                         <?php endforeach; ?>
                                                     </select>
@@ -1192,61 +1207,61 @@ Voici le document administratif à analyser :
                                                 <div class="field ff-visibility-field">
                                                     <label>Visibilité <span class="hint">(uniquement pour les pièces jointes)</span></label>
                                                     <select name="ff_visibility">
-                                                        <option value="all" <?= (($ff['visibility'] ?? 'all') === 'all') ? 'selected' : '' ?>>Tous (validateurs + owner)</option>
-                                                        <option value="owner_only" <?= (($ff['visibility'] ?? 'all') === 'owner_only') ? 'selected' : '' ?>>Owner uniquement (caché des validateurs)</option>
+                                                        <option value="all" <?= (($form_field['visibility'] ?? 'all') === 'all') ? 'selected' : '' ?>>Tous (validateurs + owner)</option>
+                                                        <option value="owner_only" <?= (($form_field['visibility'] ?? 'all') === 'owner_only') ? 'selected' : '' ?>>Owner uniquement (caché des validateurs)</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div class="field" style="margin-top:.25rem;">
                                                 <label class="checkbox-label">
-                                                    <input type="checkbox" name="ff_required" <?= $ff['required'] ? 'checked' : '' ?>> Champ obligatoire <span class="required-star">*</span>
+                                                    <input type="checkbox" name="ff_required" <?= $form_field['required'] ? 'checked' : '' ?>> Champ obligatoire <span class="required-star">*</span>
                                                 </label>
                                             </div>
                                             <div style="display:flex;gap:.5rem;margin-top:.5rem;">
                                                 <button type="submit" class="btn btn-primary">Enregistrer</button>
-                                                <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>#field-<?= $ff['id'] ?>" class="btn btn-secondary">Annuler</a>
+                                                <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>#field-<?= $form_field['id'] ?>" class="btn btn-secondary">Annuler</a>
                                             </div>
                                         </form>
                                     </td>
                                 </tr>
                             <?php else: ?>
-                                <tr id="field-<?= \App\Core\App::html()->escape($ff['id']) ?>">
-                                    <td><?= \App\Core\App::html()->escape((string)$ff['ordre']) ?></td>
-                                    <td><span style="font-size:.8rem;color:#666;"><?= \App\Core\App::html()->escape($ff['card_group']) ?></span></td>
+                                <tr id="field-<?= \App\Core\App::html()->escape($form_field['id']) ?>">
+                                    <td><?= \App\Core\App::html()->escape((string) $form_field['ordre']) ?></td>
+                                    <td><span style="font-size:.8rem;color:#666;"><?= \App\Core\App::html()->escape($form_field['card_group']) ?></span></td>
                                     <td>
-                                        <?= \App\Core\App::html()->escape($ff['label']) ?>
-                                        <?php if ($ff['required']): ?>
+                                        <?= \App\Core\App::html()->escape($form_field['label']) ?>
+                                        <?php if ($form_field['required']): ?>
                                             <span class="required-star" title="Champ obligatoire">*</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><code style="font-size:.78rem;background:#eef;padding:.1rem .3rem;border-radius:2px;"><?= \App\Core\App::html()->escape($ff['field_name']) ?></code></td>
+                                    <td><code style="font-size:.78rem;background:#eef;padding:.1rem .3rem;border-radius:2px;"><?= \App\Core\App::html()->escape($form_field['field_name']) ?></code></td>
                                     <td>
                                         <span class="field-type-badge">
-                                            <?= $this->fieldTypeIcon($ff['field_type']) ?>
-                                            <?= $this->fieldTypeLabel($ff['field_type']) ?>
+                                            <?= $this->fieldTypeIcon($form_field['field_type']) ?>
+                                            <?= $this->fieldTypeLabel($form_field['field_type']) ?>
                                         </span>
                                     </td>
-                                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= \App\Core\App::html()->escape($ff['options'] ?? '') ?>">
+                                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= \App\Core\App::html()->escape($form_field['options'] ?? '') ?>">
                                         <?php
-                                        $opts = $ff['options'] ?? '';
-                                        if (!empty($opts)) {
-                                            $decoded = json_decode($opts, true);
-                                            if (is_array($decoded)) {
-                                                echo \App\Core\App::html()->escape(implode(', ', $decoded));
-                                            } else {
-                                                echo \App\Core\App::html()->escape($opts);
-                                            }
-                                        } else {
-                                            echo '—';
-                                        }
-                                        ?>
+                                        $opts = $form_field['options'] ?? '';
+                            if (!empty($opts)) {
+                                $decoded = json_decode($opts, true);
+                                if (is_array($decoded)) {
+                                    echo \App\Core\App::html()->escape(implode(', ', $decoded));
+                                } else {
+                                    echo \App\Core\App::html()->escape($opts);
+                                }
+                            } else {
+                                echo '—';
+                            }
+                            ?>
                                     </td>
                                     <td class="actions">
-                                        <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#field-<?= $ff['id'] ?>" class="btn btn-secondary" style="font-size:.76rem;padding:.25rem .5rem;">Modifier</a>
+                                        <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_field=<?= $form_field['id'] ?>#field-<?= $form_field['id'] ?>" class="btn btn-secondary" style="font-size:.76rem;padding:.25rem .5rem;">Modifier</a>
                                         <form method="POST" style="display:inline;">
                                             <?= \App\Core\App::security()->csrfField() ?>
                                             <input type="hidden" name="action" value="delete_field">
-                                            <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
+                                            <input type="hidden" name="field_id" value="<?= $form_field['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
                                             <button type="submit" class="btn btn-danger" style="font-size:.76rem;padding:.25rem .5rem;" onclick="return confirm('Supprimer ce champ ? Les données associées seront perdues.');">Supprimer</button>
                                         </form>
@@ -1295,8 +1310,8 @@ Voici le document administratif à analyser :
                             <label>Groupe (carte)</label>
                             <?php if (!empty($existing_groups)): ?>
                                 <select name="ff_card_group">
-                                    <?php foreach ($existing_groups as $g): ?>
-                                        <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $g === 'Général' ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>
+                                    <?php foreach ($existing_groups as $existing_group): ?>
+                                        <option value="<?= \App\Core\App::html()->escape($existing_group) ?>" <?= $existing_group === 'Général' ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($existing_group) ?></option>
                                     <?php endforeach; ?>
                                     <option value="__new__">— Nouveau groupe —</option>
                                 </select>
@@ -1324,9 +1339,9 @@ Voici le document administratif à analyser :
                             <label>Étape de validation <span class="hint">(obligatoire si "Validateur" ; laisser vide pour toutes les étapes)</span></label>
                             <select name="ff_validator_step">
                                 <option value="">— Champ global (toutes étapes) —</option>
-                                <?php foreach ($steps as $s): ?>
-                                    <option value="<?= \App\Core\App::html()->escape($s['id']) ?>">
-                                        <?= \App\Core\App::html()->escape($s['label']) ?>
+                                <?php foreach ($steps as $step): ?>
+                                    <option value="<?= \App\Core\App::html()->escape($step['id']) ?>">
+                                        <?= \App\Core\App::html()->escape($step['label']) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>

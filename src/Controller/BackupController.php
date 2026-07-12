@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -22,9 +23,9 @@ final class BackupController extends BaseController
         $dbPath = defined('DB_PATH') ? DB_PATH : dirname(__DIR__, 2) . '/db/workflow.db';
 
         $dbTables = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens',
-                      'admins', 'admin_requests', 'settings', 'form_fields',
-                      'audit_log', 'alert_rules', 'alert_log',
-                      'submission_validator_data'];
+            'admins', 'admin_requests', 'settings', 'form_fields',
+            'audit_log', 'alert_rules', 'alert_log',
+            'submission_validator_data'];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->security->requireCsrf();
@@ -63,7 +64,7 @@ final class BackupController extends BaseController
                     $tmpPath  = $_FILES['backup_file']['tmp_name'];
                     $origName = $_FILES['backup_file']['name'];
 
-                    if (strtolower(pathinfo($origName, PATHINFO_EXTENSION)) !== 'db') {
+                    if (strtolower(pathinfo((string) $origName, PATHINFO_EXTENSION)) !== 'db') {
                         $errorMsg = 'Seuls les fichiers .db sont acceptés. Fichier fourni : ' . \App\Core\App::html()->escape($origName);
                     } elseif (!$this->isValidSqliteDb($tmpPath)) {
                         $errorMsg = 'Le fichier fourni n\'est pas une base de données SQLite valide. Vérifiez le fichier et réessayez.';
@@ -79,11 +80,14 @@ final class BackupController extends BaseController
                                 $testPdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                                 $testPdo->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
                                 $testPdo = null;
-                                App::audit()->log('backup_restore', 'database',
-                                    'Base restaurée depuis le fichier : ' . \App\Core\App::html()->escape($origName) .
-                                    ' (sauvegarde pré-restauration : ' . basename($backupBefore) . ')');
-                                $successMsg = 'La base de données a été restaurée avec succès depuis « ' . \App\Core\App::html()->escape($origName) . ' ». ' .
-                                               'Une copie de la base précédente a été conservée : ' . \App\Core\App::html()->escape(basename($backupBefore));
+                                App::audit()->log(
+                                    'backup_restore',
+                                    'database',
+                                    'Base restaurée depuis le fichier : ' . \App\Core\App::html()->escape($origName)
+                                    . ' (sauvegarde pré-restauration : ' . basename($backupBefore) . ')'
+                                );
+                                $successMsg = 'La base de données a été restaurée avec succès depuis « ' . \App\Core\App::html()->escape($origName) . ' ». '
+                                               . 'Une copie de la base précédente a été conservée : ' . \App\Core\App::html()->escape(basename($backupBefore));
                             } catch (\Exception $e) {
                                 if (file_exists($backupBefore)) {
                                     copy($backupBefore, $dbPath);
@@ -102,7 +106,7 @@ final class BackupController extends BaseController
             }
 
             if ($action === 'purge_count') {
-                $months = (int)($_POST['purge_months'] ?? 0);
+                $months = (int) ($_POST['purge_months'] ?? 0);
                 if (!in_array($months, [6, 12, 18, 24], true)) {
                     $errorMsg = 'Valeur de mois invalide.';
                 } else {
@@ -112,7 +116,7 @@ final class BackupController extends BaseController
             }
 
             if ($action === 'purge_confirm') {
-                $months = (int)($_POST['purge_months'] ?? 0);
+                $months = (int) ($_POST['purge_months'] ?? 0);
                 if (!in_array($months, [6, 12, 18, 24], true)) {
                     $errorMsg = 'Valeur de mois invalide.';
                 } else {
@@ -158,18 +162,21 @@ final class BackupController extends BaseController
 
                                 $pdo->exec('VACUUM');
 
-                                App::audit()->log('purge_data', 'database',
-                                    "Purge effectuée : {$submissionsDeleted} soumissions, " .
-                                    "{$tokensDeleted} tokens, {$alertLogsDeleted} alert_logs, " .
-                                    "{$validatorDataDeleted} submission_validator_data " .
-                                    "(soumissions clôturées depuis + de {$months} mois, avant le {$cutoff})");
+                                App::audit()->log(
+                                    'purge_data',
+                                    'database',
+                                    "Purge effectuée : {$submissionsDeleted} soumissions, "
+                                    . "{$tokensDeleted} tokens, {$alertLogsDeleted} alert_logs, "
+                                    . "{$validatorDataDeleted} submission_validator_data "
+                                    . "(soumissions clôturées depuis + de {$months} mois, avant le {$cutoff})"
+                                );
 
-                                $successMsg = "Purge effectuée avec succès : " .
-                                    "<strong>{$submissionsDeleted}</strong> soumission(s), " .
-                                    "<strong>{$tokensDeleted}</strong> token(s), " .
-                                    "<strong>{$alertLogsDeleted}</strong> alerte(s), " .
-                                    "<strong>{$validatorDataDeleted}</strong> donnée(s) validateur " .
-                                    "supprimée(s) (données clôturées depuis plus de {$months} mois).";
+                                $successMsg = 'Purge effectuée avec succès : '
+                                    . "<strong>{$submissionsDeleted}</strong> soumission(s), "
+                                    . "<strong>{$tokensDeleted}</strong> token(s), "
+                                    . "<strong>{$alertLogsDeleted}</strong> alerte(s), "
+                                    . "<strong>{$validatorDataDeleted}</strong> donnée(s) validateur "
+                                    . "supprimée(s) (données clôturées depuis plus de {$months} mois).";
                             } else {
                                 $infoMsg = 'Aucune donnée à purger.';
                             }
@@ -202,27 +209,27 @@ final class BackupController extends BaseController
             try {
                 $countStmt = $pdo->query(implode(' UNION ALL ', $unionParts));
                 while ($countStmt !== false && $row = $countStmt->fetch(\PDO::FETCH_ASSOC)) {
-                    $dbStats['row_counts'][$row['tbl']] = (int)$row['cnt'];
+                    $dbStats['row_counts'][$row['tbl']] = (int) $row['cnt'];
                 }
             } catch (\Exception $e) {
-                foreach ($dbTables as $table) {
-                    $dbStats['row_counts'][$table] = '—';
+                foreach ($dbTables as $dbTable) {
+                    $dbStats['row_counts'][$dbTable] = '—';
                 }
                 error_log('backup row count error: ' . $e->getMessage());
             }
 
-            $oldest = $pdo->query("SELECT MIN(submitted_at) FROM submissions")->fetchColumn();
-            $newest = $pdo->query("SELECT MAX(submitted_at) FROM submissions")->fetchColumn();
-            $oldestStr = $oldest !== false ? (string)$oldest : '';
-            $newestStr = $newest !== false ? (string)$newest : '';
+            $oldest = $pdo->query('SELECT MIN(submitted_at) FROM submissions')->fetchColumn();
+            $newest = $pdo->query('SELECT MAX(submitted_at) FROM submissions')->fetchColumn();
+            $oldestStr = $oldest !== false ? (string) $oldest : '';
+            $newestStr = $newest !== false ? (string) $newest : '';
             $oldestTs = $oldestStr !== '' ? strtotime($oldestStr) : false;
             $newestTs = $newestStr !== '' ? strtotime($newestStr) : false;
             $dbStats['oldest_submission'] = ($oldestStr !== '' && $oldestTs !== false) ? date('d/m/Y H:i', $oldestTs) : '—';
             $dbStats['newest_submission'] = ($newestStr !== '' && $newestTs !== false) ? date('d/m/Y H:i', $newestTs) : '—';
 
-            $pageCount    = (int)$pdo->query("PRAGMA page_count")->fetchColumn();
-            $freelistCount = (int)$pdo->query("PRAGMA freelist_count")->fetchColumn();
-            $pageSize     = (int)$pdo->query("PRAGMA page_size")->fetchColumn();
+            $pageCount    = (int) $pdo->query('PRAGMA page_count')->fetchColumn();
+            $freelistCount = (int) $pdo->query('PRAGMA freelist_count')->fetchColumn();
+            $pageSize     = (int) $pdo->query('PRAGMA page_size')->fetchColumn();
             $dbStats['page_count']     = $pageCount;
             $dbStats['freelist_count'] = $freelistCount;
             $dbStats['page_size']      = $pageSize;
@@ -233,7 +240,7 @@ final class BackupController extends BaseController
             $dbStats['error'] = 'Une erreur technique est survenue.';
         }
 
-        $purgePreview = $purgePreview ?? null;
+        $purgePreview ??= null;
 
         (new BackupRenderer())->renderPage($dbPath, $dbStats, $purgePreview, $successMsg, $errorMsg, $infoMsg);
     }
@@ -249,7 +256,7 @@ final class BackupController extends BaseController
         }
         $header = fread($handle, 16);
         fclose($handle);
-        return $header !== false && strpos($header, 'SQLite format 3') === 0;
+        return $header !== false && str_starts_with($header, 'SQLite format 3');
     }
 
     private function countPurgeTargets(int $months): array
@@ -265,7 +272,7 @@ final class BackupController extends BaseController
               AND closed_at < ?
         ");
         $stmt->execute([$cutoff]);
-        $submissions = (int)$stmt->fetchColumn();
+        $submissions = (int) $stmt->fetchColumn();
 
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM tokens t
@@ -275,7 +282,7 @@ final class BackupController extends BaseController
               AND s.closed_at < ?
         ");
         $stmt->execute([$cutoff]);
-        $tokens = (int)$stmt->fetchColumn();
+        $tokens = (int) $stmt->fetchColumn();
 
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM alert_log al
@@ -285,7 +292,7 @@ final class BackupController extends BaseController
               AND s.closed_at < ?
         ");
         $stmt->execute([$cutoff]);
-        $alertLogs = (int)$stmt->fetchColumn();
+        $alertLogs = (int) $stmt->fetchColumn();
 
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM submission_validator_data svd
@@ -295,7 +302,7 @@ final class BackupController extends BaseController
               AND s.closed_at < ?
         ");
         $stmt->execute([$cutoff]);
-        $validatorData = (int)$stmt->fetchColumn();
+        $validatorData = (int) $stmt->fetchColumn();
 
         return [
             'submissions'       => $submissions,
@@ -307,10 +314,12 @@ final class BackupController extends BaseController
 
     private function formatBytes(int $bytes, int $precision = 2): string
     {
-        if ($bytes <= 0) return '0 o';
+        if ($bytes <= 0) {
+            return '0 o';
+        }
         $units = ['o', 'Ko', 'Mo', 'Go'];
-        $power = (int)floor(log($bytes, 1024));
+        $power = (int) floor(log($bytes, 1024));
         $power = min($power, count($units) - 1);
-        return round($bytes / pow(1024, $power), $precision) . ' ' . $units[$power];
+        return round($bytes / 1024 ** $power, $precision) . ' ' . $units[$power];
     }
 }

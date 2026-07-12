@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -23,20 +24,20 @@ final class AdminAlertsController extends BaseController
 
             if ($action === 'add_rule') {
                 $formId = trim($_POST['form_id'] ?? '');
-                $daysBefore = (int)($_POST['days_before'] ?? 5);
+                $daysBefore = (int) ($_POST['days_before'] ?? 5);
                 $conditionType = trim($_POST['condition_type'] ?? 'steps_incomplete');
                 $notifyWho = trim($_POST['notify_who'] ?? 'admin');
                 $label = trim($_POST['label'] ?? '');
                 $customEmail = trim($_POST['custom_email'] ?? '');
 
-                if (empty($formId)) {
+                if ($formId === '' || $formId === '0') {
                     $errorMsg = 'Veuillez sélectionner un formulaire.';
                 } elseif ($daysBefore < 0) {
                     $errorMsg = 'Le nombre de jours doit être positif ou zéro.';
-                } elseif (empty($label)) {
+                } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {
-                    if ($notifyWho === 'custom' && !empty($customEmail)) {
+                    if ($notifyWho === 'custom' && ($customEmail !== '' && $customEmail !== '0')) {
                         if (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
                             $errorMsg = 'L\'adresse email personnalisée est invalide.';
                         } else {
@@ -44,7 +45,7 @@ final class AdminAlertsController extends BaseController
                         }
                     }
 
-                    if (empty($errorMsg)) {
+                    if ($errorMsg === '' || $errorMsg === '0') {
                         try {
                             $ruleId = $this->alertRepo->createRule([
                                 'form_id'        => $formId,
@@ -61,10 +62,9 @@ final class AdminAlertsController extends BaseController
                         }
                     }
                 }
-            }
-            elseif ($action === 'update_rule') {
+            } elseif ($action === 'update_rule') {
                 $ruleId = trim($_POST['rule_id'] ?? '');
-                $daysBefore = (int)($_POST['days_before'] ?? 5);
+                $daysBefore = (int) ($_POST['days_before'] ?? 5);
                 $conditionType = trim($_POST['condition_type'] ?? 'steps_incomplete');
                 $notifyWho = trim($_POST['notify_who'] ?? 'admin');
                 $label = trim($_POST['label'] ?? '');
@@ -73,10 +73,10 @@ final class AdminAlertsController extends BaseController
 
                 if ($daysBefore < 0) {
                     $errorMsg = 'Le nombre de jours doit être positif ou zéro.';
-                } elseif (empty($label)) {
+                } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {
-                    if ($notifyWho === 'custom' && !empty($customEmail)) {
+                    if ($notifyWho === 'custom' && ($customEmail !== '' && $customEmail !== '0')) {
                         if (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
                             $errorMsg = 'L\'adresse email personnalisée est invalide.';
                         } else {
@@ -84,7 +84,7 @@ final class AdminAlertsController extends BaseController
                         }
                     }
 
-                    if (empty($errorMsg)) {
+                    if ($errorMsg === '' || $errorMsg === '0') {
                         try {
                             $this->alertRepo->updateRule($ruleId, [
                                 'days_before'    => $daysBefore,
@@ -101,8 +101,7 @@ final class AdminAlertsController extends BaseController
                         }
                     }
                 }
-            }
-            elseif ($action === 'delete_rule') {
+            } elseif ($action === 'delete_rule') {
                 $ruleId = trim($_POST['rule_id'] ?? '');
                 try {
                     $this->alertRepo->deleteRule($ruleId);
@@ -112,12 +111,11 @@ final class AdminAlertsController extends BaseController
                     error_log('alert_rule_delete error: ' . $e->getMessage());
                     $errorMsg = 'Une erreur technique est survenue.';
                 }
-            }
-            elseif ($action === 'update_deadline_field') {
+            } elseif ($action === 'update_deadline_field') {
                 $formId = trim($_POST['form_id'] ?? '');
                 $deadlineField = trim($_POST['deadline_field'] ?? '');
 
-                if (!empty($formId)) {
+                if ($formId !== '' && $formId !== '0') {
                     try {
                         $this->formRepo->setDeadlineField($formId, $deadlineField);
                         App::audit()->log('deadline_field_update', 'form:' . $formId, 'Champ deadline mis à jour : ' . ($deadlineField ?: '(aucun)'));
@@ -127,9 +125,8 @@ final class AdminAlertsController extends BaseController
                         $errorMsg = 'Une erreur technique est survenue.';
                     }
                 }
-            }
-            elseif ($action === 'delete_alert_log') {
-                $retentionDays = (int)App::settings()->get('alert_log_retention_days', '90');
+            } elseif ($action === 'delete_alert_log') {
+                $retentionDays = (int) App::settings()->get('alert_log_retention_days', '90');
                 try {
                     $this->alertRepo->purgeOldLogs($retentionDays);
                     App::audit()->log('alert_log_purge', 'alert_log', "Purge des logs d'alerte > {$retentionDays} jours");
@@ -152,16 +149,9 @@ final class AdminAlertsController extends BaseController
         $lastAlertCheck = App::settings()->get('last_alert_check', '');
 
         $dateFieldsByForm = [];
-        foreach ($forms as $f) {
-            $dateFieldsByForm[$f['id']] = $this->formRepo->getDateFields($f['id']);
+        foreach ($forms as $form) {
+            $dateFieldsByForm[$form['id']] = $this->formRepo->getDateFields($form['id']);
         }
-
-        $navExtra = [
-            'alerts'    => ['href' => 'index.php?p=admin_alerts', 'label' => 'Alertes', 'icon' => '🔔'],
-            'monitoring'=> ['href' => 'index.php?p=monitoring',   'label' => 'Surveillance', 'icon' => '🖥'],
-            'stats'     => ['href' => 'index.php?p=stats',         'label' => 'Statistiques', 'icon' => '📈'],
-            'rgpd'      => ['href' => 'index.php?p=rgpd',          'label' => 'RGPD', 'icon' => '🔐'],
-        ];
 
         $content = \App\Render\AdminAlertsRenderer::content(
             $successMsg,
@@ -173,7 +163,7 @@ final class AdminAlertsController extends BaseController
             $editRuleId,
             $dateFieldsByForm,
         );
-        echo $this->renderPage('Alertes', 'alerts', '', $content, ['nav_extra' => $navExtra]);
+        echo $this->renderPage('Alertes', 'alerts', '', $content);
     }
 
 }

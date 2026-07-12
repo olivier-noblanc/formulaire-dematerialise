@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Forms;
@@ -13,15 +14,10 @@ use App\Core\Database;
  * getSubmissionValidatorData (filtrage par step) et
  * getValidatorStatusBatch (batch avec pré-résolution form_id).
  */
-final class ValidatorDataService
+final readonly class ValidatorDataService
 {
-    private Database $db;
-    private FieldService $fields;
-
-    public function __construct(Database $db, FieldService $fields)
+    public function __construct(private Database $database, private FieldService $fieldService)
     {
-        $this->db = $db;
-        $this->fields = $fields;
     }
 
     /**
@@ -29,18 +25,18 @@ final class ValidatorDataService
      */
     public function getSubmissionValidatorData(string $submissionId, ?string $stepId = null): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         if ($stepId !== null && $stepId !== '') {
-            $formIdStmt = $pdo->prepare("SELECT form_id FROM submissions WHERE id = ?");
+            $formIdStmt = $pdo->prepare('SELECT form_id FROM submissions WHERE id = ?');
             $formIdStmt->execute([$submissionId]);
-            $formId = (string)$formIdStmt->fetchColumn();
+            $formId = (string) $formIdStmt->fetchColumn();
 
             $stepLabel = '';
             if ($formId !== '') {
-                $labelStmt = $pdo->prepare("SELECT label FROM steps WHERE id = ? AND form_id = ?");
+                $labelStmt = $pdo->prepare('SELECT label FROM steps WHERE id = ? AND form_id = ?');
                 $labelStmt->execute([$stepId, $formId]);
-                $stepLabel = (string)$labelStmt->fetchColumn();
+                $stepLabel = (string) $labelStmt->fetchColumn();
             }
 
             $sql = "
@@ -88,9 +84,15 @@ final class ValidatorDataService
         ?string $filledByEmail = null,
         ?string $tokenId = null
     ): void {
-        $this->fields->saveValidatorData(
-            $submissionId, $fieldName, $value, $filledBy,
-            $stepId, $stepLabel, $filledByEmail, $tokenId
+        $this->fieldService->saveValidatorData(
+            $submissionId,
+            $fieldName,
+            $value,
+            $filledBy,
+            $stepId,
+            $stepLabel,
+            $filledByEmail,
+            $tokenId
         );
     }
 
@@ -100,7 +102,7 @@ final class ValidatorDataService
      */
     public function deleteValidatorData(string $submissionId, string $fieldName): void
     {
-        $this->fields->deleteValidatorData($submissionId, $fieldName);
+        $this->fieldService->deleteValidatorData($submissionId, $fieldName);
     }
 
     /**
@@ -109,7 +111,7 @@ final class ValidatorDataService
      */
     public function getFormValidatorFields(string $formId, ?string $stepId = null): array
     {
-        return $this->fields->getValidatorFields($formId, $stepId);
+        return $this->fieldService->getValidatorFields($formId, $stepId);
     }
 
     /**
@@ -118,7 +120,7 @@ final class ValidatorDataService
      */
     public function getFormFields(string $formId, ?string $filledBy = null): array
     {
-        return $this->fields->getFields($formId, $filledBy);
+        return $this->fieldService->getFields($formId, $filledBy);
     }
 
     /**
@@ -127,17 +129,17 @@ final class ValidatorDataService
      */
     public function getValidatorStatusBatch(array $submissions): array
     {
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
-        if (empty($submissions)) {
+        if ($submissions === []) {
             return [];
         }
 
         $formIdBySub = [];
         $subIdsIndex = [];
-        foreach ($submissions as $sub) {
-            $subId  = (string)($sub['id'] ?? '');
-            $formId = (string)($sub['form_id'] ?? '');
+        foreach ($submissions as $submission) {
+            $subId  = (string) ($submission['id'] ?? '');
+            $formId = (string) ($submission['form_id'] ?? '');
             if ($subId === '' || $formId === '') {
                 continue;
             }
@@ -145,7 +147,7 @@ final class ValidatorDataService
             $subIdsIndex[$subId] = true;
         }
 
-        if (empty($subIdsIndex)) {
+        if ($subIdsIndex === []) {
             return [];
         }
 
@@ -158,8 +160,8 @@ final class ValidatorDataService
         $stmtFields->execute($formIds);
         $validatorFieldsByForm = [];
         foreach ($stmtFields->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-            $fid = (string)($r['form_id'] ?? '');
-            $fn  = (string)($r['field_name'] ?? '');
+            $fid = (string) ($r['form_id'] ?? '');
+            $fn  = (string) ($r['field_name'] ?? '');
             if ($fid !== '' && $fn !== '') {
                 $validatorFieldsByForm[$fid][] = $fn;
             }
@@ -175,8 +177,8 @@ final class ValidatorDataService
         $stmtData->execute($subIdList);
         $filledBySub = [];
         foreach ($stmtData->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-            $sid = (string)($r['submission_id'] ?? '');
-            $fn  = (string)($r['field_name'] ?? '');
+            $sid = (string) ($r['submission_id'] ?? '');
+            $fn  = (string) ($r['field_name'] ?? '');
             if ($sid !== '' && $fn !== '') {
                 $filledBySub[$sid][] = $fn;
             }

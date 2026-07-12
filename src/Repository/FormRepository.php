@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repository;
@@ -7,43 +8,43 @@ final class FormRepository extends BaseRepository
 {
     public function findById(string $id): ?array
     {
-        return $this->fetchOne("SELECT * FROM forms WHERE id = ?", [$id]);
+        return $this->fetchOne('SELECT * FROM forms WHERE id = ?', [$id]);
     }
 
     public function findBySlug(string $slug): ?array
     {
-        return $this->fetchOne("SELECT * FROM forms WHERE slug = ?", [$slug]);
+        return $this->fetchOne('SELECT * FROM forms WHERE slug = ?', [$slug]);
     }
 
     public function findActiveBySlug(string $slug): ?array
     {
-        return $this->fetchOne("SELECT * FROM forms WHERE slug = ? AND actif = 1", [$slug]);
+        return $this->fetchOne('SELECT * FROM forms WHERE slug = ? AND actif = 1', [$slug]);
     }
 
     public function findIdBySlug(string $slug): ?string
     {
-        $result = $this->fetchOne("SELECT id FROM forms WHERE slug = ?", [$slug]);
+        $result = $this->fetchOne('SELECT id FROM forms WHERE slug = ?', [$slug]);
         return $result !== null ? (string) $result['id'] : null;
     }
 
     public function findActiveList(): array
     {
-        return $this->fetchAll("SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label");
+        return $this->fetchAll('SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label');
     }
 
     public function findAll(bool $activeOnly = false): array
     {
-        $sql = "SELECT * FROM forms";
+        $sql = 'SELECT * FROM forms';
         if ($activeOnly) {
-            $sql .= " WHERE actif = 1";
+            $sql .= ' WHERE actif = 1';
         }
-        return $this->fetchAll($sql . " ORDER BY label");
+        return $this->fetchAll($sql . ' ORDER BY label');
     }
 
     public function findOwnedBy(string $email): array
     {
         return $this->fetchAll(
-            "SELECT f.* FROM forms f JOIN form_owners fo ON fo.form_id = f.id WHERE fo.email = ? ORDER BY f.label",
+            'SELECT f.* FROM forms f JOIN form_owners fo ON fo.form_id = f.id WHERE fo.email = ? ORDER BY f.label',
             [$email]
         );
     }
@@ -67,18 +68,18 @@ final class FormRepository extends BaseRepository
             $params[] = $value;
         }
         $params[] = $id;
-        return $this->execute("UPDATE forms SET " . implode(', ', $fields) . " WHERE id = ?", $params);
+        return $this->execute('UPDATE forms SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);
     }
 
     public function delete(string $id): bool
     {
-        return $this->execute("DELETE FROM forms WHERE id = ?", [$id]);
+        return $this->execute('DELETE FROM forms WHERE id = ?', [$id]);
     }
 
     public function getFields(string $formId): array
     {
         return $this->fetchAll(
-            "SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre",
+            'SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre',
             [$formId]
         );
     }
@@ -86,7 +87,7 @@ final class FormRepository extends BaseRepository
     public function getSteps(string $formId): array
     {
         return $this->fetchAll(
-            "SELECT * FROM steps WHERE form_id = ? ORDER BY ordre",
+            'SELECT * FROM steps WHERE form_id = ? ORDER BY ordre',
             [$formId]
         );
     }
@@ -94,7 +95,7 @@ final class FormRepository extends BaseRepository
     public function getOwners(string $formId): array
     {
         return $this->fetchAll(
-            "SELECT * FROM form_owners WHERE form_id = ? ORDER BY email",
+            'SELECT * FROM form_owners WHERE form_id = ? ORDER BY email',
             [$formId]
         );
     }
@@ -110,7 +111,7 @@ final class FormRepository extends BaseRepository
     public function removeOwner(string $formId, string $email): bool
     {
         return $this->execute(
-            "DELETE FROM form_owners WHERE form_id = ? AND email = ?",
+            'DELETE FROM form_owners WHERE form_id = ? AND email = ?',
             [$formId, strtolower($email)]
         );
     }
@@ -125,17 +126,19 @@ final class FormRepository extends BaseRepository
 
     public function setDeadlineField(string $formId, string $deadlineField): bool
     {
-        return $this->execute("UPDATE forms SET deadline_field = ? WHERE id = ?", [$deadlineField, $formId]);
+        return $this->execute('UPDATE forms SET deadline_field = ? WHERE id = ?', [$deadlineField, $formId]);
     }
 
     public function findActiveSlugsAndLabels(): array
     {
-        return $this->fetchAll("SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label");
+        return $this->fetchAll('SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label');
     }
 
     public function getWorkflowStepsByFormIds(array $formIds): array
     {
-        if (empty($formIds)) return [];
+        if ($formIds === []) {
+            return [];
+        }
         $placeholders = implode(',', array_fill(0, count($formIds), '?'));
         $rows = $this->fetchAll(
             "SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.form_id,
@@ -171,7 +174,7 @@ final class FormRepository extends BaseRepository
 
     public function findOwnerEmailById(string $ownerId): ?string
     {
-        $result = $this->fetchOne("SELECT email FROM form_owners WHERE id = ?", [$ownerId]);
+        $result = $this->fetchOne('SELECT email FROM form_owners WHERE id = ?', [$ownerId]);
         return $result !== null ? (string) $result['email'] : null;
     }
 
@@ -181,7 +184,7 @@ final class FormRepository extends BaseRepository
     {
         $id = \generate_uuid();
         $this->execute(
-            "INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [$id, $data['form_id'], $data['label'], $data['field_type'] ?? 'text', $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $data['required'] ?? 0, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? 'demandeur', $data['validator_step'] ?? '', $data['visibility'] ?? 'all']
         );
         return $id;
@@ -196,12 +199,12 @@ final class FormRepository extends BaseRepository
             $params[] = $value;
         }
         $params[] = $fieldId;
-        return $this->execute("UPDATE form_fields SET " . implode(', ', $fields) . " WHERE id = ?", $params);
+        return $this->execute('UPDATE form_fields SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);
     }
 
     public function deleteField(string $fieldId): bool
     {
-        return $this->execute("DELETE FROM form_fields WHERE id = ?", [$fieldId]);
+        return $this->execute('DELETE FROM form_fields WHERE id = ?', [$fieldId]);
     }
 
     // ── Step CRUD ───────────────────────────────────────────────
@@ -210,7 +213,7 @@ final class FormRepository extends BaseRepository
     {
         $id = \generate_uuid();
         $this->execute(
-            "INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)",
+            'INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)',
             [$id, $data['form_id'], $data['label'], $data['ordre'] ?? 0, $data['actif'] ?? 1, $data['condition'] ?? '']
         );
         return $id;
@@ -225,13 +228,13 @@ final class FormRepository extends BaseRepository
             $params[] = $value;
         }
         $params[] = $stepId;
-        return $this->execute("UPDATE steps SET " . implode(', ', $fields) . " WHERE id = ?", $params);
+        return $this->execute('UPDATE steps SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);
     }
 
     public function deleteStep(string $stepId): bool
     {
-        $this->execute("DELETE FROM step_recipients WHERE step_id = ?", [$stepId]);
-        return $this->execute("DELETE FROM steps WHERE id = ?", [$stepId]);
+        $this->execute('DELETE FROM step_recipients WHERE step_id = ?', [$stepId]);
+        return $this->execute('DELETE FROM steps WHERE id = ?', [$stepId]);
     }
 
     // ── Recipient CRUD ──────────────────────────────────────────
@@ -240,7 +243,7 @@ final class FormRepository extends BaseRepository
     {
         $id = \generate_uuid();
         $this->execute(
-            "INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)",
+            'INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)',
             [$id, $stepId, $email]
         );
         return $id;
@@ -248,12 +251,12 @@ final class FormRepository extends BaseRepository
 
     public function deleteRecipient(string $recipientId): bool
     {
-        return $this->execute("DELETE FROM step_recipients WHERE id = ?", [$recipientId]);
+        return $this->execute('DELETE FROM step_recipients WHERE id = ?', [$recipientId]);
     }
 
     public function findRecipientStepId(string $recipientId): ?string
     {
-        $result = $this->fetchOne("SELECT step_id FROM step_recipients WHERE id = ?", [$recipientId]);
+        $result = $this->fetchOne('SELECT step_id FROM step_recipients WHERE id = ?', [$recipientId]);
         return $result !== null ? (string) $result['step_id'] : null;
     }
 
@@ -263,7 +266,7 @@ final class FormRepository extends BaseRepository
     {
         $id = \generate_uuid();
         $this->execute(
-            "INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)",
+            'INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)',
             [$id, $formId, $email]
         );
         return $id;
@@ -271,18 +274,18 @@ final class FormRepository extends BaseRepository
 
     public function deleteOwnerById(string $ownerId): bool
     {
-        return $this->execute("DELETE FROM form_owners WHERE id = ?", [$ownerId]);
+        return $this->execute('DELETE FROM form_owners WHERE id = ?', [$ownerId]);
     }
 
     // ── Cascade delete ──────────────────────────────────────────
 
     public function deleteCascade(string $formId): void
     {
-        $this->execute("DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)", [$formId]);
-        $this->execute("DELETE FROM form_fields WHERE form_id = ?", [$formId]);
-        $this->execute("DELETE FROM form_owners WHERE form_id = ?", [$formId]);
-        $this->execute("DELETE FROM steps WHERE form_id = ?", [$formId]);
-        $this->execute("DELETE FROM forms WHERE id = ?", [$formId]);
+        $this->execute('DELETE FROM step_recipients WHERE step_id IN (SELECT id FROM steps WHERE form_id = ?)', [$formId]);
+        $this->execute('DELETE FROM form_fields WHERE form_id = ?', [$formId]);
+        $this->execute('DELETE FROM form_owners WHERE form_id = ?', [$formId]);
+        $this->execute('DELETE FROM steps WHERE form_id = ?', [$formId]);
+        $this->execute('DELETE FROM forms WHERE id = ?', [$formId]);
     }
 
     // ── Duplicate ───────────────────────────────────────────────
@@ -290,14 +293,14 @@ final class FormRepository extends BaseRepository
     public function duplicate(string $sourceId, string $newId, string $newLabel, string $newSlug, array $srcForm): void
     {
         $this->execute(
-            "INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)",
+            'INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)',
             [$newId, $newSlug, $newLabel, $srcForm['description'], $srcForm['deadline_field']]
         );
 
         foreach ($this->getFields($sourceId) as $f) {
             $newFieldId = \generate_uuid();
             $this->execute(
-                "INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? 'demandeur', $f['validator_step'] ?? '', $f['visibility'] ?? 'all']
             );
         }
@@ -305,16 +308,16 @@ final class FormRepository extends BaseRepository
         foreach ($this->getSteps($sourceId) as $s) {
             $newStepId = \generate_uuid();
             $this->execute(
-                "INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)",
-                [$newStepId, $newId, $s['label'], $s['ordre'], $s['actif'], (string)($s['condition'] ?? '')]
+                'INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)',
+                [$newStepId, $newId, $s['label'], $s['ordre'], $s['actif'], (string) ($s['condition'] ?? '')]
             );
 
-            $recips = $this->fetchAll("SELECT * FROM step_recipients WHERE step_id = ?", [$s['id']]);
-            foreach ($recips as $r) {
+            $recips = $this->fetchAll('SELECT * FROM step_recipients WHERE step_id = ?', [$s['id']]);
+            foreach ($recips as $recip) {
                 $newRecipId = \generate_uuid();
                 $this->execute(
-                    "INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)",
-                    [$newRecipId, $newStepId, $r['email']]
+                    'INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)',
+                    [$newRecipId, $newStepId, $recip['email']]
                 );
             }
         }

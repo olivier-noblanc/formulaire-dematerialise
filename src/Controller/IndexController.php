@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -26,14 +27,12 @@ final class IndexController extends BaseController
         // v9.9.0 — is_admin_effective() = false si persona actif → l'admin
         // en mode persona voit la page d'accueil comme un user simple.
         $is_admin = $this->auth->isAdminEffective();
-
         // Récupérer les formulaires dont l'utilisateur est propriétaire
-        $owned_forms = $this->auth->getOwnedForms($user);
-        $has_owned   = !empty($owned_forms);
+        $this->auth->getOwnedForms($user);
 
         // Récupérer les formulaires actifs
-        $formRepo = App::getInstance()->get(\App\Repository\FormRepository::class);
-        $active_forms = $formRepo->findActiveList();
+        $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
+        $active_forms = $formRepository->findActiveList();
 
         // Pour les agents : compter leurs soumissions
         $my_total    = 0;
@@ -54,13 +53,13 @@ final class IndexController extends BaseController
             $pdo = $this->db->getPdo();
             $welcome_forms = _dbm_q(
                 $pdo,
-                "SELECT f.id, f.slug, f.label, f.description, COUNT(s.id) AS nb_soumissions
+                'SELECT f.id, f.slug, f.label, f.description, COUNT(s.id) AS nb_soumissions
                  FROM forms f
                  LEFT JOIN submissions s ON s.form_id = f.id
                  WHERE f.actif = 1
                  GROUP BY f.id, f.slug, f.label, f.description
                  ORDER BY nb_soumissions DESC, f.label ASC
-                 LIMIT 3"
+                 LIMIT 3'
             )->fetchAll(\PDO::FETCH_ASSOC);
         }
         // Le welcome state n'est affiché que si l'agent a 0 demande ET qu'au moins
@@ -72,8 +71,8 @@ final class IndexController extends BaseController
         $show_tutorial = $show_welcome_state;
 
         // Pour les validateurs : compter les tokens en attente
-        $tokenRepo = App::getInstance()->get(\App\Repository\TokenRepository::class);
-        $my_pending = $tokenRepo->getActiveCountByEmail($user);
+        $tokenRepository = App::getInstance()->get(\App\Repository\TokenRepository::class);
+        $tokenRepository->getActiveCountByEmail($user);
 
         // Pour les admins : stats globales
         $admin_stats = [];
@@ -84,7 +83,7 @@ final class IndexController extends BaseController
             $admin_stats['valide']   = $gstats['valide'];
             $admin_stats['bloques']  = 0;
             $delai   = (int) $this->settings->get('delai_relance_h', '48');
-            $admin_stats['bloques'] = $tokenRepo->getBlockedCount($delai * 2);
+            $admin_stats['bloques'] = $tokenRepository->getBlockedCount($delai * 2);
         }
 
         // ── RENDU ──────────────────────────────────────────────────────

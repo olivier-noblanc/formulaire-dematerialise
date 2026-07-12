@@ -16,6 +16,11 @@
 | PHP 8.5+ check | install.php + HealthController mis à jour | ✅ |
 | N+1 export fix | GROUP_CONCAT au lieu de boucle SQL | ✅ |
 | Nettoyages | $pdo inutilisé, double if, rethrow, $result non initialisé | ✅ |
+| SQL → repositories batch 1 | ConfirmAction, MyValidations, Stats | ✅ |
+| SQL → repositories batch 2 | AdminFormCrud, AdminStepCrud, AdminFieldCrud, AdminRecipient, AdminForms, AdminAccess | ✅ |
+| SQL → repositories batch 3 | Download, Index, Persona | ✅ |
+| Ultrareview v4 fixes | CSV injection (H1) + backtick M1 | ✅ |
+| **PHP Modernization** | PHP-CS-Fixer (113) + Rector (88) + PHP 8.5 features | ✅ |
 
 ---
 
@@ -38,6 +43,12 @@
 | Coverage BaseRepo | **81%** |
 | Coverage AuthService | **~82%** |
 | Coverage AttachmentService | **~70%** |
+| SQL direct remaining | **37** queries (AdminImportExport: 7, Backup: 16, Monitoring: 12, Health: 2) |
+| **PHP version** | **8.5** exclusif |
+| **PHP-CS-Fixer** | **113** fichiers conformes PER-CS |
+| **Rector** | **88** fichiers modernisés |
+| **readonly classes** | **18** services |
+| **Pipe operator \|>** | **8** occurrences |
 
 ---
 
@@ -45,8 +56,9 @@
 
 | Tâche | Effort | Impact | Détail |
 |-------|--------|--------|--------|
+| SQL → AdminImportExportHandler | Faible | Cohérence | 7 queries (reads already use repos, writes need import transaction method) |
+| SQL → Backup/Monitoring/Health | N/A | — | Intentionally kept as direct SQL (admin diagnostic tools) |
 | PHPStan baseline (132 erreurs restantes) | Moyen | Qualité code | missingType.iterableValue (phpdoc manquants) |
-| SQL → repositories (ConfirmAction, MyValidations, Stats) | Moyen | Cohérence | 3 controllers avec SQL direct restant |
 | Coverage > 80% : ExportService (~15%) | Élevé | exit() empêche le test direct |
 | Coverage > 80% : WorkflowEngine (~45%) | Moyen | Couvrir les branches restantes |
 | Coverage > 80% : AttachmentService (~70%) | Faible | fileinfo extension manquante |

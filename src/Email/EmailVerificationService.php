@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Email;
@@ -12,13 +13,10 @@ use App\Cache\CacheService;
  * probe SMTP, et orchestration selon la configuration.
  * Les fonctions globales dans lib/email_verify.php délèguent maintenant ici.
  */
-final class EmailVerificationService
+final readonly class EmailVerificationService
 {
-    private CacheService $cache;
-
-    public function __construct(CacheService $cache)
+    public function __construct(private CacheService $cacheService)
     {
-        $this->cache = $cache;
     }
 
     /**
@@ -44,7 +42,7 @@ final class EmailVerificationService
         }
 
         $ldap_uri = str_starts_with($host, '://') ? $host : 'ldap://' . $host;
-        $conn = @ldap_connect($ldap_uri, $port);
+        $conn = @ldap_connect("{$ldap_uri}:{$port}");
         if (!$conn) {
             return ['ok' => false, 'method' => 'ldap', 'detail' => 'Impossible de se connecter au serveur LDAP ' . $host];
         }
@@ -54,11 +52,7 @@ final class EmailVerificationService
         ldap_set_option($conn, LDAP_OPT_NETWORK_TIMEOUT, 5);
         ldap_set_option($conn, LDAP_OPT_TIMELIMIT, 5);
 
-        if ($bind_dn !== '') {
-            $bind = @ldap_bind($conn, $bind_dn, $bind_pass);
-        } else {
-            $bind = @ldap_bind($conn);
-        }
+        $bind = $bind_dn !== '' ? @ldap_bind($conn, $bind_dn, $bind_pass) : @ldap_bind($conn);
 
         if (!$bind) {
             $errno = ldap_errno($conn);
@@ -126,7 +120,7 @@ final class EmailVerificationService
         $base_dn = \App\Core\App::settings()->get('ldap_base_dn', '');
         $cache_key = 'ldap_suggest:' . $host . ':' . $base_dn . ':' . $query . ':' . $limit;
 
-        return $this->cache->get($cache_key, 300, function () use ($query, $limit): array {
+        return $this->cacheService->get($cache_key, 300, function () use ($query, $limit): array {
             $host          = \App\Core\App::settings()->get('ldap_host', '');
             $port          = (int) \App\Core\App::settings()->get('ldap_port', '389');
             $base_dn       = \App\Core\App::settings()->get('ldap_base_dn', '');
@@ -138,7 +132,7 @@ final class EmailVerificationService
             );
 
             $ldap_uri = str_starts_with($host, '://') ? $host : 'ldap://' . $host;
-            $conn = @ldap_connect($ldap_uri, $port);
+            $conn = @ldap_connect("{$ldap_uri}:{$port}");
             if (!$conn) {
                 return [];
             }
@@ -148,11 +142,7 @@ final class EmailVerificationService
             ldap_set_option($conn, LDAP_OPT_NETWORK_TIMEOUT, 5);
             ldap_set_option($conn, LDAP_OPT_TIMELIMIT, 8);
 
-            if ($bind_dn !== '') {
-                $bind = @ldap_bind($conn, $bind_dn, $bind_pass);
-            } else {
-                $bind = @ldap_bind($conn);
-            }
+            $bind = $bind_dn !== '' ? @ldap_bind($conn, $bind_dn, $bind_pass) : @ldap_bind($conn);
             if (!$bind) {
                 @ldap_close($conn);
                 return [];
@@ -198,10 +188,10 @@ final class EmailVerificationService
                     $display = $mail;
                 }
 
-                $results[] = ['email' => strtolower(trim($mail)), 'cn' => $display];
+                $results[] = ['email' => $mail |> trim(...) |> strtolower(...), 'cn' => $display];
             }
 
-            usort($results, fn (array $a, array $b) => strcasecmp($a['cn'], $b['cn']));
+            usort($results, fn(array $a, array $b) => strcasecmp($a['cn'], $b['cn']));
 
             return $results;
         });
@@ -299,7 +289,7 @@ final class EmailVerificationService
             return ['ok' => false, 'method' => 'smtp', 'detail' => 'MAIL FROM rejeté : ' . trim($resp)];
         }
 
-        $safe_email = str_replace(["\r", "\n", "\t", "<", ">"], '', $email);
+        $safe_email = str_replace(["\r", "\n", "\t", '<', '>'], '', $email);
         $send_smtp('RCPT TO:<' . $safe_email . '>');
         $resp = $read_smtp();
 

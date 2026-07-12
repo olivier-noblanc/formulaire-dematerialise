@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core;
@@ -32,14 +33,14 @@ final class DateHelper
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_str)) {
             try {
                 return new \DateTimeImmutable($date_str . ' 00:00:00', new \DateTimeZone('Europe/Paris'));
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 return null;
             }
         }
         if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $date_str, $m)) {
             try {
                 return new \DateTimeImmutable("{$m[3]}-{$m[2]}-{$m[1]} 00:00:00", new \DateTimeZone('Europe/Paris'));
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 return null;
             }
         }
@@ -53,10 +54,14 @@ final class DateHelper
     public static function calculateDeadlineUrgency(string $deadlineVal, string $status = 'en_cours'): array
     {
         $result = ['days_left' => null, 'urgency' => '', 'style' => ''];
-        if (empty($deadlineVal) || $status !== 'en_cours') return $result;
+        if ($deadlineVal === '' || $deadlineVal === '0' || $status !== 'en_cours') {
+            return $result;
+        }
         $ts = self::parseDeadlineDate($deadlineVal);
-        if ($ts === null) return $result;
-        $days_left = (int)(($ts - time()) / 86400);
+        if ($ts === null) {
+            return $result;
+        }
+        $days_left = (int) (($ts - time()) / 86400);
         $result['days_left'] = $days_left;
         if ($days_left < 0) {
             $result['urgency'] = 'overdue';

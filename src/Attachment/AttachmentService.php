@@ -1,10 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Attachment;
 
 use App\Core\App;
-use App\Core\Database;
 use App\Repository\AttachmentRepository;
 
 /**
@@ -14,13 +14,10 @@ use App\Repository\AttachmentRepository;
  * des pièces jointes d'une soumission.
  * Les fonctions globales dans lib/attachments.php délèguent maintenant ici.
  */
-final class AttachmentService
+final readonly class AttachmentService
 {
-    private AttachmentRepository $repo;
-
-    public function __construct(AttachmentRepository $repo)
+    public function __construct(private AttachmentRepository $attachmentRepository)
     {
-        $this->repo = $repo;
     }
 
     /**
@@ -96,7 +93,7 @@ final class AttachmentService
         $safeName = basename($file['name']);
         $safeName = preg_replace('/[^a-zA-Z0-9._\-\x{00C0}-\x{024F}]/u', '_', $safeName) ?? $safeName;
         $safeName = ltrim($safeName, '.');
-        if (empty($safeName)) {
+        if ($safeName === '' || $safeName === '0') {
             $safeName = 'fichier';
         }
 
@@ -104,8 +101,8 @@ final class AttachmentService
         $dangerousExts = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'pht', 'phar', 'shtml', 'asa', 'asp', 'aspx', 'cgi', 'pl', 'py', 'rb', 'sh', 'jsp', 'war'];
         $nameParts = explode('.', $safeName);
         if (count($nameParts) > 2) {
-            foreach ($nameParts as $part) {
-                if (in_array(strtolower($part), $dangerousExts, true)) {
+            foreach ($nameParts as $namePart) {
+                if (in_array(strtolower($namePart), $dangerousExts, true)) {
                     App::audit()->log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — double extension dangereuse : ' . $safeName, '');
                     return ['success' => false, 'message' => 'Nom de fichier non autorisé. Les doubles extensions contenant des scripts ne sont pas acceptées.', 'attachment_id' => null];
                 }
@@ -113,7 +110,7 @@ final class AttachmentService
         }
 
         // Vérifier l'extension (dernière partie)
-        $ext = strtolower(end($nameParts));
+        $ext = strtolower(array_last($nameParts));
         if (!in_array($ext, $this->getAllowedExtensions())) {
             return ['success' => false, 'message' => 'Type de fichier non autorisé. Extensions acceptées : ' . implode(', ', $this->getAllowedExtensions()) . '.', 'attachment_id' => null];
         }
@@ -149,7 +146,7 @@ final class AttachmentService
         }
 
         // Enregistrer dans la base de données
-        $attachmentId = $this->repo->create([
+        $attachmentId = $this->attachmentRepository->create([
             'submission_id' => $submissionId,
             'field_name' => $fieldName,
             'original_name' => $safeName,
@@ -171,7 +168,7 @@ final class AttachmentService
      */
     public function getAttachments(string $submissionId): array
     {
-        return $this->repo->findBySubmission($submissionId);
+        return $this->attachmentRepository->findBySubmission($submissionId);
     }
 
     /**
@@ -182,6 +179,6 @@ final class AttachmentService
      */
     public function getAttachmentById(string $attachmentId): ?array
     {
-        return $this->repo->findById($attachmentId);
+        return $this->attachmentRepository->findById($attachmentId);
     }
 }

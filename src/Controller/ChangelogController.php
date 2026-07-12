@@ -23,7 +23,7 @@ final class ChangelogController extends BaseController
   <h1>📋 Journal des mises à jour — CircuitDémat</h1>
   <div class="current-version">Version actuelle : v<?= \App\Core\App::html()->escape(App::cache()->getLatestVersion()) ?></div>
 
-  <?php if (empty($changelog)): ?>
+  <?php if ($changelog === []): ?>
     <div class="empty-changelog">
       <div class="empty-icon">📝</div>
       <p>Aucun journal de modifications disponible.</p>
@@ -39,20 +39,23 @@ final class ChangelogController extends BaseController
 
     <?php
     $hasSummaries = false;
-    foreach ($changelog as $v) {
-        if (!empty($v['summary'])) { $hasSummaries = true; break; }
-    }
-    ?>
+      foreach ($changelog as $v) {
+          if (!empty($v['summary'])) {
+              $hasSummaries = true;
+              break;
+          }
+      }
+      ?>
     <?php if ($hasSummaries): ?>
     <section class="changelog-summary" aria-label="En résumé">
       <h2><span aria-hidden="true">📌</span> En résumé</h2>
       <p class="summary-intro"><?= \App\Core\App::html()->escape(App::html()->tJargon('Vue simplifiée — le détail technique suit plus bas, réservé aux experts.')) ?></p>
       <ul class="summary-list">
         <?php
-        foreach ($changelog as $v):
-            $hasSummary = !empty($v['summary']);
-            $badgeCls = $hasSummary ? 'version-recent' : 'version-old';
-        ?>
+          foreach ($changelog as $v):
+              $hasSummary = !empty($v['summary']);
+              $badgeCls = $hasSummary ? 'version-recent' : 'version-old';
+              ?>
           <li>
             <span class="summary-version <?= $badgeCls ?>">v<?= \App\Core\App::html()->escape($v['version']) ?></span>
             <span class="summary-date"><?= \App\Core\App::html()->escape($v['date']) ?></span>
@@ -85,7 +88,7 @@ final class ChangelogController extends BaseController
 
           <?php foreach ($v['sections'] as $sectionName => $items):
               $style = $this->sectionStyle($sectionName);
-          ?>
+              ?>
             <div class="section-block <?= \App\Core\App::html()->escape($style['cls']) ?>">
               <div class="section-header">
                 <span class="section-icon"><?= $style['icon'] ?></span>
@@ -104,7 +107,7 @@ final class ChangelogController extends BaseController
     </details>
   <?php endif; ?>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Journal des modifications', 'changelog', $pageCss, $content);
     }
 
@@ -119,7 +122,7 @@ final class ChangelogController extends BaseController
             return [];
         }
 
-        $content = (string)file_get_contents($filepath);
+        $content = (string) file_get_contents($filepath);
         $lines = explode("\n", $content);
         $versions = [];
         $currentVersion = null;
@@ -186,8 +189,7 @@ final class ChangelogController extends BaseController
     private function inlineMd(string $text): string
     {
         $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text) ?? $text;
-        $text = preg_replace('/`(.+?)`/', '<code>$1</code>', $text) ?? $text;
-        return $text;
+        return preg_replace('/`(.+?)`/', '<code>$1</code>', $text) ?? $text;
     }
 
     /**
@@ -198,13 +200,27 @@ final class ChangelogController extends BaseController
     private function sectionStyle(string $section): array
     {
         $lower = mb_strtolower($section);
-        if (str_contains($lower, 'sécurité'))   return ['icon' => '🔒', 'cls' => 'section-security'];
-        if (str_contains($lower, 'correction'))  return ['icon' => '🔧', 'cls' => 'section-fix'];
-        if (str_contains($lower, 'fonctionnalité')) return ['icon' => '✨', 'cls' => 'section-feature'];
-        if (str_contains($lower, 'majeure'))     return ['icon' => '🚀', 'cls' => 'section-major'];
-        if (str_contains($lower, 'ux') || str_contains($lower, 'accessibilité')) return ['icon' => '🎨', 'cls' => 'section-ux'];
-        if (str_contains($lower, 'nettoyage'))   return ['icon' => '🧹', 'cls' => 'section-cleanup'];
-        if (str_contains($lower, 'initial'))     return ['icon' => '📌', 'cls' => 'section-initial'];
+        if (str_contains($lower, 'sécurité')) {
+            return ['icon' => '🔒', 'cls' => 'section-security'];
+        }
+        if (str_contains($lower, 'correction')) {
+            return ['icon' => '🔧', 'cls' => 'section-fix'];
+        }
+        if (str_contains($lower, 'fonctionnalité')) {
+            return ['icon' => '✨', 'cls' => 'section-feature'];
+        }
+        if (str_contains($lower, 'majeure')) {
+            return ['icon' => '🚀', 'cls' => 'section-major'];
+        }
+        if (str_contains($lower, 'ux') || str_contains($lower, 'accessibilité')) {
+            return ['icon' => '🎨', 'cls' => 'section-ux'];
+        }
+        if (str_contains($lower, 'nettoyage')) {
+            return ['icon' => '🧹', 'cls' => 'section-cleanup'];
+        }
+        if (str_contains($lower, 'initial')) {
+            return ['icon' => '📌', 'cls' => 'section-initial'];
+        }
         return ['icon' => '📄', 'cls' => 'section-default'];
     }
 }

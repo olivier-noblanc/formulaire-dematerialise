@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Export;
 
-use App\Core\Database;
 use App\Auth\AuthService;
+use App\Core\Database;
 use PDO;
 
 /**
@@ -13,15 +14,10 @@ use PDO;
  * Extrait de lib/export_csv.php — export streamé avec filtres et headers HTTP.
  * Les fonctions globales dans lib/export_csv.php délèguent maintenant ici.
  */
-final class ExportService
+final readonly class ExportService
 {
-    private Database $db;
-    private AuthService $auth;
-
-    public function __construct(Database $db, AuthService $auth)
+    public function __construct(private Database $database, private AuthService $authService)
     {
-        $this->db = $db;
-        $this->auth = $auth;
     }
 
     /**
@@ -31,7 +27,7 @@ final class ExportService
      */
     public function exportCsv(array $options = []): void
     {
-        if (!$this->auth->isAdmin()) {
+        if (!$this->authService->isAdmin()) {
             (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous n\'avez pas accès à l\'export CSV. Cette fonctionnalité est réservée aux administrateurs.');
         }
 
@@ -47,7 +43,7 @@ final class ExportService
         }
         $where_sql = implode(' AND ', $where);
 
-        $pdo = $this->db->getPdo();
+        $pdo = $this->database->getPdo();
 
         // Récupérer les colonnes JSON distinctes via json_each (une seule requête légère)
         $keysStmt = $pdo->prepare("
@@ -67,7 +63,7 @@ final class ExportService
             return;
         }
         // BOM pour Excel
-        fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
         // En-tête fixe
         $headers = array_merge(['ID', 'Formulaire', 'Agent', 'Statut', 'Soumis le', 'Clôturé le'], $all_keys);
@@ -100,11 +96,15 @@ final class ExportService
                     $row['submitted_at'],
                     $row['closed_at'] ?? '',
                 ];
-                foreach ($all_keys as $k) {
-                    $val = $data[$k] ?? '';
-                    if ($val === '1') $val = 'Oui';
-                    elseif ($val === '0') $val = 'Non';
-                    elseif (is_array($val)) $val = json_encode($val, JSON_UNESCAPED_UNICODE);
+                foreach ($all_keys as $all_key) {
+                    $val = $data[$all_key] ?? '';
+                    if ($val === '1') {
+                        $val = 'Oui';
+                    } elseif ($val === '0') {
+                        $val = 'Non';
+                    } elseif (is_array($val)) {
+                        $val = json_encode($val, JSON_UNESCAPED_UNICODE);
+                    }
                     // Neutraliser injection CSV (Excel formula injection)
                     if (is_string($val) && preg_match('/^[=\-+\@]/', $val)) {
                         $val = "'" . $val;

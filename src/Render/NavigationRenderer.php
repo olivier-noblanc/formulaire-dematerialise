@@ -16,7 +16,9 @@ final class NavigationRenderer
     public static function getAppName(): string
     {
         static $cache = null;
-        if ($cache !== null) return $cache;
+        if ($cache !== null) {
+            return $cache;
+        }
         $cache = App::settings()->get('app_name', 'CircuitDémat');
         return $cache;
     }
@@ -27,7 +29,7 @@ final class NavigationRenderer
     public static function favicon(): string
     {
         $svg = App::settings()->get('app_favicon', '');
-        if (!empty($svg)) {
+        if ($svg !== '' && $svg !== '0') {
             return '<link rel="icon" href="data:image/svg+xml,' . \App\Core\App::html()->escape($svg) . '">';
         }
         return '<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'20\' fill=\'%231E40AF\'/><text x=\'50\' y=\'78\' font-size=\'80\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>&#9670;</text></svg>">';
@@ -70,14 +72,14 @@ final class NavigationRenderer
                   AND s.closed_at IS NULL
             ");
             $stmt->execute([$user]);
-            $pending_count = (int)$stmt->fetchColumn();
+            $pending_count = (int) $stmt->fetchColumn();
 
             $stmt2 = $pdo->prepare("
                 SELECT COUNT(*) FROM submissions
                 WHERE submitted_by = ? AND status = 'en_cours' AND closed_at IS NULL
             ");
             $stmt2->execute([$user]);
-            $my_en_cours_count = (int)$stmt2->fetchColumn();
+            $my_en_cours_count = (int) $stmt2->fetchColumn();
         } catch (\Throwable $e) {
             error_log('render_nav pending_count error: ' . $e->getMessage());
             $pending_count = -1;
@@ -86,7 +88,7 @@ final class NavigationRenderer
 
         $persona_active = '';
         $persona_active_email = '';
-        $persona_current_token = isset($_GET['persona_token']) ? (string)$_GET['persona_token'] : '';
+        $persona_current_token = isset($_GET['persona_token']) ? (string) $_GET['persona_token'] : '';
         if ($is_admin && $persona_current_token !== '' && function_exists('persona_lookup')) {
             $persona_active_email = persona_lookup($persona_current_token);
             if ($persona_active_email !== '') {
@@ -152,10 +154,10 @@ final class NavigationRenderer
         $owned_forms = [];
         try {
             $owned_forms = App::auth()->getOwnedForms();
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // ignore — section non affichée
         }
-        if (!empty($owned_forms)) {
+        if ($owned_forms !== []) {
             $nav_html .= '<div class="sidebar-section-title">Mes formulaires</div>';
             $active_cls = ($current_page === 'my_forms') ? ' active' : '';
             $nav_html .= '<a href="index.php?p=my_forms" class="sidebar-item' . $active_cls . '">'
@@ -174,14 +176,14 @@ final class NavigationRenderer
                 ");
                 $persona_users = [];
                 $persona_rows = $persona_stmt !== false ? $persona_stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
-                foreach ($persona_rows as $u) {
+                foreach ($persona_rows as $persona_row) {
                     $persona_users[] = [
-                        'email' => $u,
-                        'display' => App::html()->displayUserShort($u),
+                        'email' => $persona_row,
+                        'display' => App::html()->displayUserShort($persona_row),
                     ];
                 }
                 $persona_users_json = json_encode($persona_users, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 // ignore
             }
         }
@@ -213,18 +215,18 @@ final class NavigationRenderer
 
         return '<div class="app-layout">'
             . '<nav class="sidebar" aria-label="Navigation principale">'
-            .   '<a href="index.php" class="sidebar-brand">'
-            .     '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
-            .     '<span class="sidebar-brand-text">' . \App\Core\App::html()->escape(self::getAppName()) . '</span>'
-            .   '</a>'
-            .   '<div class="sidebar-nav">'
-            .     $nav_html
-            .   '</div>'
-            .   $user_card_html
+            . '<a href="index.php" class="sidebar-brand">'
+            . '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
+            . '<span class="sidebar-brand-text">' . \App\Core\App::html()->escape(self::getAppName()) . '</span>'
+            . '</a>'
+            . '<div class="sidebar-nav">'
+            . $nav_html
+            . '</div>'
+            . $user_card_html
             . '</nav>'
             . '<div class="main-area">'
-            .   '<div class="content">'
-            .   $persona_active;
+            . '<div class="content">'
+            . $persona_active;
     }
 
     /**
@@ -235,7 +237,9 @@ final class NavigationRenderer
      */
     public function breadcrumb(array $breadcrumbs): string
     {
-        if (empty($breadcrumbs)) return '';
+        if ($breadcrumbs === []) {
+            return '';
+        }
 
         $items = [];
         $total = count($breadcrumbs);
@@ -258,62 +262,62 @@ final class NavigationRenderer
      */
     public function footer(): string
     {
-        $persona_js = <<<'HTML'
-<script>
-(function() {
-  var card = document.getElementById('sidebar-user-card');
-  if (!card || !card.classList.contains('sidebar-user-card-admin')) return;
-
-  var dropdown = document.createElement('div');
-  dropdown.className = 'sidebar-persona-dropdown';
-  dropdown.id = 'sidebar-persona-dropdown';
-
-  var usersJson = card.getAttribute('data-persona-users') || '[]';
-  var activeEmail = card.getAttribute('data-persona-active') || '';
-  var users = [];
-  try { users = JSON.parse(usersJson); } catch(e) { users = []; }
-
-  var html = '<div class="sidebar-persona-dropdown-header">🎭 Changer de rôle</div>';
-  if (activeEmail) {
-    var stopUrl = 'index.php?p=persona&action=stop';
-    var currentToken = new URLSearchParams(window.location.search).get('persona_token');
-    if (currentToken) stopUrl += '&persona_token=' + encodeURIComponent(currentToken);
-    html += '<a class="sidebar-persona-option-reset" href="' + stopUrl + '">✕ Revenir en mode admin</a>';
-  }
-  if (users.length > 0 && !activeEmail) {
-    var firstUser = users[0];
-    var url = 'index.php?p=persona&action=start&email=' + encodeURIComponent(firstUser.email);
-    html += '<a class="sidebar-persona-option" href="' + url + '">'
-          + '<span style="font-size:1.1em;margin-right:6px;">👤</span> Vue agent'
-          + '<div style="font-size:11px;color:#888;margin-top:2px;">Visualiser l\'interface comme un utilisateur non-admin</div>'
-          + '</a>';
-  } else if (users.length === 0 && !activeEmail) {
-    html += '<div style="padding:8px 12px;font-size:12px;color:#888;">Aucun utilisateur à afficher</div>';
-  }
-  dropdown.innerHTML = html;
-  card.appendChild(dropdown);
-
-  card.addEventListener('click', function(e) {
-    e.stopPropagation();
-    dropdown.classList.toggle('open');
-  });
-  document.addEventListener('click', function(e) {
-    if (!card.contains(e.target)) {
-      dropdown.classList.remove('open');
-    }
-  });
-  card.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      dropdown.classList.toggle('open');
-    }
-    if (e.key === 'Escape') {
-      dropdown.classList.remove('open');
-    }
-  });
-})();
-</script>
-HTML;
+        $persona_js = <<<'HTML_WRAP'
+        <script>
+        (function() {
+          var card = document.getElementById('sidebar-user-card');
+          if (!card || !card.classList.contains('sidebar-user-card-admin')) return;
+        
+          var dropdown = document.createElement('div');
+          dropdown.className = 'sidebar-persona-dropdown';
+          dropdown.id = 'sidebar-persona-dropdown';
+        
+          var usersJson = card.getAttribute('data-persona-users') || '[]';
+          var activeEmail = card.getAttribute('data-persona-active') || '';
+          var users = [];
+          try { users = JSON.parse(usersJson); } catch(e) { users = []; }
+        
+          var html = '<div class="sidebar-persona-dropdown-header">🎭 Changer de rôle</div>';
+          if (activeEmail) {
+            var stopUrl = 'index.php?p=persona&action=stop';
+            var currentToken = new URLSearchParams(window.location.search).get('persona_token');
+            if (currentToken) stopUrl += '&persona_token=' + encodeURIComponent(currentToken);
+            html += '<a class="sidebar-persona-option-reset" href="' + stopUrl + '">✕ Revenir en mode admin</a>';
+          }
+          if (users.length > 0 && !activeEmail) {
+            var firstUser = users[0];
+            var url = 'index.php?p=persona&action=start&email=' + encodeURIComponent(firstUser.email);
+            html += '<a class="sidebar-persona-option" href="' + url + '">'
+                  + '<span style="font-size:1.1em;margin-right:6px;">👤</span> Vue agent'
+                  + '<div style="font-size:11px;color:#888;margin-top:2px;">Visualiser l\'interface comme un utilisateur non-admin</div>'
+                  + '</a>';
+          } else if (users.length === 0 && !activeEmail) {
+            html += '<div style="padding:8px 12px;font-size:12px;color:#888;">Aucun utilisateur à afficher</div>';
+          }
+          dropdown.innerHTML = html;
+          card.appendChild(dropdown);
+        
+          card.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+          });
+          document.addEventListener('click', function(e) {
+            if (!card.contains(e.target)) {
+              dropdown.classList.remove('open');
+            }
+          });
+          card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              dropdown.classList.toggle('open');
+            }
+            if (e.key === 'Escape') {
+              dropdown.classList.remove('open');
+            }
+          });
+        })();
+        </script>
+        HTML_WRAP;
 
         return '</div><!-- /.content -->'
              . '</div><!-- /.main-area -->'
@@ -346,8 +350,8 @@ HTML;
 
         $page_body_class = 'page-' . preg_replace('/[^a-z0-9_-]/i', '', $nav_key);
         if ($body_attr) {
-            if (preg_match('/class=["\']/', $body_attr)) {
-                $body_attr = preg_replace('/class=["\']/', 'class="' . $page_body_class . ' ', $body_attr, 1);
+            if (preg_match('/class=["\']/', (string) $body_attr)) {
+                $body_attr = preg_replace('/class=["\']/', 'class="' . $page_body_class . ' ', (string) $body_attr, 1);
             } else {
                 $body_attr = 'class="' . $page_body_class . '" ' . $body_attr;
             }
@@ -384,11 +388,11 @@ HTML;
 </html>
         <?php
         $page_out = ob_get_clean();
-        if ($page_out === false) return '';
+        if ($page_out === false) {
+            return '';
+        }
 
-        $page_out = $this->personaRewriteUrls($page_out);
-
-        return $page_out;
+        return $this->personaRewriteUrls($page_out);
     }
 
     /**
@@ -399,17 +403,25 @@ HTML;
      */
     public function personaRewriteUrls(string $html): string
     {
-        $token = isset($_GET['persona_token']) ? (string)$_GET['persona_token'] : '';
-        if ($token === '') return $html;
+        $token = isset($_GET['persona_token']) ? (string) $_GET['persona_token'] : '';
+        if ($token === '') {
+            return $html;
+        }
 
         return preg_replace_callback(
             '/href=(["\'])(index\.php[^"\']*?)\1/',
             function ($m) use ($token) {
                 $quote = $m[1];
                 $url = $m[2];
-                if (str_contains($url, '<?')) return $m[0];
-                if (str_contains($url, 'p=persona')) return $m[0];
-                if (str_contains($url, 'persona_token=')) return $m[0];
+                if (str_contains($url, '<?')) {
+                    return $m[0];
+                }
+                if (str_contains($url, 'p=persona')) {
+                    return $m[0];
+                }
+                if (str_contains($url, 'persona_token=')) {
+                    return $m[0];
+                }
 
                 $anchor = '';
                 $url_main = $url;

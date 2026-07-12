@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Security;
@@ -11,17 +12,17 @@ use App\Render\HtmlService;
  */
 final class SecurityService implements SecurityInterface
 {
-    private HtmlService $html;
     private string $scriptNonce = '';
 
-    public function __construct(HtmlService $html)
+    public function __construct(private readonly HtmlService $htmlService)
     {
-        $this->html = $html;
     }
 
     public function sendSecurityHeaders(): void
     {
-        if (php_sapi_name() === 'cli') return;
+        if (php_sapi_name() === 'cli') {
+            return;
+        }
 
         header('X-Content-Type-Options: nosniff');
         header('X-Frame-Options: DENY');
@@ -51,13 +52,13 @@ final class SecurityService implements SecurityInterface
     public function csrfField(): string
     {
         $token = $this->generateCsrfToken();
-        $html = '<input type="hidden" name="csrf_token" value="' . $this->html->h($token) . '">';
+        $html = '<input type="hidden" name="csrf_token" value="' . $this->htmlService->h($token) . '">';
 
         // v10.0.0 — Persona token-based : propager ?persona_token dans les POST
         // via un champ hidden, pour que le persona persiste après un submit
-        $persona_token = isset($_GET['persona_token']) ? (string)$_GET['persona_token'] : '';
+        $persona_token = isset($_GET['persona_token']) ? (string) $_GET['persona_token'] : '';
         if ($persona_token !== '') {
-            $html .= '<input type="hidden" name="persona_token" value="' . $this->html->h($persona_token) . '">';
+            $html .= '<input type="hidden" name="persona_token" value="' . $this->htmlService->h($persona_token) . '">';
         }
 
         return $html;
@@ -76,8 +77,12 @@ final class SecurityService implements SecurityInterface
         $token = $_POST['csrf_token'] ?? '';
         $sessionToken = $_SESSION['csrf_token'] ?? '';
 
-        if (empty($token) || empty($sessionToken)) return false;
-        if (!hash_equals($sessionToken, $token)) return false;
+        if (empty($token) || empty($sessionToken)) {
+            return false;
+        }
+        if (!hash_equals($sessionToken, $token)) {
+            return false;
+        }
 
         // Rotation du token après validation
         unset($_SESSION['csrf_token']);

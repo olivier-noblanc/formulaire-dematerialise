@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -10,7 +11,7 @@ use App\Core\App;
  */
 final class AdminFieldCrudHandler
 {
-    public static function handleAddField(\PDO $pdo): array
+    public static function handleAddField(): array
     {
         $form_id = trim($_POST['form_id'] ?? '');
         $ff_label = trim($_POST['ff_label'] ?? '');
@@ -18,7 +19,7 @@ final class AdminFieldCrudHandler
         $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
         $ff_options_raw = trim($_POST['ff_options'] ?? '');
         $ff_required = isset($_POST['ff_required']) ? 1 : 0;
-        $ff_ordre = (int)($_POST['ff_ordre'] ?? 0);
+        $ff_ordre = (int) ($_POST['ff_ordre'] ?? 0);
         $ff_card_group = AdminFormsHandlers::resolveCardGroup();
         $ff_filled_by = trim($_POST['ff_filled_by'] ?? '');
         if (!in_array($ff_filled_by, ['demandeur', 'validator'])) {
@@ -29,12 +30,10 @@ final class AdminFieldCrudHandler
         if (!in_array($ff_visibility, ['all', 'owner_only'], true)) {
             $ff_visibility = 'all';
         }
-
-        if (empty($ff_field_name) && !empty($ff_label)) {
+        if (($ff_field_name === '' || $ff_field_name === '0') && ($ff_label !== '' && $ff_label !== '0')) {
             $ff_field_name = \generate_field_name($ff_label);
         }
-
-        if (empty($form_id) || empty($ff_label) || empty($ff_field_name)) {
+        if ($form_id === '' || $form_id === '0' || ($ff_label === '' || $ff_label === '0') || ($ff_field_name === '' || $ff_field_name === '0')) {
             return ['error' => 'Le libellé du champ est requis.'];
         }
         try {
@@ -56,7 +55,7 @@ final class AdminFieldCrudHandler
         }
     }
 
-    public static function handleUpdateField(\PDO $pdo): array
+    public static function handleUpdateField(): array
     {
         $field_id = trim($_POST['field_id'] ?? '');
         $form_id = trim($_POST['form_id'] ?? '');
@@ -65,7 +64,7 @@ final class AdminFieldCrudHandler
         $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
         $ff_options_raw = trim($_POST['ff_options'] ?? '');
         $ff_required = isset($_POST['ff_required']) ? 1 : 0;
-        $ff_ordre = (int)($_POST['ff_ordre'] ?? 0);
+        $ff_ordre = (int) ($_POST['ff_ordre'] ?? 0);
         $ff_card_group = AdminFormsHandlers::resolveCardGroup();
         $ff_filled_by = trim($_POST['ff_filled_by'] ?? '');
         if (!in_array($ff_filled_by, ['demandeur', 'validator'])) {
@@ -76,12 +75,10 @@ final class AdminFieldCrudHandler
         if (!in_array($ff_visibility, ['all', 'owner_only'], true)) {
             $ff_visibility = 'all';
         }
-
-        if (empty($ff_field_name) && !empty($ff_label)) {
+        if (($ff_field_name === '' || $ff_field_name === '0') && ($ff_label !== '' && $ff_label !== '0')) {
             $ff_field_name = \generate_field_name($ff_label);
         }
-
-        if (empty($field_id) || empty($ff_label) || empty($ff_field_name)) {
+        if ($field_id === '' || $field_id === '0' || ($ff_label === '' || $ff_label === '0') || ($ff_field_name === '' || $ff_field_name === '0')) {
             return ['error' => 'Le libellé du champ est requis.'];
         }
         try {
@@ -103,11 +100,11 @@ final class AdminFieldCrudHandler
         }
     }
 
-    public static function handleDeleteField(\PDO $pdo): ?array
+    public static function handleDeleteField(): ?array
     {
         $field_id = trim($_POST['field_id'] ?? '');
         $form_id = trim($_POST['form_id'] ?? '');
-        if (empty($field_id)) {
+        if ($field_id === '' || $field_id === '0') {
             return null;
         }
         try {

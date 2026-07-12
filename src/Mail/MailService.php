@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Mail;
@@ -11,15 +12,10 @@ use PHPMailer\PHPMailer\PHPMailer;
 /**
  * Service d'envoi d'emails via PHPMailer.
  */
-final class MailService implements MailInterface
+final readonly class MailService implements MailInterface
 {
-    private Database $db;
-    private SettingsService $settings;
-
-    public function __construct(Database $db, SettingsService $settings)
+    public function __construct(private Database $database, private SettingsService $settingsService)
     {
-        $this->db = $db;
-        $this->settings = $settings;
     }
 
     public function send(string $to, string $subject, string $body): bool
@@ -34,16 +30,16 @@ final class MailService implements MailInterface
             return true;
         }
 
-        $dryRun = $this->settings->get('mail_dry_run', '0') === '1';
+        $dryRun = $this->settingsService->get('mail_dry_run', '0') === '1';
         if ($dryRun) {
             error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
             return true;
         }
 
-        $smtpHost = $this->settings->get('smtp_host');
-        $smtpPort = (int) $this->settings->get('smtp_port', '25');
-        $smtpFrom = $this->settings->get('smtp_from');
-        $smtpFromName = $this->settings->get('smtp_from_name', 'CircuitDémat');
+        $smtpHost = $this->settingsService->get('smtp_host');
+        $smtpPort = (int) $this->settingsService->get('smtp_port', '25');
+        $smtpFrom = $this->settingsService->get('smtp_from');
+        $smtpFromName = $this->settingsService->get('smtp_from_name', 'CircuitDémat');
 
         if (empty($smtpHost)) {
             error_log('send_mail: aucun serveur SMTP configuré');
@@ -51,16 +47,16 @@ final class MailService implements MailInterface
         }
 
         try {
-            $mail = new PHPMailer(true);
-            $mail->isSMTP();
-            $mail->Host = $smtpHost;
-            $mail->Port = $smtpPort;
-            $mail->setFrom($smtpFrom, $smtpFromName);
-            $mail->addAddress($to);
-            $mail->Subject = $subject;
-            $mail->Body = $body;
-            $mail->isHTML(true);
-            $mail->send();
+            $phpMailer = new PHPMailer(true);
+            $phpMailer->isSMTP();
+            $phpMailer->Host = $smtpHost;
+            $phpMailer->Port = $smtpPort;
+            $phpMailer->setFrom($smtpFrom, $smtpFromName);
+            $phpMailer->addAddress($to);
+            $phpMailer->Subject = $subject;
+            $phpMailer->Body = $body;
+            $phpMailer->isHTML(true);
+            $phpMailer->send();
             return true;
         } catch (\Throwable $e) {
             error_log('send_mail error: ' . $e->getMessage());
@@ -70,7 +66,7 @@ final class MailService implements MailInterface
 
     public function buildValidationEmail(array $submission, string $stepLabel, string $token): string
     {
-        $appName = $this->settings->get('app_name', 'CircuitDémat');
+        $appName = $this->settingsService->get('app_name', 'CircuitDémat');
         $baseUrl = function_exists('resolve_base_url') ? resolve_base_url() : (defined('BASE_URL') ? BASE_URL : '');
         $validateUrl = $baseUrl . '/index.php?p=validate&token=' . $token;
 
@@ -101,7 +97,7 @@ final class MailService implements MailInterface
     public function sendDetailed(string $to, string $subject, string $body): array
     {
         $result = ['success' => false, 'error' => '', 'smtp_log' => '', 'status' => 'error'];
-        $to = strtolower(trim($to));
+        $to = $to |> trim(...) |> strtolower(...);
 
         if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
             $msg = "Adresse destinataire invalide : $to";
@@ -122,69 +118,69 @@ final class MailService implements MailInterface
             return ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => 'dry_run'];
         }
 
-        $dryRun = $this->settings->get('mail_dry_run', '0') === '1';
+        $dryRun = $this->settingsService->get('mail_dry_run', '0') === '1';
         if ($dryRun) {
             error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
             return ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => 'dry_run'];
         }
 
-        $smtpHost = $this->settings->get('smtp_host');
-        $smtpPort = (int) $this->settings->get('smtp_port', '25');
-        $smtpAuth = $this->settings->get('smtp_auth', '0') === '1';
-        $smtpUser = $this->settings->get('smtp_user', '');
-        $smtpPass = $this->settings->get('smtp_pass', '');
-        $smtpSecure = $this->settings->get('smtp_secure', '');
-        $smtpFrom = $this->settings->get('smtp_from');
-        $smtpFromName = $this->settings->get('smtp_from_name', 'CircuitDémat');
+        $smtpHost = $this->settingsService->get('smtp_host');
+        $smtpPort = (int) $this->settingsService->get('smtp_port', '25');
+        $smtpAuth = $this->settingsService->get('smtp_auth', '0') === '1';
+        $smtpUser = $this->settingsService->get('smtp_user', '');
+        $smtpPass = $this->settingsService->get('smtp_pass', '');
+        $smtpSecure = $this->settingsService->get('smtp_secure', '');
+        $smtpFrom = $this->settingsService->get('smtp_from');
+        $smtpFromName = $this->settingsService->get('smtp_from_name', 'CircuitDémat');
 
         if (empty($smtpHost)) {
-            $msg = "Aucun hôte SMTP configuré";
+            $msg = 'Aucun hôte SMTP configuré';
             $result['error'] = $msg;
             $result['status'] = 'blocked';
             return $result;
         }
         if (empty($smtpFrom)) {
-            $msg = "Aucune adresse From configurée";
+            $msg = 'Aucune adresse From configurée';
             $result['error'] = $msg;
             $result['status'] = 'blocked';
             return $result;
         }
 
         $smtpLogBuf = [];
-        $mail = new PHPMailer(true);
+        $phpMailer = new PHPMailer(true);
         try {
-            $mail->isSMTP();
-            $mail->Host = $smtpHost;
-            $mail->Port = $smtpPort;
-            $mail->SMTPAuth = $smtpAuth;
+            $phpMailer->isSMTP();
+            $phpMailer->Host = $smtpHost;
+            $phpMailer->Port = $smtpPort;
+            $phpMailer->SMTPAuth = $smtpAuth;
             if ($smtpAuth) {
-                $mail->Username = $smtpUser;
-                $mail->Password = $smtpPass;
+                $phpMailer->Username = $smtpUser;
+                $phpMailer->Password = $smtpPass;
             }
             if ($smtpSecure === 'tls') {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $phpMailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             } elseif ($smtpSecure === 'ssl') {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $phpMailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             }
-            $mail->SMTPAutoTLS = ($smtpSecure === 'tls' || $smtpSecure === 'ssl');
-            $mail->Timeout = 30;
-            $mail->SMTPDebug = 3;
-            $mail->Debugoutput = function (string $str, int $level) use (&$smtpLogBuf): void {
+            $phpMailer->SMTPAutoTLS = ($smtpSecure === 'tls' || $smtpSecure === 'ssl');
+            $phpMailer->Timeout = 30;
+            $phpMailer->SMTPDebug = 3;
+            $phpMailer->Debugoutput = function (string $str, int $level) use (&$smtpLogBuf): void {
                 $smtpLogBuf[] = '[' . $level . '] ' . rtrim($str);
             };
-            $mail->CharSet = 'UTF-8';
-            $mail->setFrom($smtpFrom, $smtpFromName);
-            $mail->addAddress($to);
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body = $body;
-            $mail->send();
+            $phpMailer->CharSet = 'UTF-8';
+            $phpMailer->setFrom($smtpFrom, $smtpFromName);
+            $phpMailer->addAddress($to);
+            $phpMailer->isHTML(true);
+            $phpMailer->Subject = $subject;
+            $phpMailer->Body = $body;
+            $phpMailer->send();
 
             $smtpLog = implode("\n", $smtpLogBuf);
             return ['success' => true, 'error' => '', 'smtp_log' => $smtpLog, 'status' => 'sent'];
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             $smtpLog = implode("\n", $smtpLogBuf);
-            $err = $mail->ErrorInfo;
+            $err = $phpMailer->ErrorInfo;
             error_log('Mail error: ' . $err);
             return ['success' => false, 'error' => $err, 'smtp_log' => $smtpLog, 'status' => 'error'];
         }
@@ -199,7 +195,7 @@ final class MailService implements MailInterface
     {
         static $tableExists = null;
         try {
-            $pdo = $this->db->getPdo();
+            $pdo = $this->database->getPdo();
             if ($tableExists === null) {
                 $stmt = $pdo->query(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='mail_log'"
@@ -207,9 +203,11 @@ final class MailService implements MailInterface
                 $cnt = $stmt !== false ? (int) $stmt->fetchColumn() : 0;
                 $tableExists = ($cnt > 0);
             }
-            if (!$tableExists) return [];
+            if (!$tableExists) {
+                return [];
+            }
 
-            $stmt = $pdo->prepare("SELECT * FROM mail_log ORDER BY created_at DESC LIMIT ?");
+            $stmt = $pdo->prepare('SELECT * FROM mail_log ORDER BY created_at DESC LIMIT ?');
             $stmt->execute([$limit]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
@@ -231,8 +229,12 @@ final class MailService implements MailInterface
 
         $lignes = '';
         foreach ($data as $k => $v) {
-            if (empty($v) || $k === 'validations') continue;
-            if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+            if (empty($v) || $k === 'validations') {
+                continue;
+            }
+            if (is_array($v)) {
+                $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+            }
             $label = \App\Core\App::html()->escape(ucfirst(str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', (string) $k) ?? (string) $k)));
             $valeur = $v === '1' ? '✓' : \App\Core\App::html()->escape((string) $v);
             $lignes .= "<tr><td style='padding:5px 8px;font-weight:bold;color:#555;'>{$label}</td><td style='padding:5px 8px;'>{$valeur}</td></tr>";
@@ -242,7 +244,7 @@ final class MailService implements MailInterface
             . '<table style="border-collapse:collapse;width:100%;margin-bottom:24px;">' . $lignes . '</table>'
             . '<a href="' . $validateUrl . '" style="background:#003189;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;display:inline-block;">'
             . '✓ Marquer comme effectué</a>'
-            . '<p style="font-size:12px;color:#999;margin-top:8px;">Lien à usage unique — ' . \App\Core\App::html()->escape($this->settings->get('smtp_from')) . '</p>';
+            . '<p style="font-size:12px;color:#999;margin-top:8px;">Lien à usage unique — ' . \App\Core\App::html()->escape($this->settingsService->get('smtp_from')) . '</p>';
 
         return $this->renderEmailTemplate($formLabel . ' — Action requise', $bodyHtml);
     }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repository;
@@ -7,24 +8,24 @@ final class SubmissionRepository extends BaseRepository
 {
     public function findById(string $id): ?array
     {
-        return $this->fetchOne("SELECT * FROM submissions WHERE id = ?", [$id]);
+        return $this->fetchOne('SELECT * FROM submissions WHERE id = ?', [$id]);
     }
 
     public function findByForm(string $formId, ?string $status = null): array
     {
-        $sql = "SELECT * FROM submissions WHERE form_id = ?";
+        $sql = 'SELECT * FROM submissions WHERE form_id = ?';
         $params = [$formId];
         if ($status !== null) {
-            $sql .= " AND status = ?";
+            $sql .= ' AND status = ?';
             $params[] = $status;
         }
-        return $this->fetchAll($sql . " ORDER BY submitted_at DESC", $params);
+        return $this->fetchAll($sql . ' ORDER BY submitted_at DESC', $params);
     }
 
     public function findBySubmitter(string $email): array
     {
         return $this->fetchAll(
-            "SELECT * FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC",
+            'SELECT * FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC',
             [$email]
         );
     }
@@ -43,8 +44,8 @@ final class SubmissionRepository extends BaseRepository
     {
         $id = \generate_uuid();
         $this->execute(
-            "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, rgpd_consent)
-             VALUES (?,?,?,?,?,?)",
+            'INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, rgpd_consent)
+             VALUES (?,?,?,?,?,?)',
             [$id, $data['form_id'], $data['data'], $data['submitted_by'], $data['submitted_at'], $data['rgpd_consent']]
         );
         return $id;
@@ -52,12 +53,12 @@ final class SubmissionRepository extends BaseRepository
 
     public function deleteById(string $id): bool
     {
-        return $this->execute("DELETE FROM submissions WHERE id = ?", [$id]);
+        return $this->execute('DELETE FROM submissions WHERE id = ?', [$id]);
     }
 
     public function getSubmitterById(string $id): ?string
     {
-        $result = $this->fetchOne("SELECT submitted_by FROM submissions WHERE id = ?", [$id]);
+        $result = $this->fetchOne('SELECT submitted_by FROM submissions WHERE id = ?', [$id]);
         return $result !== null ? (string) $result['submitted_by'] : null;
     }
 
@@ -66,8 +67,6 @@ final class SubmissionRepository extends BaseRepository
      *
      * @param array<int, mixed> $params WHERE parameters
      * @param string $whereSql Pre-built WHERE clause (e.g. "1=1 AND s.status = ?")
-     * @param int $limit
-     * @param int $offset
      * @return array<int, array<string, mixed>>
      */
     public function findPaginatedWithForm(string $whereSql, array $params, int $limit, int $offset): array
@@ -95,10 +94,10 @@ final class SubmissionRepository extends BaseRepository
     public function findByIdWithForm(string $id): ?array
     {
         return $this->fetchOne(
-            "SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
+            'SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
-             WHERE s.id = ?",
+             WHERE s.id = ?',
             [$id]
         );
     }
@@ -114,23 +113,23 @@ final class SubmissionRepository extends BaseRepository
     public function deleteCascade(string $id): bool
     {
         $this->pdo()->exec('PRAGMA foreign_keys = ON');
-        $this->execute("DELETE FROM submission_validator_data WHERE submission_id = ?", [$id]);
-        $this->execute("DELETE FROM alert_log WHERE submission_id = ?", [$id]);
-        $this->execute("DELETE FROM tokens WHERE submission_id = ?", [$id]);
-        $this->execute("DELETE FROM attachments WHERE submission_id = ?", [$id]);
-        return $this->execute("DELETE FROM submissions WHERE id = ?", [$id]);
+        $this->execute('DELETE FROM submission_validator_data WHERE submission_id = ?', [$id]);
+        $this->execute('DELETE FROM alert_log WHERE submission_id = ?', [$id]);
+        $this->execute('DELETE FROM tokens WHERE submission_id = ?', [$id]);
+        $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$id]);
+        return $this->execute('DELETE FROM submissions WHERE id = ?', [$id]);
     }
 
     public function countByForm(string $formId): int
     {
-        $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM submissions WHERE form_id = ?", [$formId]);
+        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM submissions WHERE form_id = ?', [$formId]);
         return (int) ($result['cnt'] ?? 0);
     }
 
     public function getStatusCountsByForm(string $formId): array
     {
         return $this->fetchAll(
-            "SELECT status, COUNT(*) as cnt FROM submissions WHERE form_id = ? GROUP BY status",
+            'SELECT status, COUNT(*) as cnt FROM submissions WHERE form_id = ? GROUP BY status',
             [$formId]
         );
     }
@@ -138,11 +137,11 @@ final class SubmissionRepository extends BaseRepository
     public function findPaginatedByForm(string $formId, int $limit, int $offset): array
     {
         return $this->fetchAll(
-            "SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.status, s.closed_at
+            'SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.status, s.closed_at
              FROM submissions s
              WHERE s.form_id = ?
              ORDER BY s.submitted_at DESC
-             LIMIT ? OFFSET ?",
+             LIMIT ? OFFSET ?',
             [$formId, $limit, $offset]
         );
     }
@@ -150,7 +149,7 @@ final class SubmissionRepository extends BaseRepository
     public function getStatusCountsBySubmitter(string $email): array
     {
         return $this->fetchAll(
-            "SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status",
+            'SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status',
             [$email]
         );
     }
@@ -171,11 +170,11 @@ final class SubmissionRepository extends BaseRepository
     public function getValidatorDataFilledByEmail(string $email): array
     {
         return $this->fetchAll(
-            "SELECT submission_id, field_name, field_label, field_type, value,
+            'SELECT submission_id, field_name, field_label, field_type, value,
                     filled_at, step_id, step_label
              FROM submission_validator_data
              WHERE filled_by_email = ?
-             ORDER BY filled_at DESC, field_name",
+             ORDER BY filled_at DESC, field_name',
             [$email]
         );
     }
@@ -183,12 +182,12 @@ final class SubmissionRepository extends BaseRepository
     public function getValidatorDataOnSubmissionsByEmail(string $email): array
     {
         return $this->fetchAll(
-            "SELECT svd.submission_id, svd.field_name, svd.field_label, svd.field_type,
+            'SELECT svd.submission_id, svd.field_name, svd.field_label, svd.field_type,
                     svd.value, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email
              FROM submission_validator_data svd
              JOIN submissions s ON s.id = svd.submission_id
              WHERE s.submitted_by = ?
-             ORDER BY svd.submission_id, svd.filled_at, svd.field_name",
+             ORDER BY svd.submission_id, svd.filled_at, svd.field_name',
             [$email]
         );
     }
@@ -196,8 +195,8 @@ final class SubmissionRepository extends BaseRepository
     public function deleteValidatorDataBySubmitter(string $email): bool
     {
         return $this->execute(
-            "DELETE FROM submission_validator_data
-             WHERE submission_id IN (SELECT id FROM submissions WHERE submitted_by = ?)",
+            'DELETE FROM submission_validator_data
+             WHERE submission_id IN (SELECT id FROM submissions WHERE submitted_by = ?)',
             [$email]
         );
     }
@@ -205,7 +204,7 @@ final class SubmissionRepository extends BaseRepository
     public function deleteValidatorDataByEmail(string $email): bool
     {
         return $this->execute(
-            "DELETE FROM submission_validator_data WHERE filled_by_email = ?",
+            'DELETE FROM submission_validator_data WHERE filled_by_email = ?',
             [$email]
         );
     }
@@ -214,14 +213,14 @@ final class SubmissionRepository extends BaseRepository
     {
         $this->pdo()->exec('PRAGMA foreign_keys = ON');
         return $this->execute(
-            "DELETE FROM submission_validator_data
-             WHERE submission_id NOT IN (SELECT id FROM submissions)"
+            'DELETE FROM submission_validator_data
+             WHERE submission_id NOT IN (SELECT id FROM submissions)'
         );
     }
 
     public function countAll(): int
     {
-        $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM submissions");
+        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM submissions');
         return (int) ($result['cnt'] ?? 0);
     }
 
@@ -259,33 +258,33 @@ final class SubmissionRepository extends BaseRepository
     public function updateStatus(string $id, string $status): bool
     {
         return $this->execute(
-            "UPDATE submissions SET status = ? WHERE id = ?",
+            'UPDATE submissions SET status = ? WHERE id = ?',
             [$status, $id]
         );
     }
 
     public function getValidatorData(string $submissionId, ?string $stepId = null): array
     {
-        $sql = "SELECT * FROM submission_validator_data WHERE submission_id = ?";
+        $sql = 'SELECT * FROM submission_validator_data WHERE submission_id = ?';
         $params = [$submissionId];
         if ($stepId !== null) {
-            $sql .= " AND step_id = ?";
+            $sql .= ' AND step_id = ?';
             $params[] = $stepId;
         }
-        return $this->fetchAll($sql . " ORDER BY filled_at", $params);
+        return $this->fetchAll($sql . ' ORDER BY filled_at', $params);
     }
 
     public function getValidatorDataOrdered(string $submissionId): array
     {
         return $this->fetchAll(
-            "SELECT * FROM submission_validator_data WHERE submission_id = ? ORDER BY filled_at ASC, field_name ASC",
+            'SELECT * FROM submission_validator_data WHERE submission_id = ? ORDER BY filled_at ASC, field_name ASC',
             [$submissionId]
         );
     }
 
     public function saveValidatorData(string $submissionId, string $fieldName, string $value, string $filledBy, ?string $stepId = null): void
     {
-        $labelStmt = $this->pdo()->prepare("SELECT label FROM form_fields WHERE field_name = ?");
+        $labelStmt = $this->pdo()->prepare('SELECT label FROM form_fields WHERE field_name = ?');
         $labelStmt->execute([$fieldName]);
         $fieldLabel = (string) ($labelStmt->fetchColumn() ?: $fieldName);
 
@@ -298,7 +297,7 @@ final class SubmissionRepository extends BaseRepository
     public function deleteValidatorData(string $submissionId, string $fieldName): void
     {
         $this->execute(
-            "DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?",
+            'DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?',
             [$submissionId, $fieldName]
         );
     }
@@ -306,34 +305,37 @@ final class SubmissionRepository extends BaseRepository
     public function findValidatorDataByEmail(string $email, int $limit = 50): array
     {
         return $this->fetchAll(
-            "SELECT svd.*, s.form_id, f.label as form_label
+            'SELECT svd.*, s.form_id, f.label as form_label
              FROM submission_validator_data svd
              JOIN submissions s ON s.id = svd.submission_id
              JOIN forms f ON f.id = s.form_id
              WHERE svd.filled_by_email = ?
              ORDER BY svd.filled_at DESC
-             LIMIT ?",
+             LIMIT ?',
             [$email, $limit]
         );
     }
 
     public function existsBySubmitter(string $email): bool
     {
-        $result = $this->fetchOne("SELECT 1 FROM submissions WHERE submitted_by = ? LIMIT 1", [$email]);
+        $result = $this->fetchOne('SELECT 1 FROM submissions WHERE submitted_by = ? LIMIT 1', [$email]);
         return $result !== null;
     }
 
     public function countByStatusForSubmitter(string $email): array
     {
         $rows = $this->fetchAll(
-            "SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status",
+            'SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status',
             [$email]
         );
         $result = ['total' => 0, 'en_cours' => 0, 'valide' => 0];
         foreach ($rows as $row) {
             $result['total'] += (int) $row['cnt'];
-            if ($row['status'] === 'en_cours') $result['en_cours'] = (int) $row['cnt'];
-            elseif ($row['status'] === 'valide') $result['valide'] = (int) $row['cnt'];
+            if ($row['status'] === 'en_cours') {
+                $result['en_cours'] = (int) $row['cnt'];
+            } elseif ($row['status'] === 'valide') {
+                $result['valide'] = (int) $row['cnt'];
+            }
         }
         return $result;
     }
