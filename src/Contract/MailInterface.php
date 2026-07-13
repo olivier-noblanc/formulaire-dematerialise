@@ -7,6 +7,7 @@ namespace App\Contract;
 interface MailInterface
 {
     public function send(string $to, string $subject, string $body): bool;
+    /** @param array<string, mixed> $submission */
     public function buildValidationEmail(array $submission, string $stepLabel, string $token): string;
     public function renderEmailTemplate(string $title, string $bodyHtml): string;
 }

@@ -1,6 +1,16 @@
 <?php
 // Simple router for PHP built-in server
+// NOTE: This file is ONLY used by `php -S` (dev server). IIS uses index.php directly.
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// Simulate IIS AUTH_USER for dev server only
+// Reads from DEV_AUTH_USER env var — NEVER hardcode a real email here
+if (php_sapi_name() === 'cli-server' && empty($_SERVER['AUTH_USER'])) {
+    $devUser = getenv('DEV_AUTH_USER') ?: '';
+    if ($devUser !== '') {
+        $_SERVER['AUTH_USER'] = $devUser;
+    }
+}
 
 // Serve static files if they exist
 $publicPath = __DIR__ . $uri;

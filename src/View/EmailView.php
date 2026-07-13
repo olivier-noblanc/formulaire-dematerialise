@@ -18,6 +18,7 @@ final class EmailView
         return App::mail()->renderEmailTemplate($title, $bodyHtml);
     }
 
+    /** @param array<string, mixed> $submission */
     public function validationEmail(array $submission, string $stepLabel, string $token): string
     {
         return App::mail()->buildMailHtml($submission, $stepLabel, $token);

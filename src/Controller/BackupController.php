@@ -65,7 +65,7 @@ final class BackupController extends BaseController
                     $origName = $_FILES['backup_file']['name'];
 
                     if (strtolower(pathinfo((string) $origName, PATHINFO_EXTENSION)) !== 'db') {
-                        $errorMsg = 'Seuls les fichiers .db sont acceptés. Fichier fourni : ' . \App\Core\App::html()->escape($origName);
+                        $errorMsg = 'Seuls les fichiers .db sont acceptés. Fichier fourni : ' . App::html()->escape($origName);
                     } elseif (!$this->isValidSqliteDb($tmpPath)) {
                         $errorMsg = 'Le fichier fourni n\'est pas une base de données SQLite valide. Vérifiez le fichier et réessayez.';
                     } else {
@@ -83,11 +83,11 @@ final class BackupController extends BaseController
                                 App::audit()->log(
                                     'backup_restore',
                                     'database',
-                                    'Base restaurée depuis le fichier : ' . \App\Core\App::html()->escape($origName)
+                                    'Base restaurée depuis le fichier : ' . App::html()->escape($origName)
                                     . ' (sauvegarde pré-restauration : ' . basename($backupBefore) . ')'
                                 );
-                                $successMsg = 'La base de données a été restaurée avec succès depuis « ' . \App\Core\App::html()->escape($origName) . ' ». '
-                                               . 'Une copie de la base précédente a été conservée : ' . \App\Core\App::html()->escape(basename($backupBefore));
+                                $successMsg = 'La base de données a été restaurée avec succès depuis « ' . App::html()->escape($origName) . ' ». '
+                                               . 'Une copie de la base précédente a été conservée : ' . App::html()->escape(basename($backupBefore));
                             } catch (\Exception $e) {
                                 if (file_exists($backupBefore)) {
                                     copy($backupBefore, $dbPath);
@@ -110,7 +110,13 @@ final class BackupController extends BaseController
                 if (!in_array($months, [6, 12, 18, 24], true)) {
                     $errorMsg = 'Valeur de mois invalide.';
                 } else {
-                    $purgePreview = $this->countPurgeTargets($months);
+                    $cutoff = date('Y-m-d H:i:s', strtotime("-{$months} months"));
+                    $purgePreview = [
+                        'submissions'    => $this->submissionRepo->countPurgeableByCutoff($cutoff),
+                        'tokens'         => $this->tokenRepo->countPurgeableByCutoff($cutoff),
+                        'alert_logs'     => $this->alertRepo->countPurgeableByCutoff($cutoff),
+                        'validator_data' => $this->submissionRepo->countValidatorDataPurgeable($cutoff),
+                    ];
                     $purgePreview['months'] = $months;
                 }
             }
@@ -120,7 +126,13 @@ final class BackupController extends BaseController
                 if (!in_array($months, [6, 12, 18, 24], true)) {
                     $errorMsg = 'Valeur de mois invalide.';
                 } else {
-                    $preview = $this->countPurgeTargets($months);
+                    $cutoff = date('Y-m-d H:i:s', strtotime("-{$months} months"));
+                    $preview = [
+                        'submissions'    => $this->submissionRepo->countPurgeableByCutoff($cutoff),
+                        'tokens'         => $this->tokenRepo->countPurgeableByCutoff($cutoff),
+                        'alert_logs'     => $this->alertRepo->countPurgeableByCutoff($cutoff),
+                        'validator_data' => $this->submissionRepo->countValidatorDataPurgeable($cutoff),
+                    ];
 
                     if ($preview['submissions'] === 0) {
                         $infoMsg = 'Aucune soumission à purger pour la période de ' . $months . ' mois.';
@@ -128,37 +140,14 @@ final class BackupController extends BaseController
                         try {
                             $pdo = $this->db->getPdo();
                             $pdo->exec('PRAGMA foreign_keys = ON');
-                            $cutoff = date('Y-m-d H:i:s', strtotime("-{$months} months"));
 
-                            $stmtIds = $pdo->prepare("
-                                SELECT id FROM submissions
-                                WHERE status IN ('valide', 'refuse')
-                                  AND closed_at IS NOT NULL
-                                  AND closed_at < ?
-                            ");
-                            $stmtIds->execute([$cutoff]);
-                            $ids = $stmtIds->fetchAll(\PDO::FETCH_COLUMN);
+                            $ids = $this->submissionRepo->findPurgeableIds($cutoff);
 
                             if (!empty($ids)) {
-                                $placeholders = implode(',', array_fill(0, count($ids), '?'));
-
-                                $stmtDelVd = $pdo->prepare(
-                                    "DELETE FROM submission_validator_data WHERE submission_id IN ($placeholders)"
-                                );
-                                $stmtDelVd->execute($ids);
-                                $validatorDataDeleted = $stmtDelVd->rowCount();
-
-                                $stmtDelAlerts = $pdo->prepare("DELETE FROM alert_log WHERE submission_id IN ($placeholders)");
-                                $stmtDelAlerts->execute($ids);
-                                $alertLogsDeleted = $stmtDelAlerts->rowCount();
-
-                                $stmtDelTokens = $pdo->prepare("DELETE FROM tokens WHERE submission_id IN ($placeholders)");
-                                $stmtDelTokens->execute($ids);
-                                $tokensDeleted = $stmtDelTokens->rowCount();
-
-                                $stmtDelSubs = $pdo->prepare("DELETE FROM submissions WHERE id IN ($placeholders)");
-                                $stmtDelSubs->execute($ids);
-                                $submissionsDeleted = $stmtDelSubs->rowCount();
+                                $validatorDataDeleted = $this->submissionRepo->deleteValidatorDataBySubmissionIds($ids);
+                                $alertLogsDeleted = $this->alertRepo->deleteLogBySubmissionIds($ids);
+                                $tokensDeleted = $this->tokenRepo->deleteBySubmissionIds($ids);
+                                $submissionsDeleted = $this->submissionRepo->deleteByIds($ids);
 
                                 $pdo->exec('VACUUM');
 
@@ -191,7 +180,7 @@ final class BackupController extends BaseController
 
         $dbStats = [];
         $dbStats['file_size'] = filesize($dbPath);
-        $dbStats['file_size_readable'] = $this->formatBytes($dbStats['file_size']);
+        $dbStats['file_size_readable'] = $this->formatBytes((int) $dbStats['file_size']);
         $dbStats['file_exists'] = file_exists($dbPath);
         $dbStats['file_modified'] = '—';
         if (file_exists($dbPath)) {
@@ -201,44 +190,30 @@ final class BackupController extends BaseController
 
         $dbStats['row_counts'] = [];
         try {
-            $pdo = $this->db->getPdo();
-            $unionParts = [];
-            foreach ($dbTables as $table) {
-                $unionParts[] = "SELECT '" . $table . "' AS tbl, COUNT(*) AS cnt FROM " . $table;
-            }
-            try {
-                $countStmt = $pdo->query(implode(' UNION ALL ', $unionParts));
-                while ($countStmt !== false && $row = $countStmt->fetch(\PDO::FETCH_ASSOC)) {
-                    $dbStats['row_counts'][$row['tbl']] = (int) $row['cnt'];
-                }
-            } catch (\Exception $e) {
-                foreach ($dbTables as $dbTable) {
-                    $dbStats['row_counts'][$dbTable] = '—';
-                }
-                error_log('backup row count error: ' . $e->getMessage());
-            }
-
-            $oldest = $pdo->query('SELECT MIN(submitted_at) FROM submissions')->fetchColumn();
-            $newest = $pdo->query('SELECT MAX(submitted_at) FROM submissions')->fetchColumn();
-            $oldestStr = $oldest !== false ? (string) $oldest : '';
-            $newestStr = $newest !== false ? (string) $newest : '';
-            $oldestTs = $oldestStr !== '' ? strtotime($oldestStr) : false;
-            $newestTs = $newestStr !== '' ? strtotime($newestStr) : false;
-            $dbStats['oldest_submission'] = ($oldestStr !== '' && $oldestTs !== false) ? date('d/m/Y H:i', $oldestTs) : '—';
-            $dbStats['newest_submission'] = ($newestStr !== '' && $newestTs !== false) ? date('d/m/Y H:i', $newestTs) : '—';
-
-            $pageCount    = (int) $pdo->query('PRAGMA page_count')->fetchColumn();
-            $freelistCount = (int) $pdo->query('PRAGMA freelist_count')->fetchColumn();
-            $pageSize     = (int) $pdo->query('PRAGMA page_size')->fetchColumn();
-            $dbStats['page_count']     = $pageCount;
-            $dbStats['freelist_count'] = $freelistCount;
-            $dbStats['page_size']      = $pageSize;
-            $dbStats['db_size_pages']  = $this->formatBytes($pageCount * $pageSize);
-            $dbStats['free_pages']     = $this->formatBytes($freelistCount * $pageSize);
+            $dbStats['row_counts'] = $this->submissionRepo->countByTableNames($dbTables);
         } catch (\Exception $e) {
-            error_log('dbStats error: ' . $e->getMessage());
-            $dbStats['error'] = 'Une erreur technique est survenue.';
+            foreach ($dbTables as $dbTable) {
+                $dbStats['row_counts'][$dbTable] = '—';
+            }
+            error_log('backup row count error: ' . $e->getMessage());
         }
+
+        $oldestStr = $this->submissionRepo->getOldestSubmittedAt() ?? '';
+        $newestStr = $this->submissionRepo->getNewestSubmittedAt() ?? '';
+        $oldestTs = $oldestStr !== '' ? strtotime($oldestStr) : false;
+        $newestTs = $newestStr !== '' ? strtotime($newestStr) : false;
+        $dbStats['oldest_submission'] = ($oldestStr !== '' && $oldestTs !== false) ? date('d/m/Y H:i', $oldestTs) : '—';
+        $dbStats['newest_submission'] = ($newestStr !== '' && $newestTs !== false) ? date('d/m/Y H:i', $newestTs) : '—';
+
+        $pdo = $this->db->getPdo();
+        $pageCount    = (int) $pdo->query('PRAGMA page_count')->fetchColumn();
+        $freelistCount = (int) $pdo->query('PRAGMA freelist_count')->fetchColumn();
+        $pageSize     = (int) $pdo->query('PRAGMA page_size')->fetchColumn();
+        $dbStats['page_count']     = $pageCount;
+        $dbStats['freelist_count'] = $freelistCount;
+        $dbStats['page_size']      = $pageSize;
+        $dbStats['db_size_pages']  = $this->formatBytes($pageCount * $pageSize);
+        $dbStats['free_pages']     = $this->formatBytes($freelistCount * $pageSize);
 
         $purgePreview ??= null;
 
@@ -257,59 +232,6 @@ final class BackupController extends BaseController
         $header = fread($handle, 16);
         fclose($handle);
         return $header !== false && str_starts_with($header, 'SQLite format 3');
-    }
-
-    private function countPurgeTargets(int $months): array
-    {
-        $pdo = $this->db->getPdo();
-        $cutoffTs = strtotime("-{$months} months");
-        $cutoff = date('Y-m-d H:i:s', $cutoffTs !== false ? $cutoffTs : 0);
-
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) FROM submissions
-            WHERE status IN ('valide', 'refuse')
-              AND closed_at IS NOT NULL
-              AND closed_at < ?
-        ");
-        $stmt->execute([$cutoff]);
-        $submissions = (int) $stmt->fetchColumn();
-
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status IN ('valide', 'refuse')
-              AND s.closed_at IS NOT NULL
-              AND s.closed_at < ?
-        ");
-        $stmt->execute([$cutoff]);
-        $tokens = (int) $stmt->fetchColumn();
-
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) FROM alert_log al
-            JOIN submissions s ON s.id = al.submission_id
-            WHERE s.status IN ('valide', 'refuse')
-              AND s.closed_at IS NOT NULL
-              AND s.closed_at < ?
-        ");
-        $stmt->execute([$cutoff]);
-        $alertLogs = (int) $stmt->fetchColumn();
-
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) FROM submission_validator_data svd
-            JOIN submissions s ON s.id = svd.submission_id
-            WHERE s.status IN ('valide', 'refuse')
-              AND s.closed_at IS NOT NULL
-              AND s.closed_at < ?
-        ");
-        $stmt->execute([$cutoff]);
-        $validatorData = (int) $stmt->fetchColumn();
-
-        return [
-            'submissions'       => $submissions,
-            'tokens'            => $tokens,
-            'alert_logs'        => $alertLogs,
-            'validator_data'    => $validatorData,
-        ];
     }
 
     private function formatBytes(int $bytes, int $precision = 2): string

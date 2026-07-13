@@ -73,6 +73,31 @@ final class AlertRepository extends BaseRepository
         );
     }
 
+    /**
+     * @param array<int, string> $submissionIds
+     */
+    public function deleteLogBySubmissionIds(array $submissionIds): int
+    {
+        if ($submissionIds === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
+        $stmt = $this->pdo()->prepare("DELETE FROM alert_log WHERE submission_id IN ($placeholders)");
+        $stmt->execute($submissionIds);
+        return $stmt->rowCount();
+    }
+
+    public function countPurgeableByCutoff(string $cutoff): int
+    {
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as cnt FROM alert_log al
+             JOIN submissions s ON s.id = al.submission_id
+             WHERE s.status IN ('valide', 'refuse') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
+            [$cutoff]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
+
     public function findLabelById(string $ruleId): ?string
     {
         $result = $this->fetchOne('SELECT label FROM alert_rules WHERE id = ?', [$ruleId]);

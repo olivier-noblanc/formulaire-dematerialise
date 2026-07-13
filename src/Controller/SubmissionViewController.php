@@ -12,9 +12,6 @@ final class SubmissionViewController extends BaseController
 {
     public function handle(): void
     {
-        require_once dirname(__DIR__, 2) . '/lib/render_submission_view.php';
-        require_once dirname(__DIR__, 2) . '/lib/render_submission_view_sections.php';
-
         $pdo = $this->db->getPdo();
         $subId = trim($_GET['id'] ?? '');
 

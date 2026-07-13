@@ -12,8 +12,6 @@ final class FormTrackingController extends BaseController
 {
     public function handle(): void
     {
-        require_once dirname(__DIR__, 2) . '/lib/render_form_tracking.php';
-
         $user = App::auth()->getUser();
         $pdo = $this->db->getPdo();
         $formUuid = trim($_GET['f'] ?? '');

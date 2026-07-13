@@ -15,18 +15,8 @@ final class MonitoringController extends BaseController
     {
         App::auth()->requireAdmin();
 
-        require_once dirname(__DIR__, 2) . '/lib/render_monitoring_audit.php';
-
-        $pdo = $this->db->getPdo();
-
-        $avgTimeStmt = $pdo->query("
-            SELECT AVG(
-                CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
-            ) as avg_seconds
-            FROM submissions s
-            WHERE s.status = 'valide' AND s.closed_at IS NOT NULL
-        ");
-        $avgSeconds = (float) ($avgTimeStmt->fetchColumn() ?: 0);
+        // Query #1: Average processing time
+        $avgSeconds = $this->submissionRepo->getAvgProcessingTime();
         $avgHours = round($avgSeconds / 3600, 1);
         $avgDays = round($avgSeconds / 86400, 1);
 
@@ -37,53 +27,26 @@ final class MonitoringController extends BaseController
         $enCoursSub = $gstats['en_cours'];
         $tauxValidation = $gstats['taux_validation'];
 
+        // Query #2: Blocked tokens
         $delaiRelance = (int) App::settings()->get('delai_relance_h', '48');
         $bloqueHours = $delaiRelance * 2;
-        $tokensBloques = $pdo->query("
-            SELECT t.id, t.email, t.sent_at, t.relance_count, t.expires_at,
-                   st.label as step_label, st.ordre,
-                   s.id as submission_id, s.submitted_by, s.submitted_at,
-                   f.label as form_label
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            WHERE t.done_at IS NULL AND s.status = 'en_cours'
-              AND CAST(strftime('%s', 'now') AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) > ($bloqueHours * 3600)
-            ORDER BY t.sent_at ASC
-            LIMIT 100
-        ")->fetchAll(\PDO::FETCH_ASSOC);
+        $tokensBloques = $this->tokenRepo->findBlocked($bloqueHours);
 
-        $tokensExpired = $pdo->query("
-            SELECT COUNT(*) FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE t.done_at IS NULL AND t.expires_at IS NOT NULL
-              AND t.expires_at < datetime('now') AND s.status = 'en_cours'
-        ")->fetchColumn();
+        // Query #3: Expired tokens
+        $tokensExpired = $this->tokenRepo->countExpired();
 
+        // Query #4 & #5: Active submissions with deadlines + batch pending counts
         $activeAlerts = [];
         try {
-            $alertSubmissions = $pdo->query("
-                SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.form_id,
-                       f.label as form_label, f.deadline_field
-                FROM submissions s
-                JOIN forms f ON f.id = s.form_id
-                WHERE s.status = 'en_cours' AND f.deadline_field != ''
-            ")->fetchAll(\PDO::FETCH_ASSOC);
+            $alertSubmissions = $this->submissionRepo->findActiveWithDeadlineField();
 
             $nowTs = time();
 
             // Batch fetch pending token counts to avoid N+1
             $alertSubIds = array_column($alertSubmissions, 'id');
-            $pendingCounts = [];
-            if ($alertSubIds !== []) {
-                $placeholders = implode(',', array_fill(0, count($alertSubIds), '?'));
-                $pendingStmt = $pdo->prepare("SELECT submission_id, COUNT(*) as cnt FROM tokens WHERE submission_id IN ($placeholders) AND done_at IS NULL GROUP BY submission_id");
-                $pendingStmt->execute($alertSubIds);
-                foreach ($pendingStmt->fetchAll(\PDO::FETCH_ASSOC) as $pr) {
-                    $pendingCounts[$pr['submission_id']] = (int) $pr['cnt'];
-                }
-            }
+            $pendingCounts = $alertSubIds !== []
+                ? $this->tokenRepo->countPendingBySubmissionIds($alertSubIds)
+                : [];
 
             foreach ($alertSubmissions as $alertSubmission) {
                 $data = json_decode($alertSubmission['data'], true) ?: [];
@@ -120,17 +83,10 @@ final class MonitoringController extends BaseController
             $activeAlerts = [];
         }
 
+        // Query #6: Recent alerts (existing repo method)
         $recentAlerts = [];
         try {
-            $recentAlerts = $pdo->query('
-                SELECT al.*, f.label as form_label, ar.label as rule_label
-                FROM alert_log al
-                JOIN submissions s ON s.id = al.submission_id
-                JOIN forms f ON f.id = s.form_id
-                LEFT JOIN alert_rules ar ON ar.id = al.rule_id
-                ORDER BY al.sent_at DESC
-                LIMIT 20
-            ')->fetchAll(\PDO::FETCH_ASSOC);
+            $recentAlerts = $this->alertRepo->getLogsWithForm(20);
         } catch (\Exception) {
             $recentAlerts = [];
         }
@@ -163,27 +119,13 @@ final class MonitoringController extends BaseController
         $lastRemind = App::settings()->get('last_remind_run', '');
         $lastAlertCheck = App::settings()->get('last_alert_check', '');
 
-        $dailyStmt = $pdo->query("
-            SELECT DATE(submitted_at) as day, COUNT(*) as cnt
-            FROM submissions
-            WHERE submitted_at >= datetime('now', '-7 days')
-            GROUP BY DATE(submitted_at)
-            ORDER BY day DESC
-        ");
-        $dailyStats = $dailyStmt->fetchAll(\PDO::FETCH_ASSOC);
+        // Query #7: Daily activity
+        $dailyStats = $this->submissionRepo->getDailyCounts(7);
 
-        $byFormStmt = $pdo->query("
-            SELECT f.label, COUNT(s.id) as total,
-                   SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
-                   SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
-                   SUM(CASE WHEN s.status = 'refuse' THEN 1 ELSE 0 END) as refuse
-            FROM forms f
-            LEFT JOIN submissions s ON s.form_id = f.id
-            GROUP BY f.id
-            ORDER BY total DESC
-        ");
-        $byFormStats = $byFormStmt->fetchAll(\PDO::FETCH_ASSOC);
+        // Query #8: Per-form stats
+        $byFormStats = $this->formRepo->getSubmissionCounts();
 
+        // Audit filters
         $auditFilters = [
             'log_action'     => trim($_GET['log_action'] ?? ''),
             'log_actor'      => trim($_GET['log_actor'] ?? ''),
@@ -200,41 +142,17 @@ final class MonitoringController extends BaseController
         $auditPage = max(1, (int) ($_GET['log_page'] ?? 1));
         $auditPerPage = 50;
 
-        $auditWhere = [];
-        $auditParams = [];
-        if ($auditFilters['log_action'] !== '') {
-            $auditWhere[]  = 'action = ?';
-            $auditParams[] = $auditFilters['log_action'];
-        }
-        if ($auditFilters['log_actor'] !== '') {
-            $auditWhere[]  = 'actor LIKE ?';
-            $auditParams[] = '%' . $auditFilters['log_actor'] . '%';
-        }
-        if ($auditFilters['log_target'] !== '') {
-            $auditWhere[]  = 'target LIKE ?';
-            $auditParams[] = '%' . $auditFilters['log_target'] . '%';
-        }
-        if ($auditFilters['log_date_debut'] !== '') {
-            $auditWhere[]  = 'date(created_at) >= ?';
-            $auditParams[] = $auditFilters['log_date_debut'];
-        }
-        if ($auditFilters['log_date_fin'] !== '') {
-            $auditWhere[]  = 'date(created_at) <= ?';
-            $auditParams[] = $auditFilters['log_date_fin'];
-        }
-        $auditWhereSql = $auditWhere !== [] ? ('WHERE ' . implode(' AND ', $auditWhere)) : '';
-
+        // Query #9: Audit CSV export
         if (isset($_GET['export_audit']) && $_GET['export_audit'] === '1') {
             App::audit()->log('audit_export', 'audit_log', 'Export CSV du journal d\'audit filtré');
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="audit_log_' . date('Ymd_His') . '.csv"');
-            $auditExportStmt = $pdo->prepare("SELECT created_at, action, actor, target, detail, ip FROM audit_log $auditWhereSql ORDER BY created_at DESC");
-            $auditExportStmt->execute($auditParams);
+            $auditExportRows = $this->auditRepo->findFiltered($auditFilters);
             $out = fopen('php://output', 'w');
             if ($out !== false) {
                 fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
                 fputcsv($out, ['Date', 'Action', 'Acteur', 'Cible', 'Détail', 'IP'], ';', '"', '\\');
-                while ($arow = $auditExportStmt->fetch(\PDO::FETCH_ASSOC)) {
+                foreach ($auditExportRows as $arow) {
                     fputcsv($out, [
                         $arow['created_at'],
                         $arow['action'],
@@ -249,20 +167,19 @@ final class MonitoringController extends BaseController
             exit;
         }
 
-        $auditCountStmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log $auditWhereSql");
-        $auditCountStmt->execute($auditParams);
-        $auditTotal = (int) $auditCountStmt->fetchColumn();
+        // Query #10: Audit count
+        $auditTotal = $this->auditRepo->countFiltered($auditFilters);
         $auditTotalPages = max(1, (int) ceil($auditTotal / $auditPerPage));
         if ($auditPage > $auditTotalPages) {
             $auditPage = $auditTotalPages;
         }
         $auditOffset = ($auditPage - 1) * $auditPerPage;
 
-        $auditStmt = $pdo->prepare("SELECT * FROM audit_log $auditWhereSql ORDER BY created_at DESC LIMIT ? OFFSET ?");
-        $auditStmt->execute(array_merge($auditParams, [$auditPerPage, $auditOffset]));
-        $auditLogs = $auditStmt->fetchAll(\PDO::FETCH_ASSOC);
+        // Query #11: Audit paginated
+        $auditLogs = $this->auditRepo->findFilteredPaginated($auditFilters, $auditPerPage, $auditOffset);
 
-        $actionTypes = $pdo->query('SELECT DISTINCT action FROM audit_log ORDER BY action')->fetchAll(\PDO::FETCH_COLUMN);
+        // Query #12: Distinct action types
+        $actionTypes = $this->auditRepo->getDistinctActionTypes();
 
         $auditBaseQs = http_build_query(array_filter([
             'log_action'     => $auditFilters['log_action'],

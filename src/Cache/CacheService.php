@@ -152,7 +152,11 @@ final readonly class CacheService implements CacheInterface
         $files = [];
         $dir = $this->cacheDir;
 
-        foreach (glob($dir . '/*.json') as $f) {
+        $jsonFiles = glob($dir . '/*.json');
+        if ($jsonFiles === false) {
+            return;
+        }
+        foreach ($jsonFiles as $f) {
             $size = filesize($f);
             $totalSize += $size;
             $files[] = ['path' => $f, 'size' => $size, 'mtime' => filemtime($f)];

@@ -23,10 +23,7 @@ final class HealthController extends BaseController
         $dbOk = false;
         $dbDetail = '';
         try {
-            $pdo = $this->db->getPdo();
-            $test = $pdo->prepare('SELECT 1');
-            $test->execute();
-            $dbOk = $test->fetchColumn() === '1';
+            $dbOk = $this->settingsRepo->testConnection();
             $dbDetail = 'Connexion SQLite OK';
         } catch (\Exception $e) {
             $dbDetail = 'Erreur : ' . $e->getMessage();
@@ -59,10 +56,7 @@ final class HealthController extends BaseController
         $schemaOk = false;
         $schemaDetail = '';
         try {
-            $pdo = $this->db->getPdo();
-            $tablesStmt = $pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
-            $tablesStmt->execute();
-            $tables = $tablesStmt->fetchAll(\PDO::FETCH_COLUMN);
+            $tables = $this->settingsRepo->getTableNames();
             $required = ['forms', 'submissions', 'tokens', 'settings', 'audit_log'];
             $missing = array_diff($required, $tables);
             if ($missing === []) {

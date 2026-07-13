@@ -27,6 +27,7 @@ final readonly class TokenService
     /**
      * Récupère les tokens d'une soumission avec les infos de l'étape associée.
      */
+    /** @return array<int, array<string, mixed>> */
     public function getForSubmission(string $submissionId, array $extraFields = []): array
     {
         $allowedFields = ['t.id', 't.token', 't.relance_count', 't.relance_at', 't.expires_at', 't.sent_at'];
@@ -51,6 +52,7 @@ final readonly class TokenService
     /**
      * Régénère un token expiré pour un validateur (admin uniquement).
      */
+    /** @return array{success: bool, message: string} */
     public function regenerate(string $oldTokenId): array
     {
         if (!$this->authService->isAdmin()) {
@@ -122,6 +124,7 @@ final readonly class TokenService
     /**
      * Annule une soumission en cours.
      */
+    /** @return array{success: bool, message: string} */
     public function cancel(string $submissionId, string $cancelledBy = ''): array
     {
         $caller = $cancelledBy ?: $this->authService->getUser();
@@ -189,6 +192,7 @@ final readonly class TokenService
     /**
      * Envoie un rappel manuel pour un token en attente.
      */
+    /** @return array{success: bool, message: string} */
     public function remind(string $tokenId): array
     {
         $tok = App::workflow()->getTokenByIdWithContext($tokenId);
@@ -242,6 +246,7 @@ final readonly class TokenService
     /**
      * Délègue un token de validation à un autre validateur.
      */
+    /** @return array{success: bool, message: string} */
     public function delegate(string $tokenId, string $toEmail, string $reason = ''): array
     {
         $tok = App::workflow()->getTokenByIdWithContext($tokenId);
@@ -327,6 +332,7 @@ final readonly class TokenService
     /**
      * Récupère l'historique des délégations pour une soumission.
      */
+    /** @return array<int, array<string, mixed>> */
     public function getDelegations(string $submissionId): array
     {
         $stmt = $this->database->getPdo()->prepare('

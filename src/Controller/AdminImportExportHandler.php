@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Repository\FormRepository;
 
 /**
  * Handlers pour l'export et l'import de formulaires en JSON.
@@ -14,15 +15,15 @@ final class AdminImportExportHandler
     /**
      * @return array<string, mixed>
      */
-    public static function handleExportForm(\PDO $pdo): array
+    public static function handleExportForm(): array
     {
         $export_id = trim($_POST['form_id'] ?? '');
         if ($export_id === '' || $export_id === '0') {
             return ['error' => 'Aucun formulaire sélectionné pour l\'export.'];
         }
-        $stmt = $pdo->prepare('SELECT * FROM forms WHERE id = ?');
-        $stmt->execute([$export_id]);
-        $form_data = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $repo = App::getInstance()->get(FormRepository::class);
+        $form_data = $repo->findById($export_id);
         if (!$form_data) {
             return ['error' => 'Formulaire introuvable.'];
         }
@@ -40,9 +41,7 @@ final class AdminImportExportHandler
             'steps' => [],
         ];
 
-        $f_stmt = $pdo->prepare('SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre');
-        $f_stmt->execute([$export_id]);
-        foreach ($f_stmt->fetchAll(\PDO::FETCH_ASSOC) as $f) {
+        foreach ($repo->getFields($export_id) as $f) {
             $export['fields'][] = [
                 'label' => $f['label'],
                 'field_type' => $f['field_type'],
@@ -58,16 +57,7 @@ final class AdminImportExportHandler
             ];
         }
 
-        $s_stmt = $pdo->prepare("
-            SELECT s.*, GROUP_CONCAT(sr.email, '|') as recipient_emails
-            FROM steps s
-            LEFT JOIN step_recipients sr ON sr.step_id = s.id
-            WHERE s.form_id = ?
-            GROUP BY s.id
-            ORDER BY s.ordre
-        ");
-        $s_stmt->execute([$export_id]);
-        foreach ($s_stmt->fetchAll(\PDO::FETCH_ASSOC) as $s) {
+        foreach ($repo->getStepsWithRecipients($export_id) as $s) {
             $recipients = $s['recipient_emails'] ? explode('|', $s['recipient_emails']) : [];
             $raw_condition = (string) ($s['condition'] ?? '');
             $condition_export = null;
@@ -128,7 +118,7 @@ final class AdminImportExportHandler
     /**
      * @return array<string, mixed>
      */
-    public static function handleImportForm(\PDO $pdo): array
+    public static function handleImportForm(): array
     {
         $json_input = trim($_POST['json_data'] ?? '');
         if ($json_input === '' || $json_input === '0') {
@@ -146,20 +136,24 @@ final class AdminImportExportHandler
                 'preserved_json' => $json_input,
             ];
         }
+
+        $repo = App::getInstance()->get(FormRepository::class);
         try {
-            $pdo->beginTransaction();
+            $repo->pdo()->beginTransaction();
 
             $label = $data['form']['label'];
             $slug = \generate_slug($label);
             $desc = $data['form']['description'] ?? '';
             $deadline = $data['form']['deadline_field'] ?? '';
 
-            $new_id = \generate_uuid();
-            $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at, deadline_field) VALUES (?, ?, ?, ?, 1, datetime('now'), ?)")
-                ->execute([$new_id, $slug, $label, $desc, $deadline]);
+            $new_id = $repo->create([
+                'label' => $label,
+                'slug' => $slug,
+                'description' => $desc,
+                'deadline_field' => $deadline,
+            ]);
 
             if (!empty($data['fields'])) {
-                $field_stmt = $pdo->prepare('INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, required, ordre, card_group, hint, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                 $ordre = 1;
                 foreach ($data['fields'] as $f) {
                     $options_json = null;
@@ -175,19 +169,19 @@ final class AdminImportExportHandler
                     if (!is_string($visibility) || !in_array($visibility, ['all', 'owner_only'], true)) {
                         $visibility = 'all';
                     }
-                    $field_stmt->execute([
-                        \generate_uuid(), $new_id,
-                        $f['label'] ?? 'Champ',
-                        $f['field_type'] ?? 'text',
-                        $field_name,
-                        $options_json,
-                        (int) ($f['required'] ?? 0),
-                        (int) ($f['ordre'] ?? $ordre),
-                        $f['card_group'] ?? 'Général',
-                        $f['hint'] ?? '',
-                        $filled_by,
-                        $f['validator_step'] ?? '',
-                        $visibility,
+                    $repo->createField([
+                        'form_id' => $new_id,
+                        'label' => $f['label'] ?? 'Champ',
+                        'field_type' => $f['field_type'] ?? 'text',
+                        'field_name' => $field_name,
+                        'options' => $options_json,
+                        'required' => (int) ($f['required'] ?? 0),
+                        'ordre' => (int) ($f['ordre'] ?? $ordre),
+                        'card_group' => $f['card_group'] ?? 'Général',
+                        'hint' => $f['hint'] ?? '',
+                        'filled_by' => $filled_by,
+                        'validator_step' => $f['validator_step'] ?? '',
+                        'visibility' => $visibility,
                     ]);
                     $ordre++;
                 }
@@ -195,7 +189,6 @@ final class AdminImportExportHandler
 
             if (!empty($data['steps'])) {
                 foreach ($data['steps'] as $s) {
-                    $step_id = \generate_uuid();
                     $raw_cond_import = $s['condition'] ?? '';
                     $cond_db = '';
                     if (is_array($raw_cond_import)) {
@@ -218,24 +211,28 @@ final class AdminImportExportHandler
                         }
                     }
 
-                    $pdo->prepare('INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)')
-                        ->execute([$step_id, $new_id, $s['label'] ?? 'Étape', (int) ($s['ordre'] ?? 1), (int) ($s['actif'] ?? 1), $cond_db]);
+                    $step_id = $repo->createStep([
+                        'form_id' => $new_id,
+                        'label' => $s['label'] ?? 'Étape',
+                        'ordre' => (int) ($s['ordre'] ?? 1),
+                        'actif' => (int) ($s['actif'] ?? 1),
+                        'condition' => $cond_db,
+                    ]);
 
                     if (!empty($s['recipients'])) {
-                        $recip_stmt = $pdo->prepare('INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)');
                         foreach ($s['recipients'] as $email) {
-                            $recip_stmt->execute([\generate_uuid(), $step_id, $email]);
+                            $repo->createRecipient($step_id, $email);
                         }
                     }
                 }
             }
 
-            $pdo->commit();
+            $repo->pdo()->commit();
             App::audit()->log('form_import', 'form:' . $new_id, "Formulaire '$label' importé depuis JSON");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_id)];
         } catch (\PDOException $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
+            if ($repo->pdo()->inTransaction()) {
+                $repo->pdo()->rollBack();
             }
             error_log('handleImportForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];

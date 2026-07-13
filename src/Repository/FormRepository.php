@@ -6,11 +6,13 @@ namespace App\Repository;
 
 final class FormRepository extends BaseRepository
 {
+    /** @return array<string, mixed>|null */
     public function findById(string $id): ?array
     {
         return $this->fetchOne('SELECT * FROM forms WHERE id = ?', [$id]);
     }
 
+    /** @return array<string, mixed>|null */
     public function findBySlug(string $slug): ?array
     {
         return $this->fetchOne('SELECT * FROM forms WHERE slug = ?', [$slug]);
@@ -68,8 +70,8 @@ final class FormRepository extends BaseRepository
     {
         $id = \generate_uuid();
         $this->execute(
-            "INSERT INTO forms (id, label, slug, description, actif, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-            [$id, $data['label'], $data['slug'], $data['description'] ?? '', $data['actif'] ?? 1]
+            "INSERT INTO forms (id, label, slug, description, actif, created_at, deadline_field) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)",
+            [$id, $data['label'], $data['slug'], $data['description'] ?? '', $data['actif'] ?? 1, $data['deadline_field'] ?? '']
         );
         return $id;
     }
@@ -119,6 +121,22 @@ final class FormRepository extends BaseRepository
     {
         return $this->fetchAll(
             'SELECT * FROM steps WHERE form_id = ? ORDER BY ordre',
+            [$formId]
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getStepsWithRecipients(string $formId): array
+    {
+        return $this->fetchAll(
+            "SELECT s.*, GROUP_CONCAT(sr.email, '|') as recipient_emails
+             FROM steps s
+             LEFT JOIN step_recipients sr ON sr.step_id = s.id
+             WHERE s.form_id = ?
+             GROUP BY s.id
+             ORDER BY s.ordre",
             [$formId]
         );
     }
@@ -338,6 +356,23 @@ final class FormRepository extends BaseRepository
     }
 
     // ── Cascade delete ──────────────────────────────────────────
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getSubmissionCounts(): array
+    {
+        return $this->fetchAll(
+            "SELECT f.label, COUNT(s.id) as total,
+                    SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
+                    SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
+                    SUM(CASE WHEN s.status = 'refuse' THEN 1 ELSE 0 END) as refuse
+             FROM forms f
+             LEFT JOIN submissions s ON s.form_id = f.id
+             GROUP BY f.id
+             ORDER BY total DESC"
+        );
+    }
 
     public function deleteCascade(string $formId): void
     {

@@ -21,16 +21,37 @@ final readonly class ExportService
     }
 
     /**
-     * Exporte les soumissions au format CSV et force le téléchargement.
+     * Transforme une valeur brute pour l'export CSV.
      *
-     * @param array<string, mixed> $options Filtres optionnels ['form_id' => string, 'status' => string]
+     * - '1' → 'Oui', '0' → 'Non'
+     * - tableaux → json_encode
+     * - Neutralise l'injection CSV (formules Excel)
      */
-    public function exportCsv(array $options = []): void
+    public function transformValue(mixed $val): mixed
     {
-        if (!$this->authService->isAdmin()) {
-            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous n\'avez pas accès à l\'export CSV. Cette fonctionnalité est réservée aux administrateurs.');
+        if ($val === '1') {
+            return 'Oui';
         }
+        if ($val === '0') {
+            return 'Non';
+        }
+        if (is_array($val)) {
+            return json_encode($val, JSON_UNESCAPED_UNICODE);
+        }
+        if (is_string($val) && preg_match('/^[=\-+\@]/', $val)) {
+            return "'" . $val;
+        }
+        return $val;
+    }
 
+    /**
+     * Construit la clause WHERE et les paramètres à partir des options.
+     *
+     * @param array<string, mixed> $options
+     * @return array{0: string, 1: array<int, mixed>}
+     */
+    public function buildWhereClause(array $options): array
+    {
         $where = ['1=1'];
         $params = [];
         if (!empty($options['form_id'])) {
@@ -41,7 +62,19 @@ final readonly class ExportService
             $where[] = 's.status = ?';
             $params[] = $options['status'];
         }
-        $where_sql = implode(' AND ', $where);
+        return [implode(' AND ', $where), $params];
+    }
+
+    /**
+     * Génère le contenu CSV sous forme de chaîne (sans headers HTTP ni exit).
+     *
+     * Utilisé par exportCsv() et testable directement.
+     *
+     * @param array<string, mixed> $options Filtres optionnels ['form_id' => string, 'status' => string]
+     */
+    public function generateCsvString(array $options = []): string
+    {
+        [$where_sql, $params] = $this->buildWhereClause($options);
 
         $pdo = $this->database->getPdo();
 
@@ -55,19 +88,17 @@ final readonly class ExportService
         $keysStmt->execute($params);
         $all_keys = $keysStmt->fetchAll(PDO::FETCH_COLUMN);
 
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="export_submissions_' . gmdate('Ymd_His') . '.csv"');
-
-        $out = fopen('php://output', 'w');
-        if ($out === false) {
-            return;
+        $output = fopen('php://memory', 'r+');
+        if ($output === false) {
+            return '';
         }
+
         // BOM pour Excel
-        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
         // En-tête fixe
         $headers = array_merge(['ID', 'Formulaire', 'Agent', 'Statut', 'Soumis le', 'Clôturé le'], $all_keys);
-        fputcsv($out, $headers, ';', '"', '\\');
+        fputcsv($output, $headers, ';', '"', '\\');
 
         // Streamer les lignes par batch de 500
         $batch_size = 500;
@@ -97,27 +128,36 @@ final readonly class ExportService
                     $row['closed_at'] ?? '',
                 ];
                 foreach ($all_keys as $all_key) {
-                    $val = $data[$all_key] ?? '';
-                    if ($val === '1') {
-                        $val = 'Oui';
-                    } elseif ($val === '0') {
-                        $val = 'Non';
-                    } elseif (is_array($val)) {
-                        $val = json_encode($val, JSON_UNESCAPED_UNICODE);
-                    }
-                    // Neutraliser injection CSV (Excel formula injection)
-                    if (is_string($val) && preg_match('/^[=\-+\@]/', $val)) {
-                        $val = "'" . $val;
-                    }
-                    $line[] = $val;
+                    $line[] = $this->transformValue($data[$all_key] ?? '');
                 }
-                fputcsv($out, $line, ';', '"', '\\');
+                fputcsv($output, $line, ';', '"', '\\');
             }
 
             $offset += $batch_size;
         } while (count($rows) === $batch_size);
 
-        fclose($out);
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+
+        return $csv;
+    }
+
+    /**
+     * Exporte les soumissions au format CSV et force le téléchargement.
+     *
+     * @param array<string, mixed> $options Filtres optionnels ['form_id' => string, 'status' => string]
+     */
+    public function exportCsv(array $options = []): void
+    {
+        if (!$this->authService->isAdmin()) {
+            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous n\'avez pas accès à l\'export CSV. Cette fonctionnalité est réservée aux administrateurs.');
+        }
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="export_submissions_' . gmdate('Ymd_His') . '.csv"');
+
+        echo $this->generateCsvString($options);
         exit;
     }
 }

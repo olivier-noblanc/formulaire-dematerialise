@@ -24,6 +24,7 @@ use App\Core\MigrationService;
 use App\Cron\CronService;
 use App\Email\EmailVerificationService;
 use App\Export\ExportService;
+use App\Docs\DocumentationService;
 use App\Forms\FieldService;
 use App\Forms\ValidatorDataService;
 use App\Mail\MailService;
@@ -122,6 +123,9 @@ $app->set(ExportService::class, new ExportService($db, $app->get(AuthService::cl
 
 // Email verification service
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
+
+// Documentation service (stateless)
+$app->set(DocumentationService::class, new DocumentationService());
 
 // RGPD service
 $app->set(RgpdService::class, new RgpdService($db));

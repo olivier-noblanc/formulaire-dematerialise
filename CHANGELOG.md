@@ -1,5 +1,55 @@
 # Changelog — CircuitDémat
 
+## [10.15.0] — 2026-07-13
+_Résumé : Tests E2E + migration SQL complète + couverture + PHPStan._
+
+### 🐛 Bug fixes
+
+- **AlertRepository** : service non enregistré dans helpers.php → 500 sur toutes les pages
+- **DocumentationService** : service non enregistré → 500 sur /docs
+- **MigrationService** : absente de helpers.php (présent dans bootstrap.php)
+- **MonitoringController** : `require_once lib/render_monitoring_audit.php` cassé → 500
+- **SubmissionViewController** : `require_once lib/render_submission_view.php` cassé → 500
+- **FormTrackingController** : `require_once lib/render_form_tracking.php` cassé → 500
+- **router.php** : AUTH_USER hardcodé (admin@exemple.invalid) → remplacé par DEV_AUTH_USER env var
+
+### 🔒 Sécurité
+
+- **router.php** : auth dev sécurisée — variable d'environnement DEV_AUTH_USER + guard `cli-server` (CTO audité)
+
+### 🏗 Refactor
+
+- **SQL → repositories batch 4** : AdminImportExportHandler (7 queries → FormRepository)
+- **SQL → repositories batch 5** : BackupController (12 queries → SubmissionRepo/TokenRepo/AlertRepo)
+- **SQL → repositories batch 6** : MonitoringController (12 queries → 4 repos)
+- **SQL → repositories batch 7** : HealthController (2 queries → BaseRepository)
+- **ExportService** : réfacteuré en 4 méthodes testables (generateCsvString + transformValue + buildWhereClause)
+- **BaseRepository** : ajout de `testConnection()` et `getTableNames()` pour health checks
+
+### 🧪 Tests
+
+- **ControllerRegistryTest** : 27 tests — instanciation de tous les contrôleurs + sync DI helpers/bootstrap
+- **RequireOnceIntegrityTest** : scan codebase pour require_once vers fichiers inexistants
+- **HttpRouteTest (E2E)** : 30 tests — HTTP réel sur serveur PHP dev, status codes, DOM, contenu
+- **Tests contenu E2E** : 15 pages — comptages exacts, données DB, sections conditionnelles
+- **ExportServiceTest** : 44 → 66 tests (couverture 15% → 89%)
+- **WorkflowEngineTest** : 105 → 245 tests (couverture ~45% → ~80%)
+- **AttachmentServiceTest** : 35 → 62 tests
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 977 | **1196** (0 failures) |
+| Assertions | 1628 | **2111** |
+| SQL direct remaining | 37 | **0** |
+| PHPStan baseline | 132 | **71** (-46%) |
+| Require_once cassés | 3 | **0** |
+| Services DI manquants | 3 | **0** |
+| Tests E2E | 0 | **30** |
+
+---
+
 ## [10.14.0] — 2026-07-12
 _Résumé : Ultrareview v4 — 8 bugs logiques/data corrigés, sécurité renforcée._
 
