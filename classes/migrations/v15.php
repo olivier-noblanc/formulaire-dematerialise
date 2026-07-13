@@ -24,7 +24,11 @@ function apply_migration_v15(PDO $pdo, int $current_version): int {
     if ($needs_v15) {
         try {
             // Vérifier si v15 a déjà été appliquée (marqueur en base)
-            $v15_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 15")->fetchColumn();
+            $v15_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 15");
+            if ($v15_stmt === false) {
+                throw new \RuntimeException('v15: COUNT query failed');
+            }
+            $v15_done = (int) $v15_stmt->fetchColumn();
             if ($v15_done > 0) {
                 return max($current_version, 15);
             }
@@ -35,7 +39,11 @@ function apply_migration_v15(PDO $pdo, int $current_version): int {
             $old_default_admin_email = 'admin@exemple.invalid';
 
             // 1. Mettre à jour admin_email SI c'est encore l'ancienne valeur par défaut
-            $current_admin_email = (string) $pdo->query("SELECT value FROM settings WHERE key = 'admin_email'")->fetchColumn();
+            $email_stmt = $pdo->query("SELECT value FROM settings WHERE key = 'admin_email'");
+            if ($email_stmt === false) {
+                throw new \RuntimeException('v15: SELECT admin_email failed');
+            }
+            $current_admin_email = (string) $email_stmt->fetchColumn();
             if ($current_admin_email === $old_default_admin_email || $current_admin_email === '') {
                 $pdo->prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('admin_email', ?, datetime('now'))")
                     ->execute([$new_admin_email]);
@@ -65,8 +73,16 @@ function apply_migration_v15(PDO $pdo, int $current_version): int {
             }
 
             // 4. Vérification finale
-            $final_email = (string) $pdo->query("SELECT value FROM settings WHERE key = 'admin_email'")->fetchColumn();
-            $final_cc = (string) $pdo->query("SELECT value FROM settings WHERE key = 'admin_email_cc'")->fetchColumn();
+            $final_email_stmt = $pdo->query("SELECT value FROM settings WHERE key = 'admin_email'");
+            if ($final_email_stmt === false) {
+                throw new \RuntimeException('v15: SELECT admin_email failed');
+            }
+            $final_email = (string) $final_email_stmt->fetchColumn();
+            $final_cc_stmt = $pdo->query("SELECT value FROM settings WHERE key = 'admin_email_cc'");
+            if ($final_cc_stmt === false) {
+                throw new \RuntimeException('v15: SELECT admin_email_cc failed');
+            }
+            $final_cc = (string) $final_cc_stmt->fetchColumn();
 
             if ($final_email !== '' && $final_email !== $old_default_admin_email) {
                 $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([15]);

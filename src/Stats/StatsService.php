@@ -129,6 +129,12 @@ final readonly class StatsService
         assert($rowStmt !== false);
         $row = $rowStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
+        $tokensStmt = $pdo->query('SELECT COUNT(*) FROM tokens WHERE done_at IS NULL');
+        assert($tokensStmt !== false);
+        $attachmentsCountStmt = $pdo->query('SELECT COUNT(*) FROM attachments');
+        assert($attachmentsCountStmt !== false);
+        $attachmentsSizeStmt = $pdo->query('SELECT COALESCE(SUM(file_size), 0) FROM attachments');
+        assert($attachmentsSizeStmt !== false);
         $stats = [
             'total' => (int) ($row['total'] ?? 0),
             'en_cours' => (int) ($row['en_cours'] ?? 0),
@@ -138,15 +144,16 @@ final readonly class StatsService
             'this_week' => (int) ($row['this_week'] ?? 0),
             'this_month' => (int) ($row['this_month'] ?? 0),
             'avg_days' => 0,
-            'tokens_pending' => (int) $pdo->query('SELECT COUNT(*) FROM tokens WHERE done_at IS NULL')->fetchColumn(),
-            'attachments_count' => (int) $pdo->query('SELECT COUNT(*) FROM attachments')->fetchColumn(),
-            'attachments_size' => (int) $pdo->query('SELECT COALESCE(SUM(file_size), 0) FROM attachments')->fetchColumn(),
+            'tokens_pending' => (int) $tokensStmt->fetchColumn(),
+            'attachments_count' => (int) $attachmentsCountStmt->fetchColumn(),
+            'attachments_size' => (int) $attachmentsSizeStmt->fetchColumn(),
         ];
 
         $avgStmt = $pdo->query("
             SELECT AVG(CAST(strftime('%s', closed_at) AS REAL) - CAST(strftime('%s', submitted_at) AS REAL))
             FROM submissions WHERE status = 'valide' AND closed_at IS NOT NULL
         ");
+        assert($avgStmt !== false);
         $stats['avg_days'] = round((float) ($avgStmt->fetchColumn() ?: 0) / 86400, 1);
 
         $stats['taux_validation'] = $stats['total'] > 0

@@ -57,7 +57,11 @@ function apply_migration_v13(PDO $pdo, int $current_version): int {
             $pdo->exec("CREATE INDEX IF NOT EXISTS idx_svds_submission ON submission_validator_data(submission_id)");
 
             // Vérifier que les changements existent RÉELLEMENT avant de marquer la version
-            $cols_check = $pdo->query("PRAGMA table_info(form_fields)")->fetchAll(PDO::FETCH_ASSOC);
+            $cols_check_stmt = $pdo->query("PRAGMA table_info(form_fields)");
+            if ($cols_check_stmt === false) {
+                throw new \RuntimeException('v13: PRAGMA table_info(form_fields) failed');
+            }
+            $cols_check = $cols_check_stmt->fetchAll(PDO::FETCH_ASSOC);
             $has_filled_by = false;
             $has_validator_step = false;
             foreach ($cols_check as $c) {

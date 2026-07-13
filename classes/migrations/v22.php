@@ -24,13 +24,21 @@ function apply_migration_v22(PDO $pdo, int $current_version): int {
     if ($needs_v22) {
         try {
             // Vérifier si v22 a déjà été appliquée
-            $v22_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 22")->fetchColumn();
+            $v22_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 22");
+            if ($v22_stmt === false) {
+                throw new \RuntimeException('v22: COUNT query failed');
+            }
+            $v22_done = (int) $v22_stmt->fetchColumn();
             if ($v22_done > 0) {
                 return max($current_version, 22);
             }
 
             // Ajouter colonne `admin_comment` à submissions (idempotent)
-            $cols = $pdo->query("PRAGMA table_info(submissions)")->fetchAll(PDO::FETCH_ASSOC);
+            $cols_stmt = $pdo->query("PRAGMA table_info(submissions)");
+            if ($cols_stmt === false) {
+                throw new \RuntimeException('v22: PRAGMA table_info(submissions) failed');
+            }
+            $cols = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
             $has_admin_comment = false;
             if (is_array($cols)) {
                 foreach ($cols as $c) {

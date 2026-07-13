@@ -109,7 +109,7 @@ final class AdminFormCrudHandler
             return ['error' => 'Identifiant de formulaire source invalide.'];
         }
         $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
-        $src_form = $formRepository->findById($source_id);
+        $src_form = $formRepository->findById((string) $source_id);
         if (!$src_form) {
             return ['error' => 'Formulaire source introuvable.'];
         }
@@ -119,7 +119,7 @@ final class AdminFormCrudHandler
 
         $pdo->beginTransaction();
         try {
-            $formRepository->duplicate($source_id, $new_id, $new_label, $new_slug, $src_form);
+            $formRepository->duplicate((string) $source_id, $new_id, $new_label, $new_slug, $src_form);
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();

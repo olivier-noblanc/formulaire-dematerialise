@@ -139,7 +139,7 @@ final class HtmlService implements HtmlInterface
 
         // Cas 2 : masquer le domaine si = domaine du user courant
         if ($current_user !== '' && str_contains($current_user, '@')) {
-            $user_domain = strtolower(substr($current_user, strrpos($current_user, '@')));
+            $user_domain = strtolower(substr($current_user, (int) strrpos($current_user, '@')));
             $email_lower = strtolower($email);
             if (str_ends_with($email_lower, $user_domain)) {
                 $local_part = substr($email, 0, strlen($email) - strlen($user_domain));

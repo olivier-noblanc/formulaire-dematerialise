@@ -85,7 +85,7 @@ final class AdminSettingsHandlers
         if (empty($settings['smtp_pass'])) {
             $settings['smtp_pass'] = App::settings()->get('smtp_pass', '');
         }
-        if (isset($settings['admin_email']) && ($settings['admin_email'] !== '' && $settings['admin_email'] !== '0') && !filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL)) {
+        if (($settings['admin_email'] !== '' && $settings['admin_email'] !== '0') && !filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL)) {
             $error_msg = 'L\'adresse email de l\'administrateur principal est invalide.';
             unset($settings['admin_email']);
         }

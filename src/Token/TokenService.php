@@ -26,8 +26,10 @@ final readonly class TokenService
 
     /**
      * Récupère les tokens d'une soumission avec les infos de l'étape associée.
+     *
+     * @param list<string> $extraFields
+     * @return array<int, array<string, mixed>>
      */
-    /** @return array<int, array<string, mixed>> */
     public function getForSubmission(string $submissionId, array $extraFields = []): array
     {
         $allowedFields = ['t.id', 't.token', 't.relance_count', 't.relance_at', 't.expires_at', 't.sent_at'];

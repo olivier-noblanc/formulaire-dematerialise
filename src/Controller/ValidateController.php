@@ -274,7 +274,7 @@ final class ValidateController extends BaseController
         }
 
         $content = \App\Render\ValidateRenderer::content(
-            $token,
+            (string) $token,
             $pageCss,
             $success ?? null,
             $error ?? null,

@@ -28,13 +28,21 @@ function apply_migration_v18(PDO $pdo, int $current_version): int {
     if ($needs_v18) {
         try {
             // Vérifier si v18 a déjà été appliquée
-            $v18_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 18")->fetchColumn();
+            $v18_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 18");
+            if ($v18_stmt === false) {
+                throw new \RuntimeException('v18: COUNT query failed');
+            }
+            $v18_done = (int) $v18_stmt->fetchColumn();
             if ($v18_done > 0) {
                 return max($current_version, 18);
             }
 
             // Ajouter colonne visibility à form_fields (idempotent)
-            $cols = $pdo->query("PRAGMA table_info(form_fields)")->fetchAll(PDO::FETCH_ASSOC);
+            $cols_stmt = $pdo->query("PRAGMA table_info(form_fields)");
+            if ($cols_stmt === false) {
+                throw new \RuntimeException('v18: PRAGMA table_info(form_fields) failed');
+            }
+            $cols = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
             $has_visibility = false;
             if (is_array($cols)) {
                 foreach ($cols as $c) {

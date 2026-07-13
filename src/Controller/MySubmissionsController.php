@@ -61,7 +61,7 @@ final class MySubmissionsController extends BaseController
 
             foreach ($sub['workflow_steps'] as &$ws) {
                 $stepId = $ws['step_id'];
-                if (!isset($tokensByStep[$stepId]) || empty($tokensByStep[$stepId])) {
+                if (!isset($tokensByStep[$stepId])) {
                     $ws['step_status'] = 'upcoming';
                     $ws['step_detail'] = '';
                 } else {

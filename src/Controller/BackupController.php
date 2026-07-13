@@ -78,7 +78,11 @@ final class BackupController extends BaseController
                             try {
                                 $testPdo = new \PDO('sqlite:' . $dbPath);
                                 $testPdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                                $testPdo->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
+                                $testCountStmt = $testPdo->query('SELECT COUNT(*) FROM sqlite_master');
+                                if ($testCountStmt === false) {
+                                    throw new \RuntimeException('Backup restore: COUNT query failed');
+                                }
+                                $testCountStmt->fetchColumn();
                                 $testPdo = null;
                                 App::audit()->log(
                                     'backup_restore',
@@ -206,9 +210,21 @@ final class BackupController extends BaseController
         $dbStats['newest_submission'] = ($newestStr !== '' && $newestTs !== false) ? date('d/m/Y H:i', $newestTs) : '—';
 
         $pdo = $this->db->getPdo();
-        $pageCount    = (int) $pdo->query('PRAGMA page_count')->fetchColumn();
-        $freelistCount = (int) $pdo->query('PRAGMA freelist_count')->fetchColumn();
-        $pageSize     = (int) $pdo->query('PRAGMA page_size')->fetchColumn();
+        $pageCountStmt = $pdo->query('PRAGMA page_count');
+        if ($pageCountStmt === false) {
+            throw new \RuntimeException('PRAGMA page_count failed');
+        }
+        $pageCount = (int) $pageCountStmt->fetchColumn();
+        $freelistCountStmt = $pdo->query('PRAGMA freelist_count');
+        if ($freelistCountStmt === false) {
+            throw new \RuntimeException('PRAGMA freelist_count failed');
+        }
+        $freelistCount = (int) $freelistCountStmt->fetchColumn();
+        $pageSizeStmt = $pdo->query('PRAGMA page_size');
+        if ($pageSizeStmt === false) {
+            throw new \RuntimeException('PRAGMA page_size failed');
+        }
+        $pageSize = (int) $pageSizeStmt->fetchColumn();
         $dbStats['page_count']     = $pageCount;
         $dbStats['freelist_count'] = $freelistCount;
         $dbStats['page_size']      = $pageSize;

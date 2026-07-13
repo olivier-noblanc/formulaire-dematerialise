@@ -1,7 +1,25 @@
 # Changelog — CircuitDémat
 
 ## [10.15.0] — 2026-07-13
-_Résumé : Tests E2E + migration SQL complète + couverture + PHPStan + bugs dispatch corrigés._
+_Résumé : Tests E2E + migration SQL complète + couverture + PHPStan 0 erreurs + bugs dispatch + CI E2E._
+
+### 🏗 Refactor
+
+- **PHPStan** : baseline 132 → **0 erreurs** (level 8) — tous les erreurs type safety corrigées
+- **PDOStatement|false** : 21 erreurs corrigées dans migrations v13-v26 + BackupController + StatsService
+- **Type safety** : 32 erreurs corrigées dans 20 fichiers src/ (casts, PHPDoc, code mort)
+- **CI** : tests E2E ajoutés au pipeline Woodpecker (step 5)
+
+### 📊 Résultat
+
+| Métrique | Avant session | Après |
+|----------|-------|-------|
+| Tests | 977 | **1292** (0 failures) |
+| Assertions | 1628 | **2119** |
+| PHPStan erreurs | 132 | **0** (level 8) |
+| PHPStan baseline | 132 lignes | **0** |
+| SQL direct | 37 | **0** |
+| Tests E2E | 0 | **30** |
 
 ### 🐛 Bug fixes
 
@@ -46,7 +64,7 @@ _Résumé : Tests E2E + migration SQL complète + couverture + PHPStan + bugs di
 | Tests | 977 | **1196** (0 failures) |
 | Assertions | 1628 | **2115** |
 | SQL direct remaining | 37 | **0** |
-| PHPStan baseline | 132 | **71** (-46%) |
+| PHPStan baseline | 132 → 71 → **0** (vide) | ✅ |
 | PHPStan erreurs | — | **0** (level 8) |
 | Require_once cassés | 3 | **0** |
 | Services DI manquants | 3 | **0** |

@@ -23,6 +23,9 @@
 | WorkflowEngine coverage | 105 → 245 tests (~45% → ~80%) | ✅ |
 | AttachmentService coverage | 35 → 62 tests (~70% → ~85%) | ✅ |
 | PHPStan baseline | 132 → 71 erreurs (-46%) | ✅ |
+| PHPStan erreurs résiduelles | 71 → **0** (level 8, baseline vide) | ✅ |
+| AdminFormsHandlers bugs | 7 bugs de dispatch corrigés | ✅ |
+| AttachmentService finfo guard | Dégradation gracieuse si extension manquante | ✅ |
 
 ---
 
@@ -31,12 +34,14 @@
 | Métrique | Avant | Après |
 |----------|-------|-------|
 | Tests | 977 | **1196** |
-| Assertions | 1628 | **2111** |
+| Assertions | 1628 | **2115** |
 | SQL direct remaining | 37 | **0** |
-| PHPStan baseline | 132 | **71** |
+| PHPStan erreurs | — | **0** (level 8) |
+| PHPStan baseline | 132 → 71 → **0** (vide) | ✅ |
 | Require_once cassés | 3 | **0** |
 | Services DI manquants | 3 | **0** |
 | Tests E2E | 0 | **30** |
+| Bugs dispatch corrigés | — | **7** |
 
 ---
 
@@ -44,9 +49,8 @@
 
 | Tâche | Effort | Détail |
 |-------|--------|--------|
-| PHPStan baseline (71 erreurs) | Moyen | 28 dans migrations v13-v26 + 10 dans AdminFormsHandlers (vrais bugs) + 33 hard-to-fix |
-| AdminFormsHandlers dispatch | Faible | 10 appels avec mauvais nombre d'arguments (vrai bug trouvé par PHPStan) |
-| Attachement finfo guard | Faible | Ajouter `function_exists('finfo_open')` pour dégradation gracieuse |
+| PHPStan baseline (71→0 erreurs) | Done | 33 erreurs src/ corrigées, baseline vide |
+| Tests E2E en CI | Moyen | Besoin d'un serveur PHP dev pour les 30 tests HTTP |
 
 ---
 

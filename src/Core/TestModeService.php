@@ -36,6 +36,7 @@ final class TestModeService
         if (!TEST_MODE) {
             return;
         }
+        /** @phpstan-ignore-next-line deadCode.unreachable */
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(array_merge(['_test_mode' => true], $data), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         exit;

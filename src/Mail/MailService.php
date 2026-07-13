@@ -20,6 +20,7 @@ final readonly class MailService implements MailInterface
 
     public function send(string $to, string $subject, string $body): bool
     {
+        /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
         if (defined('TEST_MODE') && TEST_MODE) {
             $GLOBALS['_test_mails'][] = [
                 'to' => $to,
