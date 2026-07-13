@@ -74,4 +74,84 @@ final class AuditRepository extends BaseRepository
         $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM audit_log');
         return (int) ($result['cnt'] ?? 0);
     }
+
+    /**
+     * @param array<string, string> $filters
+     * @return array<int, array<string, mixed>>
+     */
+    public function findFiltered(array $filters): array
+    {
+        [$whereSql, $params] = $this->buildFilterWhere($filters);
+        return $this->fetchAll(
+            "SELECT created_at, action, actor, target, detail, ip FROM audit_log $whereSql ORDER BY created_at DESC",
+            $params
+        );
+    }
+
+    /**
+     * @param array<string, string> $filters
+     */
+    public function countFiltered(array $filters): int
+    {
+        [$whereSql, $params] = $this->buildFilterWhere($filters);
+        $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM audit_log $whereSql", $params);
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    /**
+     * @param array<string, string> $filters
+     * @return array<int, array<string, mixed>>
+     */
+    public function findFilteredPaginated(array $filters, int $limit, int $offset): array
+    {
+        [$whereSql, $params] = $this->buildFilterWhere($filters);
+        return $this->fetchAll(
+            "SELECT * FROM audit_log $whereSql ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            array_merge($params, [$limit, $offset])
+        );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getDistinctActionTypes(): array
+    {
+        $stmt = $this->pdo()->query('SELECT DISTINCT action FROM audit_log ORDER BY action');
+        if ($stmt === false) {
+            return [];
+        }
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * @param array<string, string> $filters
+     * @return array{0: string, 1: array<int, mixed>}
+     */
+    private function buildFilterWhere(array $filters): array
+    {
+        $where = [];
+        $params = [];
+        if (($filters['log_action'] ?? '') !== '') {
+            $where[] = 'action = ?';
+            $params[] = $filters['log_action'];
+        }
+        if (($filters['log_actor'] ?? '') !== '') {
+            $where[] = 'actor LIKE ?';
+            $params[] = '%' . $filters['log_actor'] . '%';
+        }
+        if (($filters['log_target'] ?? '') !== '') {
+            $where[] = 'target LIKE ?';
+            $params[] = '%' . $filters['log_target'] . '%';
+        }
+        if (($filters['log_date_debut'] ?? '') !== '') {
+            $where[] = 'date(created_at) >= ?';
+            $params[] = $filters['log_date_debut'];
+        }
+        if (($filters['log_date_fin'] ?? '') !== '') {
+            $where[] = 'date(created_at) <= ?';
+            $params[] = $filters['log_date_fin'];
+        }
+        $sql = $where !== [] ? 'WHERE ' . implode(' AND ', $where) : '';
+        return [$sql, $params];
+    }
 }

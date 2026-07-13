@@ -52,6 +52,7 @@ final readonly class WorkflowService implements WorkflowInterface
         return $this->workflowEngine->getSubmissionWithFormLabel($submissionId);
     }
 
+    /** @param array<string, mixed> $formData */
     public function resolveDynamicRecipient(string $recipient, array $formData, ?string $submissionId = null): string
     {
         return $this->workflowEngine->resolveDynamicRecipient($recipient, $formData, $submissionId);

@@ -106,6 +106,7 @@ abstract class BaseController
         exit;
     }
 
+    /** @param array<string, mixed> $data */
     protected function json(array $data): void
     {
         header('Content-Type: application/json; charset=utf-8');

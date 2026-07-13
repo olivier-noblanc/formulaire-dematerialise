@@ -12,6 +12,7 @@ use App\Repository\SettingsRepository;
  */
 final class SettingsService implements SettingsInterface
 {
+    /** @var array<string, string> */
     private static array $cache = [];
 
     public function __construct(private readonly SettingsRepository $settingsRepository)
@@ -72,7 +73,7 @@ final class SettingsService implements SettingsInterface
         }
 
         $ivLength = openssl_cipher_iv_length('aes-256-cbc');
-        if ($ivLength === false) {
+        if ($ivLength === false || $ivLength < 1) {
             return $value;
         }
 

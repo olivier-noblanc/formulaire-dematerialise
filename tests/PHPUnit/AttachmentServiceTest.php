@@ -506,4 +506,415 @@ final class AttachmentServiceTest extends TestCase
         $s2 = $app->get(AttachmentService::class);
         $this->assertSame($s1, $s2);
     }
+
+    // ── filename "0" after sanitization ──────────────────────────
+
+    public function testHandleFileUploadFilenameZeroDefaultsToFichier(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => '0',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        // safeName becomes 'fichier' (no extension) → blocked at extension check
+        $this->assertStringContainsString('non autorisé', $result['message']);
+    }
+
+    // ── getAllowedMimeTypes exact count ──────────────────────────
+
+    public function testGetAllowedMimeTypesExactCount(): void
+    {
+        $types = $this->attachmentService->getAllowedMimeTypes();
+        $this->assertCount(13, $types);
+    }
+
+    // ── getAllowedExtensions exact count ─────────────────────────
+
+    public function testGetAllowedExtensionsExactCount(): void
+    {
+        $exts = $this->attachmentService->getAllowedExtensions();
+        $this->assertCount(14, $exts);
+    }
+
+    // ── getAllowedExtensions contains all office types ───────────
+
+    public function testGetAllowedExtensionsContainsOfficeTypes(): void
+    {
+        $exts = $this->attachmentService->getAllowedExtensions();
+        $this->assertContains('xls', $exts);
+        $this->assertContains('xlsx', $exts);
+        $this->assertContains('ppt', $exts);
+        $this->assertContains('pptx', $exts);
+    }
+
+    // ── getAllowedMimeTypes contains Office MIME types ───────────
+
+    public function testGetAllowedMimeTypesContainsOfficeMimeTypes(): void
+    {
+        $types = $this->attachmentService->getAllowedMimeTypes();
+        $this->assertContains('application/msword', $types);
+        $this->assertContains('application/vnd.openxmlformats-officedocument.wordprocessingml.document', $types);
+        $this->assertContains('application/vnd.ms-excel', $types);
+        $this->assertContains('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $types);
+        $this->assertContains('application/vnd.ms-powerpoint', $types);
+        $this->assertContains('application/vnd.openxmlformats-officedocument.presentationml.presentation', $types);
+    }
+
+    // ── getAttachments with multiple results ─────────────────────
+
+    public function testGetAttachmentsReturnsMultipleAttachments(): void
+    {
+        $pdo = \App\Core\App::getInstance()->get(\App\Core\Database::class)->getPdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-multi-' . $formId, 'Test Multi', '']);
+        $submissionId = 'test-sub-multi-' . uniqid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$submissionId, $formId]);
+
+        $attId1 = bin2hex(random_bytes(8));
+        $attId2 = bin2hex(random_bytes(8));
+        $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$attId1, $submissionId, 'field1', 'doc1.pdf', 'doc1.pdf', 'application/pdf', 100, 'data1']);
+        $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$attId2, $submissionId, 'field2', 'doc2.pdf', 'doc2.pdf', 'application/pdf', 200, 'data2']);
+
+        try {
+            $attachments = $this->attachmentService->getAttachments($submissionId);
+            $this->assertCount(2, $attachments);
+            $names = array_column($attachments, 'original_name');
+            $this->assertContains('doc1.pdf', $names);
+            $this->assertContains('doc2.pdf', $names);
+        } finally {
+            $pdo->prepare("DELETE FROM attachments WHERE id IN (?, ?)")->execute([$attId1, $attId2]);
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+        }
+    }
+
+    // ── getAttachmentById returns all expected fields ────────────
+
+    public function testGetAttachmentByIdReturnsAllExpectedFields(): void
+    {
+        $pdo = \App\Core\App::getInstance()->get(\App\Core\Database::class)->getPdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-fields-' . $formId, 'Test Fields', '']);
+        $submissionId = 'test-sub-fields-' . uniqid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$submissionId, $formId]);
+
+        $attId = bin2hex(random_bytes(8));
+        $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$attId, $submissionId, 'my_field', 'report.pdf', 'report.pdf', 'application/pdf', 1024, 'binary-content']);
+
+        try {
+            $att = $this->attachmentService->getAttachmentById($attId);
+            $this->assertNotNull($att);
+            $this->assertSame($attId, $att['id']);
+            $this->assertSame($submissionId, $att['submission_id']);
+            $this->assertSame('my_field', $att['field_name']);
+            $this->assertSame('report.pdf', $att['original_name']);
+            $this->assertSame('application/pdf', $att['mime_type']);
+            $this->assertSame(1024, $att['file_size']);
+        } finally {
+            $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+        }
+    }
+
+    // ── getAttachments returns empty for wrong submission ────────
+
+    public function testGetAttachmentsEmptyForWrongSubmission(): void
+    {
+        $pdo = \App\Core\App::getInstance()->get(\App\Core\Database::class)->getPdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-wrong-' . $formId, 'Test Wrong', '']);
+        $sub1 = 'test-sub-wronga-' . uniqid();
+        $sub2 = 'test-sub-wrongb-' . uniqid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$sub1, $formId]);
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
+            ->execute([$sub2, $formId]);
+
+        $attId = bin2hex(random_bytes(8));
+        $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$attId, $sub1, 'field', 'file.pdf', 'file.pdf', 'application/pdf', 100, 'data']);
+
+        try {
+            $atts = $this->attachmentService->getAttachments($sub2);
+            $this->assertEmpty($atts);
+        } finally {
+            $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
+            $pdo->prepare("DELETE FROM submissions WHERE id IN (?, ?)")->execute([$sub1, $sub2]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+        }
+    }
+
+    // ── dangerous double extension with更多变体 ──────────────────
+
+    public function testHandleFileUploadDangerousDoubleExtensionJsphp(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'image.js.php',
+            'size' => 100,
+            'type' => 'application/x-php',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('doubles extensions', $result['message']);
+    }
+
+    public function testHandleFileUploadDangerousDoubleExtensionSh(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'script.sh.jpg',
+            'size' => 100,
+            'type' => 'image/jpeg',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('doubles extensions', $result['message']);
+    }
+
+    // ── dangerous single extensions ──────────────────────────────
+
+    public function testHandleFileUploadDangerousPhtmlExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'backdoor.phtml',
+            'size' => 100,
+            'type' => 'text/html',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    public function testHandleFileUploadDangerousAspExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'shell.asp',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    public function testHandleFileUploadDangerousJspExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'exploit.jsp',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    // ── handleFileUpload return structure ─────────────────────────
+
+    public function testHandleFileUploadReturnsCorrectStructure(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_NO_FILE,
+            'tmp_name' => '',
+            'name' => '',
+            'size' => 0,
+            'type' => '',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertArrayHasKey('success', $result);
+        $this->assertArrayHasKey('message', $result);
+        $this->assertArrayHasKey('attachment_id', $result);
+        $this->assertIsBool($result['success']);
+        $this->assertIsString($result['message']);
+    }
+
+    // ── error messages are in French ─────────────────────────────
+
+    public function testHandleFileUploadErrorMessageIsFrench(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_NO_FILE,
+            'tmp_name' => '',
+            'name' => '',
+            'size' => 0,
+            'type' => '',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        // Check it contains French words
+        $this->assertMatchesRegularExpression('/[àâéèêëîïôùûüç]/u', $result['message']);
+    }
+
+    // ── getAllowedMimeTypes does not contain dangerous types ──────
+
+    public function testGetAllowedMimeTypesDoesNotContainDangerousTypes(): void
+    {
+        $types = $this->attachmentService->getAllowedMimeTypes();
+        $this->assertNotContains('application/x-php', $types);
+        $this->assertNotContains('text/html', $types);
+        $this->assertNotContains('application/x-sh', $types);
+        $this->assertNotContains('application/x-perl', $types);
+        $this->assertNotContains('application/x-python', $types);
+    }
+
+    // ── getAllowedExtensions does not contain dangerous exts ──────
+
+    public function testGetAllowedExtensionsDoesNotContainDangerousExts(): void
+    {
+        $exts = $this->attachmentService->getAllowedExtensions();
+        $this->assertNotContains('php', $exts);
+        $this->assertNotContains('phtml', $exts);
+        $this->assertNotContains('asp', $exts);
+        $this->assertNotContains('jsp', $exts);
+        $this->assertNotContains('cgi', $exts);
+        $this->assertNotContains('pl', $exts);
+        $this->assertNotContains('py', $exts);
+    }
+
+    // ── getMaxFileSize constant ──────────────────────────────────
+
+    public function testGetMaxFileSizeIsExactlyTenMegaBytes(): void
+    {
+        $this->assertSame(10485760, $this->attachmentService->getMaxFileSize());
+    }
+
+    // ── constructor injection ────────────────────────────────────
+
+    public function testConstructorAcceptsAttachmentRepository(): void
+    {
+        $repo = \App\Core\App::getInstance()->get(\App\Repository\AttachmentRepository::class);
+        $service = new AttachmentService($repo);
+        $this->assertInstanceOf(AttachmentService::class, $service);
+    }
+
+    // ── dangerous extensions: all in the list ────────────────────
+
+    public function testHandleFileUploadDangerousPhp3Extension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'shell.php3',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    public function testHandleFileUploadDangerousPhp5Extension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'shell.php5',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    public function testHandleFileUploadDangerousPharExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'malware.phar',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    public function testHandleFileUploadDangerousShtmlExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'include.shtml',
+            'size' => 100,
+            'type' => 'text/html',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    public function testHandleFileUploadDangerousAspxExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'shell.aspx',
+            'size' => 100,
+            'type' => 'application/octet-stream',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    public function testHandleFileUploadDangerousRbExtension(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'exploit.rb',
+            'size' => 100,
+            'type' => 'application/x-ruby',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+    }
+
+    // ── safe double extension (not dangerous) ────────────────────
+
+    public function testHandleFileUploadSafeDoubleExtensionNotBlocked(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'archive.tar.gz',
+            'size' => 100,
+            'type' => 'application/gzip',
+        ];
+        // .gz is not in allowed extensions → blocked at extension check
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('non autorisé', $result['message']);
+    }
+
+    // ── handleFileUpload with oversized exact boundary ───────────
+
+    public function testHandleFileUploadOneByteOverMaxSize(): void
+    {
+        $file = [
+            'error' => UPLOAD_ERR_OK,
+            'tmp_name' => '',
+            'name' => 'oversize.pdf',
+            'size' => 10 * 1024 * 1024 + 1, // 10 Mo + 1 byte
+            'type' => 'application/pdf',
+        ];
+        $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('10 Mo', $result['message']);
+    }
 }

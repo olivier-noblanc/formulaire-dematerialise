@@ -34,11 +34,13 @@ final readonly class ViewRenderer
         return $this->navigationRenderer->page($title, $currentPage, $pageCss, $content);
     }
 
+    /** @param array<string, string> $extraAdminLinks */
     public function header(string $currentPage = '', array $extraAdminLinks = []): string
     {
         return $this->navigationRenderer->header($currentPage, $extraAdminLinks);
     }
 
+    /** @param array<int, array{label: string, url: string}> $breadcrumbs */
     public function breadcrumb(array $breadcrumbs): string
     {
         return $this->navigationRenderer->breadcrumb($breadcrumbs);
@@ -59,6 +61,7 @@ final readonly class ViewRenderer
         $this->errorRenderer->errorPage($code, $title, $message, $hint, $backUrl);
     }
 
+    /** @param array<string, string> $messages */
     public function messages(array $messages = []): string
     {
         return $this->errorRenderer->messages($messages);
@@ -69,6 +72,10 @@ final readonly class ViewRenderer
         return NavigationRenderer::favicon();
     }
 
+    /**
+     * @param array<string, mixed> $field
+     * @param array<string, string> $fieldErrors
+     */
     public function field(
         array $field,
         mixed $postedVal,
@@ -79,6 +86,7 @@ final readonly class ViewRenderer
         return $this->formRenderer->field($field, $postedVal, $fieldErrors, $datalistId, $disabled);
     }
 
+    /** @param array<string, string> $hiddenFields */
     public function searchBar(
         string $actionUrl,
         string $currentSearch,
@@ -96,6 +104,10 @@ final readonly class ViewRenderer
         return $this->formRenderer->statusFilter($currentStatus, $baseUrl, $paramName);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @param list<string> $exclude
+     */
     public function submissionData(
         array $data,
         array $exclude = [],
@@ -104,6 +116,7 @@ final readonly class ViewRenderer
         return $this->formRenderer->submissionData($data, $exclude, $format);
     }
 
+    /** @param array<string, array<int, array<string, mixed>>> $grouped */
     public function formProgressIndicator(array $grouped): string
     {
         return $this->formRenderer->formProgressIndicator($grouped);

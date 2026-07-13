@@ -67,7 +67,7 @@ if ($type === 'js') {
     $version = extract_version_from_changelog(__DIR__ . '/CHANGELOG.md');
     $etag = $hash . '-v' . $version;
 
-    if (send_cache_headers_and_check_304($etag, $mtime)) {
+    if (send_cache_headers_and_check_304($etag, (int) $mtime)) {
         exit;  // 304 Not Modified
     }
 
@@ -104,7 +104,7 @@ else {
             exit;
         }
         $content = file_get_contents($cssFile);
-        $hashes[] = $section . ':' . md5($content);
+        $hashes[] = $section . ':' . md5((string) $content);
         $mtime = filemtime($cssFile);
         if ($mtime > $maxMtime) $maxMtime = $mtime;
     }
@@ -113,7 +113,7 @@ else {
         $cssFile = $cssDir . '/' . $pcf . '.css';
         if (is_file($cssFile)) {
             $content = file_get_contents($cssFile);
-            $hashes[] = $pcf . ':' . md5($content);
+            $hashes[] = $pcf . ':' . md5((string) $content);
             $mtime = filemtime($cssFile);
             if ($mtime > $maxMtime) $maxMtime = $mtime;
         }

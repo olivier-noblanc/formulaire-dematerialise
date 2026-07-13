@@ -97,6 +97,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
         return $result ?: null;
     }
 
+    /** @param array<string, mixed> $formData */
     public function resolveDynamicRecipient(string $recipient, array $formData, ?string $submissionId = null): string
     {
         // Cas spécial : {{owner}}

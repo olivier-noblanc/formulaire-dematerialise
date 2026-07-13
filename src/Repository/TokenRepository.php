@@ -6,11 +6,13 @@ namespace App\Repository;
 
 final class TokenRepository extends BaseRepository
 {
+    /** @return array<string, mixed>|null */
     public function findByValue(string $token): ?array
     {
         return $this->fetchOne('SELECT * FROM tokens WHERE token = ?', [$token]);
     }
 
+    /** @return array<string, mixed>|null */
     public function findById(string $tokenId): ?array
     {
         return $this->fetchOne('SELECT * FROM tokens WHERE id = ?', [$tokenId]);
@@ -247,6 +249,31 @@ final class TokenRepository extends BaseRepository
         return $result;
     }
 
+    /**
+     * @param array<int, string> $submissionIds
+     */
+    public function deleteBySubmissionIds(array $submissionIds): int
+    {
+        if ($submissionIds === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
+        $stmt = $this->pdo()->prepare("DELETE FROM tokens WHERE submission_id IN ($placeholders)");
+        $stmt->execute($submissionIds);
+        return $stmt->rowCount();
+    }
+
+    public function countPurgeableByCutoff(string $cutoff): int
+    {
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as cnt FROM tokens t
+             JOIN submissions s ON s.id = t.submission_id
+             WHERE s.status IN ('valide', 'refuse') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
+            [$cutoff]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
+
     public function getActiveCountByEmail(string $email): int
     {
         $result = $this->fetchOne(
@@ -279,5 +306,59 @@ final class TokenRepository extends BaseRepository
              FROM tokens WHERE submission_id = ? ORDER BY sent_at',
             [$submissionId]
         );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findBlocked(int $hours, int $limit = 100): array
+    {
+        return $this->fetchAll(
+            "SELECT t.id, t.email, t.sent_at, t.relance_count, t.expires_at,
+                    st.label as step_label, st.ordre,
+                    s.id as submission_id, s.submitted_by, s.submitted_at,
+                    f.label as form_label
+             FROM tokens t
+             JOIN steps st ON st.id = t.step_id
+             JOIN submissions s ON s.id = t.submission_id
+             JOIN forms f ON f.id = s.form_id
+             WHERE t.done_at IS NULL AND s.status = 'en_cours'
+               AND CAST(strftime('%s', 'now') AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) > ?
+             ORDER BY t.sent_at ASC
+             LIMIT ?",
+            [$hours * 3600, $limit]
+        );
+    }
+
+    public function countExpired(): int
+    {
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as count FROM tokens t
+             JOIN submissions s ON s.id = t.submission_id
+             WHERE t.done_at IS NULL AND t.expires_at IS NOT NULL
+               AND t.expires_at < datetime('now') AND s.status = 'en_cours'"
+        );
+        return (int) ($result['count'] ?? 0);
+    }
+
+    /**
+     * @param array<int, string> $submissionIds
+     * @return array<string, int>
+     */
+    public function countPendingBySubmissionIds(array $submissionIds): array
+    {
+        if ($submissionIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
+        $rows = $this->fetchAll(
+            "SELECT submission_id, COUNT(*) as cnt FROM tokens WHERE submission_id IN ($placeholders) AND done_at IS NULL GROUP BY submission_id",
+            $submissionIds
+        );
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row['submission_id']] = (int) $row['cnt'];
+        }
+        return $result;
     }
 }

@@ -664,7 +664,6 @@ final class MonitoringRenderer
 
         $log_date_debut = \App\Core\App::html()->escape((string) ($audit_filters['log_date_debut'] ?? ''));
         $log_date_fin   = \App\Core\App::html()->escape((string) ($audit_filters['log_date_fin'] ?? ''));
-        \App\Core\App::html()->escape((string) ($audit_filters['log_action'] ?? ''));
         $log_actor_v    = \App\Core\App::html()->escape((string) ($audit_filters['log_actor'] ?? ''));
         $log_target_v   = \App\Core\App::html()->escape((string) ($audit_filters['log_target'] ?? ''));
 

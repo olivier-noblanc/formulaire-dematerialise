@@ -45,6 +45,7 @@ abstract class BaseRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** @param array<int, mixed> $params */
     public function execute(string $sql, array $params = []): bool
     {
         $stmt = $this->pdo()->prepare($sql);
@@ -61,5 +62,22 @@ abstract class BaseRepository
             throw new \RuntimeException('Failed to get last insert ID');
         }
         return $id;
+    }
+
+    public function testConnection(): bool
+    {
+        $stmt = $this->pdo()->prepare('SELECT 1');
+        $stmt->execute();
+        return $stmt->fetchColumn() === '1';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getTableNames(): array
+    {
+        $stmt = $this->pdo()->prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
 }

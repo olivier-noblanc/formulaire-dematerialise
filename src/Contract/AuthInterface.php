@@ -18,6 +18,7 @@ interface AuthInterface
     public function getFormOwners(string $formId): array;
     /** @return array<int, array<string, mixed>> */
     public function getOwnedForms(?string $email = null): array;
+    /** @return array{success: bool, reason: string} */
     public function processAdminRequest(string $email): array;
     public function approveAdminRequest(string $email): bool;
     public function rejectAdminRequest(string $email): bool;

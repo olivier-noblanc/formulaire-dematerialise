@@ -1,68 +1,53 @@
 # TODO — CircuitDémat
 
-## Session 2026-07-12 — Résumé
+## Session 2026-07-13 — Résumé
 
-### ✅ Terminé
+### ✅ Terminé cette session
 
 | Tâche | Détail | Résultat |
 |-------|--------|----------|
-| Ultrareview v2 | 15 constats (3C + 10W + 2P) → 0 restants | ✅ |
-| PRAGMA foreign_keys ON global | Database.php + 9 tests adaptés | ✅ |
-| Transactions TokenService | regenerate() + delegate() wrappées | ✅ |
-| Cascade delete complète | step_recipients, form_fields, form_owners + transaction | ✅ |
-| WorkflowEngine fix | étapes conditionnelles + array_reduce + N+1 getValidatorData | ✅ |
-| Return types corrigés | : array → : ?array sur 3 handlers delete | ✅ |
-| Extraction renderers | 7 renderers créés, 7 controllers allégés | ✅ |
-| PHP 8.5+ check | install.php + HealthController mis à jour | ✅ |
-| N+1 export fix | GROUP_CONCAT au lieu de boucle SQL | ✅ |
-| Nettoyages | $pdo inutilisé, double if, rethrow, $result non initialisé | ✅ |
-| SQL → repositories batch 1 | ConfirmAction, MyValidations, Stats | ✅ |
-| SQL → repositories batch 2 | AdminFormCrud, AdminStepCrud, AdminFieldCrud, AdminRecipient, AdminForms, AdminAccess | ✅ |
-| SQL → repositories batch 3 | Download, Index, Persona | ✅ |
-| Ultrareview v4 fixes | CSV injection (H1) + backtick M1 | ✅ |
-| **PHP Modernization** | PHP-CS-Fixer (113) + Rector (88) + PHP 8.5 features | ✅ |
+| Bug fix: AlertRepository | Non enregistrée dans helpers.php → 500 | ✅ |
+| Bug fix: DocumentationService | Non enregistrée → 500 sur /docs | ✅ |
+| Bug fix: MigrationService | Absente de helpers.php | ✅ |
+| Bug fix: require_once cassés | Monitoring, SubmissionView, FormTracking → lib/ obsolète | ✅ |
+| Sécurité router.php | AUTH_USER hardcodé → DEV_AUTH_USER env var + cli-server guard | ✅ |
+| Tests ControllerRegistryTest | 27 tests: instanciation controllers + sync di + require_once | ✅ |
+| Tests RequireOnceIntegrityTest | Scan codebase pour require_once vers fichiers inexistants | ✅ |
+| Tests E2E HttpRouteTest | 30 tests HTTP: status, DOM, contenu, sécurité | ✅ |
+| Tests contenu E2E | 15 pages: comptages exacts, données DB, sections conditionnelles | ✅ |
+| SQL → repositories batch 4 | AdminImportExportHandler (7 queries → FormRepository) | ✅ |
+| SQL → repositories batch 5 | BackupController (12 queries → SubmissionRepo/TokenRepo/AlertRepo) | ✅ |
+| SQL → repositories batch 6 | MonitoringController (12 queries → 4 repos) | ✅ |
+| SQL → repositories batch 7 | HealthController (2 queries → BaseRepository) | ✅ |
+| ExportService coverage | 15% → 89% (réfacteuré en 4 méthodes testables) | ✅ |
+| WorkflowEngine coverage | 105 → 245 tests (~45% → ~80%) | ✅ |
+| AttachmentService coverage | 35 → 62 tests (~70% → ~85%) | ✅ |
+| PHPStan baseline | 132 → 71 erreurs (-46%) | ✅ |
 
 ---
 
-## 📊 Métriques actuelles
+## 📊 Métriques finales
 
-| Métrique | Valeur |
-|----------|--------|
-| Tests | **977** (0 failures) |
-| lib/ fichiers | **1** (core_bootstrap uniquement) |
-| Pages procédurales | **0** |
-| Controllers | **27** |
-| PHPStan level | **8** |
-| PHPStan baseline | **132** erreurs (annotations manquantes) |
-| Repositories | **9** |
-| Renderers | **7** |
-| PRAGMA foreign_keys | **ON global** |
-| vendor/composer | **commité** (IIS offline) |
-| Coverage HtmlService | **100%** |
-| Coverage FormRepo | **82%** |
-| Coverage BaseRepo | **81%** |
-| Coverage AuthService | **~82%** |
-| Coverage AttachmentService | **~70%** |
-| SQL direct remaining | **37** queries (AdminImportExport: 7, Backup: 16, Monitoring: 12, Health: 2) |
-| **PHP version** | **8.5** exclusif |
-| **PHP-CS-Fixer** | **113** fichiers conformes PER-CS |
-| **Rector** | **88** fichiers modernisés |
-| **readonly classes** | **18** services |
-| **Pipe operator \|>** | **8** occurrences |
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 977 | **1196** |
+| Assertions | 1628 | **2111** |
+| SQL direct remaining | 37 | **0** |
+| PHPStan baseline | 132 | **71** |
+| Require_once cassés | 3 | **0** |
+| Services DI manquants | 3 | **0** |
+| Tests E2E | 0 | **30** |
 
 ---
 
-## 🎯 Ce qui reste (nice-to-have)
+## 🎯 Ce qui reste (optionnel)
 
-| Tâche | Effort | Impact | Détail |
-|-------|--------|--------|--------|
-| SQL → AdminImportExportHandler | Faible | Cohérence | 7 queries (reads already use repos, writes need import transaction method) |
-| SQL → Backup/Monitoring/Health | N/A | — | Intentionally kept as direct SQL (admin diagnostic tools) |
-| PHPStan baseline (132 erreurs restantes) | Moyen | Qualité code | missingType.iterableValue (phpdoc manquants) |
-| Coverage > 80% : ExportService (~15%) | Élevé | exit() empêche le test direct |
-| Coverage > 80% : WorkflowEngine (~45%) | Moyen | Couvrir les branches restantes |
-| Coverage > 80% : AttachmentService (~70%) | Faible | fileinfo extension manquante |
+| Tâche | Effort | Détail |
+|-------|--------|--------|
+| PHPStan baseline (71 erreurs) | Moyen | 28 dans migrations v13-v26 + 10 dans AdminFormsHandlers (vrais bugs) + 33 hard-to-fix |
+| AdminFormsHandlers dispatch | Faible | 10 appels avec mauvais nombre d'arguments (vrai bug trouvé par PHPStan) |
+| Attachement finfo guard | Faible | Ajouter `function_exists('finfo_open')` pour dégradation gracieuse |
 
 ---
 
-_Dernière mise à jour : 2026-07-12_
+_Dernière mise à jour : 2026-07-13_

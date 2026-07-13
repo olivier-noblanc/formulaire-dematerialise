@@ -6,11 +6,13 @@ namespace App\Repository;
 
 final class SubmissionRepository extends BaseRepository
 {
+    /** @return array<string, mixed>|null */
     public function findById(string $id): ?array
     {
         return $this->fetchOne('SELECT * FROM submissions WHERE id = ?', [$id]);
     }
 
+    /** @return array<int, array<string, mixed>> */
     public function findByForm(string $formId, ?string $status = null): array
     {
         $sql = 'SELECT * FROM submissions WHERE form_id = ?';
@@ -22,6 +24,7 @@ final class SubmissionRepository extends BaseRepository
         return $this->fetchAll($sql . ' ORDER BY submitted_at DESC', $params);
     }
 
+    /** @return array<int, array<string, mixed>> */
     public function findBySubmitter(string $email): array
     {
         return $this->fetchAll(
@@ -264,6 +267,47 @@ final class SubmissionRepository extends BaseRepository
         return (int) ($result['cnt'] ?? 0);
     }
 
+    public function getAvgProcessingTime(): float
+    {
+        $result = $this->fetchOne(
+            "SELECT AVG(
+                CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
+            ) as avg_seconds
+            FROM submissions s
+            WHERE s.status = 'valide' AND s.closed_at IS NOT NULL"
+        );
+        return (float) ($result['avg_seconds'] ?? 0);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findActiveWithDeadlineField(): array
+    {
+        return $this->fetchAll(
+            "SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.form_id,
+                   f.label as form_label, f.deadline_field
+             FROM submissions s
+             JOIN forms f ON f.id = s.form_id
+             WHERE s.status = 'en_cours' AND f.deadline_field != ''"
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getDailyCounts(int $days): array
+    {
+        return $this->fetchAll(
+            "SELECT DATE(submitted_at) as day, COUNT(*) as cnt
+             FROM submissions
+             WHERE submitted_at >= datetime('now', '-' || ? || ' days')
+             GROUP BY DATE(submitted_at)
+             ORDER BY day DESC",
+            [$days]
+        );
+    }
+
     public function countOldByRetention(int $retentionMonths): int
     {
         $result = $this->fetchOne(
@@ -369,6 +413,100 @@ final class SubmissionRepository extends BaseRepository
              LIMIT ?',
             [$email, $limit]
         );
+    }
+
+    public function countPurgeableByCutoff(string $cutoff): int
+    {
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as cnt FROM submissions
+             WHERE status IN ('valide', 'refuse') AND closed_at IS NOT NULL AND closed_at < ?",
+            [$cutoff]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function findPurgeableIds(string $cutoff): array
+    {
+        $rows = $this->fetchAll(
+            "SELECT id FROM submissions
+             WHERE status IN ('valide', 'refuse') AND closed_at IS NOT NULL AND closed_at < ?",
+            [$cutoff]
+        );
+        return array_column($rows, 'id');
+    }
+
+    /**
+     * @param array<int, string> $ids
+     */
+    public function deleteByIds(array $ids): int
+    {
+        if ($ids === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo()->prepare("DELETE FROM submissions WHERE id IN ($placeholders)");
+        $stmt->execute($ids);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * @param array<int, string> $submissionIds
+     */
+    public function deleteValidatorDataBySubmissionIds(array $submissionIds): int
+    {
+        if ($submissionIds === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
+        $stmt = $this->pdo()->prepare("DELETE FROM submission_validator_data WHERE submission_id IN ($placeholders)");
+        $stmt->execute($submissionIds);
+        return $stmt->rowCount();
+    }
+
+    public function countValidatorDataPurgeable(string $cutoff): int
+    {
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as cnt FROM submission_validator_data svd
+             JOIN submissions s ON s.id = svd.submission_id
+             WHERE s.status IN ('valide', 'refuse') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
+            [$cutoff]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    public function getOldestSubmittedAt(): ?string
+    {
+        $result = $this->fetchOne('SELECT MIN(submitted_at) as val FROM submissions');
+        return $result !== null && $result['val'] !== null ? (string) $result['val'] : null;
+    }
+
+    public function getNewestSubmittedAt(): ?string
+    {
+        $result = $this->fetchOne('SELECT MAX(submitted_at) as val FROM submissions');
+        return $result !== null && $result['val'] !== null ? (string) $result['val'] : null;
+    }
+
+    /**
+     * Dynamic row counts via UNION ALL for a list of table names.
+     *
+     * @param array<int, string> $tables
+     * @return array<string, int>
+     */
+    public function countByTableNames(array $tables): array
+    {
+        $counts = [];
+        $unionParts = [];
+        foreach ($tables as $table) {
+            $unionParts[] = "SELECT '" . $table . "' AS tbl, COUNT(*) AS cnt FROM " . $table;
+        }
+        $rows = $this->fetchAll(implode(' UNION ALL ', $unionParts));
+        foreach ($rows as $row) {
+            $counts[$row['tbl']] = (int) $row['cnt'];
+        }
+        return $counts;
     }
 
     public function existsBySubmitter(string $email): bool

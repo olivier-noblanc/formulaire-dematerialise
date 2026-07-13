@@ -108,6 +108,7 @@ final class ValidationService
         return $value;
     }
 
+    /** @param array<string, mixed> $options */
     private function validateStatus(string $value, array $options): string
     {
         $allowed = $options['allowed_values'] ?? ['en_cours', 'valide', 'refuse'];
@@ -128,6 +129,7 @@ final class ValidationService
         return $value;
     }
 
+    /** @param array<string, mixed> $options */
     private function validateInt(string $value, array $options): int
     {
         $intValue = filter_var($value, FILTER_VALIDATE_INT);

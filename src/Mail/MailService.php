@@ -64,6 +64,7 @@ final readonly class MailService implements MailInterface
         }
     }
 
+    /** @param array<string, mixed> $submission */
     public function buildValidationEmail(array $submission, string $stepLabel, string $token): string
     {
         $appName = $this->settingsService->get('app_name', 'CircuitDémat');

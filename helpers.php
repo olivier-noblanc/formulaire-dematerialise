@@ -121,6 +121,7 @@ $_app->set(\App\Repository\FormRepository::class, new \App\Repository\FormReposi
 $_app->set(\App\Repository\SubmissionRepository::class, new \App\Repository\SubmissionRepository($_db_service));
 $_app->set(\App\Repository\TokenRepository::class, new \App\Repository\TokenRepository($_db_service));
 $_app->set(\App\Repository\AttachmentRepository::class, new \App\Repository\AttachmentRepository($_db_service));
+$_app->set(\App\Repository\AlertRepository::class, new \App\Repository\AlertRepository($_db_service));
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());
 $_settings_svc = $_app->get(\App\Settings\SettingsService::class);
@@ -151,3 +152,5 @@ $_app->set(\App\Cron\CronService::class, new \App\Cron\CronService($_db_service)
 $_app->set(\App\Validation\ValidationService::class, new \App\Validation\ValidationService());
 $_app->set(\App\Export\ExportService::class, new \App\Export\ExportService($_db_service, $_app->get(\App\Auth\AuthService::class)));
 $_app->set(\App\Email\EmailVerificationService::class, new \App\Email\EmailVerificationService($_app->get(\App\Cache\CacheService::class)));
+$_app->set(\App\Docs\DocumentationService::class, new \App\Docs\DocumentationService());
+$_app->set(\App\Core\MigrationService::class, new \App\Core\MigrationService($_db_service));

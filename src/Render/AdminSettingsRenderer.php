@@ -32,6 +32,7 @@ final class AdminSettingsRenderer
     /**
      * Compose le contenu HTML de la page admin_settings.php.
      */
+    /** @param array<string, mixed> $state */
     public function renderContent(array $state): string
     {
         $success_msg   = (string) ($state['success'] ?? '');

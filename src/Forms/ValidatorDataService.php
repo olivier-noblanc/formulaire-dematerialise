@@ -23,6 +23,7 @@ final readonly class ValidatorDataService
     /**
      * Récupère les données saisies par les validateurs pour une soumission.
      */
+    /** @return array<int, array<string, mixed>> */
     public function getSubmissionValidatorData(string $submissionId, ?string $stepId = null): array
     {
         $pdo = $this->database->getPdo();
@@ -109,6 +110,7 @@ final readonly class ValidatorDataService
      * Récupère les champs d'un formulaire réservés aux validateurs.
      * Délègue à FieldService::getValidatorFields().
      */
+    /** @return array<int, array<string, mixed>> */
     public function getFormValidatorFields(string $formId, ?string $stepId = null): array
     {
         return $this->fieldService->getValidatorFields($formId, $stepId);
@@ -118,6 +120,7 @@ final readonly class ValidatorDataService
      * Récupère les champs d'un formulaire, filtrés optionnellement par filled_by.
      * Délègue à FieldService::getFields().
      */
+    /** @return array<int, array<string, mixed>> */
     public function getFormFields(string $formId, ?string $filledBy = null): array
     {
         return $this->fieldService->getFields($formId, $filledBy);
@@ -126,6 +129,9 @@ final readonly class ValidatorDataService
     /**
      * Calcule l'état de complétion des champs validator pour un ensemble
      * de soumissions (batch — 2 requêtes SQL pour N soumissions).
+     *
+     * @param array<int, array<string, mixed>> $submissions
+     * @return array<string, array{total: int, filled: int, complet: bool}>
      */
     public function getValidatorStatusBatch(array $submissions): array
     {
