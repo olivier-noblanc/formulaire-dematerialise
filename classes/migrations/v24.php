@@ -16,7 +16,11 @@ function apply_migration_v24(PDO $pdo, int $current_version): int {
     }
 
     try {
-        $v24_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 24")->fetchColumn();
+        $v24_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 24");
+        if ($v24_stmt === false) {
+            throw new \RuntimeException('v24: COUNT query failed');
+        }
+        $v24_done = (int) $v24_stmt->fetchColumn();
         if ($v24_done > 0) {
             return max($current_version, 24);
         }

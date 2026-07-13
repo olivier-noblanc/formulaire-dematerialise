@@ -17,6 +17,7 @@ final class Database implements DatabaseInterface
     public function getPdo(): \PDO
     {
         // Mode test
+        /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
         if (defined('TEST_MODE') && TEST_MODE) {
             return $this->getTestPdo();
         }

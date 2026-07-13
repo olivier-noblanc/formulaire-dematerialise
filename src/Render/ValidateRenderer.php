@@ -14,7 +14,7 @@ final class ValidateRenderer
     /**
      * Retourne le HTML du contenu principal de la page Validation.
      *
-     * @param array{status: string, data: mixed} $result
+     * @param array{status: string, data?: mixed} $result
      * @param array<int, array<string, mixed>> $all_wf_steps
      * @param array<int, array<string, mixed>> $validator_fields
      * @param array<string, string> $validator_data_index field_name => value

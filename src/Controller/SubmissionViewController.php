@@ -198,9 +198,7 @@ final class SubmissionViewController extends BaseController
     <?php if ($isAdmin): ?>
       <a href="index.php?p=confirm_action&action=delete_submission&submission_id=<?= urlencode($subId) ?>&from=<?= urlencode('index.php?p=dashboard') ?>" class="btn btn-danger"><span aria-hidden="true">🗑</span> Supprimer</a>
     <?php endif; ?>
-    <?php if (!empty($attachments) || true): ?>
       <a href="index.php?p=download&mode=export_submission&submission_id=<?= urlencode($subId) ?>" class="btn btn-secondary"><span aria-hidden="true">📥</span> Exporter JSON</a>
-    <?php endif; ?>
   </div>
 <?php
         $content = (string)ob_get_clean();

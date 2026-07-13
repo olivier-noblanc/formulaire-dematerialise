@@ -21,11 +21,19 @@ function apply_migration_v21(PDO $pdo, int $current_version): int {
     $needs_v21 = ($current_version < 21) || ($current_version >= 900);
     if ($needs_v21) {
         try {
-            $v21_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 21")->fetchColumn();
+            $v21_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 21");
+            if ($v21_stmt === false) {
+                throw new \RuntimeException('v21: COUNT query failed');
+            }
+            $v21_done = (int) $v21_stmt->fetchColumn();
             if ($v21_done > 0) return max($current_version, 21);
 
             // 1. Ajouter colonne condition à form_fields (idempotent)
-            $cols = $pdo->query("PRAGMA table_info(form_fields)")->fetchAll(PDO::FETCH_ASSOC);
+            $cols_stmt = $pdo->query("PRAGMA table_info(form_fields)");
+            if ($cols_stmt === false) {
+                throw new \RuntimeException('v21: PRAGMA table_info(form_fields) failed');
+            }
+            $cols = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
             $has_condition = false;
             foreach ($cols as $c) {
                 if ($c['name'] === 'condition') { $has_condition = true; break; }
@@ -36,7 +44,11 @@ function apply_migration_v21(PDO $pdo, int $current_version): int {
 
             // 2. Convertir les anciens opérateurs sur steps
             // equals → eq, not_equals → neq, contains → in
-            $steps = $pdo->query("SELECT id, condition FROM steps WHERE condition IS NOT NULL AND condition != ''")->fetchAll(PDO::FETCH_ASSOC);
+            $steps_stmt = $pdo->query("SELECT id, condition FROM steps WHERE condition IS NOT NULL AND condition != ''");
+            if ($steps_stmt === false) {
+                throw new \RuntimeException('v21: SELECT steps failed');
+            }
+            $steps = $steps_stmt->fetchAll(PDO::FETCH_ASSOC);
             $convert = ['equals' => 'eq', 'not_equals' => 'neq', 'contains' => 'in'];
             $stmt_update = $pdo->prepare("UPDATE steps SET condition = ? WHERE id = ?");
             foreach ($steps as $step) {

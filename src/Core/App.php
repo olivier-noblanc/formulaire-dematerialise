@@ -43,7 +43,9 @@ final class App
         if (!isset($this->services[$class])) {
             throw new \RuntimeException("Service non enregistré: $class");
         }
-        return $this->services[$class];
+        /** @var T $service */
+        $service = $this->services[$class];
+        return $service;
     }
 
     public function set(string $class, object $service): void

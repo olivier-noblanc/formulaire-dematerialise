@@ -191,7 +191,7 @@ final readonly class SampleFormsService
                     $ordre = 1;
                     foreach ($sample_form['fields'] as $f) {
                         $options_json = null;
-                        if (isset($f['options']) && $f['options'] !== []) {
+                        if (isset($f['options'])) {
                             $options_json = json_encode($f['options'], JSON_UNESCAPED_UNICODE);
                         }
                         $filled_by = empty($f['filled_by']) ? 'demandeur' : $f['filled_by'];

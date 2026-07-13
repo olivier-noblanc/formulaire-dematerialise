@@ -223,7 +223,7 @@ final class TokenRepository extends BaseRepository
 
     /**
      * @param array<int, string> $submissionIds
-     * @return array<string, array<int, array<string, mixed>>>
+     * @return array<string, list<array<string, mixed>>>
      */
     public function findStepsBySubmissionIds(array $submissionIds): array
     {

@@ -18,13 +18,21 @@ function apply_migration_v26(PDO $pdo, int $current_version): int {
     }
 
     try {
-        $v26_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 26")->fetchColumn();
+        $v26_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 26");
+        if ($v26_stmt === false) {
+            throw new \RuntimeException('v26: COUNT query failed');
+        }
+        $v26_done = (int) $v26_stmt->fetchColumn();
         if ($v26_done > 0) {
             return max($current_version, 26);
         }
 
         // Vérifier si la colonne existe déjà (sécurité)
-        $cols = $pdo->query("PRAGMA table_info(submissions)")->fetchAll(PDO::FETCH_ASSOC);
+        $cols_stmt = $pdo->query("PRAGMA table_info(submissions)");
+        if ($cols_stmt === false) {
+            throw new \RuntimeException('v26: PRAGMA table_info(submissions) failed');
+        }
+        $cols = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
         $hasRgpdConsent = false;
         foreach ($cols as $col) {
             if ($col['name'] === 'rgpd_consent') {

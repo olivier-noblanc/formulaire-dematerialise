@@ -71,6 +71,7 @@ final readonly class MailerService
         }
 
         // Mode dry-run : aucun email réel n'est envoyé, tout est journalisé
+        /** @phpstan-ignore deadCode.unreachable */
         $dry_run = $this->settingsService->get('mail_dry_run', '0') === '1';
         if ($dry_run) {
             error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");

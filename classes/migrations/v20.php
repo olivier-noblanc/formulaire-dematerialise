@@ -14,7 +14,11 @@ function apply_migration_v20(PDO $pdo, int $current_version): int {
     $needs_v20 = ($current_version < 20) || ($current_version >= 900);
     if ($needs_v20) {
         try {
-            $v20_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 20")->fetchColumn();
+            $v20_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 20");
+            if ($v20_stmt === false) {
+                throw new \RuntimeException('v20: COUNT query failed');
+            }
+            $v20_done = (int) $v20_stmt->fetchColumn();
             if ($v20_done > 0) return max($current_version, 20);
 
             // Supprimer définitivement la table drafts

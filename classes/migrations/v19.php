@@ -40,13 +40,21 @@ function apply_migration_v19(PDO $pdo, int $current_version): int {
     if ($needs_v19) {
         try {
             // Vérifier si v19 a déjà été appliquée
-            $v19_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 19")->fetchColumn();
+            $v19_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 19");
+            if ($v19_stmt === false) {
+                throw new \RuntimeException('v19: COUNT query failed');
+            }
+            $v19_done = (int) $v19_stmt->fetchColumn();
             if ($v19_done > 0) {
                 return max($current_version, 19);
             }
 
             // Ajouter colonne `condition` à steps (idempotent)
-            $cols = $pdo->query("PRAGMA table_info(steps)")->fetchAll(PDO::FETCH_ASSOC);
+            $cols_stmt = $pdo->query("PRAGMA table_info(steps)");
+            if ($cols_stmt === false) {
+                throw new \RuntimeException('v19: PRAGMA table_info(steps) failed');
+            }
+            $cols = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
             $has_condition = false;
             if (is_array($cols)) {
                 foreach ($cols as $c) {

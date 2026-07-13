@@ -67,6 +67,7 @@ final class AuthService implements AuthInterface
      */
     private function getRealUser(): string
     {
+        /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
         if (defined('TEST_MODE') && TEST_MODE) {
             $testUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
             if (!empty($testUser)) {
@@ -152,6 +153,7 @@ final class AuthService implements AuthInterface
     public function requireAdmin(): void
     {
         if (!$this->isAdmin() && !$this->isSuperAdmin()) {
+            /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
             if (defined('TEST_MODE') && TEST_MODE && function_exists('test_json_response')) {
                 test_json_response(['error' => 'Accès refusé', 'redirect' => 'index.php?p=admin_access']);
             }

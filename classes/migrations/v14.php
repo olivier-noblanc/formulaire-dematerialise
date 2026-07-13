@@ -43,7 +43,11 @@ function apply_migration_v14(PDO $pdo, int $current_version): int {
                     'filled_by_email' => 'TEXT',
                     'token_id'        => 'TEXT',
                 ];
-                $cols_check = $pdo->query("PRAGMA table_info(submission_validator_data)")->fetchAll(PDO::FETCH_ASSOC);
+                $cols_check_stmt = $pdo->query("PRAGMA table_info(submission_validator_data)");
+                if ($cols_check_stmt === false) {
+                    throw new \RuntimeException('v14: PRAGMA table_info(submission_validator_data) failed');
+                }
+                $cols_check = $cols_check_stmt->fetchAll(PDO::FETCH_ASSOC);
                 $existing_cols = array_column($cols_check, 'name');
                 foreach ($cols_to_add as $col_name => $col_type) {
                     if (!in_array($col_name, $existing_cols, true)) {
@@ -69,7 +73,11 @@ function apply_migration_v14(PDO $pdo, int $current_version): int {
             }
 
             // Vérification finale : 4 colonnes + index idx_svd_sub_field présents
-            $final_cols = $pdo->query("PRAGMA table_info(submission_validator_data)")->fetchAll(PDO::FETCH_ASSOC);
+            $final_cols_stmt = $pdo->query("PRAGMA table_info(submission_validator_data)");
+            if ($final_cols_stmt === false) {
+                throw new \RuntimeException('v14: PRAGMA table_info(submission_validator_data) failed');
+            }
+            $final_cols = $final_cols_stmt->fetchAll(PDO::FETCH_ASSOC);
             $final_col_names = array_column($final_cols, 'name');
             $has_step_id         = in_array('step_id', $final_col_names, true);
             $has_step_label      = in_array('step_label', $final_col_names, true);

@@ -33,6 +33,7 @@ final class Config
 
     public function isTestMode(): bool
     {
+        /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
         return defined('TEST_MODE') && TEST_MODE;
     }
 

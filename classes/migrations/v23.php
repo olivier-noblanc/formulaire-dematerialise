@@ -37,16 +37,24 @@ function apply_migration_v23(PDO $pdo, int $current_version): int {
 
     try {
         // Vérifier si v23 a déjà été appliquée
-        $v23_done = (int) $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 23")->fetchColumn();
+        $v23_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 23");
+        if ($v23_stmt === false) {
+            throw new \RuntimeException('v23: COUNT query failed');
+        }
+        $v23_done = (int) $v23_stmt->fetchColumn();
         if ($v23_done > 0) {
             return max($current_version, 23);
         }
 
         // Vérifier si la table existe déjà (au cas où la base aurait été créée
         // après l'ajout de la table dans schema_initial.php)
-        $table_exists = (int) $pdo->query(
+        $table_exists_stmt = $pdo->query(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='mail_log'"
-        )->fetchColumn();
+        );
+        if ($table_exists_stmt === false) {
+            throw new \RuntimeException('v23: COUNT sqlite_master failed');
+        }
+        $table_exists = (int) $table_exists_stmt->fetchColumn();
 
         if ($table_exists === 0) {
             $pdo->exec("

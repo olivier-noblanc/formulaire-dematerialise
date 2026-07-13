@@ -95,6 +95,7 @@ final class SecurityService implements SecurityInterface
     public function requireCsrf(): void
     {
         if (!$this->verifyCsrf()) {
+            /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
             if (defined('TEST_MODE') && TEST_MODE && function_exists('test_json_response')) {
                 test_json_response(['error' => 'Token CSRF invalide']);
             }
