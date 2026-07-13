@@ -312,7 +312,7 @@ final class DashboardRenderer
             $admin_comment_html = ' <span aria-hidden="true" title="' . $tooltip_h . '" style="cursor:help;font-size:.95rem;">💬</span>';
         }
 
-        $detail = self::submissionDetail($d, $status, $tokens, $row, $nom);
+        $detail = self::submissionDetail($d, $status, $tokens, $row);
 
         $detail_summary = \App\Core\App::html()->escape($nom !== '' ? $nom : (string) ($row['submitted_by'] ?? '')) . ' — ' . $form_label;
 
