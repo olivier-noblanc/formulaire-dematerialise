@@ -1,9 +1,12 @@
 # Changelog — CircuitDémat
 
 ## [10.15.0] — 2026-07-13
-_Résumé : Tests E2E + migration SQL complète + couverture + PHPStan._
+_Résumé : Tests E2E + migration SQL complète + couverture + PHPStan + bugs dispatch corrigés._
 
 ### 🐛 Bug fixes
+
+- **AdminFormsHandlers** : 7 bugs de dispatch — appels avec mauvais nombre d'arguments (handleDeleteForm, handleDuplicateForm, handleAddRecipient, handleDeleteRecipient, handleUpdateStep, handleDeleteStep, submissionDetail)
+- **AttachmentService** : guard `finfo_open()` pour dégradation gracieuse si extension fileinfo manquante
 
 - **AlertRepository** : service non enregistré dans helpers.php → 500 sur toutes les pages
 - **DocumentationService** : service non enregistré → 500 sur /docs
@@ -41,12 +44,14 @@ _Résumé : Tests E2E + migration SQL complète + couverture + PHPStan._
 | Métrique | Avant | Après |
 |----------|-------|-------|
 | Tests | 977 | **1196** (0 failures) |
-| Assertions | 1628 | **2111** |
+| Assertions | 1628 | **2115** |
 | SQL direct remaining | 37 | **0** |
 | PHPStan baseline | 132 | **71** (-46%) |
+| PHPStan erreurs | — | **0** (level 8) |
 | Require_once cassés | 3 | **0** |
 | Services DI manquants | 3 | **0** |
 | Tests E2E | 0 | **30** |
+| Bugs dispatch corrigés | — | **7** |
 
 ---
 

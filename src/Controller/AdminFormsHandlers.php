@@ -73,22 +73,23 @@ final class AdminFormsHandlers
     /**
      * Route une action POST vers le handler correspondant.
      *
+     * @param \PDO   $pdo         Instance PDO pour les transactions.
      * @param string $action      Valeur de $_POST['action'].
      * @param string $get_form_id form_id validé issu de $_GET.
      * @return array<string,mixed>|null
      */
-    public static function dispatch(string $action, string $get_form_id = ''): ?array
+    public static function dispatch(\PDO $pdo, string $action, string $get_form_id = ''): ?array
     {
         return match ($action) {
             'add_form'         => AdminFormCrudHandler::handleAddForm(),
             'update_form'      => AdminFormCrudHandler::handleUpdateForm(),
-            'delete_form'      => AdminFormCrudHandler::handleDeleteForm(),
-            'duplicate_form'   => AdminFormCrudHandler::handleDuplicateForm(),
+            'delete_form'      => AdminFormCrudHandler::handleDeleteForm($pdo),
+            'duplicate_form'   => AdminFormCrudHandler::handleDuplicateForm($pdo),
             'add_step'         => AdminStepCrudHandler::handleAddStep(),
-            'update_step'      => AdminStepCrudHandler::handleUpdateStep($get_form_id),
-            'delete_step'      => AdminStepCrudHandler::handleDeleteStep($get_form_id),
-            'add_recipient'    => AdminRecipientHandler::handleAddRecipient($get_form_id),
-            'delete_recipient' => AdminRecipientHandler::handleDeleteRecipient($get_form_id),
+            'update_step'      => AdminStepCrudHandler::handleUpdateStep($pdo, $get_form_id),
+            'delete_step'      => AdminStepCrudHandler::handleDeleteStep($pdo, $get_form_id),
+            'add_recipient'    => AdminRecipientHandler::handleAddRecipient($pdo, $get_form_id),
+            'delete_recipient' => AdminRecipientHandler::handleDeleteRecipient($pdo, $get_form_id),
             'add_field'        => AdminFieldCrudHandler::handleAddField(),
             'update_field'     => AdminFieldCrudHandler::handleUpdateField(),
             'delete_field'     => AdminFieldCrudHandler::handleDeleteField(),

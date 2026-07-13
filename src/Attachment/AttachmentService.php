@@ -122,6 +122,9 @@ final readonly class AttachmentService
         }
 
         // Vérifier le type MIME
+        if (!function_exists('finfo_open')) {
+            return ['success' => false, 'message' => 'Extension fileinfo non disponible', 'attachment_id' => null];
+        }
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         if ($finfo === false) {
             return ['success' => false, 'message' => 'Impossible d\'analyser le type de fichier.', 'attachment_id' => null];
