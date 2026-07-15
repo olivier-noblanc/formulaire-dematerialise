@@ -202,6 +202,69 @@ function Find-AppRootInDir {
     return $null
 }
 
+# ── Regeneration autoload Composer ──
+# Doit être appelée APRÈS le git pull / copie des fichiers et AVANT la gate qualité,
+# car les fichiers vendor/ du nouveau code peuvent avoir changé (nouvelles dépendances).
+function Invoke-ComposerAutoload {
+    Write-Section "Regeneration autoload Composer"
+    $composerExe = Get-Command composer -ErrorAction SilentlyContinue
+    $composerPhar = Join-Path $AppRoot "composer.phar"
+
+    # 1) Resoudre : composer global OU composer.phar local
+    $usePhar = $false
+    if ($composerExe) {
+        # composer.exe est dans le PATH
+    } elseif (Test-Path $composerPhar) {
+        $usePhar = $true
+    } elseif (-not $DryRun) {
+        # 2) Auto-installation de composer.phar dans le repo
+        Write-Status ">" "Composer non trouve. Telechargement de composer.phar..." "Yellow"
+        try {
+            $proxyArgs = @{}
+            $systemProxy = [System.Net.WebRequest]::GetSystemWebProxy()
+            if ($systemProxy -and -not $systemProxy.IsBypassed('https://getcomposer.org')) {
+                $proxyAddr = $systemProxy.GetProxy('https://getcomposer.org').AbsoluteUri
+                $proxyArgs['Proxy'] = [System.Net.WebProxy]::new($proxyAddr)
+                Write-Status ">" "Proxy detecte : $proxyAddr" "DarkGray"
+            }
+            Invoke-WebRequest -Uri 'https://getcomposer.org/composer-stable.phar' `
+                -OutFile $composerPhar -UseBasicParsing @proxyArgs -ErrorAction Stop
+            Write-Status "OK" "composer.phar telecharge" "Green"
+            $usePhar = $true
+        } catch {
+            Write-Status "X" "Impossible de telecharger composer.phar : $_" "Red"
+        }
+    }
+
+    # 3) Executer dump-autoload
+    if ($composerExe -or $usePhar) {
+        Push-Location $AppRoot
+        try {
+            if (-not $DryRun) {
+                if (-not $usePhar) {
+                    $composerOutput = & composer dump-autoload -o 2>&1
+                } else {
+                    $composerOutput = & php $composerPhar dump-autoload -o 2>&1
+                }
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Status "OK" "composer dump-autoload -o : reussi" "Green"
+                } else {
+                    Write-Status "X" "composer dump-autoload -o a echoue" "Red"
+                    $composerOutput | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkRed }
+                }
+            } else {
+                Write-Status ".." "composer dump-autoload -o (simule)" "DarkGray"
+            }
+        } catch {
+            Write-Status "X" "Erreur composer : $_" "Red"
+        } finally {
+            Pop-Location
+        }
+    } elseif (-not $DryRun) {
+        Write-Status "X" "Composer introuvable et telechargement echoue. L'autoload ne sera pas regenere." "Yellow"
+    }
+}
+
 # ── Gate qualité : vérifie que le code déployé passe lint + PHPStan + tests ──
 # Retourne $true si tout passe, $false sinon. Affiche le détail sur la console.
 # Cette fonction est appelée APRÈS git pull (ou copie des fichiers) et AVANT
@@ -331,7 +394,7 @@ function Invoke-QualityGate {
                 foreach ($r in $results) {
                     $lintChecked++
                     if (-not $r.OK) {
-                        $rel = $r.File.Substring($using:AppRoot.Length + 1)
+                        $rel = $r.File.Substring($AppRoot.Length + 1)
                         Write-Status "X" "Erreur de syntaxe : $rel" "Red"
                         $r.Output | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkRed }
                         $lintErrors++
@@ -698,6 +761,9 @@ if ($hasGit) {
     }
     Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
 
+    # ── Regeneration autoload AVANT la gate (vendor peut avoir changé) ──
+    Invoke-ComposerAutoload
+
     # ── Gate qualité : vérifier que le code téléchargé passe lint + PHPStan + tests ──
     # Si la gate échoue → rollback automatique via la sauvegarde + exit 1.
     # Pour bypasser (hotfix urgent) : .\update.ps1 -SkipTests
@@ -960,6 +1026,9 @@ else {
     Write-Status ">>" "$skippedCount fichier(s) protege(s)" "DarkGray"
     Write-Status "X" "$deletedCount fichier(s) obsolete(s) supprime(s)" "DarkYellow"
 
+    # ── Regeneration autoload AVANT la gate (vendor peut avoir changé) ──
+    Invoke-ComposerAutoload
+
     # ── Gate qualité : vérifier que le code déployé passe lint + PHPStan + tests ──
     # Si la gate échoue → rollback automatique via la sauvegarde + exit 1.
     # Pour bypasser (hotfix urgent) : .\update.ps1 -SkipTests
@@ -1001,65 +1070,6 @@ else {
 }
 
 # ── Resultat final ─────────────────────────────────────────────
-
-# ── Regeneration autoload Composer ─────────────────────────────
-Write-Section "Regeneration autoload Composer"
-$composerExe = Get-Command composer -ErrorAction SilentlyContinue
-$composerPhar = Join-Path $AppRoot "composer.phar"
-
-# 1) Resoudre : composer global OU composer.phar local
-$usePhar = $false
-if ($composerExe) {
-    # composer.exe est dans le PATH
-} elseif (Test-Path $composerPhar) {
-    $usePhar = $true
-} elseif (-not $DryRun) {
-    # 2) Auto-installation de composer.phar dans le repo
-    Write-Status ">" "Composer non trouve. Telechargement de composer.phar..." "Yellow"
-    try {
-        $proxyArgs = @{}
-        $systemProxy = [System.Net.WebRequest]::GetSystemWebProxy()
-        if ($systemProxy -and -not $systemProxy.IsBypassed('https://getcomposer.org')) {
-            $proxyAddr = $systemProxy.GetProxy('https://getcomposer.org').AbsoluteUri
-            $proxyArgs['Proxy'] = [System.Net.WebProxy]::new($proxyAddr)
-            Write-Status ">" "Proxy detecte : $proxyAddr" "DarkGray"
-        }
-        Invoke-WebRequest -Uri 'https://getcomposer.org/composer-stable.phar' `
-            -OutFile $composerPhar -UseBasicParsing @proxyArgs -ErrorAction Stop
-        Write-Status "OK" "composer.phar telecharge" "Green"
-        $usePhar = $true
-    } catch {
-        Write-Status "X" "Impossible de telecharger composer.phar : $_" "Red"
-    }
-}
-
-# 3) Executer dump-autoload
-if ($composerExe -or $usePhar) {
-    Push-Location $AppRoot
-    try {
-        if (-not $DryRun) {
-            if (-not $usePhar) {
-                $composerOutput = & composer dump-autoload -o 2>&1
-            } else {
-                $composerOutput = & php $composerPhar dump-autoload -o 2>&1
-            }
-            if ($LASTEXITCODE -eq 0) {
-                Write-Status "OK" "composer dump-autoload -o : reussi" "Green"
-            } else {
-                Write-Status "X" "composer dump-autoload -o a echoue" "Red"
-                $composerOutput | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkRed }
-            }
-        } else {
-            Write-Status ".." "composer dump-autoload -o (simule)" "DarkGray"
-        }
-    } catch {
-        Write-Status "X" "Erreur composer : $_" "Red"
-    } finally {
-        Pop-Location
-    }
-} elseif (-not $DryRun) {
-    Write-Status "X" "Composer introuvable et telechargement echoue. L'autoload ne sera pas regenere." "Yellow"
-}
 
 Write-Section "Resultat final"
 $newVersion = Get-LocalVersion

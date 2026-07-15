@@ -1,5 +1,28 @@
 # Changelog — CircuitDémat
 
+## [10.15.1] — 2026-07-15
+_Résumé : Fix gate qualité — autoload régénéré avant PHPStan + fix `$using:` PowerShell._
+
+### 🐛 Bug fixes
+
+- **update.ps1** : `$using:AppRoot` utilisé hors bloc `-Parallel` (ligne 334) → remplacé par `$AppRoot`
+- **update.ps1** : `composer dump-autoload` exécuté APRÈS la gate qualité → déplacé AVANT (fonction `Invoke-ComposerAutoload` appelée avant `Invoke-QualityGate` dans les deux chemins git pull et clone)
+- **vendor/autoload** : référence cassée à `rector/rector/bootstrap.php` (package absent) → régénérée proprement via `composer dump-autoload -o`
+
+### 🗑️ Cleanup
+
+- **fix_templates.php** : supprimé du repo (fichier migration one-shot qui polluait le lint PHP)
+
+### 📊 Résultat
+
+| Problème | Cause | Fix |
+|----------|-------|-----|
+| Gate quality failed: `$using:` error | `$using:AppRoot` hors bloc parallel | `$AppRoot` |
+| Gate quality failed: `DatabaseInterface not found` | autoload stale (rector manquant) | dump-autoload AVANT gate |
+| Gate quality failed: lint error `fix_templates.php` | fichier migration en dur | supprimé |
+
+---
+
 ## [10.15.0] — 2026-07-13
 _Résumé : Tests E2E + migration SQL complète + couverture + PHPStan 0 erreurs + bugs dispatch + CI E2E._
 
