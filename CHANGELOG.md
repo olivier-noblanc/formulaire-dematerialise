@@ -1,5 +1,31 @@
 # Changelog — CircuitDémat
 
+## [10.15.2] — 2026-07-15
+_Résumé : Garde-fou PHPUnit pour les wrappers procéduraux + fix render_footer()._
+
+### 🐛 Bug fixes
+
+- **lib_wrappers.php** : ajout du wrapper `render_footer()` (manquait — appelé par `test_all.php` mais jamais défini)
+
+### 🛡️ Tests
+
+- **GlobalFunctionsTest.php** : nouveau test PHPUnit qui vérifie que toutes les fonctions globales requises existent avant déploiement
+  - Vérifie les 60+ wrappers de `lib_wrappers.php`
+  - Vérifie les fonctions requises par la gate qualité (`test_all.php`)
+  - Vérifie que toutes les fonctions sont appelables (pas d'erreur de dépendance)
+  - Scanne `test_all.php` pour détecter les appels à des fonctions non-définies
+  - Vérifie que les services OOP principaux sont enregistrés dans le container DI
+
+### 📊 Résultat
+
+| Problème | Cause | Fix |
+|----------|-------|-----|
+| Gate serveur échoue sur 12 fonctions | Version déployée ≠ version repo | Test PHPUnit comme garde-fou |
+| `render_footer()` undefined | Wrapper manquant dans lib_wrappers.php | Ajouté |
+| PHPUnit ne détecte pas les wrappers manquants | Test en isolation, pas de contrat | GlobalFunctionsTest |
+
+---
+
 ## [10.15.1] — 2026-07-15
 _Résumé : Fix gate qualité — autoload régénéré avant PHPStan + fix `$using:` PowerShell._
 
