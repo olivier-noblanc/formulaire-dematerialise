@@ -516,3 +516,9 @@ function render_admin_settings_after_main(): string
 {
     return AdminSettingsRenderer::getInstance()->renderAfterMain();
 }
+
+// ── VIEW (ViewRenderer) ───────────────────────────────
+function render_footer(): string
+{
+    return \App\Core\App::view()->footer();
+}
