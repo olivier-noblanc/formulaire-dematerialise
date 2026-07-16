@@ -26,6 +26,7 @@ final class Database implements DatabaseInterface
             $this->pdo = new \PDO('sqlite:' . DB_PATH);
             $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $this->pdo->exec('PRAGMA foreign_keys = ON');
+            $this->pdo->exec('PRAGMA busy_timeout = 5000');
 
             // Migrations
             if (function_exists('db_migrate')) {
