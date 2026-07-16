@@ -54,7 +54,7 @@ final class FormPreviewController extends BaseController
           ?>
         <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
         <div class="wf-step">
-          <div class="wf-step-label"><?= \App\Core\App::html()->escape($ws['label']) ?></div>
+          <div class="wf-step-label"><?= \App\Core\App::html()->escape($ws['step_label']) ?></div>
           <div class="wf-step-emails">
             <?php foreach ($emails as $email): ?>
               <span class="wf-step-email"><?= \App\Core\App::html()->escape($email) ?></span>

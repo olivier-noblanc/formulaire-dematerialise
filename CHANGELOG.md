@@ -1,5 +1,19 @@
 # Changelog — CircuitDémat
 
+## [10.16.2] — 2026-07-16
+_Résumé : Fix rendu workflow submission_view — le controller utilisait les mauvaises classes CSS._
+
+### 🐛 Bug fixes
+
+- **SubmissionViewController** : le circuit de validation utilisait un rendu inline avec les mauvaises classes CSS (`done`, `wf-step-label`, `wf-step-detail`) au lieu du renderer existant (`validated`, `wf-label`, `wf-ordre`, `wf-validators`) — le diagramme n'était pas stylé correctement
+- **FormPreviewController** : correction `$ws['label']` → `$ws['step_label']` (clé retournée par `getWorkflowSteps`)
+
+### 🧪 Tests
+
+- **SubmissionViewRendererTest** : 16 tests vérifiant la structure HTML et les classes CSS du diagramme workflow — aurait détecté ce type de régression
+
+---
+
 ## [10.16.1] — 2026-07-16
 _Résumé : Fixes déploiement + warnings PHP + CSP._
 
