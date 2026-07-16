@@ -96,7 +96,7 @@ class DocumentationService
     </ol>
   </nav>
         <?php
-        return rtrim(ob_get_clean(), " \t");
+        return rtrim((string) ob_get_clean(), " \t");
     }
 
     public function renderQuickstart(): string
@@ -160,7 +160,7 @@ class DocumentationService
     </div>
   </div>
         <?php
-        return rtrim(ob_get_clean(), " \t");
+        return rtrim((string) ob_get_clean(), " \t");
     }
 
     public function renderAgent(): string
@@ -1045,7 +1045,7 @@ class DocumentationService
     </div>
   </div>
         <?php
-        return rtrim(ob_get_clean(), " \t");
+        return rtrim((string) ob_get_clean(), " \t");
     }
 
     public function renderRoles(): string
@@ -1138,7 +1138,7 @@ class DocumentationService
     </table>
   </div>
         <?php
-        return rtrim(ob_get_clean(), " \t");
+        return rtrim((string) ob_get_clean(), " \t");
     }
 
     public function renderFaq(): string
