@@ -1,5 +1,25 @@
 # Changelog — CircuitDémat
 
+## [10.16.1] — 2026-07-16
+_Résumé : Fixes déploiement + warnings PHP + CSP._
+
+### 🐛 Bug fixes
+
+- **AttachmentRepository** : suppression de la référence à `uploaded_by` (colonne inexistante dans la table `attachments`) — corrige le 500 sur submission_view
+- **SubmissionViewController** : utilisation de `step_id`/`step_label` au lieu de `id`/`label` (clés retournées par `getWorkflowSteps`) — corrige les warnings PHP
+- **SubmissionRepository::findPaginatedBySubmitter** : `LIMIT 0 OFFSET 0` retournait un tableau vide — pas de LIMIT quand la valeur est 0
+- **MySubmissionsRenderer** : retrait de la colonne "Ajouté par" (donnée absente)
+- **SecurityService** : ajout `unsafe-inline` aux directives `script-src` et `style-src` du CSP — corrige le blocage des scripts/styles inline
+
+### 🔧 Infrastructure
+
+- **update.ps1** : correction du filtre `ProtectedFiles` — `$file.Name` (basename case-insensitive) remplacé par `$relativePath` — `src\Core\Config.php` n'est plus protégé par erreur
+- **update.ps1** : nettoyage du cache PHPStan **avant** la gate qualité (pas après)
+- **update.ps1** : retrait de `tests/` du `$ProtectedDirs` pour déploiement des tests
+- **.gitignore** : ajout `/coverage/`, `/test_output*.txt`, `/requireAdmin()`
+
+---
+
 ## [10.16.0] — 2026-07-16
 _Résumé : Fix relances parasites — tokens doublons + race condition remind.php._
 
