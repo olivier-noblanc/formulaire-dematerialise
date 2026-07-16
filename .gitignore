@@ -54,6 +54,7 @@ web.config
 .phpstan-cache/
 
 # Code coverage
+/coverage/
 /coverage-html/
 /coverage_html/
 
@@ -66,6 +67,10 @@ web.config
 # PHPUnit
 /phpunit.phar
 /.phpunit.result.cache
+
+# Temporary files
+/test_output*.txt
+/requireAdmin()
 
 # Temporary downloads
 /pcov.zip
