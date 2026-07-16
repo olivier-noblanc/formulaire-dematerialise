@@ -77,11 +77,32 @@ final class SubmissionViewController extends BaseController
             $tokensByStep[$tk['step_id']][] = $tk;
         }
 
+        // Build workflow_steps for SubmissionViewRenderer
+        $renderedSteps = [];
+        foreach ($workflowSteps as $step) {
+            $stepTokens = $tokensByStep[$step['step_id']] ?? [];
+            $allDone = true;
+            $hasTokens = !empty($stepTokens);
+            foreach ($stepTokens as $tk) {
+                if (empty($tk['done_at'])) { $allDone = false; break; }
+            }
+            $stepStatus = $allDone && $hasTokens ? 'validated' : ($hasTokens ? 'current' : 'upcoming');
+            $renderedSteps[] = [
+                'step_status' => $stepStatus,
+                'step_label'  => $step['step_label'],
+                'ordre'       => $step['ordre'],
+                'tokens'      => $stepTokens,
+            ];
+        }
+
         $attachments = $this->attachmentRepo->findBySubmissionWithUploader($subId);
 
         $validatorData = $this->submissionRepo->getValidatorDataOrdered($subId);
 
-        $pageCss = '';
+        $renderer = new \App\Render\SubmissionViewRenderer();
+        $workflowHtml = $renderer->renderWorkflowDiagram($renderedSteps, $status);
+
+        $pageCss = $renderer->pageCss();
         ob_start();
         ?>
   <h1><span aria-hidden="true">📄</span> Détail de la soumission</h1>
@@ -117,34 +138,7 @@ final class SubmissionViewController extends BaseController
   </div>
 
   <!-- Circuit de validation -->
-  <div class="card">
-    <h2>Circuit de validation</h2>
-    <div class="workflow">
-      <?php foreach ($workflowSteps as $i => $step):
-        $stepTokens = $tokensByStep[$step['step_id']] ?? [];
-        $allDone = true;
-        foreach ($stepTokens as $tk) {
-            if (empty($tk['done_at'])) { $allDone = false; break; }
-        }
-        $cls = $allDone && !empty($stepTokens) ? 'done' : (!empty($stepTokens) ? 'current' : 'upcoming');
-      ?>
-        <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
-        <div class="wf-step <?= $cls ?>">
-          <div class="wf-step-label"><?= \App\Core\App::html()->escape($step['step_label']) ?></div>
-          <?php foreach ($stepTokens as $tk): ?>
-            <div class="wf-step-detail">
-              <?= \App\Core\App::html()->escape($tk['email']) ?>
-              <?php if (!empty($tk['done_at'])): ?>
-                <span class="badge badge-ok">✓ <?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($tk['done_at']))) ?></span>
-              <?php else: ?>
-                <span class="badge badge-warn">⏳ En attente</span>
-              <?php endif; ?>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      <?php endforeach; ?>
-    </div>
-  </div>
+  <?= $workflowHtml ?>
 
   <!-- Pièces jointes -->
   <?php if (!empty($attachments)): ?>
