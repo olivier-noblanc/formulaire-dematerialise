@@ -1028,6 +1028,12 @@ else {
     # ── Regeneration autoload AVANT la gate (vendor peut avoir changé) ──
     Invoke-ComposerAutoload
 
+    # ── Nettoyage cache PHPStan AVANT la gate qualité ──
+    $phpstanCache = Join-Path $AppRoot ".phpstan-cache"
+    if (Test-Path $phpstanCache) {
+        Remove-Item -Path $phpstanCache -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     # ── Gate qualité : vérifier que le code déployé passe lint + PHPStan + tests ──
     # Si la gate échoue → rollback automatique via la sauvegarde + exit 1.
     # Pour bypasser (hotfix urgent) : .\update.ps1 -SkipTests
