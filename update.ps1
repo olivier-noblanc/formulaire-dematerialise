@@ -77,8 +77,7 @@ $ProtectedFiles = @( "config.php" )
 
 # Dossiers a proteger (jamais ecrases ni supprimes)
 # Inclut vendor/ (peut contenir plus de fichiers que le git — composer install)
-# et tests/ (non déployé en prod mais présent sur le serveur dev)
-$ProtectedDirs = @( "db", "sessions", "logs", "vendor", "tests", "node_modules", "cache" )
+$ProtectedDirs = @( "db", "sessions", "logs", "vendor", "node_modules", "cache" )
 
 # Repertoire du script = racine de l'application
 $AppRoot = $PSScriptRoot
