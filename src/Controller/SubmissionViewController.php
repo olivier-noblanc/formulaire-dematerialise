@@ -121,7 +121,7 @@ final class SubmissionViewController extends BaseController
     <h2>Circuit de validation</h2>
     <div class="workflow">
       <?php foreach ($workflowSteps as $i => $step):
-        $stepTokens = $tokensByStep[$step['id']] ?? [];
+        $stepTokens = $tokensByStep[$step['step_id']] ?? [];
         $allDone = true;
         foreach ($stepTokens as $tk) {
             if (empty($tk['done_at'])) { $allDone = false; break; }
@@ -130,7 +130,7 @@ final class SubmissionViewController extends BaseController
       ?>
         <?php if ($i > 0): ?><span class="wf-arrow">→</span><?php endif; ?>
         <div class="wf-step <?= $cls ?>">
-          <div class="wf-step-label"><?= \App\Core\App::html()->escape($step['label']) ?></div>
+          <div class="wf-step-label"><?= \App\Core\App::html()->escape($step['step_label']) ?></div>
           <?php foreach ($stepTokens as $tk): ?>
             <div class="wf-step-detail">
               <?= \App\Core\App::html()->escape($tk['email']) ?>
