@@ -1,5 +1,36 @@
 # Changelog — CircuitDémat
 
+## [10.16.0] — 2026-07-16
+_Résumé : Fix relances parasites — tokens doublons + race condition remind.php._
+
+### 🐛 Bug fixes
+
+- **remind.php** : correction d'une race condition où des relances étaient envoyées pour des tokens déjà validés
+  - Ancien : `fetchAll` charge tous les tokens puis itère sans re-vérifier `done_at`
+  - Nouveau : chaque token est traité dans sa propre transaction avec SELECT frais + UPDATE `AND done_at IS NULL` + `rowCount()` check
+  - `beginTransaction()` déplacé dans le `try` avec guard `inTransaction()` dans le catch
+
+- **WorkflowEngine.php** : INSERT token protégé contre la contrainte unique
+  - Ajout de `try/catch` avec check `$e->getCode() === '23000'` (UNIQUE constraint failed) pour éviter un 500 en cas d'insert concurrent
+
+- **Database.php** : ajout `PRAGMA busy_timeout = 5000` pour SQLite multi-writer
+
+### 🆕 Migration v27
+
+- **Index unique partiel** sur `(submission_id, step_id, email) WHERE done_at IS NULL` — empêche la création de tokens doublons au niveau DB
+- **Nettoyage** des doublons existants via `rowid` (monotone, fiable même avec sent_at identique)
+- Corrige le root cause : `advanceWorkflow()` pouvait créer deux tokens pour la même étape/email en cas d'accès concurrent
+
+### 📊 Résultat
+
+| Problème | Cause | Fix |
+|----------|-------|-----|
+| Relance envoyée après validation | Race condition remind.php + tokens doublons | Transaction par token + index unique partiel |
+| 500 en cas d'insert concurrent | Pas de gestion d'erreur sur INSERT | try/catch `23000` |
+| SQLITE_BUSY en cas d'écriture concurrente | Pas de busy_timeout | PRAGMA busy_timeout = 5000 |
+
+---
+
 ## [10.15.2] — 2026-07-15
 _Résumé : Garde-fou PHPUnit pour les wrappers procéduraux + fix render_footer()._
 

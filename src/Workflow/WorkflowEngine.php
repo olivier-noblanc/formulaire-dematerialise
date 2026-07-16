@@ -236,8 +236,16 @@ final readonly class WorkflowEngine implements WorkflowInterface
 
                         $token = $this->generateToken();
                         $tokenRowId = $this->generateUuid();
-                        $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)')
-                            ->execute([$tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt]);
+                        try {
+                            $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)')
+                                ->execute([$tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt]);
+                        } catch (\PDOException $e) {
+                            if ($e->getCode() === '23000') {
+                                // Contrainte unique violée — un autre process a créé le token entre-temps
+                                continue;
+                            }
+                            throw $e;
+                        }
 
                         $subject = '[Action requise] ' . ($submission['form_label'] ?? '') . ' — ' . $step['step_label'];
                         $mailSent = $this->mailService->send($rawEmail, $subject, $this->mailService->buildValidationEmail($submission, $step['step_label'], $token));

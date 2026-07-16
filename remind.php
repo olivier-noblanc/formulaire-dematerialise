@@ -20,37 +20,77 @@ $blocked = 0;
 
 $relance_max = (int)\App\Core\App::settings()->get('relance_max', '3');
 
-$tokens = _dbm_q($pdo, "
-    SELECT t.*, st.label as step_label, f.label as form_label, s.data
-    FROM tokens t
-    JOIN steps st ON st.id = t.step_id
-    JOIN submissions s ON s.id = t.submission_id
-    JOIN forms f ON f.id = s.form_id
-    WHERE t.done_at IS NULL AND s.closed_at IS NULL
-")->fetchAll(PDO::FETCH_ASSOC);
+// Récupérer les IDs des tokens à traiter (pas de fetchAll complet pour éviter les stale reads)
+$pendingIds = array_column(
+    _dbm_q($pdo, "
+        SELECT t.id
+        FROM tokens t
+        JOIN submissions s ON s.id = t.submission_id
+        WHERE t.done_at IS NULL AND s.closed_at IS NULL
+    ")->fetchAll(PDO::FETCH_ASSOC),
+    'id'
+);
 
-foreach ($tokens as $t) {
-    // Vérifier le plafond de relances
-    $relance_count = (int)($t['relance_count'] ?? 0);
-    if ($relance_count >= $relance_max) {
-        error_log("Max relances atteint pour token {$t['token']} ({$relance_count}/{$relance_max})");
-        $blocked++;
-        continue;
-    }
+foreach ($pendingIds as $tokenId) {
+    // Transaction par token : SELECT + vérification atomique avant envoi
+    try {
+        $pdo->beginTransaction();
 
-    $sent     = new DateTimeImmutable($t['sent_at']);
-    $last_ref = $t['relance_at'] ? new DateTimeImmutable($t['relance_at']) : $sent;
-    $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
+        $stmt = $pdo->prepare("
+            SELECT t.*, st.label as step_label, f.label as form_label, s.data
+            FROM tokens t
+            JOIN steps st ON st.id = t.step_id
+            JOIN submissions s ON s.id = t.submission_id
+            JOIN forms f ON f.id = s.form_id
+            WHERE t.id = ? AND t.done_at IS NULL AND s.closed_at IS NULL
+        ");
+        $stmt->execute([$tokenId]);
+        $tok = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h')) continue;
+        if (!$tok) {
+            $pdo->rollBack();
+            continue;
+        }
 
-    $subject = '[RELANCE] ' . $t['form_label'] . ' — ' . $t['step_label'];
-    if (send_mail($t['email'], $subject, build_mail_html($t, $t['step_label'], $t['token']))) {
-        $new_count = $relance_count + 1;
-        $pdo->prepare("UPDATE tokens SET relance_at=?, relance_count=? WHERE id=?")
-            ->execute([$now->format('Y-m-d H:i:s'), $new_count, $t['id']]);
-        echo "[{$now->format('Y-m-d H:i:s')}] Relance {$new_count}/{$relance_max} → {$t['email']} ({$t['step_label']})\n";
-        $nb++;
+        // Vérifier le plafond de relances
+        $relance_count = (int)($tok['relance_count'] ?? 0);
+        if ($relance_count >= $relance_max) {
+            $pdo->rollBack();
+            error_log("Max relances atteint pour token {$tok['token']} ({$relance_count}/{$relance_max})");
+            $blocked++;
+            continue;
+        }
+
+        $sent     = new DateTimeImmutable($tok['sent_at']);
+        $last_ref = $tok['relance_at'] ? new DateTimeImmutable($tok['relance_at']) : $sent;
+        $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
+
+        if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h')) {
+            $pdo->rollBack();
+            continue;
+        }
+
+        $subject = '[RELANCE] ' . $tok['form_label'] . ' — ' . $tok['step_label'];
+        if (send_mail($tok['email'], $subject, build_mail_html($tok, $tok['step_label'], $tok['token']))) {
+            $new_count = $relance_count + 1;
+            $upd = $pdo->prepare("UPDATE tokens SET relance_at=?, relance_count=? WHERE id=? AND done_at IS NULL");
+            $upd->execute([$now->format('Y-m-d H:i:s'), $new_count, $tokenId]);
+            if ($upd->rowCount() === 0) {
+                // Token validé pendant l'envoi du mail — ne pas compter comme envoyé
+                $pdo->rollBack();
+                continue;
+            }
+            $pdo->commit();
+            echo "[{$now->format('Y-m-d H:i:s')}] Relance {$new_count}/{$relance_max} → {$tok['email']} ({$tok['step_label']})\n";
+            $nb++;
+        } else {
+            $pdo->rollBack();
+        }
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log("Erreur relance token {$tokenId}: " . $e->getMessage());
     }
 }
 
