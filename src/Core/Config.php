@@ -33,15 +33,15 @@ final class Config
 
     public function isTestMode(): bool
     {
-        /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
-        return defined('TEST_MODE') && (bool) constant('TEST_MODE');
+        if (!defined('TEST_MODE')) {
+            return false;
+        }
+        return (bool) constant('TEST_MODE');
     }
 
     public function getAppName(): string
     {
-        /** @phpstan-ignore-next-line isset.offset */
-        return defined('SETTINGS_DEFAULTS')
-            ? (string) SETTINGS_DEFAULTS['app_name']
-            : 'CircuitDémat';
+        $defaults = $this->getDefaults();
+        return (string) ($defaults['app_name'] ?? 'CircuitDémat');
     }
 }
