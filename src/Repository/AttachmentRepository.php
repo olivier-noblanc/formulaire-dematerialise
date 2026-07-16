@@ -53,13 +53,7 @@ final class AttachmentRepository extends BaseRepository
      */
     public function findBySubmissionWithUploader(string $submissionId): array
     {
-        return $this->fetchAll(
-            'SELECT a.*, a.uploaded_by as uploader_name
-             FROM attachments a
-             WHERE a.submission_id = ?
-             ORDER BY a.uploaded_at ASC',
-            [$submissionId]
-        );
+        return $this->findBySubmission($submissionId);
     }
 
     public function countAll(): int

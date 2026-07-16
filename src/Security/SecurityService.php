@@ -32,7 +32,7 @@ final class SecurityService implements SecurityInterface
 
         $this->scriptNonce = bin2hex(random_bytes(16));
         $nonceAttr = "nonce=\"{$this->scriptNonce}\"";
-        $csp = "default-src 'self'; script-src 'self' {$nonceAttr}; style-src 'self' {$nonceAttr}; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
+        $csp = "default-src 'self'; script-src 'self' 'unsafe-inline' {$nonceAttr}; style-src 'self' 'unsafe-inline' {$nonceAttr}; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
         header('Content-Security-Policy: ' . $csp);
 
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');

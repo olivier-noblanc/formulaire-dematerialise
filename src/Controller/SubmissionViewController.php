@@ -151,13 +151,13 @@ final class SubmissionViewController extends BaseController
   <div class="card">
     <h2>Pièces jointes (<?= count($attachments) ?>)</h2>
     <table>
-      <thead><tr><th>Fichier</th><th>Taille</th><th>Ajouté par</th><th>Date</th><th>Action</th></tr></thead>
+      <thead><tr><th>Fichier</th><th>Taille</th><th>Date</th><th>Action</th></tr></thead>
       <tbody>
       <?php foreach ($attachments as $att): ?>
         <tr>
           <td><?= \App\Core\App::html()->escape($att['original_name']) ?></td>
           <td><?= \App\Core\App::html()->escape(format_bytes((int)$att['file_size'])) ?></td>
-          <td><?= \App\Core\App::html()->escape($att['uploader_name'] ?? $att['uploaded_by']) ?></td>
+          <td></td>
           <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($att['uploaded_at']))) ?></td>
           <td>
             <a href="index.php?p=download&id=<?= urlencode($att['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Télécharger</a>
