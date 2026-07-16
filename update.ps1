@@ -646,7 +646,7 @@ if (-not $isFirstInstall) {
                     if ($relativePath -eq "update.ps1") { continue }
                     $isProtected = $false
                     foreach ($pf in $ProtectedFiles) {
-                        if ($item.Name -eq $pf -and (Test-Path (Join-Path $AppRoot $pf))) { $isProtected = $true; break }
+                        if ($relativePath -eq $pf -and (Test-Path (Join-Path $AppRoot $pf))) { $isProtected = $true; break }
                     }
                     if ($isProtected) { Write-Status ">>" "Protege : $relativePath" "DarkGray"; continue }
                     $destPath = Join-Path $AppRoot $relativePath
@@ -931,7 +931,7 @@ else {
     foreach ($file in $remoteFiles) {
         $relativePath = $file.FullName.Substring($sourceDir.Length + 1)
         $isProtected = $false
-        foreach ($pf in $ProtectedFiles) { if ($file.Name -eq $pf) { $isProtected = $true; break } }
+        foreach ($pf in $ProtectedFiles) { if ($relativePath -eq $pf) { $isProtected = $true; break } }
         if (-not $isProtected) { foreach ($pd in $ProtectedDirs) { if ($relativePath -like "$pd\*" -or $relativePath -like "$pd/*") { $isProtected = $true; break } } }
         if ($isProtected) { Write-Status ">>" "Protege : $relativePath" "DarkGray"; $skippedCount++; continue }
 
