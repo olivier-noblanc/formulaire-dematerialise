@@ -192,16 +192,16 @@ final class SubmissionRepository extends BaseRepository
      */
     public function findPaginatedBySubmitter(string $email, string $whereSql, array $params, int $limit, int $offset): array
     {
-        return $this->fetchAll(
-            "SELECT s.id, s.form_id, s.data, s.submitted_at, s.status, s.closed_at,
+        $sql = "SELECT s.id, s.form_id, s.data, s.submitted_at, s.status, s.closed_at,
                     f.label as form_label, f.slug as form_slug, f.description as form_description, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
              WHERE $whereSql
-             ORDER BY s.submitted_at DESC
-             LIMIT ? OFFSET ?",
-            array_merge($params, [$limit, $offset])
-        );
+             ORDER BY s.submitted_at DESC";
+        if ($limit > 0) {
+            $sql .= " LIMIT $limit OFFSET $offset";
+        }
+        return $this->fetchAll($sql, $params);
     }
 
     /**
