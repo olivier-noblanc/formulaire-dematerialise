@@ -6,15 +6,14 @@
  * avec les variables $_SERVER positionnées pour simuler le mode test.
  * Le serveur PHP built-in gère les requêtes HTTP réelles.
  * 
- * Usage: php -c /path/to/php.ini test_http.php
+ * Usage: php test_http.php
  */
 
 require_once __DIR__ . '/test_bootstrap.php';
 
 // ── CONFIG ─────────────────────────────────────────────────────
 $BASE   = __DIR__;
-$PHP    = '/home/z/php/php';
-$INI    = '/home/z/php/php.ini';
+$PHP    = 'php';
 $PORT   = 8765;
 $SERVER = "http://localhost:$PORT";
 
@@ -23,7 +22,7 @@ $SERVER = "http://localhost:$PORT";
  * Relance automatiquement le serveur si nécessaire
  */
 function http_request(string $method, string $path, array $get = [], array $post = [], string $test_user = 'test.agent'): array {
-    global $SERVER, $PORT, $PHP, $INI, $BASE;
+    global $SERVER, $PORT, $PHP, $BASE;
     
     // Vérifier que le serveur tourne
     $check = @curl_init("$SERVER/test_api.php?action=stats");
@@ -39,7 +38,7 @@ function http_request(string $method, string $path, array $get = [], array $post
         // Relancer le serveur
         shell_exec("kill $(lsof -t -i:$PORT 2>/dev/null) 2>/dev/null");
         sleep(1);
-        shell_exec("cd $BASE && $PHP -c $INI -S localhost:$PORT -t . > /tmp/php_server.log 2>&1 &");
+        shell_exec("cd $BASE && $PHP -S localhost:$PORT -t . > /tmp/php_server.log 2>&1 &");
         sleep(2);
     }
     
