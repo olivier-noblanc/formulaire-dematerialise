@@ -259,3 +259,5 @@ body.page-forms .add-sub-card h4 {
     color: var(--c-primary-dark);
     margin-bottom: .75rem;
 }
+/* Visibility field — only shown for file-type fields */
+.ff-visibility-field { display: none; }
