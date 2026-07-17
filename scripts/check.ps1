@@ -151,7 +151,7 @@ function Invoke-Step {
 # ═════════════════════════════════════════════════════════════════════════════
 # ÉTAPE 1 — Lint PHP sur fichiers modifiés
 # ═════════════════════════════════════════════════════════════════════════════
-$lintScript = {
+function Step-LintPhp {
     Info "Collecte des fichiers PHP modifiés (git diff --name-only HEAD + staged)…"
     $files = @()
     $files += git diff --name-only HEAD 2>$null
@@ -177,56 +177,70 @@ $lintScript = {
         }
     }
     Info "Lint PHP terminé : $total fichier(s) vérifié(s), $errors erreur(s) de syntaxe."
-    if ($errors -ne 0) { exit 1 }
+    if ($errors -ne 0) { throw "Lint failed" }
 }
 
 Invoke-Step -Name "1. Lint PHP (php -l sur fichiers modifiés)" `
             -Precondition { $true } `
-            -Command $lintScript
+            -Command { Step-LintPhp }
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 2 — Tests PHP existants
+# ÉTAPE 2 — PHPStan (analyse statique niveau 8)
 # ═════════════════════════════════════════════════════════════════════════════
-Invoke-Step -Name "2. Tests PHP existants (tests/test_all.php)" `
+Invoke-Step -Name "2. PHPStan (analyse statique niveau 8)" `
+            -Precondition { (Test-Path 'phpstan.neon') -and (Test-Path 'vendor/bin/phpstan') } `
+            -Command { & $PhpBin vendor/bin/phpstan analyse --memory-limit=512M --no-progress }
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 3 — PHPUnit (tests unitaires + intégration)
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "3. PHPUnit (tests unitaires)" `
+            -Precondition { (Test-Path 'phpunit.xml') -and (Test-Path 'vendor/bin/phpunit') } `
+            -Command { & $PhpBin vendor/bin/phpunit }
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4 — Tests PHP existants
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "4. Tests PHP existants (tests/test_all.php)" `
             -Precondition { Test-Path 'tests/test_all.php' } `
             -Command { & $PhpBin tests/test_all.php }
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 3 — Tests de rendu HTML
+# ÉTAPE 5 — Tests de rendu HTML
 # ═════════════════════════════════════════════════════════════════════════════
-Invoke-Step -Name "3. Tests de rendu HTML (tests/test_form_render_html.php)" `
+Invoke-Step -Name "5. Tests de rendu HTML (tests/test_form_render_html.php)" `
             -Precondition { Test-Path 'tests/test_form_render_html.php' } `
             -Command { & $PhpBin tests/test_form_render_html.php }
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 4 — Tests structurels HTML
+# ÉTAPE 6 — Tests structurels HTML
 # ═════════════════════════════════════════════════════════════════════════════
-Invoke-Step -Name "4. Tests structurels HTML (tests/StructuralHtmlTest.php)" `
+Invoke-Step -Name "6. Tests structurels HTML (tests/StructuralHtmlTest.php)" `
             -Precondition { Test-Path 'tests/StructuralHtmlTest.php' } `
             -Command { & $PhpBin tests/StructuralHtmlTest.php }
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 5 — Tests de non-régression
+# ÉTAPE 7 — Tests de non-régression
 # ═════════════════════════════════════════════════════════════════════════════
-Invoke-Step -Name "5. Tests de non-régression (tests/regression/run_all.php)" `
+Invoke-Step -Name "7. Tests de non-régression (tests/regression/run_all.php)" `
             -Precondition { Test-Path 'tests/regression/run_all.php' } `
             -Command { & $PhpBin tests/regression/run_all.php }
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 6 — Tests e2e Playwright
+# ÉTAPE 8 — Tests e2e Playwright
 # ═════════════════════════════════════════════════════════════════════════════
 if (-not $NodeBin) {
     Write-Host ""
-    Write-Host "$C_BOLD--- 6. Tests e2e Playwright (tests/test_e2e_full_flow.js) ---$C_RESET"
+    Write-Host "$C_BOLD--- 8. Tests e2e Playwright (tests/test_e2e_full_flow.js) ---$C_RESET"
     Warn "Node.js indisponible — étape skippée."
-    Add-Result -Step "6. Tests e2e Playwright (tests/test_e2e_full_flow.js)" -Duration "—" -Status "SKIP"
+    Add-Result -Step "8. Tests e2e Playwright (tests/test_e2e_full_flow.js)" -Duration "—" -Status "SKIP"
 } elseif (-not $PlaywrightAvailable) {
     Write-Host ""
-    Write-Host "$C_BOLD--- 6. Tests e2e Playwright (tests/test_e2e_full_flow.js) ---$C_RESET"
+    Write-Host "$C_BOLD--- 8. Tests e2e Playwright (tests/test_e2e_full_flow.js) ---$C_RESET"
     Warn "Playwright indisponible — étape skippée."
-    Add-Result -Step "6. Tests e2e Playwright (tests/test_e2e_full_flow.js)" -Duration "—" -Status "SKIP"
+    Add-Result -Step "8. Tests e2e Playwright (tests/test_e2e_full_flow.js)" -Duration "—" -Status "SKIP"
 } else {
-    Invoke-Step -Name "6. Tests e2e Playwright (tests/test_e2e_full_flow.js)" `
+    Invoke-Step -Name "8. Tests e2e Playwright (tests/test_e2e_full_flow.js)" `
                 -Precondition { Test-Path 'tests/test_e2e_full_flow.js' } `
                 -Command { & $NodeBin tests/test_e2e_full_flow.js }
 }
