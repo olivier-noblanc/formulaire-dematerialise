@@ -94,14 +94,15 @@ final class SlugHelper
 
     /**
      * Retrieve a form by UUID.
-     * @return array<string, mixed>|null
+     * @return array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null
      */
     public static function getFormByUuid(string $uuid): ?array
     {
         $pdo = \App\Core\App::db()->getPdo();
         $stmt = $pdo->prepare('SELECT * FROM forms WHERE id = ?');
         $stmt->execute([$uuid]);
+        /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|false */
         $form = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $form ?: null;
+        return $form !== false ? $form : null;
     }
 }

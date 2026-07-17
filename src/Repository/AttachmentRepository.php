@@ -7,22 +7,26 @@ namespace App\Repository;
 final class AttachmentRepository extends BaseRepository
 {
     /**
-     * @return array<string, mixed>|null
+     * @return array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}|null
      */
     public function findById(string $id): ?array
     {
-        return $this->fetchOne('SELECT * FROM attachments WHERE id = ?', [$id]);
+        /** @var array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}|null $result */
+        $result = $this->fetchOne('SELECT * FROM attachments WHERE id = ?', [$id]);
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}>
      */
     public function findBySubmission(string $submissionId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}> $result */
+        $result = $this->fetchAll(
             'SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC',
             [$submissionId]
         );
+        return $result;
     }
 
     /**
@@ -49,7 +53,7 @@ final class AttachmentRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}>
      */
     public function findBySubmissionWithUploader(string $submissionId): array
     {
@@ -58,19 +62,22 @@ final class AttachmentRepository extends BaseRepository
 
     public function countAll(): int
     {
+        /** @var array{cnt: int}|null $result */
         $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM attachments');
         return (int) ($result['cnt'] ?? 0);
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, field_name: string, original_name: string, mime_type: string, file_size: int, uploaded_at: string}>
      */
     public function findForExport(string $submissionId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, field_name: string, original_name: string, mime_type: string, file_size: int, uploaded_at: string}> $result */
+        $result = $this->fetchAll(
             'SELECT id, field_name, original_name, mime_type, file_size, uploaded_at
              FROM attachments WHERE submission_id = ? ORDER BY uploaded_at',
             [$submissionId]
         );
+        return $result;
     }
 }

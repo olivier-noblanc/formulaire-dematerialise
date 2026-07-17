@@ -28,7 +28,20 @@ final readonly class TokenService
      * Récupère les tokens d'une soumission avec les infos de l'étape associée.
      *
      * @param list<string> $extraFields
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{
+     *   email: string,
+     *   done_at: string|null,
+     *   sent_at: string,
+     *   step_id: string,
+     *   label: string,
+     *   step_label: string,
+     *   ordre: int,
+     *   id?: string,
+     *   token?: string,
+     *   relance_count?: int,
+     *   relance_at?: string|null,
+     *   expires_at?: string|null
+     * }>
      */
     public function getForSubmission(string $submissionId, array $extraFields = []): array
     {
@@ -48,7 +61,9 @@ final readonly class TokenService
             ORDER BY st.ordre ASC, st.label ASC
         ");
         $stmt->execute([$submissionId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        /** @var array<int, array{email: string, done_at: string|null, sent_at: string, step_id: string, label: string, step_label: string, ordre: int, id?: string, token?: string, relance_count?: int, relance_at?: string|null, expires_at?: string|null}> $result */
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $result;
     }
 
     /**
@@ -334,7 +349,19 @@ final readonly class TokenService
     /**
      * Récupère l'historique des délégations pour une soumission.
      */
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{
+     *   id: string,
+     *   token_id: string,
+     *   from_email: string,
+     *   to_email: string,
+     *   reason: string|null,
+     *   delegated_at: string,
+     *   new_token_id: string|null,
+     *   step_id: string,
+     *   step_label: string
+     * }>
+     */
     public function getDelegations(string $submissionId): array
     {
         $stmt = $this->database->getPdo()->prepare('
@@ -346,6 +373,8 @@ final readonly class TokenService
             ORDER BY d.delegated_at DESC
         ');
         $stmt->execute([$submissionId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        /** @var array<int, array{id: string, token_id: string, from_email: string, to_email: string, reason: string|null, delegated_at: string, new_token_id: string|null, step_id: string, step_label: string}> $result */
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $result;
     }
 }

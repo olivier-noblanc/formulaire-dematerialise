@@ -20,7 +20,27 @@ final readonly class WorkflowEngine implements WorkflowInterface
     {
     }
 
-    /** @return array<string, mixed>|null */
+    /**
+     * @return array{
+     *   id: string,
+     *   submission_id: string,
+     *   step_id: string,
+     *   email: string,
+     *   token: string,
+     *   sent_at: string,
+     *   done_at: string|null,
+     *   relance_at: string|null,
+     *   expires_at: string|null,
+     *   relance_count: int,
+     *   step_label: string,
+     *   form_id: string,
+     *   form_label: string,
+     *   data: string,
+     *   closed_at: string|null,
+     *   status: string,
+     *   submitted_by: string
+     * }|null
+     */
     public function getTokenWithContext(string $tokenValue): ?array
     {
         $pdo = $this->database->getPdo();
@@ -35,11 +55,32 @@ final readonly class WorkflowEngine implements WorkflowInterface
             WHERE t.token = ?
         ');
         $stmt->execute([$tokenValue]);
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
     }
 
-    /** @return array<string, mixed>|null */
+    /**
+     * @return array{
+     *   id: string,
+     *   submission_id: string,
+     *   step_id: string,
+     *   email: string,
+     *   token: string,
+     *   sent_at: string,
+     *   done_at: string|null,
+     *   relance_at: string|null,
+     *   expires_at: string|null,
+     *   relance_count: int,
+     *   step_label: string,
+     *   form_id: string,
+     *   form_label: string,
+     *   data: string,
+     *   closed_at: string|null,
+     *   status: string,
+     *   submitted_by: string
+     * }|null
+     */
     public function getTokenByIdWithContext(string $tokenId): ?array
     {
         $pdo = $this->database->getPdo();
@@ -54,11 +95,21 @@ final readonly class WorkflowEngine implements WorkflowInterface
             WHERE t.id = ?
         ');
         $stmt->execute([$tokenId]);
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{
+     *   step_id: string,
+     *   step_label: string,
+     *   ordre: int,
+     *   actif: int,
+     *   condition: string,
+     *   recipient_emails: string
+     * }>
+     */
     public function getWorkflowSteps(string $formId): array
     {
         static $cache = [];
@@ -77,12 +128,25 @@ final readonly class WorkflowEngine implements WorkflowInterface
             ORDER BY st.ordre ASC, st.id ASC
         ");
         $stmt->execute([$formId]);
+        /** @var array<int, array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $result */
         $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $cache[$formId] = $result;
         return $result;
     }
 
-    /** @return array<string, mixed>|null */
+    /**
+     * @return array{
+     *   id: string,
+     *   form_id: string,
+     *   data: string,
+     *   submitted_by: string,
+     *   submitted_at: string,
+     *   closed_at: string|null,
+     *   status: string,
+     *   admin_comment: string,
+     *   form_label: string
+     * }|null
+     */
     public function getSubmissionWithFormLabel(string $submissionId): ?array
     {
         $pdo = $this->database->getPdo();
@@ -93,6 +157,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
             WHERE s.id = ?
         ');
         $stmt->execute([$submissionId]);
+        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, form_label: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
     }
@@ -144,13 +209,15 @@ final readonly class WorkflowEngine implements WorkflowInterface
         return $recipient;
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /** @return array<int, array{id: string, email: string, added_at: string}> */
     private function getFormOwners(string $formId): array
     {
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare('SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email');
         $stmt->execute([$formId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        /** @var array<int, array{id: string, email: string, added_at: string}> $result */
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $result;
     }
 
     public function advanceWorkflow(string $submissionId): void
@@ -300,7 +367,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
         }
     }
 
-    /** @return array<string, mixed> */
+    /** @return array<string, string> */
     private function getValidatorDataForEvaluation(string $submissionId): array
     {
         $data = $this->fieldService->getValidatorData($submissionId);
@@ -314,7 +381,29 @@ final readonly class WorkflowEngine implements WorkflowInterface
     /**
      * Valide ou refuse un token.
      * @param string $doneBy Email du user logged-on qui a cliqué (v10.0.2)
-     * @return array{status: string, data?: array<string, mixed>}
+     * @return array{
+     *   status: string,
+     *   data?: array{
+     *     id: string,
+     *     submission_id: string,
+     *     step_id: string,
+     *     email: string,
+     *     token: string,
+     *     sent_at: string,
+     *     done_at: string|null,
+     *     relance_at: string|null,
+     *     expires_at: string|null,
+     *     relance_count: int,
+     *     step_label: string,
+     *     form_id: string,
+     *     form_label: string,
+     *     data: string,
+     *     closed_at: string|null,
+     *     status: string,
+     *     submitted_by: string
+     *   },
+     *   message?: string
+     * }
      */
     public function validateToken(string $token, string $action = 'valider', string $comment = '', string $doneBy = ''): array
     {

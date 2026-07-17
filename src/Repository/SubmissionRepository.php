@@ -6,13 +6,19 @@ namespace App\Repository;
 
 final class SubmissionRepository extends BaseRepository
 {
-    /** @return array<string, mixed>|null */
+    /**
+     * @return array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}|null
+     */
     public function findById(string $id): ?array
     {
-        return $this->fetchOne('SELECT * FROM submissions WHERE id = ?', [$id]);
+        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}|null $result */
+        $result = $this->fetchOne('SELECT * FROM submissions WHERE id = ?', [$id]);
+        return $result;
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}>
+     */
     public function findByForm(string $formId, ?string $status = null): array
     {
         $sql = 'SELECT * FROM submissions WHERE form_id = ?';
@@ -21,29 +27,37 @@ final class SubmissionRepository extends BaseRepository
             $sql .= ' AND status = ?';
             $params[] = $status;
         }
-        return $this->fetchAll($sql . ' ORDER BY submitted_at DESC', $params);
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    public function findBySubmitter(string $email): array
-    {
-        return $this->fetchAll(
-            'SELECT * FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC',
-            [$email]
-        );
+        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}> $result */
+        $result = $this->fetchAll($sql . ' ORDER BY submitted_at DESC', $params);
+        return $result;
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}>
+     */
+    public function findBySubmitter(string $email): array
+    {
+        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}> $result */
+        $result = $this->fetchAll(
+            'SELECT * FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC',
+            [$email]
+        );
+        return $result;
+    }
+
+    /**
+     * @return array{id: string, submitted_at: string|null}|null
      */
     public function findActiveByFormAndSubmitter(string $formId, string $submittedBy): ?array
     {
-        return $this->fetchOne(
+        /** @var array{id: string, submitted_at: string|null}|null $result */
+        $result = $this->fetchOne(
             "SELECT id, submitted_at FROM submissions
              WHERE form_id = ? AND submitted_by = ? AND status = 'en_cours'
              ORDER BY submitted_at DESC LIMIT 1",
             [$formId, $submittedBy]
         );
+        return $result;
     }
 
     /**
@@ -76,11 +90,12 @@ final class SubmissionRepository extends BaseRepository
      *
      * @param array<int, mixed> $params WHERE parameters
      * @param string $whereSql Pre-built WHERE clause (e.g. "1=1 AND s.status = ?")
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, form_label: string, form_slug: string, deadline_field: string}>
      */
     public function findPaginatedWithForm(string $whereSql, array $params, int $limit, int $offset): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, form_label: string, form_slug: string, deadline_field: string}> $result */
+        $result = $this->fetchAll(
             "SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
@@ -89,6 +104,7 @@ final class SubmissionRepository extends BaseRepository
              LIMIT ? OFFSET ?",
             array_merge($params, [$limit, $offset])
         );
+        return $result;
     }
 
     /**
@@ -104,17 +120,19 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string}|null
      */
     public function findByIdWithForm(string $id): ?array
     {
-        return $this->fetchOne(
+        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string}|null $result */
+        $result = $this->fetchOne(
             'SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
              WHERE s.id = ?',
             [$id]
         );
+        return $result;
     }
 
     public function cancelById(string $id): bool
@@ -150,22 +168,25 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{status: string, cnt: int}>
      */
     public function getStatusCountsByForm(string $formId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{status: string, cnt: int}> $result */
+        $result = $this->fetchAll(
             'SELECT status, COUNT(*) as cnt FROM submissions WHERE form_id = ? GROUP BY status',
             [$formId]
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, data: string, submitted_by: string, submitted_at: string|null, status: string, closed_at: string|null}>
      */
     public function findPaginatedByForm(string $formId, int $limit, int $offset): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, data: string, submitted_by: string, submitted_at: string|null, status: string, closed_at: string|null}> $result */
+        $result = $this->fetchAll(
             'SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.status, s.closed_at
              FROM submissions s
              WHERE s.form_id = ?
@@ -173,22 +194,25 @@ final class SubmissionRepository extends BaseRepository
              LIMIT ? OFFSET ?',
             [$formId, $limit, $offset]
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{status: string, cnt: int}>
      */
     public function getStatusCountsBySubmitter(string $email): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{status: string, cnt: int}> $result */
+        $result = $this->fetchAll(
             'SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status',
             [$email]
         );
+        return $result;
     }
 
     /**
      * @param array<int, mixed> $params
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, data: string, submitted_at: string|null, status: string, closed_at: string|null, form_label: string, form_slug: string, form_description: string|null, deadline_field: string}>
      */
     public function findPaginatedBySubmitter(string $email, string $whereSql, array $params, int $limit, int $offset): array
     {
@@ -201,15 +225,18 @@ final class SubmissionRepository extends BaseRepository
         if ($limit > 0) {
             $sql .= " LIMIT $limit OFFSET $offset";
         }
-        return $this->fetchAll($sql, $params);
+        /** @var array<int, array{id: string, form_id: string, data: string, submitted_at: string|null, status: string, closed_at: string|null, form_label: string, form_slug: string, form_description: string|null, deadline_field: string}> $result */
+        $result = $this->fetchAll($sql, $params);
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_at: string, step_id: string|null, step_label: string|null}>
      */
     public function getValidatorDataFilledByEmail(string $email): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_at: string, step_id: string|null, step_label: string|null}> $result */
+        $result = $this->fetchAll(
             'SELECT submission_id, field_name, field_label, field_type, value,
                     filled_at, step_id, step_label
              FROM submission_validator_data
@@ -217,14 +244,16 @@ final class SubmissionRepository extends BaseRepository
              ORDER BY filled_at DESC, field_name',
             [$email]
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null}>
      */
     public function getValidatorDataOnSubmissionsByEmail(string $email): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null}> $result */
+        $result = $this->fetchAll(
             'SELECT svd.submission_id, svd.field_name, svd.field_label, svd.field_type,
                     svd.value, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email
              FROM submission_validator_data svd
@@ -233,6 +262,7 @@ final class SubmissionRepository extends BaseRepository
              ORDER BY svd.submission_id, svd.filled_at, svd.field_name',
             [$email]
         );
+        return $result;
     }
 
     public function deleteValidatorDataBySubmitter(string $email): bool
@@ -280,25 +310,28 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, data: string, submitted_by: string, submitted_at: string|null, form_id: string, form_label: string, deadline_field: string}>
      */
     public function findActiveWithDeadlineField(): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, data: string, submitted_by: string, submitted_at: string|null, form_id: string, form_label: string, deadline_field: string}> $result */
+        $result = $this->fetchAll(
             "SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.form_id,
                    f.label as form_label, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
              WHERE s.status = 'en_cours' AND f.deadline_field != ''"
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{day: string, cnt: int}>
      */
     public function getDailyCounts(int $days): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{day: string, cnt: int}> $result */
+        $result = $this->fetchAll(
             "SELECT DATE(submitted_at) as day, COUNT(*) as cnt
              FROM submissions
              WHERE submitted_at >= datetime('now', '-' || ? || ' days')
@@ -306,6 +339,7 @@ final class SubmissionRepository extends BaseRepository
              ORDER BY day DESC",
             [$days]
         );
+        return $result;
     }
 
     public function countOldByRetention(int $retentionMonths): int
@@ -318,11 +352,12 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, token_id: string, step_id: string, action: string|null}>
      */
     public function findPendingForValidator(string $email): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, token_id: string, step_id: string, action: string|null}> $result */
+        $result = $this->fetchAll(
             "SELECT s.*, t.id as token_id, t.step_id, t.action
              FROM submissions s
              JOIN tokens t ON t.submission_id = s.id
@@ -330,6 +365,7 @@ final class SubmissionRepository extends BaseRepository
              ORDER BY t.sent_at",
             [$email]
         );
+        return $result;
     }
 
     /**
@@ -354,7 +390,7 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}>
      */
     public function getValidatorData(string $submissionId, ?string $stepId = null): array
     {
@@ -364,18 +400,22 @@ final class SubmissionRepository extends BaseRepository
             $sql .= ' AND step_id = ?';
             $params[] = $stepId;
         }
-        return $this->fetchAll($sql . ' ORDER BY filled_at', $params);
+        /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
+        $result = $this->fetchAll($sql . ' ORDER BY filled_at', $params);
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}>
      */
     public function getValidatorDataOrdered(string $submissionId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
+        $result = $this->fetchAll(
             'SELECT * FROM submission_validator_data WHERE submission_id = ? ORDER BY filled_at ASC, field_name ASC',
             [$submissionId]
         );
+        return $result;
     }
 
     public function saveValidatorData(string $submissionId, string $fieldName, string $value, string $filledBy, ?string $stepId = null): void
@@ -399,11 +439,12 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null, form_id: string, form_label: string}>
      */
     public function findValidatorDataByEmail(string $email, int $limit = 50): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null, form_id: string, form_label: string}> $result */
+        $result = $this->fetchAll(
             'SELECT svd.*, s.form_id, f.label as form_label
              FROM submission_validator_data svd
              JOIN submissions s ON s.id = svd.submission_id
@@ -413,6 +454,7 @@ final class SubmissionRepository extends BaseRepository
              LIMIT ?',
             [$email, $limit]
         );
+        return $result;
     }
 
     public function countPurgeableByCutoff(string $cutoff): int

@@ -39,7 +39,7 @@ final class FormPreviewController extends BaseController
 
         ob_start();
         ?>
-  <div class="preview-banner"><span aria-hidden="true">👁</span> Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="index.php?p=admin_forms&form_id=<?= urlencode($form['id']) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;"><span aria-hidden="true">⚙</span> Retour à l'édition</a></div>
+  <div class="preview-banner"><span aria-hidden="true">👁</span> Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) ($form['id'] ?? '')) ?>" style="color:#b45309;font-size:.85rem;margin-left:1rem;"><span aria-hidden="true">⚙</span> Retour à l'édition</a></div>
 
   <h1><?= \App\Core\App::html()->escape($form['label']) ?></h1>
   <?php if ($form['description']): ?><p style="font-size:.85rem;color:#555;margin-bottom:2rem;"><?= \App\Core\App::html()->escape($form['description']) ?></p><?php endif; ?>
@@ -75,7 +75,7 @@ final class FormPreviewController extends BaseController
           $fieldName = \App\Core\App::html()->escape($field['field_name']);
           $fieldLabel = \App\Core\App::html()->escape($field['label']);
           $required = empty($field['required']) ? '' : 'required';
-          $placeholder = empty($field['placeholder']) ? '' : \App\Core\App::html()->escape($field['placeholder']);
+          $placeholder = empty($field['hint']) ? '' : \App\Core\App::html()->escape($field['hint']);
           ?>
       <div class="field">
         <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= empty($field['required']) ? '' : '<span style="color:#c0392b;">*</span>' ?></label>
@@ -84,8 +84,8 @@ final class FormPreviewController extends BaseController
         <?php elseif ($field['field_type'] === 'select' && !empty($field['options'])): ?>
           <select id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
             <option value="">— Sélectionner —</option>
-            <?php foreach ($field['options'] as $opt): ?>
-              <option value="<?= \App\Core\App::html()->escape($opt) ?>"><?= \App\Core\App::html()->escape($opt) ?></option>
+            <?php foreach (is_array($field['options']) ? $field['options'] : (json_decode((string) $field['options'], true) ?: []) as $opt): ?>
+              <option value="<?= \App\Core\App::html()->escape((string) $opt) ?>"><?= \App\Core\App::html()->escape((string) $opt) ?></option>
             <?php endforeach; ?>
           </select>
         <?php elseif ($field['field_type'] === 'checkbox'): ?>
@@ -98,8 +98,8 @@ final class FormPreviewController extends BaseController
         <?php else: ?>
           <input type="text" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?> placeholder="<?= $placeholder ?>">
         <?php endif; ?>
-        <?php if (!empty($field['description'])): ?>
-          <span class="hint"><?= \App\Core\App::html()->escape($field['description']) ?></span>
+        <?php if (!empty($field['hint'])): ?>
+          <span class="hint"><?= \App\Core\App::html()->escape($field['hint']) ?></span>
         <?php endif; ?>
       </div>
       <?php endforeach; ?>

@@ -142,7 +142,7 @@ final class AdminAlertsRenderer
                 $html .= '              ' . $h($rule['label']) . "\n";
                 $html .= '            </h3>' . "\n";
                 $html .= '            <div class="rule-actions">' . "\n";
-                $html .= '              <a href="index.php?p=admin_alerts&edit_rule=' . urlencode($rule['id']) . '" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>' . "\n";
+                $html .= '              <a href="index.php?p=admin_alerts&edit_rule=' . urlencode((string) ($rule['id'] ?? '')) . '" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>' . "\n";
                 $html .= '              <form method="POST" style="display:inline;">' . "\n";
                 $html .= '                ' . App::security()->csrfField() . "\n";
                 $html .= '                <input type="hidden" name="action" value="delete_rule">' . "\n";

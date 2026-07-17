@@ -36,24 +36,27 @@ final class AlertRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, days_before: int, condition_type: string, notify_who: string, label: string, actif: int, created_at: string, form_label: string, form_slug: string, deadline_field: string}>
      */
     public function getAllWithForm(): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, form_id: string, days_before: int, condition_type: string, notify_who: string, label: string, actif: int, created_at: string, form_label: string, form_slug: string, deadline_field: string}> $result */
+        $result = $this->fetchAll(
             'SELECT ar.*, f.label as form_label, f.slug as form_slug, f.deadline_field
              FROM alert_rules ar
              JOIN forms f ON f.id = ar.form_id
              ORDER BY f.label, ar.days_before DESC'
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, rule_id: string, submission_id: string, sent_at: string, message: string|null, form_label: string, rule_label: string|null}>
      */
     public function getLogsWithForm(int $limit = 50): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, rule_id: string, submission_id: string, sent_at: string, message: string|null, form_label: string, rule_label: string|null}> $result */
+        $result = $this->fetchAll(
             'SELECT al.*, f.label as form_label, ar.label as rule_label
              FROM alert_log al
              JOIN submissions s ON s.id = al.submission_id
@@ -63,6 +66,7 @@ final class AlertRepository extends BaseRepository
              LIMIT ?',
             [$limit]
         );
+        return $result;
     }
 
     public function purgeOldLogs(int $retentionDays): bool
@@ -89,6 +93,7 @@ final class AlertRepository extends BaseRepository
 
     public function countPurgeableByCutoff(string $cutoff): int
     {
+        /** @var array{cnt: int}|null $result */
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM alert_log al
              JOIN submissions s ON s.id = al.submission_id
@@ -100,6 +105,7 @@ final class AlertRepository extends BaseRepository
 
     public function findLabelById(string $ruleId): ?string
     {
+        /** @var array{label: string}|null $result */
         $result = $this->fetchOne('SELECT label FROM alert_rules WHERE id = ?', [$ruleId]);
         return $result !== null ? (string) $result['label'] : null;
     }

@@ -161,7 +161,7 @@ final class AdminAccessController extends BaseController
     <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;border-bottom:1px solid #eee;">
       <div>
         <strong><?= \App\Core\App::html()->escape($pendingRequest['email']) ?></strong>
-        <div style="font-size:.8rem;color:#555;">Demandé le <?= \App\Core\App::html()->escape($pendingRequest['created_at']) ?></div>
+        <div style="font-size:.8rem;color:#555;">Demandé le <?= \App\Core\App::html()->escape($pendingRequest['requested_at']) ?></div>
       </div>
       <div style="display:flex;gap:.5rem;">
         <form method="POST" style="display:inline;">
@@ -202,7 +202,7 @@ final class AdminAccessController extends BaseController
               <?= $this->security->csrfField() ?>
               <input type="hidden" name="action" value="remove_admin">
               <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($allAdmin['email']) ?>">
-              <a href="index.php?p=confirm_action&action=remove_admin&email=<?= urlencode($allAdmin['email']) ?>" class="btn btn-danger" style="font-size:.75rem;padding:.2rem .5rem;">Retirer</a>
+              <a href="index.php?p=confirm_action&action=remove_admin&email=<?= urlencode((string) ($allAdmin['email'] ?? '')) ?>" class="btn btn-danger" style="font-size:.75rem;padding:.2rem .5rem;">Retirer</a>
             </form>
             <?php endif; ?>
           </td>

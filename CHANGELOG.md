@@ -1,5 +1,36 @@
 # Changelog — CircuitDémat
 
+## [10.17.0] — 2026-07-16
+_Résumé : PHPDoc array shapes stricts + PHPStan 0 erreurs + fix bugs exposés._
+
+### 🐛 Bug fixes
+
+- **AdminFormsController** : `$workflowStep['label']` → `$workflowStep['step_label']` et `$workflowStep['id']` → `$workflowStep['step_id']` — clés de getWorkflowSteps
+- **FormPreviewController** : `$ws['label']` → `$ws['step_label']`, `$field['placeholder']` → `$field['hint']`, `$field['description']` → `$field['hint']` (form_fields n'a que `hint`), `json_decode` sur `options` avant foreach
+- **AdminAccessController** : `$pendingRequest['created_at']` → `$pendingRequest['requested_at']` (colonne réelle de admin_requests)
+- **AdminRepository** : SQL `ORDER BY created_at` → `ORDER BY requested_at`
+- **11 fichiers** : `urlencode(null)` → `urlencode((string) ($var ?? ''))` — TypeError PHP 8.1+
+
+### 🔧 PHPDoc & PHPStan
+
+- **Tous les repositories** (Form, Submission, Token, Attachment, Admin, Audit, Settings, Alert) : array shapes précises sur toutes les méthodes retournant des données SQL
+- **Tous les services** (WorkflowEngine, TokenService, StatsService, FieldService, ValidatorDataService, MailService, MailerService, RgpdService, EmailVerificationService) : idem
+- **Interfaces** (WorkflowInterface, FieldInterface) : return types synchronisés
+- **PHPStan niveau 8** : passe de ~30+ erreurs à **0 erreur**
+- **AGENTS.md** : ajout des règles PHPDoc array shapes et cohérence HTML/CSS
+
+### 🧪 Tests
+
+- **SubmissionViewRendererTest** : 16+ tests sur les classes CSS du diagramme workflow
+- **UrlencodeNullRegressionTest** : 17 tests sur les fix urlencode(null)
+- **WorkflowEngineTest** : tests négatifs vérifiant que les clés legacy `id`/`label` n'existent pas
+
+### 🔧 Infrastructure
+
+- **xdebug** : `xdebug.mode=coverage` (pas `debug`) — supprime le warning timeout CLI
+
+---
+
 ## [10.16.2] — 2026-07-16
 _Résumé : Fix rendu workflow submission_view — le controller utilisait les mauvaises classes CSS._
 

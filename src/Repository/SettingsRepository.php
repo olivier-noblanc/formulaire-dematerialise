@@ -29,10 +29,12 @@ final class SettingsRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{key: string, value: string}>
      */
     public function getAll(): array
     {
-        return $this->fetchAll('SELECT key, value FROM settings ORDER BY key');
+        /** @var array<int, array{key: string, value: string}> $result */
+        $result = $this->fetchAll('SELECT key, value FROM settings ORDER BY key');
+        return $result;
     }
 }

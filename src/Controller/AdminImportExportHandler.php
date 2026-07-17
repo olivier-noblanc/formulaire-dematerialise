@@ -13,7 +13,7 @@ use App\Repository\FormRepository;
 final class AdminImportExportHandler
 {
     /**
-     * @return array<string, mixed>
+     * @return array{error?: string, filename?: string, json_output?: string}
      */
     public static function handleExportForm(): array
     {
@@ -77,14 +77,15 @@ final class AdminImportExportHandler
         }
 
         $filename = preg_replace('/[^a-z0-9_-]/i', '_', $form_data['slug']) . '.json';
+        $jsonOutput = json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return [
             'filename' => $filename,
-            'json_output' => json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'json_output' => $jsonOutput !== false ? $jsonOutput : '',
         ];
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{validation_html: string, preserved_json: string}
      */
     public static function handleValidateJson(): array
     {
@@ -116,7 +117,7 @@ final class AdminImportExportHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error?: string, validation_html?: string, preserved_json?: string, redirect?: string}
      */
     public static function handleImportForm(): array
     {

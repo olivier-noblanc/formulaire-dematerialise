@@ -36,7 +36,9 @@ final class AuditRepository extends BaseRepository
         );
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}>
+     */
     public function getLogs(int $limit = 100, string $actionFilter = ''): array
     {
         $sql = 'SELECT * FROM audit_log';
@@ -47,20 +49,27 @@ final class AuditRepository extends BaseRepository
         }
         $sql .= ' ORDER BY created_at DESC LIMIT ?';
         $params[] = $limit;
-        return $this->fetchAll($sql, $params);
+        /** @var array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $result */
+        $result = $this->fetchAll($sql, $params);
+        return $result;
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}>
+     */
     public function getSecurityLogs(int $limit = 100): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $result */
+        $result = $this->fetchAll(
             'SELECT * FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?',
             ['security_event', $limit]
         );
+        return $result;
     }
 
     public function getLastBackupDate(): ?string
     {
+        /** @var array{created_at: string}|null $result */
         $result = $this->fetchOne(
             "SELECT created_at FROM audit_log
              WHERE action IN ('backup_download', 'backup_restore')
@@ -71,21 +80,24 @@ final class AuditRepository extends BaseRepository
 
     public function countAll(): int
     {
+        /** @var array{cnt: int}|null $result */
         $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM audit_log');
         return (int) ($result['cnt'] ?? 0);
     }
 
     /**
      * @param array<string, string> $filters
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{created_at: string, action: string, actor: string, target: string|null, detail: string|null, ip: string|null}>
      */
     public function findFiltered(array $filters): array
     {
         [$whereSql, $params] = $this->buildFilterWhere($filters);
-        return $this->fetchAll(
+        /** @var array<int, array{created_at: string, action: string, actor: string, target: string|null, detail: string|null, ip: string|null}> $result */
+        $result = $this->fetchAll(
             "SELECT created_at, action, actor, target, detail, ip FROM audit_log $whereSql ORDER BY created_at DESC",
             $params
         );
+        return $result;
     }
 
     /**
@@ -94,21 +106,24 @@ final class AuditRepository extends BaseRepository
     public function countFiltered(array $filters): int
     {
         [$whereSql, $params] = $this->buildFilterWhere($filters);
+        /** @var array{cnt: int}|null $result */
         $result = $this->fetchOne("SELECT COUNT(*) as cnt FROM audit_log $whereSql", $params);
         return (int) ($result['cnt'] ?? 0);
     }
 
     /**
      * @param array<string, string> $filters
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}>
      */
     public function findFilteredPaginated(array $filters, int $limit, int $offset): array
     {
         [$whereSql, $params] = $this->buildFilterWhere($filters);
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $result */
+        $result = $this->fetchAll(
             "SELECT * FROM audit_log $whereSql ORDER BY created_at DESC LIMIT ? OFFSET ?",
             array_merge($params, [$limit, $offset])
         );
+        return $result;
     }
 
     /**

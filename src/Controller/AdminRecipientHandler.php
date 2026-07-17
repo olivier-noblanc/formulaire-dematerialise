@@ -12,7 +12,7 @@ use App\Core\App;
 final class AdminRecipientHandler
 {
     /**
-     * @return array<string, mixed>
+     * @return array{error?: string, redirect?: string}
      */
     public static function handleAddRecipient(\PDO $pdo, string $get_form_id): array
     {
@@ -41,7 +41,7 @@ final class AdminRecipientHandler
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{error?: string, redirect?: string}|null
      */
     public static function handleDeleteRecipient(\PDO $pdo, string $get_form_id): ?array
     {
@@ -62,7 +62,7 @@ final class AdminRecipientHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error?: string, redirect?: string}
      */
     public static function handleAddOwner(): array
     {
@@ -86,7 +86,7 @@ final class AdminRecipientHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error?: string, redirect?: string}
      */
     public static function handleDeleteOwner(): array
     {

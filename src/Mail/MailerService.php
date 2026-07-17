@@ -226,7 +226,7 @@ final readonly class MailerService
     /**
      * Récupère les N dernières entrées de mail_log.
      *
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}>
      */
     public function getRecentLogs(int $limit = 30): array
     {
@@ -246,6 +246,7 @@ final readonly class MailerService
 
             $stmt = $pdo->prepare('SELECT * FROM mail_log ORDER BY created_at DESC LIMIT ?');
             $stmt->execute([$limit]);
+            /** @var array<int, array{id: string, created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}> */
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
             error_log('get_recent_mail_logs error: ' . $e->getMessage());

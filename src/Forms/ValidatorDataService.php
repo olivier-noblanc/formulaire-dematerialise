@@ -23,7 +23,22 @@ final readonly class ValidatorDataService
     /**
      * Récupère les données saisies par les validateurs pour une soumission.
      */
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{
+     *   id: string,
+     *   submission_id: string,
+     *   field_name: string,
+     *   field_label: string,
+     *   field_type: string,
+     *   value: string|null,
+     *   filled_by: string,
+     *   filled_at: string,
+     *   step_id: string|null,
+     *   step_label: string|null,
+     *   filled_by_email: string|null,
+     *   token_id: string|null
+     * }>
+     */
     public function getSubmissionValidatorData(string $submissionId, ?string $stepId = null): array
     {
         $pdo = $this->database->getPdo();
@@ -53,7 +68,9 @@ final readonly class ValidatorDataService
             ";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$submissionId, $submissionId, $stepId, $stepLabel]);
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
+            $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            return $result;
         }
 
         $sql = "
@@ -68,7 +85,9 @@ final readonly class ValidatorDataService
         ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$submissionId, $submissionId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $result;
     }
 
     /**
@@ -110,7 +129,24 @@ final readonly class ValidatorDataService
      * Récupère les champs d'un formulaire réservés aux validateurs.
      * Délègue à FieldService::getValidatorFields().
      */
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{
+     *   id: string,
+     *   form_id: string,
+     *   label: string,
+     *   field_type: string,
+     *   field_name: string,
+     *   options: string|null,
+     *   hint: string,
+     *   required: int,
+     *   ordre: int,
+     *   card_group: string,
+     *   filled_by: string,
+     *   validator_step: string,
+     *   visibility: string,
+     *   condition: string
+     * }>
+     */
     public function getFormValidatorFields(string $formId, ?string $stepId = null): array
     {
         return $this->fieldService->getValidatorFields($formId, $stepId);
@@ -120,7 +156,24 @@ final readonly class ValidatorDataService
      * Récupère les champs d'un formulaire, filtrés optionnellement par filled_by.
      * Délègue à FieldService::getFields().
      */
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @return array<int, array{
+     *   id: string,
+     *   form_id: string,
+     *   label: string,
+     *   field_type: string,
+     *   field_name: string,
+     *   options: string|null,
+     *   hint: string,
+     *   required: int,
+     *   ordre: int,
+     *   card_group: string,
+     *   filled_by: string,
+     *   validator_step: string,
+     *   visibility: string,
+     *   condition: string
+     * }>
+     */
     public function getFormFields(string $formId, ?string $filledBy = null): array
     {
         return $this->fieldService->getFields($formId, $filledBy);

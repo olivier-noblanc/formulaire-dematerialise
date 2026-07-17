@@ -11,7 +11,7 @@ final class TestModeService
 {
     /**
      * Retrieve captured test emails.
-     * @return array<string, mixed>
+     * @return array<int, array{to: string, subject: string, body: string, time: string}>
      */
     public static function getTestMails(): array
     {

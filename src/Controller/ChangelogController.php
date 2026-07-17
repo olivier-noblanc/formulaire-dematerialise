@@ -114,7 +114,7 @@ final class ChangelogController extends BaseController
     /**
      * Parse le fichier CHANGELOG.md et retourne un tableau structuré
      *
-     * @return list<array<string, mixed>>
+     * @return list<array{version: string, date: string, summary: string, sections: array<string, list<string>>}>
      */
     private function parseChangelog(string $filepath): array
     {
@@ -195,7 +195,7 @@ final class ChangelogController extends BaseController
     /**
      * Retourne une classe CSS et une icone selon le nom de la section
      *
-     * @return array<string, mixed>
+     * @return array{icon: string, cls: string}
      */
     private function sectionStyle(string $section): array
     {
