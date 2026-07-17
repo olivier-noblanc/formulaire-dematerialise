@@ -17,12 +17,21 @@ $PHP    = 'php';
 $PORT   = 8765;
 $SERVER = "http://localhost:$PORT";
 
+// Extensions requises — fallback si absentes du php.ini par défaut
+$REQUIRED_EXT = ['mbstring', 'pdo_sqlite', 'sqlite3', 'json', 'openssl', 'curl', 'fileinfo', 'session'];
+$PHP_EXT_FLAGS = '';
+foreach ($REQUIRED_EXT as $ext) {
+    if (!extension_loaded($ext)) {
+        $PHP_EXT_FLAGS .= " -d extension=$ext";
+    }
+}
+
 /**
  * Exécute une requête HTTP réelle via curl vers le serveur PHP de test
  * Relance automatiquement le serveur si nécessaire
  */
 function http_request(string $method, string $path, array $get = [], array $post = [], string $test_user = 'test.agent'): array {
-    global $SERVER, $PORT, $PHP, $BASE;
+    global $SERVER, $PORT, $PHP, $BASE, $PHP_EXT_FLAGS;
     
     // Vérifier que le serveur tourne
     $check = @curl_init("$SERVER/test_api.php?action=stats");
@@ -36,20 +45,20 @@ function http_request(string $method, string $path, array $get = [], array $post
     
     if (empty($test)) {
         // Relancer le serveur
-        shell_exec("kill $(lsof -t -i:$PORT 2>/dev/null) 2>/dev/null");
+        kill_port($PORT);
         sleep(1);
-        shell_exec("cd $BASE && $PHP -S localhost:$PORT -t . > /tmp/php_server.log 2>&1 &");
+        shell_exec("cd $BASE && $PHP $PHP_EXT_FLAGS -S localhost:$PORT -t . > " . escapeshellarg(test_temp_dir() . '/php_server.log') . " 2>&1 &");
         sleep(2);
     }
-    
+
     // Construire l'URL
     $url = "$SERVER/$path";
     if (!empty($get)) {
         $url .= '?' . http_build_query($get);
     }
-    
+
     // Cookie jar unique par utilisateur test pour isoler les sessions
-    $cookie_file = "/tmp/wf_test_cookies_" . preg_replace('/[^a-z0-9]/', '_', $test_user) . ".txt";
+    $cookie_file = test_temp_dir() . "/wf_test_cookies_" . preg_replace('/[^a-z0-9]/', '_', $test_user) . ".txt";
     
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -103,13 +112,18 @@ function api(string $action, array $params = [], string $test_user = 'test.agent
 }
 
 // ── CLEANUP ────────────────────────────────────────────────────
-shell_exec("kill $(lsof -t -i:$PORT 2>/dev/null) 2>/dev/null");
+kill_port($PORT);
 sleep(1);
-shell_exec("rm -f /tmp/wf_test_cookies_*.txt");
+$cookie_pattern = test_temp_dir() . '/wf_test_cookies_*.txt';
+if (PHP_OS_FAMILY === 'Windows') {
+    shell_exec("del /Q " . escapeshellarg($cookie_pattern) . " 2>NUL");
+} else {
+    shell_exec("rm -f " . escapeshellarg($cookie_pattern));
+}
 shell_exec("rm -f $BASE/db/workflow_test.db");
 
 // Démarrer le serveur
-shell_exec("cd $BASE && $PHP -c $INI -S localhost:$PORT -t . > /tmp/php_server.log 2>&1 &");
+shell_exec("cd $BASE && $PHP $PHP_EXT_FLAGS -S localhost:$PORT -t . > " . escapeshellarg(test_temp_dir() . '/php_server.log') . " 2>&1 &");
 sleep(2);
 
 // Vérifier que le serveur répond
@@ -481,8 +495,13 @@ assert_test('Stats: 1+ refusée', ($stats['refuse'] ?? 0) >= 1);
 $exit_code = print_test_summary('RÉSUMÉ');
 
 // Cleanup
-shell_exec("kill $(lsof -t -i:$PORT 2>/dev/null) 2>/dev/null");
-shell_exec("rm -f /tmp/wf_test_cookies.txt");
+kill_port($PORT);
+$final_cookie = test_temp_dir() . '/wf_test_cookies.txt';
+if (PHP_OS_FAMILY === 'Windows') {
+    shell_exec("del /Q " . escapeshellarg($final_cookie) . " 2>NUL");
+} else {
+    shell_exec("rm -f " . escapeshellarg($final_cookie));
+}
 
 if ($exit_code !== 0) {
     echo yellow("\nDB test conservée pour inspection : $BASE/db/workflow_test.db\n");

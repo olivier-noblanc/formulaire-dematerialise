@@ -245,7 +245,7 @@ $modified_files = [
     'stats.php', 'submission_view.php'
 ];
 
-$php_bin = '/tmp/my-project/bin/php/bin/php';
+$php_bin = 'php';
 foreach ($modified_files as $f) {
     $output = [];
     exec("$php_bin -l " . escapeshellarg(__DIR__ . '/' . $f) . " 2>&1", $output, $exit_code);

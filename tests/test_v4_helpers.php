@@ -6,7 +6,7 @@
  * phases de test v4.0.0. Ces fonctions exécutent des requêtes HTTP réelles
  * vers le serveur PHP built-in démarré par test_v4.php.
  *
- * Les globales $SERVER, $PORT, $PHP, $INI, $BASE doivent être définies
+ * Les globales $SERVER, $PORT, $PHP, $BASE doivent être définies
  * par le fichier principal avant tout appel à http_request() / api().
  */
 
@@ -17,7 +17,7 @@ declare(strict_types=1);
  * Relance automatiquement le serveur si nécessaire.
  */
 function http_request(string $method, string $path, array $get = [], array $post = [], string $test_user = 'test.agent', array $files = []): array {
-    global $SERVER, $PORT, $PHP, $INI, $BASE;
+    global $SERVER, $PORT, $PHP, $BASE;
 
     // Vérifier que le serveur tourne
     $check = @curl_init("$SERVER/test_api.php?action=stats");
@@ -31,9 +31,9 @@ function http_request(string $method, string $path, array $get = [], array $post
 
     if (empty($test)) {
         // Relancer le serveur
-        shell_exec("kill $(lsof -t -i:$PORT 2>/dev/null) 2>/dev/null");
+        kill_port($PORT);
         sleep(1);
-        shell_exec("cd $BASE && $PHP -c $INI -S localhost:$PORT -t . > /tmp/php_server_v4.log 2>&1 &");
+        shell_exec("cd $BASE && $PHP -S localhost:$PORT -t . > " . escapeshellarg(test_temp_dir() . '/php_server_v4.log') . " 2>&1 &");
         sleep(2);
     }
 
@@ -44,7 +44,7 @@ function http_request(string $method, string $path, array $get = [], array $post
     }
 
     // Cookie jar unique par utilisateur test
-    $cookie_file = "/tmp/wf_v4_test_cookies_" . preg_replace('/[^a-z0-9]/', '_', $test_user) . ".txt";
+    $cookie_file = test_temp_dir() . "/wf_v4_test_cookies_" . preg_replace('/[^a-z0-9]/', '_', $test_user) . ".txt";
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
