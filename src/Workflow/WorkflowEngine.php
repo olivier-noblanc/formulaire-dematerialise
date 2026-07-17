@@ -9,7 +9,7 @@ use App\Core\Database;
 use App\Forms\FieldService;
 use App\Mail\MailService;
 use App\Settings\SettingsService;
-use App\SubmissionStatus;
+use App\Enum\SubmissionStatus;
 
 /**
  * Moteur de workflow — tokens, steps, validation.
@@ -371,7 +371,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
 
             // Toutes les étapes sont validées → clôturer
             $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
-                ->execute([$now, SubmissionStatus::VALIDE->value, $submissionId]);
+                ->execute([$now, SubmissionStatus::Valide->value, $submissionId]);
 
             $pdo->commit();
             $committed = true;
@@ -483,7 +483,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
             }
 
             $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
-                ->execute([gmdate('Y-m-d H:i:s'), SubmissionStatus::REFUSE->value, $t['submission_id']]);
+                ->execute([gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value, $t['submission_id']]);
         } else {
             $stmt = $pdo->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
             $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
@@ -520,7 +520,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
     {
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = ?');
-        $stmt->execute([$formId, SubmissionStatus::EN_COURS->value]);
+        $stmt->execute([$formId, SubmissionStatus::EnCours->value]);
         return (int) $stmt->fetchColumn();
     }
 
@@ -532,7 +532,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
             JOIN submissions s ON s.id = t.submission_id
             WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = ?
         ');
-        $stmt->execute([$stepId, SubmissionStatus::EN_COURS->value]);
+        $stmt->execute([$stepId, SubmissionStatus::EnCours->value]);
         return (int) $stmt->fetchColumn();
     }
 
