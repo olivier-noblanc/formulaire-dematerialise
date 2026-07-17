@@ -248,128 +248,146 @@ final readonly class WorkflowEngine implements WorkflowInterface
         }
         ksort($byOrder);
 
-        // Tokens déjà créés
-        $tokenStmt = $pdo->prepare('SELECT step_id, done_at FROM tokens WHERE submission_id = ?');
-        $tokenStmt->execute([$submissionId]);
-        $tokensByStep = [];
-        foreach ($tokenStmt->fetchAll(\PDO::FETCH_ASSOC) as $t) {
-            $tokensByStep[$t['step_id']][] = $t['done_at'];
-        }
-
         $now = gmdate('Y-m-d H:i:s');
         $expireDays = (int) $this->settingsService->get('token_expire_days', '30');
         $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
 
-        foreach ($byOrder as $groupe) {
-            // Vérifier si toutes les étapes actives de ce groupe ont un token
-            $stepIds = array_column($groupe, 'step_id');
-            $allStarted = count(array_intersect($stepIds, array_keys($tokensByStep))) === count($groupe);
+        // Transaction pour séquencer les lectures/écritures de tokens
+        // et empêcher les doublons entre requêtes concurrentes
+        $pdo->beginTransaction();
+        $committed = false;
+        try {
+            // Tokens déjà créés (lu dans la transaction pour un snapshot cohérent)
+            $tokenStmt = $pdo->prepare('SELECT step_id, done_at FROM tokens WHERE submission_id = ?');
+            $tokenStmt->execute([$submissionId]);
+            $tokensByStep = [];
+            foreach ($tokenStmt->fetchAll(\PDO::FETCH_ASSOC) as $t) {
+                $tokensByStep[$t['step_id']][] = $t['done_at'];
+            }
 
-            if (!$allStarted) {
-                $formData = json_decode($submission['data'] ?? '{}', true) ?: [];
-                $validatorData = $this->getValidatorDataForEvaluation($submissionId);
-                $tokenCreated = false;
+            foreach ($byOrder as $groupe) {
+                // Vérifier si toutes les étapes actives de ce groupe ont un token
+                $stepIds = array_column($groupe, 'step_id');
+                $allStarted = count(array_intersect($stepIds, array_keys($tokensByStep))) === count($groupe);
 
-                foreach ($groupe as $step) {
-                    // Étape déjà démarrée (a au moins un token) → ne pas créer de doublon
-                    if (isset($tokensByStep[$step['step_id']])) {
-                        continue;
-                    }
+                if (!$allStarted) {
+                    $formData = json_decode($submission['data'] ?? '{}', true) ?: [];
+                    $validatorData = $this->getValidatorDataForEvaluation($submissionId);
+                    $tokenCreated = false;
 
-                    // Évaluer la condition
-                    if (!$this->conditionEvaluator->evaluate(
-                        $step['condition'] ?? '',
-                        $validatorData
-                    )) {
-                        continue; // Skip cette étape (condition non remplie)
-                    }
-
-                    $rawEmails = explode('|', $step['recipient_emails'] ?? '');
-                    $hasRecipient = false;
-                    foreach ($rawEmails as $rawEmail) {
-                        $rawEmail = trim($rawEmail);
-                        if ($rawEmail === '' || $rawEmail === '0') {
+                    foreach ($groupe as $step) {
+                        // Étape déjà démarrée (a au moins un token) → ne pas créer de doublon
+                        if (isset($tokensByStep[$step['step_id']])) {
                             continue;
                         }
 
-                        $rawEmail = $this->resolveDynamicRecipient($rawEmail, $formData, $submissionId);
-                        if (!filter_var($rawEmail, FILTER_VALIDATE_EMAIL)) {
-                            error_log("Workflow: skipping invalid recipient '{$rawEmail}' for step {$step['step_id']}");
-                            continue;
+                        // Évaluer la condition
+                        if (!$this->conditionEvaluator->evaluate(
+                            $step['condition'] ?? '',
+                            $validatorData
+                        )) {
+                            continue; // Skip cette étape (condition non remplie)
                         }
 
-                        $hasRecipient = true;
-
-                        // Vérifier doublon
-                        $dupCheck = $pdo->prepare('SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL');
-                        $dupCheck->execute([$submissionId, $step['step_id'], $rawEmail]);
-                        if ($dupCheck->fetch()) {
-                            continue;
-                        }
-
-                        $token = $this->generateToken();
-                        $tokenRowId = $this->generateUuid();
-                        try {
-                            $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)')
-                                ->execute([$tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt]);
-                        } catch (\PDOException $e) {
-                            if ($e->getCode() === '23000') {
-                                // Contrainte unique violée — un autre process a créé le token entre-temps
+                        $rawEmails = explode('|', $step['recipient_emails'] ?? '');
+                        $hasRecipient = false;
+                        foreach ($rawEmails as $rawEmail) {
+                            $rawEmail = trim($rawEmail);
+                            if ($rawEmail === '' || $rawEmail === '0') {
                                 continue;
                             }
-                            throw $e;
+
+                            $rawEmail = $this->resolveDynamicRecipient($rawEmail, $formData, $submissionId);
+                            if (!filter_var($rawEmail, FILTER_VALIDATE_EMAIL)) {
+                                error_log("Workflow: skipping invalid recipient '{$rawEmail}' for step {$step['step_id']}");
+                                continue;
+                            }
+
+                            $hasRecipient = true;
+
+                            // Vérifier doublon
+                            $dupCheck = $pdo->prepare('SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL');
+                            $dupCheck->execute([$submissionId, $step['step_id'], $rawEmail]);
+                            if ($dupCheck->fetch()) {
+                                continue;
+                            }
+
+                            $token = $this->generateToken();
+                            $tokenRowId = $this->generateUuid();
+                            try {
+                                $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)')
+                                    ->execute([$tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt]);
+                            } catch (\PDOException $e) {
+                                if ($e->getCode() === '23000') {
+                                    error_log("Workflow: duplicate token prevented for step {$step['step_id']}, email {$rawEmail}");
+                                    continue;
+                                }
+                                throw $e;
+                            }
+
+                            $subject = '[Action requise] ' . ($submission['form_label'] ?? '') . ' — ' . $step['step_label'];
+                            $mailSent = $this->mailService->send($rawEmail, $subject, $this->mailService->buildValidationEmail($submission, $step['step_label'], $token));
+                            if (!$mailSent) {
+                                error_log("Workflow: mail failed for token $token to {$rawEmail}");
+                            }
+                            $tokenCreated = true;
                         }
 
-                        $subject = '[Action requise] ' . ($submission['form_label'] ?? '') . ' — ' . $step['step_label'];
-                        $mailSent = $this->mailService->send($rawEmail, $subject, $this->mailService->buildValidationEmail($submission, $step['step_label'], $token));
-                        if (!$mailSent) {
-                            error_log("Workflow: mail failed for token $token to {$rawEmail}");
+                        // Étape sans recipients valides — logger et ignorer (misconfiguration)
+                        if (!$hasRecipient && !in_array(trim($step['recipient_emails'] ?? ''), ['', '0'], true)) {
+                            error_log("Workflow: step {$step['step_id']} has condition true but no valid recipients — skipping");
                         }
-                        $tokenCreated = true;
                     }
 
-                    // Étape sans recipients valides — logger et ignorer (misconfiguration)
-                    if (!$hasRecipient && !in_array(trim($step['recipient_emails'] ?? ''), ['', '0'], true)) {
-                        error_log("Workflow: step {$step['step_id']} has condition true but no valid recipients — skipping");
+                    // Si au moins un token a été créé, on attend sa validation
+                    // Si aucun token (toutes les conditions false ou tous les recipients invalides), on passe au groupe suivant
+                    if ($tokenCreated) {
+                        $pdo->commit();
+                        $committed = true;
+                        return;
                     }
                 }
 
-                // Si au moins un token a été créé, on attend sa validation
-                // Si aucun token (toutes les conditions false ou tous les recipients invalides), on passe au groupe suivant
-                if ($tokenCreated) {
+                // Vérifier si toutes les étapes de cet ordre sont validées
+                $allDone = true;
+                foreach ($groupe as $step) {
+                    // Étape sans token = condition false ou recipients invalides → pas concernée
+                    if (!isset($tokensByStep[$step['step_id']])) {
+                        continue;
+                    }
+                    $dones = $tokensByStep[$step['step_id']];
+                    if (!array_all($dones, fn($d) => $d !== null)) {
+                        $allDone = false;
+                        break;
+                    }
+                }
+
+                if (!$allDone) {
+                    $pdo->commit();
+                    $committed = true;
                     return;
-                }
+                } // Attendre que toutes les étapes de cet ordre soient validées
             }
 
-            // Vérifier si toutes les étapes de cet ordre sont validées
-            $allDone = true;
-            foreach ($groupe as $step) {
-                // Étape sans token = condition false ou recipients invalides → pas concernée
-                if (!isset($tokensByStep[$step['step_id']])) {
-                    continue;
-                }
-                $dones = $tokensByStep[$step['step_id']];
-                if (!array_all($dones, fn($d) => $d !== null)) {
-                    $allDone = false;
-                    break;
-                }
+            // Toutes les étapes sont validées → clôturer
+            $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
+                ->execute([$now, SubmissionStatus::VALIDE->value, $submissionId]);
+
+            $pdo->commit();
+            $committed = true;
+
+            // Notifier l'agent (hors transaction — side effect)
+            $agentEmail = $submission['submitted_by'] ?? '';
+            if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
+                $subject = 'Demande validée — ' . ($submission['form_label'] ?? '');
+                $body = $this->mailService->renderEmailTemplate('Demande validée', '<p>Votre demande a été validée.</p>');
+                $this->mailService->send($agentEmail, $subject, $body);
             }
-
-            if (!$allDone) {
-                return;
-            } // Attendre que toutes les étapes de cet ordre soient validées
-        }
-
-        // Toutes les étapes sont validées → clôturer
-        $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
-            ->execute([$now, SubmissionStatus::VALIDE->value, $submissionId]);
-
-        // Notifier l'agent
-        $agentEmail = $submission['submitted_by'] ?? '';
-        if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
-            $subject = 'Demande validée — ' . ($submission['form_label'] ?? '');
-            $body = $this->mailService->renderEmailTemplate('Demande validée', '<p>Votre demande a été validée.</p>');
-            $this->mailService->send($agentEmail, $subject, $body);
+        } catch (\Throwable $e) {
+            if (!$committed && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
     }
 

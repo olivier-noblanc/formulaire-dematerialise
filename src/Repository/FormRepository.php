@@ -53,6 +53,26 @@ final class FormRepository extends BaseRepository
     }
 
     /**
+     * Formulaires actifs avec nombre de soumissions (welcome state).
+     *
+     * @return array<int, array{id: string, slug: string, label: string, description: string|null, nb_soumissions: int}>
+     */
+    public function findActiveWithSubmissionCounts(int $limit = 3): array
+    {
+        /** @var array<int, array{id: string, slug: string, label: string, description: string|null, nb_soumissions: int}> $result */
+        $result = $this->fetchAll(
+            'SELECT f.id, f.slug, f.label, f.description, COUNT(s.id) AS nb_soumissions
+             FROM forms f
+             LEFT JOIN submissions s ON s.form_id = f.id
+             WHERE f.actif = 1
+             GROUP BY f.id, f.slug, f.label, f.description
+             ORDER BY nb_soumissions DESC, f.label ASC
+             LIMIT ' . (int) $limit
+        );
+        return $result;
+    }
+
+    /**
      * @return array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}>
      */
     public function findAll(bool $activeOnly = false): array

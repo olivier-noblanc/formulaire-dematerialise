@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Contrôleur de la page Détail d'une soumission (submission_view).
@@ -115,7 +116,7 @@ final class SubmissionViewController extends BaseController
         — Clôturé le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime($sub['closed_at']))) ?>
       <?php endif; ?>
     </p>
-    <p><strong>Statut :</strong> <span class="badge <?= $status === 'valide' ? 'badge-ok' : ($status === 'refuse' ? 'badge-err' : ($status === 'annule' ? 'badge-annule' : 'badge-warn')) ?>"><?= \App\Core\App::html()->escape($status) ?></span></p>
+    <p><strong>Statut :</strong> <span class="badge <?= $status === SubmissionStatus::Valide->value ? 'badge-ok' : ($status === SubmissionStatus::Refuse->value ? 'badge-err' : ($status === SubmissionStatus::Annule->value ? 'badge-annule' : 'badge-warn')) ?>"><?= \App\Core\App::html()->escape($status) ?></span></p>
   </div>
 
   <!-- Données de la soumission -->
@@ -186,7 +187,7 @@ final class SubmissionViewController extends BaseController
   <!-- Actions -->
   <div class="card-actions" style="margin-top:1.5rem;">
     <a href="index.php?p=my_submissions" class="btn btn-secondary"><span aria-hidden="true">←</span> Retour</a>
-    <?php if ($status === 'en_cours' && ($isAdmin || $sub['submitted_by'] === $user)): ?>
+    <?php if ($status === SubmissionStatus::EnCours->value && ($isAdmin || $sub['submitted_by'] === $user)): ?>
       <a href="index.php?p=confirm_action&action=cancel_submission&submission_id=<?= urlencode($subId) ?>&from=<?= urlencode('index.php?p=submission_view&id=' . $subId) ?>" class="btn btn-danger"><span aria-hidden="true">🗑</span> Annuler</a>
     <?php endif; ?>
     <?php if ($isAdmin): ?>

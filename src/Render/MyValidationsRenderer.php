@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Rendu de la page « Mes validations » (dashboard validateur).
@@ -170,7 +171,7 @@ final class MyValidationsRenderer
 
                 $actionLabel = 'Validé';
                 $actionCls = 'badge-ok';
-                if ($doneToken['sub_status'] === 'refuse') {
+                if ($doneToken['sub_status'] === SubmissionStatus::Refuse->value) {
                     $refusedByMe = false;
                     if (isset($data['validations'])) {
                         foreach ($data['validations'] as $v) {

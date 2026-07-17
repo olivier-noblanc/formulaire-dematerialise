@@ -27,9 +27,6 @@ final class IndexController extends BaseController
         // v9.9.0 — is_admin_effective() = false si persona actif → l'admin
         // en mode persona voit la page d'accueil comme un user simple.
         $is_admin = $this->auth->isAdminEffective();
-        // Récupérer les formulaires dont l'utilisateur est propriétaire
-        $this->auth->getOwnedForms($user);
-
         // Récupérer les formulaires actifs
         $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
         $active_forms = $formRepository->findActiveList();
@@ -50,17 +47,7 @@ final class IndexController extends BaseController
         // Détecté uniquement quand l'agent a VRAIMENT 0 soumission.
         $welcome_forms = [];
         if (!$is_admin && $my_total === 0) {
-            $pdo = $this->db->getPdo();
-            $welcome_forms = _dbm_q(
-                $pdo,
-                'SELECT f.id, f.slug, f.label, f.description, COUNT(s.id) AS nb_soumissions
-                 FROM forms f
-                 LEFT JOIN submissions s ON s.form_id = f.id
-                 WHERE f.actif = 1
-                 GROUP BY f.id, f.slug, f.label, f.description
-                 ORDER BY nb_soumissions DESC, f.label ASC
-                 LIMIT 3'
-            )->fetchAll(\PDO::FETCH_ASSOC);
+            $welcome_forms = $formRepository->findActiveWithSubmissionCounts(3);
         }
         // Le welcome state n'est affiché que si l'agent a 0 demande ET qu'au moins
         // un formulaire actif existe.
@@ -69,22 +56,6 @@ final class IndexController extends BaseController
         // S4-TUTORIAL (Action 6) : mini-tutoriel de 1ère utilisation.
         // Affiché au-dessus du welcome-state UNIQUEMENT si l'agent a 0 soumission.
         $show_tutorial = $show_welcome_state;
-
-        // Pour les validateurs : compter les tokens en attente
-        $tokenRepository = App::getInstance()->get(\App\Repository\TokenRepository::class);
-        $tokenRepository->getActiveCountByEmail($user);
-
-        // Pour les admins : stats globales
-        $admin_stats = [];
-        if ($is_admin) {
-            $gstats = App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
-            $admin_stats['total']    = $gstats['total'];
-            $admin_stats['en_cours'] = $gstats['en_cours'];
-            $admin_stats['valide']   = $gstats['valide'];
-            $admin_stats['bloques']  = 0;
-            $delai   = (int) $this->settings->get('delai_relance_h', '48');
-            $admin_stats['bloques'] = $tokenRepository->getBlockedCount($delai * 2);
-        }
 
         // ── RENDU ──────────────────────────────────────────────────────
         $page_css = \App\Render\IndexRenderer::pageCss();
