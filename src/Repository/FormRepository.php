@@ -12,7 +12,7 @@ final class FormRepository extends BaseRepository
     public function findById(string $id): ?array
     {
         /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
-        $result = $this->fetchOne('SELECT * FROM forms WHERE id = ?', [$id]);
+        $result = $this->fetchOne('SELECT id, slug, label, description, actif, created_at, deadline_field FROM forms WHERE id = ?', [$id]);
         return $result;
     }
 
@@ -22,7 +22,7 @@ final class FormRepository extends BaseRepository
     public function findBySlug(string $slug): ?array
     {
         /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
-        $result = $this->fetchOne('SELECT * FROM forms WHERE slug = ?', [$slug]);
+        $result = $this->fetchOne('SELECT id, slug, label, description, actif, created_at, deadline_field FROM forms WHERE slug = ?', [$slug]);
         return $result;
     }
 
@@ -32,7 +32,7 @@ final class FormRepository extends BaseRepository
     public function findActiveBySlug(string $slug): ?array
     {
         /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
-        $result = $this->fetchOne('SELECT * FROM forms WHERE slug = ? AND actif = 1', [$slug]);
+        $result = $this->fetchOne('SELECT id, slug, label, description, actif, created_at, deadline_field FROM forms WHERE slug = ? AND actif = 1', [$slug]);
         return $result;
     }
 
@@ -57,7 +57,7 @@ final class FormRepository extends BaseRepository
      */
     public function findAll(bool $activeOnly = false): array
     {
-        $sql = 'SELECT * FROM forms';
+        $sql = 'SELECT id, slug, label, description, actif, created_at, deadline_field FROM forms';
         if ($activeOnly) {
             $sql .= ' WHERE actif = 1';
         }
@@ -73,7 +73,7 @@ final class FormRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}> $result */
         $result = $this->fetchAll(
-            'SELECT f.* FROM forms f JOIN form_owners fo ON fo.form_id = f.id WHERE fo.email = ? ORDER BY f.label',
+            'SELECT f.id, f.slug, f.label, f.description, f.actif, f.created_at, f.deadline_field FROM forms f JOIN form_owners fo ON fo.form_id = f.id WHERE fo.email = ? ORDER BY f.label',
             [$email]
         );
         return $result;
@@ -126,7 +126,7 @@ final class FormRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre',
+            'SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? ORDER BY ordre',
             [$formId]
         );
         return $result;
@@ -139,7 +139,7 @@ final class FormRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM steps WHERE form_id = ? ORDER BY ordre',
+            'SELECT id, form_id, label, ordre, actif, condition FROM steps WHERE form_id = ? ORDER BY ordre',
             [$formId]
         );
         return $result;
@@ -152,7 +152,7 @@ final class FormRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string, recipient_emails: string|null}> $result */
         $result = $this->fetchAll(
-            "SELECT s.*, GROUP_CONCAT(sr.email, '|') as recipient_emails
+            "SELECT s.id, s.form_id, s.label, s.ordre, s.actif, s.condition, GROUP_CONCAT(sr.email, '|') as recipient_emails
              FROM steps s
              LEFT JOIN step_recipients sr ON sr.step_id = s.id
              WHERE s.form_id = ?
@@ -170,7 +170,7 @@ final class FormRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, email: string, added_at: string}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM form_owners WHERE form_id = ? ORDER BY email',
+            'SELECT id, form_id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email',
             [$formId]
         );
         return $result;
@@ -458,7 +458,7 @@ final class FormRepository extends BaseRepository
                 [$newStepId, $newId, $s['label'], $s['ordre'], $s['actif'], (string) ($s['condition'] ?? '')]
             );
 
-            $recips = $this->fetchAll('SELECT * FROM step_recipients WHERE step_id = ?', [$s['id']]);
+            $recips = $this->fetchAll('SELECT id, step_id, email FROM step_recipients WHERE step_id = ?', [$s['id']]);
             foreach ($recips as $recip) {
                 $newRecipId = \generate_uuid();
                 $this->execute(

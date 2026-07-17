@@ -99,7 +99,7 @@ final class SlugHelper
     public static function getFormByUuid(string $uuid): ?array
     {
         $pdo = \App\Core\App::db()->getPdo();
-        $stmt = $pdo->prepare('SELECT * FROM forms WHERE id = ?');
+        $stmt = $pdo->prepare('SELECT id, slug, label, description, actif, created_at, deadline_field FROM forms WHERE id = ?');
         $stmt->execute([$uuid]);
         /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|false */
         $form = $stmt->fetch(\PDO::FETCH_ASSOC);

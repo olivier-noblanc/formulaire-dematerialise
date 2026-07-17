@@ -19,7 +19,7 @@ final class AdminRepository extends BaseRepository
     public function findByEmail(string $email): ?array
     {
         /** @var array{id: string, email: string, added_at: string}|null $result */
-        $result = $this->fetchOne('SELECT * FROM admins WHERE email = ?', [strtolower($email)]);
+        $result = $this->fetchOne('SELECT id, email, added_at FROM admins WHERE email = ?', [strtolower($email)]);
         return $result;
     }
 
@@ -65,7 +65,7 @@ final class AdminRepository extends BaseRepository
     public function getPendingRequestsDesc(): array
     {
         /** @var array<int, array{id: string, email: string, requested_at: string, status: string, token: string}> $result */
-        $result = $this->fetchAll("SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY requested_at DESC");
+        $result = $this->fetchAll("SELECT id, email, requested_at, status, token FROM admin_requests WHERE status = 'pending' ORDER BY requested_at DESC");
         return $result;
     }
 
@@ -89,7 +89,7 @@ final class AdminRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, email: string, requested_at: string, status: string, token: string}> $result */
         $result = $this->fetchAll(
-            "SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY requested_at"
+            "SELECT id, email, requested_at, status, token FROM admin_requests WHERE status = 'pending' ORDER BY requested_at"
         );
         return $result;
     }
@@ -97,7 +97,7 @@ final class AdminRepository extends BaseRepository
     public function approveRequest(string $requestId, string $approvedBy): bool
     {
         /** @var array{id: string, email: string, requested_at: string, status: string, token: string}|null $request */
-        $request = $this->fetchOne('SELECT * FROM admin_requests WHERE id = ?', [$requestId]);
+        $request = $this->fetchOne('SELECT id, email, requested_at, status, token FROM admin_requests WHERE id = ?', [$requestId]);
         if ($request === null) {
             return false;
         }

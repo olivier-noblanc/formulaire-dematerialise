@@ -56,7 +56,7 @@ final readonly class ValidatorDataService
             }
 
             $sql = "
-                SELECT svd.*
+                SELECT svd.id, svd.submission_id, svd.field_name, svd.field_label, svd.field_type, svd.value, svd.filled_by, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email, svd.token_id
                 FROM submission_validator_data svd
                 WHERE svd.submission_id = ?
                 AND svd.field_name IN (
@@ -74,7 +74,7 @@ final readonly class ValidatorDataService
         }
 
         $sql = "
-            SELECT svd.*
+            SELECT svd.id, svd.submission_id, svd.field_name, svd.field_label, svd.field_type, svd.value, svd.filled_by, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email, svd.token_id
             FROM submission_validator_data svd
             WHERE svd.submission_id = ?
             AND svd.field_name IN (

@@ -64,7 +64,9 @@ final readonly class StatsService
         $whereSql = implode(' AND ', $where);
 
         $stmt = $pdo->prepare("
-            SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
+            SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at,
+                   s.closed_at, s.status, s.admin_comment, s.rgpd_consent,
+                   f.label as form_label, f.slug as form_slug, f.deadline_field
             FROM submissions s
             JOIN forms f ON f.id = s.form_id
             WHERE $whereSql

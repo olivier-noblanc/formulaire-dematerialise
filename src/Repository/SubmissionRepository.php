@@ -12,7 +12,7 @@ final class SubmissionRepository extends BaseRepository
     public function findById(string $id): ?array
     {
         /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}|null $result */
-        $result = $this->fetchOne('SELECT * FROM submissions WHERE id = ?', [$id]);
+        $result = $this->fetchOne('SELECT id, form_id, data, submitted_by, submitted_at, closed_at, status, admin_comment, rgpd_consent FROM submissions WHERE id = ?', [$id]);
         return $result;
     }
 
@@ -21,7 +21,7 @@ final class SubmissionRepository extends BaseRepository
      */
     public function findByForm(string $formId, ?string $status = null): array
     {
-        $sql = 'SELECT * FROM submissions WHERE form_id = ?';
+        $sql = 'SELECT id, form_id, data, submitted_by, submitted_at, closed_at, status, admin_comment, rgpd_consent FROM submissions WHERE form_id = ?';
         $params = [$formId];
         if ($status !== null) {
             $sql .= ' AND status = ?';
@@ -39,7 +39,7 @@ final class SubmissionRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC',
+            'SELECT id, form_id, data, submitted_by, submitted_at, closed_at, status, admin_comment, rgpd_consent FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC',
             [$email]
         );
         return $result;
@@ -96,7 +96,7 @@ final class SubmissionRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, form_label: string, form_slug: string, deadline_field: string}> $result */
         $result = $this->fetchAll(
-            "SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
+            "SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status, s.admin_comment, s.rgpd_consent, f.label as form_label, f.slug as form_slug, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
              WHERE $whereSql
@@ -126,7 +126,7 @@ final class SubmissionRepository extends BaseRepository
     {
         /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string}|null $result */
         $result = $this->fetchOne(
-            'SELECT s.*, f.label as form_label, f.slug as form_slug, f.deadline_field
+            'SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status, s.admin_comment, f.label as form_label, f.slug as form_slug, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
              WHERE s.id = ?',
@@ -358,7 +358,7 @@ final class SubmissionRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, token_id: string, step_id: string, action: string|null}> $result */
         $result = $this->fetchAll(
-            "SELECT s.*, t.id as token_id, t.step_id, t.action
+            "SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status, s.admin_comment, s.rgpd_consent, t.id as token_id, t.step_id, t.action
              FROM submissions s
              JOIN tokens t ON t.submission_id = s.id
              WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now')
@@ -394,7 +394,7 @@ final class SubmissionRepository extends BaseRepository
      */
     public function getValidatorData(string $submissionId, ?string $stepId = null): array
     {
-        $sql = 'SELECT * FROM submission_validator_data WHERE submission_id = ?';
+        $sql = 'SELECT id, submission_id, field_name, field_label, field_type, value, filled_by, filled_at, step_id, step_label, filled_by_email, token_id FROM submission_validator_data WHERE submission_id = ?';
         $params = [$submissionId];
         if ($stepId !== null) {
             $sql .= ' AND step_id = ?';
@@ -412,7 +412,7 @@ final class SubmissionRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM submission_validator_data WHERE submission_id = ? ORDER BY filled_at ASC, field_name ASC',
+            'SELECT id, submission_id, field_name, field_label, field_type, value, filled_by, filled_at, step_id, step_label, filled_by_email, token_id FROM submission_validator_data WHERE submission_id = ? ORDER BY filled_at ASC, field_name ASC',
             [$submissionId]
         );
         return $result;
@@ -445,7 +445,7 @@ final class SubmissionRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null, form_id: string, form_label: string}> $result */
         $result = $this->fetchAll(
-            'SELECT svd.*, s.form_id, f.label as form_label
+            'SELECT svd.id, svd.submission_id, svd.field_name, svd.field_label, svd.field_type, svd.value, svd.filled_by, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email, svd.token_id, s.form_id, f.label as form_label
              FROM submission_validator_data svd
              JOIN submissions s ON s.id = svd.submission_id
              JOIN forms f ON f.id = s.form_id

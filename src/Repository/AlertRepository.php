@@ -42,7 +42,8 @@ final class AlertRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, form_id: string, days_before: int, condition_type: string, notify_who: string, label: string, actif: int, created_at: string, form_label: string, form_slug: string, deadline_field: string}> $result */
         $result = $this->fetchAll(
-            'SELECT ar.*, f.label as form_label, f.slug as form_slug, f.deadline_field
+            'SELECT ar.id, ar.form_id, ar.days_before, ar.condition_type, ar.notify_who, ar.label, ar.actif, ar.created_at,
+                    f.label as form_label, f.slug as form_slug, f.deadline_field
              FROM alert_rules ar
              JOIN forms f ON f.id = ar.form_id
              ORDER BY f.label, ar.days_before DESC'
@@ -57,7 +58,8 @@ final class AlertRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, rule_id: string, submission_id: string, sent_at: string, message: string|null, form_label: string, rule_label: string|null}> $result */
         $result = $this->fetchAll(
-            'SELECT al.*, f.label as form_label, ar.label as rule_label
+            'SELECT al.id, al.rule_id, al.submission_id, al.sent_at, al.message,
+                    f.label as form_label, ar.label as rule_label
              FROM alert_log al
              JOIN submissions s ON s.id = al.submission_id
              JOIN forms f ON f.id = s.form_id

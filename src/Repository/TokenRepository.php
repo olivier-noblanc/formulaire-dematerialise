@@ -12,7 +12,7 @@ final class TokenRepository extends BaseRepository
     public function findByValue(string $token): ?array
     {
         /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}|null $result */
-        $result = $this->fetchOne('SELECT * FROM tokens WHERE token = ?', [$token]);
+        $result = $this->fetchOne('SELECT id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count FROM tokens WHERE token = ?', [$token]);
         return $result;
     }
 
@@ -22,7 +22,7 @@ final class TokenRepository extends BaseRepository
     public function findById(string $tokenId): ?array
     {
         /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}|null $result */
-        $result = $this->fetchOne('SELECT * FROM tokens WHERE id = ?', [$tokenId]);
+        $result = $this->fetchOne('SELECT id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count FROM tokens WHERE id = ?', [$tokenId]);
         return $result;
     }
 
@@ -33,7 +33,7 @@ final class TokenRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM tokens WHERE submission_id = ? ORDER BY sent_at',
+            'SELECT id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count FROM tokens WHERE submission_id = ? ORDER BY sent_at',
             [$submissionId]
         );
         return $result;
@@ -121,7 +121,7 @@ final class TokenRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, ordre: int}> $result */
         $result = $this->fetchAll(
-            'SELECT t.*, st.label as step_label, st.ordre
+            'SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at, t.done_at, t.relance_at, t.expires_at, t.relance_count, st.label as step_label, st.ordre
              FROM tokens t
              JOIN steps st ON st.id = t.step_id
              WHERE t.submission_id = ?
