@@ -41,7 +41,7 @@ final class AuditRepository extends BaseRepository
      */
     public function getLogs(int $limit = 100, string $actionFilter = ''): array
     {
-        $sql = 'SELECT * FROM audit_log';
+        $sql = 'SELECT id, action, target, detail, actor, ip, created_at FROM audit_log';
         $params = [];
         if ($actionFilter !== '') {
             $sql .= ' WHERE action = ?';
@@ -61,7 +61,7 @@ final class AuditRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?',
+            'SELECT id, action, target, detail, actor, ip, created_at FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?',
             ['security_event', $limit]
         );
         return $result;
@@ -120,7 +120,7 @@ final class AuditRepository extends BaseRepository
         [$whereSql, $params] = $this->buildFilterWhere($filters);
         /** @var array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $result */
         $result = $this->fetchAll(
-            "SELECT * FROM audit_log $whereSql ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT id, action, target, detail, actor, ip, created_at FROM audit_log $whereSql ORDER BY created_at DESC LIMIT ? OFFSET ?",
             array_merge($params, [$limit, $offset])
         );
         return $result;

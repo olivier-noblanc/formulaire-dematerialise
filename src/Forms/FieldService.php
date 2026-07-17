@@ -44,7 +44,7 @@ final readonly class FieldService implements FieldInterface
         }
 
         $pdo = $this->database->getPdo();
-        $sql = 'SELECT * FROM form_fields WHERE form_id = ?';
+        $sql = 'SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ?';
         $params = [$formId];
 
         if ($filledBy !== null) {
@@ -83,7 +83,7 @@ final readonly class FieldService implements FieldInterface
     public function getValidatorFields(string $formId, ?string $stepId = null): array
     {
         $pdo = $this->database->getPdo();
-        $sql = "SELECT * FROM form_fields WHERE form_id = ? AND filled_by = 'validator'";
+        $sql = "SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? AND filled_by = 'validator'";
         $params = [$formId];
 
         if ($stepId !== null && $stepId !== '') {
@@ -125,7 +125,7 @@ final readonly class FieldService implements FieldInterface
     public function getValidatorData(string $submissionId, ?string $stepId = null): array
     {
         $pdo = $this->database->getPdo();
-        $sql = 'SELECT svd.* FROM submission_validator_data svd WHERE svd.submission_id = ?';
+        $sql = 'SELECT svd.id, svd.submission_id, svd.field_name, svd.field_label, svd.field_type, svd.value, svd.filled_by, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email, svd.token_id FROM submission_validator_data svd WHERE svd.submission_id = ?';
         $params = [$submissionId];
 
         if ($stepId !== null && $stepId !== '') {

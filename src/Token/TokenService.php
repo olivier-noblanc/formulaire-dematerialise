@@ -79,7 +79,9 @@ final readonly class TokenService
 
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare('
-            SELECT t.*, s.status as sub_status
+            SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
+                   t.done_at, t.relance_at, t.expires_at, t.relance_count,
+                   s.status as sub_status
             FROM tokens t
             JOIN submissions s ON s.id = t.submission_id
             WHERE t.id = ?
@@ -365,7 +367,7 @@ final readonly class TokenService
     public function getDelegations(string $submissionId): array
     {
         $stmt = $this->database->getPdo()->prepare('
-            SELECT d.*, t.step_id, st.label as step_label
+            SELECT d.id, d.token_id, d.from_email, d.to_email, d.reason, d.delegated_at, d.new_token_id, t.step_id, st.label as step_label
             FROM delegations d
             JOIN tokens t ON t.id = d.token_id
             JOIN steps st ON st.id = t.step_id

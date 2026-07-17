@@ -209,7 +209,7 @@ final readonly class MailService implements MailInterface
                 return [];
             }
 
-            $stmt = $pdo->prepare('SELECT * FROM mail_log ORDER BY created_at DESC LIMIT ?');
+            $stmt = $pdo->prepare('SELECT id, created_at, recipient, subject, status, error_message, smtp_log, actor, ip FROM mail_log ORDER BY created_at DESC LIMIT ?');
             $stmt->execute([$limit]);
             /** @var array<int, array{id: string, created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}> */
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);

@@ -12,7 +12,7 @@ final class AttachmentRepository extends BaseRepository
     public function findById(string $id): ?array
     {
         /** @var array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}|null $result */
-        $result = $this->fetchOne('SELECT * FROM attachments WHERE id = ?', [$id]);
+        $result = $this->fetchOne('SELECT id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at FROM attachments WHERE id = ?', [$id]);
         return $result;
     }
 
@@ -23,7 +23,7 @@ final class AttachmentRepository extends BaseRepository
     {
         /** @var array<int, array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}> $result */
         $result = $this->fetchAll(
-            'SELECT * FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC',
+            'SELECT id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at FROM attachments WHERE submission_id = ? ORDER BY uploaded_at ASC',
             [$submissionId]
         );
         return $result;

@@ -45,7 +45,9 @@ final readonly class WorkflowEngine implements WorkflowInterface
     {
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare('
-            SELECT t.*, st.label as step_label, s.form_id,
+            SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
+                   t.done_at, t.relance_at, t.expires_at, t.relance_count,
+                   st.label as step_label, s.form_id,
                    f.label as form_label, s.data, s.closed_at, s.status,
                    s.submitted_by
             FROM tokens t
@@ -85,7 +87,9 @@ final readonly class WorkflowEngine implements WorkflowInterface
     {
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare('
-            SELECT t.*, st.label as step_label, s.form_id,
+            SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
+                   t.done_at, t.relance_at, t.expires_at, t.relance_count,
+                   st.label as step_label, s.form_id,
                    f.label as form_label, s.data, s.closed_at, s.status,
                    s.submitted_by
             FROM tokens t
@@ -151,7 +155,9 @@ final readonly class WorkflowEngine implements WorkflowInterface
     {
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare('
-            SELECT s.*, f.label as form_label
+            SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at,
+                   s.closed_at, s.status, s.admin_comment, s.rgpd_consent,
+                   f.label as form_label
             FROM submissions s
             JOIN forms f ON f.id = s.form_id
             WHERE s.id = ?
