@@ -54,3 +54,5 @@
           text-decoration: none;
         }
         body.page-settings .info-tooltip:hover, body.page-settings .info-tooltip:focus { opacity: 1; outline: none; }
+        /* Custom email field for alert rules */
+        .custom-email-field { display: none; }
