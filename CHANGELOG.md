@@ -1,7 +1,7 @@
 # Changelog — CircuitDémat
 
 ## [10.18.0] — 2026-07-16
-_Résumé : Hardening tokens concurrents + enum SubmissionStatus + refactor IndexController._
+_Résumé : Hardening tokens concurrents + unification SubmissionStatus + refactor._
 
 ### 🐛 Bug fixes
 
@@ -12,18 +12,19 @@ _Résumé : Hardening tokens concurrents + enum SubmissionStatus + refactor Inde
 
 ### ✨ Features
 
-- **Enum SubmissionStatus** (`App\Enum\SubmissionStatus`) : enum PHP 8.1 native avec `EnCours`, `Valide`, `Refuse`, `Annule` + méthodes `label()` et `badgeClass()`
-- **Controllers/Renderers** migrés vers `SubmissionStatus::EnCours->value` au lieu de strings hardcodées (Dashboard, MySubmissions, FormTracking, SubmissionView, MyValidations, DashboardRenderer, MySubmissionsRenderer, SubmissionViewRenderer)
+- **Enum SubmissionStatus** (`App\Enum\SubmissionStatus`) : enum unique avec `EnCours`, `Valide`, `Refuse`, `Annule` + méthodes `label()`, `icon()`, `color()`, `badgeClass()`, `cssClass()`, `fromValue()`
+- **Unification** : suppression de l'ancien `App\SubmissionStatus` (UPPER_SNAKE), tous les fichiers migrent vers `App\Enum\SubmissionStatus` (PascalCase)
 - **FormRepository::findActiveWithSubmissionCounts()** : nouvelle méthode pour le welcome state (requête extraite d'IndexController)
 
 ### 🔧 Refactor
 
-- **IndexController** : requête welcome forms déplacée vers `FormRepository::findActiveWithSubmissionCounts()` + suppression du code mort (owned forms, token count, admin stats inutilisés)
+- **IndexController** : requête welcome forms déplacée vers `FormRepository::findActiveWithSubmissionCounts()` + suppression du code mort
 - **TokenService** : import `App\Enum\SubmissionStatus`
 
 ### 🧪 Tests
 
-- **1350 tests, 0 failures, 0 errors** (était 1350/0/6 avant)
+- **1351 tests, 0 failures, 0 errors** (était 1350/0/6 avant)
+- **SubmissionStatusTest** : 9 tests couvrant values, labels, icons, colors, cssClasses, badgeClasses, fromValue, tryFrom
 
 ---
 
