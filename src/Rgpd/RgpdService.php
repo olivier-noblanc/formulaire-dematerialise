@@ -19,7 +19,8 @@ final readonly class RgpdService
 
     /**
      * Exporte toutes les données d'un agent au format JSON (droit d'accès RGPD)
-     * @return array<string, mixed>
+     *
+     * @return array{email: string, export_date?: string, submissions?: array<int, array{id: string, form: string, status: string, submitted_at: string, closed_at: string|null, data: mixed}>, validations?: array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}>, error?: string}
      */
     public function exportUserData(string $email): array
     {
@@ -35,7 +36,9 @@ final readonly class RgpdService
 
         $stmt = $pdo->prepare('SELECT s.*, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.submitted_by = ? ORDER BY s.submitted_at DESC');
         $stmt->execute([$email]);
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        /** @var array<int, array{id: string, form_label: string, status: string, submitted_at: string, closed_at: string|null, data: string}> */
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as $row) {
             $data['submissions'][] = [
                 'id' => $row['id'],
                 'form' => $row['form_label'],
@@ -48,7 +51,9 @@ final readonly class RgpdService
 
         $stmt2 = $pdo->prepare('SELECT t.*, st.label as step_label, f.label as form_label FROM tokens t JOIN steps st ON st.id = t.step_id JOIN submissions s ON s.id = t.submission_id JOIN forms f ON f.id = s.form_id WHERE t.email = ? AND t.done_at IS NOT NULL ORDER BY t.done_at DESC');
         $stmt2->execute([$email]);
-        $data['validations'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        /** @var array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}> $validations */
+        $validations = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        $data['validations'] = $validations;
 
         return $data;
     }

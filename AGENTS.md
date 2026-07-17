@@ -106,3 +106,75 @@ Après CHAQUE modification de code, TOUJOURS lancer les tests completset vérifi
 3. Vérifier que aucun fichier supprimé n'est encore requis (grep)
 4. Si modification d'un service/controller : vérifier aussi les contrôleurs enfants
 5. Ne JAMAIS claim que c'est fini sans avoir lancé les tests
+
+---
+
+## PHPDoc & PHPStan — Typage strict obligatoire
+
+PHPStan est configuré au **niveau 8** (max) avec `treatPhpDocTypesAsCertain: false`.
+
+### Problème : `array<string, mixed>` est trop vague
+
+```php
+// FAUX — PHPStan ne peut PAS détecter les mauvaises clés
+/** @return array<int, array<string, mixed>> */
+public function getWorkflowSteps(string $formId): array
+```
+
+Avec `array<string, mixed>`, PHPStan ne sait pas quelles clés existent. `$step['id']` au lieu de `$step['step_id']` passe silencieusement.
+
+### Solution : array shapes
+
+```php
+// CORRECT — PHPStan flagguera $step['id'] comme "undefined offset"
+/**
+ * @return array<int, array{
+ *   step_id: string,
+ *   step_label: string,
+ *   ordre: int,
+ *   actif: int,
+ *   condition: string,
+ *   recipient_emails: string
+ * }>
+ */
+public function getWorkflowSteps(string $formId): array
+```
+
+### Règle
+
+**Toute méthode qui retourne un tableau de données SQL** DOIT utiliser des array shapes précises, pas `array<string, mixed>`. Les clés doivent correspondre exactement aux aliases SQL (`AS` clause) ou aux noms de colonnes.
+
+Cela s'applique à :
+- Tous les méthodes de Repository (`fetchOne`, `fetchAll`)
+- Tous les méthodes de Service qui retournent des données
+- Les méthodes de WorkflowEngine, TokenService, etc.
+
+### Pourquoi les tests n'ont rien vu
+
+Les tests unitaires vérifient le **comportement** (bonne/mauvaise donnée retournée), mais pas la **cohérence des clés PHPDoc**. PHPStan est le seul outil capable de détector les accès à des clés inexistantes — mais seulement si les types sont explicites.
+
+---
+
+## Cohérence HTML/CSS
+
+Le codebase a des fichiers CSS dans `lib/` et des renderers dans `src/Render/`. Les classes CSS utilisées dans le HTML doivent correspondre exactement à celles définies dans les CSS.
+
+### Pattern dangereux
+
+```php
+// FAUX — génère du HTML inline avec les mauvaises classes
+echo '<div class="wf-step-label">';  // devrait être wf-label
+echo '<div class="wf-step done">';   // devrait être wf-step validated
+```
+
+### Pattern sûr
+
+```php
+// CORRECT — délègue au renderer qui produit le bon HTML
+$renderer = new SubmissionViewRenderer();
+echo $renderer->renderWorkflowDiagram($steps, $status);
+```
+
+### Règle
+
+Ne **jamais** générer de HTML inline dans un controller pour des sections qui ont un renderer dédié dans `src/Render/`. Utiliser le renderer. Ajouter un test qui vérifie les classes CSS dans le HTML produit.

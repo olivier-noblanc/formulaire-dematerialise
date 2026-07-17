@@ -12,7 +12,7 @@ use App\Core\App;
 final class AdminStepCrudHandler
 {
     /**
-     * @return array<string, mixed>
+     * @return array{error?: string, form_id?: string, redirect?: string}
      */
     public static function handleAddStep(): array
     {
@@ -37,7 +37,7 @@ final class AdminStepCrudHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error?: string, redirect?: string}
      */
     public static function handleUpdateStep(\PDO $pdo, string $get_form_id): array
     {
@@ -87,7 +87,7 @@ final class AdminStepCrudHandler
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{error?: string, redirect?: string}|null
      */
     public static function handleDeleteStep(\PDO $pdo, string $get_form_id): ?array
     {

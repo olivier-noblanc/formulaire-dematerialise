@@ -133,7 +133,7 @@ final class FormTrackingController extends BaseController
             $statusLabel = $status === 'valide' ? 'Validée' : ($status === 'refuse' ? 'Refusée' : ($status === 'annule' ? 'Annulée' : 'En cours'));
             ?>
           <tr>
-            <td style="white-space:nowrap;font-size:.85rem;"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', strtotime($submission['submitted_at']))) ?></td>
+            <td style="white-space:nowrap;font-size:.85rem;"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($submission['submitted_at'] ?? ''))) ?></td>
             <td><?= \App\Core\App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')) ?></td>
             <?php foreach ($keyFields as $keyField):
                 $val = $data[$keyField['field_name']] ?? '';
@@ -144,7 +144,7 @@ final class FormTrackingController extends BaseController
             <?php endforeach; ?>
             <td><span class="badge <?= $badgeCls ?>"><?= $statusLabel ?></span></td>
             <td>
-              <a href="index.php?p=submission_view&id=<?= urlencode($submission['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Voir</a>
+              <a href="index.php?p=submission_view&id=<?= urlencode((string) ($submission['id'] ?? '')) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Voir</a>
             </td>
           </tr>
         <?php endforeach; ?>

@@ -20,7 +20,19 @@ final readonly class StatsService
      * Recherche plein texte dans les soumissions.
      *
      * @param array<string, mixed> $filters
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{
+     *   id: string,
+     *   form_id: string,
+     *   data: string,
+     *   submitted_by: string,
+     *   submitted_at: string,
+     *   closed_at: string|null,
+     *   status: string,
+     *   admin_comment: string,
+     *   form_label: string,
+     *   form_slug: string,
+     *   deadline_field: string
+     * }>
      */
     public function searchSubmissions(string $query, array $filters = []): array
     {
@@ -60,13 +72,22 @@ final readonly class StatsService
             LIMIT 100
         ");
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string}> $result */
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
     }
 
     /**
      * Statistiques par période.
      *
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{
+     *   period: string,
+     *   total: int,
+     *   valide: int,
+     *   refuse: int,
+     *   en_cours: int,
+     *   avg_processing_seconds: float|null
+     * }>
      */
     public function getStatsByPeriod(string $period = 'month', int $limit = 12): array
     {
@@ -103,13 +124,28 @@ final readonly class StatsService
             LIMIT ?
         ");
         $stmt->execute([$format, $interval, $format, $limit]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        /** @var array<int, array{period: string, total: int, valide: int, refuse: int, en_cours: int, avg_processing_seconds: float|null}> $result */
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
     }
 
     /**
      * Statistiques globales pour le dashboard.
      *
-     * @return array<string, mixed>
+     * @return array{
+     *   total: int,
+     *   en_cours: int,
+     *   valide: int,
+     *   refuse: int,
+     *   today: int,
+     *   this_week: int,
+     *   this_month: int,
+     *   avg_days: float,
+     *   tokens_pending: int,
+     *   attachments_count: int,
+     *   attachments_size: int,
+     *   taux_validation: float
+     * }
      */
     public function getGlobalStats(): array
     {
@@ -164,7 +200,15 @@ final readonly class StatsService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{
+     *   label: string,
+     *   slug: string,
+     *   total: int,
+     *   en_cours: int,
+     *   valide: int,
+     *   refuse: int,
+     *   avg_seconds: float|null
+     * }>
      */
     public function getFormStats(): array
     {
@@ -183,11 +227,19 @@ final readonly class StatsService
             ORDER BY total DESC
         ");
         assert($stmt !== false);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        /** @var array<int, array{label: string, slug: string, total: int, en_cours: int, valide: int, refuse: int, avg_seconds: float|null}> $result */
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{
+     *   email: string,
+     *   total: int,
+     *   done: int,
+     *   pending: int,
+     *   avg_response_seconds: float|null
+     * }>
      */
     public function getValidatorStats(): array
     {
@@ -208,6 +260,8 @@ final readonly class StatsService
             LIMIT 20
         ");
         assert($stmt !== false);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        /** @var array<int, array{email: string, total: int, done: int, pending: int, avg_response_seconds: float|null}> $result */
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
     }
 }

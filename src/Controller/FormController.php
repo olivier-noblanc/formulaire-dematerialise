@@ -324,7 +324,7 @@ final class FormController extends BaseController
     <div class="warn-box">
       <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
       <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
-      <p><a href="index.php?p=submission_view&id=<?= urlencode($existing_submission['id']) ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
+      <p><a href="index.php?p=submission_view&id=<?= urlencode((string) ($existing_submission['id'] ?? '')) ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
     </div>
   <?php endif; ?>
 

@@ -340,7 +340,7 @@ final readonly class EmailVerificationService
     /**
      * Teste la vérification email avec une adresse donnée (pour la page admin).
      *
-     * @return array<string, mixed>
+     * @return array{email: string, mode: string, format_valid: bool, ldap?: array{ok: bool, method: string, detail: string}, smtp?: array{ok: bool, method: string, detail: string}, verify: array{ok: bool, method: string, detail: string}}
      */
     public function testVerification(string $email): array
     {

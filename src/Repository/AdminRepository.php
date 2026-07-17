@@ -14,11 +14,13 @@ final class AdminRepository extends BaseRepository
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{id: string, email: string, added_at: string}|null
      */
     public function findByEmail(string $email): ?array
     {
-        return $this->fetchOne('SELECT * FROM admins WHERE email = ?', [strtolower($email)]);
+        /** @var array{id: string, email: string, added_at: string}|null $result */
+        $result = $this->fetchOne('SELECT * FROM admins WHERE email = ?', [strtolower($email)]);
+        return $result;
     }
 
     public function isAdmin(string $email): bool
@@ -38,27 +40,33 @@ final class AdminRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{email: string}>
      */
     public function getAll(): array
     {
-        return $this->fetchAll('SELECT email FROM admins ORDER BY email');
+        /** @var array<int, array{email: string}> $result */
+        $result = $this->fetchAll('SELECT email FROM admins ORDER BY email');
+        return $result;
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{email: string, created_at: string}|null
      */
     public function findByToken(string $token): ?array
     {
-        return $this->fetchOne("SELECT email, created_at FROM admin_requests WHERE token = ? AND status = 'pending'", [$token]);
+        /** @var array{email: string, created_at: string}|null $result */
+        $result = $this->fetchOne("SELECT email, created_at FROM admin_requests WHERE token = ? AND status = 'pending'", [$token]);
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, email: string, requested_at: string, status: string, token: string}>
      */
     public function getPendingRequestsDesc(): array
     {
-        return $this->fetchAll("SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY created_at DESC");
+        /** @var array<int, array{id: string, email: string, requested_at: string, status: string, token: string}> $result */
+        $result = $this->fetchAll("SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY requested_at DESC");
+        return $result;
     }
 
     public function add(string $email): bool
@@ -75,17 +83,20 @@ final class AdminRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, email: string, requested_at: string, status: string, token: string}>
      */
     public function getPendingRequests(): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, email: string, requested_at: string, status: string, token: string}> $result */
+        $result = $this->fetchAll(
             "SELECT * FROM admin_requests WHERE status = 'pending' ORDER BY requested_at"
         );
+        return $result;
     }
 
     public function approveRequest(string $requestId, string $approvedBy): bool
     {
+        /** @var array{id: string, email: string, requested_at: string, status: string, token: string}|null $request */
         $request = $this->fetchOne('SELECT * FROM admin_requests WHERE id = ?', [$requestId]);
         if ($request === null) {
             return false;

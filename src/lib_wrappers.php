@@ -37,7 +37,7 @@ function parse_date(string $date_str): ?DateTimeImmutable
     return DateHelper::parseDate($date_str);
 }
 /**
- * @return array<string, mixed>
+ * @return array{days_left: ?int, urgency: string, style: string}
  */
 function calculate_deadline_urgency(string $deadlineVal, string $status = 'en_cours'): array
 {
@@ -58,7 +58,7 @@ function parse_options_input(string $input): ?string
     return SlugHelper::parseOptionsInput($input);
 }
 /**
- * @return array<string, mixed>|null
+ * @return array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null
  */
 function get_form_by_uuid(string $uuid): ?array
 {
@@ -83,7 +83,7 @@ function t_jargon(string $text): string
 
 // ── TEST MODE (lib/test_mode.php → App\Core\TestModeService) ────
 /**
- * @return array<string, mixed>
+ * @return array<int, array{to: string, subject: string, body: string, time: string}>
  */
 function get_test_mails(): array
 {
@@ -349,7 +349,7 @@ function validate_input(mixed $value, string $rule, array $options = []): string
 // ── FORM JSON VALIDATION (lib/admin_forms_json.php → App\Forms\FormJsonValidator) ──
 /**
  * @param array<string, mixed> $data
- * @return array<string, mixed>
+ * @return array{valid: bool, errors: string[], warnings: string[]}
  */
 function validate_form_json(array $data): array
 {
@@ -373,7 +373,7 @@ function populate_sample_forms(\PDO $pdo): string
 
 // ── ADMIN FORMS HANDLERS (lib/admin_forms_handlers.php → App\Controller\AdminFormsHandlers) ──
 /**
- * @return array<string, mixed>|null
+ * @return array{error?: string, form_id?: string, redirect?: string, validation_html?: string, preserved_json?: string, filename?: string, json_output?: string}|null
  */
 function handle_admin_action(\PDO $pdo, string $action, string $get_form_id = ''): ?array
 {
@@ -382,7 +382,7 @@ function handle_admin_action(\PDO $pdo, string $action, string $get_form_id = ''
 
 // ── ADMIN SETTINGS HANDLERS (lib/admin_settings_handlers.php → App\Controller\AdminSettingsHandlers) ──
 /**
- * @return array<string, mixed>
+ * @return array{success: string, error: string, test: string, verify_result: mixed}
  */
 function handle_admin_settings_post(): array
 {

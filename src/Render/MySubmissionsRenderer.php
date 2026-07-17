@@ -106,7 +106,7 @@ final class MySubmissionsRenderer
                 $pct     = $submission['progress_pct'];
                 $fillCls = $pct === 100 ? 'complete' : 'in-progress';
 
-                $subId       = urlencode($submission['id']);
+                $subId       = urlencode((string) ($submission['id'] ?? ''));
                 $formLabel   = App::html()->escape(self::simplifyLabel($submission['form_label']));
                 $submittedAt = App::html()->escape(date('d/m/Y à H:i', strtotime($submission['submitted_at'])));
                 $prenomNom   = App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));

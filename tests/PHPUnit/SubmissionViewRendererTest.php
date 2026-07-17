@@ -264,6 +264,94 @@ final class SubmissionViewRendererTest extends TestCase
 
     // ── Multiple steps: full structure ──────────────────────────
 
+    // ── REGRESSION: step_label/step_id keys (not label/id) ─────
+
+    public function testRenderWorkflowDiagramUsesStepLabelKeyNotLabel(): void
+    {
+        // Regression: AdminFormsController & FormPreviewController used $ws['label']
+        // instead of $ws['step_label']. The renderer must consume step_label.
+        $steps = [
+            [
+                'step_status' => 'validated',
+                'step_label'  => 'Direction',
+                'ordre'       => 1,
+                'tokens'      => [
+                    ['email' => 'a@test.com', 'done_at' => '2025-01-01', 'relance_count' => 0],
+                ],
+            ],
+        ];
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
+        $this->assertStringContainsString('Direction', $html);
+        $this->assertStringContainsString('class="wf-label"', $html);
+    }
+
+    public function testRenderWorkflowDiagramDoesNotRequireLabelOrIdKey(): void
+    {
+        // Regression: code accessing $ws['label'] or $ws['id'] would crash
+        // when only step_label/step_id are present in the array.
+        // Verify renderer does NOT access a key called 'label' or 'id'.
+        $steps = [
+            [
+                'step_status' => 'current',
+                'step_label'  => 'Test',
+                'ordre'       => 1,
+                'tokens'      => [],
+            ],
+        ];
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
+        $this->assertStringContainsString('Test', $html);
+    }
+
+    // ── REGRESSION: urlencode null TypeError ───────────────────
+
+    public function testRenderWorkflowDiagramWithNullInStepLabel(): void
+    {
+        // Regression: PHP 8.1+ rejects null to urlencode(). Renderers must
+        // not pass null to urlencode even if data is malformed.
+        $steps = [
+            [
+                'step_status' => 'upcoming',
+                'step_label'  => '',
+                'ordre'       => 1,
+                'tokens'      => [],
+            ],
+        ];
+        // Should not throw TypeError even with empty label
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
+        $this->assertIsString($html);
+    }
+
+    // ── REGRESSION: no legacy class wf-step-label in renderer ──
+
+    public function testRenderWorkflowDiagramNeverEmitsWfStepLabelClass(): void
+    {
+        // Regression: AdminFormsController used class="wf-step-label"
+        // instead of class="wf-label". Renderer must never emit the legacy class.
+        $steps = [
+            [
+                'step_status' => 'validated',
+                'step_label'  => 'Chef de service',
+                'ordre'       => 1,
+                'tokens'      => [
+                    ['email' => 'x@test.com', 'done_at' => '2025-01-01', 'relance_count' => 0],
+                ],
+            ],
+            [
+                'step_status' => 'current',
+                'step_label'  => 'Directeur',
+                'ordre'       => 2,
+                'tokens'      => [
+                    ['email' => 'y@test.com', 'done_at' => null, 'relance_count' => 0],
+                ],
+            ],
+        ];
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
+        $this->assertStringNotContainsString('wf-step-label', $html);
+        $this->assertStringContainsString('class="wf-label"', $html);
+    }
+
+    // ── Multiple steps: full structure ──────────────────────────
+
     public function testRenderWorkflowDiagramMultipleSteps(): void
     {
         $steps = [

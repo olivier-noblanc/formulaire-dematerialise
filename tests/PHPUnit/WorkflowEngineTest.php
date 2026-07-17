@@ -3351,6 +3351,76 @@ final class WorkflowEngineTest extends TestCase
         }
     }
 
+    // ── REGRESSION: getWorkflowSteps uses step_id/step_label ────
+
+    public function testGetWorkflowStepsReturnsStepIdNotId(): void
+    {
+        // Regression: AdminFormsController line 179 used $workflowStep['id']
+        // instead of $workflowStep['step_id']. Verify step_id exists, id does not.
+        $pdo = $this->db->getPdo();
+        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+
+        if (!$formId) {
+            $this->markTestSkipped('No active form');
+        }
+
+        $steps = $this->workflow->getWorkflowSteps((string) $formId);
+        if (empty($steps)) {
+            $this->markTestSkipped('No steps');
+        }
+
+        foreach ($steps as $step) {
+            $this->assertArrayHasKey('step_id', $step, 'getWorkflowSteps must return step_id key (not id)');
+            $this->assertIsString($step['step_id']);
+            $this->assertNotEmpty($step['step_id']);
+        }
+    }
+
+    public function testGetWorkflowStepsReturnsStepLabelNotLabel(): void
+    {
+        // Regression: AdminFormsController line 175 used $workflowStep['label']
+        // and FormPreviewController line 57 used $ws['label']
+        // instead of step_label. Verify step_label exists.
+        $pdo = $this->db->getPdo();
+        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+
+        if (!$formId) {
+            $this->markTestSkipped('No active form');
+        }
+
+        $steps = $this->workflow->getWorkflowSteps((string) $formId);
+        if (empty($steps)) {
+            $this->markTestSkipped('No steps');
+        }
+
+        foreach ($steps as $step) {
+            $this->assertArrayHasKey('step_label', $step, 'getWorkflowSteps must return step_label key (not label)');
+            $this->assertIsString($step['step_label']);
+        }
+    }
+
+    public function testGetWorkflowStepsDoesNotReturnLegacyIdOrLabelKeys(): void
+    {
+        // Regression: callers used $ws['id'] and $ws['label'] which would
+        // produce null/undefined-offset at runtime. Verify these keys don't exist.
+        $pdo = $this->db->getPdo();
+        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+
+        if (!$formId) {
+            $this->markTestSkipped('No active form');
+        }
+
+        $steps = $this->workflow->getWorkflowSteps((string) $formId);
+        if (empty($steps)) {
+            $this->markTestSkipped('No steps');
+        }
+
+        foreach ($steps as $step) {
+            $this->assertArrayNotHasKey('id', $step, 'getWorkflowSteps must NOT return legacy "id" key (use step_id)');
+            $this->assertArrayNotHasKey('label', $step, 'getWorkflowSteps must NOT return legacy "label" key (use step_label)');
+        }
+    }
+
     // ── getWorkflowSteps: actif is 1 ─────────────────────────────
 
     public function testGetWorkflowStepsActifIsOne(): void

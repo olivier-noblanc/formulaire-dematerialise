@@ -6,24 +6,34 @@ namespace App\Repository;
 
 final class FormRepository extends BaseRepository
 {
-    /** @return array<string, mixed>|null */
+    /**
+     * @return array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null
+     */
     public function findById(string $id): ?array
     {
-        return $this->fetchOne('SELECT * FROM forms WHERE id = ?', [$id]);
-    }
-
-    /** @return array<string, mixed>|null */
-    public function findBySlug(string $slug): ?array
-    {
-        return $this->fetchOne('SELECT * FROM forms WHERE slug = ?', [$slug]);
+        /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
+        $result = $this->fetchOne('SELECT * FROM forms WHERE id = ?', [$id]);
+        return $result;
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null
+     */
+    public function findBySlug(string $slug): ?array
+    {
+        /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
+        $result = $this->fetchOne('SELECT * FROM forms WHERE slug = ?', [$slug]);
+        return $result;
+    }
+
+    /**
+     * @return array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null
      */
     public function findActiveBySlug(string $slug): ?array
     {
-        return $this->fetchOne('SELECT * FROM forms WHERE slug = ? AND actif = 1', [$slug]);
+        /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
+        $result = $this->fetchOne('SELECT * FROM forms WHERE slug = ? AND actif = 1', [$slug]);
+        return $result;
     }
 
     public function findIdBySlug(string $slug): ?string
@@ -33,15 +43,17 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, slug: string, label: string, deadline_field: string}>
      */
     public function findActiveList(): array
     {
-        return $this->fetchAll('SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label');
+        /** @var array<int, array{id: string, slug: string, label: string, deadline_field: string}> $result */
+        $result = $this->fetchAll('SELECT id, slug, label, deadline_field FROM forms WHERE actif = 1 ORDER BY label');
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}>
      */
     public function findAll(bool $activeOnly = false): array
     {
@@ -49,18 +61,22 @@ final class FormRepository extends BaseRepository
         if ($activeOnly) {
             $sql .= ' WHERE actif = 1';
         }
-        return $this->fetchAll($sql . ' ORDER BY label');
+        /** @var array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}> $result */
+        $result = $this->fetchAll($sql . ' ORDER BY label');
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}>
      */
     public function findOwnedBy(string $email): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}> $result */
+        $result = $this->fetchAll(
             'SELECT f.* FROM forms f JOIN form_owners fo ON fo.form_id = f.id WHERE fo.email = ? ORDER BY f.label',
             [$email]
         );
+        return $result;
     }
 
     /**
@@ -104,33 +120,38 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}>
      */
     public function getFields(string $formId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
+        $result = $this->fetchAll(
             'SELECT * FROM form_fields WHERE form_id = ? ORDER BY ordre',
             [$formId]
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string}>
      */
     public function getSteps(string $formId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string}> $result */
+        $result = $this->fetchAll(
             'SELECT * FROM steps WHERE form_id = ? ORDER BY ordre',
             [$formId]
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string, recipient_emails: string|null}>
      */
     public function getStepsWithRecipients(string $formId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string, recipient_emails: string|null}> $result */
+        $result = $this->fetchAll(
             "SELECT s.*, GROUP_CONCAT(sr.email, '|') as recipient_emails
              FROM steps s
              LEFT JOIN step_recipients sr ON sr.step_id = s.id
@@ -139,17 +160,20 @@ final class FormRepository extends BaseRepository
              ORDER BY s.ordre",
             [$formId]
         );
+        return $result;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, form_id: string, email: string, added_at: string}>
      */
     public function getOwners(string $formId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, form_id: string, email: string, added_at: string}> $result */
+        $result = $this->fetchAll(
             'SELECT * FROM form_owners WHERE form_id = ? ORDER BY email',
             [$formId]
         );
+        return $result;
     }
 
     public function addOwner(string $formId, string $email): bool
@@ -169,14 +193,16 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{field_name: string, label: string}>
      */
     public function getDateFields(string $formId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{field_name: string, label: string}> $result */
+        $result = $this->fetchAll(
             "SELECT field_name, label FROM form_fields WHERE form_id = ? AND field_type = 'date' ORDER BY ordre",
             [$formId]
         );
+        return $result;
     }
 
     public function setDeadlineField(string $formId, string $deadlineField): bool
@@ -185,16 +211,18 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{slug: string, label: string}>
      */
     public function findActiveSlugsAndLabels(): array
     {
-        return $this->fetchAll('SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label');
+        /** @var array<int, array{slug: string, label: string}> $result */
+        $result = $this->fetchAll('SELECT slug, label FROM forms WHERE actif = 1 ORDER BY label');
+        return $result;
     }
 
     /**
      * @param array<int, string> $formIds
-     * @return array<string, array<int, array<string, mixed>>>
+     * @return array<string, array<int, array{step_id: string, step_label: string, ordre: int, actif: int, form_id: string, recipient_emails: string}>>
      */
     public function getWorkflowStepsByFormIds(array $formIds): array
     {
@@ -202,6 +230,7 @@ final class FormRepository extends BaseRepository
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($formIds), '?'));
+        /** @var array<int, array{step_id: string, step_label: string, ordre: int, actif: int, form_id: string, recipient_emails: string}> $rows */
         $rows = $this->fetchAll(
             "SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.form_id,
                     GROUP_CONCAT(sr.email, '|') as recipient_emails
@@ -220,11 +249,12 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: string, label: string, ordre: int, dones: string|null, emails: string|null}>
      */
     public function getWorkflowStepsWithTokens(string $formId, string $submissionId): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{id: string, label: string, ordre: int, dones: string|null, emails: string|null}> $result */
+        $result = $this->fetchAll(
             "SELECT st.id, st.label, st.ordre,
                     GROUP_CONCAT(t2.done_at, '|') as dones,
                     GROUP_CONCAT(t2.email, '|') as emails
@@ -235,6 +265,7 @@ final class FormRepository extends BaseRepository
              ORDER BY st.ordre, st.id",
             [$submissionId, $formId]
         );
+        return $result;
     }
 
     public function findOwnerEmailById(string $ownerId): ?string
@@ -358,11 +389,12 @@ final class FormRepository extends BaseRepository
     // ── Cascade delete ──────────────────────────────────────────
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{label: string, total: int, en_cours: int, valide: int, refuse: int}>
      */
     public function getSubmissionCounts(): array
     {
-        return $this->fetchAll(
+        /** @var array<int, array{label: string, total: int, en_cours: int, valide: int, refuse: int}> $result */
+        $result = $this->fetchAll(
             "SELECT f.label, COUNT(s.id) as total,
                     SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
                     SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
@@ -372,6 +404,7 @@ final class FormRepository extends BaseRepository
              GROUP BY f.id
              ORDER BY total DESC"
         );
+        return $result;
     }
 
     public function deleteCascade(string $formId): void

@@ -128,7 +128,7 @@ final class MyValidationsRenderer
 
                 $html .= '  <div class="vc-actions">' . "\n";
                 if (!$expired) {
-                    $html .= '    <a href="index.php?p=validate&token=' . urlencode($pendingToken['token']) . '" class="btn btn-primary"><span aria-hidden="true">✓</span> Valider / Refuser</a>' . "\n";
+                    $html .= '    <a href="index.php?p=validate&token=' . urlencode((string) ($pendingToken['token'] ?? '')) . '" class="btn btn-primary"><span aria-hidden="true">✓</span> Valider / Refuser</a>' . "\n";
                 } else {
                     $html .= '    <span style="font-size:.85rem;color:#c0392b;">Token expiré — contactez un administrateur pour régénérer</span>' . "\n";
                 }

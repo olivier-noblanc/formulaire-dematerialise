@@ -147,7 +147,7 @@ final class AdminFormsController extends BaseController
             <td><?= \App\Core\App::html()->escape($formField['field_type']) ?></td>
             <td><?= $formField['required'] ? 'Oui' : 'Non' ?></td>
             <td>
-              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_field=<?= urlencode($formField['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
+              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_field=<?= urlencode((string) ($formField['id'] ?? '')) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -172,11 +172,11 @@ final class AdminFormsController extends BaseController
             ?>
           <tr>
             <td><?= (int) $workflowStep['ordre'] ?></td>
-            <td><?= \App\Core\App::html()->escape($workflowStep['label']) ?></td>
+            <td><?= \App\Core\App::html()->escape($workflowStep['step_label']) ?></td>
             <td><?= \App\Core\App::html()->escape(implode(', ', $emails)) ?></td>
             <td><span class="badge <?= $workflowStep['actif'] ? 'badge-ok' : 'badge-err' ?>"><?= $workflowStep['actif'] ? 'Active' : 'Inactive' ?></span></td>
             <td>
-              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_step=<?= urlencode($workflowStep['id']) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
+              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_step=<?= urlencode((string) ($workflowStep['step_id'] ?? '')) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
             </td>
           </tr>
         <?php endforeach; ?>

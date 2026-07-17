@@ -269,7 +269,7 @@ final class ValidateController extends BaseController
             $validator_data = App::validatorData()->getSubmissionValidatorData($subm_id, $step_id);
             $validator_data_index = [];
             foreach ($validator_data as $vd) {
-                $validator_data_index[$vd['field_name']] = $vd['value'];
+                $validator_data_index[$vd['field_name']] = $vd['value'] ?? '';
             }
         }
 
