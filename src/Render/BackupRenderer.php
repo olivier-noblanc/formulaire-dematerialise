@@ -90,8 +90,8 @@ final class BackupRenderer
     /**
      * Rend le contenu HTML principal de la page sauvegarde.
      *
-     * @param array<string, mixed> $db_stats
-     * @param array<string, mixed>|null $purge_preview
+     * @param array{file_size?: int|false, file_exists: bool, file_size_readable: string, file_modified: string, row_counts: array<string, '—'|int>, oldest_submission?: string, newest_submission?: string, page_size?: int, page_count?: int, db_size_pages?: string, freelist_count?: int, free_pages?: string, error?: string} $db_stats
+     * @param array{months: int, submissions: int, tokens: int, alert_logs: int, validator_data?: int}|null $purge_preview
      */
     public function renderContent(
         string $db_path,
@@ -321,8 +321,8 @@ final class BackupRenderer
     /**
      * Compose et affiche la page sauvegarde complète.
      *
-     * @param array<string, mixed> $db_stats
-     * @param array<string, mixed>|null $purge_preview
+     * @param array{file_size?: int|false, file_exists: bool, file_size_readable: string, file_modified: string, row_counts: array<string, '—'|int>, oldest_submission?: string, newest_submission?: string, page_size?: int, page_count?: int, db_size_pages?: string, freelist_count?: int, free_pages?: string, error?: string} $db_stats
+     * @param array{months: int, submissions: int, tokens: int, alert_logs: int, validator_data?: int}|null $purge_preview
      */
     public function renderPage(
         string $db_path,

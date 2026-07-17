@@ -239,7 +239,7 @@ final class MonitoringRenderer
     /**
      * Carte alertes actives.
      *
-     * @param array<int, array<string, mixed>> $active_alerts
+     * @param array<int, array{days_remaining: int, form_label: string, nom_agent: string, deadline_formatted: string, pending_steps: int}> $active_alerts
      */
     public static function activeAlerts(array $active_alerts): string
     {
@@ -296,7 +296,7 @@ final class MonitoringRenderer
     /**
      * Carte dernières alertes envoyées.
      *
-     * @param array<int, array<string, mixed>> $recent_alerts
+     * @param array<int, array{sent_at: string, rule_label: string, form_label: string, message: string}> $recent_alerts
      */
     public static function recentAlerts(array $recent_alerts): string
     {
@@ -340,7 +340,7 @@ final class MonitoringRenderer
     /**
      * Carte soumissions par formulaire.
      *
-     * @param array<int, array<string, mixed>> $by_form_stats
+     * @param array<int, array{total: int, valide: int, label: string, en_cours: int, refuse: int}> $by_form_stats
      */
     public static function byForm(array $by_form_stats): string
     {
@@ -391,7 +391,7 @@ final class MonitoringRenderer
     /**
      * Carte activité des 7 derniers jours.
      *
-     * @param array<int, array<string, mixed>> $daily_stats
+     * @param array<int, array{cnt: int, day: string}> $daily_stats
      */
     public static function dailyActivity(array $daily_stats): string
     {
@@ -435,7 +435,7 @@ final class MonitoringRenderer
     /**
      * Carte tokens bloqués.
      *
-     * @param array<int, array<string, mixed>> $tokens_bloques
+     * @param array<int, array{id: string, email: string, sent_at: string|null, relance_count: int, expires_at: string|null, step_label: string, ordre: int, submission_id: string, submitted_by: string|null, submitted_at: string|null, form_label: string}> $tokens_bloques
      */
     public static function blockedTokens(array $tokens_bloques, int $bloque_hours): string
     {
@@ -491,7 +491,7 @@ final class MonitoringRenderer
     /**
      * Carte "Journal des emails".
      *
-     * @param array<int, array<string, mixed>> $mail_logs
+     * @param array<int, array{created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}> $mail_logs
      */
     public static function mailLogs(array $mail_logs): string
     {

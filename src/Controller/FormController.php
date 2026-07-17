@@ -288,12 +288,12 @@ final class FormController extends BaseController
      * bouton submit, script de progression). Reproduit à l'identique la
      * structure HTML historique de form.php (output buffering + inline PHP).
      *
-     * @param array<string, mixed>                            $form
-     * @param array<string, mixed>|null                       $existing_submission
+     * @param array{label: string, description: string|null}  $form
+     * @param array{submitted_at: string|null, id: string}|null $existing_submission
      * @param array<string, list<array<string, mixed>>>       $grouped  Clé=nom du groupe, valeur=liste des champs
-     * @param array<string, mixed>                            $field_errors
+     * @param array<string, string>                           $field_errors
      * @param array<string, mixed>                            $file_errors  Erreurs spécifiques aux uploads
-     * @param array<string, mixed>                            $field_values
+     * @param array<string, string>                           $field_values
      */
     private function renderContent(
         array $form,
@@ -322,7 +322,7 @@ final class FormController extends BaseController
 
   <?php if ($existing_submission && !$success): ?>
     <div class="warn-box">
-      <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $h(date('d/m/Y à H:i', strtotime($existing_submission['submitted_at']))) ?>).</p>
+      <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $h(date('d/m/Y à H:i', (int) strtotime((string) ($existing_submission['submitted_at'] ?? '')))) ?>).</p>
       <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
       <p><a href="index.php?p=submission_view&id=<?= urlencode((string) ($existing_submission['id'] ?? '')) ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
     </div>

@@ -29,7 +29,7 @@ final class DashboardRenderer
     /**
      * Encart « État du système » (S5-B / Action 3).
      *
-     * @param array<string, mixed> $sys
+     * @param array{smtp_host: string, smtp_port: int, smtp_ok: bool, smtp_label: string, last_backup: string, en_cours: int} $sys
      */
     public static function systemOverview(array $sys): string
     {
@@ -106,7 +106,7 @@ final class DashboardRenderer
     /**
      * Barre d'outils du tableau de bord (U-13 — 3 niveaux hiérarchiques).
      *
-     * @param array<int, array<string, mixed>> $forms
+     * @param array<int, array{slug: string, label: string}> $forms
      */
     public static function toolbar(string $filtre, string $form_f, string $search, array $forms): string
     {
@@ -205,8 +205,8 @@ final class DashboardRenderer
     /**
      * Tableau des soumissions.
      *
-     * @param array<int, array<string, mixed>> $rows
-     * @param array<string, array<int, array<string, mixed>>> $tokens_by_submission
+     * @param array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string}> $rows
+     * @param array<string, list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}>> $tokens_by_submission
      * @param array<string, array{total: int, filled: int, complet: bool}> $validator_status_by_submission
      */
     public static function table(array $rows, array $tokens_by_submission, array $validator_status_by_submission = []): string
@@ -236,8 +236,8 @@ final class DashboardRenderer
     /**
      * Une ligne du tableau des soumissions + son bloc <details>.
      *
-     * @param array<string, mixed> $row
-     * @param array<int, array<string, mixed>> $tokens
+     * @param array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string} $row
+     * @param list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}> $tokens
      * @param array{total: int, filled: int, complet: bool}|null $vstatus
      */
     public static function submissionRow(int $i, array $row, array $tokens, ?array $vstatus = null): string
@@ -347,9 +347,9 @@ final class DashboardRenderer
     /**
      * Contenu du bloc <details> d'une soumission.
      *
-     * @param array<string, mixed>|null  $d
-     * @param array<int, array<string, mixed>> $tokens
-     * @param array<string, mixed>      $row
+     * @param array{validations?: array<int, array{step_label: string, email: string, action: string, commentaire?: string, date: string}>}|null  $d
+     * @param list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}> $tokens
+     * @param array{id: string}      $row
      */
     public static function submissionDetail($d, string $status, array $tokens, array $row): string
     {
@@ -423,12 +423,12 @@ final class DashboardRenderer
     /**
      * Compose l'ensemble du contenu HTML du tableau de bord.
      *
-     * @param array<string, mixed> $sys
-     * @param array<string, mixed> $stats
-     * @param array<string, mixed> $filters
-     * @param array<int, array<string, mixed>> $forms
-     * @param array<int, array<string, mixed>> $rows
-     * @param array<string, array<int, array<string, mixed>>> $tokens_by_submission
+     * @param array{smtp_host: string, smtp_port: int, smtp_ok: bool, smtp_label: string, last_backup: string, en_cours: int} $sys
+     * @param array{total: int, complet: int, valide: int, refuse: int} $stats
+     * @param array{filtre: string, form: string, search: string, regen_msg: string, remind_msg: string, cancel_msg: string} $filters
+     * @param array<int, array{slug: string, label: string}> $forms
+     * @param array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string}> $rows
+     * @param array<string, list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}>> $tokens_by_submission
      * @param array<string, array{total: int, filled: int, complet: bool}> $validator_status_by_submission
      */
     public static function content(

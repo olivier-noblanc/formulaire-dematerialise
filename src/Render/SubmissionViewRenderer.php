@@ -66,7 +66,7 @@ final class SubmissionViewRenderer
     /**
      * En-tête de la soumission : titre, agent, dates, badge statut.
      *
-     * @param array<string, mixed> $sub
+     * @param array{form_label: string, submitted_by: string, submitted_at: string, closed_at?: string} $sub
      */
     public function renderHeader(array $sub, string $sub_id, string $nom_agent, string $status_label, string $status_cls): string
     {
@@ -158,7 +158,7 @@ final class SubmissionViewRenderer
     /**
      * Carte délégations effectuées.
      *
-     * @param array<int, array<string, mixed>> $delegations
+     * @param array<int, array{step_label: string, from_email: string, to_email: string, delegated_at: string, reason?: string}> $delegations
      */
     public function renderDelegations(array $delegations): string
     {
@@ -362,7 +362,7 @@ final class SubmissionViewRenderer
     /**
      * Diagramme workflow — circuit de validation.
      *
-     * @param array<int, array<string, mixed>> $workflow_steps
+     * @param list<array{step_status: string, ordre: int, step_label: string, tokens: list<array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, ordre: int}>}> $workflow_steps
      */
     public function renderWorkflowDiagram(array $workflow_steps, string $status): string
     {
@@ -440,7 +440,7 @@ final class SubmissionViewRenderer
     /**
      * Actions admin (rappeler / régénérer).
      *
-     * @param array<int, array<string, mixed>> $all_tokens
+     * @param array<int, array{id: string, email: string, done_at: string}> $all_tokens
      */
     public function renderWorkflowActions(array $all_tokens, bool $is_admin, string $status): string
     {
@@ -487,7 +487,7 @@ final class SubmissionViewRenderer
     /**
      * Formulaire de délégation.
      *
-     * @param array<int, array<string, mixed>> $all_tokens
+     * @param array<int, array{id: string, email: string, ordre: int, done_at: string}> $all_tokens
      */
     public function renderDelegationForm(array $all_tokens, string $user, bool $is_admin, string $status): string
     {
@@ -532,7 +532,7 @@ final class SubmissionViewRenderer
      * Données du formulaire.
      *
      * @param array<string, mixed> $data
-     * @param array<string, array<string, mixed>> $field_info
+     * @param array<string, array{card_group: string, label: string}> $field_info
      */
     public function renderFormData(array $data, array $field_info): string
     {
@@ -583,8 +583,8 @@ final class SubmissionViewRenderer
     /**
      * Données des validateurs.
      *
-     * @param array<int, array<string, mixed>> $validator_data_rows
-     * @param array<string, array<string, mixed>> $field_info
+     * @param array<int, array{field_name: string, field_label: string, value: string, filled_by_email?: string, step_label?: string, filled_at?: string}> $validator_data_rows
+     * @param array<string, array{label: string}> $field_info
      */
     public function renderValidatorData(array $validator_data_rows, array $field_info, bool $can_edit = false, string $sub_id = ''): string
     {
@@ -735,8 +735,8 @@ final class SubmissionViewRenderer
     /**
      * Historique des relances / notifications envoyées.
      *
-     * @param array<int, array<string, mixed>> $all_tokens
-     * @param array<int, array<string, mixed>> $submission_reminds
+     * @param array<int, array{id: string, email: string, done_at: string, relance_count: int, sent_at: string, relance_at: string, expires_at: string}> $all_tokens
+     * @param array<int, array{detail: string, created_at: string, actor: string}> $submission_reminds
      * @param array<int, array<string, mixed>> $pending_with_relance
      */
     public function renderRemindHistory(array $all_tokens, array $submission_reminds, int $total_relances, array $pending_with_relance, bool $is_admin, string $status): string
@@ -845,7 +845,7 @@ final class SubmissionViewRenderer
     /**
      * Pièces jointes.
      *
-     * @param array<int, array<string, mixed>> $attachments
+     * @param array<int, array{id: string, mime_type: string, original_name: string, file_size: int, uploaded_at: string}> $attachments
      */
     public function renderAttachments(array $attachments): string
     {
