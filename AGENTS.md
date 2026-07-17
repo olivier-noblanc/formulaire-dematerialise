@@ -178,3 +178,32 @@ echo $renderer->renderWorkflowDiagram($steps, $status);
 ### Règle
 
 Ne **jamais** générer de HTML inline dans un controller pour des sections qui ont un renderer dédié dans `src/Render/`. Utiliser le renderer. Ajouter un test qui vérifie les classes CSS dans le HTML produit.
+
+---
+
+## Tests cross-platform
+
+### Paths
+
+- **JAMAIS** de paths hardcodés Linux dans les tests : `/tmp/`, `/home/z/`, `lsof`
+- Utiliser `sys_get_temp_dir()` pour les fichiers temporaires
+- Utiliser `php` (dans le PATH) au lieu de `/home/z/php/php`
+- Pour tuer un process par port : la fonction `kill_port()` dans `test_bootstrap.php` est cross-platform (lsof sur Linux, netstat+taskkill sur Windows) et limitée à la plage 8760-8799
+
+### curl dans les tests
+
+- Toujours ajouter `CURLOPT_NOPROXY => 'localhost,127.0.0.1'` sur les handles curl — le proxy corporate peut intercepter les appels vers localhost
+
+### test_form_render_html.php — pièges connus
+
+Ce test invoque `FormController::handle()` dans un sous-processus PHP séparé. Pièges :
+
+1. **TEST_MODE** : `core_bootstrap.php` définit `TEST_MODE` via `define()` (une seule fois). Si `helpers.php` est chargé, `TEST_MODE` est fixé. Pour tester le rendu HTML (pas JSON), il faut que `TEST_MODE=false` — ne PAS définir `APP_TEST_MODE` ni le header `HTTP_X_TEST_MODE`.
+2. **CSRF** : en CLI, la session ne persiste pas entre sous-processus. Il faut peupler `$_SESSION['csrf_token']` dans le subprocess AVANT le controller, et `$_POST['csrf_token']` doit correspondre.
+3. **SMTP** : `MailService::send()` tente une connexion SMTP en mode normal. Activer `mail_dry_run=1` via `\App\Core\App::settings()->set('mail_dry_run', '1', 'test')` pour éviter le blocage.
+4. **POST data** : passer les données POST via `argv` (pas stdin) pour éviter que `stream_get_contents(STDIN)` n'écrase `$_POST`.
+5. **lib_wrappers.php** : contient `test_json_response()` qui appelle `exit()`. En mode TEST_MODE=true, le controller l'appelle et le script meurt. En mode TEST_MODE=false, cette fonction n'est pas appelée.
+
+### Règle
+
+Après avoir corrigé un test, TOUJOURS lancer `php tests/<fichier>.php` directement pour vérifier, puis la gate complète (`pwsh -NoProfile -File scripts/check.ps1`). Ne jamais claim "c'est fini" sans avoir lancé les tests.
