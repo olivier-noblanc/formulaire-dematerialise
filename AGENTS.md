@@ -207,3 +207,15 @@ Ce test invoque `FormController::handle()` dans un sous-processus PHP séparé. 
 ### Règle
 
 Après avoir corrigé un test, TOUJOURS lancer `php tests/<fichier>.php` directement pour vérifier, puis la gate complète (`pwsh -NoProfile -File scripts/check.ps1`). Ne jamais claim "c'est fini" sans avoir lancé les tests.
+
+---
+
+## Règle absolue — Pas de laisser-aller sur les bugs
+
+**TOUS les bugs trouvés doivent être fixés.** Ne JAMAIS :
+- Classer un échec de test comme "pré-existant" pour ne pas le fixer
+- Dire "pas lié à mes changements" pour esquiver un fix
+- Laisser des échecs de test dans la gate sans les corriger
+- Prendre des raccourcis en marquant des tests comme skipped
+
+Si un test échoue, c'est un bug. Point. Le corriger immédiatement, même s'il existait avant.

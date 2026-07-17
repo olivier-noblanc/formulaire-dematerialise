@@ -26,7 +26,7 @@ declare(strict_types=1);
  * @return bool True si succès, false si échec.
  */
 function run_bug09_test(): bool {
-    $path = __DIR__ . '/../../lib/render_navigation.php';
+    $path = __DIR__ . '/../../src/Render/NavigationRenderer.php';
     if (!is_file($path)) {
         echo "  ❌ Bug09 — Fichier source introuvable : $path\n";
         return false;
@@ -42,7 +42,7 @@ function run_bug09_test(): bool {
     $has_formulaires_link = strpos($src, "'label' => 'Formulaires'") !== false
                           && strpos($src, "'href' => 'index.php'") !== false;
     if (!$has_formulaires_link) {
-        echo "  ❌ Bug09 — Lien 'Formulaires' → index.php non trouvé dans render_navigation.php\n";
+        echo "  ❌ Bug09 — Lien 'Formulaires' → index.php non trouvé dans NavigationRenderer.php\n";
         return false;
     }
 
@@ -54,7 +54,7 @@ function run_bug09_test(): bool {
 
     // Assertion 3 (v10.0.7) : plus de topbar ni sidebar-cta résiduel
     if (preg_match('/class=["\']topbar["\']/', $src)) {
-        echo "  ❌ Bug09 — La topbar a réapparu dans render_navigation.php\n";
+        echo "  ❌ Bug09 — La topbar a réapparu dans NavigationRenderer.php\n";
         return false;
     }
     // sidebar-cta supprimé en v10.0.7 — vérifier qu'il n'est pas revenu
@@ -63,7 +63,7 @@ function run_bug09_test(): bool {
     $stripped = preg_replace('/^\s*\/\/.*$/m', '', $stripped);
     $stripped = preg_replace('/^\s*\#.*$/m', '', $stripped);
     if (preg_match('/sidebar-cta/', $stripped)) {
-        echo "  ❌ Bug09 — sidebar-cta a réapparu dans render_navigation.php (supprimé en v10.0.7)\n";
+        echo "  ❌ Bug09 — sidebar-cta a réapparu dans NavigationRenderer.php (supprimé en v10.0.7)\n";
         return false;
     }
 

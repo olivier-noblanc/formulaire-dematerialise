@@ -45,10 +45,11 @@ $_SERVER["SCRIPT_NAME"]    = "/index.php?p=admin_settings";
 
 ob_start();
 try {
-    // admin_settings.php fait son propre require_admin() — l'utilisateur
+    // admin_settings.php migré vers AdminSettingsController — l'utilisateur
     // courant doit être admin. On s'est arrangé pour que AUTH_USER pointe
     // sur l'admin principal.
-    require $project_root . "/pages/admin_settings.php";
+    $controller = new \App\Controller\AdminSettingsController();
+    $controller->handle();
     $html = ob_get_clean();
 } catch (\Throwable $e) {
     $html = ob_get_clean() . "\n__EXCEPTION__:" . $e->getMessage() . "\n" . $e->getTraceAsString();

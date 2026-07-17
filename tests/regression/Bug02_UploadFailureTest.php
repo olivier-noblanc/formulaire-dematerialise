@@ -47,12 +47,12 @@ function run_bug02_test(): bool {
         return false;
     }
 
-    // Assertion 1 : présence de la logique « if (!empty($file_errors)) »
-    // suivie d'un « DELETE FROM submissions ».
+    // Assertion 1 : présence de la logique « if ($file_errors !== []) »
+    // suivie d'une suppression de la soumission (deleteById ou DELETE FROM).
     // On autorise le formatage whitespace variable via une regex.
-    $pattern_delete = '/if\s*\(\s*!\s*empty\s*\(\s*\$file_errors\s*\)\s*\)\s*\{[^}]*DELETE\s+FROM\s+submissions/s';
+    $pattern_delete = '/if\s*\(\$file_errors\s*!==\s*\[\]\s*\)\s*\{[^}]*deleteById|if\s*\(\s*!\s*empty\s*\(\s*\$file_errors\s*\)\s*\)\s*\{[^}]*DELETE\s+FROM\s+submissions/s';
     if (!preg_match($pattern_delete, $src)) {
-        echo "  ❌ Bug02 — La logique « if (!empty(\$file_errors)) { DELETE FROM submissions } » est absente du FormController\n";
+        echo "  ❌ Bug02 — La logique « if (\$file_errors !== []) { suppression de la soumission } » est absente du FormController\n";
         echo "     → Le bug historique d'upload silencieux pourrait réapparaître\n";
         // Afficher un extrait autour de file_errors pour le debug
         if (preg_match('/\$file_errors/', $src, $m, PREG_OFFSET_CAPTURE)) {
@@ -63,40 +63,39 @@ function run_bug02_test(): bool {
         return false;
     }
 
-    // Assertion 2 : `handle_file_upload()` doit être appelé AVANT
-    // `advance_workflow()`. C'est l'ordre correct : si l'upload échoue,
+    // Assertion 2 : `handleFileUpload()` doit être appelé AVANT
+    // `advanceWorkflow()`. C'est l'ordre correct : si l'upload échoue,
     // on nettoie avant de déclencher le workflow.
     // On cherche l'appel RÉEL (avec une variable en argument, pas une
-    // mention dans un commentaire qui utiliserait « advance_workflow() »
-    // sans argument).
-    if (!preg_match('/handle_file_upload\s*\(\s*\$/', $src, $m1, PREG_OFFSET_CAPTURE)) {
-        echo "  ❌ Bug02 — Appel réel handle_file_upload(\$...) introuvable dans le FormController\n";
+    // mention dans un commentaire).
+    if (!preg_match('/handleFileUpload\s*\(\s*\$_FILES/', $src, $m1, PREG_OFFSET_CAPTURE)) {
+        echo "  ❌ Bug02 — Appel réel handleFileUpload(\$_FILES...) introuvable dans le FormController\n";
         return false;
     }
-    if (!preg_match('/advance_workflow\s*\(\s*\$/', $src, $m2, PREG_OFFSET_CAPTURE)) {
-        echo "  ❌ Bug02 — Appel réel advance_workflow(\$...) introuvable dans le FormController\n";
+    if (!preg_match('/advanceWorkflow\s*\(\s*\$/', $src, $m2, PREG_OFFSET_CAPTURE)) {
+        echo "  ❌ Bug02 — Appel réel advanceWorkflow(\$...) introuvable dans le FormController\n";
         return false;
     }
     $hfu_pos = $m1[0][1];
     $aw_pos  = $m2[0][1];
     if ($hfu_pos > $aw_pos) {
-        echo "  ❌ Bug02 — handle_file_upload() est appelé APRÈS advance_workflow() — ordre incorrect\n";
-        echo "     → handle_file_upload() à l'offset $hfu_pos, advance_workflow() à l'offset $aw_pos\n";
+        echo "  ❌ Bug02 — handleFileUpload() est appelé APRÈS advanceWorkflow() — ordre incorrect\n";
+        echo "     → handleFileUpload() à l'offset $hfu_pos, advanceWorkflow() à l'offset $aw_pos\n";
         return false;
     }
 
-    // Assertion 3 : `send_mail()` doit AUSSI être appelé APRÈS
-    // `handle_file_upload()`. Sinon, l'email partirait même si l'upload échoue.
-    if (!preg_match('/send_mail\s*\(\s*\$/', $src, $m3, PREG_OFFSET_CAPTURE)) {
-        echo "  ⚠ Bug02 — Appel réel send_mail(\$...) introuvable dans le FormController (warning, pas un échec)\n";
+    // Assertion 3 : `App::mail()->send()` doit AUSSI être appelé APRÈS
+    // `handleFileUpload()`. Sinon, l'email partirait même si l'upload échoue.
+    if (!preg_match('/App::mail\(\)->send\s*\(\s*\$/', $src, $m3, PREG_OFFSET_CAPTURE)) {
+        echo "  ⚠ Bug02 — Appel réel App::mail()->send(\$...) introuvable dans le FormController (warning, pas un échec)\n";
     } else {
         $sm_pos = $m3[0][1];
         if ($sm_pos < $hfu_pos) {
-            echo "  ❌ Bug02 — send_mail() est appelé AVANT handle_file_upload() — l'email partirait même en cas d'échec d'upload\n";
+            echo "  ❌ Bug02 — App::mail()->send() est appelé AVANT handleFileUpload() — l'email partirait même en cas d'échec d'upload\n";
             return false;
         }
     }
 
-    echo "  ✅ Bug02 — Logique « if (!empty(\$file_errors)) → DELETE » présente + handle_file_upload() avant advance_workflow() et send_mail()\n";
+    echo "  ✅ Bug02 — Logique « if (\$file_errors !== []) → suppression » présente + handleFileUpload() avant advanceWorkflow() et send()\n";
     return true;
 }

@@ -30,7 +30,7 @@ declare(strict_types=1);
  * @return bool True si succès, false si échec.
  */
 function run_bug07_test(): bool {
-    $path = __DIR__ . '/../../pages/my_validations.php';
+    $path = __DIR__ . '/../../src/Render/MyValidationsRenderer.php';
     if (!is_file($path)) {
         echo "  ❌ Bug07 — Fichier source introuvable : $path\n";
         return false;
@@ -64,7 +64,7 @@ function run_bug07_test(): bool {
         }
     }
     if (!$found) {
-        echo "  ❌ Bug07 — La condition « refuser && email === \$user » est absente de my_validations.php\n";
+        echo "  ❌ Bug07 — La condition « refuser && email === \$user » est absente de MyValidationsRenderer.php\n";
         echo "     → Tout validateur verrait « Refusé » dès qu'un autre a refusé\n";
         // Afficher le contexte autour de 'refuser' pour le debug
         if (preg_match('/refuser/', $src, $m, PREG_OFFSET_CAPTURE)) {
@@ -78,8 +78,8 @@ function run_bug07_test(): bool {
     // Assertion complémentaire : on vérifie aussi que la variable
     // $refused_by_me est bien utilisée pour afficher le badge. Cela
     // confirme que la logique est bien « par validateur » et non globale.
-    if (strpos($src, 'refused_by_me') === false) {
-        echo "  ⚠ Bug07 — Variable \$refused_by_me absente — la logique de filtrage par email semble différente de l'attendu (warning)\n";
+    if (strpos($src, 'refusedByMe') === false && strpos($src, 'refused_by_me') === false) {
+        echo "  ⚠ Bug07 — Variable \$refusedByMe absente — la logique de filtrage par email semble différente de l'attendu (warning)\n";
         // Pas un échec : la condition principale (email match) est vérifiée,
         // c'est l'implémentation qui peut varier.
     }
