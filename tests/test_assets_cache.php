@@ -39,7 +39,7 @@ function http_get(string $url, array $headers = []): array {
     foreach ($headers as $h) $headerArgs[] = '-H';
     foreach ($headers as $h) $headerArgs[] = $h;
 
-    $cmd = array_merge(['curl', '-s', '-D', '-', '-o', '-'], $headerArgs, [$url]);
+    $cmd = array_merge(['curl', '-s', '--noproxy', 'localhost,127.0.0.1', '-D', '-', '-o', '-'], $headerArgs, [$url]);
     $cmdStr = '';
     foreach ($cmd as $arg) {
         $cmdStr .= ' ' . escapeshellarg($arg);

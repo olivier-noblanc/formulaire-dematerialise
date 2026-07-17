@@ -24,6 +24,7 @@ function http_request(string $method, string $path, array $get = [], array $post
     if ($check) {
         curl_setopt($check, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($check, CURLOPT_TIMEOUT, 2);
+        curl_setopt($check, CURLOPT_NOPROXY, 'localhost,127.0.0.1');
         curl_setopt($check, CURLOPT_HTTPHEADER, ['X-Test-Mode: 1', 'X-Test-User: test.agent']);
         $test = @curl_exec($check);
         curl_close($check);
@@ -49,6 +50,7 @@ function http_request(string $method, string $path, array $get = [], array $post
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_NOPROXY, 'localhost,127.0.0.1');
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'X-Test-Mode: 1',
