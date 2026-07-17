@@ -157,10 +157,10 @@ function Step-LintPhp {
     $files += git diff --name-only HEAD 2>$null
     $files += git diff --name-only --cached 2>$null
 
-    $phpFiles = $files | Where-Object { $_ -and $_ -match '\.php$' } | Sort-Object -Unique
-    $phpFiles = $phpFiles | Where-Object { Test-Path $_ -PathType Leaf }
+    $phpFiles = @($files | Where-Object { $_ -and $_ -match '\.php$' } | Sort-Object -Unique)
+    $phpFiles = @($phpFiles | Where-Object { Test-Path $_ -PathType Leaf })
 
-    if (-not $phpFiles -or $phpFiles.Count -eq 0) {
+    if ($phpFiles.Count -eq 0) {
         Info "Aucun fichier PHP modifié — rien à lint (étape triviale OK)."
         return
     }
@@ -279,11 +279,6 @@ Invoke-Step -Name "4. Tests PHP existants (tests/test_all.php)" `
 Invoke-Step -Name "5. Tests de rendu HTML (tests/test_form_render_html.php)" `
             -Precondition { Test-Path 'tests/test_form_render_html.php' } `
             -Command { & $PhpBin tests/test_form_render_html.php }
-if ($hasFailure) {
-    Print-Summary
-    Err "Gate interrompue — étape parallèle échouée."
-    exit 1
-}
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ÉTAPE 6 — Tests structurels HTML
