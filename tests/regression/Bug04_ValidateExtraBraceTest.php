@@ -39,7 +39,8 @@ $_SERVER["SCRIPT_NAME"]    = "/validate.php";
 
 ob_start();
 try {
-    require $project_root . "/pages/validate.php";
+    $controller = new \App\Controller\ValidateController();
+    $controller->handle();
     $html = ob_get_clean();
 } catch (\Throwable $e) {
     $html = ob_get_clean() . "\n__EXCEPTION__:" . $e->getMessage() . "\n" . $e->getTraceAsString();

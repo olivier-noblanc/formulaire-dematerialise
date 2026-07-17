@@ -75,3 +75,7 @@ web.config
 # Temporary downloads
 /pcov.zip
 /composer-setup.php
+
+# Node.js
+node_modules/
+package-lock.json

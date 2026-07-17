@@ -40,7 +40,7 @@ function run_bug11_test(): bool {
     // ── Assertion 1 : aucune classe .topbar* dans le code source PHP ──
     // On scanne lib/, pages/, src/ à la recherche de "topbar" (hors commentaires).
     $phpFiles = [];
-    foreach (['lib', 'pages', 'src'] as $dir) {
+    foreach (['lib', 'src'] as $dir) {
         $it = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($root . '/' . $dir, FilesystemIterator::SKIP_DOTS)
         );
@@ -72,10 +72,10 @@ function run_bug11_test(): bool {
         if (preg_match('/render_breadcrumb\s*\(/', $src)) {
             $rel = str_replace($root . '/', '', $file);
             $normFile = str_replace('\\', '/', $file);
-            // Exception : la DÉFINITION de render_breadcrumb dans lib/render_navigation.php
+            // Exception : la DÉFINITION de render_breadcrumb dans NavigationRenderer.php
             // est tolérée (on garde la fonction pour rétro-compat, mais elle ne doit
             // plus être appelée par les pages).
-            if (strpos($normFile, 'lib/render_navigation.php') !== false) {
+            if (strpos($normFile, 'src/Render/NavigationRenderer.php') !== false) {
                 // Vérifier que c'est bien la définition (function render_breadcrumb)
                 // et non un appel — on cherche dans le code source brut
                 if (!preg_match('/function\s+render_breadcrumb\s*\(/', $src)) {
@@ -114,9 +114,9 @@ function run_bug11_test(): bool {
     // ── Assertion 3 (v10.0.7) : le 1er item "Formulaires" remplace sidebar-cta ──
     // sidebar-cta a été supprimé en v10.0.7 (redondant avec l'item "Formulaires"
     // de la sidebar). On vérifie maintenant que l'item "Formulaires" existe.
-    $navSrc = file_get_contents($root . '/lib/render_navigation.php');
+    $navSrc = file_get_contents($root . '/src/Render/NavigationRenderer.php');
     if ($navSrc === false || strpos($navSrc, "'label' => 'Formulaires'") === false) {
-        $failures[] = "Item 'Formulaires' non trouvé dans lib/render_navigation.php";
+        $failures[] = "Item 'Formulaires' non trouvé dans src/Render/NavigationRenderer.php";
     }
 
     if (!empty($failures)) {

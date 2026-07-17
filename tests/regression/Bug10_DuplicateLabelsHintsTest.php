@@ -24,34 +24,34 @@ require_once __DIR__ . '/_subprocess_helper.php';
 function run_bug10_test(): bool {
     $project_root = dirname(__DIR__, 2);
 
-    // 1. Vérifier le code source de validate.php : pas de <label> manuel
-    //    avant render_field() dans la boucle des champs validateur
-    $validate_src = file_get_contents($project_root . '/pages/validate.php');
+    // 1. Vérifier le code source de ValidateRenderer.php : pas de <label> manuel
+    //    avant field() dans la boucle des champs validateur
+    $validate_src = file_get_contents($project_root . '/src/Render/ValidateRenderer.php');
     if ($validate_src === false) {
         return false;
     }
 
     // Chercher s'il y a encore un <label for="<?= \App\Core\App::html()->escape($vf['field_name'])" manuel
     if (preg_match('/<label for=.*vf\[.field_name.\]/', $validate_src)) {
-        echo "  ❌ Label manuel encore présent avant render_field() dans validate.php\n";
+        echo "  ❌ Label manuel encore présent avant field() dans ValidateRenderer.php\n";
         return false;
     }
-    echo "  ✅ Pas de label manuel avant render_field()\n";
+    echo "  ✅ Pas de label manuel avant field()\n";
 
-    // 2. Vérifier le code source de render_form.php : "Texte libre" supprimé
-    $render_form_src = file_get_contents($project_root . '/lib/render_form.php');
+    // 2. Vérifier le code source de FormRenderer.php : "Texte libre" supprimé
+    $render_form_src = file_get_contents($project_root . '/src/Render/FormRenderer.php');
     if ($render_form_src === false) {
         return false;
     }
 
     if (strpos($render_form_src, "'Texte libre'") !== false
         && strpos($render_form_src, "auto_hint_text = 'Texte libre'") !== false) {
-        echo "  ❌ 'Texte libre' encore généré comme hint auto dans render_form.php\n";
+        echo "  ❌ 'Texte libre' encore généré comme hint auto dans FormRenderer.php\n";
         return false;
     }
     echo "  ✅ 'Texte libre' supprimé des hints auto\n";
 
-    // 3. Vérifier que render_field() ne génère qu'un seul <label> par champ
+    // 3. Vérifier que FormRenderer::field() ne génère qu'un seul <label> par champ
     // Simuler le rendu d'un champ texte
     $script = <<<'PHP'
 require_once $project_root . "/helpers.php";
@@ -62,7 +62,7 @@ $vf = [
     'required' => 1,
     'hint' => 'Indiquez votre pôle',
 ];
-$html = render_field($vf, '', [], '', false);
+$html = (new \App\Render\FormRenderer())->field($vf, '', [], '', false);
 
 // Compter les <label for="pole_test">
 preg_match_all('/<label for="pole_test"/', $html, $m);

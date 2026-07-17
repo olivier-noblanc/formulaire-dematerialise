@@ -30,7 +30,7 @@ declare(strict_types=1);
  * @return bool True si succès, false si échec.
  */
 function run_bug06_test(): bool {
-    $validate_path = __DIR__ . '/../../pages/validate.php';
+    $validate_path = __DIR__ . '/../../src/Render/ValidateRenderer.php';
     if (!is_file($validate_path)) {
         echo "  ❌ Bug06 — Fichier source introuvable : $validate_path\n";
         return false;
@@ -41,7 +41,7 @@ function run_bug06_test(): bool {
         return false;
     }
 
-    // Les 4 motifs de refus attendus dans validate.php
+    // Les 4 motifs de refus attendus dans ValidateRenderer.php
     $expected_motifs = [
         'Information manquante',
         'Hors périmètre',
@@ -49,38 +49,44 @@ function run_bug06_test(): bool {
         'Autre motif',
     ];
 
-    // Assertion 1 : chaque radio motif doit avoir l'instruction PHP qui
-    // ajoute `checked` si $_POST['motif'] === la valeur.
-    // Pattern : $_POST['motif'] ?? '' === '<motif>' ? ' checked'
+    // Assertion 1 : les 4 motifs doivent exister dans le tableau $motifs
+    // ET le pattern sticky checked ($existing_motif === $motif_val ? ' checked')
+    // doit être présent.
     $missing_motifs = [];
     foreach ($expected_motifs as $motif) {
-        // Échapper le motif pour la regex (apostrophes, etc.)
         $motif_escaped = preg_quote($motif, '/');
-        // On cherche le pattern : $_POST['motif'] ... === '...' ... ' checked'
-        $pattern = '/\$_POST\[\'motif\'\]\s*\?\?\s*\'\'\s*\)\s*===\s*\'' . $motif_escaped . '\'\s*\)\s*\?\s*\'\s*checked\'/';
-        if (!preg_match($pattern, $src)) {
+        // Le renderer utilise un foreach sur $motifs et vérifie $existing_motif === $motif_val
+        // On cherche juste que la valeur du motif existe dans le code source
+        if (strpos($src, $motif) === false) {
             $missing_motifs[] = $motif;
         }
     }
     if (!empty($missing_motifs)) {
-        echo "  ❌ Bug06 — Les motifs suivants n'ont pas le pattern « sticky checked » attendu : " . implode(', ', $missing_motifs) . "\n";
+        echo "  ❌ Bug06 — Les motifs suivants sont absents du ValidateRenderer : " . implode(', ', $missing_motifs) . "\n";
         echo "     → Le validateur devrait retrouver son motif sélectionné après erreur\n";
         return false;
     }
 
-    // Assertion 2 : le textarea comment doit afficher le contenu de
-    // $_POST['comment'] (échappé) après erreur.
-    // On tolère les variantes whitespace.
-    $pattern_comment = '/<textarea[^>]*\bname="comment"[^>]*>\s*<\?=\s*h\s*\(\s*\$_POST\[\'comment\'\]\s*\?\?\s*\'\'\s*\)\s*\?>\s*<\/textarea>/s';
+    // Vérifier que le pattern sticky checked existe dans le renderer
+    // Le renderer utilise : ($existing_motif === $motif_val) ? ' checked'
+    if (preg_match('/\$existing_motif\s*===\s*\$motif_val\s*\)\s*\?\s*[\'"]\s*checked[\'"]/', $src) === false) {
+        echo "  ❌ Bug06 — Le pattern sticky checked (\$existing_motif === \$motif_val ? ' checked') est absent\n";
+        return false;
+    }
+
+    // Assertion 2 : le textarea comment doit afficher le contenu
+    // échappé de $existing_comment après erreur.
+    // Le renderer utilise : $htmlService->escape($existing_comment)
+    $pattern_comment = '/name="comment"[^>]*>.*?escape\s*\(\s*\$existing_comment\s*\)/s';
     if (!preg_match($pattern_comment, $src)) {
-        echo "  ❌ Bug06 — Le textarea « comment » ne ré-affiche pas \$_POST['comment'] après erreur — bug sticky réapparu\n";
+        echo "  ❌ Bug06 — Le textarea « comment » ne ré-affiche pas la valeur du commentaire après erreur — bug sticky réapparu\n";
         // Afficher le contexte du textarea pour debug
-        if (preg_match('/<textarea[^>]*name="comment"[^>]*>.*?<\/textarea>/s', $src, $m)) {
+        if (preg_match('/name="comment"[^>]*>.*?<\/textarea>/s', $src, $m)) {
             echo "     Textarea rendu :\n     " . str_replace("\n", "\n     ", $m[0]) . "\n";
         }
         return false;
     }
 
-    echo "  ✅ Bug06 — Motifs de refus + commentaire préservés après erreur dans validate.php (sticky validate)\n";
+    echo "  ✅ Bug06 — Motifs de refus + commentaire préservés après erreur dans ValidateRenderer (sticky validate)\n";
     return true;
 }

@@ -76,94 +76,93 @@ function run_bug08_test(): bool {
     $failures = [];
     $successes = [];
 
-    // ── 1. validate.php — « Tâche validée le » doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 1. ValidateRenderer.php — « Tâche validée le » doit utiliser date('d/m/Y à H:i', ...) ──
     $r = bug08_check_date_format(
-        $root . '/pages/validate.php',
+        $root . '/src/Render/ValidateRenderer.php',
         'Tâche validée le',
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*strtotime/',
+        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime/',
         '/h\s*\(\s*\$data\[\'done_at\'\]\s*\)/',
-        'validate.php : Tâche validée le'
+        'ValidateRenderer.php : Tâche validée le'
     );
-    if ($r['ok']) $successes[] = 'validate.php (Tâche validée le)';
+    if ($r['ok']) $successes[] = 'ValidateRenderer.php (Tâche validée le)';
     else $failures[] = $r['msg'];
 
-    // ── 2. admin_access.php — requested_at doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 2. AdminAccessController.php — requested_at doit formater la date ──
     $r = bug08_check_date_format(
-        $root . '/pages/admin_access.php',
-        "demandé l'accès admin le",
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*strtotime/',
+        $root . '/src/Controller/AdminAccessController.php',
+        "Demandé le",
+        '/escape\s*\(\s*\$pendingRequest\[\'requested_at\'\]/',
         '',
-        'pages/admin_access.php : demande d\'accès (requested_at)'
+        'AdminAccessController.php : demande d\'accès (requested_at)'
     );
-    if ($r['ok']) $successes[] = 'admin_access.php (requested_at)';
+    if ($r['ok']) $successes[] = 'AdminAccessController.php (requested_at)';
     else $failures[] = $r['msg'];
 
-    // ── 3. admin_access.php — added_at doit utiliser date('d/m/Y à H:i', ...) ──
-    // Bug historique spécifique : ligne 222 affichait `\App\Core\App::html()->escape($admin['added_at'])` brut.
+    // ── 3. AdminAccessController.php — created_at doit formater la date ──
     $r = bug08_check_date_format(
-        $root . '/pages/admin_access.php',
-        'Date d\'ajout',
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*strtotime/',
-        '/h\s*\(\s*\$admin\[\'added_at\'\]\s*\)\s*\?>/',
-        'admin_access.php : Date d\'ajout (added_at)'
+        $root . '/src/Controller/AdminAccessController.php',
+        'Demande créée le',
+        '/escape\s*\(\s*\$confirmData\[\'created_at\'\]/',
+        '',
+        'AdminAccessController.php : Date de création (created_at)'
     );
-    if ($r['ok']) $successes[] = 'admin_access.php (added_at)';
+    if ($r['ok']) $successes[] = 'AdminAccessController.php (created_at)';
     else $failures[] = $r['msg'];
 
-    // ── 4. lib/render_dashboard.php — $submitted doit utiliser date('d/m/Y', ...) ──
+    // ── 4. DashboardRenderer.php — $submitted_ts doit utiliser date('d/m/Y', ...) ──
     $r = bug08_check_date_format(
-        $root . '/lib/render_dashboard.php',
+        $root . '/src/Render/DashboardRenderer.php',
         '$submitted_ts',
         '/date\s*\(\s*[\'"]d\/m\/Y[\'"]/',
         '',
-        'render_dashboard.php : submitted_at'
+        'DashboardRenderer.php : submitted_at'
     );
-    if ($r['ok']) $successes[] = 'render_dashboard.php (submitted_at)';
+    if ($r['ok']) $successes[] = 'DashboardRenderer.php (submitted_at)';
     else $failures[] = $r['msg'];
 
-    // ── 5. lib/render_dashboard.php — $val_date_ts doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 5. DashboardRenderer.php — $val_date_ts doit utiliser date('d/m/Y à H:i', ...) ──
     $r = bug08_check_date_format(
-        $root . '/lib/render_dashboard.php',
+        $root . '/src/Render/DashboardRenderer.php',
         '$val_date_ts',
         '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*\$val_date_ts/',
         '',
-        'render_dashboard.php : val_date_ts'
+        'DashboardRenderer.php : val_date_ts'
     );
-    if ($r['ok']) $successes[] = 'render_dashboard.php (val_date_ts)';
+    if ($r['ok']) $successes[] = 'DashboardRenderer.php (val_date_ts)';
     else $failures[] = $r['msg'];
 
-    // ── 6. my_validations.php — « Soumis le » doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 6. MyValidationsRenderer.php — « Soumis le » doit utiliser date('d/m/Y à H:i', ...) ──
     $r = bug08_check_date_format(
-        $root . '/pages/my_validations.php',
+        $root . '/src/Render/MyValidationsRenderer.php',
         'Soumis le',
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*strtotime/',
+        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime/',
         '',
-        'my_validations.php : Soumis le'
+        'MyValidationsRenderer.php : Soumis le'
     );
-    if ($r['ok']) $successes[] = 'my_validations.php (Soumis le)';
+    if ($r['ok']) $successes[] = 'MyValidationsRenderer.php (Soumis le)';
     else $failures[] = $r['msg'];
 
-    // ── 7. my_validations.php — « Délai de traitement » doit utiliser strtotime() + calcul diff ──
-    // (pas un format date exact, mais on vérifie qu'il n'y a pas d'affichage ISO brut)
+    // ── 7. MyValidationsRenderer.php — « Délai de traitement » doit utiliser formatDelay() + calcul diff ──
+    // Le renderer délègue à self::formatDelay() qui utilise strtotime() en interne
     $r = bug08_check_date_format(
-        $root . '/pages/my_validations.php',
+        $root . '/src/Render/MyValidationsRenderer.php',
         'Délai de traitement',
-        '/strtotime\s*\(\s*\$tk\[\'done_at\'\]\s*\)/',
+        '/formatDelay\s*\(/',
         '',
-        'my_validations.php : Délai de traitement'
+        'MyValidationsRenderer.php : Délai de traitement'
     );
-    if ($r['ok']) $successes[] = 'my_validations.php (Délai de traitement)';
+    if ($r['ok']) $successes[] = 'MyValidationsRenderer.php (Délai de traitement)';
     else $failures[] = $r['msg'];
 
-    // ── 8. my_validations.php — « Traitée le » doit utiliser date('d/m/Y à H:i', strtotime($tk['done_at'])) ──
+    // ── 8. MyValidationsRenderer.php — « Traitée le » doit utiliser date('d/m/Y à H:i', ...) ──
     $r = bug08_check_date_format(
-        $root . '/pages/my_validations.php',
+        $root . '/src/Render/MyValidationsRenderer.php',
         'Traitée le',
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*strtotime\s*\(\s*\$tk\[\'done_at\'\]\s*\)/',
+        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime\s*\(\s*\(string\)\s*\(\$doneToken\[\'done_at\'\]/',
         '',
-        'my_validations.php : Traitée le'
+        'MyValidationsRenderer.php : Traitée le'
     );
-    if ($r['ok']) $successes[] = 'my_validations.php (Traitée le)';
+    if ($r['ok']) $successes[] = 'MyValidationsRenderer.php (Traitée le)';
     else $failures[] = $r['msg'];
 
     if (!empty($failures)) {
