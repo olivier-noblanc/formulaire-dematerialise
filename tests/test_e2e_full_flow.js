@@ -19,23 +19,41 @@
 //
 // Usage : node tests/test_e2e_full_flow.js
 
-const { chromium } = require('playwright');
+const { firefox } = require('playwright');
 const { spawn } = require('child_process');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const PORT = 8899;
+const PORT = 8877;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
+
+// Sauvegarder le proxy avant de le supprimer pour l'inner http.get
+const _savedProxy = process.env.HTTP_PROXY || process.env.http_proxy || '';
+
+// Supprimer le proxy pour les appels Node.js directs (health check)
+// ET pour le serveur PHP spawné (sinon PHP tente de passer par le proxy)
+delete process.env.HTTP_PROXY;
+delete process.env.http_proxy;
+delete process.env.HTTPS_PROXY;
+delete process.env.https_proxy;
 
 let phpServer = null;
 
 // ─── Démarrer le serveur PHP intégré ───
 function startPhpServer() {
     return new Promise((resolve, reject) => {
-        // Tuer tout serveur existant
-        try { require('child_process').execSync('pkill -f "php -S 127.0.0.1:' + PORT + '" 2>/dev/null'); } catch (_) {}
+        // Tuer tout serveur existant sur le port (cross-platform)
+        try {
+            if (process.platform === 'win32') {
+                const out = require('child_process').execSync('netstat -ano | findstr :' + PORT, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+                const pids = [...new Set(out.match(/\s(\d+)\s*$/gm)?.map(m => m.trim()) || [])];
+                pids.forEach(pid => { try { require('child_process').execSync('taskkill /F /PID ' + pid); } catch (_) {} });
+            } else {
+                require('child_process').execSync('pkill -f "php -S 127.0.0.1:' + PORT + '" 2>/dev/null');
+            }
+        } catch (_) {}
 
         // Démarrer avec TEST_MODE=false (pas de variable d'env)
         // On neutralise APP_TEST_MODE pour que core_bootstrap définisse TEST_MODE=false.
@@ -61,24 +79,29 @@ function startPhpServer() {
             // Uncomment for debug : console.error('[PHP]', data.toString().trim());
         });
 
-        // Attendre que le serveur soit prêt
+        // Attendre que le serveur soit prêt — attendre que le port soit ouvert
         let attempts = 0;
         const check = () => {
             attempts++;
-            const req = http.get(`${BASE_URL}/index.php?p=health`, (res) => {
-                if (res.statusCode === 200) {
-                    resolve();
-                } else if (attempts < 30) {
-                    setTimeout(check, 200);
-                } else {
-                    reject(new Error(`Server not ready after ${attempts} attempts (status ${res.statusCode})`));
-                }
+            const net = require('net');
+            const socket = new net.Socket();
+            socket.setTimeout(1000);
+            socket.on('connect', () => {
+                // Port ouvert — serveur PHP prêt
+                socket.destroy();
+                resolve();
             });
-            req.on('error', () => {
-                if (attempts < 30) setTimeout(check, 200);
+            socket.on('error', () => {
+                socket.destroy();
+                if (attempts < 30) setTimeout(check, 300);
+                else reject(new Error('Server not reachable after 30 attempts'));
+            });
+            socket.on('timeout', () => {
+                socket.destroy();
+                if (attempts < 30) setTimeout(check, 300);
                 else reject(new Error('Server not reachable'));
             });
-            req.end();
+            socket.connect(PORT, '127.0.0.1');
         };
         setTimeout(check, 300);
     });
@@ -103,7 +126,11 @@ async function main() {
     await startPhpServer();
     console.log(`  Serveur prêt sur ${BASE_URL}\n`);
 
-    const browser = await chromium.launch({ headless: true });
+    // Lancer Firefox — bypass proxy système
+    const browser = await firefox.launch({
+        headless: true,
+        proxy: _savedProxy ? { server: 'per-proxy', bypass: '127.0.0.1,localhost' } : undefined,
+    });
     // Utiliser AUTH_USER pour simuler l'authentification IIS/Kerberos
     // sans activer TEST_MODE. L'admin "admin.local@exemple.invalid"
     // est présent dans la table admins de la DB de test.
@@ -116,7 +143,7 @@ async function main() {
     console.log('── Test 1 : Page d\'accueil se charge ──');
     const page1 = await context.newPage();
     try {
-        const resp = await page1.goto(`${BASE_URL}/index.php?p=index`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        const resp = await page1.goto(`${BASE_URL}/index.php`, { waitUntil: 'domcontentloaded', timeout: 10000 });
         if (resp && resp.status() === 200) {
             ok('index.php retourne 200');
         } else {

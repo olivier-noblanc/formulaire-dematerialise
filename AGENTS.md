@@ -208,6 +208,10 @@ Ce test invoque `FormController::handle()` dans un sous-processus PHP séparé. 
 
 Après avoir corrigé un test, TOUJOURS lancer `php tests/<fichier>.php` directement pour vérifier, puis la gate complète (`pwsh -NoProfile -File scripts/check.ps1`). Ne jamais claim "c'est fini" sans avoir lancé les tests.
 
+### Playwright — Firefox uniquement
+
+Toujours utiliser **Firefox** pour les tests Playwright, jamais Chromium. Installer avec `rtk playwright install firefox`.
+
 ---
 
 ## Règle absolue — Pas de laisser-aller sur les bugs
