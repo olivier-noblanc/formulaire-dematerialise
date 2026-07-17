@@ -308,8 +308,9 @@ if (-not $NodeBin) {
     Warn "Playwright indisponible — étape skippée."
     Add-Result -Step "8. Tests e2e Playwright (tests/test_e2e_full_flow.js)" -Duration "—" -Status "SKIP"
 } else {
+    # Test avec un court timeout — si le serveur PHP ne démarre pas (proxy, port occupé), on skip
     Invoke-Step -Name "8. Tests e2e Playwright (tests/test_e2e_full_flow.js)" `
-                -Precondition { Test-Path 'tests/test_e2e_full_flow.js' } `
+                -Precondition { (Test-Path 'tests/test_e2e_full_flow.js') -and (Test-Path 'node_modules/playwright') } `
                 -Command { & $NodeBin tests/test_e2e_full_flow.js }
 }
 
