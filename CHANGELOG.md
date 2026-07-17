@@ -9,6 +9,7 @@ _Résumé : Hardening tokens concurrents + unification SubmissionStatus + refact
 - **WorkflowEngine::advanceWorkflow()** : debug log ajouté dans le catch PDOException 23000 (defense-in-depth)
 - **RgpdServiceTest** : 5 erreurs FK corrigées — form_id hardcoded inexistant remplacé par un form créé dynamiquement en setUp/tearDown
 - **WorkflowEngineTest** : testGetWorkflowStepsReturnsConditionFieldForActiveSteps — guard markTestSkipped si aucun step actif (0 assertions)
+- **WorkflowEngine::getWorkflowSteps()** : suppression du static cache — causait des données obsolètes dans les process longs (CLI, FPM persistent)
 
 ### ✨ Features
 

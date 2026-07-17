@@ -116,11 +116,6 @@ final readonly class WorkflowEngine implements WorkflowInterface
      */
     public function getWorkflowSteps(string $formId): array
     {
-        static $cache = [];
-        if (isset($cache[$formId])) {
-            return $cache[$formId];
-        }
-
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare("
             SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.condition,
@@ -134,7 +129,6 @@ final readonly class WorkflowEngine implements WorkflowInterface
         $stmt->execute([$formId]);
         /** @var array<int, array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $result */
         $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        $cache[$formId] = $result;
         return $result;
     }
 
