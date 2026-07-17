@@ -149,7 +149,7 @@ function Invoke-Step {
 }
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 1 — Lint PHP sur fichiers modifiés
+# ÉTAPE 1 — Lint PHP sur fichiers modifiés (rapide, séquentiel)
 # ═════════════════════════════════════════════════════════════════════════════
 function Step-LintPhp {
     Info "Collecte des fichiers PHP modifiés (git diff --name-only HEAD + staged)…"
@@ -185,18 +185,86 @@ Invoke-Step -Name "1. Lint PHP (php -l sur fichiers modifiés)" `
             -Command { Step-LintPhp }
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 2 — PHPStan (analyse statique niveau 8)
+# ÉTAPES 2-3 — PHPStan + PHPUnit en parallèle (les plus lourdes)
 # ═════════════════════════════════════════════════════════════════════════════
-Invoke-Step -Name "2. PHPStan (analyse statique niveau 8)" `
-            -Precondition { (Test-Path 'phpstan.neon') -and (Test-Path 'vendor/bin/phpstan') } `
-            -Command { & $PhpBin vendor/bin/phpstan analyse --memory-limit=512M --no-progress }
+Write-Host ""
+Write-Host "$C_BOLD--- Lancement parallèle : PHPStan + PHPUnit ---$C_RESET"
 
-# ═════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 3 — PHPUnit (tests unitaires + intégration)
-# ═════════════════════════════════════════════════════════════════════════════
-Invoke-Step -Name "3. PHPUnit (tests unitaires)" `
-            -Precondition { (Test-Path 'phpunit.xml') -and (Test-Path 'vendor/bin/phpunit') } `
-            -Command { & $PhpBin vendor/bin/phpunit }
+$ProjectRoot = (Get-Location).Path
+$PhpExe = $PhpBin
+$startParallel = Get-Date
+
+# Lancer PHPStan en arrière-plan
+$phpstanLog = Join-Path $ProjectRoot "db\phpstan_output.log"
+$phpstanRunning = $false
+if ((Test-Path 'phpstan.neon') -and (Test-Path 'vendor/bin/phpstan')) {
+    $phpstanProc = Start-Process -FilePath $PhpExe -ArgumentList "vendor/bin/phpstan analyse --memory-limit=512M --no-progress" -WorkingDirectory $ProjectRoot -RedirectStandardOutput $phpstanLog -RedirectStandardError "$phpstanLog.err" -NoNewWindow -PassThru
+    $phpstanRunning = $true
+    Info "PHPStan lancé en arrière-plan (PID $($phpstanProc.Id))"
+} else {
+    Warn "PHPStan skippé (phpstan.neon ou vendor/bin/phpstan manquant)"
+    Add-Result -Step "2. PHPStan (analyse statique niveau 8)" -Duration "—" -Status "SKIP"
+}
+
+# Lancer PHPUnit en arrière-plan
+$phpunitLog = Join-Path $ProjectRoot "db\phpunit_output.log"
+$phpunitRunning = $false
+if ((Test-Path 'phpunit.xml') -and (Test-Path 'vendor/bin/phpunit')) {
+    $phpunitProc = Start-Process -FilePath $PhpExe -ArgumentList "vendor/bin/phpunit" -WorkingDirectory $ProjectRoot -RedirectStandardOutput $phpunitLog -RedirectStandardError "$phpunitLog.err" -NoNewWindow -PassThru
+    $phpunitRunning = $true
+    Info "PHPUnit lancé en arrière-plan (PID $($phpunitProc.Id))"
+} else {
+    Warn "PHPUnit skippé (phpunit.xml ou vendor/bin/phpunit manquant)"
+    Add-Result -Step "3. PHPUnit (tests unitaires)" -Duration "—" -Status "SKIP"
+}
+
+# Attendre les deux processus en parallèle
+if ($phpstanRunning) {
+    $phpstanProc.WaitForExit()
+    $phpstanDur = $phpstanProc.ExitTime - $phpstanProc.StartTime
+    $phpstanDurStr = "{0:N1}s" -f $phpstanDur.TotalSeconds
+    $phpstanOutput = Get-Content $phpstanLog -ErrorAction SilentlyContinue | Out-String
+    if ($phpstanProc.ExitCode -eq 0) {
+        Ok "PHPStan réussi en $phpstanDurStr"
+        Add-Result -Step "2. PHPStan (analyse statique niveau 8)" -Duration $phpstanDurStr -Status "OK"
+    } else {
+        Write-Host ""
+        Write-Host "${C_RED}--- PHPStan — ÉCHEC ($phpstanDurStr) ---${C_RESET}"
+        if ($phpstanOutput) { Write-Host $phpstanOutput }
+        $phpstanErr = Get-Content "$phpstanLog.err" -ErrorAction SilentlyContinue | Out-String
+        if ($phpstanErr) { Write-Host $phpstanErr }
+        Add-Result -Step "2. PHPStan (analyse statique niveau 8)" -Duration $phpstanDurStr -Status "ÉCHEC"
+    }
+}
+
+if ($phpunitRunning) {
+    $phpunitProc.WaitForExit()
+    $phpunitDur = $phpunitProc.ExitTime - $phpunitProc.StartTime
+    $phpunitDurStr = "{0:N1}s" -f $phpunitDur.TotalSeconds
+    $phpunitOutput = Get-Content $phpunitLog -ErrorAction SilentlyContinue | Out-String
+    if ($phpunitProc.ExitCode -eq 0) {
+        Ok "PHPUnit réussi en $phpunitDurStr"
+        Add-Result -Step "3. PHPUnit (tests unitaires)" -Duration $phpunitDurStr -Status "OK"
+    } else {
+        Write-Host ""
+        Write-Host "${C_RED}--- PHPUnit — ÉCHEC ($phpunitDurStr) ---${C_RESET}"
+        if ($phpunitOutput) { Write-Host $phpunitOutput }
+        $phpunitErr = Get-Content "$phpunitLog.err" -ErrorAction SilentlyContinue | Out-String
+        if ($phpunitErr) { Write-Host $phpunitErr }
+        Add-Result -Step "3. PHPUnit (tests unitaires)" -Duration $phpunitDurStr -Status "ÉCHEC"
+    }
+}
+
+$totalParallel = ((Get-Date) - $startParallel).TotalSeconds
+Info "Étapes 2-3 terminées en $("{0:N1}" -f $totalParallel)s"
+
+# Fail-fast si PHPStan ou PHPUnit échoue
+$parallelFailed = ($phpstanRunning -and $phpstanProc.ExitCode -ne 0) -or ($phpunitRunning -and $phpunitProc.ExitCode -ne 0)
+if ($parallelFailed) {
+    Print-Summary
+    Err "Gate interrompue — PHPStan ou PHPUnit échoué."
+    exit 1
+}
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ÉTAPE 4 — Tests PHP existants
@@ -211,6 +279,11 @@ Invoke-Step -Name "4. Tests PHP existants (tests/test_all.php)" `
 Invoke-Step -Name "5. Tests de rendu HTML (tests/test_form_render_html.php)" `
             -Precondition { Test-Path 'tests/test_form_render_html.php' } `
             -Command { & $PhpBin tests/test_form_render_html.php }
+if ($hasFailure) {
+    Print-Summary
+    Err "Gate interrompue — étape parallèle échouée."
+    exit 1
+}
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ÉTAPE 6 — Tests structurels HTML
