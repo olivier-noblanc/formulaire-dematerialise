@@ -173,7 +173,7 @@ final class InstallRenderer
      * Rendu de l'étape 1 — vérification des prérequis.
      */
     /**
-     * @param array<int, array<string, mixed>> $prerequisites
+     * @param array<int, array{ok: bool, label: string, detail: string}> $prerequisites
      */
     public function renderStep1(array $prerequisites, bool $all_prereqs_ok): string
     {
@@ -391,7 +391,7 @@ final class InstallRenderer
      * Compose et affiche la page complète de l'assistant d'installation.
      */
     /**
-     * @param array<string, mixed> $p
+     * @param array{step: int, messages: list<string>, error_messages: list<string>, prerequisites: list<array{ok: bool, label: string, detail: string}>, all_prereqs_ok: bool, confirm_config: array<string, mixed>|null, defaults: array<string, mixed>, install_dir: string} $p
      */
     public function renderPage(array $p): void
     {

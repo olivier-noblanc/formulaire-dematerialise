@@ -12,10 +12,10 @@ use App\Core\App;
 final class StatsRenderer
 {
     /**
-     * @param array<string, mixed> $globalStats
-     * @param array<int, array<string, mixed>> $periodStats
-     * @param array<int, array<string, mixed>> $formStats
-     * @param array<int, array<string, mixed>> $validatorStats
+     * @param array{total: int, valide: int, en_cours: int, refuse: int, taux_validation: float, avg_days: float, today: int, this_week: int, this_month: int, tokens_pending: int, attachments_count: int, attachments_size: int} $globalStats
+     * @param array<int, array{period: string, total: int, valide: int, en_cours: int}> $periodStats
+     * @param array<int, array{label: string, slug: string, total: int, en_cours: int, valide: int, refuse: int, avg_seconds: float|null}> $formStats
+     * @param array<int, array{email: string, total: int, done: int, pending: int, avg_response_seconds: float|null}> $validatorStats
      */
     public static function content(
         string $period,

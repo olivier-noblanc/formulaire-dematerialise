@@ -20,7 +20,7 @@ final class ValidationService
      *
      * @param mixed  $value   Value to validate
      * @param string $rule    Rule name
-     * @param array<string, mixed> $options Extra options (max_length, min, max, allowed_values)
+     * @param array{max_length?: int, allowed_values?: list<string>, min?: int, max?: int} $options Extra options (max_length, min, max, allowed_values)
      * @return string|int Validated value
      * @throws \InvalidArgumentException When validation fails
      */
@@ -108,7 +108,7 @@ final class ValidationService
         return $value;
     }
 
-    /** @param array<string, mixed> $options */
+    /** @param array{allowed_values?: list<string>} $options */
     private function validateStatus(string $value, array $options): string
     {
         $allowed = $options['allowed_values'] ?? ['en_cours', 'valide', 'refuse'];
@@ -129,7 +129,7 @@ final class ValidationService
         return $value;
     }
 
-    /** @param array<string, mixed> $options */
+    /** @param array{min?: int, max?: int} $options */
     private function validateInt(string $value, array $options): int
     {
         $intValue = filter_var($value, FILTER_VALIDATE_INT);

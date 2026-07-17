@@ -14,10 +14,10 @@ final class MyValidationsRenderer
     /**
      * Retourne le HTML complet du contenu principal de la page Mes validations.
      *
-     * @param array<int, array<string, mixed>> $pendingTokens
-     * @param array<int, array<string, mixed>> $doneTokens
-     * @param array<string, list<array<string, mixed>>> $allStepsBySub keyed by submission_id
-     * @param array<int, array<string, mixed>> $myVdRows
+     * @param array<int, array{token_id: string, token: string, sent_at: string|null, expires_at: string|null, relance_count: int, step_id: string, email: string, step_label: string, ordre: int, submission_id: string, data: string|null, submitted_at: string|null, sub_status: string, form_label: string, form_slug: string}> $pendingTokens
+     * @param array<int, array{token_id: string, done_at: string|null, sent_at: string|null, step_label: string, ordre: int, submission_id: string, data: string|null, submitted_at: string|null, sub_status: string, form_label: string, form_slug: string}> $doneTokens
+     * @param array<string, list<array{submission_id: string, id: string, label: string, ordre: int, dones: string|null}>> $allStepsBySub keyed by submission_id
+     * @param array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null, form_id: string, form_label: string}> $myVdRows
      * @param string $user current user email
      */
     public static function content(
@@ -59,8 +59,8 @@ final class MyValidationsRenderer
     }
 
     /**
-     * @param array<int, array<string, mixed>> $pendingTokens
-     * @param array<string, list<array<string, mixed>>> $allStepsBySub
+     * @param array<int, array{token_id: string, token: string, sent_at: string|null, expires_at: string|null, relance_count: int, step_id: string, email: string, step_label: string, ordre: int, submission_id: string, data: string|null, submitted_at: string|null, sub_status: string, form_label: string, form_slug: string}> $pendingTokens
+     * @param array<string, list<array{submission_id: string, id: string, label: string, ordre: int, dones: string|null}>> $allStepsBySub
      */
     private static function pendingTab(array $pendingTokens, array $allStepsBySub): string
     {
@@ -74,7 +74,7 @@ final class MyValidationsRenderer
             $html .= '  </div>' . "\n";
         } else {
             foreach ($pendingTokens as $pendingToken) {
-                $data = json_decode($pendingToken['data'], true) ?: [];
+                $data = json_decode((string) ($pendingToken['data'] ?? '{}'), true) ?: [];
                 $expired = !empty($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
                 $nomAgent = $htmlService->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
                 $allSteps = $allStepsBySub[$pendingToken['submission_id']] ?? [];
@@ -89,7 +89,7 @@ final class MyValidationsRenderer
                 if (!empty($data['affectation'])) {
                     $html .= ' — ' . $htmlService->escape($data['affectation']);
                 }
-                $html .= '<br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', strtotime($pendingToken['submitted_at']))) . "\n";
+                $html .= '<br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($pendingToken['submitted_at'] ?? '')))) . "\n";
                 if ($pendingToken['relance_count'] > 0) {
                     $html .= '<br><span style="color:#b45309;">Relance(s) : ' . (int) $pendingToken['relance_count'] . '</span>' . "\n";
                 }
@@ -151,7 +151,7 @@ final class MyValidationsRenderer
     }
 
     /**
-     * @param array<int, array<string, mixed>> $doneTokens
+     * @param array<int, array{token_id: string, done_at: string|null, sent_at: string|null, step_label: string, ordre: int, submission_id: string, data: string|null, submitted_at: string|null, sub_status: string, form_label: string, form_slug: string}> $doneTokens
      */
     private static function doneTab(array $doneTokens, string $user): string
     {
@@ -165,7 +165,7 @@ final class MyValidationsRenderer
             $html .= '  </div>' . "\n";
         } else {
             foreach ($doneTokens as $doneToken) {
-                $data = json_decode($doneToken['data'], true) ?: [];
+                $data = json_decode((string) ($doneToken['data'] ?? '{}'), true) ?: [];
                 $nomAgent = $htmlService->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
 
                 $actionLabel = 'Validé';
@@ -195,14 +195,14 @@ final class MyValidationsRenderer
                 $html .= '      <div class="vc-title">' . $htmlService->escape($doneToken['form_label']) . ' — ' . $htmlService->escape($doneToken['step_label']) . '</div>' . "\n";
                 $html .= '      <div class="vc-meta">' . "\n";
                 $html .= '        Agent : <strong>' . $nomAgent . '</strong>' . "\n";
-                $html .= '        <br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', strtotime($doneToken['submitted_at']))) . "\n";
+                $html .= '        <br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($doneToken['submitted_at'] ?? '')))) . "\n";
                 $html .= '      </div>' . "\n";
                 $html .= '    </div>' . "\n";
                 $html .= '    <span class="badge ' . $actionCls . '">' . $actionLabel . '</span>' . "\n";
                 $html .= '  </div>' . "\n";
                 $html .= '  <div class="vc-body">' . "\n";
-                $html .= '    <div class="done-info">Traitée le <strong>' . $htmlService->escape(date('d/m/Y à H:i', strtotime($doneToken['done_at']))) . '</strong></div>' . "\n";
-                $html .= '    <div class="done-date">Délai de traitement : ' . self::formatDelay($doneToken['done_at'], $doneToken['sent_at']) . '</div>' . "\n";
+                $html .= '    <div class="done-info">Traitée le <strong>' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($doneToken['done_at'] ?? '')))) . '</strong></div>' . "\n";
+                $html .= '    <div class="done-date">Délai de traitement : ' . self::formatDelay((string) ($doneToken['done_at'] ?? ''), (string) ($doneToken['sent_at'] ?? '')) . '</div>' . "\n";
                 $html .= '  </div>' . "\n";
                 $html .= '</div>' . "\n";
             }
@@ -234,7 +234,7 @@ final class MyValidationsRenderer
     }
 
     /**
-     * @param array<int, array<string, mixed>> $myVdRows
+     * @param array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null, form_id: string, form_label: string}> $myVdRows
      */
     private static function myVdSection(array $myVdRows): string
     {

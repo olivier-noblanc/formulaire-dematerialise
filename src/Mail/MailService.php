@@ -222,7 +222,7 @@ final readonly class MailService implements MailInterface
     /**
      * Construit le HTML du mail de validation (token + bouton).
      *
-     * @param array<string, mixed> $submission
+     * @param array{data: string, form_label?: string} $submission
      */
     public function buildMailHtml(array $submission, string $stepLabel, string $token): string
     {

@@ -12,12 +12,12 @@ use App\Core\App;
 final class AdminAlertsRenderer
 {
     /**
-     * @param array<int, array<string, mixed>> $forms           formulaires actifs (findActiveList)
-     * @param array<int, array<string, mixed>> $rules           règles avec form_label (getAllWithForm)
-     * @param array<int, array<string, mixed>> $alertLogs       logs avec form_label (getLogsWithForm)
+     * @param array<int, array{id: string, label: string, deadline_field: string}> $forms           formulaires actifs (findActiveList)
+     * @param array<int, array{id: string, form_id: string, days_before: int, condition_type: string, notify_who: string, label: string, actif: int, created_at: string, form_label: string, form_slug: string, deadline_field: string}> $rules           règles avec form_label (getAllWithForm)
+     * @param array<int, array{id: string, rule_id: string, submission_id: string, sent_at: string, message: string|null, form_label: string, rule_label: string|null}> $alertLogs       logs avec form_label (getLogsWithForm)
      * @param string $lastAlertCheck  date dernière exécution du script
      * @param string $editRuleId      id de la règle en cours d'édition (GET)
-     * @param array<string, array<int, array<string, mixed>>> $dateFieldsByForm  champs date par formulaire, clé = form id
+     * @param array<string, array<int, array{field_name: string, label: string}>> $dateFieldsByForm  champs date par formulaire, clé = form id
      */
     public static function content(
         string $successMsg,
@@ -299,10 +299,10 @@ final class AdminAlertsRenderer
             $html .= '        <tbody>' . "\n";
             foreach ($alertLogs as $alertLog) {
                 $html .= '          <tr>' . "\n";
-                $html .= '            <td style="white-space:nowrap;font-size:.8rem;">' . $h(date('d/m/Y H:i', strtotime($alertLog['sent_at']))) . '</td>' . "\n";
+                $html .= '            <td style="white-space:nowrap;font-size:.8rem;">' . $h(date('d/m/Y H:i', (int) strtotime((string) ($alertLog['sent_at'] ?? '')))) . '</td>' . "\n";
                 $html .= '            <td><span class="badge badge-info">' . $h($alertLog['rule_label'] ?? 'Règle supprimée') . '</span></td>' . "\n";
                 $html .= '            <td>' . $h($alertLog['form_label']) . '</td>' . "\n";
-                $html .= '            <td style="font-size:.8rem;">' . $h($alertLog['message']) . '</td>' . "\n";
+                $html .= '            <td style="font-size:.8rem;">' . $h((string) ($alertLog['message'] ?? '')) . '</td>' . "\n";
                 $html .= '          </tr>' . "\n";
             }
             $html .= '        </tbody>' . "\n";

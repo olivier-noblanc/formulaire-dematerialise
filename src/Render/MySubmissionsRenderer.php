@@ -15,7 +15,7 @@ final class MySubmissionsRenderer
      * Génère le HTML de la liste des soumissions de l'utilisateur.
      *
      * @param array<int, array<string, mixed>> $submissions
-     * @param array<int, array<string, mixed>> $activeForms
+     * @param array<int, array{slug: string, label: string}> $activeForms
      */
     public static function content(
         array $submissions,
@@ -103,15 +103,18 @@ final class MySubmissionsRenderer
                     }
                 }
 
-                $pct     = $submission['progress_pct'];
+                $pct     = (int) ($submission['progress_pct'] ?? 0);
                 $fillCls = $pct === 100 ? 'complete' : 'in-progress';
 
                 $subId       = urlencode((string) ($submission['id'] ?? ''));
                 $formLabel   = App::html()->escape(self::simplifyLabel($submission['form_label']));
-                $submittedAt = App::html()->escape(date('d/m/Y à H:i', strtotime($submission['submitted_at'])));
+                $submittedAt = App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($submission['submitted_at'] ?? ''))));
                 $prenomNom   = App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
                 $formSlug    = App::html()->escape($submission['form_slug']);
                 $maxPct      = max($pct, 3);
+
+                $progressDone = (int) ($submission['progress_done'] ?? 0);
+                $progressTotal = (int) ($submission['progress_total'] ?? 0);
 
                 $html .= <<<HTML
                         <div class="sub-card">
@@ -129,24 +132,24 @@ final class MySubmissionsRenderer
                               <div class="inline-progress-bar">
                                 <div class="inline-progress-fill {$fillCls}" style="width:{$maxPct}%;"></div>
                               </div>
-                              <div class="inline-progress-text">{$submission['progress_done']}/{$submission['progress_total']} étapes ({$pct}%)</div>
+                              <div class="inline-progress-text">{$progressDone}/{$progressTotal} étapes ({$pct}%)</div>
                             </div>
 
                             <div class="timeline-compact">
                     HTML;
 
-                foreach ($submission['workflow_steps'] as $ws) {
-                    $cls  = match ($ws['step_status']) {
+                foreach ($submission['workflow_steps'] ?? [] as $ws) {
+                    $cls  = match ($ws['step_status'] ?? '') {
                         'validated' => 'done',
                         'current'   => 'active',
                         default     => 'waiting',
                     };
-                    $icon = match ($ws['step_status']) {
+                    $icon = match ($ws['step_status'] ?? '') {
                         'validated' => '✓',
                         'current'   => '⏳',
                         default     => '○',
                     };
-                    $stepLabel = App::html()->escape($ws['step_label']);
+                    $stepLabel = App::html()->escape($ws['step_label'] ?? '');
                     $html .= "            <div class=\"tl-step {$cls}\">\n";
                     $html .= "              <span class=\"tl-icon\" aria-hidden=\"true\">{$icon}</span>\n";
                     $html .= "              <span class=\"tl-label\">{$stepLabel}</span>\n";

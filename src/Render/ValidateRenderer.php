@@ -15,11 +15,11 @@ final class ValidateRenderer
      * Retourne le HTML du contenu principal de la page Validation.
      *
      * @param array{status: string, data?: mixed} $result
-     * @param array<int, array<string, mixed>> $all_wf_steps
-     * @param array<int, array<string, mixed>> $validator_fields
+     * @param array<int, array{id: string, label: string, ordre: int, dones: string|null, emails: string|null}> $all_wf_steps
+     * @param array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int}> $validator_fields
      * @param array<string, string> $validator_data_index field_name => value
-     * @param array<int, array<string, mixed>> $previous_vd_rows
-     * @param array<int, array<string, mixed>> $visible_attachments
+     * @param list<array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: non-falsy-string, filled_by: string, filled_at: string}> $previous_vd_rows
+     * @param list<array<string, mixed>> $visible_attachments
      * @param list<string> $current_step_field_names
      */
     public static function content(

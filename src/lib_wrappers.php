@@ -298,7 +298,7 @@ function evaluate_condition(?string $condition_json, array $data): bool
 }
 
 /**
- * @param array<string, mixed> $step
+ * @param array{condition?: string} $step
  */
 function evaluate_step_condition(array $step, string $submission_id): bool
 {

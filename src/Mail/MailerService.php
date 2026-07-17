@@ -257,7 +257,7 @@ final readonly class MailerService
     /**
      * Construit le HTML du mail de validation (token + bouton).
      *
-     * @param array<string, mixed> $submission
+     * @param array{data: string, form_label?: string} $submission
      */
     public function buildMailHtml(array $submission, string $step_label, string $token): string
     {

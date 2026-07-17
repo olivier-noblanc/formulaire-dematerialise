@@ -19,7 +19,7 @@ final readonly class StatsService
     /**
      * Recherche plein texte dans les soumissions.
      *
-     * @param array<string, mixed> $filters
+     * @param array{status?: string, form_id?: string} $filters
      * @return array<int, array{
      *   id: string,
      *   form_id: string,
