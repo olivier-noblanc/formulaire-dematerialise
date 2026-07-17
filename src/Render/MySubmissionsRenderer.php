@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Rendu HTML de la page "Mes demandes" pour l'agent connecté.
@@ -34,10 +35,10 @@ final class MySubmissionsRenderer
 
         if ($totalCount > 0) {
             $activeTous    = $statusFilter === 'tous' ? ' active' : '';
-            $activeEnCours = $statusFilter === 'en_cours' ? ' active' : '';
-            $activeValide  = $statusFilter === 'valide' ? ' active' : '';
-            $activeRefuse  = $statusFilter === 'refuse' ? ' active' : '';
-            $activeAnnule  = $statusFilter === 'annule' ? ' active' : '';
+            $activeEnCours = $statusFilter === SubmissionStatus::EnCours->value ? ' active' : '';
+            $activeValide  = $statusFilter === SubmissionStatus::Valide->value ? ' active' : '';
+            $activeRefuse  = $statusFilter === SubmissionStatus::Refuse->value ? ' active' : '';
+            $activeAnnule  = $statusFilter === SubmissionStatus::Annule->value ? ' active' : '';
 
             $html .= <<<HTML
                   <div class="stats">
@@ -74,22 +75,22 @@ final class MySubmissionsRenderer
                 $status = $submission['status'] ?? 'en_cours';
 
                 $statusLabel = match ($status) {
-                    'valide'  => '✓ Validée',
-                    'refuse'  => '❌ Refusée',
-                    'annule'  => '🗑 Annulée',
+                    SubmissionStatus::Valide->value  => '✓ Validée',
+                    SubmissionStatus::Refuse->value  => '❌ Refusée',
+                    SubmissionStatus::Annule->value  => '🗑 Annulée',
                     default   => '⏳ En cours',
                 };
                 $badgeCls = match ($status) {
-                    'valide'  => 'badge-valide',
-                    'refuse'  => 'badge-refuse',
-                    'annule'  => 'badge-annule',
+                    SubmissionStatus::Valide->value  => 'badge-valide',
+                    SubmissionStatus::Refuse->value  => 'badge-refuse',
+                    SubmissionStatus::Annule->value  => 'badge-annule',
                     default   => 'badge-en-cours',
                 };
 
                 $deadlineField = $submission['deadline_field'] ?? '';
                 $deadlineVal   = $deadlineField ? ($data[$deadlineField] ?? '') : '';
                 $deadlineBadge = '';
-                if (!empty($deadlineVal) && $status === 'en_cours') {
+                if (!empty($deadlineVal) && $status === SubmissionStatus::EnCours->value) {
                     $dl     = calculate_deadline_urgency($deadlineVal, $status);
                     $dlDays = $dl['days_left'];
                     if ($dlDays !== null) {
@@ -162,7 +163,7 @@ final class MySubmissionsRenderer
                 $html .= "        </div>\n";
 
                 // Refusal box
-                if ($status === 'refuse' && isset($data['validations'])) {
+                if ($status === SubmissionStatus::Refuse->value && isset($data['validations'])) {
                     foreach ($data['validations'] as $v) {
                         if ($v['action'] === 'refuser') {
                             $refUser  = App::html()->displayUser($v['email']);
@@ -179,7 +180,7 @@ final class MySubmissionsRenderer
                     }
                 }
                 // Validation box
-                elseif ($status === 'valide' && isset($data['validations'])) {
+                elseif ($status === SubmissionStatus::Valide->value && isset($data['validations'])) {
                     $lastValidator = null;
                     foreach ($data['validations'] as $v) {
                         if ($v['action'] === 'valider') {

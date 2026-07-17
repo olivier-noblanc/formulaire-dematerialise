@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Contrôleur de la page "Mes demandes" pour l'agent connecté.
@@ -24,13 +25,13 @@ final class MySubmissionsController extends BaseController
             $params[] = '%' . $search . '%';
             $params[] = '%' . $search . '%';
         }
-        if ($statusFilter === 'en_cours') {
+        if ($statusFilter === SubmissionStatus::EnCours->value) {
             $where[] = "s.status = 'en_cours'";
-        } elseif ($statusFilter === 'valide') {
+        } elseif ($statusFilter === SubmissionStatus::Valide->value) {
             $where[] = "s.status = 'valide'";
-        } elseif ($statusFilter === 'refuse') {
+        } elseif ($statusFilter === SubmissionStatus::Refuse->value) {
             $where[] = "s.status = 'refuse'";
-        } elseif ($statusFilter === 'annule') {
+        } elseif ($statusFilter === SubmissionStatus::Annule->value) {
             $where[] = "s.status = 'annule'";
         }
         $whereSql = implode(' AND ', $where);
@@ -97,11 +98,11 @@ final class MySubmissionsController extends BaseController
         $annuleCount = 0;
         foreach ($statusCounts as $row) {
             $totalCount += (int) $row['cnt'];
-            if ($row['status'] === 'valide') {
+            if ($row['status'] === SubmissionStatus::Valide->value) {
                 $valideCount = (int) $row['cnt'];
-            } elseif ($row['status'] === 'refuse') {
+            } elseif ($row['status'] === SubmissionStatus::Refuse->value) {
                 $refuseCount = (int) $row['cnt'];
-            } elseif ($row['status'] === 'annule') {
+            } elseif ($row['status'] === SubmissionStatus::Annule->value) {
                 $annuleCount = (int) $row['cnt'];
             } else {
                 $enCoursCount += (int) $row['cnt'];

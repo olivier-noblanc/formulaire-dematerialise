@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Enum\SubmissionStatus;
+
 /**
  * Contrôleur du tableau de bord administrateur (dashboard.php).
  *
@@ -63,11 +65,11 @@ final class DashboardController extends BaseController
                 }
             }
             if ($filtre !== 'tous') {
-                $options['status'] = $filtre === 'en_cours'
-                    ? 'en_cours'
-                    : ($filtre === 'valide'
-                        ? 'valide'
-                        : ($filtre === 'refuse' ? 'refuse' : ''));
+                $options['status'] = $filtre === SubmissionStatus::EnCours->value
+                    ? SubmissionStatus::EnCours->value
+                    : ($filtre === SubmissionStatus::Valide->value
+                        ? SubmissionStatus::Valide->value
+                        : ($filtre === SubmissionStatus::Refuse->value ? SubmissionStatus::Refuse->value : ''));
             }
             $this->audit->log('export_csv', '', 'Export CSV des soumissions', '');
             \App\Core\App::export()->exportCsv($options);
@@ -156,21 +158,21 @@ final class DashboardController extends BaseController
         // User input is always passed via prepared statement parameters (?).
         $where  = ['1=1'];
         $params = [];
-        if ($filtre === 'en_cours') {
+        if ($filtre === SubmissionStatus::EnCours->value) {
             $where[]  = 's.status = ?';
-            $params[] = 'en_cours';
+            $params[] = SubmissionStatus::EnCours->value;
         }
-        if ($filtre === 'valide') {
+        if ($filtre === SubmissionStatus::Valide->value) {
             $where[]  = 's.status = ?';
-            $params[] = 'valide';
+            $params[] = SubmissionStatus::Valide->value;
         }
-        if ($filtre === 'refuse') {
+        if ($filtre === SubmissionStatus::Refuse->value) {
             $where[]  = 's.status = ?';
-            $params[] = 'refuse';
+            $params[] = SubmissionStatus::Refuse->value;
         }
         if ($filtre === 'complet') {
             $where[]  = 's.status != ?';
-            $params[] = 'en_cours';
+            $params[] = SubmissionStatus::EnCours->value;
         }
         if ($form_f !== '' && $form_f !== '0') {
             $where[]  = 'f.slug = ?';
@@ -209,7 +211,7 @@ final class DashboardController extends BaseController
         $rows_for_validator_status = [];
         foreach ($rows as $row) {
             $st = (string) ($row['status'] ?? 'en_cours');
-            if ($st === 'en_cours' || $st === 'valide') {
+            if ($st === SubmissionStatus::EnCours->value || $st === SubmissionStatus::Valide->value) {
                 $rows_for_validator_status[] = $row;
             }
         }
@@ -256,7 +258,7 @@ final class DashboardController extends BaseController
                 $sys_last_backup = $sys_bk_ts !== false ? date('d/m/Y', $sys_bk_ts) : '—';
             } else {
                 // Fallback : date de dernière modification du fichier DB
-                $sys_db_file = defined('DB_PATH') ? DB_PATH : __DIR__ . '/../../db/workflow.db';
+                $sys_db_file = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
                 if (file_exists($sys_db_file)) {
                     $sys_db_mtime = filemtime($sys_db_file);
                     $sys_last_backup = $sys_db_mtime !== false ? date('d/m/Y', $sys_db_mtime) : '—';

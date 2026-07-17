@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Contrôleur de la page Tableau de suivi propriétaire (form_tracking).
@@ -83,11 +84,11 @@ final class FormTrackingController extends BaseController
         $valide = 0;
         $refuse = 0;
         foreach ($statusCounts as $statusCount) {
-            if ($statusCount['status'] === 'en_cours') {
+            if ($statusCount['status'] === SubmissionStatus::EnCours->value) {
                 $enCours = (int) $statusCount['cnt'];
-            } elseif ($statusCount['status'] === 'valide') {
+            } elseif ($statusCount['status'] === SubmissionStatus::Valide->value) {
                 $valide = (int) $statusCount['cnt'];
-            } elseif ($statusCount['status'] === 'refuse') {
+            } elseif ($statusCount['status'] === SubmissionStatus::Refuse->value) {
                 $refuse = (int) $statusCount['cnt'];
             }
         }
@@ -129,8 +130,8 @@ final class FormTrackingController extends BaseController
         <?php foreach ($submissions as $submission):
             $data = json_decode($submission['data'], true) ?: [];
             $status = $submission['status'];
-            $badgeCls = $status === 'valide' ? 'badge-ok' : ($status === 'refuse' ? 'badge-err' : ($status === 'annule' ? 'badge-annule' : 'badge-warn'));
-            $statusLabel = $status === 'valide' ? 'Validée' : ($status === 'refuse' ? 'Refusée' : ($status === 'annule' ? 'Annulée' : 'En cours'));
+            $badgeCls = $status === SubmissionStatus::Valide->value ? 'badge-ok' : ($status === SubmissionStatus::Refuse->value ? 'badge-err' : ($status === SubmissionStatus::Annule->value ? 'badge-annule' : 'badge-warn'));
+            $statusLabel = $status === SubmissionStatus::Valide->value ? 'Validée' : ($status === SubmissionStatus::Refuse->value ? 'Refusée' : ($status === SubmissionStatus::Annule->value ? 'Annulée' : 'En cours'));
             ?>
           <tr>
             <td style="white-space:nowrap;font-size:.85rem;"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($submission['submitted_at'] ?? ''))) ?></td>

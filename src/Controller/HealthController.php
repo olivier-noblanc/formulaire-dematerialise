@@ -43,7 +43,7 @@ final class HealthController extends BaseController
         $checks[] = ['label' => 'Version PHP', 'ok' => $phpOk, 'detail' => $phpDetail];
 
         // 3. Répertoire db/ accessible en écriture
-        $dbPath = defined('DB_PATH') ? DB_PATH : dirname(__DIR__, 2) . '/db/workflow.db';
+        $dbPath = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
         $dbDir = dirname((string) $dbPath);
         $dirWritable = is_writable($dbDir);
         $dirDetail = $dirWritable ? 'Répertoire ' . basename($dbDir) . '/ accessible en écriture' : 'Répertoire ' . basename($dbDir) . '/ non accessible en écriture';

@@ -16,7 +16,7 @@ final class WebhookService
      */
     public function getDbSize(): int
     {
-        $path = defined('DB_PATH') ? DB_PATH : __DIR__ . '/../../db/workflow.db';
+        $path = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
         return file_exists($path) ? (int) filesize($path) : 0;
     }
 }

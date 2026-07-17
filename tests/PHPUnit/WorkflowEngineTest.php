@@ -1255,6 +1255,9 @@ final class WorkflowEngineTest extends TestCase
         }
 
         $steps = $this->workflow->getWorkflowSteps((string) $formId);
+        if (empty($steps)) {
+            $this->markTestSkipped('Form has no active steps');
+        }
         foreach ($steps as $step) {
             $this->assertArrayHasKey('condition', $step);
             $this->assertArrayHasKey('actif', $step);

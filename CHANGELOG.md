@@ -1,5 +1,32 @@
 # Changelog — CircuitDémat
 
+## [10.18.0] — 2026-07-16
+_Résumé : Hardening tokens concurrents + enum SubmissionStatus + refactor IndexController._
+
+### 🐛 Bug fixes
+
+- **WorkflowEngine::advanceWorkflow()** : transaction sur la boucle complète de tokens (SELECT + dup check + INSERT) pour sérialiser les requêtes concurrentes et empêcher les doublons
+- **WorkflowEngine::advanceWorkflow()** : debug log ajouté dans le catch PDOException 23000 (defense-in-depth)
+- **RgpdServiceTest** : 5 erreurs FK corrigées — form_id hardcoded inexistant remplacé par un form créé dynamiquement en setUp/tearDown
+- **WorkflowEngineTest** : testGetWorkflowStepsReturnsConditionFieldForActiveSteps — guard markTestSkipped si aucun step actif (0 assertions)
+
+### ✨ Features
+
+- **Enum SubmissionStatus** (`App\Enum\SubmissionStatus`) : enum PHP 8.1 native avec `EnCours`, `Valide`, `Refuse`, `Annule` + méthodes `label()` et `badgeClass()`
+- **Controllers/Renderers** migrés vers `SubmissionStatus::EnCours->value` au lieu de strings hardcodées (Dashboard, MySubmissions, FormTracking, SubmissionView, MyValidations, DashboardRenderer, MySubmissionsRenderer, SubmissionViewRenderer)
+- **FormRepository::findActiveWithSubmissionCounts()** : nouvelle méthode pour le welcome state (requête extraite d'IndexController)
+
+### 🔧 Refactor
+
+- **IndexController** : requête welcome forms déplacée vers `FormRepository::findActiveWithSubmissionCounts()` + suppression du code mort (owned forms, token count, admin stats inutilisés)
+- **TokenService** : import `App\Enum\SubmissionStatus`
+
+### 🧪 Tests
+
+- **1350 tests, 0 failures, 0 errors** (était 1350/0/6 avant)
+
+---
+
 ## [10.17.0] — 2026-07-16
 _Résumé : PHPDoc array shapes stricts + PHPStan 0 erreurs + fix bugs exposés._
 

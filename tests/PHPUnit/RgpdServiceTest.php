@@ -12,27 +12,44 @@ final class RgpdServiceTest extends TestCase
     private RgpdService $service;
     private Database $db;
     private string $originalUser;
+    private string $testFormId;
+    private string $testStepId;
 
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(Database::class);
         $this->service = new RgpdService($this->db);
         $this->originalUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
+
+        // Create a dedicated test form + step to satisfy FK constraints
+        $pdo = $this->db->getPdo();
+        $this->testFormId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$this->testFormId, 'rgpd-test-' . $this->testFormId, 'Test RGPD Form', '']);
+        $this->testStepId = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)")
+            ->execute([$this->testStepId, $this->testFormId, 'Test Step', 1]);
     }
 
     protected function tearDown(): void
     {
         $_SERVER['HTTP_X_TEST_USER'] = $this->originalUser;
 
-        // Cleanup any orphaned test data (submissions with the hardcoded test form_id)
         $pdo = $this->db->getPdo();
-        $testFormId = 'c1896b60-710a-40d6-a954-0c8796667df2';
-        $orphaned = $pdo->query("SELECT id FROM submissions WHERE form_id = '{$testFormId}'")->fetchAll(\PDO::FETCH_COLUMN);
-        if (!empty($orphaned)) {
-            $placeholders = implode(',', array_fill(0, count($orphaned), '?'));
-            $pdo->prepare("DELETE FROM tokens WHERE submission_id IN ({$placeholders})")->execute($orphaned);
-            $pdo->prepare("DELETE FROM submissions WHERE id IN ({$placeholders})")->execute($orphaned);
+        // Cleanup test data referencing the test form
+        $orphaned = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ?");
+        $orphaned->execute([$this->testFormId]);
+        $ids = $orphaned->fetchAll(\PDO::FETCH_COLUMN);
+        if (!empty($ids)) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $pdo->prepare("DELETE FROM tokens WHERE submission_id IN ({$placeholders})")->execute($ids);
+            $pdo->prepare("DELETE FROM submissions WHERE id IN ({$placeholders})")->execute($ids);
         }
+        $pdo->prepare("DELETE FROM step_recipients WHERE step_id = ?")->execute([$this->testStepId]);
+        $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$this->testStepId]);
+        $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$this->testFormId]);
+        $pdo->prepare("DELETE FROM form_owners WHERE form_id = ?")->execute([$this->testFormId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$this->testFormId]);
     }
 
     // ── exportUserData ──────────────────────────────────────────
@@ -108,11 +125,11 @@ final class RgpdServiceTest extends TestCase
         $testEmail = 'rgpd_delete_test_' . uniqid() . '@test.com';
         $data = json_encode(['prenom' => 'Test', 'nom' => 'User', 'email' => $testEmail, 'telephone' => '0123456789']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, ?, ?, ?, ?)")
-            ->execute([$testId, 'c1896b60-710a-40d6-a954-0c8796667df2', $data, $testEmail, gmdate('Y-m-d H:i:s'), 'en_cours']);
+            ->execute([$testId, $this->testFormId, $data, $testEmail, gmdate('Y-m-d H:i:s'), 'en_cours']);
 
         // Also add a token
         $tokenId = 'rgpd-token-' . uniqid();
-        $stepId = $pdo->query("SELECT id FROM steps WHERE form_id = 'c1896b60-710a-40d6-a954-0c8796667df2' LIMIT 1")->fetchColumn();
+        $stepId = $this->testStepId;
         $tokenVal = bin2hex(random_bytes(32));
         $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
             ->execute([$tokenId, $testId, $stepId, $testEmail, $tokenVal, gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s', strtotime('+30 days'))]);
@@ -150,7 +167,7 @@ final class RgpdServiceTest extends TestCase
         $testId = 'rgpd-self-' . uniqid();
         $data = json_encode(['prenom' => 'Self', 'nom' => 'Delete']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, ?, ?, ?, ?)")
-            ->execute([$testId, 'c1896b60-710a-40d6-a954-0c8796667df2', $data, $testEmail, gmdate('Y-m-d H:i:s'), 'en_cours']);
+            ->execute([$testId, $this->testFormId, $data, $testEmail, gmdate('Y-m-d H:i:s'), 'en_cours']);
 
         $result = $this->service->deleteUserData($testEmail);
         $this->assertTrue($result);
@@ -242,11 +259,11 @@ final class RgpdServiceTest extends TestCase
         $oldDate = gmdate('Y-m-d H:i:s', strtotime('-25 months'));
         $data = json_encode(['nom' => 'PurgeTest']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, closed_at, status) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$testId, 'c1896b60-710a-40d6-a954-0c8796667df2', $data, 'purge@test.com', $oldDate, $oldDate, 'valide']);
+            ->execute([$testId, $this->testFormId, $data, 'purge@test.com', $oldDate, $oldDate, 'valide']);
 
         // Also add a token and attachment for cascading delete test
         $tokId = 'purge-tok-' . uniqid();
-        $stepId = $pdo->query("SELECT id FROM steps WHERE form_id = 'c1896b60-710a-40d6-a954-0c8796667df2' LIMIT 1")->fetchColumn();
+        $stepId = $this->testStepId;
         $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
             ->execute([$tokId, $testId, $stepId, 'purge@test.com', bin2hex(random_bytes(32)), $oldDate, $oldDate]);
 
@@ -273,7 +290,7 @@ final class RgpdServiceTest extends TestCase
         $oldDate = gmdate('Y-m-d H:i:s', strtotime('-25 months'));
         $data = json_encode(['nom' => 'SkipTest']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, ?, ?, ?, ?)")
-            ->execute([$testId, 'c1896b60-710a-40d6-a954-0c8796667df2', $data, 'skip@test.com', $oldDate, 'en_cours']);
+            ->execute([$testId, $this->testFormId, $data, 'skip@test.com', $oldDate, 'en_cours']);
 
         $this->service->autoPurge(24);
 
@@ -295,7 +312,7 @@ final class RgpdServiceTest extends TestCase
         $recentDate = gmdate('Y-m-d H:i:s', strtotime('-1 months'));
         $data = json_encode(['nom' => 'RecentTest']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, closed_at, status) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$testId, 'c1896b60-710a-40d6-a954-0c8796667df2', $data, 'recent@test.com', $recentDate, $recentDate, 'valide']);
+            ->execute([$testId, $this->testFormId, $data, 'recent@test.com', $recentDate, $recentDate, 'valide']);
 
         $this->service->autoPurge(24);
 

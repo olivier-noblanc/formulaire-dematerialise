@@ -61,7 +61,7 @@ if (!function_exists('resolve_base_url')) {
         static $cached = null;
         if ($cached === null) {
             try {
-                $dbPath = defined('DB_PATH') ? DB_PATH : __DIR__ . '/db/workflow.db';
+                $dbPath = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
                 $pdo = new PDO('sqlite:' . $dbPath);
                 $stmt = $pdo->prepare("SELECT value FROM settings WHERE key = ?");
                 $stmt->execute(['base_url']);

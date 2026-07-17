@@ -20,7 +20,7 @@ final class BackupController extends BaseController
         $errorMsg   = '';
         $infoMsg    = '';
 
-        $dbPath = defined('DB_PATH') ? DB_PATH : dirname(__DIR__, 2) . '/db/workflow.db';
+        $dbPath = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
 
         $dbTables = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens',
             'admins', 'admin_requests', 'settings', 'form_fields',

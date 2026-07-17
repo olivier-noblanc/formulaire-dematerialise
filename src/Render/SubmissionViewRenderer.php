@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Render;
 
+use App\Enum\SubmissionStatus;
+
 /**
  * Rendu de la page de détail d'une soumission (submission_view.php).
  *
@@ -124,7 +126,7 @@ final class SubmissionViewRenderer
      */
     public function renderDeadline(array $dl_info, ?int $deadline_ts, int $days_remaining, string $status): string
     {
-        if (!$deadline_ts || $status !== 'en_cours') {
+        if (!$deadline_ts || $status !== SubmissionStatus::EnCours->value) {
             return '';
         }
 
@@ -212,13 +214,13 @@ final class SubmissionViewRenderer
         $actions = [];
 
         // Action 1 : Mettre à la corbeille (annuler)
-        if ($status === 'en_cours' && ($is_admin || $submitted_by === $user)) {
+        if ($status === SubmissionStatus::EnCours->value && ($is_admin || $submitted_by === $user)) {
             $cancel_url = \App\Core\App::html()->escape('index.php?p=confirm_action&action=cancel_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
             $actions[] = '<a href="' . $cancel_url . '" class="btn btn-danger" style="text-decoration:none;"><span aria-hidden="true">🗑</span> Mettre à la corbeille</a>';
         }
 
         // Action 2 : Supprimer définitivement (admin only, status=annule ou refuse)
-        if (($status === 'annule' || $status === 'refuse') && $is_admin) {
+        if (($status === SubmissionStatus::Annule->value || $status === SubmissionStatus::Refuse->value) && $is_admin) {
             $delete_url = \App\Core\App::html()->escape('index.php?p=confirm_action&action=delete_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
             $actions[] = '<a href="' . $delete_url . '" class="btn btn-danger" style="text-decoration:none;background:#c0392b;"><span aria-hidden="true">⚠</span> Supprimer définitivement</a>';
         }
@@ -369,7 +371,7 @@ final class SubmissionViewRenderer
         $steps_html = '';
         foreach ($workflow_steps as $i => $ws) {
             $step_cls = (string) ($ws['step_status'] ?? 'upcoming');
-            if ($status === 'refuse' && ($ws['step_status'] ?? '') === 'current') {
+            if ($status === SubmissionStatus::Refuse->value && ($ws['step_status'] ?? '') === 'current') {
                 $step_cls = 'refused';
             }
 
@@ -444,7 +446,7 @@ final class SubmissionViewRenderer
      */
     public function renderWorkflowActions(array $all_tokens, bool $is_admin, string $status): string
     {
-        if (!$is_admin || $status !== 'en_cours') {
+        if (!$is_admin || $status !== SubmissionStatus::EnCours->value) {
             return '';
         }
 
@@ -491,7 +493,7 @@ final class SubmissionViewRenderer
      */
     public function renderDelegationForm(array $all_tokens, string $user, bool $is_admin, string $status): string
     {
-        if ($status !== 'en_cours') {
+        if ($status !== SubmissionStatus::EnCours->value) {
             return '';
         }
 
@@ -742,7 +744,7 @@ final class SubmissionViewRenderer
     public function renderRemindHistory(array $all_tokens, array $submission_reminds, int $total_relances, array $pending_with_relance, bool $is_admin, string $status): string
     {
         $pending_html = '';
-        if ($pending_with_relance !== [] || ($status === 'en_cours' && $all_tokens !== [])) {
+        if ($pending_with_relance !== [] || ($status === SubmissionStatus::EnCours->value && $all_tokens !== [])) {
             $pending_tokens = array_filter($all_tokens, fn($t) => empty($t['done_at']));
 
             if ($pending_tokens !== []) {
@@ -818,7 +820,7 @@ final class SubmissionViewRenderer
         }
 
         $action_html = '';
-        if ($is_admin && $status === 'en_cours') {
+        if ($is_admin && $status === SubmissionStatus::EnCours->value) {
             $csrf = \App\Core\App::security()->csrfField();
             $action_html = <<<HTML
                     <div class="actions-bar">

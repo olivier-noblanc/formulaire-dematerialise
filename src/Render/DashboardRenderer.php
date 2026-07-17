@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Rendu de la page tableau de bord (dashboard.php).
@@ -276,18 +277,18 @@ final class DashboardRenderer
                 . '</span>';
         }
 
-        if ($status === 'refuse') {
+        if ($status === SubmissionStatus::Refuse->value) {
             $etat = '<span style="color:#c0392b;font-weight:bold;"><span aria-hidden="true">❌</span> Refusé</span>';
-        } elseif ($status === 'annule') {
+        } elseif ($status === SubmissionStatus::Annule->value) {
             $etat = '<span style="color:#6b7280;font-weight:bold;"><span aria-hidden="true">🗑</span> Annulé</span>';
-        } elseif ($status === 'valide') {
+        } elseif ($status === SubmissionStatus::Valide->value) {
             $etat = '<span style="color:#1a6b3c;font-weight:bold;"><span aria-hidden="true">✓</span> Validé</span>';
         } else {
             $etat = '<span style="color:#b45309;"><span aria-hidden="true">⏳</span> En cours</span>';
         }
 
         $validator_badge = '';
-        if ($vstatus !== null && ($status === 'en_cours' || $status === 'valide')) {
+        if ($vstatus !== null && ($status === SubmissionStatus::EnCours->value || $status === SubmissionStatus::Valide->value)) {
             if ($vstatus['complet']) {
                 $total = (int) $vstatus['total'];
                 $validator_badge = '<div style="margin-top:.25rem;font-size:.7rem;color:#1a6b3c;" title="Tous les champs validateur sont remplis (' . $total . ' / ' . $total . ').">'
@@ -387,7 +388,7 @@ final class DashboardRenderer
         $data_array = is_array($d) ? $d : [];
         $html .= '              ' . (new FormRenderer())->submissionData($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
 
-        if ($status === 'en_cours') {
+        if ($status === SubmissionStatus::EnCours->value) {
             $html .= "              <hr style=\"margin:1rem 0;\">\n";
             $html .= "              <div style=\"display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start;\">\n";
             if (App::auth()->isAdminEffective()) {
