@@ -200,6 +200,10 @@ if ($csrf !== '') {
     // via une monkey-patch au runtime. On le fait dans le script subprocess.
     $script = <<<'PHP'
 <?php
+// ── Configuration ──
+// TEST_MODE=false : on veut du HTML, pas du JSON.
+// CSRF : on gère via $_SESSION (la session CLI fonctionne).
+// Emails : MailService::send() tentera SMTP → on le mock via globals.
 putenv('APP_TEST_MODE=');
 unset($_SERVER['HTTP_X_TEST_MODE']);
 unset($_SERVER['HTTP_X_TEST_USER']);
@@ -214,23 +218,24 @@ foreach ($injected as $k => $v) {
     $_SERVER[$k] = $v;
 }
 
-// Peupler $_GET depuis QUERY_STRING
 if (!empty($_SERVER['QUERY_STRING'])) {
     parse_str($_SERVER['QUERY_STRING'], $_GET);
 }
 
-// Lire le chemin du projet depuis argv[3]
+// Peupler $_POST si passé en argv[4]
+if (!empty($argv[4])) {
+    parse_str($argv[4], $_POST);
+}
+
 $project_root = $argv[3];
 require_once $project_root . '/helpers.php';
 
-// ── MONKEY-PATCH : bypass CSRF check pour ce test ──
-// On pré-remplit $_SESSION avec le csrf_token qu'on va poster.
+// CSRF : pré-remplir $_SESSION avec le token qu'on poster
 if (session_status() === PHP_SESSION_NONE) session_start();
-$_SESSION['csrf_token'] = $argv[2]; // le token qu'on va poster
+$_SESSION['csrf_token'] = $_POST['csrf_token'] ?? '';
 
-// Lire les données POST depuis stdin
-$post_data = stream_get_contents(STDIN);
-parse_str($post_data, $_POST);
+// Activer mail_dry_run pour éviter SMTP (on teste le HTML, pas l'email)
+\App\Core\App::settings()->set('mail_dry_run', '1', 'test');
 
 ob_start();
 try {
@@ -268,8 +273,8 @@ PHP;
         'CONTENT_LENGTH' => (string)strlen($post_fields),
     ]));
 
-    // On doit injecter les données POST — on passe par stdin
-    $cmd = 'echo ' . escapeshellarg($post_fields) . ' | php ' . escapeshellarg($tmp) . ' ' . escapeshellarg($encoded) . ' ' . escapeshellarg($csrf) . ' ' . escapeshellarg(dirname(__DIR__)) . ' 2>&1';
+    // On passe les données POST en argv[4] (query string)
+    $cmd = 'php ' . escapeshellarg($tmp) . ' ' . escapeshellarg($encoded) . ' ' . escapeshellarg($csrf) . ' ' . escapeshellarg(dirname(__DIR__)) . ' ' . escapeshellarg($post_fields) . ' 2>&1';
     exec($cmd, $output, $exit_code);
     @unlink($tmp);
     $post_html = implode("\n", $output);
