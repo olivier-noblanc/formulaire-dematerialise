@@ -206,7 +206,7 @@ function run_tests_advanced_admin(): void {
         $_SERVER['HTTP_X_TEST_USER'] = 'notadmin@exemple.invalid';
 
         // require_admin calls test_json_response which does exit, so test in subprocess
-        $output = shell_exec('/home/z/my-project/bin/php/bin/php -r '
+        $output = shell_exec('php -r '
             . "'" . 'require_once ' . escapeshellarg("dirname(__DIR__) . '/test_bootstrap.php'") . ';'
             . '$_SERVER["HTTP_X_TEST_USER"] = "notadmin@exemple.invalid";'
             . '\App\Core\App::auth()->requireAdmin();'

@@ -404,7 +404,7 @@ foreach ($pages as $file => $info) {
         
         file_put_contents($script, $code);
         
-        $cmd = "$php -c " . escapeshellarg($ini) . " -d session.save_path=/tmp/php-sessions $script 2>&1";
+        $cmd = "$php -c " . escapeshellarg($ini) . " -d session.save_path=" . escapeshellarg(sys_get_temp_dir() . '/php-sessions') . " $script 2>&1";
         $result = shell_exec($cmd);
         @unlink($script);
         

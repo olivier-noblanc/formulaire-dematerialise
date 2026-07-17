@@ -34,20 +34,33 @@ require_once __DIR__ . '/test_v4_compliance.php';
 
 // ── CONFIG ─────────────────────────────────────────────────────
 $BASE   = __DIR__;
-$PHP    = '/home/z/php/php';
-$INI    = '/home/z/php/php.ini';
+$PHP    = 'php';
 $PORT   = 8766;  // Port différent de test_http.php pour éviter les conflits
 $SERVER = "http://localhost:$PORT";
 
+// Extensions requises — fallback si absentes du php.ini par défaut
+$REQUIRED_EXT = ['mbstring', 'pdo_sqlite', 'sqlite3', 'json', 'openssl', 'curl', 'fileinfo', 'session'];
+$PHP_EXT_FLAGS = '';
+foreach ($REQUIRED_EXT as $ext) {
+    if (!extension_loaded($ext)) {
+        $PHP_EXT_FLAGS .= " -d extension=$ext";
+    }
+}
+
 // ── CLEANUP & SERVER START ─────────────────────────────────────
 echo bold("Préparation de l'environnement de test v4.0.0...\n");
-shell_exec("kill $(lsof -t -i:$PORT 2>/dev/null) 2>/dev/null");
+kill_port($PORT);
 sleep(1);
-shell_exec("rm -f /tmp/wf_v4_test_cookies_*.txt");
+$cookie_pattern = test_temp_dir() . '/wf_v4_test_cookies_*.txt';
+if (PHP_OS_FAMILY === 'Windows') {
+    shell_exec("del /Q " . escapeshellarg($cookie_pattern) . " 2>NUL");
+} else {
+    shell_exec("rm -f " . escapeshellarg($cookie_pattern));
+}
 shell_exec("rm -f $BASE/db/workflow_test.db");
 
 // Démarrer le serveur
-shell_exec("cd $BASE && $PHP -c $INI -S localhost:$PORT -t . > /tmp/php_server_v4.log 2>&1 &");
+shell_exec("cd $BASE && $PHP $PHP_EXT_FLAGS -S localhost:$PORT -t . > " . escapeshellarg(test_temp_dir() . '/php_server_v4.log') . " 2>&1 &");
 sleep(2);
 
 // Vérifier que le serveur répond
@@ -93,12 +106,17 @@ run_tests_v4_documentation();          // Phase 12 : Documentation
 $exit_code = print_test_summary('RÉSUMÉ V4.0.0');
 
 // ── CLEANUP ────────────────────────────────────────────────────
-shell_exec("kill $(lsof -t -i:$PORT 2>/dev/null) 2>/dev/null");
-shell_exec("rm -f /tmp/wf_v4_test_cookies_*.txt");
+kill_port($PORT);
+$cleanup_cookie = test_temp_dir() . '/wf_v4_test_cookies_*.txt';
+if (PHP_OS_FAMILY === 'Windows') {
+    shell_exec("del /Q " . escapeshellarg($cleanup_cookie) . " 2>NUL");
+} else {
+    shell_exec("rm -f " . escapeshellarg($cleanup_cookie));
+}
 
 if ($exit_code !== 0) {
     echo yellow("\nDB test conservée pour inspection : $BASE/db/workflow_test.db\n");
-    echo yellow("Logs serveur : /tmp/php_server_v4.log\n");
+    echo yellow("Logs serveur : " . test_temp_dir() . "/php_server_v4.log\n");
 } else {
     shell_exec("rm -f $BASE/db/workflow_test.db");
     echo green("\nDB test nettoyée.\n");

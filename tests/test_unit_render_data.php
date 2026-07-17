@@ -411,7 +411,7 @@ test('render_error_page() pour 403 contient le code', function() {
     $php = PHP_BINARY;
     $code = <<<'PHP'
 <?php
-require_once '/home/z/my-project/formulaire-dematerialise/test_bootstrap.php';
+require_once dirname(__DIR__) . '/test_bootstrap.php';
 ob_start();
 try { render_error_page(403, 'Accès refusé', 'Vous n\'avez pas accès'); } catch (Throwable $e) {}
 $output = ob_get_clean();

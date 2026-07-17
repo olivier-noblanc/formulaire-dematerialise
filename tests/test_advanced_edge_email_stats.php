@@ -217,7 +217,7 @@ function run_tests_advanced_email(): void {
             . "test_json_response(['action' => 'test', 'status' => 'ok']);\n";
         file_put_contents($tmp, $code);
 
-        $output = shell_exec('/home/z/my-project/bin/php/bin/php ' . escapeshellarg($tmp) . ' 2>/dev/null');
+        $output = shell_exec('php ' . escapeshellarg($tmp) . ' 2>/dev/null');
         @unlink($tmp);
 
         $json = json_decode(trim($output ?? ''), true);

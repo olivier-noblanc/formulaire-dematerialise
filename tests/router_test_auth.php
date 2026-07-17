@@ -1,5 +1,5 @@
 <?php
-file_put_contents('/tmp/router_debug.log', date('Y-m-d H:i:s') . " REQUEST_URI=" . $_SERVER['REQUEST_URI'] . " HTTP_AUTH_USER=" . ($_SERVER['HTTP_AUTH_USER'] ?? 'NOT SET') . "\n", FILE_APPEND);
+file_put_contents(sys_get_temp_dir() . '/router_debug.log', date('Y-m-d H:i:s') . " REQUEST_URI=" . $_SERVER['REQUEST_URI'] . " HTTP_AUTH_USER=" . ($_SERVER['HTTP_AUTH_USER'] ?? 'NOT SET') . "\n", FILE_APPEND);
 
 if (!empty($_SERVER['HTTP_AUTH_USER']) && empty($_SERVER['AUTH_USER'])) {
     $_SERVER['AUTH_USER'] = $_SERVER['HTTP_AUTH_USER'];

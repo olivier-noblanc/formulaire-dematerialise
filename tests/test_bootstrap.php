@@ -141,6 +141,40 @@ function print_test_summary(string $title = 'RÉSULTATS'): int {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// CROSS-PLATFORM HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Répertoire temporaire système (remplace /tmp/ hardcodé).
+ */
+function test_temp_dir(): string {
+    return sys_get_temp_dir();
+}
+
+/**
+ * Tue les processus écoutant sur un port donné — cross-platform.
+ * Sécurité : ne tue que les ports dans la plage de test (8760-8799).
+ */
+function kill_port(int $port): void {
+    if ($port < 8760 || $port > 8799) {
+        error_log("kill_port refusé : port $port hors plage de test (8760-8799)");
+        return;
+    }
+    if (PHP_OS_FAMILY === 'Windows') {
+        $output = shell_exec("netstat -ano | findstr :$port");
+        if ($output) {
+            preg_match_all('/\s+(\d+)\s*$/', $output, $matches);
+            $pids = array_unique($matches[1] ?? []);
+            foreach ($pids as $pid) {
+                shell_exec("taskkill /F /PID $pid 2>NUL");
+            }
+        }
+    } else {
+        shell_exec("kill $(lsof -t -i:$port 2>/dev/null) 2>/dev/null");
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // LOAD HELPERS — so all tests have access to app functions
 // ═══════════════════════════════════════════════════════════════
 require_once dirname(__DIR__) . '/helpers.php';
