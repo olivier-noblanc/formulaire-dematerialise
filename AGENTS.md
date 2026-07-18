@@ -266,6 +266,14 @@ Pour toute fonctionnalité avec champ obligatoire, import/export, ou donnée par
 - **Invariant multi-fonctionnalités** après une action (ex. `delegate()` → vérifier `findDoneByEmail()`)
 - **Comparaison texte/statut** avec chaque branche (positive, nulle, négative)
 
+### 8. Pousser la validation vers la contrainte SQL
+
+Pour toute colonne à valeurs limitées (statut, type, enum-like), ajouter une contrainte `CHECK` en base en plus de la validation PHP. Pour tout invariant "au plus un X actif", évaluer un index unique partiel plutôt que de compter sur le code applicatif.
+
+### 9. Ne jamais avaler une exception sur un chemin critique
+
+Un `catch` qui avale l'erreur et continue silencieusement sur un chemin d'écriture, d'audit, ou de conformité est interdit. L'erreur doit soit remonter, soit être surfacée de façon visible — jamais `error_log()` seul comme unique trace.
+
 ### Checklist avant de clore une tâche
 
 1. Grep le champ/colonne/clé dans tout le dépôt
@@ -275,3 +283,5 @@ Pour toute fonctionnalité avec champ obligatoire, import/export, ou donnée par
 5. Dates avec fuseau explicite
 6. Texte utilisateur dérivé du même calcul que la logique
 7. Test du cas négatif/limite ajouté
+8. Colonne enum-like ou invariant d'unicité → contrainte SQL (pas seulement PHP)
+9. Tout `catch` sur chemin d'écriture/audit relance l'exception ou surface l'échec — jamais `error_log()` muet
