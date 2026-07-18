@@ -146,7 +146,7 @@ final class HttpRouteTest extends TestCase
 
         $httpHeaders = [
             'X-Test-Mode: 1',
-            'X-Test-User: admin@dreets.gouv.fr',
+            'X-Test-User: olivier.noblanc@dreets.gouv.fr',
         ];
         foreach ($headers as $key => $value) {
             $httpHeaders[] = "$key: $value";
@@ -574,7 +574,7 @@ final class HttpRouteTest extends TestCase
         $url = self::$baseUrl . '/?p=health';
         $ctx = stream_context_create([
             'http' => [
-                'header' => "X-Test-Mode: 1\r\nX-Test-User: admin@dreets.gouv.fr",
+                'header' => "X-Test-Mode: 1\r\nX-Test-User: olivier.noblanc@dreets.gouv.fr",
                 'timeout' => 10,
                 'ignore_errors' => true,
             ],
@@ -621,7 +621,7 @@ final class HttpRouteTest extends TestCase
         $ctx = stream_context_create([
             'http' => [
                 'method' => 'POST',
-                'header' => "X-Test-Mode: 1\r\nX-Test-User: admin@dreets.gouv.fr\r\nContent-Type: application/x-www-form-urlencoded",
+                'header' => "X-Test-Mode: 1\r\nX-Test-User: olivier.noblanc@dreets.gouv.fr\r\nContent-Type: application/x-www-form-urlencoded",
                 'content' => 'foo=bar',
                 'timeout' => 10,
                 'ignore_errors' => true,
@@ -737,7 +737,7 @@ final class HttpRouteTest extends TestCase
         $url = self::$baseUrl . '/?p=health';
         $ctx = stream_context_create([
             'http' => [
-                'header' => "X-Test-Mode: 1\r\nX-Test-User: admin@dreets.gouv.fr",
+                'header' => "X-Test-Mode: 1\r\nX-Test-User: olivier.noblanc@dreets.gouv.fr",
                 'timeout' => 10,
                 'ignore_errors' => true,
             ],
