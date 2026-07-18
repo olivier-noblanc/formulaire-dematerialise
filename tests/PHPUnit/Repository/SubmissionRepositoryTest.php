@@ -39,6 +39,38 @@ final class SubmissionRepositoryTest extends TestCase
         $this->assertNull($result);
     }
 
+    public function testFindByIdWithFormIncludesRgpdConsent(): void
+    {
+        $formId = \generate_uuid();
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-rgpd-' . $formId, 'Test RGPD', '']);
+
+        $subId = $this->repo->create([
+            'form_id' => $formId,
+            'data' => '{}',
+            'submitted_by' => 'rgpd@test.com',
+            'status' => 'en_cours',
+        ]);
+
+        // Set rgpd_consent to 1
+        $pdo->prepare("UPDATE submissions SET rgpd_consent = 1 WHERE id = ?")->execute([$subId]);
+
+        $result = $this->repo->findByIdWithForm($subId);
+        $this->assertNotNull($result);
+        $this->assertArrayHasKey('rgpd_consent', $result, 'findByIdWithForm must include rgpd_consent');
+        $this->assertSame(1, $result['rgpd_consent'], 'rgpd_consent should be 1 after update');
+
+        // Also test with consent = 0
+        $pdo->prepare("UPDATE submissions SET rgpd_consent = 0 WHERE id = ?")->execute([$subId]);
+        $result2 = $this->repo->findByIdWithForm($subId);
+        $this->assertSame(0, $result2['rgpd_consent']);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+    }
+
     public function testFindByFormReturnsArray(): void
     {
         $result = $this->repo->findByForm('nonexistent');
