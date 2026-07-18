@@ -61,7 +61,7 @@ final class MonitoringController extends BaseController
                     continue;
                 }
 
-                $daysRemaining = (int) (($deadlineTs - $nowTs) / 86400);
+                $daysRemaining = (int) floor(($deadlineTs - $nowTs) / 86400);
                 $pendingCount = $pendingCounts[$alertSubmission['id']] ?? 0;
 
                 if ($daysRemaining <= 10) {

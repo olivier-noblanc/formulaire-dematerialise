@@ -61,7 +61,7 @@ final class DateHelper
         if ($ts === null) {
             return $result;
         }
-        $days_left = (int) (($ts - time()) / 86400);
+        $days_left = (int) floor(($ts - time()) / 86400);
         $result['days_left'] = $days_left;
         if ($days_left < 0) {
             $result['urgency'] = 'overdue';
