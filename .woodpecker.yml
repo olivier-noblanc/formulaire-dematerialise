@@ -1,49 +1,59 @@
 # .woodpecker.yml — CI Woodpecker pour CircuitDémat
 #
-# Pipeline en 5 étapes (fail-fast) :
+# Pipeline en 7 étapes (fail-fast) :
 #   1. lint    : `php -l` sur tous les .php hors vendor/tests
-#   2. phpstan : télécharge phpstan.phar + analyse (niveau 6, baseline autorisée)
-#   3. tests   : `php tests/test_all.php` (51 tests fonctionnels)
-#   4. render  : `php tests/test_form_render_html.php` (8 tests rendu HTML en TEST_MODE=false)
-#   5. e2e     : `vendor/bin/phpunit --testsuite e2e` (HTTP + DOM, lance son propre serveur PHP)
+#   2. phpstan : télécharge phpstan.phar + analyse (niveau 8, baseline vide)
+#   3. phpunit : `vendor/bin/phpunit` (1500 tests unitaires)
+#   4. tests   : `php tests/test_all.php` (51 tests fonctionnels)
+#   5. render  : `php tests/test_form_render_html.php` (8 tests rendu HTML en TEST_MODE=false)
+#   6. e2e     : `vendor/bin/phpunit --testsuite e2e` (HTTP + DOM, lance son propre serveur PHP)
+#   7. gate    : `bash scripts/gate.sh` (qualité complète)
 #
-# Image de base : php:8.4-cli (Debian-based).
-# Les extensions pdo_sqlite + mbstring sont nécessaires pour SQLite + PHPMailer.
+# Image de base : php:8.5-cli (Debian-based).
 
 pipeline:
   # ── Étape 1 : Lint PHP (syntaxe) ──
   lint:
-    image: php:8.4-cli
+    image: php:8.5-cli
     commands:
       - find . -name "*.php" -not -path "./vendor/*" -not -path "./tests/*" -not -path "./node_modules/*" | xargs -l1 php -l
 
-  # ── Étape 2 : PHPStan (analyse statique niveau 6) ──
+  # ── Étape 2 : PHPStan (analyse statique niveau 8) ──
   phpstan:
-    image: php:8.4-cli
+    image: php:8.5-cli
     commands:
-      - apt-get update && apt-get install -y --no-install-recommends wget ca-certificates
-      - wget -q https://github.com/phpstan/phpstan/releases/latest/download/phpstan.phar -O phpstan.phar
-      - php phpstan.phar analyse --memory-limit=512M --no-progress
+      - apt-get update && apt-get install -y --no-install-recommends unzip
+      - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+      - composer install --no-interaction --no-progress --prefer-dist
+      - php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
 
-  # ── Étape 3 : Tests fonctionnels (51 tests) ──
-  tests:
-    image: php:8.4-cli
+  # ── Étape 3 : Tests unitaires PHPUnit (1500 tests) ──
+  phpunit:
+    image: php:8.5-cli
     commands:
-      # Les extensions pdo_sqlite et mbstring ne sont pas toujours pré-installées
-      # dans php:8.4-cli ; on les installe via docker-php-ext-install.
+      - docker-php-ext-install pdo_sqlite mbstring 2>/dev/null || true
+      - apt-get update && apt-get install -y --no-install-recommends unzip
+      - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+      - composer install --no-interaction --no-progress --prefer-dist
+      - vendor/bin/phpunit --no-coverage --testsuite unit
+
+  # ── Étape 4 : Tests fonctionnels (51 tests) ──
+  tests:
+    image: php:8.5-cli
+    commands:
       - docker-php-ext-install pdo_sqlite mbstring 2>/dev/null || true
       - php tests/test_all.php
 
-  # ── Étape 4 : Tests de rendu HTML (8 tests — TEST_MODE=false via sous-processus) ──
+  # ── Étape 5 : Tests de rendu HTML (8 tests — TEST_MODE=false via sous-processus) ──
   render_html:
-    image: php:8.4-cli
+    image: php:8.5-cli
     commands:
       - docker-php-ext-install pdo_sqlite mbstring 2>/dev/null || true
       - php tests/test_form_render_html.php
 
-  # ── Étape 5 : Tests E2E (HTTP + DOM — lance son propre serveur PHP intégré) ──
-  e2e:
-    image: php:8.4-cli
+  # ── Étape 6 : Tests E2E HTTP (lance son propre serveur PHP intégré) ──
+  e2e_http:
+    image: php:8.5-cli
     commands:
       - docker-php-ext-install pdo_sqlite mbstring 2>/dev/null || true
       - apt-get update && apt-get install -y --no-install-recommends unzip
@@ -52,6 +62,5 @@ pipeline:
       - vendor/bin/phpunit --testsuite e2e
 
 # ── Configuration CI ──
-# Le pipeline se déclenche sur ces branches uniquement.
 branches:
   include: [master, dev, "feature/*", "fix/*"]
