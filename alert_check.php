@@ -90,12 +90,13 @@ foreach ($rules as $rule) {
         }
 
         // Verifier si une alerte a deja ete envoyee pour cette regle + soumission aujourd'hui
+        // Utiliser UTC pour la comparaison car alert_log.sent_at est en UTC (datetime('now'))
         $already = $pdo->prepare("
             SELECT COUNT(*) FROM alert_log
             WHERE rule_id = ? AND submission_id = ?
               AND DATE(sent_at) = DATE(?)
         ");
-        $already->execute([$rule['id'], $sub['id'], $now->format('Y-m-d H:i:s')]);
+        $already->execute([$rule['id'], $sub['id'], gmdate('Y-m-d H:i:s')]);
         if ($already->fetchColumn() > 0) {
             // Alerte deja envoyee aujourd'hui pour cette regle + soumission
             $nb_skipped++;
@@ -112,7 +113,8 @@ foreach ($rules as $rule) {
 
         // Construire et envoyer l'email d'alerte
         foreach ($recipients as $recipient) {
-            $subject = '[ALERTE] ' . $rule['form_label'] . ' — J-' . abs($days_remaining) . ' avant la date cible';
+            $urgencyText = $days_remaining <= 0 ? 'EN RETARD de ' . abs($days_remaining) . ' jours' : 'J-' . $days_remaining . ' avant la date cible';
+            $subject = '[ALERTE] ' . $rule['form_label'] . ' — ' . $urgencyText;
             $body = build_alert_html($sub, $nom_agent, $deadline_formatted, $days_remaining, $rule, $data, $pdo);
             $sent = send_mail($recipient, $subject, $body);
 

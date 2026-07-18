@@ -19,9 +19,10 @@ final class AuditRepository extends BaseRepository
         if ($actor === '') {
             $actor = App::auth()->getUser() ?: '';
         }
+        $ip = $_SERVER['REMOTE_ADDR'] ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'CLI');
         return $this->execute(
-            "INSERT INTO audit_log (id, action, target, detail, actor, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-            [\generate_uuid(), $action, $target, $detail, $actor]
+            "INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
+            [\generate_uuid(), $action, $target, $detail, $actor, $ip]
         );
     }
 
@@ -30,9 +31,10 @@ final class AuditRepository extends BaseRepository
         if ($actor === '') {
             $actor = App::auth()->getUser() ?: '';
         }
+        $ip = $_SERVER['REMOTE_ADDR'] ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'CLI');
         return $this->execute(
-            "INSERT INTO audit_log (id, action, target, detail, actor, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-            [\generate_uuid(), 'security_event', 'security:' . $event, $detail, $actor]
+            "INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
+            [\generate_uuid(), 'security_event', 'security:' . $event, $detail, $actor, $ip]
         );
     }
 

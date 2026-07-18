@@ -46,11 +46,12 @@ final class SubmissionRepositoryTest extends TestCase
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$formId, 'test-rgpd-' . $formId, 'Test RGPD', '']);
 
-        $subId = $this->repo->create([
+        $subId = $this->repo->createWithRgpd([
             'form_id' => $formId,
             'data' => '{}',
             'submitted_by' => 'rgpd@test.com',
-            'status' => 'en_cours',
+            'submitted_at' => gmdate('Y-m-d H:i:s'),
+            'rgpd_consent' => 1,
         ]);
 
         // Set rgpd_consent to 1

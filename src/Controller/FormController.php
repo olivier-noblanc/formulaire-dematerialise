@@ -85,7 +85,7 @@ final class FormController extends BaseController
 
             // Validation dynamique des champs obligatoires
             foreach ($form_fields as $field) {
-                if ($field['required'] && $field['field_type'] !== 'checkbox' && in_array(trim($_POST[$field['field_name']] ?? ''), ['', '0'], true)) {
+                if ($field['required'] && in_array(trim($_POST[$field['field_name']] ?? ''), ['', '0'], true)) {
                     $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
                 }
             }

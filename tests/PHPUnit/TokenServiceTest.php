@@ -608,4 +608,39 @@ final class TokenServiceTest extends TestCase
         $doneAt = $check->fetchColumn();
         $this->assertNotEmpty($doneAt, 'Regenerated token must still have done_at set for workflow unblocking');
     }
+
+    // ── Bug 8: delegate() must also set invalidated_at ──────────
+
+    public function testDelegateSetsInvalidatedAtAndExcludedFromDone(): void
+    {
+        $pdo = $this->db->getPdo();
+
+        // Create a pending token for delegation
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, 'validator@test.com', ?, datetime('now'), datetime('now', '+7 days'))")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, $tokenVal]);
+
+        // Delegate to another user
+        $result = $this->tokenService->delegate($tokenId, 'delegatee@test.com', 'Test delegation');
+        $this->assertTrue($result['success'], 'Delegate should succeed');
+
+        // The delegated token should have invalidated_at set
+        $check = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
+        $check->execute([$tokenId]);
+        $row = $check->fetch(\PDO::FETCH_ASSOC);
+        $this->assertNotNull($row['invalidated_at'], 'Delegated token should have invalidated_at set');
+
+        // findDoneByEmail should NOT return the delegated token
+        $tokenRepo = new \App\Repository\TokenRepository($this->db);
+        $doneTokens = $tokenRepo->findDoneByEmail('validator@test.com');
+        $foundDelegated = false;
+        foreach ($doneTokens as $t) {
+            if ($t['token_id'] === $tokenId) {
+                $foundDelegated = true;
+                break;
+            }
+        }
+        $this->assertFalse($foundDelegated, 'findDoneByEmail must not return delegated tokens');
+    }
 }
