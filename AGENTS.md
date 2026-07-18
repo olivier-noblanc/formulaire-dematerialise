@@ -223,3 +223,55 @@ Toujours utiliser **Firefox** pour les tests Playwright, jamais Chromium. Instal
 - Prendre des raccourcis en marquant des tests comme skipped
 
 Si un test échoue, c'est un bug. Point. Le corriger immédiatement, même s'il existait avant.
+
+---
+
+## Addendum — Enseignements de l'audit manuel (juillet 2026)
+
+Un audit manuel complet a trouvé 16 bugs réels. PHPStan niveau 5 n'en a détecté qu'un seul. Les 15 autres partagent des causes communes non détectables par le typage.
+
+### 1. Discipline de grep avant de clore une tâche
+
+Avant de considérer une tâche terminée, si elle touche une colonne DB, une clé JSON, ou un champ partagé entre plusieurs fichiers, **grep ce nom sur tout le dépôt** et vérifie que chaque usage reste cohérent.
+
+```bash
+grep -rn "<nom_du_champ>" --include="*.php" .
+```
+
+### 2. Une seule source de vérité pour les listes de valeurs valides
+
+Ne jamais dupliquer une liste de valeurs autorisées. Si elle existe déjà, la référencer (`ConditionEvaluator::VALID_OPS`), pas la recopier.
+
+### 3. Ne jamais réutiliser un champ existant pour un nouveau sens
+
+Si une colonne a déjà une sémantique établie (ex. `done_at` = "traité par l'utilisateur"), ne pas l'utiliser pour un nouveau sens ("invalidé par admin"). **Créer une colonne dédiée** (`invalidated_at`).
+
+### 4. Hygiène du code mort
+
+Avant d'écrire une nouvelle méthode, chercher si une équivalente existe (`grep -rn "function nomSimilaire"`). Si tu remplaces une implémentation, **supprime l'ancienne**.
+
+### 5. Jamais de DateTime sans fuseau explicite
+
+Toute comparaison de dates entre PHP et SQLite `datetime('now')` doit utiliser UTC partout ou une conversion explicite. `alert_check.php` comparait `Europe/Paris` (PHP) à UTC (SQLite) — double-alerte possible.
+
+### 6. Cohérence texte/logique métier
+
+Si un sujet d'email ou un label dépend d'une condition, le calcul doit être **factorisé en une seule variable** utilisée aux deux endroits, jamais dupliqué.
+
+### 7. Tests à écrire systématiquement
+
+Pour toute fonctionnalité avec champ obligatoire, import/export, ou donnée partagée :
+- **Matrice type × obligatoire** (aurait attrapé le bug checkbox)
+- **Round-trip import/export** avec chaque valeur d'enum
+- **Invariant multi-fonctionnalités** après une action (ex. `delegate()` → vérifier `findDoneByEmail()`)
+- **Comparaison texte/statut** avec chaque branche (positive, nulle, négative)
+
+### Checklist avant de clore une tâche
+
+1. Grep le champ/colonne/clé dans tout le dépôt
+2. Pas de liste de valeurs dupliquée
+3. Pas de réutilisation de champ existant pour un nouveau sens
+4. Pas de méthode ancienne inutilisée laissée à côté
+5. Dates avec fuseau explicite
+6. Texte utilisateur dérivé du même calcul que la logique
+7. Test du cas négatif/limite ajouté
