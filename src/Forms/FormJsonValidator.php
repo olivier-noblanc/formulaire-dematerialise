@@ -55,6 +55,7 @@ final class FormJsonValidator
                 $warnings[] = 'Le tableau "fields" est vide. Le formulaire n\'aura aucun champ — l\'utilisateur ne pourra rien saisir.';
             }
             $seen_field_names = [];
+            $seen_validator_field_names = [];
             foreach ($data['fields'] as $i => $f) {
                 $idx = $i + 1;
                 $prefix = "fields[$idx]";
@@ -87,6 +88,9 @@ final class FormJsonValidator
                         $errors[] = "$prefix.field_name = \"{$f['field_name']}\" est en doublon. Chaque champ doit avoir un field_name unique.";
                     }
                     $seen_field_names[] = strtolower($f['field_name']);
+                    if (($f['filled_by'] ?? 'demandeur') === 'validator') {
+                        $seen_validator_field_names[] = strtolower($f['field_name']);
+                    }
                 } else {
                     $warnings[] = "$prefix.field_name est vide. Un nom technique sera généré automatiquement depuis le label, mais il est recommandé de le fournir explicitement en snake_case.";
                 }
@@ -233,6 +237,8 @@ final class FormJsonValidator
                             $errors[] = "$prefix.condition.field est requis et doit être une chaîne (nom technique du champ validateur).";
                         } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $raw_cond['field'])) {
                             $warnings[] = "$prefix.condition.field = \"{$raw_cond['field']}\" n'est pas en snake_case valide. Format attendu : minuscules, chiffres et underscores, commençant par une lettre.";
+                        } elseif (!in_array(strtolower($raw_cond['field']), $seen_validator_field_names)) {
+                            $errors[] = "$prefix.condition.field = \"{$raw_cond['field']}\" ne correspond à aucun champ validateur (filled_by=\"validator\") de ce formulaire. Les conditions ne peuvent porter que sur des champs remplis par un validateur, pas sur un champ demandeur. Le champ référencé serait ignoré silencieusement par le moteur de workflow.";
                         }
                         $cond_op = $raw_cond['op'] ?? '';
                         if (!is_string($cond_op) || !in_array($cond_op, $valid_ops_json, true)) {

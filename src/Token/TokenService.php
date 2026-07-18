@@ -307,7 +307,7 @@ final readonly class TokenService
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare("UPDATE tokens SET done_at = datetime('now') WHERE id = ?")
+            $pdo->prepare("UPDATE tokens SET done_at = datetime('now'), invalidated_at = datetime('now') WHERE id = ?")
                 ->execute([$tokenId]);
 
             $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)')

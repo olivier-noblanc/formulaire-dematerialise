@@ -65,7 +65,7 @@ foreach ($pendingIds as $tokenId) {
         $last_ref = $tok['relance_at'] ? new DateTimeImmutable($tok['relance_at']) : $sent;
         $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
 
-        if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h')) {
+        if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h', '48')) {
             $pdo->rollBack();
             continue;
         }
