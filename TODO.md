@@ -44,15 +44,15 @@
 | Fix persona test skip | 3 scénarios testés (admin, non-admin, persona_token) |
 | Split WorkflowEngineTest | 3370 lignes → 10 fichiers <350 lignes sous WorkflowEngineTest/ |
 | xdebug off permanent | xdebug.mode=off dans cli/conf.d/xdebug.ini |
+| check.ps1 sync gate.sh | 6 étapes ajoutées (mail_escaping, cache_service, email_urls, no_broken_urls, phpmailer_warnings, assets_cache) |
+| CI PHPUnit + E2E | PHPUnit (1500 tests) + E2E HTTP ajoutés au pipeline Woodpecker |
+| CI upgrade | PHP 8.4→8.5, PHPStan via composer au lieu de wget |
 
 ---
 
 ## 🎯 Ce qui reste
 
-| Tâche | Effort | Détail |
-|-------|--------|--------|
-| Tests E2E HTTP en CI | Moyen | Paths cross-platform déjà faits, reste à ajouter au pipeline CI |
-| gate.sh sync check.ps1 | Faible | Comparer les 2 scripts et synchroniser les étapes manquantes |
+Rien. Tout est fait.
 
 ---
 
