@@ -16,6 +16,8 @@ final class WorkflowEngineTest extends TestCase
 {
     private WorkflowEngine $workflow;
     private Database $db;
+    /** @var array{forms: string[], steps: string[], step_recipients: string[], submissions: string[], tokens: string[], form_owners: string[]} */
+    private array $createdIds = ['forms' => [], 'steps' => [], 'step_recipients' => [], 'submissions' => [], 'tokens' => [], 'form_owners' => []];
 
     protected function setUp(): void
     {
@@ -25,6 +27,109 @@ final class WorkflowEngineTest extends TestCase
         $fields = new FieldService($this->db);
         $conditions = new ConditionEvaluator();
         $this->workflow = new WorkflowEngine($this->db, $settings, $mail, $fields, $conditions);
+        $this->createdIds = ['forms' => [], 'steps' => [], 'step_recipients' => [], 'submissions' => [], 'tokens' => [], 'form_owners' => []];
+    }
+
+    protected function tearDown(): void
+    {
+        $pdo = $this->db->getPdo();
+        // Rollback any lingering transaction from a failed test
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        // Delete in FK-safe order
+        foreach ($this->createdIds['tokens'] as $id) {
+            try { $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$id]); } catch (\Throwable) {}
+        }
+        foreach ($this->createdIds['step_recipients'] as $id) {
+            try { $pdo->prepare("DELETE FROM step_recipients WHERE id = ?")->execute([$id]); } catch (\Throwable) {}
+        }
+        foreach ($this->createdIds['submissions'] as $id) {
+            try { $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$id]); } catch (\Throwable) {}
+        }
+        foreach ($this->createdIds['form_owners'] as $id) {
+            try { $pdo->prepare("DELETE FROM form_owners WHERE id = ?")->execute([$id]); } catch (\Throwable) {}
+        }
+        foreach ($this->createdIds['steps'] as $id) {
+            try { $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$id]); } catch (\Throwable) {}
+        }
+        foreach ($this->createdIds['forms'] as $id) {
+            try { $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$id]); } catch (\Throwable) {}
+        }
+    }
+
+    // ── Test data helpers ──────────────────────────────────────
+
+    /** Create form + step + recipient. Returns [formId, stepId]. */
+    private function createTestForm(string $slug = 'test'): array
+    {
+        $pdo = $this->db->getPdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, '', 1, datetime('now'))")
+            ->execute([$formId, $slug . '-' . uniqid(), 'Test Form']);
+        $this->createdIds['forms'][] = $formId;
+
+        $stepId = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, 'Validation', 1, 1, '')")
+            ->execute([$stepId, $formId]);
+        $this->createdIds['steps'][] = $stepId;
+
+        $srId = \generate_uuid();
+        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, 'validator@test.com')")
+            ->execute([$srId, $stepId]);
+        $this->createdIds['step_recipients'][] = $srId;
+
+        return [$formId, $stepId];
+    }
+
+    /** Create submission. Pass $closedAtOffset (e.g. '-0 seconds') to mark it closed. Returns submissionId. */
+    private function createTestSubmission(string $formId, string $data = '{}', string $status = 'en_cours', ?string $closedAtOffset = null): string
+    {
+        $pdo = $this->db->getPdo();
+        $subId = \generate_uuid();
+        $closedAt = $closedAtOffset !== null ? gmdate('Y-m-d H:i:s', strtotime($closedAtOffset) ?: time()) : null;
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at, closed_at) VALUES (?, ?, ?, 'agent@test.com', ?, datetime('now'), ?)")
+            ->execute([$subId, $formId, $data, $status, $closedAt]);
+        $this->createdIds['submissions'][] = $subId;
+        return $subId;
+    }
+
+    /** Mark an existing submission as closed. */
+    private function closeSubmission(string $submissionId, string $status = 'valide'): void
+    {
+        $pdo = $this->db->getPdo();
+        $pdo->prepare("UPDATE submissions SET closed_at = datetime('now'), status = ? WHERE id = ?")
+            ->execute([$status, $submissionId]);
+    }
+
+    /** Create a form owner. Returns id. */
+    private function createFormOwner(string $formId, string $email): string
+    {
+        $pdo = $this->db->getPdo();
+        $id = \generate_uuid();
+        $pdo->prepare("INSERT INTO form_owners (id, form_id, email, added_at) VALUES (?, ?, ?, datetime('now'))")
+            ->execute([$id, $formId, $email]);
+        $this->createdIds['form_owners'][] = $id;
+        return $id;
+    }
+
+    /**
+     * Create token. Returns [tokenId, tokenValue].
+     * $doneAtOffset: null = pending token; a strtotime offset (e.g. '-1 minute') = done token.
+     * $expiresInOffset: strtotime offset from now (e.g. '+7 days' valid, '-1 day' expired).
+     */
+    private function createTestToken(string $submissionId, string $stepId, string $email = 'validator@test.com', ?string $doneAtOffset = null, string $expiresInOffset = '+7 days'): array
+    {
+        $pdo = $this->db->getPdo();
+        $tokenId = \generate_uuid();
+        // validateToken() requires /^[a-f0-9]{64}$/ — 32 bytes, not 16.
+        $tokenVal = bin2hex(random_bytes(32));
+        $doneAt = $doneAtOffset !== null ? gmdate('Y-m-d H:i:s', strtotime($doneAtOffset) ?: time()) : null;
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime($expiresInOffset) ?: time());
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?)")
+            ->execute([$tokenId, $submissionId, $stepId, $email, $tokenVal, $doneAt, $expiresAt]);
+        $this->createdIds['tokens'][] = $tokenId;
+        return [$tokenId, $tokenVal];
     }
 
     // ── Constructor / DI ───────────────────────────────────────
@@ -55,17 +160,11 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetTokenWithContextReturnsDataForRealToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $tokenVal = $pdo->query("SELECT token FROM tokens LIMIT 1")->fetchColumn();
-
-        if (!$tokenVal) {
-            $this->markTestSkipped('No tokens available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
         $result = $this->workflow->getTokenWithContext($tokenVal);
-        if ($result === null) {
-            $this->markTestSkipped('Token has no valid joins (broken FKs in test DB)');
-        }
         $this->assertArrayHasKey('step_label', $result);
         $this->assertArrayHasKey('form_label', $result);
         $this->assertArrayHasKey('email', $result);
@@ -93,17 +192,11 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetTokenByIdWithContextReturnsDataForRealId(): void
     {
-        $pdo = $this->db->getPdo();
-        $tokenId = $pdo->query("SELECT id FROM tokens LIMIT 1")->fetchColumn();
-
-        if (!$tokenId) {
-            $this->markTestSkipped('No tokens available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [$tokenId] = $this->createTestToken($subId, $stepId);
 
         $result = $this->workflow->getTokenByIdWithContext($tokenId);
-        if ($result === null) {
-            $this->markTestSkipped('Token has no valid joins (broken FKs in test DB)');
-        }
         $this->assertArrayHasKey('step_label', $result);
         $this->assertArrayHasKey('form_label', $result);
         $this->assertArrayHasKey('data', $result);
@@ -131,18 +224,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsReturnsStepDetails(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-
-        if (!$formId) {
-            $this->markTestSkipped('No forms available');
-        }
+        [$formId] = $this->createTestForm();
 
         $steps = $this->workflow->getWorkflowSteps($formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps for this form');
-        }
-
         $this->assertArrayHasKey('step_id', $steps[0]);
         $this->assertArrayHasKey('step_label', $steps[0]);
         $this->assertArrayHasKey('ordre', $steps[0]);
@@ -165,35 +249,17 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsReturnsConditionField(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No forms available');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps');
-        }
-
+        $steps = $this->workflow->getWorkflowSteps($formId);
         $this->assertArrayHasKey('condition', $steps[0]);
     }
 
     public function testGetWorkflowStepsReturnsRecipientEmailsField(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No forms available');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps');
-        }
-
+        $steps = $this->workflow->getWorkflowSteps($formId);
         $this->assertArrayHasKey('recipient_emails', $steps[0]);
     }
 
@@ -207,12 +273,8 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelReturnsDataForRealSubmission(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions available');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
         $this->assertNotNull($result);
@@ -229,33 +291,19 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelReturnsSubmittedByField(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions available');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
-        if ($result === null) {
-            $this->markTestSkipped('Submission has no valid form join');
-        }
         $this->assertArrayHasKey('submitted_by', $result);
     }
 
     public function testGetSubmissionWithFormLabelReturnsClosedAtField(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions available');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
-        if ($result === null) {
-            $this->markTestSkipped('Submission has no valid form join');
-        }
         $this->assertArrayHasKey('closed_at', $result);
     }
 
@@ -402,151 +450,103 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenReturnsAlreadyDoneForUsedToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $doneToken = $pdo->query("SELECT token FROM tokens WHERE done_at IS NOT NULL LIMIT 1")->fetchColumn();
-
-        if (!$doneToken) {
-            $this->markTestSkipped('No done token available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $doneToken] = $this->createTestToken($subId, $stepId, doneAtOffset: '-1 minute');
 
         $result = $this->workflow->validateToken($doneToken);
-        if ($result['status'] === 'invalid') {
-            $this->markTestSkipped('Token has no valid joins (broken FKs in test DB)');
-        }
         $this->assertSame('already_done', $result['status']);
     }
 
     public function testValidateTokenSuccessForPendingToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token, t.submission_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token on en_cours submission available');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'Test validation', 'validator@test.com');
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'Test validation', 'validator@test.com');
         $this->assertSame('ok', $result['status']);
         $this->assertArrayHasKey('data', $result);
     }
 
     public function testValidateTokenRefuse(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token, t.submission_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token on en_cours submission available');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif de refus');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif de refus');
         $this->assertSame('ok', $result['status']);
 
+        $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $this->assertSame('refuse', $check->fetchColumn());
     }
 
     public function testValidateTokenTruncatesComment(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token, t.submission_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token on en_cours submission available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
         $longComment = str_repeat('x', 1500);
-        $result = $this->workflow->validateToken($row['token'], 'valider', $longComment);
+        $result = $this->workflow->validateToken($tokenVal, 'valider', $longComment);
         $this->assertSame('ok', $result['status']);
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertLessThanOrEqual(1000, strlen($validation['commentaire']));
     }
 
     public function testValidateTokenReturnsExpiredForExpiredToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $now = gmdate('Y-m-d H:i:s');
-        $row = $pdo->prepare("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE t.done_at IS NULL
-            AND t.expires_at IS NOT NULL
-            AND t.expires_at < ?
-            AND s.status = 'en_cours'
-            LIMIT 1
-        ");
-        $row->execute([$now]);
-        $row = $row->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId, expiresInOffset: '-1 day');
 
-        if (!$row) {
-            $this->markTestSkipped('No expired token available');
-        }
-
-        $result = $this->workflow->validateToken($row['token']);
+        $result = $this->workflow->validateToken($tokenVal);
         $this->assertSame('expired', $result['status']);
     }
 
     public function testValidateTokenReturnsClosedForClosedSubmissionToken(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE t.done_at IS NULL
-            AND s.closed_at IS NOT NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        // Token created before closing, so it exists with done_at NULL on a now-closed submission.
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
+        $this->closeSubmission($subId);
 
-        if (!$row) {
-            $this->markTestSkipped('No token on closed submission available');
-        }
-
-        $result = $this->workflow->validateToken($row['token']);
+        $result = $this->workflow->validateToken($tokenVal);
         $this->assertSame('closed', $result['status']);
     }
 
     public function testValidateTokenReturnsDataKeyInResult(): void
     {
-        $pdo = $this->db->getPdo();
-        $doneToken = $pdo->query("SELECT token FROM tokens WHERE done_at IS NOT NULL LIMIT 1")->fetchColumn();
-
-        if (!$doneToken) {
-            $this->markTestSkipped('No done token available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $doneToken] = $this->createTestToken($subId, $stepId, doneAtOffset: '-1 minute');
 
         $result = $this->workflow->validateToken($doneToken);
-        if ($result['status'] === 'invalid') {
-            $this->markTestSkipped('Token has no valid joins (broken FKs in test DB)');
-        }
         $this->assertArrayHasKey('data', $result);
         $this->assertIsArray($result['data']);
     }
 
     public function testValidateTokenStoresDoneByField(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id, s.data
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token on en_cours submission available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
         $doneBy = 'verifier-' . uniqid() . '@test.com';
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'Test', $doneBy);
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'Test', $doneBy);
         $this->assertSame('ok', $result['status']);
 
+        $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $data = json_decode((string) $check->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame($doneBy, $validation['done_by']);
@@ -554,76 +554,58 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenWithDefaultAction(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
         // Default action is 'valider'
-        $result = $this->workflow->validateToken($row['token']);
+        $result = $this->workflow->validateToken($tokenVal);
         $this->assertSame('ok', $result['status']);
     }
 
     public function testValidateTokenRefuseWithComment(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token, t.submission_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token available');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif de refus détaillé');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif de refus détaillé');
         $this->assertSame('ok', $result['status']);
     }
 
     public function testValidateTokenRefuseWithoutComment(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token, t.submission_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token available');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', '');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', '');
         $this->assertSame('ok', $result['status']);
     }
 
     public function testValidateTokenWithEmptyComment(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token available');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider', '');
+        $result = $this->workflow->validateToken($tokenVal, 'valider', '');
         $this->assertSame('ok', $result['status']);
     }
 
     public function testValidateTokenStoresStepLabel(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token available');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'Test');
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'Test');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertArrayHasKey('step_label', $validation);
         $this->assertArrayHasKey('email', $validation);
@@ -633,19 +615,19 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenStoresDateTimestamp(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("SELECT t.token FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.status = 'en_cours' AND t.done_at IS NULL LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
         $before = gmdate('Y-m-d H:i:s');
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'Test');
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'Test');
         $after = gmdate('Y-m-d H:i:s');
 
         $this->assertSame('ok', $result['status']);
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertGreaterThanOrEqual($before, $validation['date']);
         $this->assertLessThanOrEqual($after, $validation['date']);
@@ -655,12 +637,7 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveSubmissionsReturnsInt(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-
-        if (!$formId) {
-            $this->markTestSkipped('No forms available');
-        }
+        [$formId] = $this->createTestForm();
 
         $count = $this->workflow->hasActiveSubmissions($formId);
         $this->assertIsInt($count);
@@ -681,14 +658,11 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveSubmissionsMatchesDirectQuery(): void
     {
+        [$formId] = $this->createTestForm();
+        $this->createTestSubmission($formId);
+
+        $methodResult = $this->workflow->hasActiveSubmissions($formId);
         $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-
-        if (!$formId) {
-            $this->markTestSkipped('No forms available');
-        }
-
-        $methodResult = $this->workflow->hasActiveSubmissions((string) $formId);
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = 'en_cours'");
         $stmt->execute([$formId]);
         $directCount = $stmt->fetchColumn();
@@ -700,12 +674,7 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveStepSubmissionsReturnsInt(): void
     {
-        $pdo = $this->db->getPdo();
-        $stepId = $pdo->query("SELECT id FROM steps LIMIT 1")->fetchColumn();
-
-        if (!$stepId) {
-            $this->markTestSkipped('No steps available');
-        }
+        [, $stepId] = $this->createTestForm();
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
         $this->assertIsInt($count);
@@ -720,12 +689,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveStepSubmissionsReturnsCountForStepWithPendingTokens(): void
     {
-        $pdo = $this->db->getPdo();
-        $stepId = $pdo->query("SELECT step_id FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE t.done_at IS NULL AND s.status = 'en_cours' LIMIT 1")->fetchColumn();
-
-        if (!$stepId) {
-            $this->markTestSkipped('No step with pending tokens available');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        $this->createTestToken($subId, $stepId);
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
         $this->assertGreaterThan(0, $count);
@@ -733,14 +699,10 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveStepSubmissionsMatchesDirectQuery(): void
     {
+        [, $stepId] = $this->createTestForm();
+
+        $methodResult = $this->workflow->hasActiveStepSubmissions($stepId);
         $pdo = $this->db->getPdo();
-        $stepId = $pdo->query("SELECT id FROM steps LIMIT 1")->fetchColumn();
-
-        if (!$stepId) {
-            $this->markTestSkipped('No steps available');
-        }
-
-        $methodResult = $this->workflow->hasActiveStepSubmissions((string) $stepId);
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM tokens t
             JOIN submissions s ON s.id = t.submission_id
@@ -768,14 +730,10 @@ final class WorkflowEngineTest extends TestCase
 
     public function testAdvanceWorkflowReturnsEarlyForClosedSubmission(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions WHERE closed_at IS NOT NULL LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId, closedAtOffset: '-0 seconds');
 
-        if (!$subId) {
-            $this->markTestSkipped('No closed submission available');
-        }
-
-        $this->workflow->advanceWorkflow((string) $subId);
+        $this->workflow->advanceWorkflow($subId);
         $this->assertTrue(true);
     }
 
@@ -787,40 +745,15 @@ final class WorkflowEngineTest extends TestCase
 
     public function testAdvanceWorkflowCreatesTokensForActiveSubmission(): void
     {
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT s.id as sub_id, s.form_id
-            FROM submissions s
-            WHERE s.status = 'en_cours' AND s.closed_at IS NULL
-            AND NOT EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id)
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No fresh en_cours submission without tokens available');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $row['form_id']);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps for the form');
-        }
-
-        $hasRecipients = false;
-        foreach ($steps as $step) {
-            if (!empty(trim($step['recipient_emails'] ?? ''))) {
-                $hasRecipients = true;
-                break;
-            }
-        }
-        if (!$hasRecipients) {
-            $this->markTestSkipped('No steps with recipients for the form');
-        }
-
         $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
-        $countStmt->execute([$row['sub_id']]);
+        $countStmt->execute([$subId]);
         $tokensBefore = $countStmt->fetchColumn();
-        $this->workflow->advanceWorkflow((string) $row['sub_id']);
-        $countStmt->execute([$row['sub_id']]);
+        $this->workflow->advanceWorkflow($subId);
+        $countStmt->execute([$subId]);
         $tokensAfter = $countStmt->fetchColumn();
 
         $this->assertGreaterThan((int) $tokensBefore, (int) $tokensAfter, 'advanceWorkflow should create new tokens');
@@ -828,70 +761,43 @@ final class WorkflowEngineTest extends TestCase
 
     public function testAdvanceWorkflowSkipsInvalidEmailRecipients(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT st.id as step_id, st.form_id, st.ordre
-            FROM steps st
-            JOIN step_recipients sr ON sr.step_id = st.id
-            WHERE st.actif = 1 AND sr.email NOT LIKE '%@%'
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        $srId = \generate_uuid();
+        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, 'invalid-email')")
+            ->execute([$srId, $stepId]);
+        $this->createdIds['step_recipients'][] = $srId;
 
-        if (!$row) {
-            $this->markTestSkipped('No step with invalid email recipient available');
-        }
+        $subId = $this->createTestSubmission($formId);
 
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? AND status = 'en_cours' AND closed_at IS NULL LIMIT 1");
-        $stmt->execute([$row['form_id']]);
-        $subId = $stmt->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No active submission for the form with invalid recipient');
-        }
-
-        $this->workflow->advanceWorkflow((string) $subId);
+        $this->workflow->advanceWorkflow($subId);
         $this->assertTrue(true);
     }
 
     public function testAdvanceWorkflowSkipsConditionWhenNotMet(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT st.id as step_id, st.form_id, st.`condition`
-            FROM steps st
-            WHERE st.actif = 1 AND st.`condition` IS NOT NULL AND st.`condition` != '' AND st.`condition` != 'null'
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        $condition = json_encode(['field' => 'nonexistent_field', 'op' => 'eq', 'value' => 'never_matches']);
+        $pdo->prepare("UPDATE steps SET `condition` = ? WHERE id = ?")->execute([$condition, $stepId]);
 
-        if (!$row) {
-            $this->markTestSkipped('No step with a condition available');
-        }
+        $subId = $this->createTestSubmission($formId);
 
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? AND status = 'en_cours' AND closed_at IS NULL LIMIT 1");
-        $stmt->execute([$row['form_id']]);
-        $subId = $stmt->fetchColumn();
+        $this->workflow->advanceWorkflow($subId);
 
-        if (!$subId) {
-            $this->markTestSkipped('No active submission for the form with conditional step');
-        }
-
-        $this->workflow->advanceWorkflow((string) $subId);
-        $this->assertTrue(true);
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
+        $countStmt->execute([$subId]);
+        $this->assertSame(0, (int) $countStmt->fetchColumn(), 'No token should be created when the step condition is not met');
     }
 
     // ── getWorkflowSteps caching ─────────────────────────────────
 
     public function testGetWorkflowStepsReturnsConsistentResults(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No forms available');
-        }
-
-        $first = $this->workflow->getWorkflowSteps((string) $formId);
-        $second = $this->workflow->getWorkflowSteps((string) $formId);
+        $first = $this->workflow->getWorkflowSteps($formId);
+        $second = $this->workflow->getWorkflowSteps($formId);
         $this->assertSame($first, $second);
     }
 
@@ -1020,22 +926,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testResolveDynamicRecipientWithOwnerAndRealSubmission(): void
     {
-        $pdo = $this->db->getPdo();
-
-        // Find a form with owners
-        $formId = $pdo->query("SELECT form_id FROM form_owners LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No form with owners in test DB');
-        }
-
-        // Find a submission for that form
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? LIMIT 1");
-        $stmt->execute([$formId]);
-        $subId = $stmt->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submission for form with owners');
-        }
+        [$formId] = $this->createTestForm();
+        $this->createFormOwner($formId, 'owner-' . uniqid() . '@test.com');
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->resolveDynamicRecipient('{{owner}}', [], $subId);
         // Should resolve to the owner's email
@@ -1045,26 +938,8 @@ final class WorkflowEngineTest extends TestCase
 
     public function testResolveDynamicRecipientWithOwnerFallbackToAdmin(): void
     {
-        $pdo = $this->db->getPdo();
-
-        // Find a form WITHOUT owners but with a valid submission
-        $formId = $pdo->query("
-            SELECT s.form_id FROM submissions s
-            WHERE NOT EXISTS (SELECT 1 FROM form_owners fo WHERE fo.form_id = s.form_id)
-            LIMIT 1
-        ")->fetchColumn();
-
-        if (!$formId) {
-            $this->markTestSkipped('No form without owners in test DB');
-        }
-
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE form_id = ? LIMIT 1");
-        $stmt->execute([$formId]);
-        $subId = $stmt->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submission for form without owners');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->resolveDynamicRecipient('{{owner}}', [], $subId);
         // Should fall back to admin email
@@ -1076,57 +951,46 @@ final class WorkflowEngineTest extends TestCase
 
     public function testAdvanceWorkflowWithCompletedSubmissionClosesIt(): void
     {
-        $pdo = $this->db->getPdo();
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        $this->createTestToken($subId, $stepId, doneAtOffset: '-1 minute');
 
-        // Find a submission where ALL tokens are done and closed_at is NULL
-        $row = $pdo->query("
-            SELECT s.id as sub_id, s.form_id
-            FROM submissions s
-            WHERE s.status = 'en_cours' AND s.closed_at IS NULL
-            AND EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id AND t.done_at IS NOT NULL)
-            AND NOT EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id AND t.done_at IS NULL)
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No submission with all tokens done');
-        }
-
-        $this->workflow->advanceWorkflow((string) $row['sub_id']);
+        $this->workflow->advanceWorkflow($subId);
 
         // After advancing, submission should be closed
+        $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
-        $check->execute([$row['sub_id']]);
+        $check->execute([$subId]);
         $closedAt = $check->fetchColumn();
         $this->assertNotEmpty($closedAt);
     }
 
     public function testAdvanceWorkflowWithMixedDoneAndPendingWaits(): void
     {
+        [$formId, $step1Id] = $this->createTestForm();
         $pdo = $this->db->getPdo();
+        // Second step at the same ordre — parallel validator group.
+        $step2Id = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, 'Validation 2', 1, 1, '')")
+            ->execute([$step2Id, $formId]);
+        $this->createdIds['steps'][] = $step2Id;
+        $sr2Id = \generate_uuid();
+        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, 'validator2@test.com')")
+            ->execute([$sr2Id, $step2Id]);
+        $this->createdIds['step_recipients'][] = $sr2Id;
 
-        // Find a submission with both done and pending tokens
-        $row = $pdo->query("
-            SELECT s.id as sub_id
-            FROM submissions s
-            WHERE s.status = 'en_cours' AND s.closed_at IS NULL
-            AND EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id AND t.done_at IS NOT NULL)
-            AND EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id AND t.done_at IS NULL)
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No submission with mixed done/pending tokens');
-        }
+        $subId = $this->createTestSubmission($formId);
+        $this->createTestToken($subId, $step1Id, doneAtOffset: '-1 minute');
+        $this->createTestToken($subId, $step2Id);
 
         $before = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
-        $before->execute([$row['sub_id']]);
+        $before->execute([$subId]);
         $closedBefore = $before->fetchColumn();
 
-        $this->workflow->advanceWorkflow((string) $row['sub_id']);
+        $this->workflow->advanceWorkflow($subId);
 
         $after = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
-        $after->execute([$row['sub_id']]);
+        $after->execute([$subId]);
         $closedAfter = $after->fetchColumn();
 
         // Should not close since not all steps are done
@@ -1137,29 +1001,19 @@ final class WorkflowEngineTest extends TestCase
 
     public function testAdvanceWorkflowDoesNotCreateDuplicateTokens(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        $this->createTestToken($subId, $stepId);
+
         $pdo = $this->db->getPdo();
-
-        // Find a submission with existing tokens but not all steps started
-        $row = $pdo->query("
-            SELECT s.id as sub_id, s.form_id
-            FROM submissions s
-            WHERE s.status = 'en_cours' AND s.closed_at IS NULL
-            AND EXISTS (SELECT 1 FROM tokens t WHERE t.submission_id = s.id)
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No submission with existing tokens');
-        }
-
         $countBefore = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
-        $countBefore->execute([$row['sub_id']]);
+        $countBefore->execute([$subId]);
         $before = (int) $countBefore->fetchColumn();
 
-        $this->workflow->advanceWorkflow((string) $row['sub_id']);
+        $this->workflow->advanceWorkflow($subId);
 
         $countAfter = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
-        $countAfter->execute([$row['sub_id']]);
+        $countAfter->execute([$subId]);
         $after = (int) $countAfter->fetchColumn();
 
         // Should not create duplicates — count should be same or more (new step tokens)
@@ -1170,26 +1024,17 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseNotifiesAgent(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id, s.submitted_by
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            AND s.submitted_by IS NOT NULL AND s.submitted_by != ''
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token with submitted_by');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif de refus');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif de refus');
         $this->assertSame('ok', $result['status']);
 
         // Verify submission is marked as refused
+        $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $this->assertSame('refuse', $check->fetchColumn());
     }
 
@@ -1197,26 +1042,18 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenValiderWithDoneBy(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
         $doneBy = 'validator_' . uniqid() . '@test.com';
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'Approuvé', $doneBy);
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'Approuvé', $doneBy);
         $this->assertSame('ok', $result['status']);
 
         // Verify done_by is stored in submission data
+        $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $data = json_decode((string) $check->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame($doneBy, $validation['done_by']);
@@ -1226,20 +1063,11 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenValiderWithEmptyDoneBy(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'OK', '');
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'OK', '');
         $this->assertSame('ok', $result['status']);
     }
 
@@ -1247,17 +1075,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsReturnsConditionFieldForActiveSteps(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No forms');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('Form has no active steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
         foreach ($steps as $step) {
             $this->assertArrayHasKey('condition', $step);
             $this->assertArrayHasKey('actif', $step);
@@ -1269,17 +1089,15 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsReturnsOrderedByOrdre(): void
     {
+        [$formId, $step1Id] = $this->createTestForm();
         $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
+        $step2Id = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, 'Validation 2', 2, 1, '')")
+            ->execute([$step2Id, $formId]);
+        $this->createdIds['steps'][] = $step2Id;
 
-        if (!$formId) {
-            $this->markTestSkipped('No forms');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (count($steps) < 2) {
-            $this->markTestSkipped('Need at least 2 steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
+        $this->assertGreaterThanOrEqual(2, count($steps));
 
         $ordres = array_column($steps, 'ordre');
         $sortedOrdres = $ordres;
@@ -1291,16 +1109,10 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveSubmissionsReturnsCountForFormWithActiveSubmissions(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("
-            SELECT form_id FROM submissions WHERE status = 'en_cours' LIMIT 1
-        ")->fetchColumn();
+        [$formId] = $this->createTestForm();
+        $this->createTestSubmission($formId);
 
-        if (!$formId) {
-            $this->markTestSkipped('No form with active submissions');
-        }
-
-        $count = $this->workflow->hasActiveSubmissions((string) $formId);
+        $count = $this->workflow->hasActiveSubmissions($formId);
         $this->assertGreaterThan(0, $count);
     }
 
@@ -1308,19 +1120,11 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveStepSubmissionsReturnsZeroForCompletedStep(): void
     {
-        $pdo = $this->db->getPdo();
-        $stepId = $pdo->query("
-            SELECT step_id FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE t.done_at IS NOT NULL AND s.status != 'en_cours'
-            LIMIT 1
-        ")->fetchColumn();
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId, status: 'valide');
+        $this->createTestToken($subId, $stepId, doneAtOffset: '-1 minute');
 
-        if (!$stepId) {
-            $this->markTestSkipped('No step with completed tokens');
-        }
-
-        $count = $this->workflow->hasActiveStepSubmissions((string) $stepId);
+        $count = $this->workflow->hasActiveStepSubmissions($stepId);
         $this->assertIsInt($count);
     }
 
@@ -1357,17 +1161,10 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelReturnsAllRequiredFields(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
-
-        $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
-        if (!$result) {
-            $this->markTestSkipped('Submission has broken FK');
-        }
+        $result = $this->workflow->getSubmissionWithFormLabel($subId);
 
         $this->assertArrayHasKey('form_label', $result);
         $this->assertArrayHasKey('data', $result);
@@ -1384,155 +1181,86 @@ final class WorkflowEngineTest extends TestCase
 
     public function testAdvanceWorkflowClosesAndNotifiesAgentWhenAllDone(): void
     {
-        $pdo = $this->db->getPdo();
-
-        // Find a form with active steps
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps');
-        }
-
-        // Create a fresh en_cours submission with valid submitted_by email
-        $subId = bin2hex(random_bytes(8));
-        $agentEmail = 'agent-' . uniqid() . '@test.com';
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, status, submitted_at, submitted_by) VALUES (?, ?, '{}', 'en_cours', datetime('now'), ?)")
-            ->execute([$subId, $formId, $agentEmail]);
-
-        // Create tokens for all steps, all already done
-        foreach ($steps as $step) {
-            $tokenId = bin2hex(random_bytes(8));
-            $token = bin2hex(random_bytes(32));
-            $email = 'validator-' . uniqid() . '@test.com';
-            $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now', '+30 days'))")
-                ->execute([$tokenId, $subId, $step['step_id'], $email, $token]);
-        }
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        $this->createTestToken($subId, $stepId, doneAtOffset: '-1 minute');
 
         // Advance — should close submission and attempt to notify agent
         $this->workflow->advanceWorkflow($subId);
 
         // Verify submission is closed
+        $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT closed_at, status FROM submissions WHERE id = ?");
         $check->execute([$subId]);
         $row = $check->fetch(\PDO::FETCH_ASSOC);
         $this->assertNotEmpty($row['closed_at']);
         $this->assertSame('valide', $row['status']);
-
-        // Cleanup
-        $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
-        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
     }
 
     // ── advanceWorkflow: group not all started → creates tokens ─
 
     public function testAdvanceWorkflowCreatesTokensForFirstGroup(): void
     {
+        [$formId] = $this->createTestForm();
+        // Fresh submission with no tokens
+        $subId = $this->createTestSubmission($formId);
+
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps');
-        }
-
-        // Create fresh submission with no tokens
-        $subId = bin2hex(random_bytes(8));
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, '{}', 'test@test.com', datetime('now'), 'en_cours')")
-            ->execute([$subId, $formId]);
-
-        $countBefore = (int) $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?")->execute([$subId]) ? $pdo->query("SELECT COUNT(*) FROM tokens WHERE submission_id = '$subId'")->fetchColumn() : 0;
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
+        $countStmt->execute([$subId]);
+        $countBefore = (int) $countStmt->fetchColumn();
 
         $this->workflow->advanceWorkflow($subId);
 
-        $countAfter = (int) $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?")->execute([$subId]) ? $pdo->query("SELECT COUNT(*) FROM tokens WHERE submission_id = '$subId'")->fetchColumn() : 0;
+        $countStmt->execute([$subId]);
+        $countAfter = (int) $countStmt->fetchColumn();
 
-        // Should have created some tokens (if steps have valid recipients)
+        // Should have created some tokens (steps have valid recipients)
         $this->assertGreaterThanOrEqual($countBefore, $countAfter);
-
-        // Cleanup
-        $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
-        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
     }
 
     // ── advanceWorkflow: step already started → skip duplicate ──
 
     public function testAdvanceWorkflowSkipsStepAlreadyStarted(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        // Step already started (has a pending token)
+        $this->createTestToken($subId, $stepId);
+
         $pdo = $this->db->getPdo();
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
+        $countStmt->execute([$subId]);
+        $countBefore = (int) $countStmt->fetchColumn();
 
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No active steps');
-        }
-
-        // Create submission with tokens for all steps (already started)
-        $subId = bin2hex(random_bytes(8));
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, '{}', 'test@test.com', datetime('now'), 'en_cours')")
-            ->execute([$subId, $formId]);
-
-        foreach ($steps as $step) {
-            $tokenId = bin2hex(random_bytes(8));
-            $token = bin2hex(random_bytes(32));
-            $email = 'val-' . uniqid() . '@test.com';
-            $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now', '+30 days'))")
-                ->execute([$tokenId, $subId, $step['step_id'], $email, $token]);
-        }
-
-        $countBefore = (int) $pdo->query("SELECT COUNT(*) FROM tokens WHERE submission_id = '$subId'")->fetchColumn();
-
-        // Advance — all steps already started, should not create duplicates
+        // Advance — step already started, should not create duplicates
         $this->workflow->advanceWorkflow($subId);
 
-        $countAfter = (int) $pdo->query("SELECT COUNT(*) FROM tokens WHERE submission_id = '$subId'")->fetchColumn();
+        $countStmt->execute([$subId]);
+        $countAfter = (int) $countStmt->fetchColumn();
         $this->assertSame($countBefore, $countAfter);
-
-        // Cleanup
-        $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
-        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
     }
 
     // ── advanceWorkflow: group all done → move to next group ────
 
     public function testAdvanceWorkflowMovesToNextGroupWhenAllDone(): void
     {
+        [$formId, $step1Id] = $this->createTestForm();
         $pdo = $this->db->getPdo();
+        $step2Id = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, 'Validation 2', 2, 1, '')")
+            ->execute([$step2Id, $formId]);
+        $this->createdIds['steps'][] = $step2Id;
+        $sr2Id = \generate_uuid();
+        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, 'validator2@test.com')")
+            ->execute([$sr2Id, $step2Id]);
+        $this->createdIds['step_recipients'][] = $sr2Id;
 
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (count($steps) < 2) {
-            $this->markTestSkipped('Need at least 2 steps');
-        }
-
-        // Create submission
-        $subId = bin2hex(random_bytes(8));
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, '{}', 'test@test.com', datetime('now'), 'en_cours')")
-            ->execute([$subId, $formId]);
+        $subId = $this->createTestSubmission($formId);
 
         // Mark all tokens as done
-        foreach ($steps as $step) {
-            $tokenId = bin2hex(random_bytes(8));
-            $token = bin2hex(random_bytes(32));
-            $email = 'val-' . uniqid() . '@test.com';
-            $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now', '+30 days'))")
-                ->execute([$tokenId, $subId, $step['step_id'], $email, $token]);
-        }
+        $this->createTestToken($subId, $step1Id, doneAtOffset: '-1 minute');
+        $this->createTestToken($subId, $step2Id, doneAtOffset: '-1 minute');
 
         // Advance — should close since all steps done
         $this->workflow->advanceWorkflow($subId);
@@ -1540,10 +1268,6 @@ final class WorkflowEngineTest extends TestCase
         $closed = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
         $closed->execute([$subId]);
         $this->assertNotEmpty($closed->fetchColumn());
-
-        // Cleanup
-        $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$subId]);
-        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
     }
 
     // ── advanceWorkflow: recipient '0' skipped ──────────────────
@@ -1827,25 +1551,17 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseWithCommentZero(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', '0');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', '0');
         $this->assertSame('ok', $result['status']);
 
         // Verify submission is refused
         $check = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $this->assertSame('refuse', $check->fetchColumn());
     }
 
@@ -1853,20 +1569,12 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenValiderWithEmptyDoneByString(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'Approved', '');
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'Approved', '');
         $this->assertSame('ok', $result['status']);
         $this->assertArrayHasKey('done_at', $result['data']);
         $this->assertNotEmpty($result['data']['done_at']);
@@ -1876,29 +1584,21 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenValiderAppendsToExistingValidations(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id, s.data
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
 
         // Pre-populate submission data with existing validations
         $existingData = json_encode(['validations' => [['step_label' => 'Old', 'email' => 'old@test.com', 'action' => 'valider']]]);
-        $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")->execute([$existingData, $row['submission_id']]);
+        $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")->execute([$existingData, $subId]);
 
-        $result = $this->workflow->validateToken($row['token'], 'valider', 'New validation', 'new@test.com');
+        $result = $this->workflow->validateToken($tokenVal, 'valider', 'New validation', 'new@test.com');
         $this->assertSame('ok', $result['status']);
 
         // Verify the new validation was appended
         $check = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $data = json_decode((string) $check->fetchColumn(), true);
         $this->assertArrayHasKey('validations', $data);
         $this->assertGreaterThanOrEqual(2, count($data['validations']));
@@ -1911,25 +1611,17 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseStoresRefuseData(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif refus', 'refuser@test.com');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif refus', 'refuser@test.com');
         $this->assertSame('ok', $result['status']);
 
         // Verify submission data contains the refusal
         $check = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $data = json_decode((string) $check->fetchColumn(), true);
         $validations = $data['validations'] ?? [];
         $last = end($validations);
@@ -1942,25 +1634,17 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenSetsDoneAtOnToken(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertSame('ok', $result['status']);
 
         // Verify token done_at is set in DB
         $check = $pdo->prepare("SELECT done_at FROM tokens WHERE token = ?");
-        $check->execute([$row['token']]);
+        $check->execute([$tokenVal]);
         $doneAt = $check->fetchColumn();
         $this->assertNotEmpty($doneAt);
     }
@@ -1969,23 +1653,15 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseSetsSubmissionClosedAt(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $this->workflow->validateToken($row['token'], 'refuser', 'Refus');
+        $this->workflow->validateToken($tokenVal, 'refuser', 'Refus');
 
         $check = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $this->assertNotEmpty($check->fetchColumn());
     }
 
@@ -2234,14 +1910,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsOnlyReturnsActiveSteps(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
+        $steps = $this->workflow->getWorkflowSteps($formId);
         foreach ($steps as $step) {
             $this->assertSame(1, (int) $step['actif']);
         }
@@ -2281,18 +1952,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsIncludesRecipientEmails(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
-
+        $steps = $this->workflow->getWorkflowSteps($formId);
         foreach ($steps as $step) {
             $this->assertArrayHasKey('recipient_emails', $step);
         }
@@ -2306,14 +1968,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveSubmissionsReturnsCorrectCount(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $count = $this->workflow->hasActiveSubmissions((string) $formId);
+        $count = $this->workflow->hasActiveSubmissions($formId);
         $this->assertIsInt($count);
         $this->assertGreaterThanOrEqual(0, $count);
     }
@@ -2322,16 +1979,14 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveSubmissionsOnlyCountsEnCours(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
+        $this->createTestSubmission($formId);
+        $this->createTestSubmission($formId, status: 'valide');
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $count = $this->workflow->hasActiveSubmissions((string) $formId);
+        $count = $this->workflow->hasActiveSubmissions($formId);
 
         // Verify against direct query
+        $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = 'en_cours'");
         $stmt->execute([$formId]);
         $expected = (int) $stmt->fetchColumn();
@@ -2347,23 +2002,11 @@ final class WorkflowEngineTest extends TestCase
 
     public function testHasActiveStepSubmissionsReturnsZeroForInactiveStep(): void
     {
-        $pdo = $this->db->getPdo();
-
-        // Create a step with no tokens
-        $stepId = bin2hex(random_bytes(8));
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, 'Test Step', 100, 1)")
-            ->execute([$stepId, $formId]);
+        // Fresh step with no tokens at all.
+        [, $stepId] = $this->createTestForm();
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
         $this->assertSame(0, $count);
-
-        // Cleanup
-        $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$stepId]);
     }
 
     // ════════════════════════════════════════════════════════════
@@ -2374,92 +2017,56 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetTokenWithContextReturnsStepAndFormLabels(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No token with valid joins');
-        }
-
-        $result = $this->workflow->getTokenWithContext($row['token']);
-        if ($result) {
-            $this->assertArrayHasKey('step_label', $result);
-            $this->assertArrayHasKey('form_label', $result);
-            $this->assertArrayHasKey('email', $result);
-            $this->assertArrayHasKey('data', $result);
-            $this->assertArrayHasKey('status', $result);
-        }
+        $result = $this->workflow->getTokenWithContext($tokenVal);
+        $this->assertArrayHasKey('step_label', $result);
+        $this->assertArrayHasKey('form_label', $result);
+        $this->assertArrayHasKey('email', $result);
+        $this->assertArrayHasKey('data', $result);
+        $this->assertArrayHasKey('status', $result);
     }
 
     // ── getTokenByIdWithContext: returns all required fields ──────
 
     public function testGetTokenByIdWithContextReturnsAllRequiredFields(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.id
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [$tokenId] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No token with valid joins');
-        }
-
-        $result = $this->workflow->getTokenByIdWithContext($row['id']);
-        if ($result) {
-            $this->assertArrayHasKey('step_label', $result);
-            $this->assertArrayHasKey('form_label', $result);
-            $this->assertArrayHasKey('email', $result);
-            $this->assertArrayHasKey('data', $result);
-            $this->assertArrayHasKey('submitted_by', $result);
-        }
+        $result = $this->workflow->getTokenByIdWithContext($tokenId);
+        $this->assertArrayHasKey('step_label', $result);
+        $this->assertArrayHasKey('form_label', $result);
+        $this->assertArrayHasKey('email', $result);
+        $this->assertArrayHasKey('data', $result);
+        $this->assertArrayHasKey('submitted_by', $result);
     }
 
     // ── getSubmissionWithFormLabel: returns form_label ───────────
 
     public function testGetSubmissionWithFormLabelReturnsFormLabel(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
-
-        $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
-        if ($result) {
-            $this->assertArrayHasKey('form_label', $result);
-            $this->assertNotEmpty($result['form_label']);
-        }
+        $result = $this->workflow->getSubmissionWithFormLabel($subId);
+        $this->assertArrayHasKey('form_label', $result);
+        $this->assertNotEmpty($result['form_label']);
     }
 
     // ── getSubmissionWithFormLabel: returns status ───────────────
 
     public function testGetSubmissionWithFormLabelReturnsStatus(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
-
-        $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
-        if ($result) {
-            $this->assertArrayHasKey('status', $result);
-            $this->assertContains($result['status'], ['en_cours', 'valide', 'refuse', 'annule']);
-        }
+        $result = $this->workflow->getSubmissionWithFormLabel($subId);
+        $this->assertArrayHasKey('status', $result);
+        $this->assertContains($result['status'], ['en_cours', 'valide', 'refuse', 'annule']);
     }
 
     // ── resolveDynamicRecipient: {{field}} with numeric value ────
@@ -2646,24 +2253,19 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenCommentTruncatedAt1000Chars(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
 
         $longComment = str_repeat('x', 1500);
-        $result = $this->workflow->validateToken($row['token'], 'valider', $longComment);
+        $result = $this->workflow->validateToken($tokenVal, 'valider', $longComment);
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertLessThanOrEqual(1000, strlen($validation['commentaire']));
     }
@@ -2672,24 +2274,19 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenCommentExactly1000Chars(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
 
         $comment = str_repeat('x', 1000);
-        $result = $this->workflow->validateToken($row['token'], 'valider', $comment);
+        $result = $this->workflow->validateToken($tokenVal, 'valider', $comment);
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame(1000, strlen($validation['commentaire']));
     }
@@ -2698,24 +2295,19 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenCommentUnder1000Chars(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
 
         $comment = str_repeat('y', 500);
-        $result = $this->workflow->validateToken($row['token'], 'valider', $comment);
+        $result = $this->workflow->validateToken($tokenVal, 'valider', $comment);
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame(500, strlen($validation['commentaire']));
     }
@@ -2724,74 +2316,58 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenStoresEmailInValidation(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.email
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame($row['email'], $validation['email']);
+        $this->assertSame('validator@test.com', $validation['email']);
     }
 
     // ── validateToken: stores step_label in validation ───────────
 
     public function testValidateTokenStoresStepLabelInValidation(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, st.label as step_label
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame($row['step_label'], $validation['step_label']);
+        $this->assertSame('Validation', $validation['step_label']);
     }
 
     // ── validateToken: stores action in validation ───────────────
 
     public function testValidateTokenStoresActionInValidation(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame('valider', $validation['action']);
     }
@@ -2800,26 +2376,21 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenStoresDateInValidation(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
 
         $before = gmdate('Y-m-d H:i:s');
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $after = gmdate('Y-m-d H:i:s');
 
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertGreaterThanOrEqual($before, $validation['date']);
         $this->assertLessThanOrEqual($after, $validation['date']);
@@ -2829,20 +2400,12 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenReturnsOkStatus(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertSame('ok', $result['status']);
     }
 
@@ -2850,20 +2413,12 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenReturnsDataKeyOnSuccess(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertArrayHasKey('data', $result);
         $this->assertIsArray($result['data']);
     }
@@ -2872,20 +2427,12 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenDataContainsDoneAt(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertArrayHasKey('done_at', $result['data']);
         $this->assertNotEmpty($result['data']['done_at']);
     }
@@ -2894,104 +2441,64 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenDataContainsToken(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
-        $this->assertSame($row['token'], $result['data']['token']);
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
+        $this->assertSame($tokenVal, $result['data']['token']);
     }
 
     // ── validateToken: data contains email ───────────────────────
 
     public function testValidateTokenDataContainsEmail(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.email
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
-        $this->assertSame($row['email'], $result['data']['email']);
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
+        $this->assertSame('validator@test.com', $result['data']['email']);
     }
 
     // ── validateToken: data contains step_id ─────────────────────
 
     public function testValidateTokenDataContainsStepId(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.step_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
-        $this->assertSame($row['step_id'], $result['data']['step_id']);
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
+        $this->assertSame($stepId, $result['data']['step_id']);
     }
 
     // ── validateToken: data contains submission_id ───────────────
 
     public function testValidateTokenDataContainsSubmissionId(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
-        $this->assertSame($row['submission_id'], $result['data']['submission_id']);
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
+        $this->assertSame($subId, $result['data']['submission_id']);
     }
 
     // ── validateToken: data contains sent_at ─────────────────────
 
     public function testValidateTokenDataContainsSentAt(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertArrayHasKey('sent_at', $result['data']);
     }
 
@@ -2999,20 +2506,12 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenDataContainsExpiresAt(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertArrayHasKey('expires_at', $result['data']);
     }
 
@@ -3020,20 +2519,12 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseReturnsOk(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser');
         $this->assertSame('ok', $result['status']);
     }
 
@@ -3041,23 +2532,18 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseWithEmptyComment(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', '');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', '');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame('', $validation['commentaire']);
     }
@@ -3066,23 +2552,18 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseStoresRefuserAction(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame('refuser', $validation['action']);
     }
@@ -3091,24 +2572,19 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseStoresDoneBy(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
 
         $doneBy = 'refuser-' . uniqid() . '@test.com';
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif', $doneBy);
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif', $doneBy);
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertSame($doneBy, $validation['done_by']);
     }
@@ -3117,26 +2593,21 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseStoresDate(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
 
         $before = gmdate('Y-m-d H:i:s');
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
         $after = gmdate('Y-m-d H:i:s');
 
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
         $this->assertGreaterThanOrEqual($before, $validation['date']);
         $this->assertLessThanOrEqual($after, $validation['date']);
@@ -3146,75 +2617,56 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenRefuseStoresEmail(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.email
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame($row['email'], $validation['email']);
+        $this->assertSame('validator@test.com', $validation['email']);
     }
 
     // ── validateToken: refuser stores step_label ─────────────────
 
     public function testValidateTokenRefuseStoresStepLabel(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, st.label as step_label
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
         $this->assertSame('ok', $result['status']);
 
-        $data = json_decode($result['data']['data'], true);
+        $pdo = $this->db->getPdo();
+        $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $checkData->execute([$subId]);
+        $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame($row['step_label'], $validation['step_label']);
+        $this->assertSame('Validation', $validation['step_label']);
     }
 
     // ── validateToken: refuser sets done_at on token ─────────────
 
     public function testValidateTokenRefuseSetsDoneAtOnToken(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'refuser', 'Motif');
+        $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
         $this->assertSame('ok', $result['status']);
 
         $check = $pdo->prepare("SELECT done_at FROM tokens WHERE token = ?");
-        $check->execute([$row['token']]);
+        $check->execute([$tokenVal]);
         $this->assertNotEmpty($check->fetchColumn());
     }
 
@@ -3222,25 +2674,17 @@ final class WorkflowEngineTest extends TestCase
 
     public function testValidateTokenValiderKeepsSubmissionOpenIfMoreSteps(): void
     {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
         $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token, t.submission_id
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' AND t.done_at IS NULL
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            $this->markTestSkipped('No pending token');
-        }
-
-        $result = $this->workflow->validateToken($row['token'], 'valider');
+        $result = $this->workflow->validateToken($tokenVal, 'valider');
         $this->assertSame('ok', $result['status']);
 
         // Check if submission is still en_cours or closed
         $check = $pdo->prepare("SELECT status, closed_at FROM submissions WHERE id = ?");
-        $check->execute([$row['submission_id']]);
+        $check->execute([$subId]);
         $sub = $check->fetch(\PDO::FETCH_ASSOC);
         $this->assertContains($sub['status'], ['en_cours', 'valide']);
     }
@@ -3249,17 +2693,14 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsOrderingByOrdreThenId(): void
     {
+        [$formId, $step1Id] = $this->createTestForm();
         $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        $step2Id = \generate_uuid();
+        $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, 'Validation 2', 2, 1, '')")
+            ->execute([$step2Id, $formId]);
+        $this->createdIds['steps'][] = $step2Id;
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (count($steps) < 2) {
-            $this->markTestSkipped('Need at least 2 steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         // Verify ordering
         for ($i = 0; $i < count($steps) - 1; $i++) {
@@ -3273,17 +2714,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsIncludesConditionField(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertArrayHasKey('condition', $step);
@@ -3294,17 +2727,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsStepIdIsString(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertIsString($step['step_id']);
@@ -3316,17 +2741,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsStepLabelIsString(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertIsString($step['step_label']);
@@ -3337,17 +2754,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsOrdreIsNumeric(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertIsNumeric($step['ordre']);
@@ -3360,17 +2769,9 @@ final class WorkflowEngineTest extends TestCase
     {
         // Regression: AdminFormsController line 179 used $workflowStep['id']
         // instead of $workflowStep['step_id']. Verify step_id exists, id does not.
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertArrayHasKey('step_id', $step, 'getWorkflowSteps must return step_id key (not id)');
@@ -3384,17 +2785,9 @@ final class WorkflowEngineTest extends TestCase
         // Regression: AdminFormsController line 175 used $workflowStep['label']
         // and FormPreviewController line 57 used $ws['label']
         // instead of step_label. Verify step_label exists.
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertArrayHasKey('step_label', $step, 'getWorkflowSteps must return step_label key (not label)');
@@ -3406,17 +2799,9 @@ final class WorkflowEngineTest extends TestCase
     {
         // Regression: callers used $ws['id'] and $ws['label'] which would
         // produce null/undefined-offset at runtime. Verify these keys don't exist.
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertArrayNotHasKey('id', $step, 'getWorkflowSteps must NOT return legacy "id" key (use step_id)');
@@ -3428,17 +2813,9 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetWorkflowStepsActifIsOne(): void
     {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
+        [$formId] = $this->createTestForm();
 
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
-
-        $steps = $this->workflow->getWorkflowSteps((string) $formId);
-        if (empty($steps)) {
-            $this->markTestSkipped('No steps');
-        }
+        $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
             $this->assertSame(1, (int) $step['actif']);
@@ -3469,11 +2846,7 @@ final class WorkflowEngineTest extends TestCase
     public function testHasActiveStepSubmissionsReturnsZeroForStepWithNoTokens(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $stepId = bin2hex(random_bytes(8));
         $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, 'No Tokens Step', 100, 1)")
@@ -3491,11 +2864,7 @@ final class WorkflowEngineTest extends TestCase
     public function testHasActiveStepSubmissionsOnlyCountsNullDoneAt(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $stepId = bin2hex(random_bytes(8));
         $subId = bin2hex(random_bytes(8));
@@ -3523,11 +2892,7 @@ final class WorkflowEngineTest extends TestCase
     public function testHasActiveStepSubmissionsCountsPendingTokens(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $stepId = bin2hex(random_bytes(8));
         $subId = bin2hex(random_bytes(8));
@@ -3554,12 +2919,8 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelReturnsDataField(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
@@ -3572,12 +2933,8 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelDataIsJson(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
@@ -3590,12 +2947,8 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelSubmittedByMayBeNull(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
@@ -3611,12 +2964,8 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelClosedAtMayBeNull(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
@@ -3632,12 +2981,8 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetSubmissionWithFormLabelStatusIsValidEnum(): void
     {
-        $pdo = $this->db->getPdo();
-        $subId = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
-
-        if (!$subId) {
-            $this->markTestSkipped('No submissions');
-        }
+        [$formId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
@@ -3649,26 +2994,14 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetTokenWithContextReturnsAllExpectedFields(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.token
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [, $tokenVal] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No token with valid joins');
-        }
-
-        $result = $this->workflow->getTokenWithContext($row['token']);
-        if ($result) {
-            $expectedFields = ['token', 'step_id', 'submission_id', 'email', 'step_label', 'form_label', 'data', 'status'];
-            foreach ($expectedFields as $field) {
-                $this->assertArrayHasKey($field, $result, "Missing field: $field");
-            }
+        $result = $this->workflow->getTokenWithContext($tokenVal);
+        $expectedFields = ['token', 'step_id', 'submission_id', 'email', 'step_label', 'form_label', 'data', 'status'];
+        foreach ($expectedFields as $field) {
+            $this->assertArrayHasKey($field, $result, "Missing field: $field");
         }
     }
 
@@ -3676,26 +3009,14 @@ final class WorkflowEngineTest extends TestCase
 
     public function testGetTokenByIdWithContextReturnsAllExpectedFields(): void
     {
-        $pdo = $this->db->getPdo();
-        $row = $pdo->query("
-            SELECT t.id
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            LIMIT 1
-        ")->fetch(\PDO::FETCH_ASSOC);
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+        [$tokenId] = $this->createTestToken($subId, $stepId);
 
-        if (!$row) {
-            $this->markTestSkipped('No token with valid joins');
-        }
-
-        $result = $this->workflow->getTokenByIdWithContext($row['id']);
-        if ($result) {
-            $expectedFields = ['token', 'step_id', 'submission_id', 'email', 'step_label', 'form_label', 'data', 'status'];
-            foreach ($expectedFields as $field) {
-                $this->assertArrayHasKey($field, $result, "Missing field: $field");
-            }
+        $result = $this->workflow->getTokenByIdWithContext($tokenId);
+        $expectedFields = ['token', 'step_id', 'submission_id', 'email', 'step_label', 'form_label', 'data', 'status'];
+        foreach ($expectedFields as $field) {
+            $this->assertArrayHasKey($field, $result, "Missing field: $field");
         }
     }
 
@@ -3928,11 +3249,7 @@ final class WorkflowEngineTest extends TestCase
     public function testAdvanceWorkflowWithEmptyFormData(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $subId = bin2hex(random_bytes(8));
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, '', 'test@test.com', datetime('now'), 'en_cours')")
@@ -3955,11 +3272,7 @@ final class WorkflowEngineTest extends TestCase
     public function testAdvanceWorkflowWithNullFormData(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $subId = bin2hex(random_bytes(8));
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, 'null', 'test@test.com', datetime('now'), 'en_cours')")
@@ -3982,11 +3295,7 @@ final class WorkflowEngineTest extends TestCase
     public function testAdvanceWorkflowWithComplexFormData(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $subId = bin2hex(random_bytes(8));
         $data = json_encode([
@@ -4015,11 +3324,7 @@ final class WorkflowEngineTest extends TestCase
     public function testAdvanceWorkflowWithInvalidJsonFormData(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $subId = bin2hex(random_bytes(8));
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, 'invalid json {{{', 'test@test.com', datetime('now'), 'en_cours')")
@@ -4042,11 +3347,7 @@ final class WorkflowEngineTest extends TestCase
     public function testAdvanceWorkflowCalledTwiceDoesNotDuplicateTokens(): void
     {
         $pdo = $this->db->getPdo();
-
-        $formId = $pdo->query("SELECT id FROM forms WHERE actif = 1 LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No active form');
-        }
+        [$formId] = $this->createTestForm();
 
         $subId = bin2hex(random_bytes(8));
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, '{}', 'test@test.com', datetime('now'), 'en_cours')")

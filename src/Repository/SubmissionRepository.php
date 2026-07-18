@@ -424,9 +424,10 @@ final class SubmissionRepository extends BaseRepository
         $labelStmt->execute([$fieldName]);
         $fieldLabel = (string) ($labelStmt->fetchColumn() ?: $fieldName);
 
+        $id = \generate_uuid();
         $this->execute(
-            "INSERT OR REPLACE INTO submission_validator_data (submission_id, field_name, field_label, value, filled_by, filled_by_email, step_id, filled_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
-            [$submissionId, $fieldName, $fieldLabel, $value, 'validator', $filledBy, $stepId]
+            "INSERT OR REPLACE INTO submission_validator_data (id, submission_id, field_name, field_label, value, filled_by, filled_by_email, step_id, filled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            [$id, $submissionId, $fieldName, $fieldLabel, $value, 'validator', $filledBy, $stepId]
         );
     }
 

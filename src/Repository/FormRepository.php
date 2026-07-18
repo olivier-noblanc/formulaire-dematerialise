@@ -198,9 +198,10 @@ final class FormRepository extends BaseRepository
 
     public function addOwner(string $formId, string $email): bool
     {
+        $id = \generate_uuid();
         return $this->execute(
-            "INSERT OR IGNORE INTO form_owners (form_id, email, added_at) VALUES (?, ?, datetime('now'))",
-            [$formId, strtolower($email)]
+            "INSERT OR IGNORE INTO form_owners (id, form_id, email, added_at) VALUES (?, ?, ?, datetime('now'))",
+            [$id, $formId, strtolower($email)]
         );
     }
 

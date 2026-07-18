@@ -92,8 +92,7 @@ $app->set(TokenService::class, new TokenService(
     $app->get(SettingsService::class),
     $app->get(AuthService::class),
     $app->get(AuditLogService::class),
-    $app->get(MailService::class),
-    $app->get(WorkflowEngine::class)
+    $app->get(MailService::class)
 ));
 $app->set(ValidatorDataService::class, new ValidatorDataService($db, $app->get(FieldService::class)));
 $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRepository::class)));

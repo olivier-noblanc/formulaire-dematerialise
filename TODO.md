@@ -4,37 +4,62 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1351** |
-| Assertions | **2070** |
+| Tests | **1255** |
+| Assertions | **2113** |
 | PHPStan erreurs | **0** (level 8) |
 | Tests E2E | 30 |
-| Bugs dispatch corrigés | 7 |
+| Skipped | **0** |
+| Errors | **0** |
+| Failures | **0** |
+| Warnings | **0** |
+| Deprecations | **0** (PHP 8.5) |
 
 ---
 
-## ✅ Terminé cette session
+## 📏 Règles de taille
+
+| Règle | Limite | Détail |
+|-------|--------|--------|
+| **Fichiers PHP** | **350 lignes max** | Toute classe/fichier ne doit pas dépasser 350 lignes. Si plus long, splitter en plusieurs fichiers. |
+
+---
+
+## ✅ Terminé cette session (v10.19.0)
 
 | Tâche | Détail |
 |-------|--------|
-| Fix relances parasites | v27 migration + transaction advanceWorkflow + debug log |
-| Fix tests RgpdServiceTest + WorkflowEngineTest | 6 erreurs pré-existantes corrigées |
-| Unification SubmissionStatus | Suppression `App\SubmissionStatus`, tous les fichiers migrent vers `App\Enum\SubmissionStatus` |
-| Suppression static cache getWorkflowSteps | Élimine données obsolètes dans process longs |
-| Paths cross-platform | `/tmp/` → `sys_get_temp_dir()`, `lsof` → `kill_port()`, `/home/z/` → `php` |
-| check.ps1 : PHPStan + PHPUnit | Gate complète avec parallélisation PHPStan/PHPUnit |
-| Hook pre-commit | Lance check.ps1 via `pwsh -NoProfile` |
-| NOPROXY curl tests | Bypass proxy corporate sur appels localhost |
+| Fix TokenService constructeur | 6 args → 5 (WorkflowEngine supprimé) |
+| Fix test PDO busy_timeout | PRAGMA busy_timeout = 5000 ajouté |
+| Fix ExportServiceTest slugs | 8 slugs hardcodés → uniqid() |
+| Fix GlobalFunctionsTest regex | PCRE2 lookbehind corrigé |
+| Fix setAccessible() déprécié | 4 appels supprimés (PHP 8.5) |
+| Fix saveValidatorData() INSERT | UUID ajouté (id NOT NULL manquant) |
+| Fix addOwner() INSERT | UUID ajouté (id NOT NULL manquant) |
+| Migration v28 | tokens.action, admin_requests.reviewed_at/reviewed_by, seed testeur@e2e.test |
+| Fix RgpdServiceTest skip | Submission créée dans le test au lieu de markTestSkipped |
+| Fix 77 WorkflowEngineTest skips | Pattern DELETE-based cleanup (helpers + tearDown) |
+| Fix 4 AuthServiceTest skips | tearDown restaure $_SERVER, tests non-admin explicit user |
+| Fix 2 TokenServiceTest failures | Tests non-admin définissent explicitement $_SERVER |
+| Fix persona test skip | 3 scénarios testés (admin, non-admin, persona_token) |
 
 ---
 
-## 🎯 Ce qui reste (optionnel)
+## 🎯 Ce qui reste
 
 | Tâche | Effort | Détail |
 |-------|--------|--------|
-| Fix test_form_render_html | Faible | 7/8 passent — le test "Demande enregistrée" échoue (pré-existant) |
-| Tests E2E HTTP en CI | Moyen | Paths déjà cross-platform, reste à ajouter `php tests/test_http.php` au pipeline CI |
-| gate.sh同步 check.ps1 | Faible | gate.sh a des étapes (mail escaping, cache, email URLs, broken URLs) absentes de check.ps1 |
+| **Splitter WorkflowEngineTest** | Moyen | Fichier fait ~3300 lignes → doit être splitté en plusieurs fichiers de <350 lignes |
+| Tests E2E HTTP en CI | Moyen | Paths cross-platform, reste à ajouter au pipeline CI |
+| gate.sh sync check.ps1 | Faible | gate.sh a des étapes absentes de check.ps1 |
 
 ---
 
-_Dernière mise à jour : 2026-07-16_
+## ⚠️ Leçons apprises
+
+1. **TOUJOURS commit avant d'écraser un fichier existant.**
+2. **Quand un test modifie `$_SERVER`, le restaurer en tearDown** — sinon les tests suivants échouent silencieusement.
+3. **Quand un test dépend d'un état non-admin, le définir explicitement** — pas compter sur un état implicite du `$_SERVER`.
+
+---
+
+_Dernière mise à jour : 2026-07-18_

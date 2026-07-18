@@ -69,12 +69,16 @@ final class RgpdServiceTest extends TestCase
 
     public function testExportUserDataAsAdminReturnsRealSubmissions(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        // Use testeur@e2e.test which is seeded as admin in migration v28
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
-        $result = $this->service->exportUserData('testeur@dreets.gouv.fr');
-        if (empty($result['submissions'])) {
-            $this->markTestSkipped('No submissions in test database');
-        }
+        // Create a submission for a different user so admin can export it
+        $pdo = $this->db->getPdo();
+        $subId = \generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, '{\"test\":\"data\"}', 'other-agent@test.com', 'en_cours', datetime('now'))")
+            ->execute([$subId, $this->testFormId]);
+
+        $result = $this->service->exportUserData('other-agent@test.com');
         $this->assertNotEmpty($result['submissions']);
         $sub = $result['submissions'][0];
         $this->assertArrayHasKey('id', $sub);
