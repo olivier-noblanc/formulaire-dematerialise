@@ -34,39 +34,42 @@ final class HttpRouteTest extends TestCase
         self::killPort(self::$port);
 
         // Start PHP built-in server with TEST_MODE enabled
-        // APP_TEST_MODE=1 → core_bootstrap.php defines TEST_MODE=true
-        // router.php sets AUTH_USER fallback for dev
+        $routerPath = self::$docRoot . DIRECTORY_SEPARATOR . 'router.php';
         $cmd = sprintf(
-            'php -S 127.0.0.1:%d -t %s %s\\router.php',
+            'php -S 127.0.0.1:%d -t %s %s',
             self::$port,
             escapeshellarg(self::$docRoot),
-            escapeshellarg(self::$docRoot)
+            escapeshellarg($routerPath)
         );
 
-        $descriptors = [
-            0 => ['pipe', 'r'],  // stdin
-            1 => ['pipe', 'w'],  // stdout
-            2 => ['pipe', 'w'],  // stderr
-        ];
-
-        self::$serverProcess = proc_open($cmd, $descriptors, $pipes, self::$docRoot, [
-            'APP_TEST_MODE' => '1',
-            'APP_TEST_SECRET' => '',
-            'AUTH_USER' => 'admin@exemple.invalid',
-            'PATH' => getenv('PATH'),
-        ]);
-
-        if (!is_resource(self::$serverProcess)) {
-            self::markTestSkipped('Failed to start PHP built-in server');
+        if (PHP_OS_FAMILY === 'Windows') {
+            // On Windows, proc_open() doesn't work well with php -S.
+            // Use exec() to start the server in background.
+            $envCmd = 'set APP_TEST_MODE=1&& set APP_TEST_SECRET=&& set AUTH_USER=admin@exemple.invalid&& ' . $cmd;
+            exec('cmd /c start /B ' . $envCmd . ' > NUL 2>&1');
+            self::$serverProcess = null;
+        } else {
+            $descriptors = [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+            self::$serverProcess = proc_open($cmd, $descriptors, $pipes, self::$docRoot, [
+                'APP_TEST_MODE' => '1',
+                'APP_TEST_SECRET' => '',
+                'AUTH_USER' => 'admin@exemple.invalid',
+                'PATH' => getenv('PATH'),
+            ]);
+            if (!is_resource(self::$serverProcess)) {
+                self::markTestSkipped('Failed to start PHP built-in server');
+            }
+            fclose($pipes[0]);
         }
-
-        // Close stdin
-        fclose($pipes[0]);
 
         // Wait for server to be ready (max 10 seconds)
         $ready = false;
         for ($i = 0; $i < 40; $i++) {
-            usleep(250_000); // 250ms
+            usleep(250_000);
             $ctx = stream_context_create(['http' => [
                 'timeout' => 1,
                 'ignore_errors' => true,
@@ -79,14 +82,6 @@ final class HttpRouteTest extends TestCase
         }
 
         if (!$ready) {
-            // Check if process is still running
-            $status = proc_get_status(self::$serverProcess);
-            if (!$status['running']) {
-                fclose($pipes[1]);
-                fclose($pipes[2]);
-                self::markTestSkipped('PHP server process exited immediately');
-            }
-            self::$serverReady = false;
             self::markTestSkipped('PHP server did not become ready within 10 seconds');
         }
 
