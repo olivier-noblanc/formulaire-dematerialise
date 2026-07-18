@@ -89,7 +89,7 @@ final class HealthController extends BaseController
         $checks[] = ['label' => 'Configuration SMTP', 'ok' => $smtpOk, 'detail' => $smtpDetail];
 
         // 6. Extensions PHP requises
-        $requiredExt = ['mbstring', 'pdo_sqlite', 'sqlite3', 'json', 'session', 'pcre'];
+        $requiredExt = ['mbstring', 'pdo_sqlite', 'json', 'session', 'pcre'];
         $missingExt = array_filter($requiredExt, fn($ext) => !extension_loaded($ext));
         $extOk = $missingExt === [];
         $extDetail = $extOk
