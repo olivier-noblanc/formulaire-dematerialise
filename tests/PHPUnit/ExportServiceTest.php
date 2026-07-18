@@ -84,7 +84,6 @@ final class ExportServiceTest extends TestCase
     {
         $service = new ExportService($this->db, $this->auth);
         $reflection = new \ReflectionProperty($service, 'database');
-        $reflection->setAccessible(true);
         $this->assertSame($this->db, $reflection->getValue($service));
     }
 
@@ -92,7 +91,6 @@ final class ExportServiceTest extends TestCase
     {
         $service = new ExportService($this->db, $this->auth);
         $reflection = new \ReflectionProperty($service, 'authService');
-        $reflection->setAccessible(true);
         $this->assertSame($this->auth, $reflection->getValue($service));
     }
 
@@ -352,8 +350,9 @@ final class ExportServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         // Insert a test form if not exists
         $formId = 'test-export-form-' . uniqid();
+        $slug = 'test-export-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form', 'test-export', 'Test')");
+                     VALUES ('$formId', 'Test Export Form', '$slug', 'Test')");
 
         // Insert a test submission
         $subId = 'test-sub-' . uniqid();
@@ -392,8 +391,9 @@ final class ExportServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form2-' . uniqid();
+        $slug = 'test-export2-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form 2', 'test-export2', 'Test')");
+                     VALUES ('$formId', 'Test Export Form 2', '$slug', 'Test')");
 
         $subId = 'test-sub2-' . uniqid();
         $data = json_encode(['nom' => 'Test', 'validations' => ['some' => 'data']]);
@@ -421,8 +421,9 @@ final class ExportServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form3-' . uniqid();
+        $slug = 'test-export3-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form 3', 'test-export3', 'Test')");
+                     VALUES ('$formId', 'Test Export Form 3', '$slug', 'Test')");
 
         $subId = 'test-sub3-' . uniqid();
         $data = json_encode(['tags' => ['tag1', 'tag2'], 'nom' => 'Test']);
@@ -450,8 +451,9 @@ final class ExportServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form4-' . uniqid();
+        $slug = 'test-export4-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form 4', 'test-export4', 'Test')");
+                     VALUES ('$formId', 'Test Export Form 4', '$slug', 'Test')");
 
         $subId = 'test-sub4-' . uniqid();
         $data = json_encode(['field' => '=SUM(A1:A10)']);
@@ -474,8 +476,9 @@ final class ExportServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form5-' . uniqid();
+        $slug = 'test-export5-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form 5', 'test-export5', 'Test')");
+                     VALUES ('$formId', 'Test Export Form 5', '$slug', 'Test')");
 
         $subId1 = 'test-sub5a-' . uniqid();
         $subId2 = 'test-sub5b-' . uniqid();
@@ -509,8 +512,9 @@ final class ExportServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form6-' . uniqid();
+        $slug = 'test-export6-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form 6', 'test-export6', 'Test')");
+                     VALUES ('$formId', 'Test Export Form 6', '$slug', 'Test')");
 
         $subId1 = 'test-sub6a-' . uniqid();
         $subId2 = 'test-sub6b-' . uniqid();
@@ -544,8 +548,9 @@ final class ExportServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form7-' . uniqid();
+        $slug = 'test-export7-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form 7', 'test-export7', 'Test')");
+                     VALUES ('$formId', 'Test Export Form 7', '$slug', 'Test')");
 
         $subId1 = 'test-sub7a-' . uniqid();
         $subId2 = 'test-sub7b-' . uniqid();
@@ -579,8 +584,9 @@ final class ExportServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form8-' . uniqid();
+        $slug = 'test-export8-' . uniqid();
         $pdo->exec("INSERT INTO forms (id, label, slug, description)
-                     VALUES ('$formId', 'Test Export Form 8', 'test-export8', 'Test')");
+                     VALUES ('$formId', 'Test Export Form 8', '$slug', 'Test')");
 
         $subId = 'test-sub8-' . uniqid();
         $data = json_encode(['nom' => 'Test']);

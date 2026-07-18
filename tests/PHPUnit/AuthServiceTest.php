@@ -11,11 +11,21 @@ final class AuthServiceTest extends TestCase
 {
     private AuthService $auth;
     private Database $db;
+    private string $originalTestUser;
+    private string $originalAuthUser;
 
     protected function setUp(): void
     {
+        $this->originalTestUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
+        $this->originalAuthUser = $_SERVER['AUTH_USER'] ?? '';
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->auth = new AuthService($this->db);
+    }
+
+    protected function tearDown(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = $this->originalTestUser;
+        $_SERVER['AUTH_USER'] = $this->originalAuthUser;
     }
 
     // ── getUser() ───────────────────────────────────────────────
@@ -161,9 +171,20 @@ final class AuthServiceTest extends TestCase
 
     public function testIsAdminEffectiveFalseWhenPersonaActive(): void
     {
-        // persona_lookup function exists in the test env and calls App::has() statically,
-        // which causes an error. We skip this test to avoid the side effect.
-        $this->markTestSkipped('persona_lookup function exists in test env and calls App::has() statically');
+        // Test 1: admin without persona token → effective
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
+        $this->assertTrue($this->auth->isAdminEffective(), 'Admin without persona should be effective');
+
+        // Test 2: non-admin → not effective
+        $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
+        $this->assertFalse($this->auth->isAdminEffective(), 'Non-admin should not be effective');
+
+        // Test 3: admin with persona_token set → persona_lookup is called
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
+        $_GET['persona_token'] = 'test-token-' . uniqid();
+        $effective = $this->auth->isAdminEffective();
+        $this->assertIsBool($effective);
+        unset($_GET['persona_token']);
     }
 
     // ── requireAdmin() ──────────────────────────────────────────

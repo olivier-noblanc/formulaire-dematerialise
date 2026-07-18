@@ -186,7 +186,15 @@ final class SubmissionRepositoryTest extends TestCase
 
     public function testSaveAndDeleteValidatorDataRoundTrip(): void
     {
+        $pdo = $this->repo->pdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-vd-' . uniqid(), 'Test Form', 'Test']);
+
         $subId = 'test-sub-' . uniqid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
+            ->execute([$subId, $formId, '{}', 'test@test.com']);
+
         $fieldName = 'test_field_' . uniqid();
 
         try {
@@ -198,17 +206,23 @@ final class SubmissionRepositoryTest extends TestCase
             $this->repo->deleteValidatorData($subId, $fieldName);
             $data = $this->repo->getValidatorData($subId);
             $this->assertEmpty($data);
-        } catch (\PDOException $e) {
-            if (str_contains($e->getMessage(), 'NOT NULL')) {
-                $this->markTestSkipped('submission_validator_data table missing id column');
-            }
-            throw $e;
+        } finally {
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
         }
     }
 
     public function testSaveValidatorDataWithoutStepId(): void
     {
+        $pdo = $this->repo->pdo();
+        $formId = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-vd2-' . uniqid(), 'Test Form', 'Test']);
+
         $subId = 'test-sub-no-step-' . uniqid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
+            ->execute([$subId, $formId, '{}', 'test@test.com']);
+
         $fieldName = 'field_no_step_' . uniqid();
 
         try {
@@ -219,11 +233,9 @@ final class SubmissionRepositoryTest extends TestCase
 
             // Cleanup
             $this->repo->deleteValidatorData($subId, $fieldName);
-        } catch (\PDOException $e) {
-            if (str_contains($e->getMessage(), 'NOT NULL')) {
-                $this->markTestSkipped('submission_validator_data table missing id column');
-            }
-            throw $e;
+        } finally {
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
         }
     }
 

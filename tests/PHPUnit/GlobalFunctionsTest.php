@@ -264,7 +264,7 @@ final class GlobalFunctionsTest extends TestCase
         // Le cleanup ci-dessus devrait déjà les avoir éliminées
 
         // Extraire les appels de fonction : nom_suivi_de_(
-        preg_match_all('/(?<![\>\$\\])\b([a-z_][a-z0-9_]*)\s*\(/', $cleaned, $matches);
+        preg_match_all('/(?<![>\$])\\b([a-z_][a-z0-9_]*)\\s*\\(/', $cleaned, $matches);
 
         $excluded = [
             // Fonctions de test framework
@@ -303,6 +303,7 @@ final class GlobalFunctionsTest extends TestCase
             'extends', 'implements', 'abstract', 'final', 'private', 'protected',
             'public', 'const', 'var', 'global', 'declare', 'namespace', 'use', 'as',
             'try', 'catch', 'finally', 'throw', 'match', 'enum', 'readonly', 'yield', 'fn',
+            'empty',
             // Fonctions OOP (appels statiques via \)
             'App',
             // Fonctions defined dans le script lui-même
@@ -315,8 +316,12 @@ final class GlobalFunctionsTest extends TestCase
             'steps', 'forms', 'tokens', 'submissions', 'admins', 'settings',
             'form_fields', 'audit_log', 'alert_rules', 'alert_log', 'form_owners',
             'lazy_cron', 'delegations', 'attachments', 'step_recipients',
+            // Fonctions SQL
+            'datetime',
             // Fonctions de callback (closure context)
             'use', 'fn',
+            // Autres
+            'db',
         ];
 
         $undefinedFunctions = [];

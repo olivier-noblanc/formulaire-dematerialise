@@ -51,6 +51,7 @@ final class Database implements DatabaseInterface
             $this->pdoTest = new \PDO('sqlite:' . $testDbPath);
             $this->pdoTest->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $this->pdoTest->exec('PRAGMA foreign_keys = ON');
+            $this->pdoTest->exec('PRAGMA busy_timeout = 5000');
 
             if (function_exists('db_migrate')) {
                 db_migrate($this->pdoTest);

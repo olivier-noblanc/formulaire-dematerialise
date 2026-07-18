@@ -48,8 +48,7 @@ final class TokenServiceTest extends TestCase
             $settings,
             $auth,
             $audit,
-            $mailer,
-            $workflow
+            $mailer
         );
 
         $this->originalUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
@@ -188,6 +187,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateReturnsErrorForNonAdmin(): void
     {
+        $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
         $result = $this->tokenService->regenerate('nonexistent-token-id');
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('Accès refusé', $result['message']);
@@ -273,6 +273,7 @@ final class TokenServiceTest extends TestCase
 
     public function testCancelReturnsErrorForUnauthorizedNonAdmin(): void
     {
+        $_SERVER['HTTP_X_TEST_USER'] = 'unauthorized@test.com';
         $result = $this->tokenService->cancel($this->testSubmissionId, 'unauthorized@test.com');
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('autorisé', $result['message']);

@@ -1,5 +1,44 @@
 # Changelog — CircuitDémat
 
+## [10.19.0] — 2026-07-18
+_Résumé : 88→0 tests skippés, 0 failures, 0 errors, migration v28._
+
+### 🐛 Bug fixes
+
+- **TokenService constructeur** : 6ème argument `WorkflowEngine` supprimé (plus dans le constructor)
+- **Test PDO busy_timeout** : ajout de `PRAGMA busy_timeout = 5000` dans `Database::getTestPdo()`
+- **ExportServiceTest slugs** : 8 slugs hardcodés → `uniqid()` par test
+- **GlobalFunctionsTest regex** : PCRE2 10.44 rejette `\\` dans lookbehind → corrigé
+- **setAccessible() déprécié** : supprimé dans ExportServiceTest + SettingsServiceTest (PHP 8.5)
+- **saveValidatorData()** : INSERT manquant `id` UUID (NOT NULL PK)
+- **addOwner()** : INSERT manquant `id` UUID (NOT NULL PK)
+
+### 🆕 Migration v28
+
+- **tokens.action** : colonne ajoutée (type d'action valider/refuser)
+- **admin_requests.reviewed_at/reviewed_by** : traçabilité des décisions d'accès
+- **admins** : seed `testeur@e2e.test` pour les tests PHPUnit
+
+### 🧪 Tests — 88→0 skips
+
+- **WorkflowEngineTest** (77→0) : pattern DELETE-based cleanup via helpers (`createTestForm`, `createTestSubmission`, `createTestToken`) + `$createdIds` trackés en tearDown
+- **AuthServiceTest** (4→0) : tearDown restaure `$_SERVER`, tests non-admin définissent explicitement leur user
+- **RgpdServiceTest** (1→0) : submission créée dans le test au lieu de markTestSkipped
+- **TokenServiceTest** : 2 fixes pour tests non-admin définissant explicitement `$_SERVER`
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Errors | 4 | **0** |
+| Failures | 2 | **0** |
+| Warnings | 3 | **0** |
+| Deprecations | 4 | **0** |
+| Skipped | 88 | **0** |
+| Assertions | 1628 | **2113** |
+
+---
+
 ## [10.18.0] — 2026-07-16
 _Résumé : Hardening tokens concurrents + unification SubmissionStatus + refactor._
 

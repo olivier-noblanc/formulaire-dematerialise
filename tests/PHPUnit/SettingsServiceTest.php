@@ -21,7 +21,6 @@ final class SettingsServiceTest extends TestCase
         // Reset static cache to avoid cross-test pollution
         $reflection = new \ReflectionClass(SettingsService::class);
         $cacheProp = $reflection->getProperty('cache');
-        $cacheProp->setAccessible(true);
         $cacheProp->setValue(null, []);
 
         // Clean up test keys from previous runs
@@ -38,7 +37,6 @@ final class SettingsServiceTest extends TestCase
         // Reset static cache
         $reflection = new \ReflectionClass(SettingsService::class);
         $cacheProp = $reflection->getProperty('cache');
-        $cacheProp->setAccessible(true);
         $cacheProp->setValue(null, []);
     }
 
