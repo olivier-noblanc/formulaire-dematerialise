@@ -274,6 +274,48 @@ Invoke-Step -Name "4. Tests PHP existants (tests/test_all.php)" `
             -Command { & $PhpBin tests/test_all.php }
 
 # ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4b — Tests échappement emails
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "4b. Tests échappement emails (test_mail_escaping.php)" `
+            -Precondition { Test-Path 'tests/test_mail_escaping.php' } `
+            -Command { & $PhpBin tests/test_mail_escaping.php }
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4b2 — Tests cache service
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "4b2. Tests cache service (test_cache_service.php)" `
+            -Precondition { Test-Path 'tests/test_cache_service.php' } `
+            -Command { & $PhpBin tests/test_cache_service.php }
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4e — Tests URLs d'email
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "4e. Tests URLs d'email (test_email_urls.php)" `
+            -Precondition { Test-Path 'tests/test_email_urls.php' } `
+            -Command { & $PhpBin tests/test_email_urls.php }
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4f — Audit exhaustif liens cassés
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "4f. Audit exhaustif liens cassés (test_no_broken_urls.php)" `
+            -Precondition { Test-Path 'tests/test_no_broken_urls.php' } `
+            -Command { & $PhpBin tests/test_no_broken_urls.php }
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4c — Tests PHPMailer warnings
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "4c. Tests PHPMailer warnings (test_phpmailer_warnings.php)" `
+            -Precondition { Test-Path 'tests/test_phpmailer_warnings.php' } `
+            -Command { & $PhpBin tests/test_phpmailer_warnings.php }
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4d — Tests assets + cache HTTP
+# ═════════════════════════════════════════════════════════════════════════════
+Invoke-Step -Name "4d. Tests assets + cache HTTP (test_assets_cache.php)" `
+            -Precondition { Test-Path 'tests/test_assets_cache.php' } `
+            -Command { & $PhpBin tests/test_assets_cache.php }
+
+# ═════════════════════════════════════════════════════════════════════════════
 # ÉTAPE 5 — Tests de rendu HTML
 # ═════════════════════════════════════════════════════════════════════════════
 Invoke-Step -Name "5. Tests de rendu HTML (tests/test_form_render_html.php)" `
