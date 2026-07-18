@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1255** |
-| Assertions | **2113** |
+| Tests | **1500** |
+| Assertions | **2513** |
 | PHPStan erreurs | **0** (level 8) |
 | Tests E2E | 30 |
 | Skipped | **0** |
@@ -13,6 +13,7 @@
 | Failures | **0** |
 | Warnings | **0** |
 | Deprecations | **0** (PHP 8.5) |
+| xdebug | **off** (permanent) |
 
 ---
 
@@ -41,6 +42,8 @@
 | Fix 4 AuthServiceTest skips | tearDown restaure $_SERVER, tests non-admin explicit user |
 | Fix 2 TokenServiceTest failures | Tests non-admin définissent explicitement $_SERVER |
 | Fix persona test skip | 3 scénarios testés (admin, non-admin, persona_token) |
+| Split WorkflowEngineTest | 3370 lignes → 10 fichiers <350 lignes sous WorkflowEngineTest/ |
+| xdebug off permanent | xdebug.mode=off dans cli/conf.d/xdebug.ini |
 
 ---
 
@@ -48,9 +51,8 @@
 
 | Tâche | Effort | Détail |
 |-------|--------|--------|
-| **Splitter WorkflowEngineTest** | Moyen | Fichier fait ~3300 lignes → doit être splitté en plusieurs fichiers de <350 lignes |
-| Tests E2E HTTP en CI | Moyen | Paths cross-platform, reste à ajouter au pipeline CI |
-| gate.sh sync check.ps1 | Faible | gate.sh a des étapes absentes de check.ps1 |
+| Tests E2E HTTP en CI | Moyen | Paths cross-platform déjà faits, reste à ajouter au pipeline CI |
+| gate.sh sync check.ps1 | Faible | Comparer les 2 scripts et synchroniser les étapes manquantes |
 
 ---
 
