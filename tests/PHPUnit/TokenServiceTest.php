@@ -41,14 +41,15 @@ final class TokenServiceTest extends TestCase
         $mailer = new MailService($this->db, $settings);
         $fields = new FieldService($this->db);
         $conditions = new ConditionEvaluator();
-        $workflow = new WorkflowEngine($this->db, $settings, $mailer, $fields, $conditions);
+        $workflow = new WorkflowEngine($this->db, $settings, $mailer, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
 
         $this->tokenService = new TokenService(
             $this->db,
             $settings,
             $auth,
             $audit,
-            $mailer
+            $mailer,
+            new \App\Repository\SubmissionRepository($this->db)
         );
 
         $this->originalUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
@@ -552,5 +553,59 @@ final class TokenServiceTest extends TestCase
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$otherSubId]);
+    }
+
+    // ── Bug 1: invalidated_at — regenerate should not pollute findDoneByEmail ──
+
+    public function testRegenerateTokenSetsInvalidatedAtAndExcludedFromDone(): void
+    {
+        // Create an expired token for our test submission
+        $pdo = $this->db->getPdo();
+        $expiredTokenId = generate_uuid();
+        $expiredToken = generate_token();
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, 'validator@test.com', ?, datetime('now'), datetime('now', '-1 day'))")
+            ->execute([$expiredTokenId, $this->testSubmissionId, $this->testStepId, $expiredToken]);
+
+        // Regenerate the expired token
+        $result = $this->tokenService->regenerate($expiredTokenId);
+        $this->assertTrue($result['success'], 'Regenerate should succeed');
+
+        // The old token should have invalidated_at set
+        $check = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
+        $check->execute([$expiredTokenId]);
+        $row = $check->fetch(\PDO::FETCH_ASSOC);
+        $this->assertNotNull($row['invalidated_at'], 'Invalidated token should have invalidated_at set');
+
+        // findDoneByEmail should NOT return the invalidated token
+        $tokenRepo = new \App\Repository\TokenRepository($this->db);
+        $doneTokens = $tokenRepo->findDoneByEmail('validator@test.com');
+        $foundInvalidated = false;
+        foreach ($doneTokens as $t) {
+            if ($t['token_id'] === $expiredTokenId) {
+                $foundInvalidated = true;
+                break;
+            }
+        }
+        $this->assertFalse($foundInvalidated, 'findDoneByEmail must not return invalidated tokens');
+    }
+
+    public function testRegenerateDoesNotBreakAdvanceWorkflowStepUnblocking(): void
+    {
+        // Create an expired token, regenerate it, then verify advanceWorkflow
+        // still sees the step as "done" (done_at IS NOT NULL still holds)
+        $pdo = $this->db->getPdo();
+        $expiredTokenId = generate_uuid();
+        $expiredToken = generate_token();
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, 'validator@test.com', ?, datetime('now'), datetime('now', '-1 day'))")
+            ->execute([$expiredTokenId, $this->testSubmissionId, $this->testStepId, $expiredToken]);
+
+        // Regenerate
+        $this->tokenService->regenerate($expiredTokenId);
+
+        // The old token still has done_at set (advanceWorkflow depends on it)
+        $check = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
+        $check->execute([$expiredTokenId]);
+        $doneAt = $check->fetchColumn();
+        $this->assertNotEmpty($doneAt, 'Regenerated token must still have done_at set for workflow unblocking');
     }
 }

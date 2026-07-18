@@ -89,7 +89,7 @@ $app->get(AuthService::class)->setMailer($mail);
 
 $fields = $app->get(FieldService::class);
 $conditions = $app->get(ConditionEvaluator::class);
-$workflow = new WorkflowEngine($db, $settings, $mail, $fields, $conditions);
+$workflow = new WorkflowEngine($db, $settings, $mail, $fields, $conditions, $app->get(SubmissionRepository::class));
 $app->set(WorkflowEngine::class, $workflow);
 
 // View renderers — délèguent aux fonctions render_*() existantes
@@ -99,7 +99,7 @@ $app->set(ViewRenderer::class, $view);
 $app->set(EmailView::class, new EmailView());
 
 // Token lifecycle service
-$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail);
+$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $app->get(SubmissionRepository::class));
 $app->set(TokenService::class, $tokenService);
 
 // Attachment service

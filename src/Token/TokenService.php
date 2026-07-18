@@ -10,6 +10,7 @@ use App\Core\App;
 use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Mail\MailService;
+use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
 use App\Workflow\WorkflowEngine;
 
@@ -21,7 +22,7 @@ use App\Workflow\WorkflowEngine;
  */
 final readonly class TokenService
 {
-    public function __construct(private Database $database, private SettingsService $settingsService, private AuthService $authService, private AuditLogService $auditLogService, private MailService $mailService)
+    public function __construct(private Database $database, private SettingsService $settingsService, private AuthService $authService, private AuditLogService $auditLogService, private MailService $mailService, private SubmissionRepository $submissionRepository)
     {
     }
 
@@ -109,8 +110,8 @@ final readonly class TokenService
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE tokens SET done_at = ? WHERE id = ?')
-                ->execute([gmdate('Y-m-d H:i:s'), $oldTokenId]);
+            $pdo->prepare('UPDATE tokens SET done_at = ?, invalidated_at = ? WHERE id = ?')
+                ->execute([gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s'), $oldTokenId]);
 
             $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
                 ->execute([$newTokenRowId, $old['submission_id'], $old['step_id'], $old['email'], $newToken, $now, $expiresAt]);
@@ -175,19 +176,19 @@ final readonly class TokenService
             $pdo->prepare('UPDATE tokens SET done_at = ? WHERE submission_id = ? AND done_at IS NULL')
                 ->execute([$now, $submissionId]);
 
-            $data = json_decode($submission['data'], true) ?: [];
-            if (!isset($data['validations'])) {
-                $data['validations'] = [];
-            }
-            $data['validations'][] = [
-                'step_label' => 'Annulation',
-                'email' => $cancelledBy ?: 'system',
-                'action' => 'refuser',
-                'commentaire' => 'Soumission annulée',
-                'date' => $now,
-            ];
-            $pdo->prepare('UPDATE submissions SET data = ? WHERE id = ?')
-                ->execute([json_encode($data, JSON_UNESCAPED_UNICODE), $submissionId]);
+            $this->submissionRepository->appendToDataJson($submissionId, function (array $data) use ($now, $cancelledBy): array {
+                if (!isset($data['validations'])) {
+                    $data['validations'] = [];
+                }
+                $data['validations'][] = [
+                    'step_label' => 'Annulation',
+                    'email' => $cancelledBy ?: 'system',
+                    'action' => 'refuser',
+                    'commentaire' => 'Soumission annulée',
+                    'date' => $now,
+                ];
+                return $data;
+            });
 
             $pdo->commit();
         } catch (\Throwable $e) {

@@ -249,14 +249,14 @@ final readonly class StatsService
         $stmt = $pdo->query("
             SELECT t.email,
                    COUNT(t.id) as total,
-                   SUM(CASE WHEN t.done_at IS NOT NULL THEN 1 ELSE 0 END) as done,
+                   SUM(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL THEN 1 ELSE 0 END) as done,
                    SUM(CASE WHEN t.done_at IS NULL THEN 1 ELSE 0 END) as pending,
-                   AVG(CASE WHEN t.done_at IS NOT NULL
+                   AVG(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL
                        THEN CAST(strftime('%s', t.done_at) AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL)
                        ELSE NULL END) as avg_response_seconds
             FROM tokens t
             JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' OR t.done_at IS NOT NULL
+            WHERE s.status = 'en_cours' OR (t.done_at IS NOT NULL AND t.invalidated_at IS NULL)
             GROUP BY t.email
             ORDER BY total DESC
             LIMIT 20

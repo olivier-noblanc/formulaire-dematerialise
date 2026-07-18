@@ -85,14 +85,16 @@ $app->set(WorkflowEngine::class, new WorkflowEngine(
     $app->get(SettingsService::class),
     $app->get(MailService::class),
     $app->get(FieldService::class),
-    $app->get(ConditionEvaluator::class)
+    $app->get(ConditionEvaluator::class),
+    $app->get(SubmissionRepository::class)
 ));
 $app->set(TokenService::class, new TokenService(
     $db,
     $app->get(SettingsService::class),
     $app->get(AuthService::class),
     $app->get(AuditLogService::class),
-    $app->get(MailService::class)
+    $app->get(MailService::class),
+    $app->get(SubmissionRepository::class)
 ));
 $app->set(ValidatorDataService::class, new ValidatorDataService($db, $app->get(FieldService::class)));
 $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRepository::class)));

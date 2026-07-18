@@ -130,7 +130,7 @@ $_app->set(\App\Mail\MailService::class, $_mail_svc);
 $_auth_svc->setMailer($_mail_svc);
 $_fields_svc = $_app->get(\App\Forms\FieldService::class);
 $_conditions_svc = $_app->get(\App\Workflow\ConditionEvaluator::class);
-$_workflow_svc = new \App\Workflow\WorkflowEngine($_db_service, $_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc);
+$_workflow_svc = new \App\Workflow\WorkflowEngine($_db_service, $_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc, $_app->get(\App\Repository\SubmissionRepository::class));
 $_app->set(\App\Workflow\WorkflowEngine::class, $_workflow_svc);
 $_html_svc = $_app->get(\App\Render\HtmlService::class);
 $_app->set(\App\View\ViewRenderer::class, new \App\View\ViewRenderer($_html_svc));
@@ -143,7 +143,8 @@ $_app->set(\App\Token\TokenService::class, new \App\Token\TokenService(
     $_settings_svc,
     $_app->get(\App\Auth\AuthService::class),
     $_app->get(\App\Audit\AuditLogService::class),
-    $_mail_svc
+    $_mail_svc,
+    $_app->get(\App\Repository\SubmissionRepository::class)
 ));
 $_app->set(\App\Forms\ValidatorDataService::class, new \App\Forms\ValidatorDataService($_db_service, $_app->get(\App\Forms\FieldService::class)));
 $_attachment_repo = $_app->get(\App\Repository\AttachmentRepository::class);
