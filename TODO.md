@@ -4,12 +4,13 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests unitaires | **1252** (0 skip, 0 fail) |
+| Tests unitaires | **1266** (0 skip, 0 fail) |
 | Tests E2E | **96** (1 skip légitime, 0 fail) |
-| Total tests | **1348** |
-| Assertions | **2392** |
+| Total tests | **1362** |
+| Assertions | **2132** |
 | PHPStan erreurs | **0** (level 8) |
 | xdebug | **off** (permanent) |
+| Bugs audit | **16 trouvés, 16 fixés** |
 
 ---
 
@@ -23,40 +24,90 @@
 
 ## ✅ Terminé cette session (v10.19.0)
 
+### Fixes de tests
 | Tâche | Détail |
 |-------|--------|
-| Fix TokenService constructeur | 6 args → 5 (WorkflowEngine supprimé) |
-| Fix test PDO busy_timeout | PRAGMA busy_timeout = 5000 ajouté |
-| Fix ExportServiceTest slugs | 8 slugs hardcodés → uniqid() |
-| Fix GlobalFunctionsTest regex | PCRE2 lookbehind corrigé |
-| Fix setAccessible() déprécié | 4 appels supprimés (PHP 8.5) |
-| Fix saveValidatorData() INSERT | UUID ajouté (id NOT NULL manquant) |
-| Fix addOwner() INSERT | UUID ajouté (id NOT NULL manquant) |
+| TokenService constructeur | 6 args → 5 (WorkflowEngine supprimé) |
+| Test PDO busy_timeout | PRAGMA busy_timeout = 5000 |
+| ExportServiceTest slugs | 8 slugs hardcodés → uniqid() |
+| GlobalFunctionsTest regex | PCRE2 lookbehind corrigé |
+| setAccessible() déprécié | 4 appels supprimés (PHP 8.5) |
+| saveValidatorData() INSERT | UUID ajouté (id NOT NULL manquant) |
+| addOwner() INSERT | UUID ajouté (id NOT NULL manquant) |
 | Migration v28 | tokens.action, admin_requests.reviewed_at/reviewed_by, seed testeur@e2e.test |
-| Fix RgpdServiceTest skip | Submission créée dans le test au lieu de markTestSkipped |
-| Fix 77 WorkflowEngineTest skips | Pattern DELETE-based cleanup (helpers + tearDown) |
-| Fix 4 AuthServiceTest skips | tearDown restaure $_SERVER, tests non-admin explicit user |
-| Fix 2 TokenServiceTest failures | Tests non-admin définissent explicitement $_SERVER |
-| Fix persona test skip | 3 scénarios testés (admin, non-admin, persona_token) |
-| Split WorkflowEngineTest | 3370 lignes → 10 fichiers <350 lignes sous WorkflowEngineTest/ |
-| xdebug off permanent | xdebug.mode=off dans cli/conf.d/xdebug.ini |
-| check.ps1 sync gate.sh | 6 étapes ajoutées (mail_escaping, cache_service, email_urls, no_broken_urls, phpmailer_warnings, assets_cache) |
-| CI PHPUnit + E2E | PHPUnit (1500 tests) + E2E HTTP ajoutés au pipeline Woodpecker |
-| CI upgrade | PHP 8.4→8.5, PHPStan via composer au lieu de wget |
+| RgpdServiceTest skip | Submission créée dans le test |
+| 77 WorkflowEngineTest skips | Pattern DELETE-based cleanup (helpers + tearDown) |
+| 4 AuthServiceTest skips | tearDown restaure $_SERVER |
+| TokenServiceTest failures | Tests non-admin définissent $_SERVER |
+| persona test skip | 3 scénarios testés |
+
+### Fixes de bugs métier (16 bugs audit)
+| # | Bug | Fix |
+|---|-----|-----|
+| 1 | `done_at` double sens (regenerate) | `tokens.invalidated_at` + filtres |
+| 2 | Lost update `submissions.data` | `appendToDataJson()` optimistic locking |
+| 3 | `rgpd_consent` manquant SELECT | Ajouté au SELECT |
+| 4 | Échéances en retard mal classées | `(int)` → `(int) floor()` |
+| 5 | Code mort `FieldService::getValidatorStatusBatch` | Supprimé |
+| 6 | StatsService `invalidated_at` | Filtre ajouté |
+| 7 | Checkbox required jamais vérifiée | Suppression exclusion |
+| 8 | `delegate()` reproduit bug #1 | `invalidated_at = NOW` |
+| 9 | Checkbox required (FormController) | Suppression exclusion |
+| 10 | Dead code `SubmissionRepository::create()` | Tests migrés vers `createWithRgpd()` |
+| 11 | Sujet email alerte trompeur | `abs()` remplacé par condition |
+| 12 | Double alerte UTC/Paris | `gmdate()` pour comparaison |
+| 13 | `delai_relance_h` sans défaut | Ajout `'48'` par défaut |
+| 14 | `audit_log.ip` toujours NULL | Capture `REMOTE_ADDR` |
+| 15 | Condition étape réfère champ demandeur | Vérification dans `FormJsonValidator` |
+| 16 | Email "Refuser" affiche "Approuver" | Titre dynamique |
+
+### Infrastructure
+| Tâche | Détail |
+|-------|--------|
+| E2E tests Windows | Wrapper PHP + PowerShell Start-Process |
+| Health check | sqlite3 → pdo_sqlite |
+| testConnection() | Loose comparison pour SQLite |
+| xdebug off permanent | xdebug.mode=off |
+| CI PHPUnit + E2E | Ajoutés au pipeline Woodpecker |
+| gate.sh sync check.ps1 | 12 étapes synchronisées |
+| AGENTS.md | 9 règles d'audit ajoutées |
 
 ---
 
 ## 🎯 Ce qui reste
 
-Rien. Tout est fait.
+| Tâche | Effort | Détail |
+|-------|--------|--------|
+| **Split WorkflowEngineTest** | Moyen | ~4200 lignes → fichiers <350 lignes. Helpers créés, à appliquer. |
+| **try/catch audit catégorie 3** | Moyen | AuditLogService::log() et RgpdService::deleteUserData() avalent les erreurs — à surfacer |
+| **CHECK constraints sur colonnes enum** | Faible | Migration v30 avec CHECK sur submissions.status, form_fields.filled_by, etc. |
+| **Tests E2E HTTP en CI** | Moyen | Déjà ajoutés, à vérifier sur le serveur CI |
+| **gate.sh sync check.ps1** | Faible | Déjà fait, à vérifier en prod |
 
 ---
 
 ## ⚠️ Leçons apprises
 
 1. **TOUJOURS commit avant d'écraser un fichier existant.**
-2. **Quand un test modifie `$_SERVER`, le restaurer en tearDown** — sinon les tests suivants échouent silencieusement.
-3. **Quand un test dépend d'un état non-admin, le définir explicitement** — pas compter sur un état implicite du `$_SERVER`.
+2. **Quand un test modifie `$_SERVER`, le restaurer en tearDown.**
+3. **Quand un test dépend d'un état non-admin, le définir explicitement.**
+4. **16 bugs trouvés manuellement — PHPStan n'en détecte qu'un seul.** Lire le code, pas juste l'analyser statiquement.
+5. **never reuse field for new semantics** — créer une colonne dédiée, pas réutiliser `done_at`.
+6. **grep transversal avant de clore une tâche** — un bug correct en isolation peut être incohérent avec le reste du système.
+
+---
+
+## 📏 Règles AGENTS.md (addendum audit)
+
+1. Grep le champ/colonne/clé dans tout le dépôt
+2. Pas de liste de valeurs dupliquée
+3. Pas de réutilisation de champ existant pour un nouveau sens
+4. Pas de méthode ancienne inutilisée laissée à côté
+5. Dates avec fuseau explicite
+6. Texte utilisateur dérivé du même calcul que la logique
+7. Test du cas négatif/limite ajouté
+8. Colonne enum → contrainte SQL
+9. Catch sur chemin critique → relance ou surfacer
 
 ---
 
