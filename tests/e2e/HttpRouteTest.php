@@ -190,7 +190,7 @@ final class HttpRouteTest extends TestCase
             'docs'    => ['/?p=docs', 'Aide et documentation', ['full-doc', 'start-section']],
             'changelog' => ['/?p=changelog', 'Journal des modifications', ['version-card']],
             'my_submissions' => ['/?p=my_submissions', 'Mes demandes', []],
-            'my_validations' => ['/?p=my_validations', 'Mes validations', ['tab-bar']],
+            'my_validations' => ['/?p=my_validations', 'Mes validations', ['stat']],
             'my_forms' => ['/?p=my_forms', 'Mes formulaires', []],
             'admin_access' => ['/?p=admin_access', 'admin', []],
         ];
@@ -204,7 +204,7 @@ final class HttpRouteTest extends TestCase
     public static function adminPageProvider(): array
     {
         return [
-            'dashboard'      => ['/?p=dashboard', 'Tableau de bord', ['stat-chip', 'stats-bar']],
+            'dashboard'      => ['/?p=dashboard', 'Tableau de bord', ['stats', 'stat']],
             'admin_forms'    => ['/?p=admin_forms', 'Gestion des formulaires', []],
             'admin_settings' => ['/?p=admin_settings', 'Paramètres', []],
             'admin_alerts'   => ['/?p=admin_alerts', 'Alertes', []],
@@ -500,7 +500,7 @@ final class HttpRouteTest extends TestCase
 
         $this->assertSame(200, $status);
         $this->assertStringContainsString('Mes validations', $body);
-        $this->assertStringContainsString('tab-bar', $body);
+        $this->assertStringContainsString('stat', $body);
     }
 
     // ── Tests: comprehensive route coverage ───────────────────
