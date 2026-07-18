@@ -238,7 +238,7 @@ final class TokenRepository extends BaseRepository
              JOIN steps st ON st.id = t.step_id
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
-             WHERE t.email = ? AND t.done_at IS NOT NULL
+             WHERE t.email = ? AND t.done_at IS NOT NULL AND t.invalidated_at IS NULL
              ORDER BY t.done_at DESC
              LIMIT ?',
             [$email, $limit]

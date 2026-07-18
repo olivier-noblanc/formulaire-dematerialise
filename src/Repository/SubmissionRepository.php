@@ -143,6 +143,52 @@ final class SubmissionRepository extends BaseRepository
         );
     }
 
+    /**
+     * Atomically read-modify-write submissions.data JSON with optimistic locking.
+     *
+     * Reads the current JSON, applies $mutator, writes back with WHERE data = ?.
+     * If a concurrent write happened, retries up to 3 times.
+     *
+     * @param callable(array<string, mixed>): array<string, mixed> $mutator
+     * @return bool true on success, false after max retries
+     */
+    public function appendToDataJson(string $submissionId, callable $mutator): bool
+    {
+        $pdo = $this->pdo();
+        $maxRetries = 3;
+
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+            // Read current JSON
+            $stmt = $pdo->prepare('SELECT data FROM submissions WHERE id = ?');
+            $stmt->execute([$submissionId]);
+            $currentData = $stmt->fetchColumn();
+
+            if ($currentData === false) {
+                return false;
+            }
+
+            $decoded = json_decode($currentData, true) ?? [];
+
+            // Apply mutation
+            $decoded = $mutator($decoded);
+            $newJson = json_encode($decoded, JSON_THROW_ON_ERROR);
+
+            // Optimistic write: WHERE data = old_json
+            $update = $pdo->prepare('UPDATE submissions SET data = ? WHERE id = ? AND data = ?');
+            $update->execute([$newJson, $submissionId, $currentData]);
+
+            if ($update->rowCount() > 0) {
+                return true;
+            }
+
+            // Conflict: someone else wrote between our read and write
+            error_log("appendToDataJson: conflict on attempt " . ($attempt + 1) . " for submission $submissionId");
+        }
+
+        error_log("appendToDataJson: max retries ($maxRetries) exceeded for submission $submissionId");
+        return false;
+    }
+
     public function deleteCascade(string $id): bool
     {
         $pdo = $this->pdo();

@@ -30,7 +30,7 @@ abstract class Base extends TestCase
         $mail = new MailService($this->db, $settings);
         $fields = new FieldService($this->db);
         $conditions = new ConditionEvaluator();
-        $this->workflow = new WorkflowEngine($this->db, $settings, $mail, $fields, $conditions);
+        $this->workflow = new WorkflowEngine($this->db, $settings, $mail, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
         $this->createdIds = ['forms' => [], 'steps' => [], 'step_recipients' => [], 'submissions' => [], 'tokens' => [], 'form_owners' => []];
     }
 

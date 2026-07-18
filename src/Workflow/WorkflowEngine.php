@@ -8,6 +8,7 @@ use App\Contract\WorkflowInterface;
 use App\Core\Database;
 use App\Forms\FieldService;
 use App\Mail\MailService;
+use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
 use App\Enum\SubmissionStatus;
 
@@ -16,7 +17,7 @@ use App\Enum\SubmissionStatus;
  */
 final readonly class WorkflowEngine implements WorkflowInterface
 {
-    public function __construct(private Database $database, private SettingsService $settingsService, private MailService $mailService, private FieldService $fieldService, private ConditionEvaluator $conditionEvaluator)
+    public function __construct(private Database $database, private SettingsService $settingsService, private MailService $mailService, private FieldService $fieldService, private ConditionEvaluator $conditionEvaluator, private SubmissionRepository $submissionRepository)
     {
     }
 
@@ -457,16 +458,7 @@ final readonly class WorkflowEngine implements WorkflowInterface
             }
         }
 
-        $data = json_decode((string) ($t['data'] ?? '{}'), true) ?: [];
         $comment = mb_substr($comment, 0, 1000);
-        $data['validations'][] = [
-            'step_label' => $t['step_label'],
-            'email' => $t['email'],
-            'done_by' => $doneBy,
-            'action' => $action,
-            'commentaire' => $comment,
-            'date' => gmdate('Y-m-d H:i:s'),
-        ];
 
         if ($action === 'refuser') {
             $stmt = $pdo->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
@@ -487,8 +479,19 @@ final readonly class WorkflowEngine implements WorkflowInterface
             }
         }
 
-        $pdo->prepare('UPDATE submissions SET data = ? WHERE id = ?')
-            ->execute([json_encode($data), $t['submission_id']]);
+        $validationEntry = [
+            'step_label' => $t['step_label'],
+            'email' => $t['email'],
+            'done_by' => $doneBy,
+            'action' => $action,
+            'commentaire' => $comment,
+            'date' => gmdate('Y-m-d H:i:s'),
+        ];
+
+        $this->submissionRepository->appendToDataJson($t['submission_id'], function (array $data) use ($validationEntry): array {
+            $data['validations'][] = $validationEntry;
+            return $data;
+        });
 
         $pdo->commit();
 

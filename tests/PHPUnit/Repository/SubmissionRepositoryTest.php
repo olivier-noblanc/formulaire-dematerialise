@@ -303,4 +303,109 @@ final class SubmissionRepositoryTest extends TestCase
         $result = $this->repo->updateStatus('nonexistent-' . uniqid(), 'done');
         $this->assertTrue($result);
     }
+
+    // ── appendToDataJson() ─────────────────────────────────────
+
+    public function testAppendToDataJsonAddsMutationAndReturnsTrue(): void
+    {
+        $formId = \generate_uuid();
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-append-' . $formId, 'Test Append', '']);
+
+        $subId = $this->repo->create([
+            'form_id' => $formId,
+            'data' => json_encode(['key' => 'value']),
+            'submitted_by' => 'append@test.com',
+            'status' => 'en_cours',
+        ]);
+
+        $result = $this->repo->appendToDataJson($subId, function (array $data): array {
+            $data['mutations'][] = ['type' => 'test', 'ts' => '2026-01-01T00:00:00Z'];
+            return $data;
+        });
+
+        $this->assertTrue($result);
+
+        $fetched = $this->repo->findById($subId);
+        $decoded = json_decode($fetched['data'], true);
+        $this->assertArrayHasKey('mutations', $decoded);
+        $this->assertSame('test', $decoded['mutations'][0]['type']);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+    }
+
+    public function testAppendToDataJsonHandlesConcurrentMutationsWithoutLoss(): void
+    {
+        $formId = \generate_uuid();
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-concurrent-' . $formId, 'Test Concurrent', '']);
+
+        $subId = $this->repo->create([
+            'form_id' => $formId,
+            'data' => json_encode(['mutations' => []]),
+            'submitted_by' => 'concurrent@test.com',
+            'status' => 'en_cours',
+        ]);
+
+        // Simulate 2 sequential mutations (each reads current state, appends, writes)
+        $this->repo->appendToDataJson($subId, function (array $data): array {
+            $data['mutations'][] = ['n' => 1];
+            return $data;
+        });
+
+        $this->repo->appendToDataJson($subId, function (array $data): array {
+            $data['mutations'][] = ['n' => 2];
+            return $data;
+        });
+
+        $fetched = $this->repo->findById($subId);
+        $decoded = json_decode($fetched['data'], true);
+        $this->assertCount(2, $decoded['mutations'], 'Both mutations should survive');
+        $this->assertSame(1, $decoded['mutations'][0]['n']);
+        $this->assertSame(2, $decoded['mutations'][1]['n']);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+    }
+
+    public function testAppendToDataJsonReturnsFalseOnMaxRetriesExceeded(): void
+    {
+        $formId = \generate_uuid();
+        $pdo = $this->repo->pdo();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
+            ->execute([$formId, 'test-retry-' . $formId, 'Test Retry', '']);
+
+        $subId = $this->repo->create([
+            'form_id' => $formId,
+            'data' => json_encode(['key' => 'value']),
+            'submitted_by' => 'retry@test.com',
+            'status' => 'en_cours',
+        ]);
+
+        // Simulate 3 consecutive conflicts by modifying data externally
+        // between each read-write cycle
+        $attempt = 0;
+        $result = $this->repo->appendToDataJson($subId, function (array $data) use (&$attempt, $pdo, $subId): array {
+            $attempt++;
+            // After reading but before writing, another writer modifies the data
+            if ($attempt <= 3) {
+                $pdo->prepare("UPDATE submissions SET data = ? WHERE id = ?")
+                    ->execute([json_encode(['conflict' => $attempt]), $subId]);
+            }
+            $data['retry'] = true;
+            return $data;
+        });
+
+        $this->assertFalse($result, 'Should return false after max retries');
+        $this->assertSame(3, $attempt, 'Should have attempted 3 times');
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+        $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+    }
 }
