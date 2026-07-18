@@ -4,15 +4,11 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1500** |
-| Assertions | **2513** |
+| Tests unitaires | **1252** (0 skip, 0 fail) |
+| Tests E2E | **96** (1 skip légitime, 0 fail) |
+| Total tests | **1348** |
+| Assertions | **2392** |
 | PHPStan erreurs | **0** (level 8) |
-| Tests E2E | 30 |
-| Skipped | **0** |
-| Errors | **0** |
-| Failures | **0** |
-| Warnings | **0** |
-| Deprecations | **0** (PHP 8.5) |
 | xdebug | **off** (permanent) |
 
 ---
