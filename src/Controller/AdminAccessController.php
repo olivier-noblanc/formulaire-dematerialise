@@ -95,6 +95,8 @@ final class AdminAccessController extends BaseController
                 $errorMsg = 'Lien invalide ou demande déjà traitée.';
                 $confirmData = null;
             }
+            // Store the action from the email link for the confirmation page
+            $confirmAction = $_GET['action'] ?? 'approve';
         }
 
         $isSuperAdmin = App::auth()->isSuperAdmin();
@@ -118,8 +120,8 @@ final class AdminAccessController extends BaseController
 
   <?php if ($confirmData): ?>
   <div class="card">
-    <h2>Confirmer l'approbation</h2>
-    <p>Approuver la demande d'accès de <strong><?= \App\Core\App::html()->escape($confirmData['email']) ?></strong> ?</p>
+    <h2><?= ($confirmAction ?? 'approve') === 'reject' ? 'Confirmer le refus' : 'Confirmer l\'approbation' ?></h2>
+    <p><?= ($confirmAction ?? 'approve') === 'reject' ? 'Refuser' : 'Approuver' ?> la demande d'accès de <strong><?= \App\Core\App::html()->escape($confirmData['email']) ?></strong> ?</p>
     <p style="font-size:.85rem;color:#555;">Demande créée le <?= \App\Core\App::html()->escape($confirmData['created_at']) ?></p>
     <div style="display:flex;gap:.5rem;margin-top:1rem;">
       <form method="POST">
