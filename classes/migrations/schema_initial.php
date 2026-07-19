@@ -82,7 +82,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
             submitted_by TEXT NOT NULL,
             submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             closed_at DATETIME,
-            status TEXT DEFAULT 'en_cours',
+            status TEXT DEFAULT 'en_cours', -- v30 : contrainte via triggers (BEFORE INSERT + BEFORE UPDATE OF status) — voir classes/migrations/v30.php
             admin_comment TEXT DEFAULT '', -- v22 : annotation libre admin/owner
             FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
         )
@@ -118,7 +118,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
             id TEXT PRIMARY KEY NOT NULL,
             email TEXT UNIQUE NOT NULL,
             requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            status TEXT NOT NULL DEFAULT 'pending',
+            status TEXT NOT NULL DEFAULT 'pending', -- v30 : contrainte via triggers (BEFORE INSERT + BEFORE UPDATE OF status) — voir v30.php
             token TEXT UNIQUE NOT NULL
         )
     ");
@@ -144,9 +144,9 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
             required INTEGER DEFAULT 0,
             ordre INTEGER DEFAULT 0,
             card_group TEXT DEFAULT 'Général',
-            filled_by TEXT DEFAULT 'demandeur',
+            filled_by TEXT DEFAULT 'demandeur', -- v30 : contrainte via triggers (BEFORE INSERT + BEFORE UPDATE OF filled_by) — voir v30.php
             validator_step TEXT DEFAULT '',
-            visibility TEXT DEFAULT 'all',
+            visibility TEXT DEFAULT 'all', -- v30 : contrainte via triggers (BEFORE INSERT + BEFORE UPDATE OF visibility) — voir v30.php
             condition TEXT DEFAULT '',
             FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
         )

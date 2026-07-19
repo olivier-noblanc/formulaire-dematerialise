@@ -28,6 +28,7 @@ function apply_migration_v28(PDO $pdo, int $current_version): int {
         }
 
         // tokens.action — type d'action du token (valider/refuser)
+        // v30 : contrainte via triggers (BEFORE INSERT + BEFORE UPDATE OF action) — voir v30.php
         $columns = $pdo->query("PRAGMA table_info(tokens)");
         $hasAction = false;
         if ($columns !== false) {

@@ -13,7 +13,7 @@ final class BaseRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new class(new Database()) extends BaseRepository {};
+        $this->repo = new class(\App\Core\App::getInstance()->get(Database::class)) extends BaseRepository {};
     }
 
     public function testPdoReturnsPdoInstance(): void

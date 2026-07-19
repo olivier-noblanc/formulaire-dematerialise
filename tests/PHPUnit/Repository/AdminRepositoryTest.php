@@ -14,7 +14,7 @@ final class AdminRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $db = new Database();
+        $db = \App\Core\App::getInstance()->get(Database::class);
         $this->repo = new AdminRepository($db, new SettingsRepository($db));
     }
 

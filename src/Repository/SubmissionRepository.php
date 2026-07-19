@@ -167,7 +167,7 @@ final class SubmissionRepository extends BaseRepository
                 return false;
             }
 
-            $decoded = json_decode($currentData, true) ?? [];
+            $decoded = json_decode((string) $currentData, true) ?? [];
 
             // Apply mutation
             $decoded = $mutator($decoded);

@@ -9,6 +9,7 @@ use App\Core\Database;
 use App\Forms\FieldService;
 use App\Mail\MailService;
 use App\Repository\SettingsRepository;
+use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
 
 /**
@@ -25,7 +26,8 @@ final readonly class WorkflowService implements WorkflowInterface
         $mailService     = new MailService($database, $settingsService);
         $fieldService   = new FieldService($database);
         $conditionEvaluator = new ConditionEvaluator();
-        $this->workflowEngine = new WorkflowEngine($database, $settingsService, $mailService, $fieldService, $conditionEvaluator);
+        $submissionRepository = new SubmissionRepository($database);
+        $this->workflowEngine = new WorkflowEngine($database, $settingsService, $mailService, $fieldService, $conditionEvaluator, $submissionRepository);
     }
 
     /**

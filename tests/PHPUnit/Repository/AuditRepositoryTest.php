@@ -13,7 +13,7 @@ final class AuditRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new AuditRepository(new Database());
+        $this->repo = new AuditRepository(\App\Core\App::getInstance()->get(Database::class));
     }
 
     public function testLogReturnsBool(): void

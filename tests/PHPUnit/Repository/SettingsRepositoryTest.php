@@ -13,7 +13,7 @@ final class SettingsRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new SettingsRepository(new Database());
+        $this->repo = new SettingsRepository(\App\Core\App::getInstance()->get(Database::class));
     }
 
     public function testGetReturnsDefaultForMissingKey(): void

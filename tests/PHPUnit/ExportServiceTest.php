@@ -358,7 +358,7 @@ final class ExportServiceTest extends TestCase
         $subId = 'test-sub-' . uniqid();
         $data = json_encode(['nom' => 'Dupont', 'prenom' => 'Jean', 'check_ok' => '1', 'check_no' => '0']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId, $formId, $data, 'agent@test.com']);
 
         try {
@@ -398,7 +398,7 @@ final class ExportServiceTest extends TestCase
         $subId = 'test-sub2-' . uniqid();
         $data = json_encode(['nom' => 'Test', 'validations' => ['some' => 'data']]);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId, $formId, $data, 'agent@test.com']);
 
         try {
@@ -428,7 +428,7 @@ final class ExportServiceTest extends TestCase
         $subId = 'test-sub3-' . uniqid();
         $data = json_encode(['tags' => ['tag1', 'tag2'], 'nom' => 'Test']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId, $formId, $data, 'agent@test.com']);
 
         try {
@@ -458,7 +458,7 @@ final class ExportServiceTest extends TestCase
         $subId = 'test-sub4-' . uniqid();
         $data = json_encode(['field' => '=SUM(A1:A10)']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId, $formId, $data, 'agent@test.com']);
 
         try {
@@ -486,10 +486,10 @@ final class ExportServiceTest extends TestCase
         $data2 = json_encode(['nom' => 'Second']);
 
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, '2025-01-01 10:00:00', 'pending')")
+                        VALUES (?, ?, ?, ?, '2025-01-01 10:00:00', 'en_cours')")
             ->execute([$subId1, $formId, $data1, 'agent@test.com']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, '2025-01-02 10:00:00', 'pending')")
+                        VALUES (?, ?, ?, ?, '2025-01-02 10:00:00', 'en_cours')")
             ->execute([$subId2, $formId, $data2, 'agent@test.com']);
 
         try {
@@ -522,10 +522,10 @@ final class ExportServiceTest extends TestCase
         $data2 = json_encode(['nom' => 'Bob', 'email' => 'bob@test.com']);
 
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId1, $formId, $data1, 'agent@test.com']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId2, $formId, $data2, 'agent@test.com']);
 
         try {
@@ -559,10 +559,10 @@ final class ExportServiceTest extends TestCase
         $data2 = json_encode(['prenom' => 'Bob']);
 
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId1, $formId, $data1, 'agent@test.com']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId2, $formId, $data2, 'agent@test.com']);
 
         try {
@@ -591,7 +591,7 @@ final class ExportServiceTest extends TestCase
         $subId = 'test-sub8-' . uniqid();
         $data = json_encode(['nom' => 'Test']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, closed_at, status)
-                        VALUES (?, ?, ?, ?, datetime('now'), NULL, 'pending')")
+                        VALUES (?, ?, ?, ?, datetime('now'), NULL, 'en_cours')")
             ->execute([$subId, $formId, $data, 'agent@test.com']);
 
         try {

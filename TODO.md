@@ -4,13 +4,14 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests unitaires | **1266** (0 skip, 0 fail) |
+| Tests unitaires | **1282** (0 skip, 0 fail) |
 | Tests E2E | **96** (1 skip légitime, 0 fail) |
-| Total tests | **1362** |
-| Assertions | **2132** |
+| Total tests | **1378** |
+| Assertions | **2451** |
 | PHPStan erreurs | **0** (level 8) |
 | xdebug | **off** (permanent) |
 | Bugs audit | **16 trouvés, 16 fixés** |
+| Migration v30 | **CHECK rebuild + 4 triggers** (5 colonnes) |
 
 ---
 
@@ -22,7 +23,7 @@
 
 ---
 
-## ✅ Terminé cette session (v10.19.0)
+## ✅ Terminé (historique)
 
 ### Fixes de tests
 | Tâche | Détail |
@@ -78,9 +79,6 @@
 
 | Tâche | Effort | Détail |
 |-------|--------|--------|
-| **Split WorkflowEngineTest** | Moyen | ~4200 lignes → fichiers <350 lignes. Helpers créés, à appliquer. |
-| **try/catch audit catégorie 3** | Moyen | AuditLogService::log() et RgpdService::deleteUserData() avalent les erreurs — à surfacer |
-| **CHECK constraints sur colonnes enum** | Faible | Migration v30 avec CHECK sur submissions.status, form_fields.filled_by, etc. |
 | **Tests E2E HTTP en CI** | Moyen | Déjà ajoutés, à vérifier sur le serveur CI |
 | **gate.sh sync check.ps1** | Faible | Déjà fait, à vérifier en prod |
 
@@ -111,4 +109,4 @@
 
 ---
 
-_Dernière mise à jour : 2026-07-18_
+_Dernière mise à jour : 2026-07-19 (v10.20.0)_

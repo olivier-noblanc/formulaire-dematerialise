@@ -13,13 +13,13 @@ final class SubmissionRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new SubmissionRepository(new Database());
+        $this->repo = new SubmissionRepository(\App\Core\App::getInstance()->get(Database::class));
     }
 
     protected function tearDown(): void
     {
         // Cleanup test data: remove submissions with non-existent form_ids
-        $pdo = (new Database())->getPdo();
+        $pdo = \App\Core\App::getInstance()->get(Database::class)->getPdo();
         $orphans = $pdo->query("
             SELECT s.id FROM submissions s
             LEFT JOIN forms f ON f.id = s.form_id
@@ -100,7 +100,7 @@ final class SubmissionRepositoryTest extends TestCase
             'form_id' => $formId,
             'data' => json_encode(['field1' => 'value1']),
             'submitted_by' => 'user@test.com',
-            'status' => 'pending',
+            'status' => 'en_cours',
         ];
 
         $createdId = $this->repo->create($data);
@@ -111,16 +111,16 @@ final class SubmissionRepositoryTest extends TestCase
         $this->assertSame($createdId, $fetched['id']);
         $this->assertSame($formId, $fetched['form_id']);
         $this->assertSame('user@test.com', $fetched['submitted_by']);
-        $this->assertSame('pending', $fetched['status']);
+        $this->assertSame('en_cours', $fetched['status']);
 
         $byForm = $this->repo->findByForm($formId);
         $this->assertCount(1, $byForm);
         $this->assertSame($createdId, $byForm[0]['id']);
 
-        $updated = $this->repo->updateStatus($createdId, 'validated');
+        $updated = $this->repo->updateStatus($createdId, 'valide');
         $this->assertTrue($updated);
         $fetched2 = $this->repo->findById($createdId);
-        $this->assertSame('validated', $fetched2['status']);
+        $this->assertSame('valide', $fetched2['status']);
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$createdId]);

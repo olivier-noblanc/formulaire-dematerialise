@@ -9,6 +9,13 @@ const INST_DEFAULT_APP_NAME       = 'CircuitDémat';
 const INST_DEFAULT_EMAIL_DOMAIN   = 'dreets.gouv.fr';
 const INST_DEFAULT_DELAI_RELANCE  = 48;
 
+if (!defined('DEFAULT_DB_PATH')) {
+    define('DEFAULT_DB_PATH', __DIR__ . '/db/workflow.db');
+}
+if (!defined('DB_PATH')) {
+    define('DB_PATH', DEFAULT_DB_PATH);
+}
+
 function inst_h(string $val): string {
     return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
 }
