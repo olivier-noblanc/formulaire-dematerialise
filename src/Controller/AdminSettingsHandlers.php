@@ -95,7 +95,9 @@ final class AdminSettingsHandlers
                 App::settings()->set($key, $value, $updated_by);
             }
             App::audit()->log('settings_update', 'settings', 'Paramètres mis à jour', $updated_by);
-            $success_msg = 'Paramètres enregistrés avec succès.';
+            if ($error_msg === '') {
+                $success_msg = 'Paramètres enregistrés avec succès.';
+            }
         } catch (\Exception $e) {
             $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
         }

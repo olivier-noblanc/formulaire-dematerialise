@@ -220,7 +220,7 @@ final class FormRepository extends BaseRepository
     {
         /** @var array<int, array{field_name: string, label: string}> $result */
         $result = $this->fetchAll(
-            "SELECT field_name, label FROM form_fields WHERE form_id = ? AND field_type = 'date' ORDER BY ordre",
+            "SELECT field_name, label FROM form_fields WHERE form_id = ? AND field_type = 'date' AND filled_by = 'demandeur' ORDER BY ordre",
             [$formId]
         );
         return $result;

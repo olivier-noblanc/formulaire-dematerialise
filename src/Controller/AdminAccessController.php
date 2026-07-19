@@ -83,6 +83,13 @@ final class AdminAccessController extends BaseController
                 } else {
                     $errorMsg = 'Erreur lors du refus de la demande.';
                 }
+            } elseif ($action === 'remove_admin' && App::auth()->isSuperAdmin()) {
+                $email = $_POST['email'] ?? '';
+                if (App::auth()->removeAdmin($email)) {
+                    $successMsg = 'Administrateur retiré.';
+                } else {
+                    $errorMsg = 'Impossible de retirer cet administrateur (auto-suppression non autorisée, ou email invalide).';
+                }
             }
         }
 
