@@ -13,7 +13,7 @@ final class TokenRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new TokenRepository(new Database());
+        $this->repo = new TokenRepository(\App\Core\App::getInstance()->get(Database::class));
     }
 
     public function testFindByValueReturnsNullForNonexistent(): void

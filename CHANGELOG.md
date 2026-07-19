@@ -1,5 +1,77 @@
 # Changelog — CircuitDémat
 
+## [10.20.0] — 2026-07-19
+_Résumé : PHPStan 8→0, migration v30 (CHECK + triggers sur 5 colonnes), crash simulation test, try/catch audit, AGENTS.md addendum._
+
+### 🐛 Bug fixes
+
+- **WorkflowService** : constructeur manquant `SubmissionRepository` ajouté (5→6 args pour WorkflowEngine)
+- **FormJsonValidator** : `$seen_validator_field_names` initialisé avant le bloc fields (variable potentiellement undefined)
+- **SubmissionRepository** : cast `(string)` sur `fetchColumn()` pour `json_decode()` (int|string|null → string)
+- **phpstan_inst_stubs** : constante `DEFAULT_DB_PATH` ajoutée (5 occurrences dans helpers.php, controllers, WebhookService)
+- **ExportServiceTest** : 11 INSERT avec `status='pending'` → `'en_cours'` (valeur invalide pour submissions.status)
+- **SubmissionRepositoryTest** : `updateStatus('validated')` → `'valide'` (valeur invalide)
+- **DatabaseMigrations** : boucle require étendue `v≤29` → `v≤30`
+
+### 🆕 Migration v30 — Contraintes enum (CHECK + triggers)
+
+**Approche split** (testée et prouvée sur copie de la base réelle) :
+- **CHECK via rebuild** (CREATE→INSERT→DROP→RENAME) : `form_fields.filled_by`, `form_fields.visibility`, `admin_requests.status`
+- **Triggers BEFORE INSERT + BEFORE UPDATE OF `<colonne>`** : `submissions.status`, `tokens.action`
+- **Self-healing** : si `form_fields_new` existe mais `form_fields` non (panne entre DROP et RENAME), RENAME au lieu de rebuild complet
+- **Version INSERT en dernier** sur `$rebuild` — si panne avant, la migration se rejoue
+
+| Table | Colonne | Mécanisme | Valeurs valides |
+|-------|---------|-----------|-----------------|
+| `form_fields` | `filled_by` | CHECK rebuild | demandeur, validator |
+| `form_fields` | `visibility` | CHECK rebuild | all, owner_only |
+| `admin_requests` | `status` | CHECK rebuild | pending, approved, rejected |
+| `submissions` | `status` | Trigger BEFORE | en_cours, valide, refuse, annule |
+| `tokens` | `action` | Trigger BEFORE | valider, refuser (nullable) |
+
+**Note Windows/NTFS** : le rebuild via `$rebuild` (connexion séparée) est nécessaire car NTFS mandatory locking bloque le DDL même sans transaction ouverte quand d'autres connexions PDO sont actives dans le processus PHPUnit. Sur Linux (prod), `$rebuild` fonctionne sans problème.
+
+### 🔧 Audit try/catch
+
+- **AuditLogService::log()** : erreur inclut maintenant l'action + stack trace dans `error_log()`
+- **RgpdService::deleteUserData()** : erreur auditée via `App::audit()->log('rgpd_delete_failed', ...)` en plus de `error_log()`
+
+### 🧪 Tests ajoutés (+16)
+
+- **EnumConstraintTest** : 16 tests — INSERT/UPDATE reject + valid values pour chaque colonne (5 colonnes × 3 tests + crash simulation)
+- **testMigrationCrashSelfHealing** : simule un crash entre DROP et RENAME, vérifie que la self-healing restaure les données sans perte
+
+### 🏗️ Refactor tests
+
+- **8 Repository tests** (`AdminRepositoryTest`, `AttachmentRepositoryTest`, `AuditRepositoryTest`, `BaseRepositoryTest`, `FormRepositoryTest`, `SettingsRepositoryTest`, `SubmissionRepositoryTest`, `TokenRepositoryTest`) : `new Database()` → `App::getInstance()->get(Database::class)` pour éviter les connexions PDO concurrentes
+
+### 📝 Documentation
+
+- **AGENTS.md** : addendum audit mis à jour avec règle 10 + corollaire (vérifier un correctif avant de l'utiliser)
+- **schema_initial.php** : commentaires ajoutés sur les colonnes contraintes pointant vers v30
+- **v28.php** : commentaire ajouté sur tokens.action pointant vers v30
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1362 | **1378** (+16) |
+| Assertions | 2132 | **2451** (+319) |
+| PHPStan erreurs | 8 | **0** |
+| Migration version | 29 | **30** |
+
+### 🔍 Investigation lock Windows/NTFS
+
+Le "database table is locked" a été investigué en profondeur :
+- **Stack trace capturée** : le lock se produit quand `db_migrate()` est appelé depuis `getTestPdo()` pendant que la connexion bootstrap est encore active
+- **Preuve 1** : deux connexions PDO sans transaction → DROP **réussit**
+- **Preuve 2** : deux connexions avec `BEGIN IMMEDIATE` → DROP **hang** (timeout)
+- **Preuve 3** : `apply_schema_initial()` seul → pas de transaction, DROP **réussit**
+- **Diagnostic complet** : `spl_object_id`, `inTransaction`, `PRAGMA database_list` capturés
+- **Résultat** : non reproductible en isolation, spécifique au runner PHPUnit sur Windows/NTFS. `$rebuild` (connexion séparée) est la solution adoptée.
+
+---
+
 ## [10.19.0] — 2026-07-18
 _Résumé : 88→0 tests skippés, 0 failures, 0 errors, migration v28._
 

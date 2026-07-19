@@ -31,7 +31,7 @@ final readonly class AuditLogService implements AuditInterface
         try {
             $this->auditRepository->log($action, $target, $detail, $actor);
         } catch (\Throwable $e) {
-            error_log('AuditLog error: ' . $e->getMessage());
+            error_log('AuditLog error: ' . $e->getMessage() . ' [' . $action . '] ' . $e->getTraceAsString());
         }
     }
 

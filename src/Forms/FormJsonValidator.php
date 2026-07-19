@@ -46,6 +46,8 @@ final class FormJsonValidator
         }
 
         // ── fields array ────────────────────────────────────────
+        /** @var list<string> $seen_validator_field_names */
+        $seen_validator_field_names = [];
         if (!isset($data['fields'])) {
             $errors[] = 'Propriété "fields" manquante. Le JSON doit contenir un tableau "fields" (même vide) avec la définition des champs du formulaire.';
         } elseif (!is_array($data['fields'])) {
@@ -55,7 +57,6 @@ final class FormJsonValidator
                 $warnings[] = 'Le tableau "fields" est vide. Le formulaire n\'aura aucun champ — l\'utilisateur ne pourra rien saisir.';
             }
             $seen_field_names = [];
-            $seen_validator_field_names = [];
             foreach ($data['fields'] as $i => $f) {
                 $idx = $i + 1;
                 $prefix = "fields[$idx]";

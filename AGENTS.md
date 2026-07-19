@@ -232,7 +232,9 @@ Un audit manuel complet a trouvé 16 bugs réels. PHPStan niveau 5 n'en a détec
 
 ### 1. Discipline de grep avant de clore une tâche
 
-Avant de considérer une tâche terminée, si elle touche une colonne DB, une clé JSON, ou un champ partagé entre plusieurs fichiers, **grep ce nom sur tout le dépôt** et vérifie que chaque usage reste cohérent.
+**Règle** : avant de considérer une tâche terminée, si elle touche une colonne DB, une clé JSON, ou un champ partagé entre plusieurs fichiers, exécuter un grep de ce nom sur tout le dépôt et vérifier que chaque usage reste cohérent avec le nouveau comportement — pas seulement le fichier modifié.
+
+**Pourquoi** : la moitié des bugs trouvés (`done_at` réutilisé pour "invalidé" par `regenerate()` puis `delegate()`, alors que 3 autres fichiers le lisent comme "validé par l'utilisateur" — `findDoneByEmail`, `getValidatorStats`, `RgpdService::exportUserData`) viennent d'une fonction correcte en isolation, mais incohérente avec le reste du système. Un test unitaire de la fonction modifiée ne peut pas voir ça — seule une recherche transversale le peut.
 
 ```bash
 grep -rn "<nom_du_champ>" --include="*.php" .
@@ -240,39 +242,81 @@ grep -rn "<nom_du_champ>" --include="*.php" .
 
 ### 2. Une seule source de vérité pour les listes de valeurs valides
 
-Ne jamais dupliquer une liste de valeurs autorisées. Si elle existe déjà, la référencer (`ConditionEvaluator::VALID_OPS`), pas la recopier.
+**Règle** : ne jamais dupliquer une liste de valeurs autorisées (enum-like) dans plusieurs fichiers. Si une liste existe déjà (ex. opérateurs de condition, types de champs, statuts), la référencer, pas la recopier.
+
+**Pourquoi** : la liste des opérateurs de condition existait en 3 exemplaires légèrement différents (`ConditionEvaluator` en supporte 8, `AdminStepCrudHandler` et `FormJsonValidator` n'en acceptent que 5) — désynchronisation qui bloque silencieusement l'import de JSON générés par IA utilisant des opérateurs pourtant valides à l'exécution.
+
+**Action** : quand tu écris une deuxième occurrence d'une liste de constantes qui existe déjà ailleurs, extrais-la en constante publique du premier endroit (`ConditionEvaluator::VALID_OPS` par exemple) et importe-la partout.
 
 ### 3. Ne jamais réutiliser un champ existant pour un nouveau sens
 
-Si une colonne a déjà une sémantique établie (ex. `done_at` = "traité par l'utilisateur"), ne pas l'utiliser pour un nouveau sens ("invalidé par admin"). **Créer une colonne dédiée** (`invalidated_at`).
+**Règle** : si une colonne/clé a déjà une sémantique établie et lue à plusieurs endroits (ex. `done_at` = "traité par l'utilisateur"), ne jamais l'utiliser dans une nouvelle fonction pour signifier autre chose ("invalidé par un admin"), même si ça évite une migration. Ajouter une colonne dédiée.
+
+**Pourquoi** : ce chevauchement de sens est la cause racine de 4 des 16 bugs trouvés (bug #1 et son extension dans `delegate()`, `getValidatorStats()`, l'export RGPD).
+
+**Action** : si tu hésites à réutiliser un champ existant pour un cas proche mais différent, arrête-toi et pose la question plutôt que de trancher seul — ou par défaut, crée une colonne séparée nommée explicitement (`invalidated_at`, pas `done_at`).
 
 ### 4. Hygiène du code mort
 
-Avant d'écrire une nouvelle méthode, chercher si une équivalente existe (`grep -rn "function nomSimilaire"`). Si tu remplaces une implémentation, **supprime l'ancienne**.
+**Règle** : avant d'écrire une nouvelle méthode, cherche si une méthode équivalente existe déjà (`grep -rn "function nomSimilaire"` et `grep -rn "->methode("`). Si tu remplaces une implémentation par une meilleure, supprime l'ancienne au lieu de la laisser à côté.
 
-### 5. Jamais de DateTime sans fuseau explicite
+**Pourquoi** : trouvé 3 fois — `FieldService::getValidatorStatusBatch()` (buguée, jamais appelée) coexistant avec `ValidatorDataService::getValidatorStatusBatch()` (correcte, utilisée) ; `SubmissionRepository::create()` (incomplète) à côté de `createWithRgpd()` ; un mode `'both'` de vérification email jamais réellement câblé dans le chemin de production.
 
-Toute comparaison de dates entre PHP et SQLite `datetime('now')` doit utiliser UTC partout ou une conversion explicite. `alert_check.php` comparait `Europe/Paris` (PHP) à UTC (SQLite) — double-alerte possible.
+**Action** : en fin de tâche, si tu constates qu'une ancienne méthode devient inutilisée suite à ton changement, propose explicitement de la supprimer plutôt que de la laisser.
 
-### 6. Cohérence texte/logique métier
+### 5. Discipline temporelle : jamais de DateTime sans fuseau explicite
 
-Si un sujet d'email ou un label dépend d'une condition, le calcul doit être **factorisé en une seule variable** utilisée aux deux endroits, jamais dupliqué.
+**Règle** : toute création de `DateTimeImmutable`/`DateTime` à partir d'une chaîne stockée en base doit préciser explicitement le fuseau (`new DateTimeImmutable($str, new DateTimeZone('UTC'))`), jamais s'appuyer sur le fuseau par défaut du serveur. Toute comparaison de dates entre deux sources (PHP et SQLite `datetime('now')`) doit utiliser le même référentiel (UTC partout, ou conversion explicite documentée).
+
+**Pourquoi** : `alert_check.php` compare `$now` (Europe/Paris, calculé en PHP) à `alert_log.sent_at` (UTC, calculé par SQLite `datetime('now')`) dans le dédoublonnage journalier — fenêtre de double-alerte de 1 à 2h par jour.
+
+**Action** : grep `new DateTime` et `new DateTimeImmutable` sans `DateTimeZone` explicite à côté doit être traité comme suspect.
+
+### 6. Cohérence du texte utilisateur avec la logique métier
+
+**Règle** : quand un texte affiché à l'utilisateur (sujet d'email, libellé, statut) dépend d'une condition ou d'un signe, ce texte doit être dérivé de la **même** variable/fonction que le contenu principal, jamais recalculé séparément avec une logique dupliquée.
+
+**Pourquoi** : le sujet d'email d'alerte utilise `abs($days_remaining)` et affiche toujours "J-X avant la date cible", y compris quand l'échéance est dépassée depuis plusieurs jours — alors que le corps de l'email calcule correctement "DATE DÉPASSÉE" à partir de la même variable, juste dans une fonction différente.
+
+**Action** : si un sujet, un titre ou un label est construit dans une ligne différente de celle qui détermine le statut/l'urgence, factorise le calcul en une seule fonction/variable utilisée aux deux endroits.
 
 ### 7. Tests à écrire systématiquement
 
-Pour toute fonctionnalité avec champ obligatoire, import/export, ou donnée partagée :
-- **Matrice type × obligatoire** (aurait attrapé le bug checkbox)
-- **Round-trip import/export** avec chaque valeur d'enum
-- **Invariant multi-fonctionnalités** après une action (ex. `delegate()` → vérifier `findDoneByEmail()`)
-- **Comparaison texte/statut** avec chaque branche (positive, nulle, négative)
+Pour toute nouvelle fonctionnalité impliquant un champ obligatoire, un import/export, ou une donnée partagée entre fonctionnalités, ajouter un des tests suivants selon le cas :
+
+- **Matrice type de champ × obligatoire** : pour chaque `field_type` supporté (text, email, date, select, checkbox, textarea, file), un test qui vérifie que `required=1` bloque bien la soumission si le champ est vide/non coché. (Aurait attrapé le bug checkbox jamais vérifiée.)
+- **Round-trip import/export** : exporter une configuration, la réimporter, vérifier l'égalité — en particulier avec chaque valeur valide d'un champ enum, pas seulement les valeurs les plus courantes.
+- **Invariant multi-fonctionnalités** : après une action A (ex. `delegate()`, `regenerate()`), vérifier qu'une fonctionnalité B qui lit la même donnée donne un résultat cohérent avec l'intention métier de A.
+- **Comparaison texte/statut** : si un email ou une page affiche un statut dérivé d'un signe/condition, un test avec une valeur qui produit chaque branche (positive, nulle, négative) et une assertion sur le texte affiché.
 
 ### 8. Pousser la validation vers la contrainte SQL
 
-Pour toute colonne à valeurs limitées (statut, type, enum-like), ajouter une contrainte `CHECK` en base en plus de la validation PHP. Pour tout invariant "au plus un X actif", évaluer un index unique partiel plutôt que de compter sur le code applicatif.
+**Règle** : pour toute colonne à valeurs limitées (statut, type, enum-like), ajouter une contrainte `CHECK` en base en plus de la validation PHP. Pour tout invariant "au plus un X actif" (un seul token actif par étape, une seule soumission en cours par formulaire+demandeur, etc.), évaluer systématiquement un index unique partiel plutôt que de compter uniquement sur une vérification applicative avant écriture.
+
+**Limite à connaître** : une contrainte NOT NULL ne protège que si rien n'avale l'exception qu'elle déclenche (voir règle 9), et un `DEFAULT` ajouté pour ne pas casser des lignes existantes lors d'une migration ne doit jamais devenir un filet de sécurité permanent qui masque un oubli d'INSERT côté code.
+
+**Action** : à chaque nouvelle colonne enum-like ou nouvel invariant d'unicité, poser la question "est-ce que la base l'empêche, ou seulement le code qui l'appelle aujourd'hui ?" avant de considérer la tâche terminée.
 
 ### 9. Ne jamais avaler une exception sur un chemin critique
 
-Un `catch` qui avale l'erreur et continue silencieusement sur un chemin d'écriture, d'audit, ou de conformité est interdit. L'erreur doit soit remonter, soit être surfacée de façon visible — jamais `error_log()` seul comme unique trace.
+**Règle** : distinguer trois usages du `try/catch`, ne traiter que le troisième comme un problème :
+1. **Nettoyage puis relance** (rollback de transaction avant de laisser l'exception remonter) — légitime ; préférer `try { } finally { }` sans `catch` quand c'est fonctionnellement équivalent.
+2. **Panne externe attendue retournée en valeur structurée** (SMTP, LDAP, réseau) — légitime tel quel.
+3. **Catch qui avale l'erreur et continue silencieusement**, sur un chemin d'écriture, d'audit, ou de conformité — à proscrire. Une opération qui échoue sur ce type de chemin doit soit remonter, soit surfacer l'échec de façon visible pour l'appelant — jamais `error_log()` seul comme unique trace.
+
+**Pourquoi** : `AuditLogService::log()` avale toute exception d'écriture dans `audit_log` sans la relancer. La contrainte SQL (règle 8) et la discipline try/catch (règle 9) doivent avancer ensemble — l'une sans l'autre laisse un trou.
+
+**Action** : avant de clore une tâche qui ajoute ou modifie un `catch`, classer explicitement dans laquelle des 3 catégories il tombe. Ne jamais ajouter un `catch (\Throwable $e) { error_log(...); }` sans `throw` ni valeur de retour explicite sur un chemin qui écrit des données ou journalise une action.
+
+### 10. Vérifier une affirmation technique avant de l'utiliser pour justifier un choix
+
+**Règle** : quand tu justifies un choix d'implémentation par "X n'est pas possible" ou "X est incompatible avec Y", vérifie-le par une reproduction minimale avant de l'écrire — ne le présente jamais comme un fait établi sur la seule base de ce qui a semblé échouer pendant une tentative.
+
+**Pourquoi** : l'affirmation "SQLite refuse DROP TABLE dans la même session PDO" s'est avérée fausse à la vérification — reproduite avec le schéma réel, `DROP TABLE` fonctionne sans erreur dans la même connexion. Le vrai problème rencontré était différent : avec `foreign_keys=ON`, dropper une table parente référencée en cascade supprime silencieusement les lignes filles — pas une impossibilité, un piège documenté et contournable (`PRAGMA foreign_keys=OFF` pendant le rebuild).
+
+**Action** : avant d'écrire qu'une chose "n'est pas possible" avec l'outil/la plateforme utilisée, isole le cas dans un script minimal et montre le message d'erreur réel plutôt que de le paraphraser de mémoire. Si tu ne peux pas reproduire l'échec isolément, ne présente pas la conclusion comme acquise.
+
+**Corollaire découvert en pratique** : la règle s'applique de façon récursive — une correction n'est pas vérifiée du seul fait qu'elle corrige le diagnostic initial. Après avoir identifié la vraie cause d'un échec, le correctif proposé doit lui-même être exécuté, pas seulement écrit et jugé plausible. Une explication de ce qui n'a pas marché n'est pas une preuve que la solution proposée, elle, marche.
 
 ### Checklist avant de clore une tâche
 

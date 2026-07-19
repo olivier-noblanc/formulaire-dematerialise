@@ -13,7 +13,7 @@ final class FormRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new FormRepository(new Database());
+        $this->repo = new FormRepository(\App\Core\App::getInstance()->get(Database::class));
     }
 
     public function testFindByIdReturnsNullForNonexistent(): void

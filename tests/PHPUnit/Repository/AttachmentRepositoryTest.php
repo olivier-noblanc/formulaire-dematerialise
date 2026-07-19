@@ -13,7 +13,7 @@ final class AttachmentRepositoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = new AttachmentRepository(new Database());
+        $this->repo = new AttachmentRepository(\App\Core\App::getInstance()->get(Database::class));
     }
 
     public function testFindByIdReturnsNullForNonexistent(): void

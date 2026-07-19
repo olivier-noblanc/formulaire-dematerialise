@@ -96,7 +96,9 @@ final readonly class RgpdService
             App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
             return true;
         } catch (\Exception $e) {
-            error_log('RGPD delete error: ' . $e->getMessage());
+            $errorMsg = 'RGPD delete error: ' . $e->getMessage();
+            error_log($errorMsg);
+            App::audit()->log('rgpd_delete_failed', 'user:' . $email, $errorMsg);
             return false;
         }
     }
