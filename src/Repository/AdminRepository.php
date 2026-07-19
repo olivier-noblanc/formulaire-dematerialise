@@ -69,17 +69,22 @@ final class AdminRepository extends BaseRepository
         return $result;
     }
 
+    /**
+     * @return array{id: string, email: string, requested_at: string, status: string, token: string}|null
+     */
+    public function findPendingByEmail(string $email): ?array
+    {
+        /** @var array{id: string, email: string, requested_at: string, status: string, token: string}|null $result */
+        $result = $this->fetchOne("SELECT id, email, requested_at, status, token FROM admin_requests WHERE email = ? AND status = 'pending' ORDER BY requested_at DESC LIMIT 1", [strtolower($email)]);
+        return $result;
+    }
+
     public function add(string $email): bool
     {
         return $this->execute(
             "INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))",
             [\generate_uuid(), strtolower($email)]
         );
-    }
-
-    public function remove(string $email): bool
-    {
-        return $this->execute('DELETE FROM admins WHERE email = ?', [strtolower($email)]);
     }
 
     /**

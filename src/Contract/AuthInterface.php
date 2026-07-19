@@ -20,7 +20,7 @@ interface AuthInterface
     public function getOwnedForms(?string $email = null): array;
     /** @return array{success: bool, reason: string} */
     public function processAdminRequest(string $email): array;
-    public function approveAdminRequest(string $email): bool;
-    public function rejectAdminRequest(string $email): bool;
+    public function approveAdminRequest(string $email, ?string $requestId = null): bool;
+    public function rejectAdminRequest(string $email, ?string $requestId = null): bool;
     public function removeAdmin(string $email): bool;
 }

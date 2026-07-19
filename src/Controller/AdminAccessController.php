@@ -48,7 +48,7 @@ final class AdminAccessController extends BaseController
                 $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
                 $request = $adminRepo->findByToken($token);
                 if ($request) {
-                    if (App::auth()->approveAdminRequest($request['email'])) {
+                    if (App::auth()->approveAdminRequest($request['email'], $request['id'] ?? null)) {
                         $successMsg = 'Demande d\'accès approuvée pour ' . \App\Core\App::html()->escape($request['email']) . '.';
                     } else {
                         $errorMsg = 'Erreur lors de l\'approbation de la demande.';
@@ -61,7 +61,7 @@ final class AdminAccessController extends BaseController
                 $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
                 $request = $adminRepo->findByToken($token);
                 if ($request) {
-                    if (App::auth()->rejectAdminRequest($request['email'])) {
+                    if (App::auth()->rejectAdminRequest($request['email'], $request['id'] ?? null)) {
                         $successMsg = 'Demande d\'accès refusée pour ' . \App\Core\App::html()->escape($request['email']) . '.';
                     } else {
                         $errorMsg = 'Erreur lors du refus de la demande.';

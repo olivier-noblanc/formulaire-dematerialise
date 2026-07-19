@@ -397,7 +397,7 @@ final class FormRepository extends BaseRepository
         $id = \generate_uuid();
         $this->execute(
             'INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)',
-            [$id, $formId, $email]
+            [$id, $formId, strtolower(trim($email))]
         );
         return $id;
     }
