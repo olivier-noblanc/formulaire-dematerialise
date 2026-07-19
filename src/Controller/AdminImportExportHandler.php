@@ -194,7 +194,7 @@ final class AdminImportExportHandler
                     $cond_db = '';
                     if (is_array($raw_cond_import)) {
                         $op_imp = (string) ($raw_cond_import['op'] ?? '');
-                        $valid_ops = ['equals', 'not_equals', 'contains', 'not_empty', 'empty'];
+                        $valid_ops = \App\Workflow\ConditionEvaluator::VALID_OPS;
                         if (!empty($raw_cond_import['field']) && in_array($op_imp, $valid_ops, true)) {
                             $encoded = json_encode([
                                 'field' => (string) $raw_cond_import['field'],
