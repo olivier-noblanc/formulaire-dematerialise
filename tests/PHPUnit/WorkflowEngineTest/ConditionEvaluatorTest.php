@@ -76,7 +76,7 @@ final class ConditionEvaluatorTest extends Base
     public function testConditionEvaluatorHandlesUnknownOperator(): void
     {
         $condition = json_encode(['field' => 'name', 'op' => 'unknown']);
-        $this->assertTrue($this->evaluator->evaluate($condition, ['name' => 'John']));
+        $this->assertFalse($this->evaluator->evaluate($condition, ['name' => 'John']));
     }
 
     public function testConditionEvaluatorHandlesArrayValueInData(): void

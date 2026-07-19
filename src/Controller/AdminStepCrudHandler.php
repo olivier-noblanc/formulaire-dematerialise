@@ -55,7 +55,7 @@ final class AdminStepCrudHandler
         $condition_field = trim($_POST['condition_field'] ?? '');
         $condition_op    = trim($_POST['condition_op'] ?? '');
         $condition_value = trim($_POST['condition_value'] ?? '');
-        $valid_ops = ['equals', 'not_equals', 'contains', 'not_empty', 'empty'];
+        $valid_ops = \App\Workflow\ConditionEvaluator::VALID_OPS;
         if ($condition_op !== '' && !in_array($condition_op, $valid_ops, true)) {
             $condition_op = '';
         }
