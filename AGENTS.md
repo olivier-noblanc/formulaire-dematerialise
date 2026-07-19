@@ -4,7 +4,7 @@ Guide technique pour agents IA travaillant sur le codebase CircuitDémat.
 
 ## KISS — Projet petit intranet
 
-Ce projet est un **petit site intranet DREETS BFC** avec une charge utilisateur faible. Appliquer le principe KISS en permanence :
+Ce projet est un **petit site intranet DREETS BFC** avec une charge utilisateur faible. **Exclusif Windows** (NTFS, IIS, PowerShell). Appliquer le principe KISS en permanence :
 
 - **Pas de sur-architecture** : pas de cache superflu, pas de couches d'abstraction inutiles, pas de patterns lourds
 - **Code court et direct** : préférer la simplicité même si c'est "moins optimal"
