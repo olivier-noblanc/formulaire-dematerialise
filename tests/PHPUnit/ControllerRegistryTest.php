@@ -72,8 +72,15 @@ final class ControllerRegistryTest extends TestCase
         preg_match_all($pattern, $helpersContent, $helpersMatches);
         preg_match_all($pattern, $bootstrapContent, $bootstrapMatches);
 
-        $helpersServices = array_map(fn($s) => basename($s), $helpersMatches[1]);
-        $bootstrapServices = array_map(fn($s) => basename($s), $bootstrapMatches[1]);
+        // basename() ne strippe pas les backslashes sur Linux (utilise / comme séparateur),
+        // donc on extrait manuellement le short name pour avoir un comportement cross-platform.
+        $shortName = static function (string $fqn): string {
+            $pos = strrpos($fqn, '\\');
+            return $pos === false ? $fqn : substr($fqn, $pos + 1);
+        };
+
+        $helpersServices = array_map($shortName, $helpersMatches[1]);
+        $bootstrapServices = array_map($shortName, $bootstrapMatches[1]);
 
         $helpersOnly = array_diff($helpersServices, $bootstrapServices);
         $bootstrapOnly = array_diff($bootstrapServices, $helpersServices);
