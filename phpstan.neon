@@ -1,5 +1,6 @@
 includes:
     - phpstan-baseline.neon
+    - vendor/shipmonk/dead-code-detector/rules.neon
 parameters:
     level: 8
     paths:
