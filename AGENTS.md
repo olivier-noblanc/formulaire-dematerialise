@@ -98,6 +98,26 @@ Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oubl
 
 ---
 
+## SQLite — piège intra-processus (Windows/NTFS)
+
+**SQLITE_LOCKED (error 6) ≠ SQLITE_BUSY (error 5).** `busy_timeout` ne résout que SQLITE_BUSY (conflit inter-processus). SQLITE_LOCKED est un conflit **intra-processus** : un PDOStatement non fermé tient un verrou de lecture sur la table/sqlite_master, ce qui bloque tout DDL (DROP TABLE, ALTER TABLE) sur la même connexion.
+
+**Règle** : tout `$stmt = $pdo->query(...)` ou `$pdo->prepare(...)` qui retourne un PDOStatement doit être explicitement nettoyé (`$stmt = null`) après le dernier `fetch*()`, AVANT toute opération DDL sur la même connexion. PHP ne libère pas les statements immédiatement — le garbage collector peut tarder.
+
+```php
+// FAUX — le statement reste ouvert, tient un lock sur la table
+$stmt = $pdo->query("SELECT name FROM sqlite_master ...");
+$value = $stmt->fetchColumn();
+// $stmt est toujours vivant ici → SQLITE_LOCKED si DDL suivant
+
+// CORRECT
+$stmt = $pdo->query("SELECT name FROM sqlite_master ...");
+$value = $stmt->fetchColumn();
+$stmt = null; // libère le lock avant le DDL
+```
+
+---
+
 ## Règles de test
 
 Après CHAQUE modification de code, TOUJOURS lancer les tests completset vérifier :

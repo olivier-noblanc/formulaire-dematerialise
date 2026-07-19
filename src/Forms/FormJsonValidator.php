@@ -231,7 +231,7 @@ final class FormJsonValidator
 
                 // v19 — Condition d'exécution (branches conditionnelles)
                 $raw_cond = $s['condition'] ?? null;
-                $valid_ops_json = ['equals', 'not_equals', 'contains', 'not_empty', 'empty'];
+                $valid_ops_json = \App\Workflow\ConditionEvaluator::VALID_OPS;
                 if ($raw_cond !== null && $raw_cond !== '') {
                     if (is_array($raw_cond)) {
                         if (empty($raw_cond['field']) || !is_string($raw_cond['field'])) {

@@ -89,10 +89,10 @@ final class ConditionEvaluatorTest extends TestCase
         $this->assertTrue($this->evaluator->evaluate($condition, ['status' => 'active']));
     }
 
-    public function testUnknownOperatorReturnsTrue(): void
+    public function testUnknownOperatorReturnsFalse(): void
     {
         $condition = json_encode(['field' => 'status', 'op' => 'unknown', 'value' => 'active']);
-        $this->assertTrue($this->evaluator->evaluate($condition, ['status' => 'active']));
+        $this->assertFalse($this->evaluator->evaluate($condition, ['status' => 'active']));
     }
 
     public function testArrayValueFlattened(): void

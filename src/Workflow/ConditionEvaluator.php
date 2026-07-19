@@ -14,6 +14,8 @@ use App\Contract\ConditionInterface;
  */
 final class ConditionEvaluator implements ConditionInterface
 {
+    /** @var list<string> Opérateurs valides supportés par l'évaluateur */
+    public const VALID_OPS = ['eq', 'equals', 'neq', 'not_equals', 'contains', 'in', 'not_empty', 'empty'];
     /**
      * Évalue une condition générique.
      * @param string|null $conditionJson Le JSON de la condition
@@ -40,7 +42,7 @@ final class ConditionEvaluator implements ConditionInterface
         }
         $actual = (string) $actual;
 
-        return match ($op) {
+        $result = match ($op) {
             'eq', 'equals' => $actual === (string) $expected,
             'neq', 'not_equals' => $actual !== (string) $expected,
             'contains' => str_contains($actual, (string) $expected),
@@ -49,7 +51,13 @@ final class ConditionEvaluator implements ConditionInterface
                 : in_array($actual, array_map(trim(...), explode(',', (string) $expected)), true),
             'not_empty' => $actual !== '',
             'empty' => $actual === '',
-            default => true,
+            default => false,
         };
+
+        if ($result === false && !in_array($op, self::VALID_OPS, true)) {
+            error_log("ConditionEvaluator: opérateur inconnu '$op' pour le champ '$fieldName' — la condition est évaluée à false (fail-closed)");
+        }
+
+        return $result;
     }
 }
