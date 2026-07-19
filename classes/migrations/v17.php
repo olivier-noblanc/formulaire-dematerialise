@@ -85,16 +85,26 @@ function apply_migration_v17(PDO $pdo, int $current_version): int {
             }
 
             // 5. Vérification finale
+            // v17 a pour but d'inverser les valeurs erronées (v15/v16). Une fois l'inversion
+            // faite (ou si l'admin a configuré un autre email volontairement), la migration
+            // est considérée comme appliquée. Le seul cas d'échec légitime est une BDD vide
+            // sans aucun admin_email — mais c'est géré par v15/v16 qui insèrent une valeur.
+            //
+            // AVANT (bug) : on exigeait $final_email === 'admin.local@exemple.invalid'
+            // ce qui échouait systématiquement si l'admin avait configuré un autre email
+            // (via SETTINGS_DEFAULTS ou admin_settings.php). La migration n'était jamais
+            // marquée appliquée → log pollué + retry infini.
             $final_stmt = $pdo->query("SELECT value FROM settings WHERE key = 'admin_email'");
             if ($final_stmt === false) {
                 throw new \RuntimeException('v17: SELECT admin_email failed');
             }
             $final_email = (string) $final_stmt->fetchColumn();
-            if ($final_email === $correct_admin_email) {
+            if ($final_email !== '' && $final_email !== $wrong_admin_email) {
+                // admin_email est non vide ET n'est plus l'ancienne valeur erronée → OK
                 $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([17]);
                 return 17;
             } else {
-                error_log('[db_migrate] v17 FAILED: admin_email toujours incorrect, version NON marquée');
+                error_log('[db_migrate] v17 FAILED: admin_email toujours à l\'ancienne valeur, version NON marquée');
             }
         } catch (PDOException $e) {
             error_log('[db_migrate] v17 FAILED: ' . $e->getMessage() . ' — retry au prochain appel');

@@ -14,12 +14,49 @@ use App\Core\App;
  */
 final class AuditRepository extends BaseRepository
 {
+    /**
+     * Récupère l'IP client de façon sécurisée.
+     *
+     * N'utilise HTTP_X_FORWARDED_FOR que si REMOTE_ADDR est dans la liste
+     * des proxies de confiance (variable d'environnement TRUSTED_PROXIES,
+     * format CSV). Sinon, utilise REMOTE_ADDR directement. Évite le spoofing
+     * d'IP via header X-Forwarded-For envoyé par le client.
+     */
+    private function getClientIp(): string
+    {
+        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+        if ($remoteAddr === '') {
+            // CLI ou contexte sans REMOTE_ADDR
+            return 'CLI';
+        }
+
+        // Vérifier si REMOTE_ADDR est un proxy de confiance
+        $trustedProxiesCsv = getenv('TRUSTED_PROXIES') ?: '';
+        if ($trustedProxiesCsv !== '') {
+            $trustedProxies = array_map('trim', explode(',', $trustedProxiesCsv));
+            if (in_array($remoteAddr, $trustedProxies, true)) {
+                // Trust X-Forwarded-For — prendre la PREMIÈRE IP (la plus éloignée du serveur)
+                // qui est l'IP client originale
+                $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+                if ($xff !== '') {
+                    $ips = array_map('trim', explode(',', $xff));
+                    $first = $ips[0] ?? '';
+                    if (filter_var($first, FILTER_VALIDATE_IP) !== false) {
+                        return $first;
+                    }
+                }
+            }
+        }
+
+        return $remoteAddr;
+    }
+
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): bool
     {
         if ($actor === '') {
             $actor = App::auth()->getUser() ?: '';
         }
-        $ip = $_SERVER['REMOTE_ADDR'] ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'CLI');
+        $ip = $this->getClientIp();
         return $this->execute(
             "INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
             [\generate_uuid(), $action, $target, $detail, $actor, $ip]
@@ -31,7 +68,7 @@ final class AuditRepository extends BaseRepository
         if ($actor === '') {
             $actor = App::auth()->getUser() ?: '';
         }
-        $ip = $_SERVER['REMOTE_ADDR'] ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'CLI');
+        $ip = $this->getClientIp();
         return $this->execute(
             "INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
             [\generate_uuid(), 'security_event', 'security:' . $event, $detail, $actor, $ip]
