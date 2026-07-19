@@ -25,6 +25,7 @@ final class AdminFormCrudHandler
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
             $slug = \generate_slug($label);
             $newFormId = $repo->create(['label' => $label, 'slug' => $slug, 'description' => $description]);
+            $repo->createOwnerById($newFormId, App::auth()->getUser());
             App::audit()->log('form_create', 'form:' . $newFormId, "Formulaire '$label' créé (slug auto: $slug)");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($newFormId)];
         } catch (\PDOException $e) {

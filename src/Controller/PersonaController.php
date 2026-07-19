@@ -21,7 +21,7 @@ final class PersonaController extends BaseController
         $redirectUrl = 'index.php';
 
         if ($action === 'start') {
-            $targetEmail = trim($_GET['email'] ?? '');
+            $targetEmail = strtolower(trim($_GET['email'] ?? ''));
             if ($targetEmail === '') {
                 http_response_code(400);
                 (new \App\Render\ErrorRenderer())->errorPage(

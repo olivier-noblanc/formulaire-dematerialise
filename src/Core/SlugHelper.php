@@ -83,7 +83,7 @@ final class SlugHelper
             return $input;
         }
 
-        $lines = array_filter(array_map(trim(...), explode("\n", $input)));
+        $lines = array_values(array_filter(array_map(trim(...), explode("\n", $input)), fn($l) => $l !== ''));
         if ($lines === []) {
             return null;
         }

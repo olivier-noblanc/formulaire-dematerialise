@@ -27,8 +27,12 @@ final class ValidateController extends BaseController
             $action = trim($_POST['action'] ?? '');
             $comment = trim($_POST['comment'] ?? '');
             $motif = trim($_POST['motif'] ?? '');
-            if ($action === 'refuser' && $motif !== '') {
-                $comment = $comment !== '' ? ($motif . ' — ' . $comment) : $motif;
+            if ($action === 'refuser') {
+                if ($motif === '') {
+                    $error = 'Veuillez sélectionner un motif de refus.';
+                } else {
+                    $comment = $comment !== '' ? ($motif . ' — ' . $comment) : $motif;
+                }
             }
 
             try {

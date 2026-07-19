@@ -36,7 +36,7 @@ final class SubmissionViewController extends BaseController
         $isFormOwner = App::auth()->isFormOwner((string)$sub['form_id']);
 
         $isValidator = false;
-        if (!$isAdmin && $sub['submitted_by'] !== $user) {
+        if (!$isAdmin && !$isFormOwner && $sub['submitted_by'] !== $user) {
             if ($this->tokenRepo->existsForSubmissionAndEmail($subId, $user)) {
                 $isValidator = true;
             } else {
