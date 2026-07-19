@@ -8,10 +8,11 @@ declare(strict_types=1);
  * - form_fields.filled_by, form_fields.visibility, admin_requests.status → CHECK via rebuild
  * - submissions.status, tokens.action → triggers
  *
- * Stratégie : tentative sur $pdo direct avec retry, fallback sur $rebuild.
- * Le $rebuild est nécessaire sur Windows (NTFS mandatory locking bloque le DDL
- * même quand aucune transaction n'est ouverte — prouvé par la stack trace et
- * les tests unitaires qui échouent uniquement sur ce platform).
+ * Utilise $rebuild (connexion séparée) car $pdo du bootstrap tient un lock
+ * SQLITE_LOCKED (error 6) sur form_fields — probablement causé par le PDO
+ * ouvert dans helpers.php::getBaseUrl() qui n'est jamais fermé.
+ *
+ * Self-healing + version INSERT en dernier sur $rebuild.
  *
  * @package Migrations
  */
@@ -33,7 +34,7 @@ function apply_migration_v30(PDO $pdo, int $current_version): int {
         }
 
         // ══════════════════════════════════════════════════════════
-        // 1. Ouvrir $rebuild (connexion séparée pour le DDL)
+        // 1. $rebuild : connexion séparée pour tout le DDL
         // ══════════════════════════════════════════════════════════
         $dbListStmt = $pdo->query('PRAGMA database_list');
         if ($dbListStmt === false) {
@@ -99,9 +100,6 @@ function apply_migration_v30(PDO $pdo, int $current_version): int {
         $fkStmt = $rebuild->query('PRAGMA foreign_key_check');
         $fkErrors = $fkStmt !== false ? $fkStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
-        // ══════════════════════════════════════════════════════════
-        // 3. Version EN DERNIER sur $rebuild
-        // ══════════════════════════════════════════════════════════
         $rebuild->exec("INSERT INTO schema_version (version, applied_at) VALUES (30, datetime('now'))");
         $rebuild = null;
 
