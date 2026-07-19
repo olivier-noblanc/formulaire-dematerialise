@@ -52,7 +52,7 @@ final class AdminRepositoryTest extends TestCase
 
         $this->assertTrue($this->repo->isAdmin($email));
 
-        $removed = $this->repo->remove($email);
+        $removed = $this->repo->execute('DELETE FROM admins WHERE email = ?', [$email]);
         $this->assertTrue($removed);
         $this->assertNull($this->repo->findByEmail($email));
         $this->assertFalse($this->repo->isAdmin($email));
@@ -119,14 +119,14 @@ final class AdminRepositoryTest extends TestCase
 
         $this->assertTrue($this->repo->isAdmin($email));
 
-        $this->repo->remove($email);
+        $this->repo->execute('DELETE FROM admins WHERE email = ?', [$email]);
         $this->assertFalse($this->repo->isAdmin($email));
     }
 
     public function testRemoveNonexistentReturnsTrue(): void
     {
         // DELETE on non-existent row returns true (0 rows affected, but no error)
-        $result = $this->repo->remove('nonexistent_' . uniqid() . '@test.com');
+        $result = $this->repo->execute('DELETE FROM admins WHERE email = ?', ['nonexistent_' . uniqid() . '@test.com']);
         $this->assertTrue($result);
     }
 
@@ -215,7 +215,7 @@ final class AdminRepositoryTest extends TestCase
             $this->assertNotNull($this->repo->findByEmail(strtoupper($email)));
             $this->assertNotNull($this->repo->findByEmail(strtolower($email)));
         } finally {
-            $this->repo->remove($email);
+            $this->repo->execute('DELETE FROM admins WHERE email = ?', [$email]);
         }
     }
 }

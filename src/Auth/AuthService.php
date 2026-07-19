@@ -203,7 +203,7 @@ final class AuthService implements AuthInterface
             $email = $this->getUser();
         }
         $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('SELECT 1 FROM form_owners WHERE form_id = ? AND email = ?');
+        $stmt = $pdo->prepare('SELECT 1 FROM form_owners WHERE form_id = ? AND LOWER(email) = LOWER(?)');
         $stmt->execute([$formId, $email]);
         return $stmt->fetch() !== false;
     }
@@ -228,7 +228,7 @@ final class AuthService implements AuthInterface
             SELECT f.id, f.label, f.slug, f.actif
             FROM forms f
             JOIN form_owners fo ON fo.form_id = f.id
-            WHERE fo.email = ?
+            WHERE LOWER(fo.email) = LOWER(?)
             ORDER BY f.label
         ');
         $stmt->execute([$email]);
@@ -304,16 +304,21 @@ final class AuthService implements AuthInterface
         }
     }
 
-    public function approveAdminRequest(string $email): bool
+    public function approveAdminRequest(string $email, ?string $requestId = null): bool
     {
-        $pdo = $this->database->getPdo();
-
         try {
-            $stmt = $pdo->prepare("UPDATE admin_requests SET status = 'approved' WHERE email = ?");
-            $stmt->execute([$email]);
+            $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
 
-            $stmt = $pdo->prepare('INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, ?)');
-            $stmt->execute([generate_uuid(), $email, gmdate('Y-m-d H:i:s')]);
+            // Si pas d'ID, trouver la demande pending par email
+            if ($requestId === null) {
+                $request = $adminRepo->findPendingByEmail($email);
+                if ($request === null) {
+                    return false;
+                }
+                $requestId = $request['id'];
+            }
+
+            $adminRepo->approveRequest($requestId, $this->getUser());
 
             $subject = 'Accès admin approuvé - ' . \App\Render\NavigationRenderer::getAppName();
             $body = '
@@ -339,13 +344,21 @@ final class AuthService implements AuthInterface
         }
     }
 
-    public function rejectAdminRequest(string $email): bool
+    public function rejectAdminRequest(string $email, ?string $requestId = null): bool
     {
-        $pdo = $this->database->getPdo();
-
         try {
-            $stmt = $pdo->prepare("UPDATE admin_requests SET status = 'rejected' WHERE email = ?");
-            $stmt->execute([$email]);
+            $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
+
+            // Si pas d'ID, trouver la demande pending par email
+            if ($requestId === null) {
+                $request = $adminRepo->findPendingByEmail($email);
+                if ($request === null) {
+                    return false;
+                }
+                $requestId = $request['id'];
+            }
+
+            $adminRepo->rejectRequest($requestId, $this->getUser());
 
             $subject = 'Demande d\'accès admin refusée - ' . \App\Render\NavigationRenderer::getAppName();
             $body = '

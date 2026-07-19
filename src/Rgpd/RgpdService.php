@@ -93,7 +93,8 @@ final readonly class RgpdService
             $pdo->prepare("UPDATE delegations SET from_email = '[supprimé]' WHERE from_email = ?")->execute([$email]);
             $pdo->prepare("UPDATE delegations SET to_email = '[supprimé]' WHERE to_email = ?")->execute([$email]);
             $pdo->prepare('DELETE FROM admin_requests WHERE email = ?')->execute([$email]);
-            $pdo->prepare('DELETE FROM admins WHERE email = ?')->execute([$email]);
+            // Utiliser AuthService::removeAdmin() qui inclut le garde-fou anti-auto-suppression du super-admin
+            App::auth()->removeAdmin($email);
 
             $pdo->commit();
             App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
