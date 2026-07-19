@@ -73,6 +73,8 @@ final readonly class RgpdService
         $pdo = $this->database->getPdo();
 
         try {
+            $pdo->beginTransaction();
+
             $stmt = $pdo->prepare('SELECT id, data FROM submissions WHERE submitted_by = ?');
             $stmt->execute([$email]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -93,9 +95,13 @@ final readonly class RgpdService
             $pdo->prepare('DELETE FROM admin_requests WHERE email = ?')->execute([$email]);
             $pdo->prepare('DELETE FROM admins WHERE email = ?')->execute([$email]);
 
+            $pdo->commit();
             App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
             return true;
         } catch (\Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $errorMsg = 'RGPD delete error: ' . $e->getMessage();
             error_log($errorMsg);
             App::audit()->log('rgpd_delete_failed', 'user:' . $email, $errorMsg);
