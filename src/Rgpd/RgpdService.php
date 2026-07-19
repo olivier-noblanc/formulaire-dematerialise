@@ -123,13 +123,23 @@ final readonly class RgpdService
         $oldIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         $count = 0;
-        foreach ($oldIds as $oldId) {
-            $pdo->prepare('DELETE FROM attachments WHERE submission_id = ?')->execute([$oldId]);
-            $pdo->prepare('DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)')->execute([$oldId]);
-            $pdo->prepare('DELETE FROM tokens WHERE submission_id = ?')->execute([$oldId]);
-            $pdo->prepare('DELETE FROM alert_log WHERE submission_id = ?')->execute([$oldId]);
-            $pdo->prepare('DELETE FROM submissions WHERE id = ?')->execute([$oldId]);
-            $count++;
+        $pdo->beginTransaction();
+        try {
+            foreach ($oldIds as $oldId) {
+                $pdo->prepare('DELETE FROM attachments WHERE submission_id = ?')->execute([$oldId]);
+                $pdo->prepare('DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)')->execute([$oldId]);
+                $pdo->prepare('DELETE FROM tokens WHERE submission_id = ?')->execute([$oldId]);
+                $pdo->prepare('DELETE FROM alert_log WHERE submission_id = ?')->execute([$oldId]);
+                $pdo->prepare('DELETE FROM submissions WHERE id = ?')->execute([$oldId]);
+                $count++;
+            }
+            $pdo->commit();
+        } catch (\Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('RGPD autoPurge error: ' . $e->getMessage());
+            return 0;
         }
 
         if ($count > 0) {

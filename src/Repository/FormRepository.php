@@ -315,11 +315,17 @@ final class FormRepository extends BaseRepository
      */
     public function updateField(string $fieldId, array $data): bool
     {
+        $allowed = ['label', 'field_type', 'field_name', 'options', 'hint', 'required', 'ordre', 'card_group', 'filled_by', 'validator_step', 'visibility', 'condition'];
         $fields = [];
         $params = [];
         foreach ($data as $key => $value) {
-            $fields[] = "`$key` = ?";
-            $params[] = $value;
+            if (in_array($key, $allowed, true)) {
+                $fields[] = "`$key` = ?";
+                $params[] = $value;
+            }
+        }
+        if (empty($fields)) {
+            return false;
         }
         $params[] = $fieldId;
         return $this->execute('UPDATE form_fields SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);
@@ -350,11 +356,17 @@ final class FormRepository extends BaseRepository
      */
     public function updateStep(string $stepId, array $data): bool
     {
+        $allowed = ['label', 'ordre', 'actif', 'condition'];
         $fields = [];
         $params = [];
         foreach ($data as $key => $value) {
-            $fields[] = "`$key` = ?";
-            $params[] = $value;
+            if (in_array($key, $allowed, true)) {
+                $fields[] = "`$key` = ?";
+                $params[] = $value;
+            }
+        }
+        if (empty($fields)) {
+            return false;
         }
         $params[] = $stepId;
         return $this->execute('UPDATE steps SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);

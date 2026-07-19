@@ -37,8 +37,10 @@ final class AdminAlertsController extends BaseController
                 } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {
-                    if ($notifyWho === 'custom' && ($customEmail !== '' && $customEmail !== '0')) {
-                        if (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
+                    if ($notifyWho === 'custom') {
+                        if ($customEmail === '' || $customEmail === '0') {
+                            $errorMsg = 'L\'adresse email personnalisée est obligatoire.';
+                        } elseif (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
                             $errorMsg = 'L\'adresse email personnalisée est invalide.';
                         } else {
                             $notifyWho = $customEmail;
@@ -76,8 +78,10 @@ final class AdminAlertsController extends BaseController
                 } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {
-                    if ($notifyWho === 'custom' && ($customEmail !== '' && $customEmail !== '0')) {
-                        if (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
+                    if ($notifyWho === 'custom') {
+                        if ($customEmail === '' || $customEmail === '0') {
+                            $errorMsg = 'L\'adresse email personnalisée est obligatoire.';
+                        } elseif (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
                             $errorMsg = 'L\'adresse email personnalisée est invalide.';
                         } else {
                             $notifyWho = $customEmail;

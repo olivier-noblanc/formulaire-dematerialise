@@ -305,7 +305,7 @@ final class TokenRepository extends BaseRepository
     {
         /** @var array{count: int}|null $result */
         $result = $this->fetchOne(
-            'SELECT COUNT(*) as count FROM tokens WHERE email = ? AND done_at IS NULL',
+            'SELECT COUNT(*) as count FROM tokens WHERE email = ? AND done_at IS NULL AND expires_at > datetime(\'now\')',
             [$email]
         );
         return (int) ($result['count'] ?? 0);
