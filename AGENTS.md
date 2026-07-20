@@ -14,6 +14,20 @@ Ce projet est un **petit site intranet DREETS BFC** avec une charge utilisateur 
 
 ---
 
+## Outils disponibles (scoop shims)
+
+| Outil | Usage | Emplacement |
+|-------|-------|-------------|
+| **phive** | Installer des phars (phpstan, grumphp...) | `~/scoop/shims/phive.bat` |
+| **grumphp.phar** | Quality gate (lint, phpstan, phpunit, php-cs-fixer) | `~/scoop/shims/grumphp.phar` |
+| **phpstan** | Analyse statique level 8 | `~/scoop/shims/phpstan.phar` |
+| **rector** | Modernisation PHP auto | `vendor/bin/rector` (via composer) |
+| **pwsh** | Scripts gate (check.ps1, update.ps1) | PATH |
+
+Usage : `php ~/scoop/shims/<outil>.phar <commande>` ou directement `<outil>` si dans le PATH.
+
+---
+
 ## Repository Pattern
 
 Les repositories centralisent l'accès aux données. Ne pas utiliser `get_pdo()` directement.

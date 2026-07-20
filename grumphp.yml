@@ -1,0 +1,12 @@
+grumphp:
+    process_timeout: 300
+    stop_on_failure: false
+    ignore_unstaged_changes: false
+    hide_circumvention_tip: false
+    parallel:
+        enabled: true
+        max_workers: 4
+    tasks:
+        phpstan:
+            configuration: phpstan.neon
+            level: 8
