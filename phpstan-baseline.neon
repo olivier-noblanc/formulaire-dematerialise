@@ -319,61 +319,13 @@ parameters:
 			path: src/Contract/SettingsInterface.php
 
 		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:advanceWorkflow$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getSubmissionWithFormLabel$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getTokenByIdWithContext$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getTokenWithContext$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getWorkflowSteps$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:hasActiveStepSubmissions$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:hasActiveSubmissions$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:resolveDynamicRecipient$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\WorkflowInterface\:\:validateToken$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/WorkflowInterface.php
-
-		-
 			message: '#^Property App\\Controller\\BaseController\:\:\$adminRepo is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Controller/BaseController.php
+
+		-
+			message: '#^Property App\\Controller\\BaseController\:\:\$conditions is never read$#'
 			identifier: shipmonk.deadProperty.neverRead
 			count: 1
 			path: src/Controller/BaseController.php
@@ -385,22 +337,28 @@ parameters:
 			path: src/Controller/BaseController.php
 
 		-
-			message: '#^Unused App\\Controller\\BaseController\:\:json$#'
-			identifier: shipmonk.deadMethod
+			message: '#^Property App\\Controller\\BaseController\:\:\$fields is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
 			count: 1
 			path: src/Controller/BaseController.php
 
 		-
-			message: '#^Unused App\\Controller\\PageController\:\:__construct$#'
-			identifier: shipmonk.deadMethod
+			message: '#^Property App\\Controller\\BaseController\:\:\$mail is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
 			count: 1
-			path: src/Controller/PageController.php
+			path: src/Controller/BaseController.php
 
 		-
-			message: '#^Unused App\\Controller\\PageController\:\:handle$#'
+			message: '#^Property App\\Controller\\BaseController\:\:\$workflow is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Controller/BaseController.php
+
+		-
+			message: '#^Unused App\\Controller\\BaseController\:\:json$#'
 			identifier: shipmonk.deadMethod
 			count: 1
-			path: src/Controller/PageController.php
+			path: src/Controller/BaseController.php
 
 		-
 			message: '#^Unused App\\Core\\App\:\:config$#'
@@ -559,6 +517,12 @@ parameters:
 			path: src/Render/ErrorRenderer.php
 
 		-
+			message: '#^Unused App\\Render\\FormRenderer\:\:statusFilter$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/FormRenderer.php
+
+		-
 			message: '#^Unused App\\Render\\IndexRenderer\:\:hero$#'
 			identifier: shipmonk.deadMethod
 			count: 1
@@ -605,6 +569,12 @@ parameters:
 			identifier: shipmonk.deadMethod
 			count: 1
 			path: src/Render/InstallRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\NavigationRenderer\:\:breadcrumb$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/NavigationRenderer.php
 
 		-
 			message: '#^Unused App\\Render\\SubmissionViewRenderer\:\:renderContent$#'
@@ -839,159 +809,3 @@ parameters:
 			identifier: shipmonk.deadMethod
 			count: 1
 			path: src/Token/TokenService.php
-
-		-
-			message: '#^Unused App\\View\\EmailView\:\:template$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/EmailView.php
-
-		-
-			message: '#^Unused App\\View\\EmailView\:\:validationEmail$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/EmailView.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:breadcrumb$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:errorPage$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:favicon$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:field$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:formProgressIndicator$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:h$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:header$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:ldapDatalist$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:messages$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:page$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:searchBar$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:statusFilter$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:submissionData$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\View\\ViewRenderer\:\:tJargon$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/View/ViewRenderer.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:__construct$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:advanceWorkflow$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:getSubmissionWithFormLabel$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:getTokenByIdWithContext$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:getTokenWithContext$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:getWorkflowSteps$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:hasActiveStepSubmissions$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:hasActiveSubmissions$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:resolveDynamicRecipient$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
-
-		-
-			message: '#^Unused App\\Workflow\\WorkflowService\:\:validateToken$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Workflow/WorkflowService.php
