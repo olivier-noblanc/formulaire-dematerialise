@@ -643,30 +643,6 @@ parameters:
 			path: src/Controller/BackupController.php
 
 		-
-			message: '#^Property App\\Controller\\BaseController\:\:\$conditions is never read$#'
-			identifier: shipmonk.deadProperty.neverRead
-			count: 1
-			path: src/Controller/BaseController.php
-
-		-
-			message: '#^Property App\\Controller\\BaseController\:\:\$fields is never read$#'
-			identifier: shipmonk.deadProperty.neverRead
-			count: 1
-			path: src/Controller/BaseController.php
-
-		-
-			message: '#^Property App\\Controller\\BaseController\:\:\$mail is never read$#'
-			identifier: shipmonk.deadProperty.neverRead
-			count: 1
-			path: src/Controller/BaseController.php
-
-		-
-			message: '#^Property App\\Controller\\BaseController\:\:\$workflow is never read$#'
-			identifier: shipmonk.deadProperty.neverRead
-			count: 1
-			path: src/Controller/BaseController.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 2

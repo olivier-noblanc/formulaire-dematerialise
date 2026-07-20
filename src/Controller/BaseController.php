@@ -9,8 +9,6 @@ use App\Auth\AuthService;
 use App\Cache\CacheService;
 use App\Core\App;
 use App\Core\Database;
-use App\Forms\FieldService;
-use App\Mail\MailService;
 use App\Render\HtmlService;
 use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;
@@ -21,8 +19,6 @@ use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
 use App\Security\SecurityService;
 use App\Settings\SettingsService;
-use App\Workflow\ConditionEvaluator;
-use App\Workflow\WorkflowEngine;
 
 /**
  * Contrôleur de base — fournit l'accès aux services et repositories via DI.
@@ -37,14 +33,10 @@ abstract class BaseController
     protected Database $db;
     protected AuthService $auth;
     protected SettingsService $settings;
-    protected FieldService $fields;
     protected SecurityService $security;
-    protected MailService $mail;
     protected AuditLogService $audit;
     protected CacheService $cache;
     protected HtmlService $html;
-    protected WorkflowEngine $workflow;
-    protected ConditionEvaluator $conditions;
 
     // Repositories
     protected FormRepository $formRepo;
@@ -70,14 +62,10 @@ abstract class BaseController
         $this->db             = $this->app->get(Database::class);
         $this->settings       = $this->app->get(SettingsService::class);
         $this->auth           = $this->app->get(AuthService::class);
-        $this->fields         = $this->app->get(FieldService::class);
         $this->security       = $this->app->get(SecurityService::class);
-        $this->mail           = $this->app->get(MailService::class);
         $this->audit          = $this->app->get(AuditLogService::class);
         $this->cache          = $this->app->get(CacheService::class);
         $this->html           = $this->app->get(HtmlService::class);
-        $this->conditions     = $this->app->get(ConditionEvaluator::class);
-        $this->workflow       = $this->app->get(WorkflowEngine::class);
 
         // Repositories
         $this->formRepo       = $this->app->get(FormRepository::class);
