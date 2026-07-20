@@ -12,26 +12,13 @@ use App\Core\App;
 class ErrorResponseException extends \Exception
 {
     public function __construct(
-        public readonly int $httpCode,
+        int $httpCode,
         public readonly string $title,
         string $message,
         public readonly string $hint = '',
         public readonly string $backUrl = 'index.php'
     ) {
         parent::__construct($message, $httpCode);
-    }
-
-    public function getErrorTitle(): string
-    {
-        return $this->title;
-    }
-    public function getHint(): string
-    {
-        return $this->hint;
-    }
-    public function getBackUrl(): string
-    {
-        return $this->backUrl;
     }
 }
 

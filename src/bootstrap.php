@@ -20,7 +20,6 @@ use App\Cache\CacheService;
 use App\Core\App;
 use App\Core\Config;
 use App\Core\Database;
-use App\Core\MigrationService;
 use App\Cron\CronService;
 use App\Email\EmailVerificationService;
 use App\Export\ExportService;
@@ -104,9 +103,6 @@ $app->set(ValidatorDataService::class, new ValidatorDataService($db, $fields));
 // Cron service
 $app->set(CronService::class, new CronService($db));
 
-// Migration service
-$app->set(MigrationService::class, new MigrationService($db));
-
 // Validation service
 $app->set(ValidationService::class, new ValidationService());
 
@@ -122,7 +118,7 @@ $app->set(DocumentationService::class, new DocumentationService());
 // RGPD service
 $app->set(RgpdService::class, new RgpdService($db));
 
-// Note : les méthodes statiques App::db(), App::config(), App::auth() sont
+// Note : les méthodes statiques App::db(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`
 // historique a été supprimé en v9.1.1 : il était vide et la méthode existe
 // toujours → code mort + erreur PHPStan (function.alreadyNarrowedType).

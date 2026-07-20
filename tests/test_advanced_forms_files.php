@@ -59,13 +59,6 @@ function run_tests_advanced_forms(): void {
         return empty($steps) ? true : 'Expected empty array for invalid form_id';
     });
 
-    test('get_form_owners() returns correct owners', function() use ($onboarding_id) {
-        $owners = \App\Core\App::auth()->getFormOwners($onboarding_id);
-        // Should return an array (may be empty if no owners set)
-        /** @phpstan-ignore-next-line function.alreadyNarrowedType */
-        return is_array($owners) ? true : 'Expected array, got: ' . gettype($owners);
-    });
-
     test('get_owned_forms() for admin email returns forms', function() {
         // Use the admin email from settings
         $admin_email = \App\Core\App::auth()->getAdminEmail();

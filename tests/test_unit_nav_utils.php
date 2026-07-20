@@ -189,14 +189,6 @@ test('is_form_owner() avec email non-propriétaire', function() {
     return $result === false ? true : 'Non-propriétaire détecté comme propriétaire';
 });
 
-test('get_form_owners() retourne un tableau', function() {
-    $pdo = \App\Core\App::db()->getPdo();
-    $form_id = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
-    if (!$form_id) return 'Pas de formulaire onboarding';
-    $owners = \App\Core\App::auth()->getFormOwners($form_id);
-    return is_array($owners) ? true : 'Pas un tableau';
-});
-
 test('get_owned_forms() retourne un tableau', function() {
     $forms = \App\Core\App::auth()->getOwnedForms('nobody@dreets.gouv.fr');
     return is_array($forms) ? true : 'Pas un tableau';
@@ -214,11 +206,6 @@ test('verify_email() mode none = ok', function() {
 
 test('get_stats_by_period() retourne un tableau', function() {
     $result = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getStatsByPeriod('month', 5);
-    return is_array($result) ? true : 'Pas un tableau';
-});
-
-test('TokenService::getForSubmission() retourne un tableau', function() {
-    $result = \App\Core\App::token()->getForSubmission('00000000-0000-4000-8000-000000000000');
     return is_array($result) ? true : 'Pas un tableau';
 });
 

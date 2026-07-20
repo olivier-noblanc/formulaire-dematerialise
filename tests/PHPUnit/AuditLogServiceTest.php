@@ -42,17 +42,6 @@ final class AuditLogServiceTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function testGetLogsReturnsArray(): void
-    {
-        $logs = $this->audit->getLogs(10);
-        $this->assertIsArray($logs);
-    }
-
-    public function testGetLogsWithFilter(): void
-    {
-        $logs = $this->audit->getLogs(10, 'test_action');
-        $this->assertIsArray($logs);
-    }
 
     public function testLogMaskEmailsInNonCli(): void
     {
@@ -90,51 +79,4 @@ final class AuditLogServiceTest extends TestCase
         $this->assertSame('sec@test.com', $row['actor']);
     }
 
-    public function testGetLogsRespectsLimit(): void
-    {
-        $this->audit->log('limit_test', 'a', '1', 'test@test.com');
-        $this->audit->log('limit_test', 'b', '2', 'test@test.com');
-        $this->audit->log('limit_test', 'c', '3', 'test@test.com');
-
-        $logs = $this->audit->getLogs(2, 'limit_test');
-        $this->assertLessThanOrEqual(2, count($logs));
-    }
-
-    public function testAppLogWrapperDelegatesToService(): void
-    {
-        $marker = 'wrapper_' . uniqid();
-        \App\Core\App::audit()->log('wrapper_test', 'target:' . $marker, 'wrapper detail');
-
-        $logs = \App\Core\App::audit()->getLogs(5, 'wrapper_test');
-        $found = false;
-        foreach ($logs as $log) {
-            if (str_contains((string)$log['target'], $marker)) {
-                $found = true;
-                break;
-            }
-        }
-        $this->assertTrue($found, 'App::audit()->log() should write to audit_log');
-    }
-
-    public function testSecurityLogWrapperDelegatesToService(): void
-    {
-        $marker = 'secwrap_' . uniqid();
-        \App\Core\App::audit()->securityLog($marker, 'wrapper security detail');
-
-        $logs = \App\Core\App::audit()->getLogs(5, 'security_event');
-        $found = false;
-        foreach ($logs as $log) {
-            if (str_contains((string)$log['target'], $marker)) {
-                $found = true;
-                break;
-            }
-        }
-        $this->assertTrue($found, 'App::audit()->securityLog() should write to audit_log');
-    }
-
-    public function testGetAuditLogsWrapperDelegatesToService(): void
-    {
-        $logs = \App\Core\App::audit()->getLogs(5);
-        $this->assertIsArray($logs);
-    }
 }

@@ -27,48 +27,6 @@ final readonly class TokenService
     }
 
     /**
-     * Récupère les tokens d'une soumission avec les infos de l'étape associée.
-     *
-     * @param list<string> $extraFields
-     * @return array<int, array{
-     *   email: string,
-     *   done_at: string|null,
-     *   sent_at: string,
-     *   step_id: string,
-     *   label: string,
-     *   step_label: string,
-     *   ordre: int,
-     *   id?: string,
-     *   token?: string,
-     *   relance_count?: int,
-     *   relance_at?: string|null,
-     *   expires_at?: string|null
-     * }>
-     */
-    public function getForSubmission(string $submissionId, array $extraFields = []): array
-    {
-        $allowedFields = ['t.id', 't.token', 't.relance_count', 't.relance_at', 't.expires_at', 't.sent_at'];
-        if ($extraFields !== []) {
-            $extraFields = array_intersect($extraFields, $allowedFields);
-        }
-        $base = 't.email, t.done_at, t.sent_at, t.step_id, st.label, st.label as step_label, st.ordre';
-        if ($extraFields !== []) {
-            $base = implode(', ', $extraFields) . ', ' . $base;
-        }
-        $stmt = $this->database->getPdo()->prepare("
-            SELECT {$base}
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            WHERE t.submission_id = ?
-            ORDER BY st.ordre ASC, st.label ASC
-        ");
-        $stmt->execute([$submissionId]);
-        /** @var array<int, array{email: string, done_at: string|null, sent_at: string, step_id: string, label: string, step_label: string, ordre: int, id?: string, token?: string, relance_count?: int, relance_at?: string|null, expires_at?: string|null}> $result */
-        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $result;
-    }
-
-    /**
      * Régénère un token expiré pour un validateur (admin uniquement).
      */
     /** @return array{success: bool, message: string} */
@@ -348,37 +306,5 @@ final readonly class TokenService
         $this->auditLogService->log('token_delegate', 'token:' . $tokenId, 'Token délégué de ' . $tok['email'] . ' à ' . $toEmail . ($reason !== '' && $reason !== '0' ? ' — Motif : ' . $reason : ''));
 
         return ['success' => true, 'message' => 'Validation déléguée à ' . $toEmail . '. Un email lui a été envoyé.'];
-    }
-
-    /**
-     * Récupère l'historique des délégations pour une soumission.
-     */
-    /**
-     * @return array<int, array{
-     *   id: string,
-     *   token_id: string,
-     *   from_email: string,
-     *   to_email: string,
-     *   reason: string|null,
-     *   delegated_at: string,
-     *   new_token_id: string|null,
-     *   step_id: string,
-     *   step_label: string
-     * }>
-     */
-    public function getDelegations(string $submissionId): array
-    {
-        $stmt = $this->database->getPdo()->prepare('
-            SELECT d.id, d.token_id, d.from_email, d.to_email, d.reason, d.delegated_at, d.new_token_id, t.step_id, st.label as step_label
-            FROM delegations d
-            JOIN tokens t ON t.id = d.token_id
-            JOIN steps st ON st.id = t.step_id
-            WHERE t.submission_id = ?
-            ORDER BY d.delegated_at DESC
-        ');
-        $stmt->execute([$submissionId]);
-        /** @var array<int, array{id: string, token_id: string, from_email: string, to_email: string, reason: string|null, delegated_at: string, new_token_id: string|null, step_id: string, step_label: string}> $result */
-        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $result;
     }
 }

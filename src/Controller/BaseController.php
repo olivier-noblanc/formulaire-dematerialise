@@ -8,12 +8,10 @@ use App\Audit\AuditLogService;
 use App\Auth\AuthService;
 use App\Cache\CacheService;
 use App\Core\App;
-use App\Core\Config;
 use App\Core\Database;
 use App\Forms\FieldService;
 use App\Mail\MailService;
 use App\Render\HtmlService;
-use App\Repository\AdminRepository;
 use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;
 use App\Repository\AuditRepository;
@@ -37,7 +35,6 @@ use App\Workflow\WorkflowEngine;
 abstract class BaseController
 {
     protected Database $db;
-    protected Config $config;
     protected AuthService $auth;
     protected SettingsService $settings;
     protected FieldService $fields;
@@ -54,7 +51,6 @@ abstract class BaseController
     protected SubmissionRepository $submissionRepo;
     protected TokenRepository $tokenRepo;
     protected AttachmentRepository $attachmentRepo;
-    protected AdminRepository $adminRepo;
     protected SettingsRepository $settingsRepo;
     protected AuditRepository $auditRepo;
     protected AlertRepository $alertRepo;
@@ -72,7 +68,6 @@ abstract class BaseController
         $this->app = $app ?? App::getInstance();
 
         $this->db             = $this->app->get(Database::class);
-        $this->config         = $this->app->get(Config::class);
         $this->settings       = $this->app->get(SettingsService::class);
         $this->auth           = $this->app->get(AuthService::class);
         $this->fields         = $this->app->get(FieldService::class);
@@ -89,7 +84,6 @@ abstract class BaseController
         $this->submissionRepo = $this->app->get(SubmissionRepository::class);
         $this->tokenRepo      = $this->app->get(TokenRepository::class);
         $this->attachmentRepo = $this->app->get(AttachmentRepository::class);
-        $this->adminRepo      = $this->app->get(AdminRepository::class);
         $this->settingsRepo   = $this->app->get(SettingsRepository::class);
         $this->auditRepo      = $this->app->get(AuditRepository::class);
         $this->alertRepo      = $this->app->get(AlertRepository::class);
@@ -103,14 +97,6 @@ abstract class BaseController
     protected function redirect(string $url): void
     {
         header('Location: ' . $url);
-        exit;
-    }
-
-    /** @param array<string, mixed> $data */
-    protected function json(array $data): void
-    {
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
 }

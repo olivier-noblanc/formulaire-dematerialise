@@ -290,75 +290,6 @@ final class AuthServiceTest extends TestCase
         }
     }
 
-    // ── getFormOwners() ─────────────────────────────────────────
-
-    public function testGetFormOwnersReturnsArray(): void
-    {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
-        }
-        $owners = $this->auth->getFormOwners($formId);
-        $this->assertIsArray($owners);
-    }
-
-    public function testGetFormOwnersReturnsEmptyForNonexistentForm(): void
-    {
-        $owners = $this->auth->getFormOwners('nonexistent-form-id');
-        $this->assertIsArray($owners);
-        $this->assertEmpty($owners);
-    }
-
-    public function testGetFormOwnersContainsInsertedOwner(): void
-    {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
-        }
-
-        $testEmail = 'getowner_' . uniqid() . '@test.com';
-        $ownerId = bin2hex(random_bytes(8));
-        $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)")
-            ->execute([$ownerId, $formId, $testEmail]);
-
-        try {
-            $owners = $this->auth->getFormOwners($formId);
-            $emails = array_column($owners, 'email');
-            $this->assertContains($testEmail, $emails);
-        } finally {
-            $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
-                ->execute([$formId, $testEmail]);
-        }
-    }
-
-    public function testGetFormOwnersReturnsCorrectColumns(): void
-    {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
-        }
-
-        $testEmail = 'colowner_' . uniqid() . '@test.com';
-        $ownerId = bin2hex(random_bytes(8));
-        $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)")
-            ->execute([$ownerId, $formId, $testEmail]);
-
-        try {
-            $owners = $this->auth->getFormOwners($formId);
-            if (!empty($owners)) {
-                $this->assertArrayHasKey('id', $owners[0]);
-                $this->assertArrayHasKey('email', $owners[0]);
-                $this->assertArrayHasKey('added_at', $owners[0]);
-            }
-        } finally {
-            $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
-                ->execute([$formId, $testEmail]);
-        }
-    }
-
     // ── getOwnedForms() ─────────────────────────────────────────
 
     public function testGetOwnedFormsReturnsArray(): void
@@ -523,36 +454,6 @@ final class AuthServiceTest extends TestCase
     {
         $result = $this->auth->isFormOwner('any-form', '');
         $this->assertFalse($result);
-    }
-
-    public function testGetFormOwnersSortedByEmail(): void
-    {
-        $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
-        }
-
-        $email1 = 'aaa_' . uniqid() . '@test.com';
-        $email2 = 'zzz_' . uniqid() . '@test.com';
-        $id1 = bin2hex(random_bytes(8));
-        $id2 = bin2hex(random_bytes(8));
-        $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)")
-            ->execute([$id1, $formId, $email1]);
-        $pdo->prepare("INSERT OR IGNORE INTO form_owners (id, form_id, email) VALUES (?, ?, ?)")
-            ->execute([$id2, $formId, $email2]);
-
-        try {
-            $owners = $this->auth->getFormOwners($formId);
-            $emails = array_column($owners, 'email');
-            // Verify sorted order
-            $sortedEmails = $emails;
-            sort($sortedEmails);
-            $this->assertSame($sortedEmails, $emails);
-        } finally {
-            $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email IN (?, ?)")
-                ->execute([$formId, $email1, $email2]);
-        }
     }
 
     // ── processAdminRequest() ───────────────────────────────────

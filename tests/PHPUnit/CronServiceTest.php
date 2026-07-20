@@ -14,12 +14,21 @@ final class CronServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        CronService::resetRunningGuard();
+        // Reset static guard from previous test so runLazyCron() actually executes
+        $ref = new \ReflectionProperty(CronService::class, 'running');
+        $ref->setValue(null, false);
+
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->cron = new CronService($this->db);
 
         $pdo = $this->db->getPdo();
         $pdo->exec("DELETE FROM lazy_cron");
+    }
+
+    private static function resetRunningGuard(): void
+    {
+        $ref = new \ReflectionProperty(CronService::class, 'running');
+        $ref->setValue(null, false);
     }
 
     // ── Constructor / DI ───────────────────────────────────────
@@ -113,24 +122,6 @@ final class CronServiceTest extends TestCase
         $this->assertIsInt($result);
     }
 
-    // ── resetRunningGuard ───────────────────────────────────────
-
-    public function testResetRunningGuardAllowsReEntry(): void
-    {
-        // First run
-        $this->cron->runLazyCron();
-        $pdo = $this->db->getPdo();
-        $count1 = (int) $pdo->query("SELECT COUNT(*) FROM lazy_cron")->fetchColumn();
-
-        // Reset guard and run again — should execute
-        CronService::resetRunningGuard();
-        $this->cron->runLazyCron();
-        // Note: second run won't increment because intervals haven't elapsed,
-        // but the guard should not prevent entry
-        $count2 = (int) $pdo->query("SELECT COUNT(*) FROM lazy_cron")->fetchColumn();
-        $this->assertGreaterThanOrEqual($count1, $count2);
-    }
-
     // ── runLazyCron ─────────────────────────────────────────────
 
     public function testRunLazyCronCreatesDbRowsOnFirstRun(): void
@@ -156,7 +147,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        CronService::resetRunningGuard();
+        self::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -177,7 +168,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        CronService::resetRunningGuard();
+        self::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -247,7 +238,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'alert_check'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        CronService::resetRunningGuard();
+        self::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'alert_check'");
@@ -268,7 +259,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'rgpd_purge'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        CronService::resetRunningGuard();
+        self::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'rgpd_purge'");
@@ -290,94 +281,13 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        CronService::resetRunningGuard();
+        self::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count2 = (int)$stmt2->fetchColumn();
 
         $this->assertSame($count1, $count2);
-    }
-
-    // ── handlePost ──────────────────────────────────────────────
-
-    public function testHandlePostReturnsNullForGetRequest(): void
-    {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-        $result = $this->cron->handlePost();
-
-        $_SERVER['REQUEST_METHOD'] = $method;
-        $this->assertNull($result);
-    }
-
-    public function testHandlePostReturnsActionFromPostData(): void
-    {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['action'] = 'submit_form';
-
-        try {
-            $result = $this->cron->handlePost();
-            $this->assertSame('submit_form', $result);
-        } catch (\Throwable $e) {
-            // Expected in test environment — CSRF/rate limit not available
-            $this->assertTrue(true);
-        }
-
-        $_SERVER['REQUEST_METHOD'] = $method;
-        unset($_POST['action']);
-    }
-
-    public function testHandlePostReturnsNullForPutRequest(): void
-    {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-
-        $result = $this->cron->handlePost();
-
-        $_SERVER['REQUEST_METHOD'] = $method;
-        $this->assertNull($result);
-    }
-
-    public function testHandlePostReturnsNullForDeleteRequest(): void
-    {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $_SERVER['REQUEST_METHOD'] = 'DELETE';
-
-        $result = $this->cron->handlePost();
-
-        $_SERVER['REQUEST_METHOD'] = $method;
-        $this->assertNull($result);
-    }
-
-    public function testHandlePostReturnsNullWhenNoAction(): void
-    {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        unset($_POST['action']);
-
-        try {
-            $result = $this->cron->handlePost();
-            $this->assertNull($result);
-        } catch (\Throwable $e) {
-            // Expected in test environment
-            $this->assertTrue(true);
-        }
-
-        $_SERVER['REQUEST_METHOD'] = $method;
-    }
-
-    public function testHandlePostReturnsNullForPatchRequest(): void
-    {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $_SERVER['REQUEST_METHOD'] = 'PATCH';
-
-        $result = $this->cron->handlePost();
-
-        $_SERVER['REQUEST_METHOD'] = $method;
-        $this->assertNull($result);
     }
 
     // ── Edge cases ──────────────────────────────────────────────
@@ -405,7 +315,7 @@ final class CronServiceTest extends TestCase
         $count1 = (int) $stmt->fetchColumn();
 
         // Run again immediately — all tasks within interval
-        CronService::resetRunningGuard();
+        self::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -424,7 +334,7 @@ final class CronServiceTest extends TestCase
         $pdo->prepare("UPDATE lazy_cron SET last_run = ? WHERE task_key = 'remind'")
             ->execute([$oldTimestamp]);
 
-        CronService::resetRunningGuard();
+        self::resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt = $pdo->query("SELECT COUNT(*) FROM lazy_cron WHERE task_key = 'remind'");

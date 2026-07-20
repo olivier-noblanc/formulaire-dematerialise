@@ -106,8 +106,5 @@ final class SecurityService implements SecurityInterface
         }
     }
 
-    public function getScriptNonce(): string
-    {
-        return $this->scriptNonce;
-    }
+
 }
