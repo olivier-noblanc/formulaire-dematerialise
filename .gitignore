@@ -4,13 +4,13 @@
 !vendor/composer/
 !vendor/PHPMailer/
 
-# Base de données SQLite (v10.0.8 — ne JAMAIS committer la DB)
+# Base de données SQLite
 /db/*.db
 *.db
 *.sqlite
 *.sqlite3
 
-# Fichiers de configuration sensibles (v10.0.8 — ne JAMAIS committer)
+# Fichiers de configuration sensibles
 /config.php
 /.env
 /.env.local
@@ -22,14 +22,16 @@
 /cache/
 *.tmp
 *.log
+*.log.err
 /db/cache/
+/.phpstan-cache/
 /download/claude_cache.json
 
 # Backups (générés par update.ps1)
 /backups/
 /backup-*.zip
 
-# Sessions PHP (si stockées dans le projet)
+# Sessions PHP
 /sessions/
 
 # Système de fichiers
@@ -47,11 +49,6 @@ web.config
 /tool-results/
 /spc
 /worklog.md
-
-
-# PHPMailer web.config (sécurité IIS)
-web.config
-.phpstan-cache/
 
 # Code coverage
 /coverage/
@@ -83,5 +80,5 @@ web.config
 node_modules/
 package-lock.json
 
-# Fichier temporaire (second avis Claude)
+# Fichier temporaire
 monofichier_code_source.php
