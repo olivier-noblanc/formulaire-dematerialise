@@ -27,6 +27,14 @@
 
 ## ✅ Terminé (historique)
 
+### v10.22.0 — Bug bounty : send_mail() fantôme, fuseau remind.php, code mort
+| Tâche | Détail |
+|-------|--------|
+| send_mail()/build_mail_html()/render_email_template()/format_bytes() | N'existaient qu'en stub PHPStan — Fatal Error au runtime réel. Impact : remind.php (relances jamais envoyées), alert_check.php (script entier plantait), SubmissionViewController (page utilisateur plantait avec pièce jointe). Voir CHANGELOG v10.22.0. |
+| remind.php fuseau horaire | Même bug que #12 (alert_check.php), jamais reporté sur ce script jumeau. Fix DateTimeZone('UTC') explicite. |
+| MailerService | Code mort confirmé (consolidée dans MailService, jamais supprimée) — supprimée avec son test. |
+| BaseController | 4 propriétés jamais lues (fields/mail/workflow/conditions) — supprimées. |
+
 ### v10.21.0 — Harnais e2e Linux + bug findBlocked() + couverture TokenRepository
 | Tâche | Détail |
 |-------|--------|
@@ -87,7 +95,9 @@
 
 ## 🎯 Ce qui reste
 
-_Aucune tâche connue en attente — voir « Terminé » ci-dessous pour l'historique._
+| Tâche | Effort | Détail |
+|-------|--------|--------|
+| Reliquat code mort (baseline PHPStan) | Faible | ~13 entrées shipmonk.deadMethod/deadProperty non-Contract encore non triées individuellement : `Config::get/getAppName/getBaseUrl/getDbPath/isTestMode` (classe quasi entièrement inutilisée), `AdminRepository::isAdmin` (dupliqué par `AuthService::isAdminByEmail`, confirmé inerte), `AuditRepository::getLogs`, `FormRenderer::statusFilter`, `InstallRenderer::renderPage`, `NavigationRenderer::breadcrumb`, `SubmissionViewRenderer::renderContent`. `ErrorResponseException::$title/$hint/$backUrl` examinées et laissées telles quelles (partie de l'API publique de l'exception, non lues mais pas gênant). |
 
 
 ---
@@ -118,4 +128,4 @@ _Aucune tâche connue en attente — voir « Terminé » ci-dessous pour l'histo
 
 ---
 
-_Dernière mise à jour : 2026-07-20 (v10.21.0)_
+_Dernière mise à jour : 2026-07-20 (v10.22.0)_

@@ -1,5 +1,33 @@
 # Changelog — CircuitDémat
 
+## [10.22.0] — 2026-07-20
+_Résumé : Bug bounty — send_mail()/build_mail_html()/render_email_template()/format_bytes() n'existaient qu'en stub PHPStan (Fatal Error au runtime réel), bug de fuseau horaire dans remind.php, suppression de MailerService (code mort confirmé) et de 4 propriétés mortes dans BaseController._
+
+### 🐛 Bug fixes — critiques
+
+- **`send_mail()` / `build_mail_html()` / `render_email_template()` / `format_bytes()`** : ces 4 fonctions globales n'étaient définies que dans `phpstan_inst_stubs.php` (chargé uniquement par PHPStan pour l'analyse statique — jamais au runtime réel). Tout appel réel provoquait un Fatal Error "Call to undefined function", invisible à l'analyse statique puisque PHPStan voyait le stub. Impact réel :
+  - `remind.php` (relance toutes les 12h) : plantait sur `send_mail()` à chaque tentative d'envoi, isolé par token → aucune relance probablement jamais envoyée.
+  - `alert_check.php` (alertes échéance) : aucun try/catch autour de `send_mail()` → le script entier plantait dès la première alerte à envoyer.
+  - `SubmissionViewController` : `format_bytes()` appelée sans protection pour la taille des pièces jointes → la page de consultation d'une soumission plantait (Fatal Error) dès qu'elle avait au moins une pièce jointe — bug **visible par les utilisateurs**, pas seulement un script cron.
+  - Fix : `src/mail_wrappers.php` définit les vraies implémentations (celles déjà documentées dans les docblocks `@deprecated` des stubs), chargé par `helpers.php`. 8 tests ajoutés (`MailWrapperFunctionsExistTest`) qui auraient détecté ce bug.
+- **`remind.php`** : `sent_at`/`relance_at` (UTC, SQLite `datetime('now')`) interprétées sans fuseau horaire explicite → décalage de 1-2h selon le fuseau serveur (Europe/Paris en prod), même classe de bug que le #12 déjà fixé dans `alert_check.php` mais jamais reporté sur ce script jumeau. Relances pouvant partir en avance sur le délai configuré. Fix : `DateTimeZone('UTC')` explicite. Test de régression Bug12 ajouté (12 bugs historiques désormais couverts dans `tests/regression/`).
+
+### 🧹 Code mort
+
+- **`App\Mail\MailerService`** (303 lignes + test dédié) : classe entièrement orpheline, confirmée par le CHANGELOG lui-même ("Méthodes ... ajoutées à MailService, anciennement uniquement sur MailerService") — jamais supprimée après la consolidation. Zéro référence réelle. Supprimée avec son test et les entrées de baseline PHPStan correspondantes.
+- **`BaseController`** : 4 propriétés (`$fields`, `$mail`, `$workflow`, `$conditions`) instanciées via le container DI à chaque construction de contrôleur (25 sous-classes, donc à chaque requête HTTP) mais jamais lues nulle part — confirmé par PHPStan (shipmonk.deadProperty) et grep exhaustif. Retirées avec leurs imports.
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1321 | **1283 unit+e2e** (+8 MailWrapper, +1 régression Bug12, -4 MailerServiceTest) |
+| Tests de régression historiques | 11 | **12** |
+| PHPStan (level 8) | 0 erreur | 0 erreur |
+| Code mort supprimé | — | MailerService (303 lignes), 4 propriétés BaseController |
+
+---
+
 ## [10.21.0] — 2026-07-20
 _Résumé : Harnais e2e Linux réparé (5 bugs bloquant silencieusement les 96 tests), bug de production findBlocked() corrigé, couverture complète de TokenRepository (36 tests)._
 
