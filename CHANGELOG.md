@@ -1,17 +1,36 @@
 # Changelog — CircuitDémat
 
 ## [10.20.1] — 2026-07-20
-_Résumé : Fix deploy — shipmonk rules.neon manquant du gitignore, PHPStan échouait sur prod._
+_Résumé : Migration GitHub Actions CI, remote GitHub, PHPStan retiré du deploy gate._
+
+### 🆕 CI GitHub Actions
+
+- **`.github/workflows/ci.yml`** : gate qualité complète (Lint + PHPStan 8 + PHPUnit + tests fonctionnels)
+- PHP 8.5, ubuntu-latest, `composer install` pour les deps dev
+- `config.php` stub généré en CI (pas de secrets)
+
+### 🔀 Migration Codeberg → GitHub
+
+- **Remote** : `github.com/olivier-noblanc/formulaire-dematerialise` (privé)
+- **update.ps1** : URLs GitHub (API + raw), clone auth via token GitHub
+- **force-update.ps1** : curl avec header `Accept: application/vnd.github.v3.raw`
+- **AGENTS.md** : remote URL mise à jour
+- **docs/CI.md** : réécrit pour GitHub Actions
 
 ### 🐛 Bug fixes
 
-- **.gitignore** : `vendor/shipmonk/dead-code-detector/rules.neon` ajouté à l'allow-list — le fichier était exclu par `/vendor/*` mais requis par `phpstan.neon`, causant un échec PHPStan au déploiement prod
+- **.gitignore** : `.mimocode/` ajouté
+- **update.ps1** : PHPStan retiré du gate deploy (outils dev, maintenant en CI)
+- **EnumConstraintTest** : skip `testMigrationCrashSelfHealing` si DB ne contient pas `schema_version`
+- **test_mail_escaping.php** : tests adaptés cross-plateforme (anti-double-escape uniquement)
 
 ### 📊 Résultat
 
 | Métrique | Avant | Après |
 |----------|-------|-------|
-| PHPStan prod | Échec (rules.neon manquant) | **OK** |
+| CI | Aucune | **GitHub Actions** (4 jobs, ~2 min) |
+| Remote | Codeberg (504 intermittent) | **GitHub** (stable) |
+| Deploy gate | Lint + PHPStan + tests | Lint + tests (PHPStan en CI) |
 
 ---
 
