@@ -4,11 +4,13 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests unitaires | **1282** (0 skip, 0 fail) |
+| Tests unitaires | **1285** (0 skip, 0 fail) |
 | Tests E2E | **96** (1 skip légitime, 0 fail) |
-| Total tests | **1378** |
+| Total tests | **1381** |
 | Assertions | **2451** |
 | PHPStan erreurs | **0** (level 8) |
+| CI | **GitHub Actions** (4 jobs, ~2 min) |
+| Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (privé) |
 | xdebug | **off** (permanent) |
 | Bugs audit | **16 trouvés, 16 fixés** |
 | Migration v30 | **CHECK rebuild + 4 triggers** (5 colonnes) |
@@ -80,10 +82,8 @@
 
 | Tâche | Effort | Détail |
 |-------|--------|--------|
-| **Tests E2E HTTP en CI** | Moyen | Déjà ajoutés, à vérifier sur le serveur CI |
-| **gate.sh sync check.ps1** | Faible | Déjà fait, à vérifier en prod |
-| **E2E "8 vs 18 forms"** | Faible | 2 tests échouent : `testAccueilRendersExactly8FormCards` (assert 18 == 8) et `testAdminFormsRendersFormSelector` (assert 18 == 8). Pré-existant — la DB de test contient 18 forms, les tests en attendent 8. Pollution DB ou test obsolète — à investiguer. |
-| **Couverture TokenRepository** | Moyen | 13 méthodes sans test (findWithStepsBySubmission, findDetailedWithStepsBySubmission, findBySubmissionIds, existsForSubmissionAndEmail, findEmailAndStepLabelById, findPendingByEmail, findStepsBySubmissionIds, deleteBySubmissionIds, countPurgeableByCutoff, findForExport, findBlocked, countExpired, countPendingBySubmissionIds). Seule findDoneByEmail testée via TokenServiceTest. |
+| **E2E "8 vs 18 forms"** | Faible | 2 tests échouent : `testAccueilRendersExactly8FormCards` et `testAdminFormsRendersFormSelector` (assert 18 == 8). Pré-existant — la DB de test contient 18 forms, les tests en attendent 8. |
+| **Couverture TokenRepository** | Moyen | 13 méthodes sans test. Seule findDoneByEmail testée via TokenServiceTest. |
 
 
 ---
