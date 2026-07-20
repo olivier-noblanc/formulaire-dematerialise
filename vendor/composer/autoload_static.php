@@ -16,11 +16,14 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
     public static $prefixLengthsPsr4 = array (
         'S' =>
         array (
+            'Spaze\\PHPStan\\Rules\\Disallowed\\' => 31,
             'ShipMonk\\PHPStan\\DeadCode\\' => 26,
         ),
         'P' =>
         array (
             'PhpParser\\' => 10,
+            'PHPStan\\ExtensionInstaller\\' => 27,
+            'PHPStan\\' => 8,
         ),
         'D' =>
         array (
@@ -34,6 +37,10 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
     );
 
     public static $prefixDirsPsr4 = array (
+        'Spaze\\PHPStan\\Rules\\Disallowed\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/spaze/phpstan-disallowed-calls/src',
+        ),
         'ShipMonk\\PHPStan\\DeadCode\\' =>
         array (
             0 => __DIR__ . '/..' . '/shipmonk/dead-code-detector/src',
@@ -41,6 +48,14 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
         'PhpParser\\' =>
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'PHPStan\\ExtensionInstaller\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phpstan/extension-installer/src',
+        ),
+        'PHPStan\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phpstan/phpstan-strict-rules/src',
         ),
         'DeepCopy\\' =>
         array (
