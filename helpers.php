@@ -87,6 +87,11 @@ $_app->set(\App\Core\Config::class, new \App\Core\Config());
 // persona, conditions, validation, test_mode, database) en un seul fichier.
 require_once __DIR__ . '/src/lib_wrappers.php';
 
+// send_mail(), build_mail_html(), render_email_template(), format_bytes() :
+// wrappers manquants à l'exécution réelle (n'existaient qu'en stub PHPStan) —
+// voir CHANGELOG et src/mail_wrappers.php pour le détail du bug.
+require_once __DIR__ . '/src/mail_wrappers.php';
+
 // ── 6. Sécurité (headers) ──
 
 // Enregistrer SecurityService AVANT d'appeler send_security_headers()
