@@ -14,7 +14,10 @@ if (php_sapi_name() !== 'cli' && !TEST_MODE && empty($GLOBALS['_lazy_cron_runnin
 }
 
 $pdo  = get_pdo();
-$now  = new DateTimeImmutable();
+// UTC explicite : sent_at/relance_at viennent de SQLite datetime('now') (toujours UTC).
+// Sans fuseau explicite, DateTimeImmutable($string) interprète la chaîne selon le
+// fuseau par défaut du serveur (Europe/Paris en prod) — même bug que #12 (alert_check.php).
+$now  = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 $nb   = 0;
 $blocked = 0;
 
@@ -61,8 +64,8 @@ foreach ($pendingIds as $tokenId) {
             continue;
         }
 
-        $sent     = new DateTimeImmutable($tok['sent_at']);
-        $last_ref = $tok['relance_at'] ? new DateTimeImmutable($tok['relance_at']) : $sent;
+        $sent     = new DateTimeImmutable($tok['sent_at'], new DateTimeZone('UTC'));
+        $last_ref = $tok['relance_at'] ? new DateTimeImmutable($tok['relance_at'], new DateTimeZone('UTC')) : $sent;
         $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
 
         if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h', '48')) {
