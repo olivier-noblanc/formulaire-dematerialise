@@ -7,96 +7,6 @@ namespace App\Repository;
 final class TokenRepository extends BaseRepository
 {
     /**
-     * @return array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}|null
-     */
-    public function findByValue(string $token): ?array
-    {
-        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}|null $result */
-        $result = $this->fetchOne('SELECT id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count FROM tokens WHERE token = ?', [$token]);
-        return $result;
-    }
-
-    /**
-     * @return array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}|null
-     */
-    public function findById(string $tokenId): ?array
-    {
-        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}|null $result */
-        $result = $this->fetchOne('SELECT id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count FROM tokens WHERE id = ?', [$tokenId]);
-        return $result;
-    }
-
-    /**
-     * @return array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}>
-     */
-    public function findBySubmission(string $submissionId): array
-    {
-        /** @var array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string|null, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int}> $result */
-        $result = $this->fetchAll(
-            'SELECT id, submission_id, step_id, email, token, sent_at, done_at, relance_at, expires_at, relance_count FROM tokens WHERE submission_id = ? ORDER BY sent_at',
-            [$submissionId]
-        );
-        return $result;
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public function create(array $data): string
-    {
-        $id = \generate_uuid();
-        $this->execute(
-            "INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)",
-            [$id, $data['submission_id'], $data['step_id'], $data['email'], $data['token'], $data['expires_at'] ?? null]
-        );
-        return $id;
-    }
-
-    public function markUsed(string $tokenId): bool
-    {
-        return $this->execute(
-            "UPDATE tokens SET done_at = datetime('now') WHERE id = ?",
-            [$tokenId]
-        );
-    }
-
-    public function markExpired(string $tokenId): bool
-    {
-        return $this->execute(
-            "UPDATE tokens SET expires_at = datetime('now', '-1 second') WHERE id = ?",
-            [$tokenId]
-        );
-    }
-
-    public function incrementRelance(string $tokenId): bool
-    {
-        return $this->execute(
-            "UPDATE tokens SET relance_count = relance_count + 1, relance_at = datetime('now') WHERE id = ?",
-            [$tokenId]
-        );
-    }
-
-    public function getActiveCount(string $formId): int
-    {
-        /** @var array{count: int}|null $result */
-        $result = $this->fetchOne(
-            "SELECT COUNT(*) as count FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE s.form_id = ? AND t.done_at IS NULL AND t.expires_at > datetime('now')",
-            [$formId]
-        );
-        return (int) ($result['count'] ?? 0);
-    }
-
-    public function getActiveCountByStep(string $stepId): int
-    {
-        /** @var array{count: int}|null $result */
-        $result = $this->fetchOne(
-            "SELECT COUNT(*) as count FROM tokens WHERE step_id = ? AND done_at IS NULL AND expires_at > datetime('now')",
-            [$stepId]
-        );
-        return (int) ($result['count'] ?? 0);
-    }
-
-    /**
      * @return array<int, array{id: string, step_id: string, email: string, token: string, sent_at: string|null, step_label: string, ordre: int}>
      */
     public function findWithStepsBySubmission(string $submissionId): array
@@ -299,30 +209,6 @@ final class TokenRepository extends BaseRepository
             [$cutoff]
         );
         return (int) ($result['cnt'] ?? 0);
-    }
-
-    public function getActiveCountByEmail(string $email): int
-    {
-        /** @var array{count: int}|null $result */
-        $result = $this->fetchOne(
-            'SELECT COUNT(*) as count FROM tokens WHERE email = ? AND done_at IS NULL AND expires_at > datetime(\'now\')',
-            [$email]
-        );
-        return (int) ($result['count'] ?? 0);
-    }
-
-    public function getBlockedCount(int $hours): int
-    {
-        /** @var array{count: int}|null $result */
-        $result = $this->fetchOne(
-            "SELECT COUNT(*) as count FROM tokens t
-             JOIN submissions s ON s.id = t.submission_id
-             WHERE t.done_at IS NULL AND s.status = 'en_cours'
-               AND CAST(strftime('%s', 'now') AS REAL)
-                   - CAST(strftime('%s', t.sent_at) AS REAL) > ?",
-            [$hours * 3600]
-        );
-        return (int) ($result['count'] ?? 0);
     }
 
     /**

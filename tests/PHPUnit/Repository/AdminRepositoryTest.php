@@ -130,14 +130,6 @@ final class AdminRepositoryTest extends TestCase
         $this->assertTrue($result);
     }
 
-    // ── getPendingRequests() ────────────────────────────────────
-
-    public function testGetPendingRequestsReturnsArray(): void
-    {
-        $result = $this->repo->getPendingRequests();
-        $this->assertIsArray($result);
-    }
-
     // ── approveRequest() ────────────────────────────────────────
 
     public function testApproveRequestReturnsFalseForNonexistent(): void

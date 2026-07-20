@@ -55,15 +55,6 @@ abstract class BaseRepository
         return $stmt->execute($params);
     }
 
-    public function lastInsertId(): string
-    {
-        $id = $this->pdo()->lastInsertId();
-        if ($id === false) {
-            throw new \RuntimeException('Failed to get last insert ID');
-        }
-        return $id;
-    }
-
     public function testConnection(): bool
     {
         $stmt = $this->pdo()->prepare('SELECT 1');

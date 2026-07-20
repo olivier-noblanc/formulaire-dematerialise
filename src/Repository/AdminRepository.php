@@ -87,18 +87,6 @@ final class AdminRepository extends BaseRepository
         );
     }
 
-    /**
-     * @return array<int, array{id: string, email: string, requested_at: string, status: string, token: string}>
-     */
-    public function getPendingRequests(): array
-    {
-        /** @var array<int, array{id: string, email: string, requested_at: string, status: string, token: string}> $result */
-        $result = $this->fetchAll(
-            "SELECT id, email, requested_at, status, token FROM admin_requests WHERE status = 'pending' ORDER BY requested_at"
-        );
-        return $result;
-    }
-
     public function approveRequest(string $requestId, string $approvedBy): bool
     {
         /** @var array{id: string, email: string, requested_at: string, status: string, token: string}|null $request */

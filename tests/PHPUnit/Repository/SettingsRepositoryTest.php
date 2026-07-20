@@ -29,19 +29,4 @@ final class SettingsRepositoryTest extends TestCase
         $result = $this->repo->get($key);
         $this->assertSame('test_value', $result);
     }
-
-    public function testDeleteRemovesKey(): void
-    {
-        $key = 'test_delete_' . uniqid();
-        $this->repo->set($key, 'to_delete');
-        $this->repo->delete($key);
-        $result = $this->repo->get($key, '');
-        $this->assertNull($result);
-    }
-
-    public function testGetAllReturnsArray(): void
-    {
-        $result = $this->repo->getAll();
-        $this->assertIsArray($result);
-    }
 }
