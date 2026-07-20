@@ -42,16 +42,6 @@ final class AttachmentRepository extends BaseRepository
         return $id;
     }
 
-    public function delete(string $id): bool
-    {
-        return $this->execute('DELETE FROM attachments WHERE id = ?', [$id]);
-    }
-
-    public function deleteBySubmission(string $submissionId): bool
-    {
-        return $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$submissionId]);
-    }
-
     /**
      * @return array<int, array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}>
      */

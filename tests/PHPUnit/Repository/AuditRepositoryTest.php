@@ -22,21 +22,9 @@ final class AuditRepositoryTest extends TestCase
         $this->assertTrue($result);
     }
 
-    public function testSecurityLogReturnsBool(): void
-    {
-        $result = $this->repo->securityLog('test_event', 'detail', 'test@test.com');
-        $this->assertTrue($result);
-    }
-
     public function testGetLogsReturnsArray(): void
     {
         $result = $this->repo->getLogs(10);
-        $this->assertIsArray($result);
-    }
-
-    public function testGetSecurityLogsReturnsArray(): void
-    {
-        $result = $this->repo->getSecurityLogs(10);
         $this->assertIsArray($result);
     }
 

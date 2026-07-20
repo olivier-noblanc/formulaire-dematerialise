@@ -19,16 +19,6 @@ final class FormRepository extends BaseRepository
     /**
      * @return array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null
      */
-    public function findBySlug(string $slug): ?array
-    {
-        /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
-        $result = $this->fetchOne('SELECT id, slug, label, description, actif, created_at, deadline_field FROM forms WHERE slug = ?', [$slug]);
-        return $result;
-    }
-
-    /**
-     * @return array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null
-     */
     public function findActiveBySlug(string $slug): ?array
     {
         /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|null $result */
@@ -87,19 +77,6 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}>
-     */
-    public function findOwnedBy(string $email): array
-    {
-        /** @var array<int, array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}> $result */
-        $result = $this->fetchAll(
-            'SELECT f.id, f.slug, f.label, f.description, f.actif, f.created_at, f.deadline_field FROM forms f JOIN form_owners fo ON fo.form_id = f.id WHERE fo.email = ? ORDER BY f.label',
-            [$email]
-        );
-        return $result;
-    }
-
-    /**
      * @param array<string, mixed> $data
      */
     public function create(array $data): string
@@ -132,11 +109,6 @@ final class FormRepository extends BaseRepository
         }
         $params[] = $id;
         return $this->execute('UPDATE forms SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);
-    }
-
-    public function delete(string $id): bool
-    {
-        return $this->execute('DELETE FROM forms WHERE id = ?', [$id]);
     }
 
     /**
@@ -181,36 +153,6 @@ final class FormRepository extends BaseRepository
             [$formId]
         );
         return $result;
-    }
-
-    /**
-     * @return array<int, array{id: string, form_id: string, email: string, added_at: string}>
-     */
-    public function getOwners(string $formId): array
-    {
-        /** @var array<int, array{id: string, form_id: string, email: string, added_at: string}> $result */
-        $result = $this->fetchAll(
-            'SELECT id, form_id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email',
-            [$formId]
-        );
-        return $result;
-    }
-
-    public function addOwner(string $formId, string $email): bool
-    {
-        $id = \generate_uuid();
-        return $this->execute(
-            "INSERT OR IGNORE INTO form_owners (id, form_id, email, added_at) VALUES (?, ?, ?, datetime('now'))",
-            [$id, $formId, strtolower($email)]
-        );
-    }
-
-    public function removeOwner(string $formId, string $email): bool
-    {
-        return $this->execute(
-            'DELETE FROM form_owners WHERE form_id = ? AND email = ?',
-            [$formId, strtolower($email)]
-        );
     }
 
     /**

@@ -23,18 +23,4 @@ final class SettingsRepository extends BaseRepository
         );
     }
 
-    public function delete(string $key): bool
-    {
-        return $this->execute('DELETE FROM settings WHERE key = ?', [$key]);
-    }
-
-    /**
-     * @return array<int, array{key: string, value: string}>
-     */
-    public function getAll(): array
-    {
-        /** @var array<int, array{key: string, value: string}> $result */
-        $result = $this->fetchAll('SELECT key, value FROM settings ORDER BY key');
-        return $result;
-    }
 }

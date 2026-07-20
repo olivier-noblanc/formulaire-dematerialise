@@ -48,19 +48,6 @@ final class BaseRepositoryTest extends TestCase
         $this->assertTrue($result);
     }
 
-    // ── lastInsertId() ──────────────────────────────────────────
-
-    public function testLastInsertIdReturnsString(): void
-    {
-        $pdo = $this->repo->pdo();
-        $pdo->exec("CREATE TEMPORARY TABLE test_lastid (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
-        $pdo->exec("INSERT INTO test_lastid (val) VALUES ('test')");
-        $id = $this->repo->lastInsertId();
-        $this->assertIsString($id);
-        $this->assertNotEmpty($id);
-        $pdo->exec("DROP TABLE test_lastid");
-    }
-
     // ── fetchAll() with parameters ──────────────────────────────
 
     public function testFetchAllWithParameters(): void

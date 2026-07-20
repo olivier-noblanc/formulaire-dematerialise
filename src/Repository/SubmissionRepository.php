@@ -7,45 +7,6 @@ namespace App\Repository;
 final class SubmissionRepository extends BaseRepository
 {
     /**
-     * @return array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}|null
-     */
-    public function findById(string $id): ?array
-    {
-        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}|null $result */
-        $result = $this->fetchOne('SELECT id, form_id, data, submitted_by, submitted_at, closed_at, status, admin_comment, rgpd_consent FROM submissions WHERE id = ?', [$id]);
-        return $result;
-    }
-
-    /**
-     * @return array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}>
-     */
-    public function findByForm(string $formId, ?string $status = null): array
-    {
-        $sql = 'SELECT id, form_id, data, submitted_by, submitted_at, closed_at, status, admin_comment, rgpd_consent FROM submissions WHERE form_id = ?';
-        $params = [$formId];
-        if ($status !== null) {
-            $sql .= ' AND status = ?';
-            $params[] = $status;
-        }
-        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}> $result */
-        $result = $this->fetchAll($sql . ' ORDER BY submitted_at DESC', $params);
-        return $result;
-    }
-
-    /**
-     * @return array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}>
-     */
-    public function findBySubmitter(string $email): array
-    {
-        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int}> $result */
-        $result = $this->fetchAll(
-            'SELECT id, form_id, data, submitted_by, submitted_at, closed_at, status, admin_comment, rgpd_consent FROM submissions WHERE submitted_by = ? ORDER BY submitted_at DESC',
-            [$email]
-        );
-        return $result;
-    }
-
-    /**
      * @return array{id: string, submitted_at: string|null}|null
      */
     public function findActiveByFormAndSubmitter(string $formId, string $submittedBy): ?array
@@ -398,44 +359,6 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, token_id: string, step_id: string, action: string|null}>
-     */
-    public function findPendingForValidator(string $email): array
-    {
-        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int, token_id: string, step_id: string, action: string|null}> $result */
-        $result = $this->fetchAll(
-            "SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status, s.admin_comment, s.rgpd_consent, t.id as token_id, t.step_id, t.action
-             FROM submissions s
-             JOIN tokens t ON t.submission_id = s.id
-             WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now')
-             ORDER BY t.sent_at",
-            [$email]
-        );
-        return $result;
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public function create(array $data): string
-    {
-        $id = \generate_uuid();
-        $this->execute(
-            "INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-            [$id, $data['form_id'], $data['data'], $data['submitted_by'], $data['status'] ?? 'en_cours']
-        );
-        return $id;
-    }
-
-    public function updateStatus(string $id, string $status): bool
-    {
-        return $this->execute(
-            'UPDATE submissions SET status = ? WHERE id = ?',
-            [$status, $id]
-        );
-    }
-
-    /**
      * @return array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}>
      */
     public function getValidatorData(string $submissionId, ?string $stepId = null): array
@@ -462,27 +385,6 @@ final class SubmissionRepository extends BaseRepository
             [$submissionId]
         );
         return $result;
-    }
-
-    public function saveValidatorData(string $submissionId, string $fieldName, string $value, string $filledBy, ?string $stepId = null): void
-    {
-        $labelStmt = $this->pdo()->prepare('SELECT label FROM form_fields WHERE field_name = ?');
-        $labelStmt->execute([$fieldName]);
-        $fieldLabel = (string) ($labelStmt->fetchColumn() ?: $fieldName);
-
-        $id = \generate_uuid();
-        $this->execute(
-            "INSERT OR REPLACE INTO submission_validator_data (id, submission_id, field_name, field_label, value, filled_by, filled_by_email, step_id, filled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
-            [$id, $submissionId, $fieldName, $fieldLabel, $value, 'validator', $filledBy, $stepId]
-        );
-    }
-
-    public function deleteValidatorData(string $submissionId, string $fieldName): void
-    {
-        $this->execute(
-            'DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?',
-            [$submissionId, $fieldName]
-        );
     }
 
     /**

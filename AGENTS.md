@@ -363,3 +363,11 @@ Pour toute nouvelle fonctionnalité impliquant un champ obligatoire, un import/e
 7. Test du cas négatif/limite ajouté
 8. Colonne enum-like ou invariant d'unicité → contrainte SQL (pas seulement PHP)
 9. Tout `catch` sur chemin d'écriture/audit relance l'exception ou surface l'échec — jamais `error_log()` muet
+
+### 11. Avant de supprimer une méthode "morte en prod", grep aussi dans les tests
+
+**Règle** : quand une méthode est confirmée morte en production (zero callers dans `src/`), vérifier aussi son usage dans `tests/` avant de la supprimer. Un usage test-only n'est pas une preuve de vie en prod, mais c'est un usage qui va casser au moment de la suppression — à anticiper, pas à découvrir en cours de route.
+
+**Pourquoi** : `TokenRepository::create()` était mort en prod mais utilisé par 3 tests `appendToDataJson` qui dépendaient accidentellement de elle. La suppression a cassé ces tests pour une raison sans rapport avec `create()` elle-même — le fix a nécessité de réécrire les tests pour utiliser `createWithRgpd()` + lecture PDO directe.
+
+**Action** : `grep -rn "methodName(" tests/ --include='*.php'` AVANT de supprimer. Si des tests l'utilisent, les adapter à la méthode de remplacement plutôt que de les casser silencieusement.

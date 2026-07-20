@@ -63,18 +63,6 @@ final class AuditRepository extends BaseRepository
         );
     }
 
-    public function securityLog(string $event, string $detail = '', string $actor = ''): bool
-    {
-        if ($actor === '') {
-            $actor = App::auth()->getUser() ?: '';
-        }
-        $ip = $this->getClientIp();
-        return $this->execute(
-            "INSERT INTO audit_log (id, action, target, detail, actor, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
-            [\generate_uuid(), 'security_event', 'security:' . $event, $detail, $actor, $ip]
-        );
-    }
-
     /**
      * @return array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}>
      */
@@ -90,19 +78,6 @@ final class AuditRepository extends BaseRepository
         $params[] = $limit;
         /** @var array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $result */
         $result = $this->fetchAll($sql, $params);
-        return $result;
-    }
-
-    /**
-     * @return array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}>
-     */
-    public function getSecurityLogs(int $limit = 100): array
-    {
-        /** @var array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $result */
-        $result = $this->fetchAll(
-            'SELECT id, action, target, detail, actor, ip, created_at FROM audit_log WHERE action = ? ORDER BY created_at DESC LIMIT ?',
-            ['security_event', $limit]
-        );
         return $result;
     }
 
