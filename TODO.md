@@ -4,15 +4,15 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests unitaires | **1285** (0 skip, 0 fail) |
-| Tests E2E | **96** (1 skip légitime, 0 fail) |
-| Total tests | **1381** |
-| Assertions | **2451** |
+| Tests unitaires | **1225** (1189 unit + 36 TokenRepository, 0 skip, 0 fail) |
+| Tests E2E | **96** (1 skip légitime, 0 fail) — **exécutés réellement pour la première fois sur Linux (v10.21.0)** |
+| Total tests | **1321** |
+| Assertions | **2330** |
 | PHPStan erreurs | **0** (level 8) |
 | CI | **GitHub Actions** (4 jobs, ~2 min) |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (privé) |
 | xdebug | **off** (permanent) |
-| Bugs audit | **16 trouvés, 16 fixés** |
+| Bugs audit | **16 trouvés, 16 fixés** (+ 6 bugs harnais e2e/production trouvés et fixés en v10.21.0) |
 | Migration v30 | **CHECK rebuild + 4 triggers** (5 colonnes) |
 
 ---
@@ -26,6 +26,13 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.21.0 — Harnais e2e Linux + bug findBlocked() + couverture TokenRepository
+| Tâche | Détail |
+|-------|--------|
+| E2E "8 vs 18 forms" | Non reproductible sur environnement propre — 3 runs complets consécutifs (1285-1321 tests) donnent 8 forms stable et les 2 tests passent. La vraie cause du blocage : le harnais e2e ne s'exécutait jamais réellement sur Linux (5 bugs en cascade, voir CHANGELOG v10.21.0), masquant l'état réel derrière un skip silencieux. |
+| Couverture TokenRepository | 13 méthodes non testées → 36 tests ajoutés (`tests/PHPUnit/Repository/TokenRepositoryTest/`). A révélé un bug de production réel dans `findBlocked()` (comparaison REAL/TEXT, jamais aucun résultat retourné) — voir CHANGELOG. |
+| start_server.php + HttpRouteTest.php | 5 bugs harnais e2e corrigés (argument pidfile, environnement proc_open vide, contexte file_get_contents, expose_php, constantes pcntl) — détail complet dans CHANGELOG v10.21.0. |
 
 ### Fixes de tests
 | Tâche | Détail |
@@ -80,10 +87,7 @@
 
 ## 🎯 Ce qui reste
 
-| Tâche | Effort | Détail |
-|-------|--------|--------|
-| **E2E "8 vs 18 forms"** | Faible | 2 tests échouent : `testAccueilRendersExactly8FormCards` et `testAdminFormsRendersFormSelector` (assert 18 == 8). Pré-existant — la DB de test contient 18 forms, les tests en attendent 8. |
-| **Couverture TokenRepository** | Moyen | 13 méthodes sans test. Seule findDoneByEmail testée via TokenServiceTest. |
+_Aucune tâche connue en attente — voir « Terminé » ci-dessous pour l'historique._
 
 
 ---
@@ -96,6 +100,7 @@
 4. **16 bugs trouvés manuellement — PHPStan n'en détecte qu'un seul.** Lire le code, pas juste l'analyser statiquement.
 5. **never reuse field for new semantics** — créer une colonne dédiée, pas réutiliser `done_at`.
 6. **grep transversal avant de clore une tâche** — un bug correct en isolation peut être incohérent avec le reste du système.
+7. **paramètre lié PDO comparé à une expression calculée (pas une colonne) → caster explicitement.** `execute([$val])` lie en TEXT par défaut ; SQLite n'applique l'affinité numérique qu'au contact d'une colonne à affinité définie, pas d'une expression arithmétique. `WHERE CAST(...) - CAST(...) > ?` échoue silencieusement (0 résultat, jamais d'erreur) — `> CAST(? AS REAL)` corrige. Trouvé dans `TokenRepository::findBlocked()`, jamais détecté car aucun test n'existait avant v10.21.0.
 
 ---
 
@@ -113,4 +118,4 @@
 
 ---
 
-_Dernière mise à jour : 2026-07-20 (v10.20.1)_
+_Dernière mise à jour : 2026-07-20 (v10.21.0)_

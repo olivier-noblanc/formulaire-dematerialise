@@ -1,5 +1,41 @@
 # Changelog — CircuitDémat
 
+## [10.21.0] — 2026-07-20
+_Résumé : Harnais e2e Linux réparé (5 bugs bloquant silencieusement les 96 tests), bug de production findBlocked() corrigé, couverture complète de TokenRepository (36 tests)._
+
+### 🐛 Bug fixes — harnais e2e (Linux/CI)
+
+Le harnais `tests/e2e/HttpRouteTest.php` + `start_server.php` n'exécutait
+jamais réellement les 96 tests e2e sur Linux (dev comme CI) : 5 bugs en
+cascade faisaient échouer le démarrage du serveur de test, masqués par le
+fait qu'un test entièrement skip sort en code 0 (CI restait verte sans
+qu'aucun assert e2e ne soit jamais exécuté).
+
+- **`start_server.php`** : exigeait un 3ᵉ argument (`pidfile`) jamais fourni par l'appelant → `exit(1)` immédiat, serveur jamais démarré. Rendu optionnel.
+- **`HttpRouteTest::setUpBeforeClass()`** : `proc_open(..., [])` remplaçait tout l'environnement du process enfant (dont `PATH`) au lieu de l'hériter → `PHP_BINARY` résolu vide dans `start_server.php`, commande serveur invalide (`sh: -S: not found`). Fix : `env=null`.
+- **`HttpRouteTest::tearDownAfterClass()`** : `file_get_contents()` appelé avec un tableau brut au lieu d'un contexte `stream_context_create()` — `TypeError` non catchable par `@` sur PHP 8.5.
+- **`testNoServerHeaderLeak`** : skip inconditionnel au lieu d'un vrai fix — corrigé en désactivant `expose_php` sur le serveur de dev (`-d expose_php=0`, Linux + Windows) ; le test vérifie maintenant réellement l'absence de l'en-tête.
+- **`HttpRouteTest::tearDownAfterClass()`** : `SIGTERM`/`SIGKILL` (constantes ext-pcntl, jamais chargée en CI) remplacées par leurs valeurs POSIX numériques (15/9) — `posix_kill()` n'a pas besoin de pcntl.
+
+### 🐛 Bug fixes — production
+
+- **`TokenRepository::findBlocked()`** : la comparaison `CAST(...) AS REAL) - CAST(...) AS REAL) > ?` échouait systématiquement car le paramètre lié via `execute([...])` est passé en TEXT par défaut, sans affinité numérique appliquée face à une expression calculée (contrairement à une colonne). La méthode ne retournait donc **jamais aucun** token bloqué — l'alerte « tokens bloqués » de `MonitoringController` n'a probablement jamais fonctionné. Fix : `CAST(? AS REAL)` côté SQL.
+
+### ✅ Tests — couverture TokenRepository
+
+- **`tests/PHPUnit/Repository/TokenRepositoryTest/`** (nouveau, 4 fichiers, pattern `WorkflowEngineTest/`) : 36 tests / 67 assertions couvrant les 13 méthodes jusqu'ici non testées (`findWithStepsBySubmission`, `findDetailedWithStepsBySubmission`, `findBySubmissionIds`, `existsForSubmissionAndEmail`, `findEmailAndStepLabelById`, `findPendingByEmail`, `findStepsBySubmissionIds`, `deleteBySubmissionIds`, `countPurgeableByCutoff`, `findForExport`, `findBlocked`, `countExpired`, `countPendingBySubmissionIds`).
+
+### 📊 Résultat
+
+| Métrique | Avant (documenté) | Après (vérifié) |
+|----------|-------|-------|
+| Tests e2e exécutés réellement (Linux) | 0 (100% skip silencieux) | **96/96** |
+| Suite complète | 1285 (chiffre TODO.md, non vérifiable — harnais cassé) | **1321 tests, 0 échec, 1 skip légitime** |
+| TokenRepository | 1/14 méthodes testées | **14/14** |
+| PHPStan (level 8) | 0 erreur | 0 erreur (inchangé) |
+
+---
+
 ## [10.20.1] — 2026-07-20
 _Résumé : Migration GitHub Actions CI, remote GitHub, PHPStan retiré du deploy gate._
 
