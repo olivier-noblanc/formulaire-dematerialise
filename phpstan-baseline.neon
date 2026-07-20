@@ -1168,42 +1168,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 1
-			path: src/Mail/MailerService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Mail/MailerService.php
-
-		-
-			message: '#^Unused App\\Mail\\MailerService\:\:__construct$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Mail/MailerService.php
-
-		-
-			message: '#^Unused App\\Mail\\MailerService\:\:buildMailHtml$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Mail/MailerService.php
-
-		-
-			message: '#^Unused App\\Mail\\MailerService\:\:getRecentLogs$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Mail/MailerService.php
-
-		-
-			message: '#^Unused App\\Mail\\MailerService\:\:send$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Mail/MailerService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
 			path: src/Persona/PersonaService.php
 
 		-
