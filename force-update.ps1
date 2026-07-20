@@ -5,7 +5,7 @@
 
 $token = $env:FORMULAIRE_TOKEN
 if (-not $token) {
-    $token = Read-Host "Token Codeberg"
+    $token = Read-Host "Token GitHub"
     $env:FORMULAIRE_TOKEN = $token
 }
 if (-not $token) { Write-Host "Token requis." -ForegroundColor Red; exit 1 }
@@ -99,14 +99,14 @@ $success = 0; $failCnt = 0
 Write-Host ""
 Write-Host "=== TELECHARGEMENT ($($filesToDownload.Count) fichiers) ===" -ForegroundColor Cyan
 
-# Arguments communs curl
-$curlArgs = @("-s", "-L", "--fail", "--show-error", "-u", "oliviernoblanc:$token")
+# Arguments communs curl (GitHub API — header Accept pour contenu brut)
+$curlArgs = @("-s", "-L", "--fail", "--show-error", "-u", "olivier-noblanc:$token", "-H", "Accept: application/vnd.github.v3.raw")
 if ($proxy) {
     $curlArgs += @("--proxy", $proxy, "--proxy-anyauth")
 }
 
 foreach ($file in $filesToDownload) {
-    $url = "https://codeberg.org/oliviernoblanc/formulaire-dematerialise/raw/branch/master/$file"
+    $url = "https://api.github.com/repos/olivier-noblanc/formulaire-dematerialise/contents/$file"
     $dest = Join-Path $appRoot $file.Replace("/", "\")
     $destDir = Split-Path -Parent $dest
     if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }

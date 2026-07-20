@@ -71,7 +71,7 @@ Invoke-WebRequest -Uri "http://localhost/health.php?format=json" -UseBasicParsin
 
 Le script :
 1. Sauvegarde automatiquement l'existant dans `backups/`
-2. Télécharge la dernière version depuis Codeberg
+2. Télécharge la dernière version depuis GitHub
 3. Préserve `config.php`, `db/workflow.db`, `.env`
 4. Réinitialise l'OPcache IIS
 
