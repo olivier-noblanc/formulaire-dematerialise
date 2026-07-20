@@ -106,10 +106,13 @@ final class HttpRouteTest extends TestCase
                 if (PHP_OS_FAMILY === 'Windows') {
                     exec('taskkill /PID ' . $status['pid'] . ' /F 2>NUL');
                 } else {
-                    posix_kill($status['pid'], SIGTERM);
+                    // SIGTERM/SIGKILL (constantes ext-pcntl, non chargée en CI — voir ci.yml)
+                    // remplacées par leurs valeurs numériques POSIX standard : posix_kill()
+                    // accepte un int, pas besoin de pcntl pour ça.
+                    posix_kill($status['pid'], 15); // SIGTERM
                     sleep(1);
                     if (proc_get_status(self::$serverProcess)['running']) {
-                        posix_kill($status['pid'], SIGKILL);
+                        posix_kill($status['pid'], 9); // SIGKILL
                     }
                 }
             }
