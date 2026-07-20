@@ -17,7 +17,13 @@ jobs:
           php-version: '8.4'
           extensions: pdo_sqlite, sqlite3
           coverage: none
-      - run: vendor/bin/php-cs-fixer fix --dry-run --diff --no-progress 2>&1 || echo "php-cs-fixer skipped (not critical)"
+      - name: Lint all PHP files
+        run: |
+          failed=0
+          while IFS= read -r f; do
+            php -l "$f" > /dev/null 2>&1 || { echo "SYNTAX ERROR: $f"; failed=1; }
+          done < <(find src/ lib/ -name '*.php')
+          exit $failed
 
   phpstan:
     name: PHPStan (level 8)
@@ -29,7 +35,7 @@ jobs:
           php-version: '8.4'
           extensions: pdo_sqlite, sqlite3
           coverage: none
-      - run: vendor/bin/phpstan analyse --memory-limit=512M --no-progress
+      - run: php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
 
   phpunit:
     name: PHPUnit (unit + e2e)
@@ -43,7 +49,7 @@ jobs:
           coverage: none
       - name: Create DB directory
         run: mkdir -p db
-      - run: vendor/bin/phpunit --no-coverage
+      - run: php vendor/bin/phpunit --no-coverage
 
   functional:
     name: Tests fonctionnels
