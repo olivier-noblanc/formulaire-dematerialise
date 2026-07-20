@@ -58,7 +58,11 @@ final class HttpRouteTest extends TestCase
                 1 => ['pipe', 'w'],
                 2 => ['pipe', 'w'],
             ];
-            self::$serverProcess = proc_open($cmd, $descriptors, $pipes, self::$docRoot, []);
+            // env=null hérite de l'environnement courant (notamment PATH) — un tableau vide []
+            // le remplace par un environnement totalement vide, ce qui rend PHP_BINARY vide dans
+            // start_server.php (résolution interne dépendante de PATH) et fait échouer la commande
+            // "$phpBin -S ..." avec "sh: -S: not found" (le process meurt immédiatement, exitcode 127).
+            self::$serverProcess = proc_open($cmd, $descriptors, $pipes, self::$docRoot, null);
             if (!is_resource(self::$serverProcess)) {
                 self::markTestSkipped('Failed to start PHP built-in server');
             }
