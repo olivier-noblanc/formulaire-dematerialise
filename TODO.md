@@ -82,7 +82,7 @@
 |-------|--------|--------|
 | **Tests E2E HTTP en CI** | Moyen | Déjà ajoutés, à vérifier sur le serveur CI |
 | **gate.sh sync check.ps1** | Faible | Déjà fait, à vérifier en prod |
-| **E2E "8 vs 18 forms"** | Faible | `testAccueilRendersExactly8FormCards` attend 8 forms mais la DB en contient 18. Pré-existant (confirmé par stash test). Pollution DB de test ou test obsolète — à investiguer. |
+| **E2E "8 vs 18 forms"** | Faible | 2 tests échouent : `testAccueilRendersExactly8FormCards` (assert 18 == 8) et `testAdminFormsRendersFormSelector` (assert 18 == 8). Pré-existant — la DB de test contient 18 forms, les tests en attendent 8. Pollution DB ou test obsolète — à investiguer. |
 | **Couverture TokenRepository** | Moyen | 13 méthodes sans test (findWithStepsBySubmission, findDetailedWithStepsBySubmission, findBySubmissionIds, existsForSubmissionAndEmail, findEmailAndStepLabelById, findPendingByEmail, findStepsBySubmissionIds, deleteBySubmissionIds, countPurgeableByCutoff, findForExport, findBlocked, countExpired, countPendingBySubmissionIds). Seule findDoneByEmail testée via TokenServiceTest. |
 
 

@@ -35,32 +35,34 @@ param(
 # v10.0.9 — Fix 2 bugs :
 #   1. Comparaison CRLF/LF : on normalise les 2 contenus en LF avant comparaison
 #      (avant : $currentContent -ne $response.Content échouait toujours car
-#      Windows = CRLF, Codeberg = LF → fausse mise à jour à chaque lancement)
-#   2. Token Codeberg en header Authorization au lieu de l'URL
+#      Windows = CRLF, GitHub = LF → fausse mise à jour à chaque lancement)
+#   2. Token GitHub en header Authorization au lieu de l'URL
 #      (avant : token dans l'URL = visible dans logs proxy + historique PowerShell)
 if ($env:FORMULAIRE_TOKEN -and -not $env:_UPDATE_PS1_SELF_UPDATED) {
     $env:_UPDATE_PS1_SELF_UPDATED = "1"
     # v10.0.9 — URL SANS token (le token va dans le header)
-    $repoRawUrl = "https://codeberg.org/oliviernoblanc/formulaire-dematerialise/raw/branch/master/update.ps1"
+    $repoRawUrl = "https://api.github.com/repos/olivier-noblanc/formulaire-dematerialise/contents/update.ps1"
     try {
         # v10.0.9 — Token en header Authorization (pas dans l'URL)
-        $headers = @{ "Authorization" = "token $($env:FORMULAIRE_TOKEN)" }
+        $headers = @{ "Authorization" = "token $($env:FORMULAIRE_TOKEN)"; "Accept" = "application/vnd.github.v3+json" }
         $response = Invoke-WebRequest -Uri $repoRawUrl -Headers $headers -UseBasicParsing -ErrorAction Stop
-        if ($response.StatusCode -eq 200 -and $response.Content.Length -gt 1000) {
-            $scriptPath = $MyInvocation.MyCommand.Path
-            $currentContent = Get-Content -Path $scriptPath -Raw -ErrorAction SilentlyContinue
-            # v10.0.9 — Normaliser CRLF → LF pour les 2 contenus avant comparaison
-            # (Windows stocke en CRLF, Codeberg sert en LF → sans ça, comparaison
-            # toujours différente → fausse mise à jour à chaque lancement)
-            $currentNormalized = $currentContent -replace "`r`n", "`n"
-            $remoteNormalized  = $response.Content -replace "`r`n", "`n"
-            if ($currentNormalized -ne $remoteNormalized) {
-                Write-Host "  ! Mise a jour de update.ps1..." -ForegroundColor Yellow
-                # v10.0.9 — Préserver les CRLF locaux (Windows) lors de l'écriture
-                Set-Content -Path $scriptPath -Value $response.Content -Encoding UTF8 -NoNewline
-                Write-Host "  OK update.ps1 mis a jour. Relance..." -ForegroundColor Green
-                & $scriptPath -DryRun:$DryRun -SkipBackup:$SkipBackup -SkipTests:$SkipTests -SkipLint:$SkipLint
-                exit $LASTEXITCODE
+        if ($response.StatusCode -eq 200) {
+            # GitHub API retourne du JSON avec content base64-encodé
+            $json = $response.Content | ConvertFrom-Json
+            $remoteContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($json.content))
+            if ($remoteContent.Length -gt 1000) {
+                $scriptPath = $MyInvocation.MyCommand.Path
+                $currentContent = Get-Content -Path $scriptPath -Raw -ErrorAction SilentlyContinue
+                # v10.0.9 — Normaliser CRLF → LF pour les 2 contenus avant comparaison
+                $currentNormalized = $currentContent -replace "`r`n", "`n"
+                $remoteNormalized  = $remoteContent -replace "`r`n", "`n"
+                if ($currentNormalized -ne $remoteNormalized) {
+                    Write-Host "  ! Mise a jour de update.ps1..." -ForegroundColor Yellow
+                    Set-Content -Path $scriptPath -Value $remoteContent -Encoding UTF8 -NoNewline
+                    Write-Host "  OK update.ps1 mis a jour. Relance..." -ForegroundColor Green
+                    & $scriptPath -DryRun:$DryRun -SkipBackup:$SkipBackup -SkipTests:$SkipTests -SkipLint:$SkipLint
+                    exit $LASTEXITCODE
+                }
             }
         }
     } catch {
@@ -70,7 +72,7 @@ if ($env:FORMULAIRE_TOKEN -and -not $env:_UPDATE_PS1_SELF_UPDATED) {
 
 # ── Configuration ──────────────────────────────────────────────
 $RepoBranch  = "master"
-$RepoUrl     = "https://codeberg.org/oliviernoblanc/formulaire-dematerialise.git"
+$RepoUrl     = "https://github.com/olivier-noblanc/formulaire-dematerialise.git"
 
 # Fichiers a proteger (jamais ecrases ni supprimes)
 $ProtectedFiles = @( "config.php" )
@@ -161,7 +163,7 @@ function Get-CloneUrl {
     if ($env:FORMULAIRE_TOKEN) {
         $token = $env:FORMULAIRE_TOKEN
         $encodedToken = [System.Uri]::EscapeDataString($token)
-        $url = "https://oliviernoblanc:$encodedToken@codeberg.org/oliviernoblanc/formulaire-dematerialise.git"
+        $url = "https://olivier-noblanc:$encodedToken@github.com/olivier-noblanc/formulaire-dematerialise.git"
         Write-Status "!" "Token detecte (FORMULAIRE_TOKEN, $($token.Length) chars). Auth via token." "Green"
         return $url
     }
@@ -844,8 +846,8 @@ else {
         Write-Host ""
         if ($env:FORMULAIRE_TOKEN) {
             Write-Host "  ! Le clone a echoue avec le token fourni." -ForegroundColor Red
-            Write-Host "  Verifier le token sur Codeberg :" -ForegroundColor Cyan
-            Write-Host "    https://codeberg.org/user/settings/applications" -ForegroundColor Green
+            Write-Host "  Verifier le token sur GitHub :" -ForegroundColor Cyan
+            Write-Host "    https://github.com/settings/tokens" -ForegroundColor Green
             Write-Host '  $env:FORMULAIRE_TOKEN = "nouveau_token"' -ForegroundColor Green
             Write-Host '  .\update.ps1' -ForegroundColor Green
         } else {

@@ -106,8 +106,7 @@ Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oubl
 
 - **SSH coupé** sur le réseau de l'utilisateur — ne jamais tenter `git push` via SSH
 - **Proxy** : `http://127.0.0.1:3128` (si besoin pour curl/fetch)
-- **Codeberg** : subit des erreurs 500/504 intermittentes (issue #2596) — le push HTTPS peut échouer, réessayer plus tard
-- **Remote** : `https://codeberg.org/oliviernoblanc/formulaire-dematerialise.git` (HTTPS uniquement)
+- **Remote** : `https://github.com/olivier-noblanc/formulaire-dematerialise.git` (HTTPS)
 - **IIS prod** : pas d'accès web — vendor/ doit être commit, pas de `composer install` possible en prod. Les fichiers d'autoload doivent être à jour dans le repo.
 
 ---
