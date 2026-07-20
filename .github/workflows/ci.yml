@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
       - name: Lint all PHP files
@@ -32,9 +32,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
+      - run: composer install --no-interaction --prefer-dist
       - run: php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
 
   phpunit:
@@ -44,9 +45,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
+      - run: composer install --no-interaction --prefer-dist
       - name: Create DB directory
         run: mkdir -p db
       - run: php vendor/bin/phpunit --no-coverage
@@ -59,9 +61,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
+      - run: composer install --no-interaction --prefer-dist
       - name: Create DB directory
         run: mkdir -p db
       - name: test_all.php
