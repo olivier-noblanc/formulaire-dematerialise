@@ -1,2 +1,997 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Unused App\\Audit\\AuditLogService\:\:getLogs$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Audit/AuditLogService.php
+
+		-
+			message: '#^Unused App\\Auth\\AuthService\:\:getFormOwners$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Auth/AuthService.php
+
+		-
+			message: '#^Unused App\\Cache\\CacheService\:\:clear$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Cache/CacheService.php
+
+		-
+			message: '#^Unused App\\Contract\\AuditInterface\:\:getLogs$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuditInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuditInterface\:\:log$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuditInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuditInterface\:\:securityLog$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuditInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:approveAdminRequest$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:getAdminEmail$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:getEmailDomain$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:getFormOwners$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:getOwnedForms$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:getUser$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:isAdmin$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:isAdminEffective$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:isFormOwner$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:isSuperAdmin$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:processAdminRequest$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:rejectAdminRequest$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:removeAdmin$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\AuthInterface\:\:requireAdmin$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/AuthInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\CacheInterface\:\:clear$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/CacheInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\CacheInterface\:\:get$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/CacheInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\CacheInterface\:\:getLatestVersion$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/CacheInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\CacheInterface\:\:set$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/CacheInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\ConditionInterface\:\:evaluate$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/ConditionInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\DatabaseInterface\:\:getPdo$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/DatabaseInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\DatabaseInterface\:\:release$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/DatabaseInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\FieldInterface\:\:deleteValidatorData$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/FieldInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\FieldInterface\:\:getFields$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/FieldInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\FieldInterface\:\:getValidatorData$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/FieldInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\FieldInterface\:\:getValidatorFields$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/FieldInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\FieldInterface\:\:saveValidatorData$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/FieldInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:buildUrl$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:displayUser$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:displayUserShort$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:escape$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:formatFileSize$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:getFileIcon$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:h$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:renderDonutChart$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:renderPagination$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\HtmlInterface\:\:tJargon$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/HtmlInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\MailInterface\:\:buildValidationEmail$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/MailInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\MailInterface\:\:renderEmailTemplate$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/MailInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SecurityInterface\:\:csrfField$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SecurityInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SecurityInterface\:\:generateCsrfToken$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SecurityInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SecurityInterface\:\:requireCsrf$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SecurityInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SecurityInterface\:\:sendSecurityHeaders$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SecurityInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SecurityInterface\:\:verifyCsrf$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SecurityInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SettingsInterface\:\:decrypt$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SettingsInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SettingsInterface\:\:encrypt$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SettingsInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SettingsInterface\:\:get$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SettingsInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\SettingsInterface\:\:set$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/SettingsInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:advanceWorkflow$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getSubmissionWithFormLabel$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getTokenByIdWithContext$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getTokenWithContext$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:getWorkflowSteps$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:hasActiveStepSubmissions$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:hasActiveSubmissions$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:resolveDynamicRecipient$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Unused App\\Contract\\WorkflowInterface\:\:validateToken$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Contract/WorkflowInterface.php
+
+		-
+			message: '#^Property App\\Controller\\BaseController\:\:\$adminRepo is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Controller/BaseController.php
+
+		-
+			message: '#^Property App\\Controller\\BaseController\:\:\$config is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Controller/BaseController.php
+
+		-
+			message: '#^Unused App\\Controller\\BaseController\:\:json$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Controller/BaseController.php
+
+		-
+			message: '#^Unused App\\Controller\\PageController\:\:__construct$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Controller/PageController.php
+
+		-
+			message: '#^Unused App\\Controller\\PageController\:\:handle$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Controller/PageController.php
+
+		-
+			message: '#^Unused App\\Core\\App\:\:config$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/App.php
+
+		-
+			message: '#^Unused App\\Core\\App\:\:fields$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/App.php
+
+		-
+			message: '#^Unused App\\Core\\App\:\:migrations$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/App.php
+
+		-
+			message: '#^Unused App\\Core\\Config\:\:get$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: '#^Unused App\\Core\\Config\:\:getAppName$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: '#^Unused App\\Core\\Config\:\:getBaseUrl$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: '#^Unused App\\Core\\Config\:\:getDbPath$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: '#^Unused App\\Core\\Config\:\:isTestMode$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: '#^Unused App\\Core\\MigrationService\:\:migrate$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/MigrationService.php
+
+		-
+			message: '#^Unused App\\Core\\MigrationService\:\:migratePdo$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/MigrationService.php
+
+		-
+			message: '#^Unused App\\Cron\\CronService\:\:handlePost$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Cron/CronService.php
+
+		-
+			message: '#^Unused App\\Cron\\CronService\:\:resetRunningGuard$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Cron/CronService.php
+
+		-
+			message: '#^Unused App\\Enum\\SubmissionStatus\:\:badgeClass$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Enum/SubmissionStatus.php
+
+		-
+			message: '#^Unused App\\Enum\\SubmissionStatus\:\:color$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Enum/SubmissionStatus.php
+
+		-
+			message: '#^Unused App\\Enum\\SubmissionStatus\:\:cssClass$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Enum/SubmissionStatus.php
+
+		-
+			message: '#^Unused App\\Enum\\SubmissionStatus\:\:fromValue$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Enum/SubmissionStatus.php
+
+		-
+			message: '#^Unused App\\Enum\\SubmissionStatus\:\:icon$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Enum/SubmissionStatus.php
+
+		-
+			message: '#^Unused App\\Enum\\SubmissionStatus\:\:label$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Enum/SubmissionStatus.php
+
+		-
+			message: '#^Unused App\\Mail\\MailerService\:\:__construct$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Mail/MailerService.php
+
+		-
+			message: '#^Unused App\\Mail\\MailerService\:\:buildMailHtml$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Mail/MailerService.php
+
+		-
+			message: '#^Unused App\\Mail\\MailerService\:\:getRecentLogs$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Mail/MailerService.php
+
+		-
+			message: '#^Unused App\\Mail\\MailerService\:\:send$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Mail/MailerService.php
+
+		-
+			message: '#^Property App\\Render\\ErrorResponseException\:\:\$httpCode is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/ErrorRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\ErrorResponseException\:\:getBackUrl$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/ErrorRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\ErrorResponseException\:\:getErrorTitle$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/ErrorRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\ErrorResponseException\:\:getHint$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/ErrorRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\IndexRenderer\:\:hero$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\IndexRenderer\:\:navTiles$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\IndexRenderer\:\:ownerForms$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\IndexRenderer\:\:quickStatsAdmin$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\IndexRenderer\:\:quickStatsAgent$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\IndexRenderer\:\:quickStatsValidator$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\IndexRenderer\:\:whereAmI$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\InstallRenderer\:\:renderPage$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/InstallRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\SubmissionViewRenderer\:\:renderContent$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/SubmissionViewRenderer.php
+
+		-
+			message: '#^Unused App\\Repository\\AdminRepository\:\:getPendingRequests$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/AdminRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\AdminRepository\:\:isAdmin$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/AdminRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\AttachmentRepository\:\:delete$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/AttachmentRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\AttachmentRepository\:\:deleteBySubmission$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/AttachmentRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\AuditRepository\:\:getSecurityLogs$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/AuditRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\AuditRepository\:\:securityLog$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/AuditRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\BaseRepository\:\:lastInsertId$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/BaseRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\FormRepository\:\:addOwner$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/FormRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\FormRepository\:\:delete$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/FormRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\FormRepository\:\:findBySlug$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/FormRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\FormRepository\:\:findOwnedBy$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/FormRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\FormRepository\:\:getOwners$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/FormRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\FormRepository\:\:removeOwner$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/FormRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SettingsRepository\:\:delete$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SettingsRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SettingsRepository\:\:getAll$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SettingsRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:create$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:deleteValidatorData$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:findByForm$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:findById$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:findBySubmitter$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:findPendingForValidator$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:saveValidatorData$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\SubmissionRepository\:\:updateStatus$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/SubmissionRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:create$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:findById$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:findBySubmission$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:findByValue$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:getActiveCount$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:getActiveCountByEmail$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:getActiveCountByStep$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:getBlockedCount$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:incrementRelance$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:markExpired$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\TokenRepository\:\:markUsed$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/TokenRepository.php
+
+		-
+			message: '#^Unused App\\Security\\SecurityService\:\:getScriptNonce$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Security/SecurityService.php
+
+		-
+			message: '#^Unused App\\Stats\\StatsService\:\:searchSubmissions$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Stats/StatsService.php
+
+		-
+			message: '#^Unused App\\Token\\TokenService\:\:getDelegations$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Token/TokenService.php
+
+		-
+			message: '#^Unused App\\Token\\TokenService\:\:getForSubmission$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Token/TokenService.php
+
+		-
+			message: '#^Unused App\\View\\EmailView\:\:template$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/EmailView.php
+
+		-
+			message: '#^Unused App\\View\\EmailView\:\:validationEmail$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/EmailView.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:breadcrumb$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:errorPage$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:favicon$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:field$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:formProgressIndicator$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:h$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:header$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:ldapDatalist$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:messages$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:page$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:searchBar$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:statusFilter$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:submissionData$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\View\\ViewRenderer\:\:tJargon$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/View/ViewRenderer.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:__construct$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:advanceWorkflow$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:getSubmissionWithFormLabel$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:getTokenByIdWithContext$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:getTokenWithContext$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:getWorkflowSteps$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:hasActiveStepSubmissions$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:hasActiveSubmissions$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:resolveDynamicRecipient$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php
+
+		-
+			message: '#^Unused App\\Workflow\\WorkflowService\:\:validateToken$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Workflow/WorkflowService.php

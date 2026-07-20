@@ -7,13 +7,17 @@ namespace Composer\Autoload;
 class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
 {
     public static $files = array (
-        '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         '9b38cf48e83f5d8f60375221cd213eee' => __DIR__ . '/..' . '/phpstan/phpstan/bootstrap.php',
+        '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
         '38143a9afc50997d55e4815db8489d1c' => __DIR__ . '/..' . '/rector/rector/bootstrap.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        'S' =>
+        array (
+            'ShipMonk\\PHPStan\\DeadCode\\' => 26,
+        ),
         'P' =>
         array (
             'PhpParser\\' => 10,
@@ -30,6 +34,10 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
     );
 
     public static $prefixDirsPsr4 = array (
+        'ShipMonk\\PHPStan\\DeadCode\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/shipmonk/dead-code-detector/src',
+        ),
         'PhpParser\\' =>
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
