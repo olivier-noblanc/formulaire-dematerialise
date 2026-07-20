@@ -3,7 +3,6 @@
 !vendor/autoload.php
 !vendor/composer/
 !vendor/PHPMailer/
-!vendor/shipmonk/dead-code-detector/rules.neon
 
 # Base de données SQLite (v10.0.8 — ne JAMAIS committer la DB)
 /db/*.db
