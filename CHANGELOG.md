@@ -1,5 +1,20 @@
 # Changelog — CircuitDémat
 
+## [10.20.1] — 2026-07-20
+_Résumé : Fix deploy — shipmonk rules.neon manquant du gitignore, PHPStan échouait sur prod._
+
+### 🐛 Bug fixes
+
+- **.gitignore** : `vendor/shipmonk/dead-code-detector/rules.neon` ajouté à l'allow-list — le fichier était exclu par `/vendor/*` mais requis par `phpstan.neon`, causant un échec PHPStan au déploiement prod
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| PHPStan prod | Échec (rules.neon manquant) | **OK** |
+
+---
+
 ## [10.20.0] — 2026-07-19
 _Résumé : PHPStan 8→0, migration v30 (CHECK + triggers sur 5 colonnes), crash simulation test, try/catch audit, AGENTS.md addendum._
 

@@ -72,6 +72,7 @@
 | CI PHPUnit + E2E | Ajoutés au pipeline Woodpecker |
 | gate.sh sync check.ps1 | 12 étapes synchronisées |
 | AGENTS.md | 9 règles d'audit ajoutées |
+| gitignore shipmonk rules.neon | `vendor/shipmonk/dead-code-detector/rules.neon` ajouté au gitignore allow-list — manquait côté prod, PHPStan échouait au deploy |
 
 ---
 
@@ -83,6 +84,7 @@
 | **gate.sh sync check.ps1** | Faible | Déjà fait, à vérifier en prod |
 | **E2E "8 vs 18 forms"** | Faible | `testAccueilRendersExactly8FormCards` attend 8 forms mais la DB en contient 18. Pré-existant (confirmé par stash test). Pollution DB de test ou test obsolète — à investiguer. |
 | **Couverture TokenRepository** | Moyen | 13 méthodes sans test (findWithStepsBySubmission, findDetailedWithStepsBySubmission, findBySubmissionIds, existsForSubmissionAndEmail, findEmailAndStepLabelById, findPendingByEmail, findStepsBySubmissionIds, deleteBySubmissionIds, countPurgeableByCutoff, findForExport, findBlocked, countExpired, countPendingBySubmissionIds). Seule findDoneByEmail testée via TokenServiceTest. |
+
 
 ---
 
@@ -111,4 +113,4 @@
 
 ---
 
-_Dernière mise à jour : 2026-07-19 (v10.20.0)_
+_Dernière mise à jour : 2026-07-20 (v10.20.1)_
