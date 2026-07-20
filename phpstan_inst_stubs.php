@@ -33,26 +33,9 @@ function inst_check_csrf(): bool {
 }
 
 // ── Stubs for legacy procedural functions still called by alert_check.php, remind.php, etc. ──
-
-/** @deprecated Use App::mail()->send() */
-function send_mail(string $to, string $subject, string $body): bool {
-    return \App\Core\App::mail()->send($to, $subject, $body);
-}
-
-/** @deprecated Use App::mail()->buildMailHtml() */
-function build_mail_html(array $submission, string $step_label, string $token): string {
-    return \App\Core\App::mail()->buildMailHtml($submission, $step_label, $token);
-}
-
-/** @deprecated Use App::mail()->renderEmailTemplate() */
-function render_email_template(string $title, string $body_html): string {
-    return \App\Core\App::mail()->renderEmailTemplate($title, $body_html);
-}
-
-/** @deprecated Use App::html()->formatFileSize() */
-function format_bytes(int $bytes): string {
-    return \App\Core\App::html()->formatFileSize($bytes);
-}
+// send_mail(), build_mail_html(), render_email_template(), format_bytes() sont désormais de
+// vraies fonctions (src/mail_wrappers.php, chargé par helpers.php) — stubs retirés d'ici pour
+// éviter une redéclaration fatale (ce fichier est chargé APRÈS helpers.php par phpstan.neon).
 
 /** @deprecated Defined locally in MySubmissionsController — stub for PHPStan */
 function simplify_form_label(string $label): string {
