@@ -17,69 +17,6 @@ final readonly class StatsService
     }
 
     /**
-     * Recherche plein texte dans les soumissions.
-     *
-     * @param array{status?: string, form_id?: string} $filters
-     * @return array<int, array{
-     *   id: string,
-     *   form_id: string,
-     *   data: string,
-     *   submitted_by: string,
-     *   submitted_at: string,
-     *   closed_at: string|null,
-     *   status: string,
-     *   admin_comment: string,
-     *   form_label: string,
-     *   form_slug: string,
-     *   deadline_field: string
-     * }>
-     */
-    public function searchSubmissions(string $query, array $filters = []): array
-    {
-        $pdo = $this->database->getPdo();
-        $query = trim($query);
-        if ($query === '') {
-            return [];
-        }
-        $query = mb_substr($query, 0, 200);
-
-        $where = ['1=1'];
-        $params = [];
-
-        $where[] = '(s.submitted_by LIKE ? OR s.data LIKE ? OR f.label LIKE ?)';
-        $searchTerm = '%' . $query . '%';
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-
-        if (!empty($filters['status'])) {
-            $where[] = 's.status = ?';
-            $params[] = $filters['status'];
-        }
-        if (!empty($filters['form_id'])) {
-            $where[] = 's.form_id = ?';
-            $params[] = $filters['form_id'];
-        }
-
-        $whereSql = implode(' AND ', $where);
-
-        $stmt = $pdo->prepare("
-            SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at,
-                   s.closed_at, s.status, s.admin_comment, s.rgpd_consent,
-                   f.label as form_label, f.slug as form_slug, f.deadline_field
-            FROM submissions s
-            JOIN forms f ON f.id = s.form_id
-            WHERE $whereSql
-            ORDER BY s.submitted_at DESC
-            LIMIT 100
-        ");
-        $stmt->execute($params);
-        /** @var array<int, array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, form_label: string, form_slug: string, deadline_field: string}> $result */
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return $result;
-    }
-
-    /**
      * Statistiques par période.
      *
      * @return array<int, array{

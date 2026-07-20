@@ -44,12 +44,6 @@ final class AppTest extends TestCase
         $this->assertInstanceOf(Database::class, $db);
     }
 
-    public function testStaticConfigMethod(): void
-    {
-        $config = App::config();
-        $this->assertInstanceOf(Config::class, $config);
-    }
-
     public function testStaticHtmlMethod(): void
     {
         $html = App::html();

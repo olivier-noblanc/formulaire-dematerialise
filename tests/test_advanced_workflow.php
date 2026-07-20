@@ -226,33 +226,6 @@ function run_tests_advanced_workflow(): void {
         return true;
     });
 
-    test('get_delegations() returns delegated tokens', function() use ($pdo, $onboarding_id) {
-        $sub_id = generate_uuid();
-        $data = json_encode(['nom' => 'DelegList', 'prenom' => 'Test']);
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))")
-            ->execute([$sub_id, $onboarding_id, $data, 'deleg_list@exemple.invalid']);
-
-        \App\Core\App::workflow()->advanceWorkflow($sub_id);
-
-        // Get first pending token
-        $stmt = $pdo->prepare("SELECT id FROM tokens WHERE submission_id = ? AND done_at IS NULL LIMIT 1");
-        $stmt->execute([$sub_id]);
-        $tok_id = $stmt->fetchColumn();
-
-        $delegate_email = 'deleg_list_target@exemple.invalid';
-        \App\Core\App::token()->delegate($tok_id, $delegate_email, 'Test delegation for list');
-
-        $delegations = \App\Core\App::token()->getDelegations($sub_id);
-
-        // Cleanup
-        $pdo->prepare("DELETE FROM delegations WHERE token_id = ?")->execute([$tok_id]);
-        $pdo->prepare("DELETE FROM tokens WHERE submission_id = ?")->execute([$sub_id]);
-        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$sub_id]);
-
-        return (count($delegations) > 0 && $delegations[0]['to_email'] === $delegate_email)
-            ? true : 'No delegations found or wrong email. Count: ' . count($delegations);
-    });
-
     test('resolve_dynamic_recipient() with multiple {{}} references', function() {
         // Test that a single {{}} reference resolves correctly
         $result = \App\Core\App::workflow()->resolveDynamicRecipient('{{email_manager}}', ['email_manager' => 'manager@exemple.invalid']);

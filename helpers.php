@@ -152,4 +152,3 @@ $_app->set(\App\Validation\ValidationService::class, new \App\Validation\Validat
 $_app->set(\App\Export\ExportService::class, new \App\Export\ExportService($_db_service, $_app->get(\App\Auth\AuthService::class)));
 $_app->set(\App\Email\EmailVerificationService::class, new \App\Email\EmailVerificationService($_app->get(\App\Cache\CacheService::class)));
 $_app->set(\App\Docs\DocumentationService::class, new \App\Docs\DocumentationService());
-$_app->set(\App\Core\MigrationService::class, new \App\Core\MigrationService($_db_service));

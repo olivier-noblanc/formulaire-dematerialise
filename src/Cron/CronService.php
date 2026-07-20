@@ -21,14 +21,6 @@ final class CronService
     }
 
     /**
-     * Réinitialise le garde de ré-entrée (pour les tests unitaires).
-     */
-    public static function resetRunningGuard(): void
-    {
-        self::$running = false;
-    }
-
-    /**
      * Exécute les tâches planifiées dont l'intervalle est écoulé.
      *
      * Deux passes séparées : d'abord tous les INSERT (sans exec de fichiers),
@@ -142,17 +134,5 @@ final class CronService
             return null;
         }
         return $dt->getTimestamp();
-    }
-
-    /**
-     * Gère une requête POST — CSRF, retourne l'action.
-     */
-    public function handlePost(): ?string
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return null;
-        }
-        \App\Core\App::security()->requireCsrf();
-        return $_POST['action'] ?? null;
     }
 }

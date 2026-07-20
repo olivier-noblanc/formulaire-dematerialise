@@ -63,11 +63,6 @@ final class App
         return self::getInstance()->get(Database::class);
     }
 
-    public static function config(): Config
-    {
-        return self::getInstance()->get(Config::class);
-    }
-
     public static function auth(): \App\Auth\AuthService
     {
         return self::getInstance()->get(\App\Auth\AuthService::class);
@@ -76,11 +71,6 @@ final class App
     public static function settings(): \App\Settings\SettingsService
     {
         return self::getInstance()->get(\App\Settings\SettingsService::class);
-    }
-
-    public static function fields(): \App\Forms\FieldService
-    {
-        return self::getInstance()->get(\App\Forms\FieldService::class);
     }
 
     public static function security(): \App\Security\SecurityService
@@ -136,11 +126,6 @@ final class App
     public static function cron(): \App\Cron\CronService
     {
         return self::getInstance()->get(\App\Cron\CronService::class);
-    }
-
-    public static function migrations(): MigrationService
-    {
-        return self::getInstance()->get(MigrationService::class);
     }
 
     public static function validation(): \App\Validation\ValidationService

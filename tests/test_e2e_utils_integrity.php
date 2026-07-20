@@ -32,11 +32,6 @@ function run_tests_e2e_utils(): void {
         return \App\Core\App::workflow()->hasActiveSubmissions($onboarding_id) ? true : 'Pas de soumissions actives détectées';
     });
 
-    test('search_submissions() trouve des résultats', function() use ($onboarding_id) {
-        $results = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions('Martin', ['form_id' => $onboarding_id]);
-        return count($results) > 0 ? true : 'Recherche "Martin" sans résultats';
-    });
-
     test('Le workflow trace les validations dans data', function() use ($pdo, $submission_uuid) {
         $stmt = $pdo->prepare('SELECT data FROM submissions WHERE id = ?');
         $stmt->execute([$submission_uuid]);

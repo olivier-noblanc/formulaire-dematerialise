@@ -51,14 +51,6 @@ final class CacheServiceTest extends TestCase
         $this->assertSame('cached', $result);
     }
 
-    public function testClearRemovesKey(): void
-    {
-        $this->cache->set('to_clear', 'value', 60);
-        $this->cache->clear('to_clear');
-        $result = $this->cache->get('to_clear', 60, fn() => 'after_clear');
-        $this->assertSame('after_clear', $result);
-    }
-
     public function testSetArrayValue(): void
     {
         $data = ['name' => 'John', 'age' => 30];

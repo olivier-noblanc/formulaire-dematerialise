@@ -208,14 +208,7 @@ final class AuthService implements AuthInterface
         return $stmt->fetch() !== false;
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function getFormOwners(string $formId): array
-    {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email');
-        $stmt->execute([$formId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
+
 
     /** @return array<int, array<string, mixed>> */
     public function getOwnedForms(?string $email = null): array

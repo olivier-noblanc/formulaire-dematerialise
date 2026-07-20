@@ -112,13 +112,6 @@ function run_tests_advanced_edge(): void {
         return $result === $value ? true : "Expected: $value, Got: $result";
     });
 
-    test('search_submissions() with SQL injection attempt in search term', function() {
-        $result = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions("'; DROP TABLE submissions; --");
-        // Should return an array (empty or not), not crash
-        /** @phpstan-ignore-next-line function.alreadyNarrowedType */
-        return is_array($result) ? true : 'search_submissions did not return array for SQLi attempt';
-    });
-
     test('render_field() with very long label text', function() {
         $long_label = str_repeat('VeryLongLabel', 50);
         $field = [

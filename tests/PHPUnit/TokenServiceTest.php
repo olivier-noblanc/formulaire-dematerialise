@@ -143,47 +143,6 @@ final class TokenServiceTest extends TestCase
         $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$this->testFormId]);
     }
 
-    // ── getForSubmission ────────────────────────────────────────
-
-    public function testGetTokensForSubmissionReturnsArray(): void
-    {
-        $tokens = $this->tokenService->getForSubmission('nonexistent-id');
-        $this->assertIsArray($tokens);
-        $this->assertEmpty($tokens);
-    }
-
-    public function testGetForSubmissionWithExtraFields(): void
-    {
-        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId, ['t.id', 't.token']);
-        $this->assertIsArray($tokens);
-        $this->assertNotEmpty($tokens);
-    }
-
-    public function testGetForSubmissionFiltersDisallowedFields(): void
-    {
-        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId, ['t.id', 'nonexistent_column']);
-        $this->assertIsArray($tokens);
-        $this->assertNotEmpty($tokens);
-        $this->assertArrayHasKey('id', $tokens[0]);
-        $this->assertArrayNotHasKey('nonexistent_column', $tokens[0]);
-    }
-
-    public function testGetForSubmissionWithRealData(): void
-    {
-        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId);
-        $this->assertNotEmpty($tokens);
-        $this->assertArrayHasKey('email', $tokens[0]);
-        $this->assertArrayHasKey('done_at', $tokens[0]);
-        $this->assertArrayHasKey('step_id', $tokens[0]);
-        $this->assertArrayHasKey('step_label', $tokens[0]);
-    }
-
-    public function testGetForSubmissionReturnsMultipleTokens(): void
-    {
-        $tokens = $this->tokenService->getForSubmission($this->testSubmissionId);
-        $this->assertGreaterThanOrEqual(2, count($tokens));
-    }
-
     // ── regenerate ──────────────────────────────────────────────
 
     public function testRegenerateReturnsErrorForNonAdmin(): void
@@ -505,54 +464,6 @@ final class TokenServiceTest extends TestCase
 
         // Cleanup
         $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$existingTokenId]);
-    }
-
-    // ── getDelegations ──────────────────────────────────────────
-
-    public function testGetDelegationsReturnsArray(): void
-    {
-        $delegations = $this->tokenService->getDelegations('nonexistent-id');
-        $this->assertIsArray($delegations);
-        $this->assertEmpty($delegations);
-    }
-
-    public function testGetDelegationsReturnsEmptyForSubmissionWithoutDelegations(): void
-    {
-        $delegations = $this->tokenService->getDelegations($this->testSubmissionId);
-        $this->assertIsArray($delegations);
-        $this->assertEmpty($delegations);
-    }
-
-    public function testGetDelegationsWithRealData(): void
-    {
-        // Create a delegation first
-        $toEmail = 'del_get_target_' . uniqid() . '@test.com';
-        $this->tokenService->delegate($this->testPendingTokenId, $toEmail, 'Test reason');
-
-        $delegations = $this->tokenService->getDelegations($this->testSubmissionId);
-        $this->assertNotEmpty($delegations);
-        $this->assertArrayHasKey('from_email', $delegations[0]);
-        $this->assertArrayHasKey('to_email', $delegations[0]);
-        $this->assertArrayHasKey('step_label', $delegations[0]);
-    }
-
-    public function testGetDelegationsReturnsCorrectSubmissionScope(): void
-    {
-        // Create delegation on test submission
-        $toEmail = 'del_scope_' . uniqid() . '@test.com';
-        $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
-
-        // Create a different submission and check it has no delegations
-        $pdo = $this->db->getPdo();
-        $otherSubId = generate_uuid();
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', ?, datetime('now'), 'en_cours', 1)")
-            ->execute([$otherSubId, $this->testFormId, 'other@test.com']);
-
-        $delegations = $this->tokenService->getDelegations($otherSubId);
-        $this->assertEmpty($delegations);
-
-        // Cleanup
-        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$otherSubId]);
     }
 
     // ── Bug 1: invalidated_at — regenerate should not pollute findDoneByEmail ──

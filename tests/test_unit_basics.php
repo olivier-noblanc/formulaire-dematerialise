@@ -338,36 +338,6 @@ echo "\n";
 // ═══════════════════════════════════════════════════
 echo "── 4. POST / CSRF ──\n";
 
-test('handlePost() en GET retourne null', function() {
-    $prev = $_SERVER['REQUEST_METHOD'] ?? '';
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-    $result = \App\Core\App::cron()->handlePost();
-    $_SERVER['REQUEST_METHOD'] = $prev;
-    return $result === null ? true : "Got: " . var_export($result, true);
-});
-
-test('handlePost() en POST avec action retourne l\'action', function() {
-    $prev_method = $_SERVER['REQUEST_METHOD'] ?? '';
-    $prev_action = $_POST['action'] ?? null;
-    $_SERVER['REQUEST_METHOD'] = 'POST';
-    $_POST['action'] = 'save_form';
-    $result = \App\Core\App::cron()->handlePost();
-    $_SERVER['REQUEST_METHOD'] = $prev_method;
-    if ($prev_action !== null) $_POST['action'] = $prev_action; else unset($_POST['action']);
-    return $result === 'save_form' ? true : "Got: " . var_export($result, true);
-});
-
-test('handlePost() en POST sans action retourne null', function() {
-    $prev_method = $_SERVER['REQUEST_METHOD'] ?? '';
-    $prev_action = $_POST['action'] ?? null;
-    $_SERVER['REQUEST_METHOD'] = 'POST';
-    unset($_POST['action']);
-    $result = \App\Core\App::cron()->handlePost();
-    $_SERVER['REQUEST_METHOD'] = $prev_method;
-    if ($prev_action !== null) $_POST['action'] = $prev_action; else unset($_POST['action']);
-    return $result === null ? true : "Got: " . var_export($result, true);
-});
-
 test('generate_csrf_token() retourne une chaîne hex', function() {
     @session_start();
     $token = \App\Core\App::security()->generateCsrfToken();

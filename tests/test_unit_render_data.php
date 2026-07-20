@@ -373,21 +373,6 @@ test('app_log() écrit dans l\'audit', function() {
     return $after > $before ? true : 'Audit log non incrémenté';
 });
 
-test('get_audit_logs() retourne un tableau', function() {
-    $logs = \App\Core\App::audit()->getLogs(5);
-    return is_array($logs) ? true : 'Pas un tableau';
-});
-
-test('StatsService::searchSubmissions() avec terme vide retourne vide', function() {
-    $results = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions('');
-    return empty($results) ? true : 'Résultats pour terme vide';
-});
-
-test('StatsService::searchSubmissions() retourne un tableau', function() {
-    $results = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->searchSubmissions('dupont');
-    return is_array($results) ? true : 'Pas un tableau';
-});
-
 test('get_test_mails() retourne un tableau', function() {
     $mails = get_test_mails();
     return is_array($mails) ? true : 'Pas un tableau';

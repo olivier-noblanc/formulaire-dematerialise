@@ -95,17 +95,7 @@ final readonly class CacheService implements CacheInterface
         file_put_contents($file, $payload, LOCK_EX);
     }
 
-    public function clear(string $key): void
-    {
-        $file = $this->cacheDir . '/' . md5($key) . '.json';
-        if (file_exists($file)) {
-            @unlink($file);
-        }
-        $lockFile = $file . '.lock';
-        if (file_exists($lockFile)) {
-            @unlink($lockFile);
-        }
-    }
+
 
     public function getLatestVersion(): string
     {

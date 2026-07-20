@@ -44,9 +44,5 @@ final readonly class AuditLogService implements AuditInterface
         $this->log('security_event', 'security:' . $event, $detail, $actor);
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function getLogs(int $limit = 100, string $actionFilter = ''): array
-    {
-        return $this->auditRepository->getLogs($limit, $actionFilter);
-    }
+
 }
