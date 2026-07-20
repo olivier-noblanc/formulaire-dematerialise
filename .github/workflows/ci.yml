@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CI_CONFIG: |
     <?php
@@ -22,6 +26,7 @@ env:
     ]);
 
 jobs:
+  # ── Lint ──────────────────────────────────────────────────────
   lint:
     name: Lint PHP
     runs-on: ubuntu-latest
@@ -40,6 +45,7 @@ jobs:
           done < <(find src/ lib/ -name '*.php')
           exit $failed
 
+  # ── Analyse statique ─────────────────────────────────────────
   phpstan:
     name: PHPStan (level 8)
     runs-on: ubuntu-latest
@@ -50,11 +56,18 @@ jobs:
           php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
       - run: composer install --no-interaction --prefer-dist
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - run: php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
 
+  # ── Tests unitaires + e2e ────────────────────────────────────
   phpunit:
     name: PHPUnit (unit + e2e)
     runs-on: ubuntu-latest
@@ -65,13 +78,86 @@ jobs:
           php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
       - run: composer install --no-interaction --prefer-dist
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php
           mkdir -p db
-      - run: php vendor/bin/phpunit --no-coverage
+      - name: Run PHPUnit
+        run: php vendor/bin/phpunit --no-coverage
 
+  # ── Style de code ────────────────────────────────────────────
+  cs-fixer:
+    name: PHP CS Fixer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_sqlite, sqlite3
+          coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+      - run: composer install --no-interaction --prefer-dist
+      - name: Check code style (dry-run)
+        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --no-progress --using-cache=no 2>&1 || true
+
+  # ── Modernisation PHP ────────────────────────────────────────
+  rector:
+    name: Rector (modernisation)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_sqlite, sqlite3
+          coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+      - run: composer install --no-interaction --prefer-dist
+      - name: Create config.php
+        run: echo "$CI_CONFIG" > config.php
+      - name: Check with Rector (dry-run)
+        run: php vendor/bin/rector process --dry-run --no-progress-bar 2>&1 || true
+
+  # ── Sécurité deps ────────────────────────────────────────────
+  security:
+    name: Composer audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_sqlite, sqlite3
+          coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+      - run: composer install --no-interaction --prefer-dist
+      - name: Audit dependencies for vulnerabilities
+        run: composer audit --no-dev 2>&1 || echo "::warning::Composer audit found issues (non-blocking)"
+
+  # ── Tests fonctionnels ───────────────────────────────────────
   functional:
     name: Tests fonctionnels
     runs-on: ubuntu-latest
@@ -83,6 +169,12 @@ jobs:
           php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
       - run: composer install --no-interaction --prefer-dist
       - name: Create config.php + db dir
         run: |
