@@ -266,6 +266,14 @@ final class EnumConstraintTest extends TestCase
             $this->markTestSkipped('workflow.db non trouvée');
         }
 
+        // Vérifier que la DB contient les tables attendues (migration v30)
+        $checkPdo = new \PDO('sqlite:' . $prodPath);
+        $hasSchema = $checkPdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'")->fetchColumn();
+        $checkPdo = null;
+        if (!$hasSchema) {
+            $this->markTestSkipped('workflow.db ne contient pas la table schema_version (DB de test vide)');
+        }
+
         // Copier la base pour ne pas casser l'environnement
         $tmpDb = sys_get_temp_dir() . '/v30_crash_test.db';
         copy($prodPath, $tmpDb);

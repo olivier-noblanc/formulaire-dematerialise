@@ -17,7 +17,7 @@ env:
         'smtp_from' => 'test@localhost', 'smtp_from_name' => 'CircuitDemat',
         'delai_relance_h' => '48', 'admin_email' => 'admin@test.local',
         'token_expire_days' => '30', 'relance_max' => '3',
-        'app_name' => 'CircuitDemat', 'email_domain' => 'test.local',
+        'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'test.local',
         'base_url' => 'http://localhost',
     ]);
 
