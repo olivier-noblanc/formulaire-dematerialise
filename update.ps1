@@ -272,7 +272,7 @@ function Invoke-ComposerAutoload {
 # de considérer la mise à jour comme réussie. Si elle retourne $false, le script
 # restaure la sauvegarde et sort en erreur (exit 1).
 function Invoke-QualityGate {
-    Write-Section "Gate qualité (lint + PHPStan + tests)"
+    Write-Section "Gate qualité (lint + tests)"
 
     # ── Vérifier que PHP est disponible ──
     $phpExe = Get-Command php -ErrorAction SilentlyContinue
@@ -427,47 +427,11 @@ function Invoke-QualityGate {
         }
     }
 
-    # ── 2. PHPStan (si vendor/bin/phpstan.phar ou phpstan présent) ──
-    Write-Status ">" "Étape 2/3 : PHPStan (analyse statique niveau 6)..." "Cyan"
-    $phpstanPhar = Join-Path $AppRoot "vendor\bin\phpstan.phar"
-    $phpstanBat  = Join-Path $AppRoot "vendor\bin\phpstan.bat"
-    $phpstanRan = $false
+    # ── 2. PHPStan → déplacé dans GitHub Actions CI (pas sur prod) ──
+    Write-Status "OK" "PHPStan : déplacé dans GitHub Actions CI (pas nécessaire en prod)." "Green"
 
-    if (Test-Path $phpstanPhar) {
-        $phpstanRan = $true
-        $output = & $phpBin $phpstanPhar analyse --memory-limit=512M --no-progress 2>&1
-        $rc = $LASTEXITCODE
-    } elseif (Test-Path $phpstanBat) {
-        $phpstanRan = $true
-        $output = & $phpstanBat analyse --memory-limit=512M --no-progress 2>&1
-        $rc = $LASTEXITCODE
-    } elseif (Get-Command phpstan -ErrorAction SilentlyContinue) {
-        $phpstanRan = $true
-        $output = & phpstan analyse --memory-limit=512M --no-progress 2>&1
-        $rc = $LASTEXITCODE
-    } else {
-        Write-Status "!" "PHPStan non trouvé (vendor/bin/phpstan.phar absent). Étape skippée." "Yellow"
-        Write-Status ">" "Pour activer : php composer.phar require phpstan/phpstan — ou télécharger le phar." "DarkGray"
-    }
-
-    if ($phpstanRan) {
-        # Filtrer les warnings de session CLI (bruit environnement Windows)
-        $filteredOutput = $output | Where-Object {
-            $_ -notmatch 'session_start' -and
-            $_ -notmatch 'PHP Request Shutdown' -and
-            $_ -notmatch 'headers already sent'
-        }
-        $filteredOutput | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
-        if ($rc -eq 0) {
-            Write-Status "OK" "PHPStan : OK (baseline autorisée)." "Green"
-        } else {
-            Write-Status "X" "PHPStan : échec (code $rc)." "Red"
-            $gateOk = $false
-        }
-    }
-
-    # ── 3. Tests fonctionnels (tests/test_all.php — 51 tests) ──
-    Write-Status ">" "Étape 3/3 : Tests fonctionnels (tests/test_all.php)..." "Cyan"
+    # ── 2. Tests fonctionnels (tests/test_all.php — 51 tests) ──
+    Write-Status ">" "Étape 2/2 : Tests fonctionnels (tests/test_all.php)..." "Cyan"
     $testFile = Join-Path $AppRoot "tests\test_all.php"
     if (-not (Test-Path $testFile)) {
         Write-Status "!" "tests/test_all.php introuvable. Étape skippée." "Yellow"
@@ -1036,7 +1000,7 @@ else {
         Remove-Item -Path $phpstanCache -Recurse -Force -ErrorAction SilentlyContinue
     }
 
-    # ── Gate qualité : vérifier que le code déployé passe lint + PHPStan + tests ──
+    # ── Gate qualité : vérifier que le code déployé passe lint + tests ──
     # Si la gate échoue → rollback automatique via la sauvegarde + exit 1.
     # Pour bypasser (hotfix urgent) : .\update.ps1 -SkipTests
     if ($SkipTests) {
