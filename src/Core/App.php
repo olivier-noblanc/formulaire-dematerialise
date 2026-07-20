@@ -118,11 +118,6 @@ final class App
         return self::getInstance()->get(\App\Workflow\ConditionEvaluator::class);
     }
 
-    public static function view(): \App\View\ViewRenderer
-    {
-        return self::getInstance()->get(\App\View\ViewRenderer::class);
-    }
-
     public static function token(): \App\Token\TokenService
     {
         return self::getInstance()->get(\App\Token\TokenService::class);

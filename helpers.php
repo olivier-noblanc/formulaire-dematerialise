@@ -133,8 +133,6 @@ $_conditions_svc = $_app->get(\App\Workflow\ConditionEvaluator::class);
 $_workflow_svc = new \App\Workflow\WorkflowEngine($_db_service, $_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc, $_app->get(\App\Repository\SubmissionRepository::class));
 $_app->set(\App\Workflow\WorkflowEngine::class, $_workflow_svc);
 $_html_svc = $_app->get(\App\Render\HtmlService::class);
-$_app->set(\App\View\ViewRenderer::class, new \App\View\ViewRenderer($_html_svc));
-$_app->set(\App\View\EmailView::class, new \App\View\EmailView());
 $_app->set(\App\Persona\PersonaService::class, new \App\Persona\PersonaService($_db_service));
 $_app->set(\App\Stats\StatsService::class, new \App\Stats\StatsService($_db_service));
 $_app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($_db_service));

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Workflow;
 
-use App\Contract\WorkflowInterface;
 use App\Core\Database;
 use App\Forms\FieldService;
 use App\Mail\MailService;
@@ -15,7 +14,7 @@ use App\Enum\SubmissionStatus;
 /**
  * Moteur de workflow — tokens, steps, validation.
  */
-final readonly class WorkflowEngine implements WorkflowInterface
+final readonly class WorkflowEngine
 {
     public function __construct(private Database $database, private SettingsService $settingsService, private MailService $mailService, private FieldService $fieldService, private ConditionEvaluator $conditionEvaluator, private SubmissionRepository $submissionRepository)
     {

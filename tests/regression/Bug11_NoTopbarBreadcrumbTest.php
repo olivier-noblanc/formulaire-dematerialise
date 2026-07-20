@@ -81,10 +81,6 @@ function run_bug11_test(): bool {
                 if (!preg_match('/function\s+render_breadcrumb\s*\(/', $src)) {
                     $failures[] = "appel render_breadcrumb() trouvé dans $rel";
                 }
-            } elseif (strpos($normFile, 'src/View/ViewRenderer.php') !== false) {
-                // ViewRenderer::breadcrumb() est une façade qui appelle render_breadcrumb
-                // — on la tolère car elle n'est plus appelée par les pages (v9.1.0).
-                // Le test vérifie juste qu'elle n'est pas appelée.
             } else {
                 $failures[] = "appel render_breadcrumb() trouvé dans $rel";
             }
