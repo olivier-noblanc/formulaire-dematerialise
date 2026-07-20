@@ -241,7 +241,7 @@ final class TokenRepository extends BaseRepository
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
              WHERE t.done_at IS NULL AND s.status = 'en_cours'
-               AND CAST(strftime('%s', 'now') AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) > ?
+               AND CAST(strftime('%s', 'now') AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) > CAST(? AS REAL)
              ORDER BY t.sent_at ASC
              LIMIT ?",
             [$hours * 3600, $limit]
