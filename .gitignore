@@ -64,6 +64,9 @@ web.config
 # Graphify
 /graphify-out/
 
+# MiMoCode
+.mimocode/
+
 # PHPUnit
 /phpunit.phar
 /.phpunit.result.cache
