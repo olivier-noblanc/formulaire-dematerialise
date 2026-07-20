@@ -517,8 +517,8 @@ function render_admin_settings_after_main(): string
     return AdminSettingsRenderer::getInstance()->renderAfterMain();
 }
 
-// ── VIEW (ViewRenderer) ───────────────────────────────
+// ── VIEW (NavigationRenderer) ─────────────────────────
 function render_footer(): string
 {
-    return \App\Core\App::view()->footer();
+    return (new \App\Render\NavigationRenderer())->footer();
 }

@@ -34,7 +34,6 @@ use App\Workflow\WorkflowEngine;
 use App\Workflow\ConditionEvaluator;
 use App\Persona\PersonaService;
 use App\Stats\StatsService;
-use App\View\ViewRenderer;
 use App\Token\TokenService;
 use App\Attachment\AttachmentService;
 use App\Cron\CronService;
@@ -79,7 +78,6 @@ $app->set(TokenRepository::class, new TokenRepository($db));
     $app->set(ConditionEvaluator::class, new ConditionEvaluator());
     $app->set(PersonaService::class, new PersonaService($db));
     $app->set(StatsService::class, new StatsService($db));
-    $app->set(ViewRenderer::class, new ViewRenderer($app->get(HtmlService::class)));
 $app->set(WorkflowEngine::class, new WorkflowEngine(
     $db,
     $app->get(SettingsService::class),

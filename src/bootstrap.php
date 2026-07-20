@@ -44,8 +44,6 @@ use App\Settings\SettingsService;
 use App\Stats\StatsService;
 use App\Token\TokenService;
 use App\Validation\ValidationService;
-use App\View\EmailView;
-use App\View\ViewRenderer;
 use App\Workflow\ConditionEvaluator;
 use App\Workflow\WorkflowEngine;
 
@@ -91,12 +89,6 @@ $fields = $app->get(FieldService::class);
 $conditions = $app->get(ConditionEvaluator::class);
 $workflow = new WorkflowEngine($db, $settings, $mail, $fields, $conditions, $app->get(SubmissionRepository::class));
 $app->set(WorkflowEngine::class, $workflow);
-
-// View renderers — délèguent aux fonctions render_*() existantes
-$html = $app->get(HtmlService::class);
-$view = new ViewRenderer($html);
-$app->set(ViewRenderer::class, $view);
-$app->set(EmailView::class, new EmailView());
 
 // Token lifecycle service
 $tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $app->get(SubmissionRepository::class));

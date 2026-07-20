@@ -131,7 +131,7 @@ final class GlobalFunctionsTest extends TestCase
         // helpers.php
         'resolve_base_url',
 
-        // ViewRenderer (appelé en tant que fonction globale via test_all.php)
+        // lib_wrappers.php
         'render_footer',
     ];
 
