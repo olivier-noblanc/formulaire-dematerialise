@@ -95,9 +95,10 @@ final class HttpRouteTest extends TestCase
     {
         if (is_resource(self::$serverProcess)) {
             // Try graceful shutdown first
-            @file_get_contents(self::$baseUrl . '/?p=__shutdown', false, [
+            $shutdownCtx = stream_context_create([
                 'http' => ['timeout' => 2, 'ignore_errors' => true],
             ]);
+            @file_get_contents(self::$baseUrl . '/?p=__shutdown', false, $shutdownCtx);
 
             $status = proc_get_status(self::$serverProcess);
             if ($status['running']) {
