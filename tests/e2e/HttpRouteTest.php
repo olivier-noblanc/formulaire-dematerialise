@@ -723,10 +723,10 @@ final class HttpRouteTest extends TestCase
 
     public function testNoServerHeaderLeak(): void
     {
-        // The PHP built-in server always exposes X-Powered-By header.
-        // This test only applies to production servers (IIS, Apache, etc.).
-        if (PHP_OS_FAMILY === 'Windows' || !self::$serverReady) {
-            $this->markTestSkipped('X-Powered-By header is exposed by PHP built-in server');
+        // Le serveur de dev est démarré avec -d expose_php=0 (start_server.php /
+        // start_server.ps1), donc l'en-tête ne doit plus fuiter ici non plus.
+        if (!self::$serverReady) {
+            $this->markTestSkipped('PHP built-in server not ready');
         }
 
         $url = self::$baseUrl . '/?p=health';

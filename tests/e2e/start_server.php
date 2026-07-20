@@ -31,7 +31,10 @@ if ($pidFile !== null) {
 }
 
 $phpBin = PHP_BINARY;
-$serverCmd = $phpBin . ' -S 127.0.0.1:' . $port . ' -t ' . escapeshellarg($docRoot) . ' ' . escapeshellarg($routerPath);
+// expose_php=0 : évite la fuite de l'en-tête X-Powered-By, propre au serveur de
+// dev PHP intégré (IIS/Apache en prod ne l'exposent pas nativement — voir
+// testNoServerHeaderLeak dans HttpRouteTest.php).
+$serverCmd = $phpBin . ' -d expose_php=0 -S 127.0.0.1:' . $port . ' -t ' . escapeshellarg($docRoot) . ' ' . escapeshellarg($routerPath);
 
 if (PHP_OS_FAMILY === 'Windows') {
     // On Windows, use COM to start process in background
