@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * tests/regression/run_all.php — Orchestrateur des 9 tests de non-régression.
+ * tests/regression/run_all.php — Orchestrateur des 12 tests de non-régression.
  *
  * Inclut chaque fichier BugNN_<Name>Test.php et exécute sa fonction
  * `run_bugNN_test()`. Affiche un résumé `[PASS/FAIL] BugNN_Name — message`
@@ -23,7 +23,7 @@ define('C_RED',   "\033[31m");
 define('C_CYAN',  "\033[36m");
 define('C_YELLOW',"\033[33m");
 
-// ── Liste ordonnée des 11 tests de non-régression ────────────────────────────
+// ── Liste ordonnée des 12 tests de non-régression ────────────────────────────
 // Chaque entrée : [id, nom court, fichier, fonction]
 $tests = [
     ['01', 'EndifFormController',  'Bug01_EndifFormControllerTest.php',  'run_bug01_test'],
@@ -37,10 +37,11 @@ $tests = [
     ['09', 'TopbarLink',           'Bug09_TopbarLinkTest.php',           'run_bug09_test'],
     ['10', 'DuplicateLabelsHints', 'Bug10_DuplicateLabelsHintsTest.php', 'run_bug10_test'],
     ['11', 'NoTopbarBreadcrumb',   'Bug11_NoTopbarBreadcrumbTest.php',   'run_bug11_test'],
+    ['12', 'RemindTimezoneOffset', 'Bug12_RemindTimezoneOffsetTest.php', 'run_bug12_test'],
 ];
 
 echo C_BOLD . "\n═════════════════════════════════════════════════════════════════\n" . C_RESET;
-echo C_BOLD . "  Tests de non-régression (11 bugs historiques) — tests/regression\n" . C_RESET;
+echo C_BOLD . "  Tests de non-régression (12 bugs historiques) — tests/regression\n" . C_RESET;
 echo C_BOLD . "═════════════════════════════════════════════════════════════════\n" . C_RESET;
 
 $pass_count = 0;
@@ -102,5 +103,5 @@ if ($fail_count > 0) {
     exit(1);
 }
 
-echo C_GREEN . C_BOLD . "  ✅ Tous les tests de non-régression passent — les 11 bugs historiques sont couverts." . C_RESET . "\n";
+echo C_GREEN . C_BOLD . "  ✅ Tous les tests de non-régression passent — les 12 bugs historiques sont couverts." . C_RESET . "\n";
 exit(0);
