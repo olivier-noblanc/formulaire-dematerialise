@@ -102,9 +102,18 @@
 
 ## 🎯 Ce qui reste
 
-| Tâche | Effort | Détail |
-|-------|--------|--------|
-| Reliquat code mort (baseline PHPStan) | Faible | ~13 entrées shipmonk.deadMethod/deadProperty non-Contract encore non triées individuellement : `Config::get/getAppName/getBaseUrl/getDbPath/isTestMode` (classe quasi entièrement inutilisée), `AdminRepository::isAdmin` (dupliqué par `AuthService::isAdminByEmail`, confirmé inerte), `AuditRepository::getLogs`, `FormRenderer::statusFilter`, `InstallRenderer::renderPage`, `NavigationRenderer::breadcrumb`, `SubmissionViewRenderer::renderContent`. `ErrorResponseException::$title/$hint/$backUrl` examinées et laissées telles quelles (partie de l'API publique de l'exception, non lues mais pas gênant). |
+_Aucune tâche connue en attente._ Le reliquat de code mort de la baseline PHPStan a été trié individuellement (v10.24.0) :
+
+| Élément | Décision | Raison |
+|---|---|---|
+| `App\Core\Config` (classe entière) | **Supprimé** | Enregistrée dans 3 bootstraps parallèles, jamais consultée nulle part, aucun accesseur `App::config()` n'a jamais existé |
+| `NavigationRenderer::breadcrumb()` | **Supprimé** | Aucun appelant — breadcrumbs supprimés de l'UI (épuration v9.1.0) |
+| `FormRenderer::statusFilter()` | **Supprimé** | Aucun appelant — `MySubmissionsRenderer` a sa propre implémentation inline divergente |
+| `InstallRenderer::renderPage()` | **Conservé** | Faux positif — utilisée par `install.php`, juste exclu de l'analyse PHPStan (`excludePaths`) |
+| `AuditRepository::getLogs()` | **Conservé** | Jamais appelée en prod, mais sert à vérifier `log()` (méthode active) par lecture dans `AuditRepositoryTest::testLogAndReadBackRoundTrip` — la supprimer affaiblirait la couverture d'une fonctionnalité réelle |
+| `AdminRepository::isAdmin()` | **Conservé (non tranché)** | Dupliquée par `AuthService::isAdminByEmail()`, confirmée inerte en prod, mais a 6 points d'usage dans `AdminRepositoryTest.php` (fichier testant aussi d'autres méthodes actives) — retrait pas fait faute de temps pour éditer proprement sans casser les autres tests du fichier |
+| `SubmissionViewRenderer::renderContent()` | **Conservé (non tranché)** | ~90 lignes, jamais appelée par `SubmissionViewController` (qui construit son propre template inline), mais testée par `CssCoverageTest.php` — possible duplication de logique plutôt que code mort pur ; mériterait d'unifier le contrôleur sur cette méthode plutôt que de la supprimer |
+| `ErrorResponseException::$title/$hint/$backUrl` | **Conservé** | Propriétés publiques de l'API de l'exception (mode TEST_MODE), non lues mais sans risque |
 
 
 ---
@@ -135,4 +144,4 @@
 
 ---
 
-_Dernière mise à jour : 2026-07-20 (v10.23.0)_
+_Dernière mise à jour : 2026-07-20 (v10.24.0)_
