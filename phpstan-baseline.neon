@@ -985,36 +985,6 @@ parameters:
 			path: src/Controller/ValidateController.php
 
 		-
-			message: '#^Unused App\\Core\\Config\:\:get$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Core/Config.php
-
-		-
-			message: '#^Unused App\\Core\\Config\:\:getAppName$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Core/Config.php
-
-		-
-			message: '#^Unused App\\Core\\Config\:\:getBaseUrl$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Core/Config.php
-
-		-
-			message: '#^Unused App\\Core\\Config\:\:getDbPath$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Core/Config.php
-
-		-
-			message: '#^Unused App\\Core\\Config\:\:isTestMode$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Core/Config.php
-
-		-
 			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
 			identifier: if.condNotBoolean
 			count: 4
@@ -1321,12 +1291,6 @@ parameters:
 			path: src/Render/FormRenderer.php
 
 		-
-			message: '#^Unused App\\Render\\FormRenderer\:\:statusFilter$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
 			count: 1
@@ -1437,12 +1401,6 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
 			identifier: if.condNotBoolean
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Unused App\\Render\\NavigationRenderer\:\:breadcrumb$#'
-			identifier: shipmonk.deadMethod
 			count: 1
 			path: src/Render/NavigationRenderer.php
 
