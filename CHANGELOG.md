@@ -1,5 +1,25 @@
 # Changelog — CircuitDémat
 
+## [10.23.0] — 2026-07-20
+_Résumé : Migration v31 (4 CHECK enum supplémentaires), MailService::send()/sendDetailed() dédupliquées (send() ne configurait ni auth SMTP ni TLS), mail_log enfin alimentée._
+
+### 🔒 Durcissement SQL (AGENTS.md règle #8)
+
+- **Migration v31** : contraintes CHECK ajoutées sur 4 colonnes enum-like supplémentaires (rebuild de table, pattern v30) :
+  - `form_fields.field_type` et `submission_validator_data.field_type` → `'text'|'email'|'date'|'select'|'checkbox'|'textarea'|'file'` (source de vérité : `FormJsonValidator::$valid_field_types`)
+  - `submission_validator_data.filled_by` → `'demandeur'|'validator'` (aligné sur le domaine sémantique de `form_fields.filled_by`, bien que seul `'validator'` soit utilisé en pratique aujourd'hui)
+  - `mail_log.status` → `'sent'|'blocked'|'dry_run'|'error'`
+  - 9 colonnes enum-like protégées côté SQL au total (5 en v30 + 4 en v31). Chemin de mise à niveau réel testé (DB v30 pure → v31), idempotence confirmée, 11 tests dédiés (`EnumConstraintV31Test`).
+  - Délibérément **non** touchées : `audit_log.action` (30+ valeurs et en croissance — un CHECK y casserait l'ajout de toute nouvelle fonctionnalité, et un audit log ne doit jamais risquer un échec d'écriture) ; `alert_rules.notify_who` (enum-ou-email, pas un vrai enum) ; `alert_rules.condition_type` (une seule valeur en pratique mais domaine trop ambigu pour verrouiller sans risque).
+
+### 🐛 Bug fix majeur — MailService
+
+- **`MailService::send()` vs `sendDetailed()`** : deux implémentations PHPMailer entièrement dupliquées et divergentes. `send()` (utilisée par tout le workflow métier réel — WorkflowEngine, TokenService : validations, refus, délégations, relances) ne configurait ni `SMTPAuth`/`Username`/`Password` ni `SMTPSecure` (TLS/SSL), contrairement à `sendDetailed()` (utilisée uniquement par le bouton admin « tester l'email »). Si le serveur SMTP de production exige l'authentification ou le TLS, tous les emails de workflow réels échoueraient silencieusement alors que le test SMTP admin réussirait. Fix : `send()` délègue maintenant entièrement à `sendDetailed()`, seule implémentation SMTP restante.
+- **`mail_log` alimentée pour la première fois** : la page monitoring affiche un « Journal des emails » depuis toujours, mais rien n'y écrivait (`getRecentLogs()` ne fait que lire). `sendDetailed()` y insère maintenant chaque tentative (actor/ip résolus via `App::auth()`/`$_SERVER`, écriture protégée par try/catch pour ne jamais faire échouer un envoi à cause d'un problème de log).
+- Test de régression Bug13 (13 bugs historiques désormais couverts) — sonde en sous-processus hors TEST_MODE, seul moyen d'exercer ce chemin de code.
+
+---
+
 ## [10.22.0] — 2026-07-20
 _Résumé : Bug bounty — send_mail()/build_mail_html()/render_email_template()/format_bytes() n'existaient qu'en stub PHPStan (Fatal Error au runtime réel), bug de fuseau horaire dans remind.php, suppression de MailerService (code mort confirmé) et de 4 propriétés mortes dans BaseController._
 
