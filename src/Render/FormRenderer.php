@@ -209,32 +209,6 @@ final class FormRenderer
     }
 
     /**
-     * Generates status filter links (Tous / En cours / Validés / Refusés).
-     *
-     * @param string $current_status Active status (tous|en_cours|valide|refuse)
-     * @param string $base_url       Base URL to append the status parameter to
-     * @param string $param_name     URL parameter name (default: statut)
-     * @return string HTML of the filter links
-     */
-    public function statusFilter(string $current_status, string $base_url, string $param_name = 'statut'): string
-    {
-        $statuses = [
-            'tous'     => '📊 Tous',
-            'en_cours' => '⏳ En cours',
-            'valide'   => '✓ Validés',
-            'refuse'   => '❌ Refusés',
-            'annule'   => '🗑 Annulés',
-        ];
-        $html = '<div class="filtres">';
-        foreach ($statuses as $status => $label) {
-            $sep   = (str_contains($base_url, '?')) ? '&' : '?';
-            $active = ($current_status === $status) ? ' actif' : '';
-            $html .= '<a href="' . \App\Core\App::html()->escape($base_url . $sep . $param_name . '=' . $status) . '" class="' . $active . '">' . $label . '</a>';
-        }
-        return $html . '</div>';
-    }
-
-    /**
      * Displays submission data as key/value pairs.
      *
      * @param array<string, mixed>  $data    Submission data (decoded from JSON)
