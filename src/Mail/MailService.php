@@ -20,49 +20,7 @@ final readonly class MailService implements MailInterface
 
     public function send(string $to, string $subject, string $body): bool
     {
-        /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
-        if (defined('TEST_MODE') && TEST_MODE) {
-            $GLOBALS['_test_mails'][] = [
-                'to' => $to,
-                'subject' => $subject,
-                'body' => $body,
-                'time' => gmdate('Y-m-d H:i:s'),
-            ];
-            return true;
-        }
-
-        $dryRun = $this->settingsService->get('mail_dry_run', '0') === '1';
-        if ($dryRun) {
-            error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
-            return true;
-        }
-
-        $smtpHost = $this->settingsService->get('smtp_host');
-        $smtpPort = (int) $this->settingsService->get('smtp_port', '25');
-        $smtpFrom = $this->settingsService->get('smtp_from');
-        $smtpFromName = $this->settingsService->get('smtp_from_name', 'CircuitDémat');
-
-        if (empty($smtpHost)) {
-            error_log('send_mail: aucun serveur SMTP configuré');
-            return false;
-        }
-
-        try {
-            $phpMailer = new PHPMailer(true);
-            $phpMailer->isSMTP();
-            $phpMailer->Host = $smtpHost;
-            $phpMailer->Port = $smtpPort;
-            $phpMailer->setFrom($smtpFrom, $smtpFromName);
-            $phpMailer->addAddress($to);
-            $phpMailer->Subject = $subject;
-            $phpMailer->Body = $body;
-            $phpMailer->isHTML(true);
-            $phpMailer->send();
-            return true;
-        } catch (\Throwable $e) {
-            error_log('send_mail error: ' . $e->getMessage());
-            return false;
-        }
+        return $this->sendDetailed($to, $subject, $body)['success'];
     }
 
     /** @param array<string, mixed> $submission */
@@ -106,6 +64,7 @@ final readonly class MailService implements MailInterface
             error_log("send_mail() BLOQUÉ — $msg");
             $result['error'] = $msg;
             $result['status'] = 'blocked';
+            $this->logMailAttempt($to, $subject, $result);
             return $result;
         }
 
@@ -123,7 +82,9 @@ final readonly class MailService implements MailInterface
         $dryRun = $this->settingsService->get('mail_dry_run', '0') === '1';
         if ($dryRun) {
             error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
-            return ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => 'dry_run'];
+            $result = ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => 'dry_run'];
+            $this->logMailAttempt($to, $subject, $result);
+            return $result;
         }
 
         $smtpHost = $this->settingsService->get('smtp_host');
@@ -139,12 +100,14 @@ final readonly class MailService implements MailInterface
             $msg = 'Aucun hôte SMTP configuré';
             $result['error'] = $msg;
             $result['status'] = 'blocked';
+            $this->logMailAttempt($to, $subject, $result);
             return $result;
         }
         if (empty($smtpFrom)) {
             $msg = 'Aucune adresse From configurée';
             $result['error'] = $msg;
             $result['status'] = 'blocked';
+            $this->logMailAttempt($to, $subject, $result);
             return $result;
         }
 
@@ -179,12 +142,43 @@ final readonly class MailService implements MailInterface
             $phpMailer->send();
 
             $smtpLog = implode("\n", $smtpLogBuf);
-            return ['success' => true, 'error' => '', 'smtp_log' => $smtpLog, 'status' => 'sent'];
+            $result = ['success' => true, 'error' => '', 'smtp_log' => $smtpLog, 'status' => 'sent'];
+            $this->logMailAttempt($to, $subject, $result);
+            return $result;
         } catch (\Throwable) {
             $smtpLog = implode("\n", $smtpLogBuf);
             $err = $phpMailer->ErrorInfo;
             error_log('Mail error: ' . $err);
-            return ['success' => false, 'error' => $err, 'smtp_log' => $smtpLog, 'status' => 'error'];
+            $result = ['success' => false, 'error' => $err, 'smtp_log' => $smtpLog, 'status' => 'error'];
+            $this->logMailAttempt($to, $subject, $result);
+            return $result;
+        }
+    }
+
+    /**
+     * Persiste une tentative d'envoi dans mail_log (visible sur la page monitoring).
+     * Ne journalise pas les envois TEST_MODE (interceptés dans \$GLOBALS['_test_mails'],
+     * mail_log reflète l'activité réelle, pas le harnais de test).
+     *
+     * @param array{success:bool,error:string,smtp_log:string,status:string} $result
+     */
+    private function logMailAttempt(string $to, string $subject, array $result): void
+    {
+        try {
+            $actor = \App\Core\App::auth()->getUser();
+            if ($actor === '') {
+                $actor = 'system';
+            }
+            $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'CLI');
+            $this->database->getPdo()->prepare(
+                'INSERT INTO mail_log (id, created_at, recipient, subject, status, error_message, smtp_log, actor, ip)
+                 VALUES (?, datetime(\'now\'), ?, ?, ?, ?, ?, ?, ?)'
+            )->execute([
+                \generate_uuid(), $to, $subject, $result['status'],
+                $result['error'], $result['smtp_log'], $actor, $ip,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('mail_log insert error: ' . $e->getMessage());
         }
     }
 
