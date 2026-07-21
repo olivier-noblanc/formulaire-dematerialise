@@ -1,5 +1,17 @@
 # Changelog — CircuitDémat
 
+## [10.24.0] — 2026-07-20
+_Résumé : Suppression de App\Core\Config (code mort, 3 bootstraps parallèles nettoyés), NavigationRenderer::breadcrumb() et FormRenderer::statusFilter()._
+
+### 🧹 Code mort
+
+- **`App\Core\Config`** : classe entière supprimée. Enregistrée dans 3 bootstraps parallèles (`helpers.php`, `src/bootstrap.php`, `tests/phpunit_bootstrap.php`) mais aucune de ses 5 méthodes jamais consultée — l'app lit `BASE_URL`/`DB_PATH`/`TEST_MODE` directement comme constantes. Aucun accesseur `App::config()` n'a d'ailleurs jamais existé, contrairement à `App::mail()`/`App::html()`. Sa suppression a révélé les 3 bootstraps parallèles (2 sous `tests/`, invisibles à PHPStan) — tous corrigés dans le même commit.
+- **`NavigationRenderer::breadcrumb()`** : aucun appelant — les breadcrumbs ont été supprimés de l'UI (épuration v9.1.0).
+- **`FormRenderer::statusFilter()`** : aucun appelant — `MySubmissionsRenderer` a sa propre implémentation inline divergente, jamais consolidée.
+- Triage complet du reliquat de code mort de la baseline PHPStan — voir TODO.md pour le détail des éléments **délibérément conservés** (`InstallRenderer::renderPage` — faux positif, `AuditRepository::getLogs` — sert à la vérification de tests, `AdminRepository::isAdmin` et `SubmissionViewRenderer::renderContent` — non tranchés, nécessitent plus d'investigation).
+
+---
+
 ## [10.23.0] — 2026-07-20
 _Résumé : Migration v31 (4 CHECK enum supplémentaires), MailService::send()/sendDetailed() dédupliquées (send() ne configurait ni auth SMTP ni TLS), mail_log enfin alimentée._
 
