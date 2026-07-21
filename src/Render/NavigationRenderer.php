@@ -230,34 +230,6 @@ final class NavigationRenderer
     }
 
     /**
-     * Generates a breadcrumb navigation.
-     *
-     * @param array<int, mixed> $breadcrumbs Array of [label, href] from top to bottom
-     * @return string HTML of the breadcrumb
-     */
-    public function breadcrumb(array $breadcrumbs): string
-    {
-        if ($breadcrumbs === []) {
-            return '';
-        }
-
-        $items = [];
-        $total = count($breadcrumbs);
-        foreach ($breadcrumbs as $i => $crumb) {
-            $label = \App\Core\App::html()->escape($crumb[0]);
-            if ($i === $total - 1) {
-                $items[] = '<span aria-current="page" class="current">' . $label . '</span>';
-            } else {
-                $items[] = '<a href="' . \App\Core\App::html()->escape($crumb[1]) . '">' . $label . '</a>';
-            }
-        }
-
-        return '<nav aria-label="Fil d\'Ariane" class="breadcrumb">
-  ' . implode(' <span aria-hidden="true" class="separator">›</span> ', $items) . '
-</nav>';
-    }
-
-    /**
      * Generates the page footer with persona dropdown JS.
      */
     public function footer(): string
