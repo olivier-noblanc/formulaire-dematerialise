@@ -80,7 +80,6 @@ if (!function_exists('resolve_base_url')) {
 $_app = \App\Core\App::getInstance();
 $_db_service = new \App\Core\Database();
 $_app->set(\App\Core\Database::class, $_db_service);
-$_app->set(\App\Core\Config::class, new \App\Core\Config());
 
 // ── 3. Services OOP et wrappers procéduraux ──
 // Charge toutes les fonctions globales (uuid, date, slug, jargon, cache, settings,

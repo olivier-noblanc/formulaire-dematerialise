@@ -6,7 +6,6 @@ namespace App\Tests;
 use PHPUnit\Framework\TestCase;
 use App\Core\App;
 use App\Core\Database;
-use App\Core\Config;
 use App\Auth\AuthService;
 use App\Settings\SettingsService;
 use App\Security\SecurityService;

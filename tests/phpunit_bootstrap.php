@@ -21,7 +21,6 @@ require_once dirname(__DIR__) . '/helpers.php';
 // Register services in the App container for tests
 use App\Core\App;
 use App\Core\Database;
-use App\Core\Config;
 use App\Auth\AuthService;
 use App\Settings\SettingsService;
 use App\Security\SecurityService;
@@ -56,7 +55,6 @@ $app = App::getInstance();
 // Register services (idempotent — set() overwrites existing)
 $db = new Database();
     $app->set(Database::class, $db);
-    $app->set(Config::class, new Config());
     $app->set(SettingsRepository::class, new SettingsRepository($db));
     $settingsRepo = $app->get(SettingsRepository::class);
     $app->set(SettingsService::class, new SettingsService($settingsRepo));

@@ -18,7 +18,6 @@ use App\Audit\AuditLogService;
 use App\Auth\AuthService;
 use App\Cache\CacheService;
 use App\Core\App;
-use App\Core\Config;
 use App\Core\Database;
 use App\Cron\CronService;
 use App\Email\EmailVerificationService;
@@ -54,7 +53,6 @@ $app = App::getInstance();
 // Enregistrer les services dans le container
 $db = new Database();
 $app->set(Database::class, $db);
-$app->set(Config::class, new Config());
 
 // Services seront instanciés à la demande
 $app->set(AuthService::class, new AuthService($db));
