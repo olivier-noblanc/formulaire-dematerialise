@@ -27,6 +27,13 @@
 
 ## ✅ Terminé (historique)
 
+### v10.23.0 — Migration v31 (durcissement SQL) + fix MailService send()/sendDetailed()
+| Tâche | Détail |
+|-------|--------|
+| Migration v31 | 4 colonnes enum-like supplémentaires protégées par CHECK (field_type ×2, filled_by svd, status mail_log). 9 au total avec v30. |
+| MailService::send() vs sendDetailed() | Deux implémentations SMTP dupliquées et divergentes — send() (tout le workflow réel) ne configurait ni auth SMTP ni TLS, contrairement à sendDetailed() (bouton test admin uniquement). send() délègue maintenant à sendDetailed(). |
+| mail_log | Jamais alimentée malgré l'affichage monitoring déjà construit — corrigé dans le même commit. |
+
 ### v10.22.0 — Bug bounty : send_mail() fantôme, fuseau remind.php, code mort
 | Tâche | Détail |
 |-------|--------|
@@ -128,4 +135,4 @@
 
 ---
 
-_Dernière mise à jour : 2026-07-20 (v10.22.0)_
+_Dernière mise à jour : 2026-07-20 (v10.23.0)_
