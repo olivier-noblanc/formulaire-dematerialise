@@ -14,7 +14,7 @@ use PHPMailer\PHPMailer\PHPMailer;
  */
 final readonly class MailService implements MailInterface
 {
-    public function __construct(private MailRepository $mailRepo, private SettingsService $settingsService)
+    public function __construct(private MailRepository $mailRepository, private SettingsService $settingsService)
     {
     }
 
@@ -96,14 +96,14 @@ final readonly class MailService implements MailInterface
         $smtpFrom = $this->settingsService->get('smtp_from');
         $smtpFromName = $this->settingsService->get('smtp_from_name', 'CircuitDémat');
 
-        if (empty($smtpHost)) {
+        if ($smtpHost === '' || $smtpHost === '0') {
             $msg = 'Aucun hôte SMTP configuré';
             $result['error'] = $msg;
             $result['status'] = 'blocked';
             $this->logMailAttempt($to, $subject, $result);
             return $result;
         }
-        if (empty($smtpFrom)) {
+        if ($smtpFrom === '' || $smtpFrom === '0') {
             $msg = 'Aucune adresse From configurée';
             $result['error'] = $msg;
             $result['status'] = 'blocked';
@@ -170,7 +170,7 @@ final readonly class MailService implements MailInterface
                 $actor = 'system';
             }
             $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'CLI');
-            $this->mailRepo->insertLog(
+            $this->mailRepository->insertLog(
                 \generate_uuid(),
                 $to,
                 $subject,
@@ -191,10 +191,10 @@ final readonly class MailService implements MailInterface
     public function getRecentLogs(int $limit = 30): array
     {
         try {
-            if (!$this->mailRepo->tableExists()) {
+            if (!$this->mailRepository->tableExists()) {
                 return [];
             }
-            return $this->mailRepo->getRecentLogs($limit);
+            return $this->mailRepository->getRecentLogs($limit);
         } catch (\Throwable $e) {
             error_log('getRecentLogs error: ' . $e->getMessage());
             return [];

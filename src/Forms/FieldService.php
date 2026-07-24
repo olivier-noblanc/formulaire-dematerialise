@@ -170,7 +170,7 @@ final readonly class FieldService implements FieldInterface
         $fieldStmt->execute([$fieldName]);
         $fieldInfo = $fieldStmt->fetch(\PDO::FETCH_ASSOC);
         $fieldLabel = $fieldInfo['label'] ?? $fieldName;
-        $fieldType = $fieldInfo['field_type'] ?? 'text';
+        $fieldType = $fieldInfo['field_type'] ?? \App\Enum\FieldType::Text->value;
 
         if ($stepLabel === null && $stepId !== null) {
             $labelStmt = $pdo->prepare('SELECT label FROM steps WHERE id = ?');

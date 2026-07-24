@@ -18,8 +18,8 @@ use App\Repository\SubmissionRepository;
 final readonly class ValidatorDataService
 {
     public function __construct(
-        private SubmissionRepository $submissionRepo,
-        private FormRepository $formRepo,
+        private SubmissionRepository $submissionRepository,
+        private FormRepository $formRepository,
         private FieldService $fieldService,
     ) {
     }
@@ -46,16 +46,16 @@ final readonly class ValidatorDataService
     public function getSubmissionValidatorData(string $submissionId, ?string $stepId = null): array
     {
         if ($stepId !== null && $stepId !== '') {
-            $formId = $this->submissionRepo->findFormIdById($submissionId) ?? '';
+            $formId = $this->submissionRepository->findFormIdById($submissionId) ?? '';
             $stepLabel = '';
             if ($formId !== '') {
-                $stepLabel = $this->formRepo->getStepLabel($stepId) ?? '';
+                $stepLabel = $this->formRepository->getStepLabel($stepId) ?? '';
             }
 
-            return $this->submissionRepo->getValidatorDataByStepFields($submissionId, $stepId, $stepLabel);
+            return $this->submissionRepository->getValidatorDataByStepFields($submissionId, $stepId, $stepLabel);
         }
 
-        return $this->submissionRepo->getValidatorData($submissionId);
+        return $this->submissionRepository->getValidatorData($submissionId);
     }
 
     /**
@@ -179,7 +179,7 @@ final readonly class ValidatorDataService
         $formIds = array_values(array_unique(array_values($formIdBySub)));
         $validatorFieldsByForm = [];
         foreach ($formIds as $fid) {
-            $fields = $this->formRepo->getValidatorFields($fid);
+            $fields = $this->formRepository->getValidatorFields($fid);
             foreach ($fields as $field) {
                 $fn = (string) ($field['field_name'] ?? '');
                 if ($fn !== '') {
@@ -190,7 +190,7 @@ final readonly class ValidatorDataService
 
         $filledBySub = [];
         foreach (array_keys($subIdsIndex) as $subId) {
-            $data = $this->submissionRepo->getValidatorData($subId);
+            $data = $this->submissionRepository->getValidatorData($subId);
             foreach ($data as $row) {
                 $fn  = (string) ($row['field_name'] ?? '');
                 $val = $row['value'] ?? null;

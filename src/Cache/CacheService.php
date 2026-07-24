@@ -146,10 +146,10 @@ final readonly class CacheService implements CacheInterface
         if ($jsonFiles === false) {
             return;
         }
-        foreach ($jsonFiles as $f) {
-            $size = filesize($f);
+        foreach ($jsonFiles as $jsonFile) {
+            $size = filesize($jsonFile);
             $totalSize += $size;
-            $files[] = ['path' => $f, 'size' => $size, 'mtime' => filemtime($f)];
+            $files[] = ['path' => $jsonFile, 'size' => $size, 'mtime' => filemtime($jsonFile)];
         }
 
         if ($totalSize <= $this->maxSizeBytes || $files === []) {

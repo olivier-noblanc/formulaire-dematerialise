@@ -26,7 +26,7 @@ final class App
 
     public static function getInstance(): self
     {
-        if (self::$app === null) {
+        if (!self::$app instanceof \App\Core\App) {
             self::$app = new self();
         }
         return self::$app;
