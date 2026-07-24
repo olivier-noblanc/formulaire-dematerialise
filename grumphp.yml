@@ -10,3 +10,5 @@ grumphp:
         phpstan:
             configuration: phpstan.neon
             level: 8
+        deptrac:
+            depfile: deptrac.php
