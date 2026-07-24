@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\FilledBy;
 use App\Enum\SubmissionStatus;
 
 /**
@@ -45,7 +46,7 @@ final class FormTrackingController extends BaseController
             );
         }
 
-        $fields = App::validatorData()->getFormFields($formId, 'demandeur');
+        $fields = App::validatorData()->getFormFields($formId, FilledBy::Demandeur->value);
 
         $keyFields = [];
         $allFieldNames = [];

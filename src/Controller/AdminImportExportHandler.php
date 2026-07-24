@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\FieldVisibility;
+use App\Enum\FilledBy;
+use App\Enum\FieldType;
 use App\Repository\FormRepository;
 
 /**
@@ -51,7 +54,7 @@ final class AdminImportExportHandler
                 'ordre' => (int) $f['ordre'],
                 'card_group' => $f['card_group'] ?? 'Général',
                 'hint' => $f['hint'] ?? '',
-                'filled_by' => $f['filled_by'] ?? 'demandeur',
+                'filled_by' => $f['filled_by'] ?? FilledBy::Demandeur->value,
                 'validator_step' => $f['validator_step'] ?? '',
                 'visibility' => $f['visibility'] ?? 'all',
             ];
@@ -162,18 +165,18 @@ final class AdminImportExportHandler
                         $options_json = is_string($f['options']) ? $f['options'] : json_encode($f['options'], JSON_UNESCAPED_UNICODE);
                     }
                     $field_name = empty($f['field_name']) ? \generate_field_name($f['label']) : $f['field_name'];
-                    $filled_by = empty($f['filled_by']) ? 'demandeur' : $f['filled_by'];
-                    if (!in_array($filled_by, ['demandeur', 'validator'])) {
-                        $filled_by = 'demandeur';
+                    $filled_by = empty($f['filled_by']) ? FilledBy::Demandeur->value : $f['filled_by'];
+                    if (!in_array($filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value])) {
+                        $filled_by = FilledBy::Demandeur->value;
                     }
                     $visibility = $f['visibility'] ?? 'all';
-                    if (!is_string($visibility) || !in_array($visibility, ['all', 'owner_only'], true)) {
+                    if (!is_string($visibility) || !in_array($visibility, ['all', FieldVisibility::OwnerOnly->value], true)) {
                         $visibility = 'all';
                     }
                     $repo->createField([
                         'form_id' => $new_id,
                         'label' => $f['label'] ?? 'Champ',
-                        'field_type' => $f['field_type'] ?? 'text',
+                        'field_type' => $f['field_type'] ?? FieldType::Text->value,
                         'field_name' => $field_name,
                         'options' => $options_json,
                         'required' => (int) ($f['required'] ?? 0),

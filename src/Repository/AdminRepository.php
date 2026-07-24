@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\AdminRequestStatus;
+
 final class AdminRepository extends BaseRepository
 {
     public function __construct(
@@ -55,7 +57,7 @@ final class AdminRepository extends BaseRepository
     public function findByToken(string $token): ?array
     {
         /** @var array{email: string, created_at: string}|null $result */
-        $result = $this->fetchOne("SELECT email, created_at FROM admin_requests WHERE token = ? AND status = 'pending'", [$token]);
+        $result = $this->fetchOne("SELECT email, created_at FROM admin_requests WHERE token = ? AND status = '" . AdminRequestStatus::Pending->value . "'", [$token]);
         return $result;
     }
 
@@ -65,7 +67,7 @@ final class AdminRepository extends BaseRepository
     public function getPendingRequestsDesc(): array
     {
         /** @var array<int, array{id: string, email: string, requested_at: string, status: string, token: string}> $result */
-        $result = $this->fetchAll("SELECT id, email, requested_at, status, token FROM admin_requests WHERE status = 'pending' ORDER BY requested_at DESC");
+        $result = $this->fetchAll("SELECT id, email, requested_at, status, token FROM admin_requests WHERE status = '" . AdminRequestStatus::Pending->value . "' ORDER BY requested_at DESC");
         return $result;
     }
 
@@ -75,7 +77,7 @@ final class AdminRepository extends BaseRepository
     public function findPendingByEmail(string $email): ?array
     {
         /** @var array{id: string, email: string, requested_at: string, status: string, token: string}|null $result */
-        $result = $this->fetchOne("SELECT id, email, requested_at, status, token FROM admin_requests WHERE email = ? AND status = 'pending' ORDER BY requested_at DESC LIMIT 1", [strtolower($email)]);
+        $result = $this->fetchOne("SELECT id, email, requested_at, status, token FROM admin_requests WHERE email = ? AND status = '" . AdminRequestStatus::Pending->value . "' ORDER BY requested_at DESC LIMIT 1", [strtolower($email)]);
         return $result;
     }
 
@@ -97,7 +99,7 @@ final class AdminRepository extends BaseRepository
 
         $this->add($request['email']);
         return $this->execute(
-            "UPDATE admin_requests SET status = 'approved', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?",
+            "UPDATE admin_requests SET status = '" . AdminRequestStatus::Approved->value . "', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?",
             [$approvedBy, $requestId]
         );
     }
@@ -105,7 +107,7 @@ final class AdminRepository extends BaseRepository
     public function rejectRequest(string $requestId, string $rejectedBy): bool
     {
         return $this->execute(
-            "UPDATE admin_requests SET status = 'rejected', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?",
+            "UPDATE admin_requests SET status = '" . AdminRequestStatus::Rejected->value . "', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?",
             [$rejectedBy, $requestId]
         );
     }

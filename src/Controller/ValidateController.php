@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\FieldVisibility;
+use App\Enum\FilledBy;
+use App\Enum\FieldType;
+use App\Enum\ValidationAction;
 
 /**
  * Contrôleur de la page Validation (accept/refuse de formulaires).
@@ -27,7 +31,7 @@ final class ValidateController extends BaseController
             $action = trim($_POST['action'] ?? '');
             $comment = trim($_POST['comment'] ?? '');
             $motif = trim($_POST['motif'] ?? '');
-            if ($action === 'refuser') {
+            if ($action === ValidationAction::Refuser->value) {
                 if ($motif === '') {
                     $error = 'Veuillez sélectionner un motif de refus.';
                 } else {
@@ -51,9 +55,9 @@ final class ValidateController extends BaseController
             }
 
             if (!isset($error)) {
-                if ($action === 'refuser' && in_array(trim($comment), ['', '0'], true)) {
+                if ($action === ValidationAction::Refuser->value && in_array(trim($comment), ['', '0'], true)) {
                     // Ne pas traiter — on affiche la page avec un message d'erreur
-                } elseif ($token && in_array($action, ['valider', 'refuser'])) {
+                } elseif ($token && in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value])) {
                     $pre_ctx = App::workflow()->getTokenWithContext((string) $token);
                     $pre_validator_fields = [];
                     if ($pre_ctx && !empty($pre_ctx['form_id'])) {
@@ -63,7 +67,7 @@ final class ValidateController extends BaseController
                         );
                     }
 
-                    if ($action === 'valider' && $pre_validator_fields !== []) {
+                    if ($action === ValidationAction::Valider->value && $pre_validator_fields !== []) {
                         $missing = [];
                         foreach ($pre_validator_fields as $pre_validator_field) {
                             if (!empty($pre_validator_field['required'])) {
@@ -126,7 +130,7 @@ final class ValidateController extends BaseController
                                                 $subm_id,
                                                 $fname,
                                                 $val,
-                                                'validator',
+                                                FilledBy::Validator->value,
                                                 $step_id,
                                                 null,
                                                 isset($token_ctx['email']) ? (string) $token_ctx['email'] : null,
@@ -258,7 +262,7 @@ final class ValidateController extends BaseController
                 $owner_only_fields = [];
                 $form_fields = App::validatorData()->getFormFields($form_id);
                 foreach ($form_fields as $form_field) {
-                    if (($form_field['field_type'] ?? '') === 'file' && ($form_field['visibility'] ?? 'all') === 'owner_only') {
+                    if (($form_field['field_type'] ?? '') === FieldType::File->value && ($form_field['visibility'] ?? 'all') === FieldVisibility::OwnerOnly->value) {
                         $owner_only_fields[] = $form_field['field_name'];
                     }
                 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\FieldType;
+use App\Enum\FilledBy;
 use App\Enum\SubmissionStatus;
 
 final class FormRepository extends BaseRepository
@@ -164,7 +166,7 @@ final class FormRepository extends BaseRepository
     {
         /** @var array<int, array{field_name: string, label: string}> $result */
         $result = $this->fetchAll(
-            "SELECT field_name, label FROM form_fields WHERE form_id = ? AND field_type = 'date' AND filled_by = 'demandeur' ORDER BY ordre",
+            "SELECT field_name, label FROM form_fields WHERE form_id = ? AND field_type = '" . FieldType::Date->value . "' AND filled_by = '" . FilledBy::Demandeur->value . "' ORDER BY ordre",
             [$formId]
         );
         return $result;
@@ -249,7 +251,7 @@ final class FormRepository extends BaseRepository
         $id = \generate_uuid();
         $this->execute(
             'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? 'text', $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $data['required'] ?? 0, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? 'demandeur', $data['validator_step'] ?? '', $data['visibility'] ?? 'all']
+            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? FieldType::Text->value, $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $data['required'] ?? 0, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? FilledBy::Demandeur->value, $data['validator_step'] ?? '', $data['visibility'] ?? 'all']
         );
         return $id;
     }
@@ -424,7 +426,7 @@ final class FormRepository extends BaseRepository
             $newFieldId = \generate_uuid();
             $this->execute(
                 'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? 'demandeur', $f['validator_step'] ?? '', $f['visibility'] ?? 'all']
+                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? FilledBy::Demandeur->value, $f['validator_step'] ?? '', $f['visibility'] ?? 'all']
             );
         }
 
@@ -451,7 +453,7 @@ final class FormRepository extends BaseRepository
      */
     public function getValidatorFields(string $formId, ?string $stepId = null): array
     {
-        $sql = "SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? AND filled_by = 'validator'";
+        $sql = "SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? AND filled_by = '" . FilledBy::Validator->value . "'";
         $params = [$formId];
 
         if ($stepId !== null && $stepId !== '') {

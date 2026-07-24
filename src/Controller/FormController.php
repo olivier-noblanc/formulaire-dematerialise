@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\FieldType;
+use App\Enum\FilledBy;
 
 /**
  * Contrôleur du formulaire de demande (form.php?f=<slug>).
@@ -65,7 +67,7 @@ final class FormController extends BaseController
         // Charger les champs dynamiques du formulaire, ordonnés par ordre.
         // Exclure les champs réservés aux validateurs (filled_by='validator').
         $all_form_fields = App::validatorData()->getFormFields($form['id']);
-        $form_fields = array_filter($all_form_fields, fn($f): bool => empty($f['filled_by']) || $f['filled_by'] === 'demandeur');
+        $form_fields = array_filter($all_form_fields, fn($f): bool => empty($f['filled_by']) || $f['filled_by'] === FilledBy::Demandeur->value);
 
         // Pour les champs avec condition : préparer les données pour le JS
         // Les champs conditionnels sont affichés mais masqués par le JS
@@ -93,7 +95,7 @@ final class FormController extends BaseController
             // Validation des fichiers uploadés
             $file_errors = [];
             foreach ($form_fields as $field) {
-                if ($field['field_type'] === 'file') {
+                if ($field['field_type'] === FieldType::File->value) {
                     $fname = $field['field_name'];
                     if ($field['required'] && empty($_FILES[$fname]['name'])) {
                         $file_errors[$fname] = 'Ce fichier est obligatoire';
@@ -120,7 +122,7 @@ final class FormController extends BaseController
 
                 // Ajouter les noms de fichiers uploadés dans les données
                 foreach ($form_fields as $field) {
-                    if ($field['field_type'] === 'file') {
+                    if ($field['field_type'] === FieldType::File->value) {
                         $fname = $field['field_name'];
                         if (!empty($_FILES[$fname]['name'])) {
                             $data[$fname] = $_FILES[$fname]['name'];
@@ -145,7 +147,7 @@ final class FormController extends BaseController
                 // La soumission reste en base (traçabilité) mais son statut est forcé
                 // à "en_cours" sans tokens générés.
                 foreach ($form_fields as $form_field) {
-                    if ($form_field['field_type'] === 'file') {
+                    if ($form_field['field_type'] === FieldType::File->value) {
                         $fname = $form_field['field_name'];
                         if (!empty($_FILES[$fname]['name']) && $_FILES[$fname]['error'] !== UPLOAD_ERR_NO_FILE) {
                             $upload_result = App::attachment()->handleFileUpload($_FILES[$fname], $submission_id, $fname);
@@ -353,7 +355,7 @@ final class FormController extends BaseController
           $checkboxes = [];
             $non_checkboxes = [];
             foreach ($card_fields as $card_field) {
-                if ($card_field['field_type'] === 'checkbox') {
+                if ($card_field['field_type'] === FieldType::Checkbox->value) {
                     $checkboxes[] = $card_field;
                 } else {
                     $non_checkboxes[] = $card_field;

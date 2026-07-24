@@ -21,7 +21,7 @@ Ce projet est un **petit site intranet DREETS BFC** avec une charge utilisateur 
 | **phive** | Installer des phars (phpstan, grumphp...) | `~/scoop/shims/phive.bat` |
 | **grumphp.phar** | Quality gate (lint, phpstan, phpunit, php-cs-fixer) | `~/scoop/shims/grumphp.phar` |
 | **phpstan** | Analyse statique level 8 | `~/scoop/shims/phpstan.phar` |
-| **rector** | Modernisation PHP auto | `vendor/bin/rector process src/ --no-parallel` (jamais sans `--no-parallel`, plante en RAM) |
+| **rector** | Modernisation PHP auto | `php -d memory_limit=10G vendor/bin/rector process src/ --no-progress-bar --memory-limit=10G` (jamais sans memory-limit, plante en RAM) |
 | **pwsh** | Scripts gate (check.ps1, update.ps1) | PATH |
 
 Usage : `php ~/scoop/shims/<outil>.phar <commande>` ou directement `<outil>` si dans le PATH.

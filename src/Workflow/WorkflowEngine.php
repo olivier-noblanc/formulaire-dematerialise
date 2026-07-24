@@ -10,6 +10,7 @@ use App\Mail\MailService;
 use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
 use App\Enum\SubmissionStatus;
+use App\Enum\ValidationAction;
 
 /**
  * Moteur de workflow — tokens, steps, validation.
@@ -423,12 +424,12 @@ final readonly class WorkflowEngine
      *   message?: string
      * }
      */
-    public function validateToken(string $token, string $action = 'valider', string $comment = '', string $doneBy = ''): array
+    public function validateToken(string $token, string $action = ValidationAction::Valider->value, string $comment = '', string $doneBy = ''): array
     {
         if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
             return ['status' => 'invalid'];
         }
-        if (!in_array($action, ['valider', 'refuser'], true)) {
+        if (!in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value], true)) {
             return ['status' => 'invalid', 'message' => 'Action non autorisée.'];
         }
 

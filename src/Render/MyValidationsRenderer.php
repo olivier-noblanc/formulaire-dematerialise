@@ -6,6 +6,7 @@ namespace App\Render;
 
 use App\Core\App;
 use App\Enum\SubmissionStatus;
+use App\Enum\ValidationAction;
 
 /**
  * Rendu de la page « Mes validations » (dashboard validateur).
@@ -175,7 +176,7 @@ final class MyValidationsRenderer
                     $refusedByMe = false;
                     if (isset($data['validations'])) {
                         foreach ($data['validations'] as $v) {
-                            if ($v['action'] === 'refuser' && (string) ($v['email'] ?? '') === $user) {
+                            if ($v['action'] === ValidationAction::Refuser->value && (string) ($v['email'] ?? '') === $user) {
                                 $refusedByMe = true;
                                 break;
                             }

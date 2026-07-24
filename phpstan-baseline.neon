@@ -223,12 +223,6 @@ parameters:
 			path: src/Auth/AuthService.php
 
 		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Auth/AuthService.php
-
-		-
 			message: '#^Only booleans are allowed in &&, int\|string\|false\|null given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
 			count: 1
@@ -565,12 +559,6 @@ parameters:
 			path: src/Controller/AdminAccessController.php
 
 		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/AdminAccessController.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, array\<string, string\>\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -597,30 +585,6 @@ parameters:
 		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
-			count: 2
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 4
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Magic string ''owner_only'' detected → use FieldVisibility\:\:OwnerOnly\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
 			count: 2
 			path: src/Controller/AdminFieldCrudHandler.php
 
@@ -676,30 +640,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 8
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 4
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Magic string ''owner_only'' detected → use FieldVisibility\:\:OwnerOnly\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
 			path: src/Controller/AdminImportExportHandler.php
 
 		-
@@ -895,24 +835,6 @@ parameters:
 			path: src/Controller/FormController.php
 
 		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Controller/FormController.php
-
-		-
 			message: '#^Only booleans are allowed in &&, array\<string, string\|null\>\|null given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
 			count: 1
@@ -967,36 +889,6 @@ parameters:
 			path: src/Controller/FormPreviewController.php
 
 		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Magic string ''select'' detected → use FieldType\:\:Select\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Magic string ''textarea'' detected → use FieldType\:\:Textarea\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -1017,12 +909,6 @@ parameters:
 		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
 			count: 1
 			path: src/Controller/FormTrackingController.php
 
@@ -1189,37 +1075,7 @@ parameters:
 			path: src/Controller/ValidateController.php
 
 		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Magic string ''owner_only'' detected → use FieldVisibility\:\:OwnerOnly\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
 			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Magic string ''refuser'' detected → use ValidationAction\:\:Refuser\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 2
 			path: src/Controller/ValidateController.php
@@ -1265,18 +1121,6 @@ parameters:
 			identifier: shipmonk.deadMethod
 			count: 1
 			path: src/Core/App.php
-
-		-
-			message: '#^Magic string ''critical'' detected → use UrgencyLevel\:\:Critical\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Core/DateHelper.php
-
-		-
-			message: '#^Magic string ''overdue'' detected → use UrgencyLevel\:\:Overdue\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Core/DateHelper.php
 
 		-
 			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
@@ -1351,24 +1195,6 @@ parameters:
 			path: src/Enum/AdminRequestStatus.php
 
 		-
-			message: '#^Unused App\\Enum\\AdminRequestStatus\:\:Approved$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/AdminRequestStatus.php
-
-		-
-			message: '#^Unused App\\Enum\\AdminRequestStatus\:\:Pending$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/AdminRequestStatus.php
-
-		-
-			message: '#^Unused App\\Enum\\AdminRequestStatus\:\:Rejected$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/AdminRequestStatus.php
-
-		-
 			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 1
@@ -1423,18 +1249,6 @@ parameters:
 			path: src/Enum/FieldVisibility.php
 
 		-
-			message: '#^Unused App\\Enum\\FieldVisibility\:\:All$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/FieldVisibility.php
-
-		-
-			message: '#^Unused App\\Enum\\FieldVisibility\:\:OwnerOnly$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/FieldVisibility.php
-
-		-
 			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 1
@@ -1443,18 +1257,6 @@ parameters:
 		-
 			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
 			identifier: noMagicString
-			count: 1
-			path: src/Enum/FilledBy.php
-
-		-
-			message: '#^Unused App\\Enum\\FilledBy\:\:Demandeur$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/FilledBy.php
-
-		-
-			message: '#^Unused App\\Enum\\FilledBy\:\:Validator$#'
-			identifier: shipmonk.deadEnumCase
 			count: 1
 			path: src/Enum/FilledBy.php
 
@@ -1495,19 +1297,7 @@ parameters:
 			path: src/Enum/UrgencyLevel.php
 
 		-
-			message: '#^Unused App\\Enum\\UrgencyLevel\:\:Critical$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/UrgencyLevel.php
-
-		-
 			message: '#^Unused App\\Enum\\UrgencyLevel\:\:Ok$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/UrgencyLevel.php
-
-		-
-			message: '#^Unused App\\Enum\\UrgencyLevel\:\:Overdue$#'
 			identifier: shipmonk.deadEnumCase
 			count: 1
 			path: src/Enum/UrgencyLevel.php
@@ -1531,18 +1321,6 @@ parameters:
 			path: src/Enum/ValidationAction.php
 
 		-
-			message: '#^Unused App\\Enum\\ValidationAction\:\:Refuser$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/ValidationAction.php
-
-		-
-			message: '#^Unused App\\Enum\\ValidationAction\:\:Valider$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/ValidationAction.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 2
@@ -1561,12 +1339,6 @@ parameters:
 			path: src/Export/ExportService.php
 
 		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Forms/FieldService.php
-
-		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
 			count: 3
@@ -1576,66 +1348,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 17
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 4
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''owner_only'' detected → use FieldVisibility\:\:OwnerOnly\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''select'' detected → use FieldType\:\:Select\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''textarea'' detected → use FieldType\:\:Textarea\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 4
 			path: src/Forms/FormJsonValidator.php
 
 		-
@@ -1663,63 +1375,15 @@ parameters:
 			path: src/Forms/SampleFormsService.php
 
 		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 6
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 7
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
+			message: '#^Offset ''recipients'' might not exist on array\{label\: ''Application / SI…'', field_type\: ''text'', field_name\: ''application_si'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Badge accès'', field_type\: ''checkbox'', field_name\: ''badge_acces'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Bilan de départ'', field_type\: ''textarea'', field_name\: ''bilan_depart'', required\: 0, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Bureau / Poste'', field_type\: ''text'', field_name\: ''bureau_poste'', required\: 0, card_group\: ''Affectation''\}\|array\{label\: ''Clôture compte SI'', field_type\: ''checkbox'', field_name\: ''cloture_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Clôture messagerie'', field_type\: ''checkbox'', field_name\: ''cloture_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Coût estimé \(€\)'', field_type\: ''text'', field_name\: ''cout_estime'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Création compte SI'', field_type\: ''checkbox'', field_name\: ''creation_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Création messagerie'', field_type\: ''checkbox'', field_name\: ''creation_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Date d\\''arrivée'', field_type\: ''date'', field_name\: ''date_arrivee'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date de départ'', field_type\: ''date'', field_name\: ''date_depart'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date début'', field_type\: ''date'', field_name\: ''date_debut'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Date fin'', field_type\: ''date'', field_name\: ''date_fin'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Date souhaitée'', field_type\: ''date'', field_name\: ''date_souhaitee'', required\: 0, card_group\: ''Demande''\|''Mutation''\}\|array\{label\: ''Date'', field_type\: ''date'', field_name\: ''date_sortie'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Direction / Service'', field_type\: ''text'', field_name\: ''direction_service'', required\: 1, card_group\: ''Affectation''\}\|array\{label\: ''Direction actuelle'', field_type\: ''text'', field_name\: ''direction_actuelle'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Direction demandée'', field_type\: ''text'', field_name\: ''direction_demandee'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Décision de…'', field_type\: ''select'', field_name\: ''decision_validation'', options\: array\{''Accepté'', ''Accepté avec…'', ''Refusé''\}, required\: 1, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Heure départ'', field_type\: ''text'', field_name\: ''heure_depart'', required\: 1, card_group\: ''Demande'', hint\: ''ex \: 16h30''\}\|array\{label\: ''Intitulé de la…'', field_type\: ''text'', field_name\: ''intitule_formation'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Justificatif'', field_type\: ''file'', field_name\: ''justificatif'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 0, card_group\: ''Demande''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Matériel…'', field_type\: ''select'', field_name\: ''materiel_info'', options\: array\{''PC portable'', ''PC fixe'', ''Tablette'', ''Aucun''\}, required\: 0, card_group\: ''IT''\}\|array\{label\: ''Montant \(€\)'', field_type\: ''text'', field_name\: ''montant'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Motif de départ'', field_type\: ''select'', field_name\: ''motif_depart'', options\: array\{''Démission'', ''Retraite'', ''Mutation sortante'', ''Fin de contrat'', ''Licenciement''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Motif'', field_type\: ''textarea'', field_name\: ''motif'', required\: 1, card_group\: ''Demande''\|''Finance''\|''Matériel''\|''Mutation''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Agent''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Identité'', hint\?\: ''Nom Prénom''\}\|array\{label\: ''Organisme'', field_type\: ''text'', field_name\: ''organisme'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Remarques'', field_type\: ''textarea'', field_name\: ''remarques'', required\: 0, card_group\: ''Divers''\}\|array\{label\: ''Restitution matériel'', field_type\: ''checkbox'', field_name\: ''restitution_materiel'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Type d\\''arrivée'', field_type\: ''select'', field_name\: ''type_arrivee'', options\: array\{''Nouveau recruté'', ''Mutation entrante'', ''Contrat temporaire'', ''Stage''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Création'', ''Modification'', ''Suppression''\}, required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Remboursement'', ''Avance''\}, required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Type de matériel'', field_type\: ''select'', field_name\: ''type_materiel'', options\: array\{''PC portable'', ''PC fixe'', ''Écran'', ''Imprimante'', ''Clavier/Souris'', ''Autre''\}, required\: 1, card_group\: ''Matériel''\}\|array\{label\: ''Validation DRH''\|''Validation DSI''\|''Validation…''\|''Validation manager''\|''Validation manager…''\|''Validation RH'', ordre\: 1\|2\|3\|4, recipients\: array\{''drh@dreets\.gouv\.fr''\}\|array\{''dsi@dreets\.gouv\.fr''\}\|array\{''logistique@dreets…''\}\|array\{''manager\-accueil…''\}\|array\{''manager@dreets\.gouv…''\}\|array\{''rh@dreets\.gouv\.fr''\}\}\|array\{label\: ''Validation…'', ordre\: 2, recipients\: array\{''compta@dreets\.gouv…''\}\}\.$#'
+			identifier: offsetAccess.notFound
 			count: 1
 			path: src/Forms/SampleFormsService.php
 
 		-
-			message: '#^Magic string ''select'' detected → use FieldType\:\:Select\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 7
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 18
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Magic string ''textarea'' detected → use FieldType\:\:Textarea\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 9
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Forms/SampleFormsService.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 3
+			count: 1
 			path: src/Mail/MailService.php
 
 		-
@@ -1813,63 +1477,9 @@ parameters:
 			path: src/Render/AdminFormsRenderer.php
 
 		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/AdminFormsRenderer.php
-
-		-
 			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
 			identifier: noMagicString
-			count: 6
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
 			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''owner_only'' detected → use FieldVisibility\:\:OwnerOnly\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''select'' detected → use FieldType\:\:Select\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''textarea'' detected → use FieldType\:\:Textarea\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
 			path: src/Render/AdminFormsRenderer.php
 
 		-
@@ -1927,12 +1537,6 @@ parameters:
 			path: src/Render/DashboardRenderer.php
 
 		-
-			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/DashboardRenderer.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -1975,45 +1579,15 @@ parameters:
 			path: src/Render/FormRenderer.php
 
 		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Render/FormRenderer.php
-
-		-
 			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 5
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 3
 			path: src/Render/FormRenderer.php
 
 		-
-			message: '#^Magic string ''select'' detected → use FieldType\:\:Select\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
 			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
 			identifier: noMagicString
-			count: 2
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Magic string ''textarea'' detected → use FieldType\:\:Textarea\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
+			count: 1
 			path: src/Render/FormRenderer.php
 
 		-
@@ -2107,18 +1681,6 @@ parameters:
 			path: src/Render/MySubmissionsRenderer.php
 
 		-
-			message: '#^Magic string ''refuser'' detected → use ValidationAction\:\:Refuser\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
 			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
 			identifier: ternary.condNotBoolean
 			count: 1
@@ -2158,12 +1720,6 @@ parameters:
 			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 3
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Magic string ''refuser'' detected → use ValidationAction\:\:Refuser\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
 			path: src/Render/MyValidationsRenderer.php
 
 		-
@@ -2251,12 +1807,6 @@ parameters:
 			path: src/Render/SubmissionViewRenderer.php
 
 		-
-			message: '#^Magic string ''critical'' detected → use UrgencyLevel\:\:Critical\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
 			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 1
@@ -2270,12 +1820,6 @@ parameters:
 
 		-
 			message: '#^Magic string ''overdue'' detected → use UrgencyLevel\:\:Overdue\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 1
 			path: src/Render/SubmissionViewRenderer.php
@@ -2359,21 +1903,9 @@ parameters:
 			path: src/Repository/FormRepository.php
 
 		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Repository/FormRepository.php
-
-		-
 			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 2
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
 			path: src/Repository/FormRepository.php
 
 		-
@@ -2515,12 +2047,6 @@ parameters:
 			path: src/Token/TokenService.php
 
 		-
-			message: '#^Magic string ''refuser'' detected → use ValidationAction\:\:Refuser\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
 			message: '#^Only booleans are allowed in &&, array\<string, string\|null\>\|null given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
 			count: 1
@@ -2637,12 +2163,6 @@ parameters:
 		-
 			message: '#^Magic string ''refuser'' detected → use ValidationAction\:\:Refuser\-\>value instead\.$#'
 			identifier: noMagicString
-			count: 3
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
-			identifier: noMagicString
 			count: 2
 			path: src/Workflow/WorkflowEngine.php
 
@@ -2713,7 +2233,7 @@ parameters:
 			path: src/lib_wrappers.php
 
 		-
-			message: '#^Parameter \#1 \$formRepo of class App\\Forms\\SampleFormsService constructor expects App\\Repository\\FormRepository, App\\Core\\Database given\.$#'
+			message: '#^Parameter \#1 \$formRepository of class App\\Forms\\SampleFormsService constructor expects App\\Repository\\FormRepository, App\\Core\\Database given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/lib_wrappers.php

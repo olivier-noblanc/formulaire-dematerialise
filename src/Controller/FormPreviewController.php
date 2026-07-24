@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\FieldType;
+use App\Enum\FilledBy;
 
 /**
  * Contrôleur de la page Prévisualisation de formulaire.
@@ -27,7 +29,7 @@ final class FormPreviewController extends BaseController
             );
         }
 
-        $formFields = App::validatorData()->getFormFields($form['id'], 'demandeur');
+        $formFields = App::validatorData()->getFormFields($form['id'], FilledBy::Demandeur->value);
 
         $grouped = [];
         foreach ($formFields as $field) {
@@ -79,21 +81,21 @@ final class FormPreviewController extends BaseController
           ?>
       <div class="field">
         <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= empty($field['required']) ? '' : '<span style="color:#c0392b;">*</span>' ?></label>
-        <?php if ($field['field_type'] === 'textarea'): ?>
+        <?php if ($field['field_type'] === FieldType::Textarea->value): ?>
           <textarea id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" rows="3" <?= $required ?> placeholder="<?= $placeholder ?>"></textarea>
-        <?php elseif ($field['field_type'] === 'select' && !empty($field['options'])): ?>
+        <?php elseif ($field['field_type'] === FieldType::Select->value && !empty($field['options'])): ?>
           <select id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
             <option value="">— Sélectionner —</option>
             <?php foreach (is_array($field['options']) ? $field['options'] : (json_decode((string) $field['options'], true) ?: []) as $opt): ?>
               <option value="<?= \App\Core\App::html()->escape((string) $opt) ?>"><?= \App\Core\App::html()->escape((string) $opt) ?></option>
             <?php endforeach; ?>
           </select>
-        <?php elseif ($field['field_type'] === 'checkbox'): ?>
+        <?php elseif ($field['field_type'] === FieldType::Checkbox->value): ?>
           <label class="checkbox-item">
             <input type="checkbox" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
             <?= $fieldLabel ?>
           </label>
-        <?php elseif ($field['field_type'] === 'date'): ?>
+        <?php elseif ($field['field_type'] === FieldType::Date->value): ?>
           <input type="date" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
         <?php else: ?>
           <input type="text" id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?> placeholder="<?= $placeholder ?>">

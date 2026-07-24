@@ -83,8 +83,8 @@ final readonly class FieldService implements FieldInterface
     public function getValidatorFields(string $formId, ?string $stepId = null): array
     {
         $pdo = $this->database->getPdo();
-        $sql = "SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? AND filled_by = 'validator'";
-        $params = [$formId];
+        $sql = 'SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? AND filled_by = ?';
+        $params = [$formId, \App\Enum\FilledBy::Validator->value];
 
         if ($stepId !== null && $stepId !== '') {
             $stepLabel = '';
@@ -129,13 +129,14 @@ final readonly class FieldService implements FieldInterface
         $params = [$submissionId];
 
         if ($stepId !== null && $stepId !== '') {
-            $sql .= " AND svd.field_name IN (
+            $sql .= ' AND svd.field_name IN (
                 SELECT ff.field_name FROM form_fields ff
                 WHERE ff.form_id = (SELECT form_id FROM submissions WHERE id = ?)
-                AND ff.filled_by = 'validator'
-                AND (ff.validator_step = ? OR ff.validator_step = ? OR ff.validator_step = '')
-            )";
+                AND ff.filled_by = ?
+                AND (ff.validator_step = ? OR ff.validator_step = ? OR ff.validator_step = \'\')
+            )';
             $params[] = $submissionId;
+            $params[] = \App\Enum\FilledBy::Validator->value;
             $params[] = $stepId;
 
             $labelStmt = $pdo->prepare('SELECT label FROM steps WHERE id = ?');

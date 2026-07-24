@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\FilledBy;
 use App\Enum\SubmissionStatus;
 
 final class SubmissionRepository extends BaseRepository
@@ -548,7 +549,7 @@ final class SubmissionRepository extends BaseRepository
              AND svd.field_name IN (
                  SELECT ff.field_name FROM form_fields ff
                  WHERE ff.form_id = (SELECT form_id FROM submissions WHERE id = ?)
-                 AND ff.filled_by = 'validator'
+                 AND ff.filled_by = '" . FilledBy::Validator->value . "'
                  AND (ff.validator_step = ? OR ff.validator_step = ? OR ff.validator_step = '')
              )",
             [$submissionId, $submissionId, $stepId, $stepLabel]

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\AdminRequestStatus;
 
 /**
  * Contrôleur de la page d'accès admin (demandes d'accès, approbation/refus).
@@ -33,7 +34,7 @@ final class AdminAccessController extends BaseController
                         $successMsg = 'Votre demande d\'accès admin a été envoyée. Vous recevrez un email lorsque l\'administrateur principal aura pris une décision.';
                     }
                 } else {
-                    if ($result['reason'] === 'pending') {
+                    if ($result['reason'] === AdminRequestStatus::Pending->value) {
                         $errorMsg = 'Vous avez déjà une demande d\'accès admin en attente. L\'administrateur principal doit l\'approuver. Contactez-le directement : ' . \App\Core\App::html()->escape(App::auth()->getAdminEmail());
                     } elseif ($result['reason'] === 'mail_failed') {
                         $errorMsg = 'Votre demande a été enregistrée mais l\'email n\'a pas pu être envoyé. Contactez directement l\'administrateur : ' . \App\Core\App::html()->escape(App::auth()->getAdminEmail());

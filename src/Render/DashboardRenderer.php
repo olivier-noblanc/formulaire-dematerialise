@@ -6,6 +6,7 @@ namespace App\Render;
 
 use App\Core\App;
 use App\Enum\SubmissionStatus;
+use App\Enum\ValidationAction;
 
 /**
  * Rendu de la page tableau de bord (dashboard.php).
@@ -362,7 +363,7 @@ final class DashboardRenderer
                 $step_label = \App\Core\App::html()->escape((string) ($validation['step_label'] ?? ''));
                 $email      = \App\Core\App::html()->escape((string) ($validation['email'] ?? ''));
                 $action     = (string) ($validation['action'] ?? '');
-                $is_valide  = ($action === 'valider');
+                $is_valide  = ($action === ValidationAction::Valider->value);
                 $color      = $is_valide ? '#1a6b3c' : '#c0392b';
                 $icon       = $is_valide ? '✅' : '❌';
                 $label      = $is_valide ? 'Validé' : 'Refusé';
