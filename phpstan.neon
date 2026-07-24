@@ -1,5 +1,6 @@
 includes:
     - phpstan-baseline.neon
+    - phpstan-rules.neon
 parameters:
     level: 8
     paths:
