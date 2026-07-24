@@ -282,4 +282,21 @@ final class TokenRepository extends BaseRepository
         }
         return $result;
     }
+
+    /**
+     * Nombre de tokens en attente pour un utilisateur donné (pas encore traités, pas expirés).
+     */
+    public function countPendingForEmail(string $email): int
+    {
+        /** @var array{cnt: int}|null $result */
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as cnt FROM tokens t
+             JOIN submissions s ON s.id = t.submission_id
+             WHERE t.email = ? AND t.done_at IS NULL
+               AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))
+               AND s.closed_at IS NULL",
+            [$email]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
 }

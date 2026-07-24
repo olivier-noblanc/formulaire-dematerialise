@@ -142,8 +142,7 @@ final class BackupController extends BaseController
                         $infoMsg = 'Aucune soumission à purger pour la période de ' . $months . ' mois.';
                     } else {
                         try {
-                            $pdo = $this->db->getPdo();
-                            $pdo->exec('PRAGMA foreign_keys = ON');
+                            $this->db->enableForeignKeys();
 
                             $ids = $this->submissionRepo->findPurgeableIds($cutoff);
 
@@ -153,7 +152,7 @@ final class BackupController extends BaseController
                                 $tokensDeleted = $this->tokenRepo->deleteBySubmissionIds($ids);
                                 $submissionsDeleted = $this->submissionRepo->deleteByIds($ids);
 
-                                $pdo->exec('VACUUM');
+                                $this->db->vacuum();
 
                                 App::audit()->log(
                                     'purge_data',
@@ -209,22 +208,9 @@ final class BackupController extends BaseController
         $dbStats['oldest_submission'] = ($oldestStr !== '' && $oldestTs !== false) ? date('d/m/Y H:i', $oldestTs) : '—';
         $dbStats['newest_submission'] = ($newestStr !== '' && $newestTs !== false) ? date('d/m/Y H:i', $newestTs) : '—';
 
-        $pdo = $this->db->getPdo();
-        $pageCountStmt = $pdo->query('PRAGMA page_count');
-        if ($pageCountStmt === false) {
-            throw new \RuntimeException('PRAGMA page_count failed');
-        }
-        $pageCount = (int) $pageCountStmt->fetchColumn();
-        $freelistCountStmt = $pdo->query('PRAGMA freelist_count');
-        if ($freelistCountStmt === false) {
-            throw new \RuntimeException('PRAGMA freelist_count failed');
-        }
-        $freelistCount = (int) $freelistCountStmt->fetchColumn();
-        $pageSizeStmt = $pdo->query('PRAGMA page_size');
-        if ($pageSizeStmt === false) {
-            throw new \RuntimeException('PRAGMA page_size failed');
-        }
-        $pageSize = (int) $pageSizeStmt->fetchColumn();
+        $pageCount = $this->db->getPageCount();
+        $freelistCount = $this->db->getFreelistCount();
+        $pageSize = $this->db->getPageSize();
         $dbStats['page_count']     = $pageCount;
         $dbStats['freelist_count'] = $freelistCount;
         $dbStats['page_size']      = $pageSize;

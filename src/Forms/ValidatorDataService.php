@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Forms;
 
-use App\Core\Database;
+use App\Repository\FormRepository;
+use App\Repository\SubmissionRepository;
 
 /**
  * Service de gestion des données validateur (filled_by).
@@ -16,8 +17,11 @@ use App\Core\Database;
  */
 final readonly class ValidatorDataService
 {
-    public function __construct(private Database $database, private FieldService $fieldService)
-    {
+    public function __construct(
+        private SubmissionRepository $submissionRepo,
+        private FormRepository $formRepo,
+        private FieldService $fieldService,
+    ) {
     }
 
     /**
@@ -41,53 +45,17 @@ final readonly class ValidatorDataService
      */
     public function getSubmissionValidatorData(string $submissionId, ?string $stepId = null): array
     {
-        $pdo = $this->database->getPdo();
-
         if ($stepId !== null && $stepId !== '') {
-            $formIdStmt = $pdo->prepare('SELECT form_id FROM submissions WHERE id = ?');
-            $formIdStmt->execute([$submissionId]);
-            $formId = (string) $formIdStmt->fetchColumn();
-
+            $formId = $this->submissionRepo->findFormIdById($submissionId) ?? '';
             $stepLabel = '';
             if ($formId !== '') {
-                $labelStmt = $pdo->prepare('SELECT label FROM steps WHERE id = ? AND form_id = ?');
-                $labelStmt->execute([$stepId, $formId]);
-                $stepLabel = (string) $labelStmt->fetchColumn();
+                $stepLabel = $this->formRepo->getStepLabel($stepId) ?? '';
             }
 
-            $sql = "
-                SELECT svd.id, svd.submission_id, svd.field_name, svd.field_label, svd.field_type, svd.value, svd.filled_by, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email, svd.token_id
-                FROM submission_validator_data svd
-                WHERE svd.submission_id = ?
-                AND svd.field_name IN (
-                    SELECT ff.field_name FROM form_fields ff
-                    WHERE ff.form_id = (SELECT form_id FROM submissions WHERE id = ?)
-                    AND ff.filled_by = 'validator'
-                    AND (ff.validator_step = ? OR ff.validator_step = ? OR ff.validator_step = '')
-                )
-            ";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$submissionId, $submissionId, $stepId, $stepLabel]);
-            /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
-            $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            return $result;
+            return $this->submissionRepo->getValidatorDataByStepFields($submissionId, $stepId, $stepLabel);
         }
 
-        $sql = "
-            SELECT svd.id, svd.submission_id, svd.field_name, svd.field_label, svd.field_type, svd.value, svd.filled_by, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email, svd.token_id
-            FROM submission_validator_data svd
-            WHERE svd.submission_id = ?
-            AND svd.field_name IN (
-                SELECT ff.field_name FROM form_fields ff
-                WHERE ff.form_id = (SELECT form_id FROM submissions WHERE id = ?)
-                AND ff.filled_by = 'validator'
-            )
-        ";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$submissionId, $submissionId]);
-        /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
-        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $result;
+        return $this->submissionRepo->getValidatorData($submissionId);
     }
 
     /**
@@ -188,8 +156,6 @@ final readonly class ValidatorDataService
      */
     public function getValidatorStatusBatch(array $submissions): array
     {
-        $pdo = $this->database->getPdo();
-
         if ($submissions === []) {
             return [];
         }
@@ -211,35 +177,26 @@ final readonly class ValidatorDataService
         }
 
         $formIds = array_values(array_unique(array_values($formIdBySub)));
-        $formPlaceholders = implode(',', array_fill(0, count($formIds), '?'));
-        $stmtFields = $pdo->prepare(
-            "SELECT form_id, field_name FROM form_fields
-             WHERE filled_by = 'validator' AND form_id IN ($formPlaceholders)"
-        );
-        $stmtFields->execute($formIds);
         $validatorFieldsByForm = [];
-        foreach ($stmtFields->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-            $fid = (string) ($r['form_id'] ?? '');
-            $fn  = (string) ($r['field_name'] ?? '');
-            if ($fid !== '' && $fn !== '') {
-                $validatorFieldsByForm[$fid][] = $fn;
+        foreach ($formIds as $fid) {
+            $fields = $this->formRepo->getValidatorFields($fid);
+            foreach ($fields as $field) {
+                $fn = (string) ($field['field_name'] ?? '');
+                if ($fn !== '') {
+                    $validatorFieldsByForm[$fid][] = $fn;
+                }
             }
         }
 
-        $subIdList = array_keys($subIdsIndex);
-        $subPlaceholders = implode(',', array_fill(0, count($subIdList), '?'));
-        $stmtData = $pdo->prepare(
-            "SELECT submission_id, field_name FROM submission_validator_data
-             WHERE submission_id IN ($subPlaceholders)
-             AND value IS NOT NULL AND value != ''"
-        );
-        $stmtData->execute($subIdList);
         $filledBySub = [];
-        foreach ($stmtData->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-            $sid = (string) ($r['submission_id'] ?? '');
-            $fn  = (string) ($r['field_name'] ?? '');
-            if ($sid !== '' && $fn !== '') {
-                $filledBySub[$sid][] = $fn;
+        foreach (array_keys($subIdsIndex) as $subId) {
+            $data = $this->submissionRepo->getValidatorData($subId);
+            foreach ($data as $row) {
+                $fn  = (string) ($row['field_name'] ?? '');
+                $val = $row['value'] ?? null;
+                if ($fn !== '' && $val !== null && $val !== '') {
+                    $filledBySub[$subId][] = $fn;
+                }
             }
         }
 

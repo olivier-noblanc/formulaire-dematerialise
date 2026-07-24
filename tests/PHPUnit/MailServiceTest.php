@@ -8,6 +8,7 @@ use App\Mail\MailService;
 use App\Core\Database;
 use App\Settings\SettingsService;
 use App\Repository\SettingsRepository;
+use App\Repository\MailRepository;
 
 final class MailServiceTest extends TestCase
 {
@@ -19,7 +20,7 @@ final class MailServiceTest extends TestCase
     {
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $this->settings = new SettingsService(new SettingsRepository($this->db));
-        $this->mail = new MailService($this->db, $this->settings);
+        $this->mail = new MailService(new MailRepository($this->db), $this->settings);
     }
 
     public function testSendReturnsTrueInTestMode(): void
@@ -80,7 +81,7 @@ final class MailServiceTest extends TestCase
 
     public function testConstructorCreatesInstance(): void
     {
-        $mail = new MailService($this->db, $this->settings);
+        $mail = new MailService(new MailRepository($this->db), $this->settings);
         $this->assertInstanceOf(MailService::class, $mail);
     }
 

@@ -129,7 +129,9 @@ $_app->set(\App\Repository\AlertRepository::class, new \App\Repository\AlertRepo
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());
 $_settings_svc = $_app->get(\App\Settings\SettingsService::class);
-$_mail_svc = new \App\Mail\MailService($_db_service, $_settings_svc);
+$_mail_repo = new \App\Repository\MailRepository($_db_service);
+$_app->set(\App\Repository\MailRepository::class, $_mail_repo);
+$_mail_svc = new \App\Mail\MailService($_mail_repo, $_settings_svc);
 $_app->set(\App\Mail\MailService::class, $_mail_svc);
 $_auth_svc->setMailer($_mail_svc);
 $_fields_svc = $_app->get(\App\Forms\FieldService::class);
@@ -148,7 +150,7 @@ $_app->set(\App\Token\TokenService::class, new \App\Token\TokenService(
     $_mail_svc,
     $_app->get(\App\Repository\SubmissionRepository::class)
 ));
-$_app->set(\App\Forms\ValidatorDataService::class, new \App\Forms\ValidatorDataService($_db_service, $_app->get(\App\Forms\FieldService::class)));
+$_app->set(\App\Forms\ValidatorDataService::class, new \App\Forms\ValidatorDataService($_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\FormRepository::class), $_app->get(\App\Forms\FieldService::class)));
 $_attachment_repo = $_app->get(\App\Repository\AttachmentRepository::class);
 $_app->set(\App\Attachment\AttachmentService::class, new \App\Attachment\AttachmentService($_attachment_repo));
 $_app->set(\App\Cron\CronService::class, new \App\Cron\CronService($_db_service));

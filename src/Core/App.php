@@ -142,4 +142,24 @@ final class App
     {
         return self::getInstance()->get(\App\Export\ExportService::class);
     }
+
+    public static function tokenRepo(): \App\Repository\TokenRepository
+    {
+        return self::getInstance()->get(\App\Repository\TokenRepository::class);
+    }
+
+    public static function submissionRepo(): \App\Repository\SubmissionRepository
+    {
+        return self::getInstance()->get(\App\Repository\SubmissionRepository::class);
+    }
+
+    public static function formRepo(): \App\Repository\FormRepository
+    {
+        return self::getInstance()->get(\App\Repository\FormRepository::class);
+    }
+
+    public static function mailRepo(): \App\Repository\MailRepository
+    {
+        return self::getInstance()->get(\App\Repository\MailRepository::class);
+    }
 }

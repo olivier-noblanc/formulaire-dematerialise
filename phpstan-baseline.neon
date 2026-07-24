@@ -985,6 +985,18 @@ parameters:
 			path: src/Controller/ValidateController.php
 
 		-
+			message: '#^Unused App\\Core\\App\:\:formRepo$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/App.php
+
+		-
+			message: '#^Unused App\\Core\\App\:\:mailRepo$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Core/App.php
+
+		-
 			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
 			identifier: if.condNotBoolean
 			count: 4
@@ -1075,12 +1087,6 @@ parameters:
 			path: src/Forms/FormJsonValidator.php
 
 		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Forms/SampleFormsService.php
-
-		-
 			message: '#^Casting to int something that''s already int\.$#'
 			identifier: cast.useless
 			count: 1
@@ -1095,7 +1101,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 4
+			count: 3
 			path: src/Mail/MailService.php
 
 		-
@@ -1495,6 +1501,66 @@ parameters:
 			path: src/Repository/FormRepository.php
 
 		-
+			message: '#^Unused App\\Repository\\LazyCronRepository\:\:beginExclusive$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/LazyCronRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\LazyCronRepository\:\:commit$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/LazyCronRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\LazyCronRepository\:\:getLastRun$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/LazyCronRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\LazyCronRepository\:\:recordRun$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/LazyCronRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\LazyCronRepository\:\:rollback$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/LazyCronRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\PersonaRepository\:\:createToken$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/PersonaRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\PersonaRepository\:\:deleteExpiredBefore$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/PersonaRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\PersonaRepository\:\:deleteRevokedBefore$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/PersonaRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\PersonaRepository\:\:findByToken$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/PersonaRepository.php
+
+		-
+			message: '#^Unused App\\Repository\\PersonaRepository\:\:revoke$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/PersonaRepository.php
+
+		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
 			count: 2
@@ -1689,5 +1755,11 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
 			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: src/lib_wrappers.php
+
+		-
+			message: '#^Parameter \#1 \$formRepo of class App\\Forms\\SampleFormsService constructor expects App\\Repository\\FormRepository, App\\Core\\Database given\.$#'
+			identifier: argument.type
 			count: 1
 			path: src/lib_wrappers.php

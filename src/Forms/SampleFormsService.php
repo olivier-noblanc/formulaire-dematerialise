@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Forms;
 
-use App\Core\Database;
+use App\Repository\FormRepository;
 
 /**
  * Service de peuplement des formulaires d'exemple (onboarding, outboarding, etc.).
  */
 final readonly class SampleFormsService
 {
-    public function __construct(private Database $database)
+    public function __construct(private FormRepository $formRepo)
     {
     }
 
@@ -24,7 +24,7 @@ final readonly class SampleFormsService
      */
     public function populate(): string
     {
-        $pdo = $this->database->getPdo();
+        $pdo = $this->formRepo->pdo();
 
         try {
             $pdo->beginTransaction();
@@ -175,39 +175,33 @@ final readonly class SampleFormsService
             $created = 0;
             $skipped = 0;
             foreach ($sample_forms as $sample_form) {
-                $chk = $pdo->prepare('SELECT COUNT(*) FROM forms WHERE slug = ?');
-                $chk->execute([$sample_form['slug']]);
-                if ($chk->fetchColumn() > 0) {
+                if ($this->formRepo->findIdBySlug($sample_form['slug']) !== null) {
                     $skipped++;
                     continue;
                 }
 
-                $form_uuid = \generate_uuid();
-                $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
-                    ->execute([$form_uuid, $sample_form['slug'], $sample_form['label'], $sample_form['description']]);
+                $form_uuid = $this->formRepo->create([
+                    'slug' => $sample_form['slug'],
+                    'label' => $sample_form['label'],
+                    'description' => $sample_form['description'],
+                    'actif' => 1,
+                ]);
 
                 if (isset($sample_form['fields']) && !in_array($sample_form['fields'], ['', '0', []], true)) {
-                    $field_stmt = $pdo->prepare('INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, required, ordre, card_group, hint, filled_by, validator_step) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                     $ordre = 1;
                     foreach ($sample_form['fields'] as $f) {
-                        $options_json = null;
-                        if (isset($f['options'])) {
-                            $options_json = json_encode($f['options'], JSON_UNESCAPED_UNICODE);
-                        }
-                        $filled_by = empty($f['filled_by']) ? 'demandeur' : $f['filled_by'];
-                        if (!in_array($filled_by, ['demandeur', 'validator'])) {
-                            $filled_by = 'demandeur';
-                        }
-                        $field_stmt->execute([
-                            \generate_uuid(), $form_uuid,
-                            $f['label'], $f['field_type'] ?? '', $f['field_name'] ?? '',
-                            $options_json,
-                            (int) ($f['required'] ?? 0),
-                            $ordre,
-                            $f['card_group'] ?? 'Général',
-                            $f['hint'] ?? '',
-                            $filled_by,
-                            $f['validator_step'] ?? '',
+                        $this->formRepo->createField([
+                            'form_id' => $form_uuid,
+                            'label' => $f['label'],
+                            'field_type' => $f['field_type'] ?? '',
+                            'field_name' => $f['field_name'] ?? '',
+                            'options' => isset($f['options']) ? json_encode($f['options'], JSON_UNESCAPED_UNICODE) : null,
+                            'required' => (int) ($f['required'] ?? 0),
+                            'ordre' => $ordre,
+                            'card_group' => $f['card_group'] ?? 'Général',
+                            'hint' => $f['hint'] ?? '',
+                            'filled_by' => !empty($f['filled_by']) && in_array($f['filled_by'], ['demandeur', 'validator'], true) ? $f['filled_by'] : 'demandeur',
+                            'validator_step' => $f['validator_step'] ?? '',
                         ]);
                         $ordre++;
                     }
@@ -215,14 +209,16 @@ final readonly class SampleFormsService
 
                 if (isset($sample_form['steps']) && !in_array($sample_form['steps'], ['', '0', []], true)) {
                     foreach ($sample_form['steps'] as $s) {
-                        $step_uuid = \generate_uuid();
-                        $pdo->prepare('INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, ?, ?, 1)')
-                            ->execute([$step_uuid, $form_uuid, $s['label'], $s['ordre'] ?? 0]);
+                        $step_uuid = $this->formRepo->createStep([
+                            'form_id' => $form_uuid,
+                            'label' => $s['label'],
+                            'ordre' => $s['ordre'] ?? 0,
+                            'actif' => 1,
+                        ]);
 
                         if (!empty($s['recipients'])) {
-                            $recip_stmt = $pdo->prepare('INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)');
                             foreach ($s['recipients'] as $email) {
-                                $recip_stmt->execute([\generate_uuid(), $step_uuid, $email]);
+                                $this->formRepo->createRecipient($step_uuid, $email);
                             }
                         }
                     }

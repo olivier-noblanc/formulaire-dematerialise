@@ -526,4 +526,62 @@ final class SubmissionRepository extends BaseRepository
         }
         return $result;
     }
+
+    public function findFormIdById(string $submissionId): ?string
+    {
+        $result = $this->fetchOne('SELECT form_id FROM submissions WHERE id = ?', [$submissionId]);
+        return $result !== null ? (string) $result['form_id'] : null;
+    }
+
+    /**
+     * @return array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}>
+     */
+    public function getValidatorDataByStepFields(string $submissionId, string $stepId, string $stepLabel): array
+    {
+        /** @var array<int, array{id: string, submission_id: string, field_name: string, field_label: string, field_type: string, value: string|null, filled_by: string, filled_at: string, step_id: string|null, step_label: string|null, filled_by_email: string|null, token_id: string|null}> $result */
+        $result = $this->fetchAll(
+            "SELECT svd.id, svd.submission_id, svd.field_name, svd.field_label, svd.field_type, svd.value, svd.filled_by, svd.filled_at, svd.step_id, svd.step_label, svd.filled_by_email, svd.token_id
+             FROM submission_validator_data svd
+             WHERE svd.submission_id = ?
+             AND svd.field_name IN (
+                 SELECT ff.field_name FROM form_fields ff
+                 WHERE ff.form_id = (SELECT form_id FROM submissions WHERE id = ?)
+                 AND ff.filled_by = 'validator'
+                 AND (ff.validator_step = ? OR ff.validator_step = ? OR ff.validator_step = '')
+             )",
+            [$submissionId, $submissionId, $stepId, $stepLabel]
+        );
+        return $result;
+    }
+
+    /**
+     * Nombre de soumissions en cours pour un demandeur donné.
+     */
+    public function countEnCoursBySubmitter(string $email): int
+    {
+        /** @var array{cnt: int}|null $result */
+        $result = $this->fetchOne(
+            "SELECT COUNT(*) as cnt FROM submissions
+             WHERE submitted_by = ? AND status = 'en_cours' AND closed_at IS NULL",
+            [$email]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    /**
+     * Liste des submitted_by distincts (pour le switch persona admin).
+     *
+     * @return array<int, string>
+     */
+    public function findDistinctSubmitters(int $limit = 50): array
+    {
+        /** @var array<int, array{submitted_by: string}> $result */
+        $result = $this->fetchAll(
+            "SELECT DISTINCT submitted_by FROM submissions
+             WHERE submitted_by IS NOT NULL AND submitted_by != ''
+             ORDER BY submitted_by LIMIT ?",
+            [$limit]
+        );
+        return array_column($result, 'submitted_by');
+    }
 }

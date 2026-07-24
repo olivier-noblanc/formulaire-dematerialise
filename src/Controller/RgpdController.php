@@ -18,7 +18,6 @@ final class RgpdController extends BaseController
     {
         App::auth()->requireAdmin();
 
-        $pdo = $this->db->getPdo();
         $successMsg = '';
         $errorMsg = '';
         $infoMsg = '';
@@ -84,7 +83,7 @@ final class RgpdController extends BaseController
                 } elseif ($email === App::auth()->getUser()) {
                     $errorMsg = 'Vous ne pouvez pas supprimer vos propres données.';
                 } else {
-                    $pdo->exec('PRAGMA foreign_keys = ON');
+                    $this->db->enableForeignKeys();
 
                     $this->submissionRepo->deleteValidatorDataBySubmitter($email);
                     $this->submissionRepo->deleteValidatorDataByEmail($email);
@@ -107,7 +106,7 @@ final class RgpdController extends BaseController
                 } else {
                     $months = (int) $this->settings->get('retention_months', '24');
 
-                    $pdo->exec('PRAGMA foreign_keys = ON');
+                    $this->db->enableForeignKeys();
 
                     $count = App::getInstance()->get(\App\Rgpd\RgpdService::class)->autoPurge($months);
 
