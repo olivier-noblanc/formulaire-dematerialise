@@ -9,6 +9,7 @@ use App\Auth\AuthService;
 use App\Core\App;
 use App\Core\Database;
 use App\Enum\SubmissionStatus;
+use App\Enum\ValidationAction;
 use App\Mail\MailService;
 use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
@@ -141,7 +142,7 @@ final readonly class TokenService
                 $data['validations'][] = [
                     'step_label' => 'Annulation',
                     'email' => $cancelledBy ?: 'system',
-                    'action' => 'refuser',
+                    'action' => ValidationAction::Refuser->value,
                     'commentaire' => 'Soumission annulée',
                     'date' => $now,
                 ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Enum\SubmissionStatus;
+use App\Enum\UrgencyLevel;
 
 /**
  * Date parsing and deadline urgency helpers.
@@ -66,10 +67,10 @@ final class DateHelper
         $days_left = (int) floor(($ts - time()) / 86400);
         $result['days_left'] = $days_left;
         if ($days_left < 0) {
-            $result['urgency'] = 'overdue';
+            $result['urgency'] = UrgencyLevel::Overdue->value;
             $result['style'] = 'color:#c0392b;font-weight:bold;';
         } elseif ($days_left <= 2) {
-            $result['urgency'] = 'critical';
+            $result['urgency'] = UrgencyLevel::Critical->value;
             $result['style'] = 'color:#c0392b;font-weight:bold;';
         } elseif ($days_left <= 5) {
             $result['urgency'] = 'warning';

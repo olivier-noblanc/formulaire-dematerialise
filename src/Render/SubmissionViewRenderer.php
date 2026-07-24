@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Enum\SubmissionStatus;
+use App\Enum\UrgencyLevel;
+use App\Enum\ValidationAction;
 
 /**
  * Rendu de la page de détail d'une soumission (submission_view.php).
@@ -131,8 +133,8 @@ final class SubmissionViewRenderer
         }
 
         $urgency = (string) ($dl_info['urgency'] ?? '');
-        $dl_cls  = $urgency === 'overdue' ? 'overdue' : ($urgency === 'critical' ? 'urgent' : 'ok');
-        $dl_icon = $urgency === 'overdue' ? '🚨' : ($urgency === 'critical' ? '⚠️' : '📅');
+        $dl_cls  = $urgency === UrgencyLevel::Overdue->value ? 'overdue' : ($urgency === UrgencyLevel::Critical->value ? 'urgent' : 'ok');
+        $dl_icon = $urgency === UrgencyLevel::Overdue->value ? '🚨' : ($urgency === UrgencyLevel::Critical->value ? '⚠️' : '📅');
 
         if ($days_remaining < 0) {
             $dl_text = 'Date dépassée de ' . abs($days_remaining) . ' jour(s)';
@@ -682,7 +684,7 @@ final class SubmissionViewRenderer
 
         $items_html = '';
         foreach ($data['validations'] as $v) {
-            $is_valid = ($v['action'] ?? '') === 'valider';
+            $is_valid = ($v['action'] ?? '') === ValidationAction::Valider->value;
             $icon = $is_valid ? '✅' : '❌';
             $step_label = \App\Core\App::html()->escape((string) ($v['step_label'] ?? ''));
             $email_display = \App\Core\App::html()->displayUser((string) ($v['email'] ?? ''));

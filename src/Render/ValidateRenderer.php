@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\ValidationAction;
 
 /**
  * Rendu de la page Validation (accept/refuse de formulaires).
@@ -233,7 +234,7 @@ final class ValidateRenderer
 
             // ── Boutons ──
             $html .= '  <div class="submit-buttons">' . "\n";
-            $html .= '    <button type="submit" name="action" value="valider" class="btn-validate"><span aria-hidden="true">✅</span> Valider</button>' . "\n";
+            $html .= '    <button type="submit" name="action" value="' . ValidationAction::Valider->value . '" class="btn-validate"><span aria-hidden="true">✅</span> Valider</button>' . "\n";
             $html .= '    <button type="button" id="btn-show-refusal-recap" class="btn-refuse-confirm" aria-haspopup="dialog" aria-expanded="false" aria-controls="refusal-recap"><span aria-hidden="true">❌</span> Confirmer le refus</button>' . "\n";
             $html .= '  </div>' . "\n";
 
@@ -243,7 +244,7 @@ final class ValidateRenderer
             $html .= '    <p class="refusal-summary-text">Vous allez refuser cette demande pour le motif suivant : <strong id="refusal-recap-motif">—</strong></p>' . "\n";
             $html .= '    <p class="refusal-summary-warning">Cette action est <strong>irréversible</strong>. Le demandeur sera notifié par email.</p>' . "\n";
             $html .= '    <div class="refusal-summary-actions">' . "\n";
-            $html .= '      <button type="submit" name="action" value="refuser" class="btn-refuse-definitive" formnovalidate><span aria-hidden="true">✓</span> Oui, refuser définitivement</button>' . "\n";
+            $html .= '      <button type="submit" name="action" value="' . ValidationAction::Refuser->value . '" class="btn-refuse-definitive" formnovalidate><span aria-hidden="true">✓</span> Oui, refuser définitivement</button>' . "\n";
             $html .= '      <button type="button" id="btn-cancel-refusal" class="btn-refuse-cancel">Annuler</button>' . "\n";
             $html .= '    </div>' . "\n";
             $html .= '  </div>' . "\n";

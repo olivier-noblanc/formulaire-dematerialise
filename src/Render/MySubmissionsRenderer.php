@@ -6,6 +6,7 @@ namespace App\Render;
 
 use App\Core\App;
 use App\Enum\SubmissionStatus;
+use App\Enum\ValidationAction;
 
 /**
  * Rendu HTML de la page "Mes demandes" pour l'agent connecté.
@@ -165,7 +166,7 @@ final class MySubmissionsRenderer
                 // Refusal box
                 if ($status === SubmissionStatus::Refuse->value && isset($data['validations'])) {
                     foreach ($data['validations'] as $v) {
-                        if ($v['action'] === 'refuser') {
+                        if ($v['action'] === ValidationAction::Refuser->value) {
                             $refUser  = App::html()->displayUser($v['email']);
                             $refStep  = App::html()->escape($v['step_label']);
                             $html .= "          <div class=\"refusal-box\">\n";
@@ -183,7 +184,7 @@ final class MySubmissionsRenderer
                 elseif ($status === SubmissionStatus::Valide->value && isset($data['validations'])) {
                     $lastValidator = null;
                     foreach ($data['validations'] as $v) {
-                        if ($v['action'] === 'valider') {
+                        if ($v['action'] === ValidationAction::Valider->value) {
                             $lastValidator = $v;
                         }
                     }

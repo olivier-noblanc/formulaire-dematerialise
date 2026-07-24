@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace App\Render;
 
+use App\Enum\FieldVisibility;
+use App\Enum\FilledBy;
+use App\Enum\FieldType;
+
 /**
  * Render de la page "Gestion des formulaires" (admin_forms.php).
  *
@@ -300,13 +304,13 @@ CSS;
     public function getFormFieldTypes(): array
     {
         return [
-            'text'     => '<span aria-hidden="true">📝</span> Texte',
-            'email'    => '<span aria-hidden="true">📧</span> Courriel',
-            'date'     => '<span aria-hidden="true">📅</span> Date',
-            'select'   => '<span aria-hidden="true">📋</span> Sélecteur',
-            'checkbox' => '<span aria-hidden="true">☑</span> Case à cocher',
-            'textarea' => '<span aria-hidden="true">📝</span> Zone de texte',
-            'file'     => '<span aria-hidden="true">📎</span> Fichier',
+            FieldType::Text->value     => '<span aria-hidden="true">📝</span> Texte',
+            FieldType::Email->value    => '<span aria-hidden="true">📧</span> Courriel',
+            FieldType::Date->value     => '<span aria-hidden="true">📅</span> Date',
+            FieldType::Select->value   => '<span aria-hidden="true">📋</span> Sélecteur',
+            FieldType::Checkbox->value => '<span aria-hidden="true">☑</span> Case à cocher',
+            FieldType::Textarea->value => '<span aria-hidden="true">📝</span> Zone de texte',
+            FieldType::File->value     => '<span aria-hidden="true">📎</span> Fichier',
         ];
     }
 
@@ -316,13 +320,13 @@ CSS;
     public function fieldTypeIcon(string $type): string
     {
         $icons = [
-            'text'     => '<span aria-hidden="true">📝</span>',
-            'email'    => '<span aria-hidden="true">📧</span>',
-            'date'     => '<span aria-hidden="true">📅</span>',
-            'select'   => '<span aria-hidden="true">📋</span>',
-            'checkbox' => '<span aria-hidden="true">☑️</span>',
-            'textarea' => '<span aria-hidden="true">📝</span>',
-            'file'     => '<span aria-hidden="true">📎</span>',
+            FieldType::Text->value     => '<span aria-hidden="true">📝</span>',
+            FieldType::Email->value    => '<span aria-hidden="true">📧</span>',
+            FieldType::Date->value     => '<span aria-hidden="true">📅</span>',
+            FieldType::Select->value   => '<span aria-hidden="true">📋</span>',
+            FieldType::Checkbox->value => '<span aria-hidden="true">☑️</span>',
+            FieldType::Textarea->value => '<span aria-hidden="true">📝</span>',
+            FieldType::File->value     => '<span aria-hidden="true">📎</span>',
         ];
         return $icons[$type] ?? '<span aria-hidden="true">📄</span>';
     }
@@ -333,13 +337,13 @@ CSS;
     public function fieldTypeLabel(string $type): string
     {
         $labels = [
-            'text'     => 'Texte',
-            'email'    => 'Courriel',
-            'date'     => 'Date',
-            'select'   => 'Sélecteur',
-            'checkbox' => 'Case à cocher',
-            'textarea' => 'Zone de texte',
-            'file'     => 'Fichier',
+            FieldType::Text->value     => 'Texte',
+            FieldType::Email->value    => 'Courriel',
+            FieldType::Date->value     => 'Date',
+            FieldType::Select->value   => 'Sélecteur',
+            FieldType::Checkbox->value => 'Case à cocher',
+            FieldType::Textarea->value => 'Zone de texte',
+            FieldType::File->value     => 'Fichier',
         ];
         return $labels[$type] ?? $type;
     }
@@ -1194,8 +1198,8 @@ Voici le document administratif à analyser :
                                                 <div class="field">
                                                     <label>Rempli par</label>
                                                     <select name="ff_filled_by">
-                                                        <option value="demandeur" <?= ($ff['filled_by'] ?? '') === 'demandeur' || ($ff['filled_by'] ?? '') === '' ? 'selected' : '' ?>>Demandeur</option>
-                                                        <option value="validator" <?= ($ff['filled_by'] ?? '') === 'validator' ? 'selected' : '' ?>>Validateur</option>
+                                                        <option value="demandeur" <?= ($ff['filled_by'] ?? '') === FilledBy::Demandeur->value || ($ff['filled_by'] ?? '') === '' ? 'selected' : '' ?>>Demandeur</option>
+                                                        <option value="validator" <?= ($ff['filled_by'] ?? '') === FilledBy::Validator->value ? 'selected' : '' ?>>Validateur</option>
                                                     </select>
                                                 </div>
                                                 <div class="field">
@@ -1212,8 +1216,8 @@ Voici le document administratif à analyser :
                                                 <div class="field ff-visibility-field">
                                                     <label>Visibilité <span class="hint">(uniquement pour les pièces jointes)</span></label>
                                                     <select name="ff_visibility">
-                                                        <option value="all" <?= (($ff['visibility'] ?? 'all') === 'all') ? 'selected' : '' ?>>Tous (validateurs + owner)</option>
-                                                        <option value="owner_only" <?= (($ff['visibility'] ?? 'all') === 'owner_only') ? 'selected' : '' ?>>Owner uniquement (caché des validateurs)</option>
+                                                        <option value="all" <?= (($ff['visibility'] ?? 'all') === FieldVisibility::All->value) ? 'selected' : '' ?>>Tous (validateurs + owner)</option>
+                                                        <option value="owner_only" <?= (($ff['visibility'] ?? 'all') === FieldVisibility::OwnerOnly->value) ? 'selected' : '' ?>>Owner uniquement (caché des validateurs)</option>
                                                     </select>
                                                 </div>
                                             </div>

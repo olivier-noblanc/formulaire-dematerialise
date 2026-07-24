@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\FieldType;
 
 /**
  * Form & UI rendering helpers.
@@ -26,7 +27,7 @@ final class FormRenderer
         $name          = \App\Core\App::html()->escape($field['field_name']);
         $label         = \App\Core\App::html()->escape(t_jargon($field['label']));
         $req_span      = $field['required'] ? ' <span class="req">*</span>' : '';
-        $required_attr = (!$disabled && $field['required'] && $field['field_type'] !== 'checkbox') ? ' required aria-required="true"' : '';
+        $required_attr = (!$disabled && $field['required'] && $field['field_type'] !== FieldType::Checkbox->value) ? ' required aria-required="true"' : '';
         $error_class   = isset($field_errors[$field['field_name']]) ? ' field-error' : '';
         $disabled_attr = $disabled ? ' disabled' : '';
 
@@ -56,22 +57,22 @@ final class FormRenderer
 
         $max_size_mo = 0;
         switch ($field['field_type']) {
-            case 'date':
+            case FieldType::Date->value:
                 $auto_hint_text = 'Format : jour/mois/année (JJ/MM/AAAA)';
                 $placeholder    = 'JJ/MM/AAAA';
                 break;
-            case 'email':
+            case FieldType::Email->value:
                 $auto_hint_text = 'Exemple : prenom.nom@exemple.invalid';
                 $placeholder    = 'prenom.nom@exemple.invalid';
                 break;
-            case 'textarea':
+            case FieldType::Textarea->value:
                 $auto_hint_text = 'Texte libre, maximum ' . $textarea_maxlength . ' caractères';
                 break;
-            case 'file':
+            case FieldType::File->value:
                 $max_size_mo    = round(App::attachment()->getMaxFileSize() / 1048576, 0);
                 $auto_hint_text = 'Formats acceptés : PDF, images, Office, ZIP — Max ' . $max_size_mo . ' Mo';
                 break;
-            case 'text':
+            case FieldType::Text->value:
                 if ($html5_type === 'email') {
                     $auto_hint_text = 'Exemple : prenom.nom@exemple.invalid';
                     $placeholder    = 'prenom.nom@exemple.invalid';
@@ -122,7 +123,7 @@ final class FormRenderer
         $placeholder_attr = $placeholder !== '' ? ' placeholder="' . \App\Core\App::html()->escape($placeholder) . '"' : '';
 
         switch ($field['field_type']) {
-            case 'email':
+            case FieldType::Email->value:
                 $val       = \App\Core\App::html()->escape($posted_val ?? '');
                 $maxlength = ' maxlength="500"';
                 $list_attr = $datalist_id === '' || $datalist_id === '0' ? '' : ' list="' . \App\Core\App::html()->escape($datalist_id) . '"';
@@ -130,13 +131,13 @@ final class FormRenderer
                     <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="email" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$maxlength}{$placeholder_attr} pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"{$list_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
                     HTML;
 
-            case 'date':
+            case FieldType::Date->value:
                 $val = \App\Core\App::html()->escape($posted_val ?? '');
                 return <<<HTML
                     <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="date" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$placeholder_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
                     HTML;
 
-            case 'select':
+            case FieldType::Select->value:
                 $opts_raw    = $field['options'] ?? '[]';
                 $opts        = json_decode($opts_raw, true) ?: [];
                 $options_html = '<option value="">— Sélectionner —</option>';
@@ -148,20 +149,20 @@ final class FormRenderer
                     <div class="field"><label for="{$name}">{$label}{$req_span}</label><select id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}"{$disabled_attr}>{$options_html}</select>{$user_hint}{$error_html}</div>
                     HTML;
 
-            case 'checkbox':
+            case FieldType::Checkbox->value:
                 $checked = empty($posted_val) ? '' : ' checked';
                 return <<<HTML
                     <label class="checkbox-item"><input type="checkbox" name="{$name}" value="1"{$checked}{$disabled_attr}> {$label}</label>
                     HTML;
 
-            case 'textarea':
+            case FieldType::Textarea->value:
                 $val       = \App\Core\App::html()->escape($posted_val ?? '');
                 $maxlength = ' maxlength="' . $textarea_maxlength . '"';
                 return <<<HTML
                     <div class="field full"><label for="{$name}">{$label}{$req_span}</label><textarea id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}"{$placeholder_attr}{$maxlength}{$disabled_attr}>{$val}</textarea>{$auto_hint_html}{$user_hint}{$error_html}</div>
                     HTML;
 
-            case 'file':
+            case FieldType::File->value:
                 $accept = implode(',', array_map(fn($ext) => '.' . $ext, App::attachment()->getAllowedExtensions()));
                 return <<<HTML
                     <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="file" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" accept="{$accept}"{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
@@ -256,7 +257,7 @@ final class FormRenderer
         $total_fields = 0;
         foreach ($grouped as $fields) {
             foreach ($fields as $field) {
-                if (isset($field['field_type']) && $field['field_type'] !== 'file') {
+                if (isset($field['field_type']) && $field['field_type'] !== FieldType::File->value) {
                     $total_fields++;
                 }
             }

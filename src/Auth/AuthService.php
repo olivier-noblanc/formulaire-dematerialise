@@ -8,6 +8,7 @@ use App\Contract\AuthInterface;
 use App\Contract\MailInterface;
 use App\Core\App;
 use App\Core\Database;
+use App\Enum\AdminRequestStatus;
 
 /**
  * Service d'authentification et gestion des admins.
@@ -244,7 +245,7 @@ final class AuthService implements AuthInterface
                 return ['success' => true, 'reason' => 'already_admin'];
             }
 
-            $stmt = $pdo->prepare("SELECT 1 FROM admin_requests WHERE email = ? AND status = 'pending'");
+            $stmt = $pdo->prepare("SELECT 1 FROM admin_requests WHERE email = ? AND status = '" . AdminRequestStatus::Pending->value . "'");
             $stmt->execute([$email]);
             if ($stmt->fetch() !== false) {
                 return ['success' => false, 'reason' => \App\Enum\AdminRequestStatus::Pending->value];
@@ -252,7 +253,7 @@ final class AuthService implements AuthInterface
 
             $token = bin2hex(random_bytes(32));
             $ar_id = generate_uuid();
-            $stmt = $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, 'pending', ?)");
+            $stmt = $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, '" . AdminRequestStatus::Pending->value . "', ?)");
             $stmt->execute([$ar_id, $email, gmdate('Y-m-d H:i:s'), $token]);
 
             App::audit()->log('admin_request', 'admin:' . $email, 'Demande d\'accès admin', $email);

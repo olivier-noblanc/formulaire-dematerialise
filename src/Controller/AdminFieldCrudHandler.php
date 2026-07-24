@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\FieldVisibility;
+use App\Enum\FilledBy;
+use App\Enum\FieldType;
 
 /**
  * Handlers CRUD pour les champs de formulaire (add, update, delete).
@@ -19,18 +22,18 @@ final class AdminFieldCrudHandler
         $form_id = trim($_POST['form_id'] ?? '');
         $ff_label = trim($_POST['ff_label'] ?? '');
         $ff_field_name = trim($_POST['ff_field_name'] ?? '');
-        $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
+        $ff_field_type = trim($_POST['ff_field_type'] ?? FieldType::Text->value);
         $ff_options_raw = trim($_POST['ff_options'] ?? '');
         $ff_required = isset($_POST['ff_required']) ? 1 : 0;
         $ff_ordre = (int) ($_POST['ff_ordre'] ?? 0);
         $ff_card_group = AdminFormsHandlers::resolveCardGroup();
         $ff_filled_by = trim($_POST['ff_filled_by'] ?? '');
-        if (!in_array($ff_filled_by, ['demandeur', 'validator'])) {
-            $ff_filled_by = 'demandeur';
+        if (!in_array($ff_filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value])) {
+            $ff_filled_by = FilledBy::Demandeur->value;
         }
         $ff_validator_step = trim($_POST['ff_validator_step'] ?? '');
         $ff_visibility = trim($_POST['ff_visibility'] ?? 'all');
-        if (!in_array($ff_visibility, ['all', 'owner_only'], true)) {
+        if (!in_array($ff_visibility, ['all', FieldVisibility::OwnerOnly->value], true)) {
             $ff_visibility = 'all';
         }
         if (($ff_field_name === '' || $ff_field_name === '0') && ($ff_label !== '' && $ff_label !== '0')) {
@@ -67,18 +70,18 @@ final class AdminFieldCrudHandler
         $form_id = trim($_POST['form_id'] ?? '');
         $ff_label = trim($_POST['ff_label'] ?? '');
         $ff_field_name = trim($_POST['ff_field_name'] ?? '');
-        $ff_field_type = trim($_POST['ff_field_type'] ?? 'text');
+        $ff_field_type = trim($_POST['ff_field_type'] ?? FieldType::Text->value);
         $ff_options_raw = trim($_POST['ff_options'] ?? '');
         $ff_required = isset($_POST['ff_required']) ? 1 : 0;
         $ff_ordre = (int) ($_POST['ff_ordre'] ?? 0);
         $ff_card_group = AdminFormsHandlers::resolveCardGroup();
         $ff_filled_by = trim($_POST['ff_filled_by'] ?? '');
-        if (!in_array($ff_filled_by, ['demandeur', 'validator'])) {
-            $ff_filled_by = 'demandeur';
+        if (!in_array($ff_filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value])) {
+            $ff_filled_by = FilledBy::Demandeur->value;
         }
         $ff_validator_step = trim($_POST['ff_validator_step'] ?? '');
         $ff_visibility = trim($_POST['ff_visibility'] ?? 'all');
-        if (!in_array($ff_visibility, ['all', 'owner_only'], true)) {
+        if (!in_array($ff_visibility, ['all', FieldVisibility::OwnerOnly->value], true)) {
             $ff_visibility = 'all';
         }
         if (($ff_field_name === '' || $ff_field_name === '0') && ($ff_label !== '' && $ff_label !== '0')) {
