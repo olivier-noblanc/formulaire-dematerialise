@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Stats;
 
 use App\Core\Database;
+use App\Enum\SubmissionStatus;
 use PDO;
 
 /**
@@ -50,10 +51,10 @@ final readonly class StatsService
             SELECT
                 strftime(?, s.submitted_at) as period,
                 COUNT(*) as total,
-                SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
-                SUM(CASE WHEN s.status = 'refuse' THEN 1 ELSE 0 END) as refuse,
-                SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
-                AVG(CASE WHEN s.status = 'valide' AND s.closed_at IS NOT NULL
+                SUM(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
+                SUM(CASE WHEN s.status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
+                SUM(CASE WHEN s.status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
+                AVG(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' AND s.closed_at IS NOT NULL
                     THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
                     ELSE NULL END) as avg_processing_seconds
             FROM submissions s
@@ -93,9 +94,9 @@ final readonly class StatsService
         $rowStmt = $pdo->query("
             SELECT
                 COUNT(*) as total,
-                SUM(CASE WHEN status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
-                SUM(CASE WHEN status = 'valide' THEN 1 ELSE 0 END) as valide,
-                SUM(CASE WHEN status = 'refuse' THEN 1 ELSE 0 END) as refuse,
+                SUM(CASE WHEN status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
+                SUM(CASE WHEN status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
+                SUM(CASE WHEN status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
                 SUM(CASE WHEN DATE(submitted_at) = DATE('now') THEN 1 ELSE 0 END) as today,
                 SUM(CASE WHEN submitted_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as this_week,
                 SUM(CASE WHEN submitted_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) as this_month
@@ -112,9 +113,9 @@ final readonly class StatsService
         assert($attachmentsSizeStmt !== false);
         $stats = [
             'total' => (int) ($row['total'] ?? 0),
-            'en_cours' => (int) ($row['en_cours'] ?? 0),
-            'valide' => (int) ($row['valide'] ?? 0),
-            'refuse' => (int) ($row['refuse'] ?? 0),
+            SubmissionStatus::EnCours->value => (int) ($row['en_cours'] ?? 0),
+            SubmissionStatus::Valide->value => (int) ($row['valide'] ?? 0),
+            SubmissionStatus::Refuse->value => (int) ($row['refuse'] ?? 0),
             'today' => (int) ($row['today'] ?? 0),
             'this_week' => (int) ($row['this_week'] ?? 0),
             'this_month' => (int) ($row['this_month'] ?? 0),
@@ -126,13 +127,13 @@ final readonly class StatsService
 
         $avgStmt = $pdo->query("
             SELECT AVG(CAST(strftime('%s', closed_at) AS REAL) - CAST(strftime('%s', submitted_at) AS REAL))
-            FROM submissions WHERE status = 'valide' AND closed_at IS NOT NULL
+            FROM submissions WHERE status = '" . SubmissionStatus::Valide->value . "' AND closed_at IS NOT NULL
         ");
         assert($avgStmt !== false);
         $stats['avg_days'] = round((float) ($avgStmt->fetchColumn() ?: 0) / 86400, 1);
 
         $stats['taux_validation'] = $stats['total'] > 0
-            ? round(($stats['valide'] / $stats['total']) * 100, 1)
+            ? round(($stats[SubmissionStatus::Valide->value] / $stats['total']) * 100, 1)
             : 0;
 
         return $stats;
@@ -154,10 +155,10 @@ final readonly class StatsService
         $pdo = $this->database->getPdo();
         $stmt = $pdo->query("
             SELECT f.label, f.slug, COUNT(s.id) as total,
-                   SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
-                   SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
-                   SUM(CASE WHEN s.status = 'refuse' THEN 1 ELSE 0 END) as refuse,
-                   AVG(CASE WHEN s.status = 'valide' AND s.closed_at IS NOT NULL
+                   SUM(CASE WHEN s.status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
+                   SUM(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
+                   SUM(CASE WHEN s.status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
+                   AVG(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' AND s.closed_at IS NOT NULL
                        THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
                        ELSE NULL END) as avg_seconds
             FROM forms f
@@ -193,7 +194,7 @@ final readonly class StatsService
                        ELSE NULL END) as avg_response_seconds
             FROM tokens t
             JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = 'en_cours' OR (t.done_at IS NOT NULL AND t.invalidated_at IS NULL)
+            WHERE s.status = '" . SubmissionStatus::EnCours->value . "' OR (t.done_at IS NOT NULL AND t.invalidated_at IS NULL)
             GROUP BY t.email
             ORDER BY total DESC
             LIMIT 20

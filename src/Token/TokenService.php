@@ -55,7 +55,7 @@ final readonly class TokenService
         if ($old['done_at']) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
-        if ($old['sub_status'] !== 'en_cours') {
+        if ($old['sub_status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
 
@@ -114,7 +114,7 @@ final readonly class TokenService
         if (!$submission) {
             return ['success' => false, 'message' => 'Soumission introuvable.'];
         }
-        if ($submission['status'] !== 'en_cours') {
+        if ($submission['status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'Seules les soumissions en cours peuvent être annulées.'];
         }
 
@@ -128,7 +128,7 @@ final readonly class TokenService
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = 'annule' WHERE id = ?")
+            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = '" . SubmissionStatus::Annule->value . "' WHERE id = ?")
                 ->execute([$now, $submissionId]);
 
             $pdo->prepare('UPDATE tokens SET done_at = ? WHERE submission_id = ? AND done_at IS NULL')
@@ -182,7 +182,7 @@ final readonly class TokenService
         if ($tok['done_at']) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
-        if ($tok['status'] !== 'en_cours') {
+        if ($tok['status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
 
@@ -236,7 +236,7 @@ final readonly class TokenService
         if ($tok['done_at']) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
-        if ($tok['status'] !== 'en_cours') {
+        if ($tok['status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
 

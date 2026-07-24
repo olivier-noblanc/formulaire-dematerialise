@@ -30,7 +30,7 @@ final class SubmissionViewController extends BaseController
         }
 
         $data = json_decode($sub['data'], true) ?: [];
-        $status = $sub['status'] ?? 'en_cours';
+        $status = $sub['status'] ?? SubmissionStatus::EnCours->value;
         $user = App::auth()->getUser();
         $isAdmin = App::auth()->isAdminEffective();
         $isFormOwner = App::auth()->isFormOwner((string)$sub['form_id']);

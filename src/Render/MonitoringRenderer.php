@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Rendu de la page de surveillance / monitoring (monitoring.php).
@@ -350,11 +351,11 @@ final class MonitoringRenderer
             $rows = '';
             foreach ($by_form_stats as $by_form_stat) {
                 $bf_total  = (int) $by_form_stat['total'];
-                $bf_valide = (int) $by_form_stat['valide'];
+                $bf_valide = (int) $by_form_stat[SubmissionStatus::Valide->value];
                 $bf_rate   = $bf_total > 0 ? round(($bf_valide / $bf_total) * 100, 1) : 0;
                 $label     = \App\Core\App::html()->escape((string) $by_form_stat['label']);
-                $en_cours  = (int) $by_form_stat['en_cours'];
-                $refuse    = (int) $by_form_stat['refuse'];
+                $en_cours  = (int) $by_form_stat[SubmissionStatus::EnCours->value];
+                $refuse    = (int) $by_form_stat[SubmissionStatus::Refuse->value];
 
                 $rows .= <<<HTML
                               <tr>

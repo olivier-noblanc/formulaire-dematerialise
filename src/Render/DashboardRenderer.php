@@ -39,7 +39,7 @@ final class DashboardRenderer
         $smtp_ok     = (bool) ($sys['smtp_ok'] ?? false);
         $smtp_label  = \App\Core\App::html()->escape((string) ($sys['smtp_label'] ?? 'Non configuré'));
         $last_backup = \App\Core\App::html()->escape((string) ($sys['last_backup'] ?? '—'));
-        $en_cours    = (int) ($sys['en_cours'] ?? 0);
+        $en_cours    = (int) ($sys[SubmissionStatus::EnCours->value] ?? 0);
         $smtp_dot    = $smtp_ok ? '🟢' : '🔴';
 
         return <<<HTML
@@ -245,7 +245,7 @@ final class DashboardRenderer
     {
         $d      = json_decode((string) ($row['data'] ?? ''), true);
         $nom    = \App\Core\App::html()->escape(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
-        $status = (string) ($row['status'] ?? 'en_cours');
+        $status = (string) ($row['status'] ?? SubmissionStatus::EnCours->value);
         $deadline_field = (string) ($row['deadline_field'] ?? '');
         $deadline_val   = $deadline_field !== '' && $deadline_field !== '0'
             ? ((string) ($d[$deadline_field] ?? ''))
@@ -458,8 +458,8 @@ final class DashboardRenderer
         $content .= self::stats(
             (int) ($stats['total'] ?? 0),
             (int) ($stats['complet'] ?? 0),
-            (int) ($stats['valide'] ?? 0),
-            (int) ($stats['refuse'] ?? 0)
+            (int) ($stats[SubmissionStatus::Valide->value] ?? 0),
+            (int) ($stats[SubmissionStatus::Refuse->value] ?? 0)
         );
         $content .= self::toolbar($filtre, $form_f, $search, $forms);
         $content .= self::statusLegend();

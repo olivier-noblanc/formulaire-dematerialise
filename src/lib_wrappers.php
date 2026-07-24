@@ -13,6 +13,7 @@ use App\Core\DateHelper;
 use App\Core\SlugHelper;
 use App\Core\TestModeService;
 use App\Core\UuidHelper;
+use App\Enum\SubmissionStatus;
 use App\Render\AdminFormsRenderer;
 use App\Render\AdminSettingsRenderer;
 use App\Render\JargonService;
@@ -39,7 +40,7 @@ function parse_date(string $date_str): ?DateTimeImmutable
 /**
  * @return array{days_left: ?int, urgency: string, style: string}
  */
-function calculate_deadline_urgency(string $deadlineVal, string $status = 'en_cours'): array
+function calculate_deadline_urgency(string $deadlineVal, string $status = SubmissionStatus::EnCours->value): array
 {
     return DateHelper::calculateDeadlineUrgency($deadlineVal, $status);
 }

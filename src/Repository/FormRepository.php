@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\SubmissionStatus;
+
 final class FormRepository extends BaseRepository
 {
     /**
@@ -371,9 +373,9 @@ final class FormRepository extends BaseRepository
         /** @var array<int, array{label: string, total: int, en_cours: int, valide: int, refuse: int}> $result */
         $result = $this->fetchAll(
             "SELECT f.label, COUNT(s.id) as total,
-                    SUM(CASE WHEN s.status = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
-                    SUM(CASE WHEN s.status = 'valide' THEN 1 ELSE 0 END) as valide,
-                    SUM(CASE WHEN s.status = 'refuse' THEN 1 ELSE 0 END) as refuse
+                    SUM(CASE WHEN s.status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
+                    SUM(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
+                    SUM(CASE WHEN s.status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse
              FROM forms f
              LEFT JOIN submissions s ON s.form_id = f.id
              GROUP BY f.id

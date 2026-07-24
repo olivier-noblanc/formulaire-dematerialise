@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Contrôleur de la page d'accueil (index.php).
@@ -39,8 +40,8 @@ final class IndexController extends BaseController
             $subRepo = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
             $counts = $subRepo->countByStatusForSubmitter($user);
             $my_total    = $counts['total'];
-            $my_en_cours = $counts['en_cours'];
-            $my_valide   = $counts['valide'];
+            $my_en_cours = $counts[SubmissionStatus::EnCours->value];
+            $my_valide   = $counts[SubmissionStatus::Valide->value];
         }
 
         // U-06 (part 2) : empty-state guidé pour agent sans aucune demande.

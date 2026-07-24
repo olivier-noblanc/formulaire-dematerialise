@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Enum\SubmissionStatus;
+
 /**
  * Date parsing and deadline urgency helpers.
  */
@@ -51,10 +53,10 @@ final class DateHelper
      * Calculate deadline urgency.
      * @return array{days_left: ?int, urgency: string, style: string}
      */
-    public static function calculateDeadlineUrgency(string $deadlineVal, string $status = 'en_cours'): array
+    public static function calculateDeadlineUrgency(string $deadlineVal, string $status = SubmissionStatus::EnCours->value): array
     {
         $result = ['days_left' => null, 'urgency' => '', 'style' => ''];
-        if ($deadlineVal === '' || $deadlineVal === '0' || $status !== 'en_cours') {
+        if ($deadlineVal === '' || $deadlineVal === '0' || $status !== SubmissionStatus::EnCours->value) {
             return $result;
         }
         $ts = self::parseDeadlineDate($deadlineVal);

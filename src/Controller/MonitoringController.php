@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Contrôleur de la page Surveillance (monitoring).
@@ -22,9 +23,9 @@ final class MonitoringController extends BaseController
 
         $gstats = App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
         $totalSub = $gstats['total'];
-        $valideSub = $gstats['valide'];
-        $refuseSub = $gstats['refuse'];
-        $enCoursSub = $gstats['en_cours'];
+        $valideSub = $gstats[SubmissionStatus::Valide->value];
+        $refuseSub = $gstats[SubmissionStatus::Refuse->value];
+        $enCoursSub = $gstats[SubmissionStatus::EnCours->value];
         $tauxValidation = $gstats['taux_validation'];
 
         // Query #2: Blocked tokens

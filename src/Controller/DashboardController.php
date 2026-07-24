@@ -210,7 +210,7 @@ final class DashboardController extends BaseController
         // remplis. Batch (2 requêtes SQL pour N soumissions) pour éviter le N+1.
         $rows_for_validator_status = [];
         foreach ($rows as $row) {
-            $st = (string) ($row['status'] ?? 'en_cours');
+            $st = (string) ($row['status'] ?? SubmissionStatus::EnCours->value);
             if ($st === SubmissionStatus::EnCours->value || $st === SubmissionStatus::Valide->value) {
                 $rows_for_validator_status[] = $row;
             }
@@ -220,9 +220,9 @@ final class DashboardController extends BaseController
         $forms  = $this->formRepo->findAll(true);
         $gstats = \App\Core\App::getInstance()->get(\App\Stats\StatsService::class)->getGlobalStats();
         $total  = $gstats['total'];
-        $complet = $gstats['valide'] + $gstats['refuse'];
-        $valide  = $gstats['valide'];
-        $refuse  = $gstats['refuse'];
+        $complet = $gstats[SubmissionStatus::Valide->value] + $gstats[SubmissionStatus::Refuse->value];
+        $valide  = $gstats[SubmissionStatus::Valide->value];
+        $refuse  = $gstats[SubmissionStatus::Refuse->value];
 
         // État du système — S5-B / Action 3
         $sys_smtp_host  = $this->settings->get('smtp_host', '');
@@ -275,14 +275,14 @@ final class DashboardController extends BaseController
             'smtp_ok'     => $sys_smtp_ok,
             'smtp_label'  => $sys_smtp_label,
             'last_backup' => $sys_last_backup,
-            'en_cours'    => $gstats['en_cours'] ?? 0,
+            SubmissionStatus::EnCours->value => $gstats[SubmissionStatus::EnCours->value] ?? 0,
         ];
 
         $stats = [
             'total'   => $total,
             'complet' => $complet,
-            'valide'  => $valide,
-            'refuse'  => $refuse,
+            SubmissionStatus::Valide->value => $valide,
+            SubmissionStatus::Refuse->value => $refuse,
         ];
 
         $filters = [

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\SubmissionStatus;
+
 final class SubmissionRepository extends BaseRepository
 {
     /**
@@ -14,7 +16,7 @@ final class SubmissionRepository extends BaseRepository
         /** @var array{id: string, submitted_at: string|null}|null $result */
         $result = $this->fetchOne(
             "SELECT id, submitted_at FROM submissions
-             WHERE form_id = ? AND submitted_by = ? AND status = 'en_cours'
+             WHERE form_id = ? AND submitted_by = ? AND status = '" . SubmissionStatus::EnCours->value . "'
              ORDER BY submitted_at DESC LIMIT 1",
             [$formId, $submittedBy]
         );
@@ -99,7 +101,7 @@ final class SubmissionRepository extends BaseRepository
     public function cancelById(string $id): bool
     {
         return $this->execute(
-            "UPDATE submissions SET status = 'annule', closed_at = datetime('now') WHERE id = ? AND status = 'en_cours'",
+            "UPDATE submissions SET status = '" . SubmissionStatus::Annule->value . "', closed_at = datetime('now') WHERE id = ? AND status = '" . SubmissionStatus::EnCours->value . "'",
             [$id]
         );
     }
@@ -311,7 +313,7 @@ final class SubmissionRepository extends BaseRepository
                 CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
             ) as avg_seconds
             FROM submissions s
-            WHERE s.status = 'valide' AND s.closed_at IS NOT NULL"
+            WHERE s.status = '" . SubmissionStatus::Valide->value . "' AND s.closed_at IS NOT NULL"
         );
         return (float) ($result['avg_seconds'] ?? 0);
     }
@@ -327,7 +329,7 @@ final class SubmissionRepository extends BaseRepository
                    f.label as form_label, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
-             WHERE s.status = 'en_cours' AND f.deadline_field != ''"
+             WHERE s.status = '" . SubmissionStatus::EnCours->value . "' AND f.deadline_field != ''"
         );
         return $result;
     }
@@ -352,7 +354,7 @@ final class SubmissionRepository extends BaseRepository
     public function countOldByRetention(int $retentionMonths): int
     {
         $result = $this->fetchOne(
-            "SELECT COUNT(*) as cnt FROM submissions WHERE status != 'en_cours' AND closed_at < datetime('now', '-' || ? || ' months')",
+            "SELECT COUNT(*) as cnt FROM submissions WHERE status != '" . SubmissionStatus::EnCours->value . "' AND closed_at < datetime('now', '-' || ? || ' months')",
             [$retentionMonths]
         );
         return (int) ($result['cnt'] ?? 0);
@@ -410,7 +412,7 @@ final class SubmissionRepository extends BaseRepository
     {
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM submissions
-             WHERE status IN ('valide', 'refuse') AND closed_at IS NOT NULL AND closed_at < ?",
+             WHERE status IN ('" . SubmissionStatus::Valide->value . "', '" . SubmissionStatus::Refuse->value . "') AND closed_at IS NOT NULL AND closed_at < ?",
             [$cutoff]
         );
         return (int) ($result['cnt'] ?? 0);
@@ -423,7 +425,7 @@ final class SubmissionRepository extends BaseRepository
     {
         $rows = $this->fetchAll(
             "SELECT id FROM submissions
-             WHERE status IN ('valide', 'refuse') AND closed_at IS NOT NULL AND closed_at < ?",
+             WHERE status IN ('" . SubmissionStatus::Valide->value . "', '" . SubmissionStatus::Refuse->value . "') AND closed_at IS NOT NULL AND closed_at < ?",
             [$cutoff]
         );
         return array_column($rows, 'id');
@@ -462,7 +464,7 @@ final class SubmissionRepository extends BaseRepository
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM submission_validator_data svd
              JOIN submissions s ON s.id = svd.submission_id
-             WHERE s.status IN ('valide', 'refuse') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
+             WHERE s.status IN ('" . SubmissionStatus::Valide->value . "', '" . SubmissionStatus::Refuse->value . "') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
             [$cutoff]
         );
         return (int) ($result['cnt'] ?? 0);
@@ -515,13 +517,13 @@ final class SubmissionRepository extends BaseRepository
             'SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status',
             [$email]
         );
-        $result = ['total' => 0, 'en_cours' => 0, 'valide' => 0];
+        $result = ['total' => 0, SubmissionStatus::EnCours->value => 0, SubmissionStatus::Valide->value => 0];
         foreach ($rows as $row) {
             $result['total'] += (int) $row['cnt'];
-            if ($row['status'] === 'en_cours') {
-                $result['en_cours'] = (int) $row['cnt'];
-            } elseif ($row['status'] === 'valide') {
-                $result['valide'] = (int) $row['cnt'];
+            if ($row['status'] === SubmissionStatus::EnCours->value) {
+                $result[SubmissionStatus::EnCours->value] = (int) $row['cnt'];
+            } elseif ($row['status'] === SubmissionStatus::Valide->value) {
+                $result[SubmissionStatus::Valide->value] = (int) $row['cnt'];
             }
         }
         return $result;
@@ -562,7 +564,7 @@ final class SubmissionRepository extends BaseRepository
         /** @var array{cnt: int}|null $result */
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM submissions
-             WHERE submitted_by = ? AND status = 'en_cours' AND closed_at IS NULL",
+             WHERE submitted_by = ? AND status = '" . SubmissionStatus::EnCours->value . "' AND closed_at IS NULL",
             [$email]
         );
         return (int) ($result['cnt'] ?? 0);
