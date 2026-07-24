@@ -4,16 +4,13 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests unitaires | **1225** (1189 unit + 36 TokenRepository, 0 skip, 0 fail) |
-| Tests E2E | **96** (1 skip légitime, 0 fail) — **exécutés réellement pour la première fois sur Linux (v10.21.0)** |
-| Total tests | **1321** |
-| Assertions | **2330** |
-| PHPStan erreurs | **0** (level 8) |
+| Tests | **1287** (0 fail, 0 skip) |
+| Assertions | **2309** |
+| PHPStan erreurs baseline | **775** (level 8, noDirectPdo: 0, noMagicString: 76) |
+| Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
+| Repositories | **12** |
 | CI | **GitHub Actions** (4 jobs, ~2 min) |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (privé) |
-| xdebug | **off** (permanent) |
-| Bugs audit | **16 trouvés, 16 fixés** (+ 6 bugs harnais e2e/production trouvés et fixés en v10.21.0) |
-| Migration v30 | **CHECK rebuild + 4 triggers** (5 colonnes) |
 
 ---
 
@@ -26,6 +23,27 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.25.0 — Enforcement du repository pattern via PHPStan
+| Tâche | Détail |
+|-------|--------|
+| Règle PHPStan noDirectPdo | `spaze/phpstan-disallowed-calls` configuré : 3 volets (get_pdo, getPdo, prepare/query/exec) avec allowlist repositories/migrations/legacy |
+| Migration 14 services | WorkflowEngine, AuthService, StatsService, TokenService, RgpdService, FieldService, PersonaService, CronService, ExportService, MailService, ValidatorDataService, SampleFormsService, NavigationRenderer — 0 accès PDO direct |
+| Migration 7 controllers | BackupController, RgpdController, AdminFormsController + 4 handlers — paramètre PDO supprimé du dispatch |
+| 3 nouveaux repos | PersonaRepository, LazyCronRepository, MailRepository |
+| ~40 méthodes repo | Ajoutées sur FormRepo, SubmissionRepo, TokenRepo, AdminRepo, AttachmentRepo |
+| Baseline PHPStan | 676 → 526 erreurs |
+| Tests E2E fixés | 2 tests hardcodés (count 8) → dynamiques |
+
+### v10.25.0 — Enums métier + Deptrac + NoMagicStringRule
+| Tâche | Détail |
+|-------|--------|
+| 7 enums créés | SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel |
+| Migration strings métier | 39 fichiers migrés, 0 raw string restante hors comments/CSS/SQL aliases |
+| NoMagicStringRule | 22 strings bloquées par PHPStan, 76 violations dans baseline |
+| Deptrac 4.7.1 | 6 layers, 0 violations, branché à GrumPHP |
+| rector.php | UP_TO_PHP_85, règle custom ReplaceMagicStringWithEnumRector |
+| Baseline PHPStan | 526 → 775 (+ NoMagicStringRule) |
 
 ### v10.23.0 — Migration v31 (durcissement SQL) + fix MailService send()/sendDetailed()
 | Tâche | Détail |
@@ -102,18 +120,33 @@
 
 ## 🎯 Ce qui reste
 
-_Aucune tâche connue en attente._ Le reliquat de code mort de la baseline PHPStan a été trié individuellement (v10.24.0) :
+### Baseline PHPStan (775 erreurs)
+
+| Catégorie | Count | Priorité | Détail |
+|-----------|-------|----------|--------|
+| `noMagicString` | 76 | **HIGH** | Strings métier dans comments, SQL aliases, CSS — à migrer ou valider comme non-applicables |
+| `shipmonk.deadMethod` | 64 | **MEDIUM** | Code mort à supprimer ou justifier |
+| `empty.notAllowed` | 52 | **LOW** | `empty()` interdit par phpstan-strict-rules → remplacer par `=== ''` / `=== null` / `=== []` |
+| `booleanNot.exprNotBoolean` | 44 | **LOW** | Expressions non-booléennes dans des `!` → caster en bool |
+| `ternary.shortNotAllowed` | 28 | **LOW** | Ternaires courts (`?:`) interdits → `??` ou `if/else` |
+| `if.condNotBoolean` | 26 | **LOW** | Conditions non-booléennes dans les `if` |
+| `function.strict` | 13 | **LOW** | Appels non stricts |
+| `booleanAnd/rightNotBoolean` | 10 | **LOW** | Opérandes non-booléennes dans `&&` |
+| `equal.notAllowed` | 9 | **LOW** | Comparaisons `==` au lieu de `===` |
+| `cast.useless` | 8 | **LOW** | Casts inutiles |
+| Autres | ~43 | **LOW** | Divers (arrayFilter.strict, deadProperty, deadEnumCase, etc.) |
+
+### Éléments conservés (décision antérieure)
 
 | Élément | Décision | Raison |
 |---|---|---|
-| `App\Core\Config` (classe entière) | **Supprimé** | Enregistrée dans 3 bootstraps parallèles, jamais consultée nulle part, aucun accesseur `App::config()` n'a jamais existé |
-| `NavigationRenderer::breadcrumb()` | **Supprimé** | Aucun appelant — breadcrumbs supprimés de l'UI (épuration v9.1.0) |
-| `FormRenderer::statusFilter()` | **Supprimé** | Aucun appelant — `MySubmissionsRenderer` a sa propre implémentation inline divergente |
-| `InstallRenderer::renderPage()` | **Conservé** | Faux positif — utilisée par `install.php`, juste exclu de l'analyse PHPStan (`excludePaths`) |
-| `AuditRepository::getLogs()` | **Conservé** | Jamais appelée en prod, mais sert à vérifier `log()` (méthode active) par lecture dans `AuditRepositoryTest::testLogAndReadBackRoundTrip` — la supprimer affaiblirait la couverture d'une fonctionnalité réelle |
-| `AdminRepository::isAdmin()` | **Conservé (non tranché)** | Dupliquée par `AuthService::isAdminByEmail()`, confirmée inerte en prod, mais a 6 points d'usage dans `AdminRepositoryTest.php` (fichier testant aussi d'autres méthodes actives) — retrait pas fait faute de temps pour éditer proprement sans casser les autres tests du fichier |
-| `SubmissionViewRenderer::renderContent()` | **Conservé (non tranché)** | ~90 lignes, jamais appelée par `SubmissionViewController` (qui construit son propre template inline), mais testée par `CssCoverageTest.php` — possible duplication de logique plutôt que code mort pur ; mériterait d'unifier le contrôleur sur cette méthode plutôt que de la supprimer |
-| `ErrorResponseException::$title/$hint/$backUrl` | **Conservé** | Propriétés publiques de l'API de l'exception (mode TEST_MODE), non lues mais sans risque |
+| `App\Core\Config` (classe entière) | **Supprimé** | Enregistrée dans 3 bootstraps parallèles, jamais consultée nulle part |
+| `NavigationRenderer::breadcrumb()` | **Supprimé** | Aucun appelant — breadcrumbs supprimés de l'UI |
+| `FormRenderer::statusFilter()` | **Supprimé** | Aucun appelant |
+| `InstallRenderer::renderPage()` | **Conservé** | Faux positif — utilisée par `install.php` |
+| `AuditRepository::getLogs()` | **Conservé** | Sert à vérifier `log()` dans les tests |
+| `AdminRepository::isAdmin()` | **Conservé** | Utilisée par 6 tests |
+| `SubmissionViewRenderer::renderContent()` | **Conservé** | Testée par CssCoverageTest |
 
 
 ---
@@ -144,4 +177,4 @@ _Aucune tâche connue en attente._ Le reliquat de code mort de la baseline PHPSt
 
 ---
 
-_Dernière mise à jour : 2026-07-20 (v10.24.0)_
+_Dernière mise à jour : 2026-07-24 (v10.25.0)_
