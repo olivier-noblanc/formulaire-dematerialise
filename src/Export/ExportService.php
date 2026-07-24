@@ -151,7 +151,7 @@ final readonly class ExportService
     public function exportCsv(array $options = []): void
     {
         if (!$this->authService->isAdmin()) {
-            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous n\'avez pas accès à l\'export CSV. Cette fonctionnalité est réservée aux administrateurs.');
+            new \App\Render\ErrorRenderer()->errorPage(403, 'Accès refusé', 'Vous n\'avez pas accès à l\'export CSV. Cette fonctionnalité est réservée aux administrateurs.');
         }
 
         header('Content-Type: text/csv; charset=utf-8');

@@ -37,7 +37,7 @@ final class AdminAlertsRenderer
 
         $html .= '  <h1><span aria-hidden="true">🔔</span> Alertes paramétrables</h1>' . "\n";
         $html .= "\n";
-        $html .= '  ' . (new \App\Render\ErrorRenderer())->messages(['success' => $successMsg, 'error' => $errorMsg]) . "\n";
+        $html .= '  ' . new \App\Render\ErrorRenderer()->messages(['success' => $successMsg, 'error' => $errorMsg]) . "\n";
         $html .= "\n";
 
         // ── Script status ──

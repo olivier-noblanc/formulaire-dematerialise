@@ -19,7 +19,7 @@ final class FormJsonValidator
     {
         $errors = [];
         $warnings = [];
-        $valid_field_types = ['text', 'email', 'date', 'select', 'checkbox', 'textarea', 'file'];
+        $valid_field_types = [\App\Enum\FieldType::Text->value, \App\Enum\FieldType::Email->value, \App\Enum\FieldType::Date->value, \App\Enum\FieldType::Select->value, \App\Enum\FieldType::Checkbox->value, \App\Enum\FieldType::Textarea->value, \App\Enum\FieldType::File->value];
 
         // ── Top-level structure ──────────────────────────────────
         if (!isset($data['schema_version'])) {
@@ -89,7 +89,7 @@ final class FormJsonValidator
                         $errors[] = "$prefix.field_name = \"{$f['field_name']}\" est en doublon. Chaque champ doit avoir un field_name unique.";
                     }
                     $seen_field_names[] = strtolower($f['field_name']);
-                    if (($f['filled_by'] ?? 'demandeur') === 'validator') {
+                    if (($f['filled_by'] ?? \App\Enum\FilledBy::Demandeur->value) === \App\Enum\FilledBy::Validator->value) {
                         $seen_validator_field_names[] = strtolower($f['field_name']);
                     }
                 } else {
@@ -97,7 +97,7 @@ final class FormJsonValidator
                 }
 
                 // options for select
-                if (($f['field_type'] ?? '') === 'select') {
+                if (($f['field_type'] ?? '') === \App\Enum\FieldType::Select->value) {
                     if (empty($f['options']) || !is_array($f['options'])) {
                         $errors[] = "$prefix : field_type = \"select\" mais \"options\" est manquant ou n'est pas un tableau. Exemple : \"options\": [\"Option A\", \"Option B\"]";
                     } else {
@@ -110,7 +110,7 @@ final class FormJsonValidator
                             $warnings[] = "$prefix : field_type = \"select\" mais options ne contient que " . count($f['options']) . ' valeur(s). Un sélecteur devrait avoir au moins 2 options.';
                         }
                     }
-                } elseif (isset($f['options']) && $f['field_type'] !== 'select') {
+                } elseif (isset($f['options']) && $f['field_type'] !== \App\Enum\FieldType::Select->value) {
                     $warnings[] = "$prefix : field_type = \"{$f['field_type']}\" mais \"options\" est renseigné. Seul le type \"select\" utilise les options.";
                 }
 
@@ -140,7 +140,7 @@ final class FormJsonValidator
                 if (isset($f['filled_by'])) {
                     if (!is_string($f['filled_by'])) {
                         $errors[] = "$prefix.filled_by doit être une chaîne. Trouvé : " . gettype($f['filled_by']);
-                    } elseif (!in_array($f['filled_by'], ['demandeur', 'validator'], true)) {
+                    } elseif (!in_array($f['filled_by'], [\App\Enum\FilledBy::Demandeur->value, \App\Enum\FilledBy::Validator->value], true)) {
                         $errors[] = "$prefix.filled_by = \"{$f['filled_by']}\" n'est pas valide. Valeurs attendues : \"demandeur\" ou \"validator\".";
                     }
                 }
@@ -150,17 +150,17 @@ final class FormJsonValidator
                 }
 
                 // Cohérence : si filled_by='validator' et validator_step vide → warning
-                if (($f['filled_by'] ?? '') === 'validator' && empty($f['validator_step'])) {
+                if (($f['filled_by'] ?? '') === \App\Enum\FilledBy::Validator->value && empty($f['validator_step'])) {
                     $warnings[] = "$prefix : filled_by = \"validator\" mais validator_step est vide. Le champ sera disponible sur TOUTES les étapes (champ global). Précisez validator_step pour le limiter à une étape.";
                 }
 
                 // Cohérence : si filled_by='demandeur' et validator_step renseigné → warning
-                if (($f['filled_by'] ?? 'demandeur') === 'demandeur' && !empty($f['validator_step'])) {
+                if (($f['filled_by'] ?? \App\Enum\FilledBy::Demandeur->value) === \App\Enum\FilledBy::Demandeur->value && !empty($f['validator_step'])) {
                     $warnings[] = "$prefix : filled_by = \"demandeur\" mais validator_step est renseigné. validator_step sera ignoré pour les champs demandeur. Mettez filled_by = \"validator\" si vous voulez un champ validateur.";
                 }
 
                 // Si filled_by='validator', vérifier que validator_step correspond à un step existant
-                if (($f['filled_by'] ?? '') === 'validator' && !empty($f['validator_step'])) {
+                if (($f['filled_by'] ?? '') === \App\Enum\FilledBy::Validator->value && !empty($f['validator_step'])) {
                     $step_match = false;
                     foreach ($data['steps'] ?? [] as $s) {
                         if (($s['label'] ?? '') === $f['validator_step'] || ($s['id'] ?? '') === $f['validator_step']) {
@@ -177,11 +177,11 @@ final class FormJsonValidator
                 if (isset($f['visibility'])) {
                     if (!is_string($f['visibility'])) {
                         $errors[] = "$prefix.visibility doit être une chaîne.";
-                    } elseif (!in_array($f['visibility'], ['all', 'owner_only'], true)) {
+                    } elseif (!in_array($f['visibility'], ['all', \App\Enum\FieldVisibility::OwnerOnly->value], true)) {
                         $errors[] = "$prefix.visibility = \"{$f['visibility']}\" n'est pas valide. Valeurs attendues : \"all\" ou \"owner_only\".";
                     }
                 }
-                if (($f['visibility'] ?? 'all') === 'owner_only' && ($f['field_type'] ?? '') !== 'file') {
+                if (($f['visibility'] ?? 'all') === \App\Enum\FieldVisibility::OwnerOnly->value && ($f['field_type'] ?? '') !== \App\Enum\FieldType::File->value) {
                     $warnings[] = "$prefix : visibility = \"owner_only\" mais field_type n'est pas \"file\". visibility sera ignoré.";
                 }
             }

@@ -27,7 +27,7 @@ final class AuthService implements AuthInterface
 
     private function getMailer(): MailInterface
     {
-        if ($this->mail === null) {
+        if (!$this->mail instanceof \App\Contract\MailInterface) {
             $this->mail = App::mail();
         }
         return $this->mail;
@@ -158,7 +158,7 @@ final class AuthService implements AuthInterface
                 test_json_response(['error' => 'Accès refusé', 'redirect' => 'index.php?p=admin_access']);
             }
             if (class_exists(\App\Render\ErrorRenderer::class)) {
-                (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous devez être administrateur pour accéder à cette page.');
+                new \App\Render\ErrorRenderer()->errorPage(403, 'Accès refusé', 'Vous devez être administrateur pour accéder à cette page.');
             }
             exit;
         }
@@ -247,7 +247,7 @@ final class AuthService implements AuthInterface
             $stmt = $pdo->prepare("SELECT 1 FROM admin_requests WHERE email = ? AND status = 'pending'");
             $stmt->execute([$email]);
             if ($stmt->fetch() !== false) {
-                return ['success' => false, 'reason' => 'pending'];
+                return ['success' => false, 'reason' => \App\Enum\AdminRequestStatus::Pending->value];
             }
 
             $token = bin2hex(random_bytes(32));

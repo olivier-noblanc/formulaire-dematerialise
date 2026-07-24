@@ -106,7 +106,7 @@ final class BackupRenderer
 
     <h1><span aria-hidden="true">💾</span> Sauvegarde et restauration</h1>
 
-    <?= (new ErrorRenderer())->messages(['success' => $success_msg, 'error' => $error_msg, 'info' => $info_msg]) ?>
+    <?= new ErrorRenderer()->messages(['success' => $success_msg, 'error' => $error_msg, 'info' => $info_msg]) ?>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!--  4. STATISTIQUES DE LA BASE                               -->
@@ -347,7 +347,7 @@ final class BackupRenderer
             $info_msg
         );
 
-        echo (new NavigationRenderer())->page(
+        echo new NavigationRenderer()->page(
             'Sauvegarde et restauration',
             'backup',
             $page_css,

@@ -80,7 +80,7 @@ final class AdminSettingsRenderer
           <a href="#section-email-summary">📋 Résumé</a>
         </nav>
 
-        <?= (new ErrorRenderer())->messages(['success' => $success_msg, 'error' => $error_msg, 'info' => $test_msg]) ?>
+        <?= new ErrorRenderer()->messages(['success' => $success_msg, 'error' => $error_msg, 'info' => $test_msg]) ?>
 
         <?php if ($mail_dry_run === '1'): ?>
             <div class="warning-box">

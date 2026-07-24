@@ -11,7 +11,7 @@ use App\Repository\FormRepository;
  */
 final readonly class SampleFormsService
 {
-    public function __construct(private FormRepository $formRepo)
+    public function __construct(private FormRepository $formRepository)
     {
     }
 
@@ -24,7 +24,7 @@ final readonly class SampleFormsService
      */
     public function populate(): string
     {
-        $pdo = $this->formRepo->pdo();
+        $pdo = $this->formRepository->pdo();
 
         try {
             $pdo->beginTransaction();
@@ -35,17 +35,17 @@ final readonly class SampleFormsService
                     'label' => 'Accueil agent',
                     'description' => "Formulaire d'accueil d'un nouvel agent — prise de poste, création des accès et formalités d'entrée",
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
-                        ['label' => "Date d'arrivée", 'field_type' => 'date', 'field_name' => 'date_arrivee', 'required' => 1, 'card_group' => 'Identité'],
-                        ['label' => "Type d'arrivée", 'field_type' => 'select', 'field_name' => 'type_arrivee', 'options' => ['Nouveau recruté', 'Mutation entrante', 'Contrat temporaire', 'Stage'], 'required' => 1, 'card_group' => 'Identité'],
-                        ['label' => 'Direction / Service', 'field_type' => 'text', 'field_name' => 'direction_service', 'required' => 1, 'card_group' => 'Affectation'],
-                        ['label' => 'Bureau / Poste', 'field_type' => 'text', 'field_name' => 'bureau_poste', 'required' => 0, 'card_group' => 'Affectation'],
-                        ['label' => 'Création compte SI', 'field_type' => 'checkbox', 'field_name' => 'creation_compte_si', 'required' => 0, 'card_group' => 'IT'],
-                        ['label' => 'Création messagerie', 'field_type' => 'checkbox', 'field_name' => 'creation_messagerie', 'required' => 0, 'card_group' => 'IT'],
-                        ['label' => 'Matériel informatique', 'field_type' => 'select', 'field_name' => 'materiel_info', 'options' => ['PC portable', 'PC fixe', 'Tablette', 'Aucun'], 'required' => 0, 'card_group' => 'IT'],
-                        ['label' => 'Badge accès', 'field_type' => 'checkbox', 'field_name' => 'badge_acces', 'required' => 0, 'card_group' => 'Logistique'],
-                        ['label' => 'Remarques', 'field_type' => 'textarea', 'field_name' => 'remarques', 'required' => 0, 'card_group' => 'Divers'],
-                        ['label' => 'Décision de validation', 'field_type' => 'select', 'field_name' => 'decision_validation', 'options' => ['Accepté', 'Accepté avec réserves', 'Refusé'], 'required' => 1, 'card_group' => 'Décision', 'filled_by' => 'validator', 'validator_step' => 'Validation manager'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
+                        ['label' => "Date d'arrivée", 'field_type' => \App\Enum\FieldType::Date->value, 'field_name' => 'date_arrivee', 'required' => 1, 'card_group' => 'Identité'],
+                        ['label' => "Type d'arrivée", 'field_type' => \App\Enum\FieldType::Select->value, 'field_name' => 'type_arrivee', 'options' => ['Nouveau recruté', 'Mutation entrante', 'Contrat temporaire', 'Stage'], 'required' => 1, 'card_group' => 'Identité'],
+                        ['label' => 'Direction / Service', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'direction_service', 'required' => 1, 'card_group' => 'Affectation'],
+                        ['label' => 'Bureau / Poste', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'bureau_poste', 'required' => 0, 'card_group' => 'Affectation'],
+                        ['label' => 'Création compte SI', 'field_type' => \App\Enum\FieldType::Checkbox->value, 'field_name' => 'creation_compte_si', 'required' => 0, 'card_group' => 'IT'],
+                        ['label' => 'Création messagerie', 'field_type' => \App\Enum\FieldType::Checkbox->value, 'field_name' => 'creation_messagerie', 'required' => 0, 'card_group' => 'IT'],
+                        ['label' => 'Matériel informatique', 'field_type' => \App\Enum\FieldType::Select->value, 'field_name' => 'materiel_info', 'options' => ['PC portable', 'PC fixe', 'Tablette', 'Aucun'], 'required' => 0, 'card_group' => 'IT'],
+                        ['label' => 'Badge accès', 'field_type' => \App\Enum\FieldType::Checkbox->value, 'field_name' => 'badge_acces', 'required' => 0, 'card_group' => 'Logistique'],
+                        ['label' => 'Remarques', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'remarques', 'required' => 0, 'card_group' => 'Divers'],
+                        ['label' => 'Décision de validation', 'field_type' => \App\Enum\FieldType::Select->value, 'field_name' => 'decision_validation', 'options' => ['Accepté', 'Accepté avec réserves', 'Refusé'], 'required' => 1, 'card_group' => 'Décision', 'filled_by' => \App\Enum\FilledBy::Validator->value, 'validator_step' => 'Validation manager'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -59,14 +59,14 @@ final readonly class SampleFormsService
                     'label' => 'Départ agent',
                     'description' => "Formulaire de départ d'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat",
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
-                        ['label' => 'Date de départ', 'field_type' => 'date', 'field_name' => 'date_depart', 'required' => 1, 'card_group' => 'Identité'],
-                        ['label' => 'Motif de départ', 'field_type' => 'select', 'field_name' => 'motif_depart', 'options' => ['Démission', 'Retraite', 'Mutation sortante', 'Fin de contrat', 'Licenciement'], 'required' => 1, 'card_group' => 'Identité'],
-                        ['label' => 'Restitution matériel', 'field_type' => 'checkbox', 'field_name' => 'restitution_materiel', 'required' => 0, 'card_group' => 'Logistique'],
-                        ['label' => 'Clôture compte SI', 'field_type' => 'checkbox', 'field_name' => 'cloture_compte_si', 'required' => 0, 'card_group' => 'IT'],
-                        ['label' => 'Clôture messagerie', 'field_type' => 'checkbox', 'field_name' => 'cloture_messagerie', 'required' => 0, 'card_group' => 'IT'],
-                        ['label' => 'Remarques', 'field_type' => 'textarea', 'field_name' => 'remarques', 'required' => 0, 'card_group' => 'Divers'],
-                        ['label' => 'Bilan de départ', 'field_type' => 'textarea', 'field_name' => 'bilan_depart', 'required' => 0, 'card_group' => 'Décision', 'filled_by' => 'validator', 'validator_step' => 'Validation manager'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité', 'hint' => 'Nom Prénom'],
+                        ['label' => 'Date de départ', 'field_type' => \App\Enum\FieldType::Date->value, 'field_name' => 'date_depart', 'required' => 1, 'card_group' => 'Identité'],
+                        ['label' => 'Motif de départ', 'field_type' => \App\Enum\FieldType::Select->value, 'field_name' => 'motif_depart', 'options' => ['Démission', 'Retraite', 'Mutation sortante', 'Fin de contrat', 'Licenciement'], 'required' => 1, 'card_group' => 'Identité'],
+                        ['label' => 'Restitution matériel', 'field_type' => \App\Enum\FieldType::Checkbox->value, 'field_name' => 'restitution_materiel', 'required' => 0, 'card_group' => 'Logistique'],
+                        ['label' => 'Clôture compte SI', 'field_type' => \App\Enum\FieldType::Checkbox->value, 'field_name' => 'cloture_compte_si', 'required' => 0, 'card_group' => 'IT'],
+                        ['label' => 'Clôture messagerie', 'field_type' => \App\Enum\FieldType::Checkbox->value, 'field_name' => 'cloture_messagerie', 'required' => 0, 'card_group' => 'IT'],
+                        ['label' => 'Remarques', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'remarques', 'required' => 0, 'card_group' => 'Divers'],
+                        ['label' => 'Bilan de départ', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'bilan_depart', 'required' => 0, 'card_group' => 'Décision', 'filled_by' => \App\Enum\FilledBy::Validator->value, 'validator_step' => 'Validation manager'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -80,11 +80,11 @@ final readonly class SampleFormsService
                     'label' => 'Accès SI',
                     'description' => "Demande de création, modification ou suppression d'un accès au système d'information",
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité'],
-                        ['label' => 'Type de demande', 'field_type' => 'select', 'field_name' => 'type_demande', 'options' => ['Création', 'Modification', 'Suppression'], 'required' => 1, 'card_group' => 'Demande'],
-                        ['label' => 'Application / SI concerné', 'field_type' => 'text', 'field_name' => 'application_si', 'required' => 1, 'card_group' => 'Demande'],
-                        ['label' => 'Justification', 'field_type' => 'textarea', 'field_name' => 'justification', 'required' => 0, 'card_group' => 'Demande'],
-                        ['label' => 'Date souhaitée', 'field_type' => 'date', 'field_name' => 'date_souhaitee', 'required' => 0, 'card_group' => 'Demande'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Identité'],
+                        ['label' => 'Type de demande', 'field_type' => \App\Enum\FieldType::Select->value, 'field_name' => 'type_demande', 'options' => ['Création', 'Modification', 'Suppression'], 'required' => 1, 'card_group' => 'Demande'],
+                        ['label' => 'Application / SI concerné', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'application_si', 'required' => 1, 'card_group' => 'Demande'],
+                        ['label' => 'Justification', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'justification', 'required' => 0, 'card_group' => 'Demande'],
+                        ['label' => 'Date souhaitée', 'field_type' => \App\Enum\FieldType::Date->value, 'field_name' => 'date_souhaitee', 'required' => 0, 'card_group' => 'Demande'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -96,13 +96,13 @@ final readonly class SampleFormsService
                     'label' => 'Formation',
                     'description' => 'Demande de formation',
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
-                        ['label' => 'Intitulé de la formation', 'field_type' => 'text', 'field_name' => 'intitule_formation', 'required' => 1, 'card_group' => 'Formation'],
-                        ['label' => 'Organisme', 'field_type' => 'text', 'field_name' => 'organisme', 'required' => 0, 'card_group' => 'Formation'],
-                        ['label' => 'Date début', 'field_type' => 'date', 'field_name' => 'date_debut', 'required' => 1, 'card_group' => 'Formation'],
-                        ['label' => 'Date fin', 'field_type' => 'date', 'field_name' => 'date_fin', 'required' => 0, 'card_group' => 'Formation'],
-                        ['label' => 'Coût estimé (€)', 'field_type' => 'text', 'field_name' => 'cout_estime', 'required' => 0, 'card_group' => 'Formation'],
-                        ['label' => 'Justification', 'field_type' => 'textarea', 'field_name' => 'justification', 'required' => 1, 'card_group' => 'Formation'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                        ['label' => 'Intitulé de la formation', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'intitule_formation', 'required' => 1, 'card_group' => 'Formation'],
+                        ['label' => 'Organisme', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'organisme', 'required' => 0, 'card_group' => 'Formation'],
+                        ['label' => 'Date début', 'field_type' => \App\Enum\FieldType::Date->value, 'field_name' => 'date_debut', 'required' => 1, 'card_group' => 'Formation'],
+                        ['label' => 'Date fin', 'field_type' => \App\Enum\FieldType::Date->value, 'field_name' => 'date_fin', 'required' => 0, 'card_group' => 'Formation'],
+                        ['label' => 'Coût estimé (€)', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'cout_estime', 'required' => 0, 'card_group' => 'Formation'],
+                        ['label' => 'Justification', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'justification', 'required' => 1, 'card_group' => 'Formation'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -114,11 +114,11 @@ final readonly class SampleFormsService
                     'label' => 'Mutation',
                     'description' => 'Demande de mutation',
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
-                        ['label' => 'Direction actuelle', 'field_type' => 'text', 'field_name' => 'direction_actuelle', 'required' => 1, 'card_group' => 'Mutation'],
-                        ['label' => 'Direction demandée', 'field_type' => 'text', 'field_name' => 'direction_demandee', 'required' => 1, 'card_group' => 'Mutation'],
-                        ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Mutation'],
-                        ['label' => 'Date souhaitée', 'field_type' => 'date', 'field_name' => 'date_souhaitee', 'required' => 0, 'card_group' => 'Mutation'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                        ['label' => 'Direction actuelle', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'direction_actuelle', 'required' => 1, 'card_group' => 'Mutation'],
+                        ['label' => 'Direction demandée', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'direction_demandee', 'required' => 1, 'card_group' => 'Mutation'],
+                        ['label' => 'Motif', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Mutation'],
+                        ['label' => 'Date souhaitée', 'field_type' => \App\Enum\FieldType::Date->value, 'field_name' => 'date_souhaitee', 'required' => 0, 'card_group' => 'Mutation'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager actuel', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -131,9 +131,9 @@ final readonly class SampleFormsService
                     'label' => 'Matériel — Prescription',
                     'description' => 'Prescription de matériel informatique ou bureautique',
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
-                        ['label' => 'Type de matériel', 'field_type' => 'select', 'field_name' => 'type_materiel', 'options' => ['PC portable', 'PC fixe', 'Écran', 'Imprimante', 'Clavier/Souris', 'Autre'], 'required' => 1, 'card_group' => 'Matériel'],
-                        ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Matériel'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                        ['label' => 'Type de matériel', 'field_type' => \App\Enum\FieldType::Select->value, 'field_name' => 'type_materiel', 'options' => ['PC portable', 'PC fixe', 'Écran', 'Imprimante', 'Clavier/Souris', 'Autre'], 'required' => 1, 'card_group' => 'Matériel'],
+                        ['label' => 'Motif', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Matériel'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -145,11 +145,11 @@ final readonly class SampleFormsService
                     'label' => 'Remboursement / Avance de frais',
                     'description' => 'Demande de remboursement ou avance de frais',
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
-                        ['label' => 'Type de demande', 'field_type' => 'select', 'field_name' => 'type_demande', 'options' => ['Remboursement', 'Avance'], 'required' => 1, 'card_group' => 'Finance'],
-                        ['label' => 'Montant (€)', 'field_type' => 'text', 'field_name' => 'montant', 'required' => 1, 'card_group' => 'Finance'],
-                        ['label' => 'Justificatif', 'field_type' => 'file', 'field_name' => 'justificatif', 'required' => 1, 'card_group' => 'Finance'],
-                        ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Finance'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                        ['label' => 'Type de demande', 'field_type' => \App\Enum\FieldType::Select->value, 'field_name' => 'type_demande', 'options' => ['Remboursement', 'Avance'], 'required' => 1, 'card_group' => 'Finance'],
+                        ['label' => 'Montant (€)', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'montant', 'required' => 1, 'card_group' => 'Finance'],
+                        ['label' => 'Justificatif', 'field_type' => \App\Enum\FieldType::File->value, 'field_name' => 'justificatif', 'required' => 1, 'card_group' => 'Finance'],
+                        ['label' => 'Motif', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Finance'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -161,10 +161,10 @@ final readonly class SampleFormsService
                     'label' => 'Sortie hors plages',
                     'description' => 'Autorisation de sortie hors plages horaires',
                     'fields' => [
-                        ['label' => 'Nom complet', 'field_type' => 'text', 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
-                        ['label' => 'Date', 'field_type' => 'date', 'field_name' => 'date_sortie', 'required' => 1, 'card_group' => 'Demande'],
-                        ['label' => 'Heure départ', 'field_type' => 'text', 'field_name' => 'heure_depart', 'required' => 1, 'card_group' => 'Demande', 'hint' => 'ex : 16h30'],
-                        ['label' => 'Motif', 'field_type' => 'textarea', 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Demande'],
+                        ['label' => 'Nom complet', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'nom_complet', 'required' => 1, 'card_group' => 'Agent'],
+                        ['label' => 'Date', 'field_type' => \App\Enum\FieldType::Date->value, 'field_name' => 'date_sortie', 'required' => 1, 'card_group' => 'Demande'],
+                        ['label' => 'Heure départ', 'field_type' => \App\Enum\FieldType::Text->value, 'field_name' => 'heure_depart', 'required' => 1, 'card_group' => 'Demande', 'hint' => 'ex : 16h30'],
+                        ['label' => 'Motif', 'field_type' => \App\Enum\FieldType::Textarea->value, 'field_name' => 'motif', 'required' => 1, 'card_group' => 'Demande'],
                     ],
                     'steps' => [
                         ['label' => 'Validation manager', 'ordre' => 1, 'recipients' => ['manager@dreets.gouv.fr']],
@@ -175,12 +175,12 @@ final readonly class SampleFormsService
             $created = 0;
             $skipped = 0;
             foreach ($sample_forms as $sample_form) {
-                if ($this->formRepo->findIdBySlug($sample_form['slug']) !== null) {
+                if ($this->formRepository->findIdBySlug($sample_form['slug']) !== null) {
                     $skipped++;
                     continue;
                 }
 
-                $form_uuid = $this->formRepo->create([
+                $form_uuid = $this->formRepository->create([
                     'slug' => $sample_form['slug'],
                     'label' => $sample_form['label'],
                     'description' => $sample_form['description'],
@@ -190,7 +190,7 @@ final readonly class SampleFormsService
                 if (isset($sample_form['fields']) && !in_array($sample_form['fields'], ['', '0', []], true)) {
                     $ordre = 1;
                     foreach ($sample_form['fields'] as $f) {
-                        $this->formRepo->createField([
+                        $this->formRepository->createField([
                             'form_id' => $form_uuid,
                             'label' => $f['label'],
                             'field_type' => $f['field_type'] ?? '',
@@ -200,7 +200,7 @@ final readonly class SampleFormsService
                             'ordre' => $ordre,
                             'card_group' => $f['card_group'] ?? 'Général',
                             'hint' => $f['hint'] ?? '',
-                            'filled_by' => !empty($f['filled_by']) && in_array($f['filled_by'], ['demandeur', 'validator'], true) ? $f['filled_by'] : 'demandeur',
+                            'filled_by' => isset($f['filled_by']) && ($f['filled_by'] !== '' && $f['filled_by'] !== '0') && in_array($f['filled_by'], [\App\Enum\FilledBy::Demandeur->value, \App\Enum\FilledBy::Validator->value], true) ? $f['filled_by'] : \App\Enum\FilledBy::Demandeur->value,
                             'validator_step' => $f['validator_step'] ?? '',
                         ]);
                         $ordre++;
@@ -209,17 +209,15 @@ final readonly class SampleFormsService
 
                 if (isset($sample_form['steps']) && !in_array($sample_form['steps'], ['', '0', []], true)) {
                     foreach ($sample_form['steps'] as $s) {
-                        $step_uuid = $this->formRepo->createStep([
+                        $step_uuid = $this->formRepository->createStep([
                             'form_id' => $form_uuid,
                             'label' => $s['label'],
                             'ordre' => $s['ordre'] ?? 0,
                             'actif' => 1,
                         ]);
 
-                        if (!empty($s['recipients'])) {
-                            foreach ($s['recipients'] as $email) {
-                                $this->formRepo->createRecipient($step_uuid, $email);
-                            }
+                        foreach ($s['recipients'] as $email) {
+                            $this->formRepository->createRecipient($step_uuid, $email);
                         }
                     }
                 }
