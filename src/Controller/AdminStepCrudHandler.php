@@ -39,7 +39,7 @@ final class AdminStepCrudHandler
     /**
      * @return array{error?: string, redirect?: string}
      */
-    public static function handleUpdateStep(\PDO $pdo, string $get_form_id): array
+    public static function handleUpdateStep(string $get_form_id): array
     {
         [$step_id, $err] = AdminFormsHandlers::postStepId();
         if ($err !== null) {
@@ -89,7 +89,7 @@ final class AdminStepCrudHandler
     /**
      * @return array{error?: string, redirect?: string}|null
      */
-    public static function handleDeleteStep(\PDO $pdo, string $get_form_id): ?array
+    public static function handleDeleteStep(string $get_form_id): ?array
     {
         [$step_id, $err] = AdminFormsHandlers::postStepId();
         if ($err !== null) {

@@ -61,6 +61,59 @@ final class Database implements DatabaseInterface
         return $this->pdoTest;
     }
 
+    // ── SQLite admin operations ──────────────────────────────────
+
+    /**
+     * Re-enable foreign key enforcement (session-scoped in SQLite).
+     *
+     * Already set on connection, but useful to re-enable explicitly
+     * before a transaction that depends on FK cascades.
+     */
+    public function enableForeignKeys(): void
+    {
+        $this->getPdo()->exec('PRAGMA foreign_keys = ON');
+    }
+
+    public function getPageCount(): int
+    {
+        $stmt = $this->getPdo()->query('PRAGMA page_count');
+        return $stmt !== false ? (int) $stmt->fetchColumn() : 0;
+    }
+
+    public function getFreelistCount(): int
+    {
+        $stmt = $this->getPdo()->query('PRAGMA freelist_count');
+        return $stmt !== false ? (int) $stmt->fetchColumn() : 0;
+    }
+
+    public function getPageSize(): int
+    {
+        $stmt = $this->getPdo()->query('PRAGMA page_size');
+        return $stmt !== false ? (int) $stmt->fetchColumn() : 0;
+    }
+
+    public function vacuum(): void
+    {
+        $this->getPdo()->exec('VACUUM');
+    }
+
+    // ── Transaction helpers ──────────────────────────────────────
+
+    public function beginTransaction(): void
+    {
+        $this->getPdo()->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->getPdo()->commit();
+    }
+
+    public function rollBack(): void
+    {
+        $this->getPdo()->rollBack();
+    }
+
     public function release(): void
     {
         if ($this->pdo instanceof \PDO) {

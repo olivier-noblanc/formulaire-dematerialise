@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Contract\MailInterface;
-use App\Core\Database;
+use App\Repository\MailRepository;
 use App\Settings\SettingsService;
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -14,7 +14,7 @@ use PHPMailer\PHPMailer\PHPMailer;
  */
 final readonly class MailService implements MailInterface
 {
-    public function __construct(private Database $database, private SettingsService $settingsService)
+    public function __construct(private MailRepository $mailRepo, private SettingsService $settingsService)
     {
     }
 
@@ -170,13 +170,14 @@ final readonly class MailService implements MailInterface
                 $actor = 'system';
             }
             $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'CLI');
-            $this->database->getPdo()->prepare(
-                'INSERT INTO mail_log (id, created_at, recipient, subject, status, error_message, smtp_log, actor, ip)
-                 VALUES (?, datetime(\'now\'), ?, ?, ?, ?, ?, ?, ?)'
-            )->execute([
-                \generate_uuid(), $to, $subject, $result['status'],
-                $result['error'], $result['smtp_log'], $actor, $ip,
-            ]);
+            $this->mailRepo->insertLog(
+                \generate_uuid(),
+                $to,
+                $subject,
+                $result,
+                $actor,
+                $ip
+            );
         } catch (\Throwable $e) {
             error_log('mail_log insert error: ' . $e->getMessage());
         }
@@ -189,24 +190,11 @@ final readonly class MailService implements MailInterface
      */
     public function getRecentLogs(int $limit = 30): array
     {
-        static $tableExists = null;
         try {
-            $pdo = $this->database->getPdo();
-            if ($tableExists === null) {
-                $stmt = $pdo->query(
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='mail_log'"
-                );
-                $cnt = $stmt !== false ? (int) $stmt->fetchColumn() : 0;
-                $tableExists = ($cnt > 0);
-            }
-            if (!$tableExists) {
+            if (!$this->mailRepo->tableExists()) {
                 return [];
             }
-
-            $stmt = $pdo->prepare('SELECT id, created_at, recipient, subject, status, error_message, smtp_log, actor, ip FROM mail_log ORDER BY created_at DESC LIMIT ?');
-            $stmt->execute([$limit]);
-            /** @var array<int, array{id: string, created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}> */
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            return $this->mailRepo->getRecentLogs($limit);
         } catch (\Throwable $e) {
             error_log('getRecentLogs error: ' . $e->getMessage());
             return [];

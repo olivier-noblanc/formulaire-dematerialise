@@ -1,0 +1,88 @@
+parameters:
+    # ═══════════════════════════════════════════════════════════
+    # VOLET 1 : get_pdo() — point d'entrée global vers PDO
+    # ═══════════════════════════════════════════════════════════
+    disallowedFunctionCalls:
+        -
+            function: 'get_pdo()'
+            message: 'Direct PDO access via get_pdo() is forbidden outside the Repository layer. Inject the appropriate Repository instead.'
+            errorIdentifier: 'noDirectPdo'
+            allowIn:
+                - src/Repository/*
+                - src/Core/Database.php
+                - src/Core/DatabaseInterface.php
+                - classes/migrations/*
+                - helpers.php
+                - install.php
+                - remind.php
+                - alert_check.php
+
+    # ═══════════════════════════════════════════════════════════
+    # VOLET 2 : Database::getPdo() — accès instance via DI
+    # ═══════════════════════════════════════════════════════════
+    disallowedMethodCalls:
+        -
+            method: 'App\Core\Database::getPdo()'
+            message: 'Direct PDO access via ->getPdo() is forbidden outside the Repository layer. Inject the appropriate Repository instead.'
+            errorIdentifier: 'noDirectPdo'
+            allowIn:
+                - src/Repository/*
+                - src/Core/Database.php
+                - src/Core/DatabaseInterface.php
+                - classes/migrations/*
+                - helpers.php
+                - install.php
+                - remind.php
+                - alert_check.php
+
+    # ═══════════════════════════════════════════════════════════
+    # VOLET 3 : SQL brut sur PDO (prepare, query, exec)
+    # ═══════════════════════════════════════════════════════════
+        -
+            method: 'PDO::prepare()'
+            message: 'Direct SQL access via PDO::prepare() is forbidden outside the Repository layer. Use a Repository method instead.'
+            errorIdentifier: 'noDirectPdo'
+            allowIn:
+                - src/Repository/*
+                - src/Core/Database.php
+                - classes/migrations/*
+                - classes/DatabaseMigrations.php
+                - helpers.php
+                - remind.php
+                - alert_check.php
+        -
+            method: 'PDO::query()'
+            message: 'Direct SQL access via PDO::query() is forbidden outside the Repository layer. Use a Repository method instead.'
+            errorIdentifier: 'noDirectPdo'
+            allowIn:
+                - src/Repository/*
+                - src/Core/Database.php
+                - classes/migrations/*
+                - classes/DatabaseMigrations.php
+                - helpers.php
+                - remind.php
+                - alert_check.php
+        -
+            method: 'PDO::exec()'
+            message: 'Direct SQL access via PDO::exec() is forbidden outside the Repository layer. Use a Repository method instead.'
+            errorIdentifier: 'noDirectPdo'
+            allowIn:
+                - src/Repository/*
+                - src/Core/Database.php
+                - classes/migrations/*
+                - classes/DatabaseMigrations.php
+                - helpers.php
+                - remind.php
+                - alert_check.php
+
+    disallowedStaticCalls:
+        -
+            method: 'PDO::exec()'
+            message: 'Direct SQL access via PDO::exec() is forbidden outside the Repository layer.'
+            errorIdentifier: 'noDirectPdo'
+            allowIn:
+                - src/Repository/*
+                - src/Core/Database.php
+                - classes/migrations/*
+                - remind.php
+                - alert_check.php

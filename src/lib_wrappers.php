@@ -375,9 +375,9 @@ function populate_sample_forms(\PDO $pdo): string
 /**
  * @return array{error?: string, form_id?: string, redirect?: string, validation_html?: string, preserved_json?: string, filename?: string, json_output?: string}|null
  */
-function handle_admin_action(\PDO $pdo, string $action, string $get_form_id = ''): ?array
+function handle_admin_action(string $action, string $get_form_id = ''): ?array
 {
-    return \App\Controller\AdminFormsHandlers::dispatch($pdo, $action, $get_form_id);
+    return \App\Controller\AdminFormsHandlers::dispatch($action, $get_form_id);
 }
 
 // ── ADMIN SETTINGS HANDLERS (lib/admin_settings_handlers.php → App\Controller\AdminSettingsHandlers) ──

@@ -49,6 +49,7 @@ use App\Repository\AttachmentRepository;
 use App\Repository\AlertRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
+use App\Repository\MailRepository;
 
 $app = App::getInstance();
 
@@ -70,7 +71,8 @@ $app->set(TokenRepository::class, new TokenRepository($db));
     $app->set(HtmlService::class, new HtmlService());
     $app->set(SecurityService::class, new SecurityService($app->get(HtmlService::class)));
     $app->set(AuditLogService::class, new AuditLogService($app->get(AuditRepository::class)));
-    $app->set(MailService::class, new MailService($db, $app->get(SettingsService::class)));
+    $app->set(MailRepository::class, new MailRepository($db));
+    $app->set(MailService::class, new MailService($app->get(MailRepository::class), $app->get(SettingsService::class)));
     $app->set(FieldService::class, new FieldService($db));
     $app->set(ConditionEvaluator::class, new ConditionEvaluator());
     $app->set(PersonaService::class, new PersonaService($db));
@@ -91,7 +93,7 @@ $app->set(TokenService::class, new TokenService(
     $app->get(MailService::class),
     $app->get(SubmissionRepository::class)
 ));
-$app->set(ValidatorDataService::class, new ValidatorDataService($db, $app->get(FieldService::class)));
+$app->set(ValidatorDataService::class, new ValidatorDataService($app->get(SubmissionRepository::class), $app->get(FormRepository::class), $app->get(FieldService::class)));
 $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRepository::class)));
 $app->set(CronService::class, new CronService($db));
 $app->set(ValidationService::class, new ValidationService());

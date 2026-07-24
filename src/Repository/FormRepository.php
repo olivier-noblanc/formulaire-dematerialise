@@ -443,4 +443,32 @@ final class FormRepository extends BaseRepository
             }
         }
     }
+
+    /**
+     * @return array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}>
+     */
+    public function getValidatorFields(string $formId, ?string $stepId = null): array
+    {
+        $sql = "SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? AND filled_by = 'validator'";
+        $params = [$formId];
+
+        if ($stepId !== null && $stepId !== '') {
+            $stepLabel = $this->getStepLabel($stepId) ?? '';
+
+            $sql .= " AND (validator_step = ? OR validator_step = ? OR validator_step = '')";
+            $params[] = $stepId;
+            $params[] = $stepLabel;
+        }
+
+        $sql .= ' ORDER BY ordre, id';
+        /** @var array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
+        $result = $this->fetchAll($sql, $params);
+        return $result;
+    }
+
+    public function getStepLabel(string $stepId): ?string
+    {
+        $result = $this->fetchOne('SELECT label FROM steps WHERE id = ?', [$stepId]);
+        return $result !== null ? (string) $result['label'] : null;
+    }
 }

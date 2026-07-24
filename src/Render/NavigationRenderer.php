@@ -63,23 +63,8 @@ final class NavigationRenderer
         $pending_count = 0;
         $my_en_cours_count = 0;
         try {
-            $pdo = App::db()->getPdo();
-            $stmt = $pdo->prepare("
-                SELECT COUNT(*) FROM tokens t
-                JOIN submissions s ON s.id = t.submission_id
-                WHERE t.email = ? AND t.done_at IS NULL
-                  AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))
-                  AND s.closed_at IS NULL
-            ");
-            $stmt->execute([$user]);
-            $pending_count = (int) $stmt->fetchColumn();
-
-            $stmt2 = $pdo->prepare("
-                SELECT COUNT(*) FROM submissions
-                WHERE submitted_by = ? AND status = 'en_cours' AND closed_at IS NULL
-            ");
-            $stmt2->execute([$user]);
-            $my_en_cours_count = (int) $stmt2->fetchColumn();
+            $pending_count = App::tokenRepo()->countPendingForEmail($user);
+            $my_en_cours_count = App::submissionRepo()->countEnCoursBySubmitter($user);
         } catch (\Throwable $e) {
             error_log('render_nav pending_count error: ' . $e->getMessage());
             $pending_count = -1;
@@ -167,15 +152,10 @@ final class NavigationRenderer
         }
 
         $persona_users_json = '[]';
-        if ($is_admin && isset($pdo)) {
+        if ($is_admin) {
             try {
-                $persona_stmt = $pdo->query("
-                    SELECT DISTINCT submitted_by FROM submissions
-                    WHERE submitted_by IS NOT NULL AND submitted_by != ''
-                    ORDER BY submitted_by LIMIT 50
-                ");
+                $persona_rows = App::submissionRepo()->findDistinctSubmitters(50);
                 $persona_users = [];
-                $persona_rows = $persona_stmt !== false ? $persona_stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
                 foreach ($persona_rows as $persona_row) {
                     $persona_users[] = [
                         'email' => $persona_row,

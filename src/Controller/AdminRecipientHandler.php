@@ -14,7 +14,7 @@ final class AdminRecipientHandler
     /**
      * @return array{error?: string, redirect?: string}
      */
-    public static function handleAddRecipient(\PDO $pdo, string $get_form_id): array
+    public static function handleAddRecipient(string $get_form_id): array
     {
         [$step_id, $err] = AdminFormsHandlers::postStepId();
         if ($err !== null) {
@@ -43,7 +43,7 @@ final class AdminRecipientHandler
     /**
      * @return array{error?: string, redirect?: string}|null
      */
-    public static function handleDeleteRecipient(\PDO $pdo, string $get_form_id): ?array
+    public static function handleDeleteRecipient(string $get_form_id): ?array
     {
         $recipient_id = trim($_POST['recipient_id'] ?? '');
         if ($recipient_id === '' || $recipient_id === '0') {

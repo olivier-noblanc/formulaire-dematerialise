@@ -64,7 +64,7 @@ final class AdminFormCrudHandler
     /**
      * @return array<string, mixed>
      */
-    public static function handleDeleteForm(\PDO $pdo): array
+    public static function handleDeleteForm(): array
     {
         [$form_id, $err] = AdminFormsHandlers::postFormId();
         if ($err !== null) {
@@ -81,12 +81,13 @@ final class AdminFormCrudHandler
             return ['error' => 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.', 'form_id' => $form_id];
         }
         $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
-        $pdo->beginTransaction();
+        $db = App::db();
+        $db->beginTransaction();
         try {
             $formRepository->deleteCascade((string) $form_id);
-            $pdo->commit();
+            $db->commit();
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            $db->rollBack();
             error_log('handleDeleteForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -98,7 +99,7 @@ final class AdminFormCrudHandler
     /**
      * @return array<string, mixed>
      */
-    public static function handleDuplicateForm(\PDO $pdo): array
+    public static function handleDuplicateForm(): array
     {
         $source_id = trim($_POST['source_form_id'] ?? '');
         try {
@@ -118,12 +119,13 @@ final class AdminFormCrudHandler
         $new_slug = \generate_slug($new_label);
         $new_id = \generate_uuid();
 
-        $pdo->beginTransaction();
+        $db = App::db();
+        $db->beginTransaction();
         try {
             $formRepository->duplicate((string) $source_id, $new_id, $new_label, $new_slug, $src_form);
-            $pdo->commit();
+            $db->commit();
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            $db->rollBack();
             error_log('handleDuplicateForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }

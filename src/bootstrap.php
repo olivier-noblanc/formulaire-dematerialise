@@ -33,6 +33,7 @@ use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;
 use App\Repository\AuditRepository;
 use App\Repository\FormRepository;
+use App\Repository\MailRepository;
 use App\Repository\SettingsRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
@@ -78,7 +79,9 @@ $app->set(PersonaService::class, new PersonaService($db));
 
 // Services avec dépendances
 $settings = $app->get(SettingsService::class);
-$mail = new MailService($db, $settings);
+$mailRepo = new MailRepository($db);
+$app->set(MailRepository::class, $mailRepo);
+$mail = new MailService($mailRepo, $settings);
 $app->set(MailService::class, $mail);
 $app->get(AuthService::class)->setMailer($mail);
 
@@ -96,7 +99,7 @@ $attachmentRepo = $app->get(AttachmentRepository::class);
 $app->set(AttachmentService::class, new AttachmentService($attachmentRepo));
 
 // Validator data service
-$app->set(ValidatorDataService::class, new ValidatorDataService($db, $fields));
+$app->set(ValidatorDataService::class, new ValidatorDataService($app->get(SubmissionRepository::class), $app->get(FormRepository::class), $fields));
 
 // Cron service
 $app->set(CronService::class, new CronService($db));
