@@ -1,0 +1,5 @@
+services:
+    -
+        class: App\PHPStan\NoMagicStringRule
+        tags:
+            - phpstan.rules.rule
