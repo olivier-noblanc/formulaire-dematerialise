@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\SubmissionStatus;
 
 /**
  * Rendu de la page Statistiques.
@@ -35,9 +36,9 @@ final class StatsRenderer
 
         // Global stats values
         $total        = (int) ($globalStats['total'] ?? 0);
-        $valide       = (int) ($globalStats['valide'] ?? 0);
-        $enCours      = (int) ($globalStats['en_cours'] ?? 0);
-        $refuse       = (int) ($globalStats['refuse'] ?? 0);
+        $valide       = (int) ($globalStats[SubmissionStatus::Valide->value] ?? 0);
+        $enCours      = (int) ($globalStats[SubmissionStatus::EnCours->value] ?? 0);
+        $refuse       = (int) ($globalStats[SubmissionStatus::Refuse->value] ?? 0);
         $taux         = $h((string) ($globalStats['taux_validation'] ?? '0'));
         $avgDays      = $h((string) ($globalStats['avg_days'] ?? '—'));
         $today        = (int) ($globalStats['today'] ?? 0);
@@ -80,8 +81,8 @@ final class StatsRenderer
             $html .= '<div class="bar-chart">';
             foreach ($periodStatsAsc as $periodStatAsc) {
                 $pct = round(($periodStatAsc['total'] / $maxTotal) * 100);
-                $validePct  = $periodStatAsc['total'] > 0 ? round(($periodStatAsc['valide'] / $periodStatAsc['total']) * 100) : 0;
-                $enCoursPct = $periodStatAsc['total'] > 0 ? round(($periodStatAsc['en_cours'] / $periodStatAsc['total']) * 100) : 0;
+                $validePct  = $periodStatAsc['total'] > 0 ? round(($periodStatAsc[SubmissionStatus::Valide->value] / $periodStatAsc['total']) * 100) : 0;
+                $enCoursPct = $periodStatAsc['total'] > 0 ? round(($periodStatAsc[SubmissionStatus::EnCours->value] / $periodStatAsc['total']) * 100) : 0;
                 $refusePct  = max(0, 100 - $validePct - $enCoursPct);
                 $barWidth   = max($pct, 3);
                 $periodStr  = $h((string) $periodStatAsc['period']);
@@ -113,12 +114,12 @@ final class StatsRenderer
             $html .= '<table><thead><tr><th>Formulaire</th><th>Total</th><th>En cours</th><th>Validées</th><th>Refusées</th><th>Taux</th><th>Temps moyen</th></tr></thead><tbody>';
             foreach ($formStats as $formStat) {
                 $fsTotal  = (int) $formStat['total'];
-                $fsValide = (int) $formStat['valide'];
+                $fsValide = (int) $formStat[SubmissionStatus::Valide->value];
                 $fsRate   = $fsTotal > 0 ? round(($fsValide / $fsTotal) * 100, 1) : 0;
                 $fsAvg    = empty($formStat['avg_seconds']) ? '—' : round((float) $formStat['avg_seconds'] / 86400, 1) . ' j';
                 $fsLabel  = $h((string) $formStat['label']);
-                $fsEnC    = (int) $formStat['en_cours'];
-                $fsRef    = (int) $formStat['refuse'];
+                $fsEnC    = (int) $formStat[SubmissionStatus::EnCours->value];
+                $fsRef    = (int) $formStat[SubmissionStatus::Refuse->value];
                 $html .= '<tr><td><strong>' . $fsLabel . '</strong></td><td>' . $fsTotal . '</td>';
                 $html .= '<td><span class="badge badge-warn">' . $fsEnC . '</span></td>';
                 $html .= '<td><span class="badge badge-ok">' . $fsValide . '</span></td>';

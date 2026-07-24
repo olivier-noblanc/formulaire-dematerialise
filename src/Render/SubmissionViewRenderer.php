@@ -281,7 +281,7 @@ final class SubmissionViewRenderer
         $sub_id         = (string) ($ctx['sub_id'] ?? '');
         $sub            = $ctx['sub'] ?? [];
         $data           = $ctx['data'] ?? [];
-        $status         = (string) ($ctx['status'] ?? 'en_cours');
+        $status         = (string) ($ctx['status'] ?? SubmissionStatus::EnCours->value);
         $status_label   = (string) ($ctx['status_label'] ?? '');
         $status_cls     = (string) ($ctx['status_cls'] ?? '');
         $user           = (string) ($ctx['user'] ?? '');

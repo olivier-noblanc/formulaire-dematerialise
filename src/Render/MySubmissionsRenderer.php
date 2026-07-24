@@ -72,7 +72,7 @@ final class MySubmissionsRenderer
         } else {
             foreach ($submissions as $submission) {
                 $data   = json_decode($submission['data'], true);
-                $status = $submission['status'] ?? 'en_cours';
+                $status = $submission['status'] ?? SubmissionStatus::EnCours->value;
 
                 $statusLabel = match ($status) {
                     SubmissionStatus::Valide->value  => '✓ Validée',

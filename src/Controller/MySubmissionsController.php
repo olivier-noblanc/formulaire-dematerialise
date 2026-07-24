@@ -26,13 +26,13 @@ final class MySubmissionsController extends BaseController
             $params[] = '%' . $search . '%';
         }
         if ($statusFilter === SubmissionStatus::EnCours->value) {
-            $where[] = "s.status = 'en_cours'";
+            $where[] = "s.status = '" . SubmissionStatus::EnCours->value . "'";
         } elseif ($statusFilter === SubmissionStatus::Valide->value) {
-            $where[] = "s.status = 'valide'";
+            $where[] = "s.status = '" . SubmissionStatus::Valide->value . "'";
         } elseif ($statusFilter === SubmissionStatus::Refuse->value) {
-            $where[] = "s.status = 'refuse'";
+            $where[] = "s.status = '" . SubmissionStatus::Refuse->value . "'";
         } elseif ($statusFilter === SubmissionStatus::Annule->value) {
-            $where[] = "s.status = 'annule'";
+            $where[] = "s.status = '" . SubmissionStatus::Annule->value . "'";
         }
         $whereSql = implode(' AND ', $where);
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\SubmissionStatus;
+
 final class TokenRepository extends BaseRepository
 {
     /**
@@ -108,7 +110,7 @@ final class TokenRepository extends BaseRepository
                  JOIN steps st ON st.id = t.step_id
                  JOIN submissions s ON s.id = t.submission_id
                  JOIN forms f ON f.id = s.form_id
-                 WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = 'en_cours'
+                 WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = '" . SubmissionStatus::EnCours->value . "'
                    AND (f.label LIKE ? OR s.data LIKE ?)
                  ORDER BY t.sent_at DESC",
                 [$email, '%' . $search . '%', '%' . $search . '%']
@@ -126,7 +128,7 @@ final class TokenRepository extends BaseRepository
              JOIN steps st ON st.id = t.step_id
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
-             WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = 'en_cours'
+             WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = '" . SubmissionStatus::EnCours->value . "'
              ORDER BY t.sent_at DESC",
             [$email]
         );
@@ -205,7 +207,7 @@ final class TokenRepository extends BaseRepository
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM tokens t
              JOIN submissions s ON s.id = t.submission_id
-             WHERE s.status IN ('valide', 'refuse') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
+             WHERE s.status IN ('" . SubmissionStatus::Valide->value . "', '" . SubmissionStatus::Refuse->value . "') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
             [$cutoff]
         );
         return (int) ($result['cnt'] ?? 0);
@@ -240,7 +242,7 @@ final class TokenRepository extends BaseRepository
              JOIN steps st ON st.id = t.step_id
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
-             WHERE t.done_at IS NULL AND s.status = 'en_cours'
+             WHERE t.done_at IS NULL AND s.status = '" . SubmissionStatus::EnCours->value . "'
                AND CAST(strftime('%s', 'now') AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) > CAST(? AS REAL)
              ORDER BY t.sent_at ASC
              LIMIT ?",
@@ -256,7 +258,7 @@ final class TokenRepository extends BaseRepository
             "SELECT COUNT(*) as count FROM tokens t
              JOIN submissions s ON s.id = t.submission_id
              WHERE t.done_at IS NULL AND t.expires_at IS NOT NULL
-               AND t.expires_at < datetime('now') AND s.status = 'en_cours'"
+               AND t.expires_at < datetime('now') AND s.status = '" . SubmissionStatus::EnCours->value . "'"
         );
         return (int) ($result['count'] ?? 0);
     }

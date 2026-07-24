@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Validation;
 
+use App\Enum\SubmissionStatus;
+
 /**
  * Consolidated input validation service.
  *
@@ -111,7 +113,7 @@ final class ValidationService
     /** @param array{allowed_values?: list<string>} $options */
     private function validateStatus(string $value, array $options): string
     {
-        $allowed = $options['allowed_values'] ?? ['en_cours', 'valide', 'refuse'];
+        $allowed = $options['allowed_values'] ?? [SubmissionStatus::EnCours->value, SubmissionStatus::Valide->value, SubmissionStatus::Refuse->value];
         if (!in_array($value, $allowed, true)) {
             throw new \InvalidArgumentException('Statut invalide');
         }

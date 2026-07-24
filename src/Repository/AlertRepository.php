@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\SubmissionStatus;
+
 final class AlertRepository extends BaseRepository
 {
     /**
@@ -99,7 +101,7 @@ final class AlertRepository extends BaseRepository
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM alert_log al
              JOIN submissions s ON s.id = al.submission_id
-             WHERE s.status IN ('valide', 'refuse') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
+             WHERE s.status IN ('" . SubmissionStatus::Valide->value . "', '" . SubmissionStatus::Refuse->value . "') AND s.closed_at IS NOT NULL AND s.closed_at < ?",
             [$cutoff]
         );
         return (int) ($result['cnt'] ?? 0);
