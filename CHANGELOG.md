@@ -39,9 +39,8 @@ _Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration dupl
 ### 🐛 Bug backlog audit
 
 Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
-- **22 confirmés fixés** par les sessions précédentes (invalidated_at, optimistic locking, RGPD complet, REMOTE_ADDR, checkbox required, floor(), opérateurs sync, etc.)
-- **5 à vérifier** en détail (notify_who custom, sélecteur date limite, handler retirer admin, flash messages, motif refus)
-- **1 encore présent** : JargonService entier mort (#26) — à supprimer
+- **29 confirmés fixés** par les sessions précédentes (invalidated_at, optimistic locking, RGPD complet, REMOTE_ADDR, checkbox required, floor(), opérateurs sync, etc.)
+- **- **1 encore présent** : JargonService entier mort (#26) — à supprimer
 
 ---
 
