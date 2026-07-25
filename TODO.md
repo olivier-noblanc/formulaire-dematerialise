@@ -8,7 +8,7 @@
 | Assertions | **2309** |
 | PHPStan erreurs baseline | **506** (level 8, noDirectPdo: 0, noMagicString: 51) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
-| Repositories | **12** |
+| Repositories | **10** (LazyCronRepository, PersonaRepository supprimés) |
 | CI | **GitHub Actions** (4 jobs, ~2 min) |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (privé) |
 
@@ -120,21 +120,29 @@
 
 ## 🎯 Ce qui reste
 
-### Baseline PHPStan (775 erreurs)
+### Baseline PHPStan (506 erreurs)
 
 | Catégorie | Count | Priorité | Détail |
 |-----------|-------|----------|--------|
-| `noMagicString` | 76 | **HIGH** | Strings métier dans comments, SQL aliases, CSS — à migrer ou valider comme non-applicables |
-| `shipmonk.deadMethod` | 64 | **MEDIUM** | Code mort à supprimer ou justifier |
 | `empty.notAllowed` | 52 | **LOW** | `empty()` interdit par phpstan-strict-rules → remplacer par `=== ''` / `=== null` / `=== []` |
-| `booleanNot.exprNotBoolean` | 44 | **LOW** | Expressions non-booléennes dans des `!` → caster en bool |
+| `noMagicString` | 51 | **HIGH** | Strings métier dans comments, SQL aliases, CSS — à migrer ou valider comme non-applicables |
 | `ternary.shortNotAllowed` | 28 | **LOW** | Ternaires courts (`?:`) interdits → `??` ou `if/else` |
-| `if.condNotBoolean` | 26 | **LOW** | Conditions non-booléennes dans les `if` |
+| `booleanNot.exprNotBoolean` | 27 | **LOW** | Expressions non-booléennes dans des `!` → caster en bool |
+| `if.condNotBoolean` | 25 | **LOW** | Conditions non-booléennes dans les `if` |
+| `in_array strict` | 13 | **LOW** | `in_array()` sans 3ème paramètre `true` |
 | `function.strict` | 13 | **LOW** | Appels non stricts |
-| `booleanAnd/rightNotBoolean` | 10 | **LOW** | Opérandes non-booléennes dans `&&` |
 | `equal.notAllowed` | 9 | **LOW** | Comparaisons `==` au lieu de `===` |
-| `cast.useless` | 8 | **LOW** | Casts inutiles |
-| Autres | ~43 | **LOW** | Divers (arrayFilter.strict, deadProperty, deadEnumCase, etc.) |
+| `cast.useless` | 5 | **LOW** | Casts inutiles |
+| `booleanAnd/rightNotBoolean` | 4 | **LOW** | Opérandes non-booléennes dans `&&` |
+| Autres | ~179 | **LOW** | Divers (arrayFilter.strict, deadProperty, deadEnumCase, etc.) |
+
+### Bug backlog audit — 22/29 fixés, 1 présent
+
+**Confirmés fixés (22)** : #1 (invalidated_at), #2 (optimistic locking), #6 (RGPD complet), #14 (REMOTE_ADDR), #9 (checkbox required), #11 (sujet alerte), #4 (floor()), #7 (opérateurs sync), #15 (filled_by), #18 (approveRequest ciblé), #19 (garde-fou auto-suppression), #20 (strtolower owner), #21 (createOwnerById), #24 (array_filter strict), #27 (isFormOwner tracking)
+
+**À vérifier (5)** : #17 (notify_who custom sans email), #28 (sélecteur date limite), #22 (handler retirer admin), #23 (flash messages), #25 (motif refus obligatoire)
+
+**Encore présent (1)** : #26 — JargonService entier mort, à supprimer
 
 ### Éléments conservés (décision antérieure)
 
