@@ -1,7 +1,7 @@
 # Changelog — CircuitDémat
 
 ## [10.26.0] — 2026-07-25
-_Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration duplication, baseline PHPStan 775→506, outils mutation testing, Rector PHP 8.5._
+_Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration duplication, baseline PHPStan 775→506, outils mutation testing, Rector PHP 8.5, 47 nouveaux tests TokenService._
 
 ### 🐛 Dead code cleanup
 
@@ -33,8 +33,19 @@ _Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration dupl
 | PHPStan baseline | 775 | **506** |
 | deadMethod errors | 64 | **0** |
 | noMagicString errors | 76 | **51** |
-| Tests | 1287 | 1287 (0 fail) |
-| Bug backlog audit | 29 non vérifiés | **22 fixés, 5 à vérifier, 1 présent** |
+| Tests | 1287 | **1334** (0 fail) |
+| Bug backlog audit | 29 non vérifiés | **29/29 fixés, backlog vide** |
+
+### 🧪 Tests — Mutation testing (TokenService)
+
+- **47 nouveaux tests TokenService** ciblant les mutants échappés par infection
+- Vérification du format exact des audit_log (target, detail, action)
+- Tests des limites de relance (max atteint, count incrémenté)
+- Vérification de la création de tokens délégués et invalidated_at
+- Edge cases : cancel marque TOUS les tokens, validation entry a une date
+- **MSI TokenService** : 35% → **40%** (+5%)
+- **MSI ConditionEvaluator** : **77%**
+- **MSI ExportService** : **85%**
 
 ### 🐛 Bug backlog audit
 

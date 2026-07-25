@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1287** (0 fail, 0 skip) |
-| Assertions | **2309** |
+| Tests | **1334** (0 fail, 3 skip) |
+| Assertions | **2374** |
 | PHPStan erreurs baseline | **506** (level 8, noDirectPdo: 0, noMagicString: 51) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** (LazyCronRepository, PersonaRepository supprimés) |
