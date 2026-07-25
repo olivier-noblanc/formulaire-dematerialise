@@ -22,7 +22,7 @@ final class AdminFieldCrudHandler
         $form_id = trim($_POST['form_id'] ?? '');
         $ff_label = trim($_POST['ff_label'] ?? '');
         $ff_field_name = trim($_POST['ff_field_name'] ?? '');
-        $ff_field_type = trim($_POST['ff_field_type'] ?? FieldType::Text->value);
+        $ff_field_type = trim((string) ($_POST['ff_field_type'] ?? FieldType::Text->value));
         $ff_options_raw = trim($_POST['ff_options'] ?? '');
         $ff_required = isset($_POST['ff_required']) ? 1 : 0;
         $ff_ordre = (int) ($_POST['ff_ordre'] ?? 0);

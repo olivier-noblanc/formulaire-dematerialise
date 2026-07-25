@@ -1088,7 +1088,7 @@ Voici le document administratif à analyser :
             <?php endif; ?>
 
             <?php if (!empty($steps)): ?>
-                <?= (new \App\Render\LdapRenderer())->datalist('ldap-recipient-suggestions', '', 300) ?>
+                <?= new \App\Render\LdapRenderer()->datalist('ldap-recipient-suggestions', '', 300) ?>
             <?php endif; ?>
         </div>
     </div>
@@ -1430,6 +1430,6 @@ Voici le document administratif à analyser :
         if ($content === false) {
             $content = '';
         }
-        echo (new NavigationRenderer())->page('Gestion des formulaires', 'forms', $page_css, $content);
+        echo new NavigationRenderer()->page('Gestion des formulaires', 'forms', $page_css, $content);
     }
 }

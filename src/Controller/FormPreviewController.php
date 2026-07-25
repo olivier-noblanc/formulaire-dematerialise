@@ -21,7 +21,7 @@ final class FormPreviewController extends BaseController
         $form = $this->formRepo->findById($formId);
 
         if (!$form) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Formulaire introuvable',
                 'Le formulaire demandé n\'existe pas.',

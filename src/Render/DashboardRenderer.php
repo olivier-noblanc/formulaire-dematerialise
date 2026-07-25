@@ -124,7 +124,7 @@ final class DashboardRenderer
             $options .= "<option value=\"{$slug}\"{$sel}>{$label}</option>";
         }
 
-        $search_bar = (new FormRenderer())->searchBar('index.php?p=dashboard', $search, 'Rechercher (agent, formulaire, données)...', ['statut' => $filtre, 'form' => $form_f]);
+        $search_bar = new FormRenderer()->searchBar('index.php?p=dashboard', $search, 'Rechercher (agent, formulaire, données)...', ['statut' => $filtre, 'form' => $form_f]);
 
         return <<<HTML
               <div class="toolbar">
@@ -387,7 +387,7 @@ final class DashboardRenderer
         }
 
         $data_array = is_array($d) ? $d : [];
-        $html .= '              ' . (new FormRenderer())->submissionData($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
+        $html .= '              ' . new FormRenderer()->submissionData($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
 
         if ($status === SubmissionStatus::EnCours->value) {
             $html .= "              <hr style=\"margin:1rem 0;\">\n";

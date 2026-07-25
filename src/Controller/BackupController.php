@@ -219,7 +219,7 @@ final class BackupController extends BaseController
 
         $purgePreview ??= null;
 
-        (new BackupRenderer())->renderPage($dbPath, $dbStats, $purgePreview, $successMsg, $errorMsg, $infoMsg);
+        new BackupRenderer()->renderPage($dbPath, $dbStats, $purgePreview, $successMsg, $errorMsg, $infoMsg);
     }
 
     private function isValidSqliteDb(string $path): bool

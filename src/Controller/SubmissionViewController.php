@@ -24,7 +24,7 @@ final class SubmissionViewController extends BaseController
         $sub = $this->submissionRepo->findByIdWithForm($subId);
 
         if (!$sub) {
-            (new \App\Render\ErrorRenderer())->errorPage(404, 'Soumission introuvable',
+            new \App\Render\ErrorRenderer()->errorPage(404, 'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
                 'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.');
         }
@@ -40,7 +40,7 @@ final class SubmissionViewController extends BaseController
             if ($this->tokenRepo->existsForSubmissionAndEmail($subId, $user)) {
                 $isValidator = true;
             } else {
-                (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès non autorisé',
+                new \App\Render\ErrorRenderer()->errorPage(403, 'Accès non autorisé',
                     'Vous n\'avez pas les droits pour voir cette soumission.',
                     'Seuls l\'auteur, les validateurs et les administrateurs peuvent consulter une soumission.');
             }

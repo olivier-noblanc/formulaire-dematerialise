@@ -1,7 +1,7 @@
 # Changelog — CircuitDémat
 
 ## [10.26.0] — 2026-07-25
-_Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration duplication, baseline PHPStan 775→508, outils mutation testing._
+_Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration duplication, baseline PHPStan 775→506, outils mutation testing, Rector PHP 8.5._
 
 ### 🐛 Dead code cleanup
 
@@ -19,17 +19,18 @@ _Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration dupl
 
 ### 🔧 PHPStan — Baseline réduite
 
-- **Baseline** : 775 → 508 erreurs (-34%, -267 erreurs)
+- **Baseline** : 775 → 506 erreurs (-35%, -269 erreurs)
 - **deadMethod** : 64 → 0 (toutes les méthodes mortes supprimées ou justifiées)
 - **NoMagicStringRule** : 76 → 51 (9 strings allowlistées : types HTML5, noms colonnes SQL, classes CSS)
 - **phpstan-strict-rules** installé (auto-enregistré via extension-installer)
 - **infection/infection** installé (mutation testing, configuré sur src/Workflow, Token, Export)
+- **Rector** : 27 fichiers nettoyés via règles PHP 8.5 (NewMethodCallWithoutParentheses, NullToStrictString, RemoveUnusedVariable, FunctionFirstClassCallable, AddTypeToConst)
 
 ### 📊 Résultat
 
 | Métrique | Avant | Après |
 |----------|-------|-------|
-| PHPStan baseline | 775 | **508** |
+| PHPStan baseline | 775 | **506** |
 | deadMethod errors | 64 | **0** |
 | noMagicString errors | 76 | **51** |
 | Tests | 1287 | 1287 (0 fail) |

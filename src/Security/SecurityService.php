@@ -100,7 +100,7 @@ final class SecurityService implements SecurityInterface
                 test_json_response(['error' => 'Token CSRF invalide']);
             }
             if (class_exists(\App\Render\ErrorRenderer::class)) {
-                (new \App\Render\ErrorRenderer())->errorPage(403, 'Erreur de sécurité', 'Le jeton de sécurité (CSRF) est invalide ou manquant. Veuillez réessayer.');
+                new \App\Render\ErrorRenderer()->errorPage(403, 'Erreur de sécurité', 'Le jeton de sécurité (CSRF) est invalide ou manquant. Veuillez réessayer.');
             }
             exit;
         }

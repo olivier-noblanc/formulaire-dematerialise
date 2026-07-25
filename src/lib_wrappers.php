@@ -521,5 +521,5 @@ function render_admin_settings_after_main(): string
 // ── VIEW (NavigationRenderer) ─────────────────────────
 function render_footer(): string
 {
-    return (new \App\Render\NavigationRenderer())->footer();
+    return new \App\Render\NavigationRenderer()->footer();
 }

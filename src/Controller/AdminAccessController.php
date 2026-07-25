@@ -124,7 +124,7 @@ final class AdminAccessController extends BaseController
         ?>
   <h1><span aria-hidden="true">🔐</span> <?= \App\Core\App::html()->escape($pageTitle) ?></h1>
 
-  <?= (new \App\Render\ErrorRenderer())->messages(['success' => $successMsg, 'error' => $errorMsg, 'warning' => $warningMsg]) ?>
+  <?= new \App\Render\ErrorRenderer()->messages(['success' => $successMsg, 'error' => $errorMsg, 'warning' => $warningMsg]) ?>
 
   <?php if ($confirmData): ?>
   <div class="card">

@@ -30,9 +30,9 @@ $rules = _dbm_q($pdo, "
     ORDER BY ar.days_before DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-if (empty($rules)) {
+if ($rules === []) {
     echo "[{$now->format('Y-m-d H:i:s')}] Aucune regle d'alerte active.\n";
-    if (empty($GLOBALS['_lazy_cron_running'])) {
+    if (($GLOBALS['_lazy_cron_running'] ?? null) === null) {
         exit(0);
     }
 }

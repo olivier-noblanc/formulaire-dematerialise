@@ -14,7 +14,7 @@ final class MyFormsController extends BaseController
     {
         $user = App::auth()->getUser();
         if ($user === '') {
-            (new \App\Render\ErrorRenderer())->errorPage(403, 'Accès refusé', 'Vous devez être connecté.', '');
+            new \App\Render\ErrorRenderer()->errorPage(403, 'Accès refusé', 'Vous devez être connecté.', '');
         }
 
         $ownedForms = App::auth()->getOwnedForms($user);

@@ -27,7 +27,7 @@ final class StatsController extends BaseController
         $validatorStats = $statsService->getValidatorStats();
 
         $periodLabel = $period === 'week' ? 'semaine' : ($period === 'year' ? 'année' : 'mois');
-        $content = \App\Render\StatsRenderer::content($period, $globalStats, $periodStats, $formStats, $validatorStats, $periodLabel, (new \App\Webhook\WebhookService())->getDbSize());
+        $content = \App\Render\StatsRenderer::content($period, $globalStats, $periodStats, $formStats, $validatorStats, $periodLabel, new \App\Webhook\WebhookService()->getDbSize());
         echo $this->renderPage('Statistiques', 'stats', '', $content);
     }
 }

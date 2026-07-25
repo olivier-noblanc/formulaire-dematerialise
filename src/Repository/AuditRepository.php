@@ -33,13 +33,13 @@ final class AuditRepository extends BaseRepository
         // Vérifier si REMOTE_ADDR est un proxy de confiance
         $trustedProxiesCsv = getenv('TRUSTED_PROXIES') ?: '';
         if ($trustedProxiesCsv !== '') {
-            $trustedProxies = array_map('trim', explode(',', $trustedProxiesCsv));
+            $trustedProxies = array_map(trim(...), explode(',', $trustedProxiesCsv));
             if (in_array($remoteAddr, $trustedProxies, true)) {
                 // Trust X-Forwarded-For — prendre la PREMIÈRE IP (la plus éloignée du serveur)
                 // qui est l'IP client originale
                 $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
                 if ($xff !== '') {
-                    $ips = array_map('trim', explode(',', $xff));
+                    $ips = array_map(trim(...), explode(',', (string) $xff));
                     $first = $ips[0] ?? '';
                     if (filter_var($first, FILTER_VALIDATE_IP) !== false) {
                         return $first;

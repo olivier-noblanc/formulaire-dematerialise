@@ -20,7 +20,7 @@ final class DownloadController extends BaseController
 
         $attachmentId = trim($_GET['id'] ?? '');
         if ($attachmentId === '' || $attachmentId === '0') {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 400,
                 'Requête invalide',
                 'L\'identifiant de pièce jointe fourni est invalide.',
@@ -32,7 +32,7 @@ final class DownloadController extends BaseController
             $attachmentId = (string) validate_input($attachmentId, 'uuid');
         } catch (\InvalidArgumentException) {
             App::audit()->securityLog('invalid_attachment_id', 'ID=' . substr($attachmentId, 0, 20));
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 400,
                 'Requête invalide',
                 'L\'identifiant de pièce jointe fourni est invalide.',
@@ -42,7 +42,7 @@ final class DownloadController extends BaseController
 
         $attachment = App::attachment()->getAttachmentById($attachmentId);
         if (!$attachment) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Pièce jointe introuvable',
                 'La pièce jointe demandée n\'existe pas ou a été supprimée.',
@@ -73,7 +73,7 @@ final class DownloadController extends BaseController
         }
 
         if (!$has_access) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 403,
                 'Accès non autorisé',
                 'Vous n\'avez pas les droits nécessaires pour accéder à cette pièce jointe. Seuls l\'auteur de la demande, les validateurs concernés et les administrateurs peuvent la consulter.',
@@ -84,7 +84,7 @@ final class DownloadController extends BaseController
         $mime_type = $attachment['mime_type'];
         $allowed_mimes = App::attachment()->getAllowedMimeTypes();
         if (!in_array($mime_type, $allowed_mimes)) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 403,
                 'Type de fichier non autorisé',
                 'Le type MIME de cette pièce jointe n\'est pas dans la liste autorisée.',
@@ -128,7 +128,7 @@ final class DownloadController extends BaseController
             }
         }
 
-        (new \App\Render\ErrorRenderer())->errorPage(
+        new \App\Render\ErrorRenderer()->errorPage(
             404,
             'Fichier introuvable',
             'Le fichier demandé n\'existe pas sur le serveur. Il a peut-être été supprimé ou déplacé.',
@@ -140,7 +140,7 @@ final class DownloadController extends BaseController
     {
         $submission_id = trim($_GET['submission_id'] ?? '');
         if ($submission_id === '') {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 400,
                 'Requête invalide',
                 'L\'identifiant de soumission fourni est invalide.',
@@ -152,7 +152,7 @@ final class DownloadController extends BaseController
             $submission_id = (string) validate_input($submission_id, 'uuid');
         } catch (\InvalidArgumentException) {
             App::audit()->securityLog('invalid_submission_id', 'ID=' . substr($submission_id, 0, 20));
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 400,
                 'Requête invalide',
                 'L\'identifiant de soumission fourni est invalide.',
@@ -163,7 +163,7 @@ final class DownloadController extends BaseController
         $submissionRepository = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
         $submission = $submissionRepository->findByIdWithForm($submission_id);
         if ($submission === null) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
@@ -187,7 +187,7 @@ final class DownloadController extends BaseController
         }
 
         if (!$has_access) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 403,
                 'Accès non autorisé',
                 'Vous n\'avez pas les droits nécessaires pour exporter cette soumission.',

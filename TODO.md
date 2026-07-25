@@ -6,7 +6,7 @@
 |----------|--------|
 | Tests | **1287** (0 fail, 0 skip) |
 | Assertions | **2309** |
-| PHPStan erreurs baseline | **508** (level 8, noDirectPdo: 0, noMagicString: 51) |
+| PHPStan erreurs baseline | **506** (level 8, noDirectPdo: 0, noMagicString: 51) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **12** |
 | CI | **GitHub Actions** (4 jobs, ~2 min) |

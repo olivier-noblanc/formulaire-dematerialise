@@ -24,7 +24,7 @@ final class PersonaController extends BaseController
             $targetEmail = strtolower(trim($_GET['email'] ?? ''));
             if ($targetEmail === '') {
                 http_response_code(400);
-                (new \App\Render\ErrorRenderer())->errorPage(
+                new \App\Render\ErrorRenderer()->errorPage(
                     400,
                     'Email manquant',
                     'Le paramètre email est requis pour action=start.',
@@ -35,7 +35,7 @@ final class PersonaController extends BaseController
             try {
                 $subRepo = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
                 if (!$subRepo->existsBySubmitter($targetEmail)) {
-                    (new \App\Render\ErrorRenderer())->errorPage(
+                    new \App\Render\ErrorRenderer()->errorPage(
                         404,
                         'Utilisateur inconnu',
                         'Aucune soumission trouvée pour ' . \App\Core\App::html()->escape($targetEmail) . '.',
@@ -43,13 +43,13 @@ final class PersonaController extends BaseController
                     );
                 }
             } catch (\Throwable $e) {
-                (new \App\Render\ErrorRenderer())->errorPage(500, 'Erreur DB', \App\Core\App::html()->escape($e->getMessage()), '');
+                new \App\Render\ErrorRenderer()->errorPage(500, 'Erreur DB', \App\Core\App::html()->escape($e->getMessage()), '');
             }
 
             $adminEmail = App::auth()->getUser();
             $token = persona_create_token($adminEmail, $targetEmail);
             if ($token === '') {
-                (new \App\Render\ErrorRenderer())->errorPage(
+                new \App\Render\ErrorRenderer()->errorPage(
                     500,
                     'Erreur création token',
                     'Impossible de créer le token persona.',
@@ -65,7 +65,7 @@ final class PersonaController extends BaseController
             $redirectUrl = 'index.php';
         } else {
             http_response_code(400);
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 400,
                 'Action invalide',
                 'Action non reconnue. Utilisez ?action=start&email=XXX ou ?action=stop.',
