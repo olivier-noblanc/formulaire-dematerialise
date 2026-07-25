@@ -32,7 +32,7 @@ final class FormController extends BaseController
             try {
                 $slug = validate_input($slug, 'slug', ['max_length' => 100]);
             } catch (\InvalidArgumentException) {
-                (new \App\Render\ErrorRenderer())->errorPage(
+                new \App\Render\ErrorRenderer()->errorPage(
                     400,
                     'Paramètre invalide',
                     'Le paramètre de formulaire fourni est invalide.',
@@ -48,7 +48,7 @@ final class FormController extends BaseController
             if (TEST_MODE) {
                 test_json_response(['error' => 'Formulaire introuvable', 'slug' => $slug]);
             }
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Formulaire introuvable',
                 'Le formulaire demandé n\'existe pas ou a été désactivé.',
@@ -348,7 +348,7 @@ final class FormController extends BaseController
       <span class="form-help-icon" aria-hidden="true">💡</span>
       <span class="form-help-text">
         <?php // U-08 : indicateur de progression (uniquement si >1 section)?>
-        <?= (new \App\Render\FormRenderer())->formProgressIndicator($grouped) ?>
+        <?= new \App\Render\FormRenderer()->formProgressIndicator($grouped) ?>
         <?php foreach ($grouped as $card_title => $card_fields): ?>
           <?php
           // Séparer les checkboxes des autres champs pour le rendu
@@ -371,7 +371,7 @@ final class FormController extends BaseController
                   <div<?php if ($cond !== '' && $cond !== '0') {
                       echo $cond;
                   } ?>>
-                  <?= (new \App\Render\FormRenderer())->field($non_checkbox, $field_values[$non_checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  <?= new \App\Render\FormRenderer()->field($non_checkbox, $field_values[$non_checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>
@@ -385,7 +385,7 @@ final class FormController extends BaseController
                   <div<?php if ($cond !== '' && $cond !== '0') {
                       echo $cond;
                   } ?>>
-                  <?= (new \App\Render\FormRenderer())->field($checkbox, $field_values[$checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  <?= new \App\Render\FormRenderer()->field($checkbox, $field_values[$checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>

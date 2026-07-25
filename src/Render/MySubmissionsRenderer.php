@@ -53,7 +53,7 @@ final class MySubmissionsRenderer
                 HTML;
 
             $html .= '  <div style="margin-bottom:1.5rem;">' . "\n";
-            $html .= '    ' . (new FormRenderer())->searchBar('index.php?p=my_submissions', $search, 'Rechercher...', ['statut' => $statusFilter]) . "\n";
+            $html .= '    ' . new FormRenderer()->searchBar('index.php?p=my_submissions', $search, 'Rechercher...', ['statut' => $statusFilter]) . "\n";
             $html .= '  </div>' . "\n";
         }
 

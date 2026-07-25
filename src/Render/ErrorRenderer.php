@@ -96,7 +96,7 @@ final class ErrorRenderer
     <div class="error-stamp">' . \App\Core\App::html()->escape(NavigationRenderer::getAppName()) . '</div>
   </div>
 </div>
-' . (new NavigationRenderer())->footer() . '
+' . new NavigationRenderer()->footer() . '
 </body>
 </html>';
 

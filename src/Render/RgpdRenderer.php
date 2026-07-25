@@ -27,7 +27,7 @@ final class RgpdRenderer
         $h = App::html()->escape(...);
         $csrf = App::security()->csrfField();
 
-        $msgHtml = (new ErrorRenderer())->messages([
+        $msgHtml = new ErrorRenderer()->messages([
             'success' => $successMsg,
             'error' => $errorMsg,
             'info' => $infoMsg,

@@ -32,7 +32,7 @@ final class AdminFormsController extends BaseController
             }
         } catch (\InvalidArgumentException) {
             App::audit()->securityLog('invalid_admin_forms_id', 'form_id=' . substr((string) $formId, 0, 20) . ' edit_step=' . substr((string) $editStepId, 0, 20) . ' edit_field=' . substr($editFieldId, 0, 20));
-            (new \App\Render\ErrorRenderer())->errorPage(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
+            new \App\Render\ErrorRenderer()->errorPage(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
         }
 
         $action = $_POST['action'] ?? '';
@@ -95,7 +95,7 @@ final class AdminFormsController extends BaseController
         ?>
   <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
 
-  <?= (new \App\Render\ErrorRenderer())->messages(['success' => $successMsg, 'error' => $errorMsg]) ?>
+  <?= new \App\Render\ErrorRenderer()->messages(['success' => $successMsg, 'error' => $errorMsg]) ?>
   <?= $validationHtml ?>
 
   <!-- Sélecteur de formulaire -->

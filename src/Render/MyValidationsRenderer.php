@@ -49,7 +49,7 @@ final class MyValidationsRenderer
             $html .= '<div class="msg-info" role="status" aria-live="polite">' . $htmlService->escape($delegationMsg) . '</div>' . "\n";
         }
 
-        $html .= (new FormRenderer())->searchBar('index.php?p=my_validations', $search, 'Rechercher un formulaire...', ['tab' => $activeTab]) . "\n";
+        $html .= new FormRenderer()->searchBar('index.php?p=my_validations', $search, 'Rechercher un formulaire...', ['tab' => $activeTab]) . "\n";
 
         if ($activeTab === 'pending') {
             $html .= self::pendingTab($pendingTokens, $allStepsBySub);

@@ -24,7 +24,7 @@ final class FormTrackingController extends BaseController
         }
 
         if (!$form) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Formulaire introuvable',
                 'Le formulaire que vous cherchez n\'existe pas ou a été désactivé.',
@@ -38,7 +38,7 @@ final class FormTrackingController extends BaseController
         $isOwner = App::auth()->isFormOwner($formId);
 
         if (!$isAdmin && !$isOwner) {
-            (new \App\Render\ErrorRenderer())->errorPage(
+            new \App\Render\ErrorRenderer()->errorPage(
                 403,
                 'Accès refusé',
                 'Vous n\'êtes pas propriétaire de ce formulaire. Seuls les propriétaires désignés et les administrateurs peuvent accéder au tableau de suivi.',

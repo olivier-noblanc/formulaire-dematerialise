@@ -15,7 +15,7 @@ use App\Contract\ConditionInterface;
 final class ConditionEvaluator implements ConditionInterface
 {
     /** @var list<string> Opérateurs valides supportés par l'évaluateur */
-    public const VALID_OPS = ['eq', 'equals', 'neq', 'not_equals', 'contains', 'in', 'not_empty', 'empty'];
+    public const array VALID_OPS = ['eq', 'equals', 'neq', 'not_equals', 'contains', 'in', 'not_empty', 'empty'];
     /**
      * Évalue une condition générique.
      * @param string|null $conditionJson Le JSON de la condition

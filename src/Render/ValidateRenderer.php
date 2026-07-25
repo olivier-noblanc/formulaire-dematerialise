@@ -149,7 +149,7 @@ final class ValidateRenderer
             $html .= '  <p><strong>Étape :</strong> ' . $htmlService->escape($data['step_label'] ?? '') . '</p>' . "\n";
 
             $exclude_keys = array_merge(['validations', 'csrf_token'], $current_step_field_names);
-            $html .= (new FormRenderer())->submissionData($d, $exclude_keys);
+            $html .= new FormRenderer()->submissionData($d, $exclude_keys);
             $html .= '</div>' . "\n";
 
             // ── Informations saisies par les validateurs précédents ──
@@ -198,7 +198,7 @@ final class ValidateRenderer
                     $fname = $validator_field['field_name'] ?? '';
                     $existing_val = $validator_data_index[$fname] ?? '';
                     $html .= '    <div style="margin-bottom: 1rem;">' . "\n";
-                    $html .= (new FormRenderer())->field($validator_field, $existing_val, [], '', false);
+                    $html .= new FormRenderer()->field($validator_field, $existing_val, [], '', false);
                     $html .= '    </div>' . "\n";
                 }
                 $html .= '  </div>' . "\n";

@@ -80,7 +80,7 @@ final class MonitoringController extends BaseController
                 }
             }
             usort($activeAlerts, fn($a, $b) => $a['days_remaining'] - $b['days_remaining']);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $activeAlerts = [];
         }
 
@@ -225,6 +225,6 @@ final class MonitoringController extends BaseController
         $navExtra   = \App\Render\MonitoringRenderer::navExtra();
         $content    = \App\Render\MonitoringRenderer::content($ctx);
 
-        echo (new \App\Render\NavigationRenderer())->page('Surveillance', 'monitoring', $pageCss, $content, ['nav_extra' => $navExtra]);
+        echo new \App\Render\NavigationRenderer()->page('Surveillance', 'monitoring', $pageCss, $content, ['nav_extra' => $navExtra]);
     }
 }
