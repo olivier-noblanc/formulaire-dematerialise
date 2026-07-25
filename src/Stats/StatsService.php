@@ -113,9 +113,9 @@ final readonly class StatsService
         assert($attachmentsSizeStmt !== false);
         $stats = [
             'total' => (int) ($row['total'] ?? 0),
-            SubmissionStatus::EnCours->value => (int) ($row['en_cours'] ?? 0),
-            SubmissionStatus::Valide->value => (int) ($row['valide'] ?? 0),
-            SubmissionStatus::Refuse->value => (int) ($row['refuse'] ?? 0),
+            SubmissionStatus::EnCours->value => (int) ($row[SubmissionStatus::EnCours->value] ?? 0),
+            SubmissionStatus::Valide->value => (int) ($row[SubmissionStatus::Valide->value] ?? 0),
+            SubmissionStatus::Refuse->value => (int) ($row[SubmissionStatus::Refuse->value] ?? 0),
             'today' => (int) ($row['today'] ?? 0),
             'this_week' => (int) ($row['this_week'] ?? 0),
             'this_month' => (int) ($row['this_month'] ?? 0),

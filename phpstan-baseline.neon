@@ -7,12 +7,6 @@ parameters:
 			path: alert_check.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: alert_check.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, DateTimeImmutable\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -29,12 +23,6 @@ parameters:
 			identifier: ternary.shortNotAllowed
 			count: 1
 			path: alert_check.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: assets.php
 
 		-
 			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
@@ -70,54 +58,6 @@ parameters:
 			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
 			identifier: equal.notAllowed
 			count: 9
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 23
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 10
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 6
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''select'' detected → use FieldType\:\:Select\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 17
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 50
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''textarea'' detected → use FieldType\:\:Textarea\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 11
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
 			path: classes/migrations/seed_default_forms.php
 
 		-
@@ -179,12 +119,6 @@ parameters:
 			identifier: ternary.shortNotAllowed
 			count: 1
 			path: lib/core_bootstrap.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: remind.php
 
 		-
 			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
@@ -553,12 +487,6 @@ parameters:
 			path: src/Controller/AdminAccessController.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 18
-			path: src/Controller/AdminAccessController.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, array\<string, string\>\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -585,7 +513,7 @@ parameters:
 		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
-			count: 2
+			count: 1
 			path: src/Controller/AdminFieldCrudHandler.php
 
 		-
@@ -661,12 +589,6 @@ parameters:
 			path: src/Controller/AdminRecipientHandler.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/AdminRecipientHandler.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -727,12 +649,6 @@ parameters:
 			path: src/Controller/ChangelogController.php
 
 		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Controller/ChangelogController.php
-
-		-
 			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
 			identifier: booleanAnd.rightNotBoolean
 			count: 3
@@ -748,12 +664,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 1
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
 			path: src/Controller/ConfirmActionController.php
 
 		-
@@ -913,12 +823,6 @@ parameters:
 			path: src/Controller/FormTrackingController.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -979,28 +883,10 @@ parameters:
 			path: src/Controller/MySubmissionsController.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Controller/MySubmissionsController.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 1
 			path: src/Controller/MyValidationsController.php
-
-		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/MyValidationsController.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Controller/PersonaController.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
@@ -1069,18 +955,6 @@ parameters:
 			path: src/Controller/ValidateController.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Controller/ValidateController.php
-
-		-
 			message: '#^Only booleans are allowed in &&, array\<string, int\|string\|null\>\|null given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
 			count: 1
@@ -1111,18 +985,6 @@ parameters:
 			path: src/Controller/ValidateController.php
 
 		-
-			message: '#^Unused App\\Core\\App\:\:formRepo$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Core/App.php
-
-		-
-			message: '#^Unused App\\Core\\App\:\:mailRepo$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Core/App.php
-
-		-
 			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
 			identifier: if.condNotBoolean
 			count: 4
@@ -1139,18 +1001,6 @@ parameters:
 			identifier: ternary.shortNotAllowed
 			count: 1
 			path: src/Core/SlugHelper.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 4
-			path: src/Cron/CronService.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Email/EmailVerificationService.php
 
 		-
 			message: '#^Only booleans are allowed in a negated boolean, LDAP\\Connection\|false given\.$#'
@@ -1175,150 +1025,6 @@ parameters:
 			identifier: booleanNot.exprNotBoolean
 			count: 2
 			path: src/Email/EmailVerificationService.php
-
-		-
-			message: '#^Magic string ''approved'' detected → use AdminRequestStatus\:\:Approved\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/AdminRequestStatus.php
-
-		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/AdminRequestStatus.php
-
-		-
-			message: '#^Magic string ''rejected'' detected → use AdminRequestStatus\:\:Rejected\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/AdminRequestStatus.php
-
-		-
-			message: '#^Magic string ''checkbox'' detected → use FieldType\:\:Checkbox\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Magic string ''file'' detected → use FieldType\:\:File\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Magic string ''select'' detected → use FieldType\:\:Select\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Magic string ''textarea'' detected → use FieldType\:\:Textarea\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Unused App\\Enum\\FieldType\:\:values$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Enum/FieldType.php
-
-		-
-			message: '#^Magic string ''owner_only'' detected → use FieldVisibility\:\:OwnerOnly\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FieldVisibility.php
-
-		-
-			message: '#^Magic string ''demandeur'' detected → use FilledBy\:\:Demandeur\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FilledBy.php
-
-		-
-			message: '#^Magic string ''validator'' detected → use FilledBy\:\:Validator\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/FilledBy.php
-
-		-
-			message: '#^Magic string ''annule'' detected → use SubmissionStatus\:\:Annule\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/SubmissionStatus.php
-
-		-
-			message: '#^Magic string ''en_cours'' detected → use SubmissionStatus\:\:EnCours\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/SubmissionStatus.php
-
-		-
-			message: '#^Magic string ''refuse'' detected → use SubmissionStatus\:\:Refuse\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/SubmissionStatus.php
-
-		-
-			message: '#^Magic string ''valide'' detected → use SubmissionStatus\:\:Valide\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/SubmissionStatus.php
-
-		-
-			message: '#^Magic string ''critical'' detected → use UrgencyLevel\:\:Critical\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/UrgencyLevel.php
-
-		-
-			message: '#^Magic string ''overdue'' detected → use UrgencyLevel\:\:Overdue\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/UrgencyLevel.php
-
-		-
-			message: '#^Unused App\\Enum\\UrgencyLevel\:\:Ok$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/UrgencyLevel.php
-
-		-
-			message: '#^Unused App\\Enum\\UrgencyLevel\:\:Warning$#'
-			identifier: shipmonk.deadEnumCase
-			count: 1
-			path: src/Enum/UrgencyLevel.php
-
-		-
-			message: '#^Magic string ''refuser'' detected → use ValidationAction\:\:Refuser\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/ValidationAction.php
-
-		-
-			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Enum/ValidationAction.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
@@ -1477,12 +1183,6 @@ parameters:
 			path: src/Render/AdminFormsRenderer.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 3
@@ -1522,18 +1222,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 4
-			path: src/Render/DashboardRenderer.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/DashboardRenderer.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
 			path: src/Render/DashboardRenderer.php
 
 		-
@@ -1579,18 +1267,6 @@ parameters:
 			path: src/Render/FormRenderer.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Magic string ''text'' detected → use FieldType\:\:Text\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
 			message: '#^Only booleans are allowed in &&, mixed given on the right side\.$#'
 			identifier: booleanAnd.rightNotBoolean
 			count: 1
@@ -1617,7 +1293,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 2
+			count: 1
 			path: src/Render/IndexRenderer.php
 
 		-
@@ -1633,33 +1309,9 @@ parameters:
 			path: src/Render/InstallRenderer.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/LdapRenderer.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 3
-			path: src/Render/MonitoringRenderer.php
-
-		-
-			message: '#^Magic string ''critical'' detected → use UrgencyLevel\:\:Critical\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/MonitoringRenderer.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/MonitoringRenderer.php
-
-		-
-			message: '#^Magic string ''overdue'' detected → use UrgencyLevel\:\:Overdue\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
 			path: src/Render/MonitoringRenderer.php
 
 		-
@@ -1672,12 +1324,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 4
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
 			path: src/Render/MySubmissionsRenderer.php
 
 		-
@@ -1711,18 +1357,6 @@ parameters:
 			path: src/Render/MyValidationsRenderer.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Render/MyValidationsRenderer.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 2
@@ -1739,12 +1373,6 @@ parameters:
 			identifier: ternary.shortNotAllowed
 			count: 3
 			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/NavigationRenderer.php
 
 		-
 			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
@@ -1783,18 +1411,6 @@ parameters:
 			path: src/Render/StatsRenderer.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/StatsRenderer.php
-
-		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/StatsRenderer.php
-
-		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
 			count: 1
@@ -1804,24 +1420,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 14
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 7
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Magic string ''overdue'' detected → use UrgencyLevel\:\:Overdue\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
 			path: src/Render/SubmissionViewRenderer.php
 
 		-
@@ -1853,18 +1451,6 @@ parameters:
 			identifier: equal.notAllowed
 			count: 1
 			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Magic string ''pending'' detected → use AdminRequestStatus\:\:Pending\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Repository/AdminRepository.php
 
 		-
 			message: '#^Unused App\\Repository\\AdminRepository\:\:isAdmin$#'
@@ -1903,78 +1489,6 @@ parameters:
 			path: src/Repository/FormRepository.php
 
 		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\LazyCronRepository\:\:beginExclusive$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/LazyCronRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\LazyCronRepository\:\:commit$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/LazyCronRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\LazyCronRepository\:\:getLastRun$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/LazyCronRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\LazyCronRepository\:\:recordRun$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/LazyCronRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\LazyCronRepository\:\:rollback$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/LazyCronRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\PersonaRepository\:\:createToken$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/PersonaRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\PersonaRepository\:\:deleteExpiredBefore$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/PersonaRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\PersonaRepository\:\:deleteRevokedBefore$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/PersonaRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\PersonaRepository\:\:findByToken$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/PersonaRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\PersonaRepository\:\:revoke$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/PersonaRepository.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Rgpd/RgpdService.php
-
-		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
 			count: 2
@@ -1987,34 +1501,10 @@ parameters:
 			path: src/Security/SecurityService.php
 
 		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 1
-			path: src/Settings/SettingsService.php
-
-		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
 			count: 2
 			path: src/Settings/SettingsService.php
-
-		-
-			message: '#^Magic string ''en_cours'' detected → use SubmissionStatus\:\:EnCours\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Stats/StatsService.php
-
-		-
-			message: '#^Magic string ''refuse'' detected → use SubmissionStatus\:\:Refuse\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Stats/StatsService.php
-
-		-
-			message: '#^Magic string ''valide'' detected → use SubmissionStatus\:\:Valide\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Stats/StatsService.php
 
 		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
@@ -2032,18 +1522,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 14
 			path: src/Token/TokenService.php
 
 		-
@@ -2107,18 +1585,6 @@ parameters:
 			path: src/Token/TokenService.php
 
 		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Validation/ValidationService.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Validation/ValidationService.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 6
@@ -2146,24 +1612,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 6
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Magic string ''date'' detected → use FieldType\:\:Date\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Magic string ''email'' detected → use FieldType\:\:Email\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 3
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Magic string ''refuser'' detected → use ValidationAction\:\:Refuser\-\>value instead\.$#'
-			identifier: noMagicString
-			count: 2
 			path: src/Workflow/WorkflowEngine.php
 
 		-

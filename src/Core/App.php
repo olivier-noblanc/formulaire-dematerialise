@@ -152,14 +152,4 @@ final class App
     {
         return self::getInstance()->get(\App\Repository\SubmissionRepository::class);
     }
-
-    public static function formRepo(): \App\Repository\FormRepository
-    {
-        return self::getInstance()->get(\App\Repository\FormRepository::class);
-    }
-
-    public static function mailRepo(): \App\Repository\MailRepository
-    {
-        return self::getInstance()->get(\App\Repository\MailRepository::class);
-    }
 }
