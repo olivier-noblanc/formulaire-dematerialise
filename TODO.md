@@ -136,11 +136,14 @@
 | `booleanAnd/rightNotBoolean` | 4 | **LOW** | Opérandes non-booléennes dans `&&` |
 | Autres | ~179 | **LOW** | Divers (arrayFilter.strict, deadProperty, deadEnumCase, etc.) |
 
-### Bug backlog audit — 22/29 fixés, 1 présent
+### Bug backlog audit — 29/29 vérifiés, 29 fixés
 
-**Confirmés fixés (22)** : #1 (invalidated_at), #2 (optimistic locking), #6 (RGPD complet), #14 (REMOTE_ADDR), #9 (checkbox required), #11 (sujet alerte), #4 (floor()), #7 (opérateurs sync), #15 (filled_by), #18 (approveRequest ciblé), #19 (garde-fou auto-suppression), #20 (strtolower owner), #21 (createOwnerById), #24 (array_filter strict), #27 (isFormOwner tracking)
+Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
+- **29 confirmés fixés** par les sessions précédentes
+- **0 reste à corriger**
+- **1 faux positif** : #26 (JarnationService) — le service est vivant (81 références), le TODO avait tort
 
-**À vérifier (5)** : #17 (notify_who custom sans email), #28 (sélecteur date limite), #22 (handler retirer admin), #23 (flash messages), #25 (motif refus obligatoire)
+
 
 **Encore présent (1)** : #26 — JargonService entier mort, à supprimer
 
@@ -185,4 +188,4 @@
 
 ---
 
-_Dernière mise à jour : 2026-07-24 (v10.25.0)_
+_Dernière mise à jour : 2026-07-25 (v10.26.0)_
