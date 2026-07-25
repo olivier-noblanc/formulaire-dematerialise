@@ -94,13 +94,8 @@ final class IndexRenderer
     {
         $cards = '';
         foreach ($welcome_forms as $welcome_form) {
-            $slug  = \App\Core\App::html()->escape((string) ($welcome_form['slug'] ?? ''));
-            $label = \App\Core\App::html()->escape((string) ($welcome_form['label'] ?? ''));
-            $desc_html = '';
-            if (!empty($welcome_form['description'])) {
-                $d = \App\Core\App::html()->escape((string) $welcome_form['description']);
-                $desc_html = "\n              <div class=\"welcome-form-desc\">{$d}</div>";
-            }
+            ['slug' => $slug, 'label' => $label, 'desc' => $desc] = self::escapeFormField($welcome_form);
+            $desc_html = $desc !== '' ? "\n              <div class=\"welcome-form-desc\">{$desc}</div>" : '';
             $cards .= <<<HTML
                           <a href="index.php?p=form&f={$slug}" class="welcome-form-card">
                             <span class="welcome-form-icon" aria-hidden="true">📝</span>
@@ -146,13 +141,8 @@ final class IndexRenderer
         }
         $cards = '';
         foreach ($active_forms as $active_form) {
-            $slug  = \App\Core\App::html()->escape((string) ($active_form['slug'] ?? ''));
-            $label = \App\Core\App::html()->escape((string) ($active_form['label'] ?? ''));
-            $desc_html = '';
-            if (!empty($active_form['description'])) {
-                $d = \App\Core\App::html()->escape((string) $active_form['description']);
-                $desc_html = "\n          <div class=\"fc-desc\">{$d}</div>";
-            }
+            ['slug' => $slug, 'label' => $label, 'desc' => $desc] = self::escapeFormField($active_form);
+            $desc_html = $desc !== '' ? "\n          <div class=\"fc-desc\">{$desc}</div>" : '';
             $cards .= <<<HTML
                         <a href="index.php?p=form&f={$slug}" class="form-card">
                           <div class="fc-title">{$label}</div>{$desc_html}
@@ -166,6 +156,23 @@ final class IndexRenderer
             {$cards}
               </div>
             HTML;
+    }
+
+    /**
+     * Escape common form fields (slug, label, description).
+     *
+     * @param array<string, mixed> $form
+     * @return array{slug: string, label: string, desc: string}
+     */
+    private static function escapeFormField(array $form): array
+    {
+        $slug  = \App\Core\App::html()->escape((string) ($form['slug'] ?? ''));
+        $label = \App\Core\App::html()->escape((string) ($form['label'] ?? ''));
+        $desc  = '';
+        if (!empty($form['description'])) {
+            $desc = \App\Core\App::html()->escape((string) $form['description']);
+        }
+        return ['slug' => $slug, 'label' => $label, 'desc' => $desc];
     }
 
     /**

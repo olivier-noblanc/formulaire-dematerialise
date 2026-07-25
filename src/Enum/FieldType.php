@@ -13,10 +13,4 @@ enum FieldType: string
     case Checkbox = 'checkbox';
     case Textarea = 'textarea';
     case File = 'file';
-
-    /** @return list<string> */
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
-    }
 }

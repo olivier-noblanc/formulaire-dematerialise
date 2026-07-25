@@ -61,7 +61,32 @@ class NoMagicStringRule implements Rule
     ];
 
     /**
+     * Strings that match a business enum value but are NOT business logic
+     * in the contexts where they appear:
+     * - DB column names (email, date)
+     * - HTML5 input types (email, text, date)
+     * - HTML element types (select, checkbox, textarea, file)
+     * - CSS class names (overdue, critical)
+     * - Constant-like strings used pervasively across the codebase
+     *
+     * @var array<string, string>
+     */
+    private const array ALLOWED_VALUES = [
+        'email' => 'DB column / HTML5 input type — too many non-FieldType usages',
+        'text' => 'HTML5 input type default — not always FieldType::Text',
+        'date' => 'DB column / HTML5 input type — not always FieldType::Date',
+        'select' => 'HTML element type name — used in migrations and HTML context',
+        'checkbox' => 'HTML element type name — used in migrations and HTML context',
+        'textarea' => 'HTML element type name — used in migrations and HTML context',
+        'file' => 'HTML element type name — used in migrations and HTML context',
+        'overdue' => 'CSS class name — used alongside UrgencyLevel comparisons',
+        'critical' => 'CSS class name — used alongside UrgencyLevel comparisons',
+        'pending' => 'URL tab parameter / internal status string — not always AdminRequestStatus',
+    ];
+
+    /**
      * Files/patterns where magic strings are allowed (SQL, config, bootstrap, etc.).
+     * Uses both / and \ separators for cross-platform path matching.
      */
     private const array ALLOWED_PATTERNS = [
         'bootstrap.php',
@@ -71,7 +96,13 @@ class NoMagicStringRule implements Rule
         'phpstan_inst_stubs.php',
         'deptrac.php',
         '/migrations/',
+        '\\migrations\\',
+        '/Enum/',
+        '\\Enum\\',
+        '/phpstan-rules/',
+        '\\phpstan-rules\\',
         '/tests/',
+        '\\tests\\',
     ];
 
     public function getNodeType(): string
@@ -93,8 +124,14 @@ class NoMagicStringRule implements Rule
             return [];
         }
 
+        // Skip strings that are allowed (non-business usages like DB columns, HTML types, CSS classes)
+        if (isset(self::ALLOWED_VALUES[$value])) {
+            return [];
+        }
+
         // Skip allowed files
         $fileDescription = $scope->getFileDescription();
+        // @phpstan-ignore function.alreadyNarrowedType (getFileDescription() returns FileDescription|string, PHPStan narrows to string)
         $file = is_string($fileDescription) ? $fileDescription : $fileDescription->getFile();
         foreach (self::ALLOWED_PATTERNS as $pattern) {
             if (str_contains($file, $pattern)) {

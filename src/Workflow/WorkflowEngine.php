@@ -460,7 +460,7 @@ final readonly class WorkflowEngine
 
         $comment = mb_substr($comment, 0, 1000);
 
-        if ($action === 'refuser') {
+        if ($action === ValidationAction::Refuser->value) {
             $stmt = $pdo->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
             $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
             if ($stmt->rowCount() === 0) {
@@ -496,7 +496,7 @@ final readonly class WorkflowEngine
         $pdo->commit();
 
         // Emails et advanceWorkflow APRES le commit (side effects hors transaction)
-        if ($action === 'refuser') {
+        if ($action === ValidationAction::Refuser->value) {
             $agentEmail = $t['submitted_by'] ?? '';
             if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
                 $subject = 'Demande refusée — ' . ($t['form_label'] ?? '');

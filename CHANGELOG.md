@@ -1,5 +1,41 @@
 # Changelog — CircuitDémat
 
+## [10.26.0] — 2026-07-25
+_Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration duplication, baseline PHPStan 775→508, outils mutation testing._
+
+### 🐛 Dead code cleanup
+
+- **LazyCronRepository** supprimé (5 méthodes) : repository entier jamais utilisé, zéro appelant dans src/ ou tests/
+- **PersonaRepository** supprimé (5 méthodes) : repository entier jamais utilisé, zéro appelant
+- **App::formRepo()** supprimé : accesseur static jamais appelé (les contrôleurs injectent via BaseController)
+- **App::mailRepo()** supprimé : accesseur static jamais appelé (MailService injecte directement)
+- **FieldType::values()** supprimé : méthode enum jamais appelée
+- **UrgencyLevel::Warning/Ok** supprimés : cases enum jamais utilisées
+
+### 🔧 Refactor — Duplication
+
+- **IndexRenderer** : factorisation `escapeFormField()` (duplication 12 lignes internalisée)
+- **AdminFieldCrudHandler** : factorisation `readFieldPostData()` (duplication 40+21 lignes internalisée)
+
+### 🔧 PHPStan — Baseline réduite
+
+- **Baseline** : 775 → 508 erreurs (-34%, -267 erreurs)
+- **deadMethod** : 64 → 0 (toutes les méthodes mortes supprimées ou justifiées)
+- **NoMagicStringRule** : 76 → 51 (9 strings allowlistées : types HTML5, noms colonnes SQL, classes CSS)
+- **phpstan-strict-rules** installé (auto-enregistré via extension-installer)
+- **infection/infection** installé (mutation testing, configuré sur src/Workflow, Token, Export)
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| PHPStan baseline | 775 | **508** |
+| deadMethod errors | 64 | **0** |
+| noMagicString errors | 76 | **51** |
+| Tests | 1287 | 1287 (0 fail) |
+
+---
+
 ## [10.25.0] — 2026-07-24
 _Résumé : Repository pattern enforcement, migration enums métier, deptrac, PHPStan rules custom._
 
