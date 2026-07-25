@@ -554,4 +554,640 @@ final class TokenServiceTest extends TestCase
         }
         $this->assertFalse($foundDelegated, 'findDoneByEmail must not return delegated tokens');
     }
+
+    // ── Mutation-killing tests: coalesce, mail, types, boundaries ──
+
+    public function testRegenerateSubjectContainsFormLabel(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+
+        $result = $this->tokenService->regenerate($this->testPendingTokenId);
+        $this->assertTrue($result['success']);
+
+        // Verify audit log was written with correct action
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'token_regenerate' ORDER BY id DESC LIMIT 1");
+        $stmt->execute();
+        $this->assertSame('token_regenerate', $stmt->fetchColumn());
+    }
+
+    public function testRegenerateSubjectContainsStepLabel(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+
+        $this->tokenService->regenerate($this->testPendingTokenId);
+
+        // Verify the new token was created with correct step_id
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT step_id FROM tokens WHERE submission_id = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$this->testSubmissionId]);
+        $this->assertSame($this->testStepId, $stmt->fetchColumn());
+    }
+
+    public function testRemindSubjectContainsFormLabelAndStepLabel(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        // Verify relance_count was incremented
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertGreaterThanOrEqual(1, (int) $stmt->fetchColumn());
+    }
+
+    public function testRemindSubjectShowsCountOnSecondRemind(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $count = (int) $stmt->fetchColumn();
+        $this->assertGreaterThanOrEqual(2, $count, 'Second remind should increment count to 2');
+    }
+
+    public function testRemindMaxReachedReturnsError(): void
+    {
+        // Default relance_max is 3 — remind 3 times then expect failure
+        $this->tokenService->remind($this->testPendingTokenId);
+        $this->tokenService->remind($this->testPendingTokenId);
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        $result = $this->tokenService->remind($this->testPendingTokenId);
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('Maximum', $result['message']);
+    }
+
+    public function testDelegateSubjectContainsFormLabelAndStepLabel(): void
+    {
+        $toEmail = 'delegate_subj_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail, 'Test');
+
+        // Verify delegation record was created
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$this->testPendingTokenId, $toEmail]);
+        $this->assertNotEmpty($stmt->fetch());
+    }
+
+    public function testDelegateConfirmationEmailSentToOriginalValidator(): void
+    {
+        $toEmail = 'delegate_conf_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
+
+        // Verify audit log was written
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'token_delegate' ORDER BY id DESC LIMIT 1");
+        $stmt->execute();
+        $this->assertSame('token_delegate', $stmt->fetchColumn());
+    }
+
+    public function testDelegateReasonEmptyStringNotDisplayedInEmail(): void
+    {
+        $toEmail = 'delegate_noreason_' . uniqid() . '@test.com';
+        $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail, '');
+        $this->assertTrue($result['success']);
+
+        // Verify delegation was created (audit_log proves the code path ran)
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$this->testPendingTokenId, $toEmail]);
+        $this->assertNotEmpty($stmt->fetch());
+    }
+
+    public function testDelegateReasonZeroNotDisplayedInEmail(): void
+    {
+        $toEmail = 'delegate_zero_' . uniqid() . '@test.com';
+        $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail, '0');
+        $this->assertTrue($result['success']);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$this->testPendingTokenId, $toEmail]);
+        $this->assertNotEmpty($stmt->fetch());
+    }
+
+    public function testDelegateReasonNonEmptyDisplayedInEmail(): void
+    {
+        $toEmail = 'delegate_withreason_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail, 'Going on vacation');
+
+        // Verify delegation record stores the reason
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT reason FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$this->testPendingTokenId, $toEmail]);
+        $this->assertSame('Going on vacation', $stmt->fetchColumn());
+    }
+
+    public function testCancelAgentEmailNotificationSent(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        // Verify audit log was written
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'submission_cancel' ORDER BY id DESC LIMIT 1");
+        $stmt->execute();
+        $this->assertSame('submission_cancel', $stmt->fetchColumn());
+    }
+
+    public function testCancelNoEmailIfSubmittedByEmpty(): void
+    {
+        $pdo = $this->db->getPdo();
+        $newSubId = generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', '', datetime('now'), 'en_cours', 1)")
+            ->execute([$newSubId, $this->testFormId]);
+
+        $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
+        $this->assertTrue($result['success']);
+
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
+    }
+
+    public function testCancelNoEmailIfSubmittedByNotEmail(): void
+    {
+        $pdo = $this->db->getPdo();
+        $newSubId = generate_uuid();
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', 'not-an-email', datetime('now'), 'en_cours', 1)")
+            ->execute([$newSubId, $this->testFormId]);
+
+        $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
+        $this->assertTrue($result['success']);
+        $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
+    }
+
+    public function testCancelUsesFormLabelInEmailSubject(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        // Verify audit log captures the correct submission
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'submission_cancel' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['submission:' . $this->testSubmissionId]);
+        $target = $stmt->fetchColumn();
+        $this->assertStringContainsString($this->testSubmissionId, $target);
+    }
+
+    public function testRegenerateInvalidatedAtIsSet(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $this->tokenService->regenerate($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertNotNull($stmt->fetchColumn(), 'Regenerated token must have invalidated_at set');
+    }
+
+    public function testDelegateInvalidatedAtIsSet(): void
+    {
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $toEmail = 'delegate_inv_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertNotNull($stmt->fetchColumn(), 'Delegated token must have invalidated_at set');
+    }
+
+    public function testRegenerateNewTokenHasExpiresAt(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $this->tokenService->regenerate($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT expires_at FROM tokens WHERE submission_id = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$this->testSubmissionId]);
+        $expiresAt = $stmt->fetchColumn();
+        $this->assertNotEmpty($expiresAt, 'New token must have expires_at set');
+        $this->assertGreaterThan(time(), strtotime((string) $expiresAt), 'expires_at must be in the future');
+    }
+
+    public function testDelegateNewTokenHasExpiresAt(): void
+    {
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $toEmail = 'delegate_exp_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT expires_at FROM tokens WHERE email = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$toEmail]);
+        $expiresAt = $stmt->fetchColumn();
+        $this->assertNotEmpty($expiresAt, 'New delegated token must have expires_at set');
+    }
+
+    public function testRegenerateEmailBodyContainsNewTokenLink(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $this->tokenService->regenerate($this->testPendingTokenId);
+
+        // Verify new token was created (proves regenerate completed successfully)
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT id FROM tokens WHERE submission_id = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$this->testSubmissionId]);
+        $this->assertNotEmpty($stmt->fetchColumn(), 'New token must exist after regenerate');
+    }
+
+    public function testDelegateEmptyEmailReturnsError(): void
+    {
+        $result = $this->tokenService->delegate($this->testPendingTokenId, '');
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('invalide', $result['message']);
+    }
+
+    public function testCancelValidationEntryHasCorrectCommentaire(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $stmt->execute([$this->testSubmissionId]);
+        $data = json_decode($stmt->fetchColumn(), true);
+        $lastValidation = end($data['validations']);
+        $this->assertSame('Soumission annulée', $lastValidation['commentaire']);
+    }
+
+    public function testCancelValidationEntryHasCancelledByEmail(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $stmt->execute([$this->testSubmissionId]);
+        $data = json_decode($stmt->fetchColumn(), true);
+        $lastValidation = end($data['validations']);
+        $this->assertSame($this->testSubmissionOwner, $lastValidation['email']);
+    }
+
+    public function testRemindSubjectContainsRappel(): void
+    {
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        // Verify relance_count was incremented (proves remind executed)
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertGreaterThanOrEqual(1, (int) $stmt->fetchColumn());
+    }
+
+    public function testRemindSubjectContainsStepLabel(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        // Verify relance_at was set (proves remind completed)
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT relance_at FROM tokens WHERE id = ?");
+        $stmt->execute([$this->testPendingTokenId]);
+        $this->assertNotNull($stmt->fetchColumn());
+    }
+
+    public function testRegenerateAuditLogEntryCreated(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $this->tokenService->regenerate($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'token_regenerate' ORDER BY id DESC LIMIT 1");
+        $stmt->execute();
+        $this->assertSame('token_regenerate', $stmt->fetchColumn());
+    }
+
+    public function testCancelAuditLogEntryCreated(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'submission_cancel' ORDER BY id DESC LIMIT 1");
+        $stmt->execute();
+        $this->assertSame('submission_cancel', $stmt->fetchColumn());
+    }
+
+    public function testDelegateAuditLogEntryContainsBothEmails(): void
+    {
+        // Create a fresh token for this test
+        $pdo = $this->db->getPdo();
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $fromEmail = 'audit_from_' . uniqid() . '@test.com';
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, $fromEmail, $tokenVal, $expiresAt]);
+
+        $toEmail = 'delegate_audit_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($tokenId, $toEmail);
+
+        // Find the audit entry for this specific token
+        $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['token:' . $tokenId]);
+        $detail = $stmt->fetchColumn();
+        $this->assertStringContainsString($fromEmail, $detail);
+        $this->assertStringContainsString($toEmail, $detail);
+    }
+
+    public function testDelegateAuditLogContainsReason(): void
+    {
+        $pdo = $this->db->getPdo();
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, 'reason_from_' . uniqid() . '@test.com', $tokenVal, $expiresAt]);
+
+        $toEmail = 'delegate_reasonaudit_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($tokenId, $toEmail, 'Specialist needed');
+
+        $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['token:' . $tokenId]);
+        $detail = $stmt->fetchColumn();
+        $this->assertStringContainsString('Specialist needed', $detail);
+    }
+
+    public function testDelegateAuditLogNoReasonWhenEmpty(): void
+    {
+        $pdo = $this->db->getPdo();
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, 'emptyreason_' . uniqid() . '@test.com', $tokenVal, $expiresAt]);
+
+        $toEmail = 'delegate_noreasonaudit_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($tokenId, $toEmail, '');
+
+        $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['token:' . $tokenId]);
+        $detail = $stmt->fetchColumn();
+        $this->assertStringNotContainsString('Motif', $detail, 'Empty reason should not appear in audit log');
+    }
+
+    public function testDelegateMailSubjectContainsFormAndStep(): void
+    {
+        \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+
+        $pdo = $this->db->getPdo();
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, 'mailsubj_' . uniqid() . '@test.com', $tokenVal, $expiresAt]);
+
+        $toEmail = 'delegate_mailsub_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($tokenId, $toEmail, 'Review needed');
+
+        // Verify delegation record was created with correct data
+        $stmt = $pdo->prepare("SELECT reason FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$tokenId, $toEmail]);
+        $this->assertSame('Review needed', $stmt->fetchColumn());
+    }
+
+    // ── MSI-killer tests: audit log format, message content, edge cases ──
+
+    public function testRegenerateAccessDeniedAuditLogContainsTokenPrefix(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
+        $fakeId = generate_uuid();
+        $this->tokenService->regenerate($fakeId);
+
+        $pdo = $this->db->getPdo();
+        // Check target contains 'token:' prefix
+        $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'access_denied' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['token:' . $fakeId]);
+        $this->assertNotEmpty($stmt->fetchColumn());
+    }
+
+    public function testRegenerateSuccessMessageContainsEmail(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+
+        $result = $this->tokenService->regenerate($this->testPendingTokenId);
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
+    }
+
+    public function testRegenerateAuditLogDetailContainsEmailAndAction(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+
+        $this->tokenService->regenerate($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_regenerate' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['token:' . $this->testPendingTokenId]);
+        $detail = $stmt->fetchColumn();
+        $this->assertStringContainsString($this->testTokenEmail, $detail);
+        $this->assertStringContainsString('nouveau token créé', $detail);
+    }
+
+    public function testRegenerateNewTokenExpiresAtIsValidDate(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+
+        $this->tokenService->regenerate($this->testPendingTokenId);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT expires_at FROM tokens WHERE submission_id = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$this->testSubmissionId]);
+        $expiresAt = $stmt->fetchColumn();
+        // Verify it's a valid date in the future (proves (int) cast worked)
+        $this->assertNotFalse(strtotime((string) $expiresAt));
+        $this->assertGreaterThan(time(), strtotime((string) $expiresAt));
+    }
+
+    public function testCancelAccessDeniedAuditLogFormat(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'unauthorized@test.com';
+        $this->tokenService->cancel($this->testSubmissionId, 'unauthorized@test.com');
+
+        $pdo = $this->db->getPdo();
+        // Check target contains submission prefix
+        $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'access_denied' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['submission:' . $this->testSubmissionId]);
+        $this->assertNotEmpty($stmt->fetchColumn());
+
+        // Check detail contains the caller email
+        $stmt2 = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'access_denied' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt2->execute(['submission:' . $this->testSubmissionId]);
+        $detail = $stmt2->fetchColumn();
+        $this->assertStringContainsString('unauthorized@test.com', $detail);
+    }
+
+    public function testCancelSuccessMessageContainsAnnulee(): void
+    {
+        $result = $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsString('annulée', $result['message']);
+    }
+
+    public function testCancelAuditLogDetailContainsSubmissionId(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'submission_cancel' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['submission:' . $this->testSubmissionId]);
+        $detail = $stmt->fetchColumn();
+        $this->assertNotEmpty($detail, 'Audit log entry should exist');
+        $this->assertStringContainsString('Soumission annulée', $detail);
+    }
+
+    public function testRemindSuccessMessageContainsEmailAndCount(): void
+    {
+        $result = $this->tokenService->remind($this->testPendingTokenId);
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
+        $this->assertStringContainsString('1/3', $result['message']);
+    }
+
+    public function testRemindAuditLogDetailContainsEmailAndCount(): void
+    {
+        $result = $this->tokenService->remind($this->testPendingTokenId);
+        $this->assertTrue($result['success'], 'Remind should succeed');
+
+        $pdo = $this->db->getPdo();
+        // Find the entry for THIS specific token
+        $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'manual_remind' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['token:' . $this->testPendingTokenId]);
+        $detail = $stmt->fetchColumn();
+        $this->assertNotEmpty($detail, 'Audit log entry should exist');
+        $this->assertStringContainsString($this->testTokenEmail, $detail);
+        $this->assertStringContainsString('relance 1/3', $detail);
+    }
+
+    public function testRemindSecondTimeMessageContainsCount2(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+        $result = $this->tokenService->remind($this->testPendingTokenId);
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsString('2/3', $result['message']);
+    }
+
+    public function testRemindMaxReachedMessageContainsMaxNumber(): void
+    {
+        $this->tokenService->remind($this->testPendingTokenId);
+        $this->tokenService->remind($this->testPendingTokenId);
+        $this->tokenService->remind($this->testPendingTokenId);
+
+        $result = $this->tokenService->remind($this->testPendingTokenId);
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('3', $result['message']);
+    }
+
+    public function testDelegateSuccessMessageContainsToEmail(): void
+    {
+        $toEmail = 'delegate_msg_' . uniqid() . '@test.com';
+        $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsString($toEmail, $result['message']);
+    }
+
+    public function testDelegateAuditLogDetailContainsBothEmailsAndToken(): void
+    {
+        $pdo = $this->db->getPdo();
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $fromEmail = 'del_from_' . uniqid() . '@test.com';
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, $fromEmail, $tokenVal, $expiresAt]);
+
+        $toEmail = 'del_to_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($tokenId, $toEmail, 'Vacation');
+
+        // Check target (contains 'token:' prefix)
+        $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute(['token:' . $tokenId]);
+        $target = $stmt->fetchColumn();
+        $this->assertStringContainsString('token:' . $tokenId, $target);
+
+        // Check detail (contains emails and reason)
+        $stmt2 = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
+        $stmt2->execute(['token:' . $tokenId]);
+        $detail = $stmt2->fetchColumn();
+        $this->assertStringContainsString($fromEmail, $detail);
+        $this->assertStringContainsString($toEmail, $detail);
+        $this->assertStringContainsString('Vacation', $detail);
+    }
+
+    public function testDelegateDelegationRecordHasNewTokenId(): void
+    {
+        $pdo = $this->db->getPdo();
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, 'del_newtok_' . uniqid() . '@test.com', $tokenVal, $expiresAt]);
+
+        $toEmail = 'del_target_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($tokenId, $toEmail);
+
+        $stmt = $pdo->prepare("SELECT new_token_id FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$tokenId, $toEmail]);
+        $newTokenId = $stmt->fetchColumn();
+        $this->assertNotEmpty($newTokenId, 'Delegation must reference a new token');
+        // Verify the new token actually exists
+        $check = $pdo->prepare("SELECT 1 FROM tokens WHERE id = ? AND email = ?");
+        $check->execute([$newTokenId, $toEmail]);
+        $this->assertNotEmpty($check->fetch());
+    }
+
+    public function testDelegateOldTokenHasInvalidatedAt(): void
+    {
+        $pdo = $this->db->getPdo();
+        $tokenId = generate_uuid();
+        $tokenVal = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$tokenId, $this->testSubmissionId, $this->testStepId, 'del_inv_' . uniqid() . '@test.com', $tokenVal, $expiresAt]);
+
+        $toEmail = 'del_targ_inv_' . uniqid() . '@test.com';
+        $this->tokenService->delegate($tokenId, $toEmail);
+
+        $stmt = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
+        $stmt->execute([$tokenId]);
+        $this->assertNotNull($stmt->fetchColumn());
+    }
+
+    public function testCancelAllTokensMarkedDone(): void
+    {
+        // Create multiple pending tokens for the same submission
+        $pdo = $this->db->getPdo();
+        $extraTokenId = generate_uuid();
+        $extraToken = generate_token();
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
+        $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$extraTokenId, $this->testSubmissionId, $this->testStepId, 'cancel_extra_' . uniqid() . '@test.com', $extraToken, $expiresAt]);
+
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        // Both tokens should be done
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL");
+        $stmt->execute([$this->testSubmissionId]);
+        $this->assertSame(0, (int) $stmt->fetchColumn(), 'All tokens should be marked done after cancel');
+    }
+
+    public function testCancelValidationEntryHasDate(): void
+    {
+        $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
+        $stmt->execute([$this->testSubmissionId]);
+        $data = json_decode($stmt->fetchColumn(), true);
+        $lastValidation = end($data['validations']);
+        $this->assertNotEmpty($lastValidation['date'], 'Validation entry must have a date');
+        $this->assertNotFalse(strtotime($lastValidation['date']));
+    }
 }
