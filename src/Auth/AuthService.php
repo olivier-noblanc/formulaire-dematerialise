@@ -104,16 +104,20 @@ final class AuthService implements AuthInterface
     /**
      * Vérifie si un email donné est admin (sans dépendre de getUser()).
      * Utile pour vérifier l'user réel quand un persona est actif.
+     *
+     * CS-11 (audit 2026-07-26) : délègue à AdminRepository::findByEmail()
+     * au lieu de faire un SELECT direct via PDO. Alignement avec la règle
+     * noDirectPdo (v10.25.0) et suppression de la duplication de requête
+     * entre AuthService et AdminRepository. Lazy-load via App::getInstance()
+     * pour éviter la dépendance circulaire au constructeur (AuthService est
+     * créé AVANT AdminRepository dans bootstrap.php).
      */
     private function isAdminByEmail(string $email): bool
     {
         if ($email === '') {
             return false;
         }
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('SELECT 1 FROM admins WHERE email = ?');
-        $stmt->execute([$email]);
-        return $stmt->fetch() !== false;
+        return \App\Core\App::getInstance()->get(\App\Repository\AdminRepository::class)->isAdmin($email);
     }
 
     public function isAdmin(): bool
@@ -173,16 +177,12 @@ final class AuthService implements AuthInterface
 
     public function getAdminEmail(): string
     {
+        // CS-11 (audit 2026-07-26) : délègue à AdminRepository::getSuperAdminEmail()
+        // au lieu de faire un SELECT direct via PDO. Alignement avec noDirectPdo.
         try {
-            $pdo = $this->database->getPdo();
-            $stmt = $pdo->prepare('SELECT value FROM settings WHERE key = ?');
-            $stmt->execute(['admin_email']);
-            $val = $stmt->fetchColumn();
-            if ($val && filter_var($val, FILTER_VALIDATE_EMAIL)) {
-                return (string) $val;
-            }
+            return \App\Core\App::getInstance()->get(\App\Repository\AdminRepository::class)->getSuperAdminEmail();
         } catch (\Throwable) {
-            // DB pas encore prête
+            // Container DI ou DB pas encore prêt (tôt dans le bootstrap)
         }
 
         // Fallback sur SETTINGS_DEFAULTS
