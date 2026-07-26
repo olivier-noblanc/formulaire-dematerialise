@@ -214,8 +214,17 @@ final readonly class TokenService
         $mailSent = $this->mailService->send($tok['email'], $subject, $mailBody);
 
         if ($mailSent) {
-            $this->database->getPdo()->prepare('UPDATE tokens SET relance_count = ?, relance_at = ? WHERE id = ?')
-                ->execute([$newCount, gmdate('Y-m-d H:i:s'), $tokenId]);
+            // B7 fix : ajouter WHERE done_at IS NULL pour ne pas incrémenter
+            // relance_count sur un token qui aurait été traité entre-temps (race
+            // condition entre la lecture de $tok et l'UPDATE). Vérifier rowCount()
+            // pour ne pas logger un rappel qui n'a pas réellement mis à jour la DB.
+            $stmt = $this->database->getPdo()->prepare('UPDATE tokens SET relance_count = ?, relance_at = ? WHERE id = ? AND done_at IS NULL');
+            $stmt->execute([$newCount, gmdate('Y-m-d H:i:s'), $tokenId]);
+            if ($stmt->rowCount() === 0) {
+                // Token traité entre-temps (validation/refus concurrent). On ne log
+                // pas un rappel fantôme — l'email a été envoyé mais l'état a changé.
+                return ['success' => false, 'message' => 'Ce token vient d\'être traité. Le rappel n\'est plus pertinent.'];
+            }
             $this->auditLogService->log('manual_remind', 'token:' . $tokenId, 'Rappel manuel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')');
             return ['success' => true, 'message' => 'Rappel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')'];
         }
@@ -266,14 +275,29 @@ final readonly class TokenService
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare("UPDATE tokens SET done_at = datetime('now'), invalidated_at = datetime('now') WHERE id = ?")
-                ->execute([$tokenId]);
+            // B6 fix : ajouter WHERE done_at IS NULL AND invalidated_at IS NULL
+            // pour ne pas invalider un token qui aurait été traité entre la lecture
+            // de $tok et l'UPDATE (race condition). Vérifier rowCount() pour
+            // détecter le cas et rollback.
+            $stmt = $pdo->prepare("UPDATE tokens SET done_at = datetime('now'), invalidated_at = datetime('now') WHERE id = ? AND done_at IS NULL AND invalidated_at IS NULL");
+            $stmt->execute([$tokenId]);
+            if ($stmt->rowCount() === 0) {
+                // Token traité ou invalidé entre-temps (validation/refus/régénération
+                // concurrent). On rollback et informe l'utilisateur.
+                $pdo->rollBack();
+                return ['success' => false, 'message' => 'Ce token vient d\'être traité ou invalidé. La délégation n\'est plus possible.'];
+            }
 
             $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
                 ->execute([$newTokenRowId, $tok['submission_id'], $tok['step_id'], $toEmail, $newToken, $now, $expiresAt]);
 
-            $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
-                ->execute([$delegationId, $tokenId, $tok['email'], $toEmail, $reason, $newTokenRowId]);
+            // B12 fix : utiliser gmdate() (PHP UTC) plutôt que datetime('now')
+            // (SQLite UTC) pour que delegated_at soit calculé dans le même
+            // référentiel que le reste de l'app (relance_at, done_at, etc.).
+            // Avant : delegated_at venait de SQLite, les autres colonnes de PHP —
+            // différence potentielle de 1s entre les deux appels.
+            $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$delegationId, $tokenId, $tok['email'], $toEmail, $reason, $now, $newTokenRowId]);
 
             $pdo->commit();
         } catch (\Throwable $e) {
