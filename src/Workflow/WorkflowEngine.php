@@ -161,6 +161,7 @@ final readonly class WorkflowEngine
      *   closed_at: string|null,
      *   status: string,
      *   admin_comment: string,
+     *   rgpd_consent: int|null,
      *   form_label: string
      * }|null
      */
@@ -176,7 +177,11 @@ final readonly class WorkflowEngine
             WHERE s.id = ?
         ');
         $stmt->execute([$submissionId]);
-        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, form_label: string}|false $result */
+        // CS-12 fix (audit 2026-07-26) : la shape PHPDoc omettait rgpd_consent
+        // bien que le SELECT l'inclue. Contourné par isset() dans
+        // DownloadController:210, mais PHPStan ne pouvait pas détecter les
+        // accès à des clés inexistantes. Shape maintenant complète.
+        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
     }
