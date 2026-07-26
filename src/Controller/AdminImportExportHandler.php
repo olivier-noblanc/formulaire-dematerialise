@@ -100,7 +100,10 @@ final class AdminImportExportHandler
             ];
         }
         $data = json_decode($json_input, true);
-        if ($data === null) {
+        // B-01-5 fix (audit 2026-07-26) : json_decode('null') retourne null légitimement.
+        // Avant, on traitait ça comme un JSON invalide. On vérifie json_last_error()
+        // pour distinguer 'null' valide d'un vrai JSON cassé.
+        if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
             return [
                 'validation_html' => '<div class="msg-error" role="alert" aria-live="assertive">JSON invalide : ' . \App\Core\App::html()->escape(json_last_error_msg()) . '. Vérifiez la syntaxe (virgules manquantes, guillemets non fermés, etc.).</div>',
                 'preserved_json' => $json_input,
@@ -129,7 +132,8 @@ final class AdminImportExportHandler
             return ['error' => 'Aucune donnée JSON fournie pour l\'import.'];
         }
         $data = json_decode($json_input, true);
-        if ($data === null) {
+        // B-01-5 fix : voir commentaire dans handleValidateForm
+        if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
             return ['error' => 'JSON invalide : ' . json_last_error_msg()];
         }
         $validation = \App\Forms\FormJsonValidator::validate($data);

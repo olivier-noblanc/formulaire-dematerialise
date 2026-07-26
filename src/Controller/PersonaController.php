@@ -18,10 +18,34 @@ final class PersonaController extends BaseController
         $action = $_GET['action'] ?? '';
         $currentToken = $_GET['persona_token'] ?? '';
 
+        // B-02-5 fix (audit 2026-07-26) : start et stop sont des actions state-changing
+        // (activation/désactivation d'un persona admin→user). Avant, elles étaient en
+        // GET sans CSRF — un attaquant pouvait forcer un admin à activer un persona
+        // via un lien/image piégé (CSRF GET). Maintenant on exige POST + CSRF.
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            // Afficher une page de confirmation qui fait un POST avec CSRF
+            // plutôt que d'exécuter directement l'action en GET.
+            $redirectUrl = 'index.php';
+            if ($action === 'start') {
+                $targetEmail = strtolower(trim($_GET['email'] ?? ''));
+                // Rediriger vers confirm_action avec les params pour GET→POST
+                $redirectUrl = 'index.php?p=confirm_action&action=persona_start'
+                    . '&email=' . urlencode($targetEmail)
+                    . '&from=' . urlencode('index.php');
+            } elseif ($action === 'stop') {
+                $redirectUrl = 'index.php?p=confirm_action&action=persona_stop'
+                    . '&from=' . urlencode('index.php');
+            }
+            $this->redirect($redirectUrl);
+        }
+
+        // POST : vérifier CSRF
+        $this->security->requireCsrf();
+
         $redirectUrl = 'index.php';
 
         if ($action === 'start') {
-            $targetEmail = strtolower(trim($_GET['email'] ?? ''));
+            $targetEmail = strtolower(trim($_POST['email'] ?? ''));
             if ($targetEmail === '') {
                 http_response_code(400);
                 new \App\Render\ErrorRenderer()->errorPage(
@@ -68,12 +92,11 @@ final class PersonaController extends BaseController
             new \App\Render\ErrorRenderer()->errorPage(
                 400,
                 'Action invalide',
-                'Action non reconnue. Utilisez ?action=start&email=XXX ou ?action=stop.',
+                'Action non reconnue. Utilisez POST ?action=start&email=XXX ou ?action=stop.',
                 ''
             );
         }
 
-        header('Location: ' . $redirectUrl);
-        exit;
+        $this->redirect($redirectUrl);
     }
 }

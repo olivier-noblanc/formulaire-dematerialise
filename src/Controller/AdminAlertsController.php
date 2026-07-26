@@ -32,8 +32,12 @@ final class AdminAlertsController extends BaseController
 
                 if ($formId === '' || $formId === '0') {
                     $errorMsg = 'Veuillez sélectionner un formulaire.';
-                } elseif ($daysBefore < 0) {
-                    $errorMsg = 'Le nombre de jours doit être positif ou zéro.';
+                } elseif ($daysBefore <= 0) {
+                    // B-01-2 fix (audit 2026-07-26) : la CHECK SQL v33 impose days_before > 0
+                    // (J-0 n'a pas de sens — une alerte le jour même de la deadline).
+                    // Avant, PHP acceptait 0 mais l'INSERT échouait en SQL → message
+                    // générique "Une erreur technique est survenue" sans explication.
+                    $errorMsg = 'Le nombre de jours doit être strictement positif (minimum 1).';
                 } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {
@@ -73,8 +77,9 @@ final class AdminAlertsController extends BaseController
                 $customEmail = trim($_POST['custom_email'] ?? '');
                 $actif = isset($_POST['actif']) ? 1 : 0;
 
-                if ($daysBefore < 0) {
-                    $errorMsg = 'Le nombre de jours doit être positif ou zéro.';
+                if ($daysBefore <= 0) {
+                    // B-01-2 fix : voir commentaire dans handleAdd
+                    $errorMsg = 'Le nombre de jours doit être strictement positif (minimum 1).';
                 } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {

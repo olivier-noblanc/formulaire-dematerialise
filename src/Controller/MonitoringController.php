@@ -145,7 +145,9 @@ final class MonitoringController extends BaseController
 
         // Query #9: Audit CSV export
         if (isset($_GET['export_audit']) && $_GET['export_audit'] === '1') {
-            App::audit()->log('audit_export', 'audit_log', 'Export CSV du journal d\'audit filtré');
+            // B-02-9 fix (audit 2026-07-26) : audit_log était enregistré AVANT la génération
+            // du CSV. Si la génération échouait (DB lock, OOM), l'audit disait 'export done'
+            // alors que rien n'avait été exporté. Maintenant on log APRÈS succès.
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="audit_log_' . date('Ymd_His') . '.csv"');
             $auditExportRows = $this->auditRepo->findFiltered($auditFilters);
@@ -165,6 +167,8 @@ final class MonitoringController extends BaseController
                 }
                 fclose($out);
             }
+            // B-02-9 fix : audit log APRÈS succès du export CSV
+            App::audit()->log('audit_export', 'audit_log', 'Export CSV du journal d\'audit filtré');
             exit;
         }
 

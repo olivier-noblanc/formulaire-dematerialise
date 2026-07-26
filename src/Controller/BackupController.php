@@ -71,10 +71,19 @@ final class BackupController extends BaseController
                     } else {
                         App::db()->release();
                         $backupBefore = $dbPath . '.before_restore_' . date('Ymd_His');
+                        // B-02-2 fix (audit 2026-07-26) : copy() retournait false silencieusement
+                        // si le disque était plein ou permissions insuffisantes, puis move_uploaded_file
+                        // écrasait quand même la DB originale → perte de données silencieuse.
+                        // Maintenant on vérifie le retour de copy() et on abort si échec.
+                        $backupOk = true;
                         if (file_exists($dbPath)) {
-                            copy($dbPath, $backupBefore);
+                            $backupOk = @copy($dbPath, $backupBefore);
+                            if (!$backupOk) {
+                                $errorMsg = 'Impossible de créer la sauvegarde pré-restauration (permissions disque ?). Restauration annulée pour protéger la base actuelle.';
+                                error_log('backup_restore: copy() failed to create ' . $backupBefore);
+                            }
                         }
-                        if (move_uploaded_file($tmpPath, $dbPath)) {
+                        if ($backupOk && move_uploaded_file($tmpPath, $dbPath)) {
                             try {
                                 $testPdo = new \PDO('sqlite:' . $dbPath);
                                 $testPdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
@@ -93,13 +102,20 @@ final class BackupController extends BaseController
                                 $successMsg = 'La base de données a été restaurée avec succès depuis « ' . App::html()->escape($origName) . ' ». '
                                                . 'Une copie de la base précédente a été conservée : ' . App::html()->escape(basename($backupBefore));
                             } catch (\Exception $e) {
+                                // B-02-3 fix : copy() de secours non vérifié — si échec, message
+                                // disait 'rétablie' alors que la DB était vide/corrompue.
+                                $rollbackOk = true;
                                 if (file_exists($backupBefore)) {
-                                    copy($backupBefore, $dbPath);
+                                    $rollbackOk = @copy($backupBefore, $dbPath);
                                 }
-                                error_log('backup_restore error: ' . $e->getMessage());
-                                $errorMsg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie.';
+                                error_log('backup_restore error: ' . $e->getMessage() . ' | rollback copy: ' . ($rollbackOk ? 'ok' : 'FAILED'));
+                                if ($rollbackOk) {
+                                    $errorMsg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie.';
+                                } else {
+                                    $errorMsg = 'La base restaurée semble corrompue ET la restauration de secours a échoué. La sauvegarde manuelle est disponible : ' . App::html()->escape(basename($backupBefore)) . '. Contactez l\'administrateur.';
+                                }
                             }
-                        } else {
+                        } elseif ($backupOk) {
                             $errorMsg = 'Impossible de remplacer le fichier de base de données. Vérifiez les permissions du dossier db/.';
                             if (file_exists($backupBefore)) {
                                 @unlink($backupBefore);
@@ -182,11 +198,13 @@ final class BackupController extends BaseController
         }
 
         $dbStats = [];
-        $dbStats['file_size'] = filesize($dbPath);
-        $dbStats['file_size_readable'] = $this->formatBytes((int) $dbStats['file_size']);
+        // B-02-7 fix (audit 2026-07-26) : filesize() était appelé AVANT file_exists()
+        // → warning PHP si le fichier n'existe pas. On inverse l'ordre.
         $dbStats['file_exists'] = file_exists($dbPath);
+        $dbStats['file_size'] = $dbStats['file_exists'] ? filesize($dbPath) : false;
+        $dbStats['file_size_readable'] = $this->formatBytes((int) ($dbStats['file_size'] ?: 0));
         $dbStats['file_modified'] = '—';
-        if (file_exists($dbPath)) {
+        if ($dbStats['file_exists']) {
             $mtime = filemtime($dbPath);
             $dbStats['file_modified'] = $mtime !== false ? date('d/m/Y H:i:s', $mtime) : '—';
         }

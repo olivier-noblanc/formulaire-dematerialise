@@ -254,7 +254,10 @@ final class DashboardController extends BaseController
         try {
             $sys_bk_row = $this->auditRepo->getLastBackupDate();
             if ($sys_bk_row) {
-                $sys_bk_ts = strtotime($sys_bk_row);
+                // B-02-10 fix (audit 2026-07-26) : strtotime() sans UTC sur une date stockée
+                // en UTC (audit_log.created_at = datetime('now') SQLite = UTC) provoque un
+                // décalage de 1-2h en prod (Europe/Paris). On force l'interprétation UTC.
+                $sys_bk_ts = strtotime($sys_bk_row . ' UTC');
                 $sys_last_backup = $sys_bk_ts !== false ? date('d/m/Y', $sys_bk_ts) : '—';
             } else {
                 // Fallback : date de dernière modification du fichier DB

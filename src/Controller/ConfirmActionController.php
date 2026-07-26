@@ -80,7 +80,13 @@ final class ConfirmActionController extends BaseController
             }
         }
 
-        $this->security->requireCsrf();
+        // B-02-1 fix (audit 2026-07-26) : requireCsrf() était appelé sur GET, ce qui
+        // cassait la page de confirmation en production (CSRF token absent des URLs
+        // de redirection qui pointent vers cette page). Le CSRF est vérifié sur le
+        // POST final (dans les controllers qui exécutent l'action), pas sur l'affichage
+        // de la page de confirmation. En TEST_MODE, requireCsrf est no-op donc le bug
+        // était invisible à la suite de tests.
+        // $this->security->requireCsrf(); // ← retiré
 
         $confirmMessage = $config['description'];
         $detailText = '';
