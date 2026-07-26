@@ -1,19 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Controller {
-    // Override test_json_response for App\Controller namespace.
-    // When _test_no_exit is true, captures data and throws TestJsonCapturedException
-    // instead of calling exit. Allows PHPUnit to exercise controllers that call
-    // test_json_response without killing the process.
-    function test_json_response(array $data): void
-    {
-        $GLOBALS['_test_captured_json'] = $data;
-        throw new \App\Tests\Controller\TestJsonCapturedException($data);
-    }
-}
-
-namespace App\Tests\Controller {
+namespace App\Tests\Controller;
 
 use App\Core\App;
 use App\Core\Database;
@@ -277,5 +265,4 @@ final class FormControllerTest extends TestCase
         $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)")
             ->execute([\generate_uuid(), $stepId, $recipientEmail]);
     }
-}
 }
