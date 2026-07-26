@@ -16,8 +16,8 @@ final class SubmissionViewController extends BaseController
         $subId = trim($_GET['id'] ?? '');
 
         if (empty($subId)) {
-            header('Location: index.php?p=dashboard');
-            exit;
+            // B-EXIT : utiliser redirect() pour mode 'no-exit' (tests PHPUnit)
+            $this->redirect('index.php?p=dashboard');
         }
 
         $sub = $this->submissionRepo->findByIdWithForm($subId);
@@ -57,15 +57,15 @@ final class SubmissionViewController extends BaseController
             if ($action === 'cancel_submission' && ($isAdmin || $sub['submitted_by'] === $user)) {
                 $this->submissionRepo->cancelById($subId);
                 App::audit()->log('submission_cancel', 'submission:' . $subId, 'Soumission annulée par ' . $user);
-                header('Location: index.php?p=submission_view&id=' . urlencode($subId));
-                exit;
+                // B-EXIT : redirect() au lieu de header()+exit
+                $this->redirect('index.php?p=submission_view&id=' . urlencode($subId));
             }
 
             if ($action === 'delete_submission' && $isAdmin) {
                 $this->submissionRepo->deleteCascade($subId);
                 App::audit()->log('submission_delete', 'submission:' . $subId, 'Soumission supprimée par ' . $user);
-                header('Location: index.php?p=dashboard');
-                exit;
+                // B-EXIT : redirect() au lieu de header()+exit
+                $this->redirect('index.php?p=dashboard');
             }
         }
 

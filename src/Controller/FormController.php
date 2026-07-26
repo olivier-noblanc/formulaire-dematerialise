@@ -234,9 +234,10 @@ final class FormController extends BaseController
         }
 
         // Mode test : GET renvoie les métadonnées du formulaire en JSON
+        // B-EXIT (audit 2026-07-26) : utiliser test_json_response() au lieu de
+        // echo+exit direct pour permettre le mode 'no-exit' (tests PHPUnit).
         /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
         if (TEST_MODE && $_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['screenshot'])) {
-            header('Content-Type: application/json; charset=utf-8');
             $fields_list = [];
             foreach ($form_fields as $form_field) {
                 $fields_list[] = [
@@ -248,8 +249,7 @@ final class FormController extends BaseController
                     'card_group' => $form_field['card_group'],
                 ];
             }
-            echo json_encode([
-                '_test_mode'   => true,
+            test_json_response([
                 'form'         => [
                     'id'          => $form['id'],
                     'slug'        => $form['slug'],
@@ -259,8 +259,7 @@ final class FormController extends BaseController
                 'fields'       => $fields_list,
                 'csrf_token'   => $this->security->generateCsrfToken(),
                 'submitted_by' => $submitted_by,
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            exit;
+            ]);
         }
 
         // Regrouper les champs par card_group pour le rendu visuel
