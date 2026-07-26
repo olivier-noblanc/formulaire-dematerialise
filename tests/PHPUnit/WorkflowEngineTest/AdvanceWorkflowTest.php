@@ -196,6 +196,10 @@ final class AdvanceWorkflowTest extends Base
     }
     public function testAdvanceWorkflowClosesImmediatelyWithNoSteps(): void
     {
+        // B-W1 fix (audit fonctionnel 2026-07-26) : avant, advanceWorkflow clôturait
+        // une soumission sans étape comme 'valide'. C'était un bug métier — une
+        // soumission sans validation ne devrait pas être marquée validée.
+        // Maintenant : la soumission reste en_cours + audit_log 'workflow_no_steps'.
         $pdo = $this->db->getPdo();
         $formId = \generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, 'NoSteps', 'test', 0, datetime('now'))")->execute([$formId, 'no-steps-' . uniqid()]);
@@ -205,8 +209,13 @@ final class AdvanceWorkflowTest extends Base
         $check = $pdo->prepare("SELECT closed_at, status FROM submissions WHERE id = ?");
         $check->execute([$subId]);
         $row = $check->fetch(\PDO::FETCH_ASSOC);
-        $this->assertNotEmpty($row['closed_at']);
-        $this->assertSame('valide', $row['status']);
+        // B-W1 : ne doit PAS clôturer — la soumission reste en_cours
+        $this->assertEmpty($row['closed_at'], 'B-W1: soumission sans étape ne doit pas être clôturée');
+        $this->assertSame('en_cours', $row['status']);
+        // Vérifier qu'un audit_log a été créé
+        $auditStmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log WHERE action = 'workflow_no_steps' AND target = ?");
+        $auditStmt->execute(['submission:' . $subId]);
+        $this->assertGreaterThan(0, (int) $auditStmt->fetchColumn(), 'audit_log workflow_no_steps doit être créé');
     }
     public function testAdvanceWorkflowSkipsStepWithFalseCondition(): void
     {
