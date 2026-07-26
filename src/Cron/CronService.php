@@ -27,6 +27,12 @@ final class CronService
      * puis l'exécution des callbacks/fichiers. Cela évite que les fichiers
      * requis (remind.php, alert_check.php) ne verrouillent la DB au milieu
      * des INSERT, ce qui casserait les tâches suivantes.
+     *
+     * B9 fix (audit 2026-07-26) : si le callback d'une tâche lève une exception,
+     * on réécrit last_run à sa valeur précédente (ou DELETE la ligne si c'était
+     * la première exécution). La tâche sera ainsi réessayée à la prochaine requête
+     * au lieu d'attendre un nouvel intervalle complet. run_count reste incrémenté
+     * pour garder une trace de la tentative échouée (acceptable pour KISS).
      */
     public function runLazyCron(): void
     {
@@ -46,6 +52,8 @@ final class CronService
         ];
 
         $due = [];
+        /** @var array<string, string|false|null> $prevLastRun capture la valeur avant update pour revert en cas d'échec */
+        $prevLastRun = [];
 
         // Pass 1 : déterminer les tâches à exécuter et enregistrer en DB
         try {
@@ -82,6 +90,8 @@ final class CronService
                             continue;
                         }
                     }
+                    // B9 : capturer la valeur précédente pour revert en cas d'échec du callback
+                    $prevLastRun[$key] = $last_run2;
                     $pdo->prepare('INSERT OR REPLACE INTO lazy_cron (task_key, last_run, run_count) VALUES (?, ?, COALESCE((SELECT run_count FROM lazy_cron WHERE task_key = ?), 0) + 1)')
                         ->execute([$key, gmdate('Y-m-d H:i:s', $nowTs), $key]);
                     $pdo->exec('COMMIT');
@@ -105,6 +115,7 @@ final class CronService
         // Pass 2 : exécuter les callbacks/fichiers des tâches enregistrées
         foreach ($due as $key) {
             $task = $tasks[$key];
+            $callbackFailed = false;
             try {
                 $GLOBALS['_lazy_cron_running'] = true;
                 ob_start();
@@ -118,7 +129,29 @@ final class CronService
             } catch (\Throwable $e) {
                 ob_end_clean();
                 $GLOBALS['_lazy_cron_running'] = false;
+                $callbackFailed = true;
                 error_log("Lazy cron error ({$key}): " . $e->getMessage());
+            }
+
+            // B9 fix : si le callback a échoué, revert last_run pour permettre
+            // une nouvelle tentative à la prochaine requête au lieu d'attendre
+            // un intervalle complet. run_count reste incrémenté (trace de tentative).
+            if ($callbackFailed) {
+                $prev = $prevLastRun[$key] ?? null;
+                try {
+                    if (in_array($prev, [false, null, ''], true)) {
+                        // Première exécution qui a échoué → supprimer la ligne pour
+                        // que should_run=true au prochain passage.
+                        $pdo->prepare('DELETE FROM lazy_cron WHERE task_key = ?')->execute([$key]);
+                    } else {
+                        // Écrire l'ancienne valeur (assez ancienne pour que la tâche
+                        // soit de nouveau considérée due au prochain passage).
+                        $pdo->prepare('UPDATE lazy_cron SET last_run = ? WHERE task_key = ?')
+                            ->execute([(string) $prev, $key]);
+                    }
+                } catch (\Throwable $revertErr) {
+                    error_log("Lazy cron revert error ({$key}): " . $revertErr->getMessage());
+                }
             }
         }
     }
