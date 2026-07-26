@@ -210,8 +210,10 @@ final class RgpdServiceTest extends TestCase
             ->execute([$tokenId, $submissionId, $stepId, 'test@test.com', \generate_token()]);
 
         // Add delegation records
+        // v33 (audit 2026-07-26) : delegations.new_token_id a maintenant une FK vers tokens(id).
+        // On insère NULL au lieu de '' (chaîne vide) pour respecter la contrainte.
         $delId = 'del-' . uniqid();
-        $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, '', datetime('now'), '')")
+        $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, '', datetime('now'), NULL)")
             ->execute([$delId, $tokenId, $testEmail, 'target@test.com']);
 
         $result = $this->service->deleteUserData($testEmail);
