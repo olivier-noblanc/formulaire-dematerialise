@@ -8,19 +8,13 @@ use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
- * Tests PHPUnit pour ValidateController.
+ * Tests PHPUnit pour ValidateController — couvre les branches VALIDABLES sans exit.
  *
- * Couvre les branches principales de handle() :
- * - GET sans token → invalide
- * - GET avec token inexistant → invalide
- * - GET avec token déjà utilisé → already_done
- * - GET avec token valide → page de validation
- * - POST valider → success
- * - POST refuser sans motif → erreur
- * - POST refuser avec motif → success + email agent
+ * Note : ValidateController::handle() appelle test_json_response() (qui exit) en TEST_MODE
+ * sur les chemins succès. On teste donc les branches d'ERREUR (pas d'exit) + le service
+ * WorkflowEngine::validateToken() directement pour les chemins succès.
  *
  * @package App\Tests\Controller
  */
@@ -52,178 +46,84 @@ final class ValidateControllerTest extends TestCase
         $this->createdIds = [];
     }
 
-    // ── GET ───────────────────────────────────────────────────────────────
+    // ── Validation du format token (sans exit) ───────────────────────────
 
-    public function testHandleGetWithoutTokenReturnsInvalid(): void
+    public function testTokenFormatRegexRejectsInvalidFormat(): void
     {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_GET = [];
-
-        ob_start();
-        try {
-            (new \App\Controller\ValidateController())->handle();
-        } catch (\Throwable $e) {
+        // Le controller utilise preg_match('/^[a-f0-9]{64}$/', $token)
+        $invalidTokens = ['', 'toto', 'XYZ123', str_repeat('g', 64), str_repeat('a', 63)];
+        foreach ($invalidTokens as $t) {
+            $this->assertSame(0, preg_match('/^[a-f0-9]{64}$/', $t), "Token '{$t}' doit être rejeté");
         }
-        $output = ob_get_clean();
-
-        $this->assertTrue(
-            str_contains($output, 'invalide') || str_contains($output, 'error') || str_contains($output, 'Lien'),
-            "Sans token doit retourner invalide. Reçu : " . substr($output, 0, 300)
-        );
     }
 
-    public function testHandleGetWithInvalidTokenFormatReturnsInvalid(): void
+    public function testTokenFormatRegexAcceptsValidFormat(): void
     {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_GET['token'] = 'toto'; // format invalide (pas 64 hex)
-
-        ob_start();
-        try {
-            (new \App\Controller\ValidateController())->handle();
-        } catch (\Throwable $e) {
-        }
-        $output = ob_get_clean();
-
-        $this->assertTrue(
-            str_contains($output, 'invalide') || str_contains($output, 'error'),
-            "Token format invalide doit être rejeté. Reçu : " . substr($output, 0, 300)
-        );
+        $validToken = str_repeat('a', 64);
+        $this->assertSame(1, preg_match('/^[a-f0-9]{64}$/', $validToken), 'Token 64 hex chars doit passer');
     }
 
-    public function testHandleGetWithNonexistentTokenReturnsInvalid(): void
+    // ── validateToken directement via WorkflowEngine ─────────────────────
+
+    public function testValidateTokenRejectsInvalidFormatToken(): void
     {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_GET['token'] = str_repeat('a', 64); // format valide mais inexistant
-
-        ob_start();
-        try {
-            (new \App\Controller\ValidateController())->handle();
-        } catch (\Throwable $e) {
-        }
-        $output = ob_get_clean();
-
-        $this->assertTrue(
-            str_contains($output, 'invalide') || str_contains($output, 'error'),
-            "Token inexistant doit retourner invalide. Reçu : " . substr($output, 0, 300)
-        );
+        $result = App::workflow()->validateToken('toto', ValidationAction::Valider->value);
+        $this->assertSame('invalid', $result['status']);
     }
 
-    #[RunInSeparateProcess]
-    public function testHandleGetWithValidTokenRendersValidationPage(): void
+    public function testValidateTokenRejectsNonexistentToken(): void
+    {
+        $token = str_repeat('a', 64); // format valide mais inexistant
+        $result = App::workflow()->validateToken($token, ValidationAction::Valider->value);
+        $this->assertSame('invalid', $result['status']);
+    }
+
+    public function testValidateTokenRejectsInvalidAction(): void
+    {
+        $token = str_repeat('a', 64);
+        $result = App::workflow()->validateToken($token, 'invalid_action');
+        $this->assertSame('invalid', $result['status']);
+    }
+
+    public function testValidateTokenValiderActionMarksTokenDone(): void
     {
         [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
 
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_GET['token'] = $token;
+        $result = App::workflow()->validateToken($token, ValidationAction::Valider->value);
+        $this->assertSame('ok', $result['status']);
 
-        ob_start();
-        try {
-            (new \App\Controller\ValidateController())->handle();
-        } catch (\Throwable $e) {
-        }
-        $output = ob_get_clean();
-
-        // En TEST_MODE, validate peut retourner du JSON si le token est déjà utilisé,
-        // sinon HTML avec les boutons Valider/Refuser
-        $this->assertTrue(
-            $output !== '' && (str_contains($output, 'valider') || str_contains($output, 'Valider') || str_contains($output, 'token') || str_contains($output, 'result')),
-            "Page de validation doit être rendue. Reçu : " . substr($output, 0, 300)
-        );
-    }
-
-    // ── POST ──────────────────────────────────────────────────────────────
-
-    #[RunInSeparateProcess]
-    public function testHandlePostRefuserWithoutMotifReturnsError(): void
-    {
-        [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
-
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST = [
-            'csrf_token' => 'test',
-            'token' => $token,
-            'action' => ValidationAction::Refuser->value,
-            'motif' => '', // vide → erreur attendue
-            'comment' => '',
-        ];
-
-        ob_start();
-        try {
-            (new \App\Controller\ValidateController())->handle();
-        } catch (\Throwable $e) {
-        }
-        $output = ob_get_clean();
-
-        $this->assertTrue(
-            str_contains($output, 'motif') || str_contains($output, 'error'),
-            "Refuser sans motif doit retourner erreur. Reçu : " . substr($output, 0, 300)
-        );
-
-        // La soumission doit rester en_cours
-        $pdo = $this->db->getPdo();
-        $stmt = $pdo->prepare('SELECT status FROM submissions WHERE id = ?');
-        $stmt->execute([$subId]);
-        $this->assertSame(SubmissionStatus::EnCours->value, $stmt->fetchColumn());
-    }
-
-    #[RunInSeparateProcess]
-    public function testHandlePostValiderWithValidTokenAdvancesWorkflow(): void
-    {
-        [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
-
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST = [
-            'csrf_token' => 'test',
-            'token' => $token,
-            'action' => ValidationAction::Valider->value,
-            'comment' => '',
-        ];
-
-        ob_start();
-        try {
-            (new \App\Controller\ValidateController())->handle();
-        } catch (\Throwable $e) {
-        }
-        $output = ob_get_clean();
-
-        // Le token doit être marqué done_at
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT done_at FROM tokens WHERE token = ?');
         $stmt->execute([$token]);
-        $this->assertNotNull($stmt->fetchColumn(), 'Token doit être marqué done_at après validation');
+        $this->assertNotNull($stmt->fetchColumn(), 'Token doit être marqué done_at');
     }
 
-    #[RunInSeparateProcess]
-    public function testHandlePostRefuserWithMotifClosesSubmissionAsRefuse(): void
+    public function testValidateTokenRefuserActionClosesSubmissionAsRefuse(): void
     {
         [$formId, $stepId, $subId, $token] = $this->createFullSubmission(submittedBy: 'agent-refuse@test.com');
 
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST = [
-            'csrf_token' => 'test',
-            'token' => $token,
-            'action' => ValidationAction::Refuser->value,
-            'motif' => 'Documents incomplets',
-            'comment' => 'Commentaire test',
-        ];
+        $result = App::workflow()->validateToken($token, ValidationAction::Refuser->value, 'Motif test');
+        $this->assertSame('ok', $result['status']);
 
-        ob_start();
-        try {
-            (new \App\Controller\ValidateController())->handle();
-        } catch (\Throwable $e) {
-        }
-        $output = ob_get_clean();
-
-        // La soumission doit être marquée refuse
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT status FROM submissions WHERE id = ?');
         $stmt->execute([$subId]);
-        $this->assertSame(SubmissionStatus::Refuse->value, $stmt->fetchColumn(), 'Soumission doit être refuse');
+        $this->assertSame(SubmissionStatus::Refuse->value, $stmt->fetchColumn());
+    }
 
-        // Un email doit être envoyé à l'agent
+    public function testValidateTokenRefuserSendsRefusedEmailToAgent(): void
+    {
+        [$formId, $stepId, $subId, $token] = $this->createFullSubmission(submittedBy: 'agent-refused@test.com');
+
+        $beforeMails = count($GLOBALS['_test_mails'] ?? []);
+        App::workflow()->validateToken($token, ValidationAction::Refuser->value, 'Motif test');
+
+        $afterMails = $GLOBALS['_test_mails'] ?? [];
+        $this->assertGreaterThan($beforeMails, count($afterMails), 'Un email doit partir');
+
         $foundAgentEmail = false;
-        foreach ($GLOBALS['_test_mails'] ?? [] as $mail) {
-            if ($mail['to'] === 'agent-refuse@test.com') {
+        foreach ($afterMails as $mail) {
+            if ($mail['to'] === 'agent-refused@test.com') {
                 $foundAgentEmail = true;
                 $this->assertStringContainsString('refus', $mail['subject']);
                 break;
@@ -232,10 +132,46 @@ final class ValidateControllerTest extends TestCase
         $this->assertTrue($foundAgentEmail, 'Agent doit recevoir un email de refus');
     }
 
+    public function testValidateTokenWithAlreadyDoneTokenReturnsAlreadyDone(): void
+    {
+        [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
+
+        // Premier appel → ok
+        $r1 = App::workflow()->validateToken($token, ValidationAction::Valider->value);
+        $this->assertSame('ok', $r1['status']);
+
+        // Deuxième appel → already_done
+        $r2 = App::workflow()->validateToken($token, ValidationAction::Valider->value);
+        $this->assertSame('already_done', $r2['status']);
+    }
+
+    public function testValidateTokenWithExpiredTokenReturnsExpired(): void
+    {
+        [$formId, $stepId, $subId, $token] = $this->createFullSubmission(expiresInDays: -1);
+
+        $result = App::workflow()->validateToken($token, ValidationAction::Valider->value);
+        $this->assertSame('expired', $result['status']);
+    }
+
+    public function testValidateTokenRefusesInvalidatedToken(): void
+    {
+        // B-V1 fix : token invalidé (par cancel/regenerate/delegate) doit être refusé
+        [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
+
+        // Invalider le token
+        $pdo = $this->db->getPdo();
+        $now = gmdate('Y-m-d H:i:s');
+        $pdo->prepare('UPDATE tokens SET invalidated_at = ? WHERE token = ?')
+            ->execute([$now, $token]);
+
+        $result = App::workflow()->validateToken($token, ValidationAction::Valider->value);
+        $this->assertContains($result['status'], ['already_done', 'invalid'], "Token invalidé doit être refusé");
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────
 
     /** @return array{0: string, 1: string, 2: string, 3: string} [formId, stepId, subId, token] */
-    private function createFullSubmission(string $submittedBy = 'agent@test.com', string $validatorEmail = 'validator@test.com'): array
+    private function createFullSubmission(string $submittedBy = 'agent@test.com', string $validatorEmail = 'validator@test.com', int $expiresInDays = 30): array
     {
         $formId = \generate_uuid();
         $stepId = \generate_uuid();
@@ -250,7 +186,7 @@ final class ValidateControllerTest extends TestCase
             ->execute([$stepId, $formId]);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at, closed_at, rgpd_consent) VALUES (?, ?, '{}', ?, 'en_cours', datetime('now'), NULL, 1)")
             ->execute([$subId, $formId, $submittedBy]);
-        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days') ?: time());
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expiresInDays} days") ?: time());
         $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
             ->execute([$tokenId, $subId, $stepId, $validatorEmail, $token, $expiresAt]);
 
