@@ -51,7 +51,7 @@ _Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration dupl
 
 Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 - **29 confirmés fixés** par les sessions précédentes (invalidated_at, optimistic locking, RGPD complet, REMOTE_ADDR, checkbox required, floor(), opérateurs sync, etc.)
-- **- **1 encore présent** : JargonService entier mort (#26) — à supprimer
+- **1 faux positif** : #26 (JargonService) — le service est vivant (81 références via `t_jargon()` → `JargonService::translate()`), le TODO avait tort
 
 ---
 
