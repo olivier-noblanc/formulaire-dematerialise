@@ -15,7 +15,6 @@ final class FormTrackingController extends BaseController
     public function handle(): void
     {
         $user = App::auth()->getUser();
-        $pdo = $this->db->getPdo();
         $formUuid = trim($_GET['f'] ?? '');
 
         $form = null;

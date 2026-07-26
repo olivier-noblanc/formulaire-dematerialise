@@ -13,7 +13,6 @@ final class SubmissionViewController extends BaseController
 {
     public function handle(): void
     {
-        $pdo = $this->db->getPdo();
         $subId = trim($_GET['id'] ?? '');
 
         if (empty($subId)) {

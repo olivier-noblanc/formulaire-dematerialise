@@ -522,9 +522,12 @@ final class MonitoringRenderer
                 'sent'         => ['label' => 'Envoyé',     'cls' => 'badge-ok'],
                 'error'        => ['label' => 'Échec',      'cls' => 'badge-err'],
                 'blocked'      => ['label' => 'Bloqué',     'cls' => 'badge-warn'],
-                'rate_limited' => ['label' => 'Rate-limit', 'cls' => 'badge-warn'],
-                'cli_blocked'  => ['label' => 'CLI bloqué', 'cls' => 'badge-warn'],
                 'dry_run'      => ['label' => 'Dry-run',    'cls' => 'badge-info'],
+                // B18 fix (audit 2026-07-26) : 'cli_blocked' et 'rate_limited' ont été
+                // retirés — la migration v31 a ajouté un CHECK sur mail_log.status qui
+                // restreint à 'sent'|'blocked'|'dry_run'|'error'. Aucun code dans
+                // MailService::sendDetailed() ne produit 'cli_blocked' ou 'rate_limited'
+                // (vérifié par grep). Ces labels étaient du code mort depuis v31.
             ];
             $badge_info = $status_labels[$status] ?? ['label' => $status, 'cls' => 'badge-info'];
             $badge_html = '<span class="badge ' . $badge_info['cls'] . '">' . $badge_info['label'] . '</span>';
