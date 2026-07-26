@@ -48,6 +48,8 @@ function apply_migration_v14(PDO $pdo, int $current_version): int {
                     throw new \RuntimeException('v14: PRAGMA table_info(submission_validator_data) failed');
                 }
                 $cols_check = $cols_check_stmt->fetchAll(PDO::FETCH_ASSOC);
+                // CS-06 fix (audit 2026-07-26) : libérer le statement avant le prochain DDL
+                $cols_check_stmt = null;
                 $existing_cols = array_column($cols_check, 'name');
                 foreach ($cols_to_add as $col_name => $col_type) {
                     if (!in_array($col_name, $existing_cols, true)) {
@@ -58,7 +60,9 @@ function apply_migration_v14(PDO $pdo, int $current_version): int {
                 // Index UNIQUE sur (submission_id, field_name).
                 // SQLite ne permet pas ALTER TABLE ADD CONSTRAINT sur une table
                 // existante : on crée un index UNIQUE explicite nommé idx_svd_sub_field.
-                $idx_check = _dbm_q($pdo, "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_svd_sub_field'")->fetchColumn();
+                $idx_check_stmt = _dbm_q($pdo, "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_svd_sub_field'");
+                $idx_check = $idx_check_stmt->fetchColumn();
+                $idx_check_stmt = null; // CS-06
                 if ($idx_check !== 'idx_svd_sub_field') {
                     // Dédoubler avant de créer l'index UNIQUE : on garde le plus
                     // ancien (MIN(id)) par (submission_id, field_name) pour
@@ -78,12 +82,15 @@ function apply_migration_v14(PDO $pdo, int $current_version): int {
                 throw new \RuntimeException('v14: PRAGMA table_info(submission_validator_data) failed');
             }
             $final_cols = $final_cols_stmt->fetchAll(PDO::FETCH_ASSOC);
+            $final_cols_stmt = null; // CS-06
             $final_col_names = array_column($final_cols, 'name');
             $has_step_id         = in_array('step_id', $final_col_names, true);
             $has_step_label      = in_array('step_label', $final_col_names, true);
             $has_filled_by_email = in_array('filled_by_email', $final_col_names, true);
             $has_token_id        = in_array('token_id', $final_col_names, true);
-            $final_idx = _dbm_q($pdo, "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_svd_sub_field'")->fetchColumn();
+            $final_idx_stmt = _dbm_q($pdo, "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_svd_sub_field'");
+            $final_idx = $final_idx_stmt->fetchColumn();
+            $final_idx_stmt = null; // CS-06
 
             if ($has_step_id && $has_step_label && $has_filled_by_email && $has_token_id && $final_idx === 'idx_svd_sub_field') {
                 $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([14]);

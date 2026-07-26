@@ -62,13 +62,18 @@ function apply_migration_v13(PDO $pdo, int $current_version): int {
                 throw new \RuntimeException('v13: PRAGMA table_info(form_fields) failed');
             }
             $cols_check = $cols_check_stmt->fetchAll(PDO::FETCH_ASSOC);
+            // CS-06 fix (audit 2026-07-26) : libérer le statement avant le _dbm_q suivant
+            // (règle SQLITE_LOCKED intra-processus, voir AGENTS.md).
+            $cols_check_stmt = null;
             $has_filled_by = false;
             $has_validator_step = false;
             foreach ($cols_check as $c) {
                 if ($c['name'] === 'filled_by')    $has_filled_by    = true;
                 if ($c['name'] === 'validator_step') $has_validator_step = true;
             }
-            $table_exists = _dbm_q($pdo, "SELECT name FROM sqlite_master WHERE type='table' AND name='submission_validator_data'")->fetchColumn();
+            $table_exists_stmt = _dbm_q($pdo, "SELECT name FROM sqlite_master WHERE type='table' AND name='submission_validator_data'");
+            $table_exists = $table_exists_stmt->fetchColumn();
+            $table_exists_stmt = null; // CS-06 : libérer avant le prochain DDL
 
             if ($has_filled_by && $has_validator_step && $table_exists === 'submission_validator_data') {
                 $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([13]);

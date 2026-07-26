@@ -42,6 +42,9 @@ function apply_migration_v23(PDO $pdo, int $current_version): int {
             throw new \RuntimeException('v23: COUNT query failed');
         }
         $v23_done = (int) $v23_stmt->fetchColumn();
+        // CS-06 fix (audit 2026-07-26) : libérer le statement AVANT le DDL suivant
+        // (règle SQLITE_LOCKED intra-processus, voir AGENTS.md).
+        $v23_stmt = null;
         if ($v23_done > 0) {
             return max($current_version, 23);
         }
@@ -55,6 +58,8 @@ function apply_migration_v23(PDO $pdo, int $current_version): int {
             throw new \RuntimeException('v23: COUNT sqlite_master failed');
         }
         $table_exists = (int) $table_exists_stmt->fetchColumn();
+        // CS-06 : libérer le statement avant le DDL CREATE TABLE ci-dessous
+        $table_exists_stmt = null;
 
         if ($table_exists === 0) {
             $pdo->exec("
