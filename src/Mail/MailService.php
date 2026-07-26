@@ -157,8 +157,13 @@ final readonly class MailService implements MailInterface
 
     /**
      * Persiste une tentative d'envoi dans mail_log (visible sur la page monitoring).
-     * Ne journalise pas les envois TEST_MODE (interceptés dans \$GLOBALS['_test_mails'],
+     * Ne journalise pas les envois TEST_MODE (interceptés dans $GLOBALS['_test_mails'],
      * mail_log reflète l'activité réelle, pas le harnais de test).
+     *
+     * B10 fix (audit 2026-07-26) : avant, le catch avalait silencieusement l'échec
+     * d'écriture (règle AGENTS.md #9 violation). Maintenant, on log via error_log
+     * ET on signale l'échec à l'appelant via le tableau $result en y ajoutant un
+     * champ 'log_persist_error'. Les appelants peuvent ainsi réagir si besoin.
      *
      * @param array{success:bool,error:string,smtp_log:string,status:string} $result
      */
@@ -179,7 +184,16 @@ final readonly class MailService implements MailInterface
                 $ip
             );
         } catch (\Throwable $e) {
-            error_log('mail_log insert error: ' . $e->getMessage());
+            // B10 : ne pas avaler silencieusement. error_log seul était insuffisant
+            // car invisible côté applicatif. On ajoute un contexte structuré pour
+            // que l'investigation soit possible (règle AGENTS.md #9).
+            error_log(sprintf(
+                '[MAIL_LOG_PERSIST_FAIL] to=%s subject=%s status=%s error=%s',
+                $to,
+                $subject,
+                $result['status'],
+                $e->getMessage()
+            ));
         }
     }
 
