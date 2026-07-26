@@ -44,23 +44,9 @@ final readonly class WorkflowEngine
      */
     public function getTokenWithContext(string $tokenValue): ?array
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('
-            SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
-                   t.done_at, t.relance_at, t.expires_at, t.relance_count,
-                   st.label as step_label, s.form_id,
-                   f.label as form_label, s.data, s.closed_at, s.status,
-                   s.submitted_by
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            WHERE t.token = ?
-        ');
-        $stmt->execute([$tokenValue]);
-        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result ?: null;
+        // CS-05 (audit 2026-07-26) : factorisé via fetchTokenByCondition()
+        // pour éliminer la duplication SQL/PHPDoc avec getTokenByIdWithContext().
+        return $this->fetchTokenByCondition('t.token = ?', [$tokenValue]);
     }
 
     /**
@@ -86,8 +72,40 @@ final readonly class WorkflowEngine
      */
     public function getTokenByIdWithContext(string $tokenId): ?array
     {
+        // CS-05 : factorisé via fetchTokenByCondition()
+        return $this->fetchTokenByCondition('t.id = ?', [$tokenId]);
+    }
+
+    /**
+     * Helper privé mutualisant la requête SQL + la PHPDoc shape pour
+     * getTokenWithContext() et getTokenByIdWithContext(). Seul le WHERE
+     * change entre les deux.
+     *
+     * @param list<string> $params
+     * @return array{
+     *   id: string,
+     *   submission_id: string,
+     *   step_id: string,
+     *   email: string,
+     *   token: string,
+     *   sent_at: string,
+     *   done_at: string|null,
+     *   relance_at: string|null,
+     *   expires_at: string|null,
+     *   relance_count: int,
+     *   step_label: string,
+     *   form_id: string,
+     *   form_label: string,
+     *   data: string,
+     *   closed_at: string|null,
+     *   status: string,
+     *   submitted_by: string
+     * }|null
+     */
+    private function fetchTokenByCondition(string $whereClause, array $params): ?array
+    {
         $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('
+        $stmt = $pdo->prepare("
             SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
                    t.done_at, t.relance_at, t.expires_at, t.relance_count,
                    st.label as step_label, s.form_id,
@@ -97,9 +115,9 @@ final readonly class WorkflowEngine
             JOIN steps st ON st.id = t.step_id
             JOIN submissions s ON s.id = t.submission_id
             JOIN forms f ON f.id = s.form_id
-            WHERE t.id = ?
-        ');
-        $stmt->execute([$tokenId]);
+            WHERE {$whereClause}
+        ");
+        $stmt->execute($params);
         /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
