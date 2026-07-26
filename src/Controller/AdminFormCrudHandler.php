@@ -110,6 +110,13 @@ final class AdminFormCrudHandler
         if (in_array($source_id, ['', '0', 0], true)) {
             return ['error' => 'Identifiant de formulaire source invalide.'];
         }
+        // B-01-1 fix (audit 2026-07-26) : handleDeleteForm vérifiait isFormOwner
+        // mais handleDuplicateForm ne le faisait pas. Tout admin pouvait dupliquer
+        // n'importe quel formulaire (et donc exfiltrer les emails destinataires
+        // des étapes de validation).
+        if (!App::auth()->isFormOwner((string) $source_id) && !App::auth()->isSuperAdmin()) {
+            return ['error' => 'Seuls les propriétaires du formulaire peuvent le dupliquer.'];
+        }
         $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
         $src_form = $formRepository->findById((string) $source_id);
         if (!$src_form) {

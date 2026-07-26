@@ -27,7 +27,7 @@ final class FormTrackingController extends BaseController
                 404,
                 'Formulaire introuvable',
                 'Le formulaire que vous cherchez n\'existe pas ou a été désactivé.',
-                'Vérifiez l\'adresse dans votre navigateur.\nSi vous avez suivi un lien, contactez l\'expéditeur pour obtenir le bon lien.'
+                'Vérifiez l\'adresse dans votre navigateur.' . "\n" . 'Si vous avez suivi un lien, contactez l\'expéditeur pour obtenir le bon lien.'
             );
         }
 
