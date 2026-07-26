@@ -1,0 +1,39 @@
+# Dependabot — met à jour automatiquement les dépendances Composer + GitHub Actions.
+# Doc : https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # ── Composer dependencies ──────────────────────────────────────
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "php"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Ne pas grouper — un PR par update pour faciliter la revue et le rollback
+    groups: {} # désactive le grouping
+
+  # ── GitHub Actions (mises à jour de versions des actions CI) ────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    groups:
+      # Grouper toutes les mises à jour de Actions dans un seul PR
+      # (souvent compatibles entre elles)
+      github-actions:
+        patterns: ["*"]
