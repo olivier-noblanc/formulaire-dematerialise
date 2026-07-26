@@ -4,13 +4,16 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1334** (0 fail, 3 skip) |
-| Assertions | **2374** |
-| PHPStan erreurs baseline | **506** (level 8, noDirectPdo: 0, noMagicString: 51) |
+| Tests | **1402** (0 fail, 6 skip) |
+| Assertions | **4100+** |
+| Coverage | **31.5%** (codecov.io) — cible 60% |
+| Infection MSI | **30%** min — cible 50% |
+| PHPStan erreurs baseline | **507** (level 8, noDirectPdo: 0, noMagicString: 51) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** (LazyCronRepository, PersonaRepository supprimés) |
-| CI | **GitHub Actions** (4 jobs, ~2 min) |
-| Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (privé) |
+| CI | **GitHub Actions** (11 jobs, ~3 min) — Lint, PHPStan, PHPUnit+coverage, CS Fixer, Rector, Composer audit, Deptrac, phpcpd, Infection, Tests fonctionnels, Playwright |
+| Workflows | **2** (CI + Dependabot) |
+| Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
 ---
 
