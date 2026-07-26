@@ -63,7 +63,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - run: php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
@@ -85,7 +85,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php
@@ -123,7 +123,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php
@@ -155,7 +155,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Check code style (dry-run)
         run: php vendor/bin/php-cs-fixer fix --dry-run --diff --no-progress --using-cache=no 2>&1 || true
 
@@ -176,7 +176,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - name: Check with Rector (dry-run)
@@ -199,7 +199,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Audit dependencies for vulnerabilities
         run: composer audit --no-dev 2>&1 || echo "::warning::Composer audit found issues (non-blocking)"
 
@@ -220,7 +220,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - name: Deptrac (architecture layers)
@@ -266,7 +266,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php
@@ -301,7 +301,7 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php
