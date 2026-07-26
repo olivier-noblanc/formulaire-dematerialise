@@ -46,8 +46,10 @@ function run_bug07_test(): bool {
     //
     //   if ($v['action'] === 'refuser' && (string)($v['email'] ?? '') === $user)
     //
-    // On tolère des variantes whitespace, l'ordre des opérandes, et
-    // l'usage éventuel de == au lieu de === (mais on préfère ===).
+    // On tolère des variantes whitespace, l'ordre des opérandes, l'usage
+    // éventuel de == au lieu de === (mais on préfère ===), et l'utilisation
+    // de ValidationAction::Refuser->value au lieu de la string littérale
+    // 'refuser' (migré en v10.25.0 avec l'introduction des enums métier).
     $patterns = [
         // Forme canonique : $v['action'] === 'refuser' && (string)($v['email'] ?? '') === $user
         '/\$v\[\'action\'\]\s*===\s*\'refuser\'\s*&&\s*\(string\)\s*\(\$v\[\'email\'\]\s*\?\?\s*\'\'\)\s*===\s*\$user/',
@@ -55,6 +57,8 @@ function run_bug07_test(): bool {
         '/\$v\[\'action\'\]\s*===\s*\'refuser\'\s*&&\s*\$v\[\'email\'\]\s*===\s*\$user/',
         // Variante : $user === (string)($v['email'] ?? '') (opérandes inversés)
         '/\$user\s*===\s*\(string\)\s*\(\$v\[\'email\'\]\s*\?\?\s*\'\'\)\s*&&\s*\$v\[\'action\'\]\s*===\s*\'refuser\'/',
+        // Variante v10.25.0+ : $v['action'] === ValidationAction::Refuser->value && ...
+        '/\$v\[\'action\'\]\s*===\s*ValidationAction::Refuser->value\s*&&\s*\(string\)\s*\(\$v\[\'email\'\]\s*\?\?\s*\'\'\)\s*===\s*\$user/',
     ];
     $found = false;
     foreach ($patterns as $p) {
