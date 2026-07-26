@@ -6,6 +6,19 @@ namespace App\Core;
 
 /**
  * Test mode utilities — email capture and JSON responses for E2E tests.
+ *
+ * B-EXIT (audit 2026-07-26) : ajout d'un mode 'no-exit' contrôlé par
+ * $GLOBALS['_test_no_exit']. Quand ce flag est true, testJsonResponse()
+ * NE fait PAS exit — elle stocke la réponse dans $GLOBALS['_test_json_output']
+ * et retourne normalement. Permet de tester les controllers dans PHPUnit
+ * sans crasher le process (exit() → "Premature end of PHPUnit process").
+ *
+ * Usage typique dans un test :
+ *   $GLOBALS['_test_no_exit'] = true;
+ *   (new FormController())->handle();
+ *   $output = $GLOBALS['_test_json_output'];
+ *   $this->assertSame('error', $output['error']);
+ *   unset($GLOBALS['_test_no_exit']);
  */
 final class TestModeService
 {
@@ -28,12 +41,23 @@ final class TestModeService
 
     /**
      * Output a JSON response and exit in test mode.
+     *
+     * In 'no-exit' mode ($GLOBALS['_test_no_exit'] = true), stores the data in
+     * $GLOBALS['_test_json_output'] and returns instead of exiting. This allows
+     * PHPUnit tests to exercise controllers that call test_json_response without
+     * the exit() killing the PHPUnit process.
+     *
      * @param array<string, mixed> $data
      */
     public static function testJsonResponse(array $data): void
     {
         /** @phpstan-ignore-next-line booleanNot.alwaysFalse */
         if (!TEST_MODE) {
+            return;
+        }
+        // B-EXIT : mode 'no-exit' pour tests PHPUnit — capture au lieu d'exit
+        if (!empty($GLOBALS['_test_no_exit'])) {
+            $GLOBALS['_test_json_output'] = $data;
             return;
         }
         /** @phpstan-ignore-next-line deadCode.unreachable */
