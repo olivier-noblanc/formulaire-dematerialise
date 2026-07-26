@@ -84,6 +84,11 @@ abstract class BaseController
 
     protected function redirect(string $url): void
     {
+        // B-EXIT (audit 2026-07-26) : mode 'no-exit' pour tests PHPUnit.
+        if (isset($GLOBALS['_test_no_exit']) && $GLOBALS['_test_no_exit'] === true) {
+            $GLOBALS['_test_redirect'] = $url;
+            return;
+        }
         header('Location: ' . $url);
         exit;
     }
