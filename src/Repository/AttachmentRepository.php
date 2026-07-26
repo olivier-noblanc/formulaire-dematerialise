@@ -43,21 +43,6 @@ final class AttachmentRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}>
-     */
-    public function findBySubmissionWithUploader(string $submissionId): array
-    {
-        return $this->findBySubmission($submissionId);
-    }
-
-    public function countAll(): int
-    {
-        /** @var array{cnt: int}|null $result */
-        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM attachments');
-        return (int) ($result['cnt'] ?? 0);
-    }
-
-    /**
      * @return array<int, array{id: string, field_name: string, original_name: string, mime_type: string, file_size: int, uploaded_at: string}>
      */
     public function findForExport(string $submissionId): array
@@ -69,5 +54,12 @@ final class AttachmentRepository extends BaseRepository
             [$submissionId]
         );
         return $result;
+    }
+
+    public function countAll(): int
+    {
+        /** @var array{cnt: int}|null $result */
+        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM attachments');
+        return (int) ($result['cnt'] ?? 0);
     }
 }

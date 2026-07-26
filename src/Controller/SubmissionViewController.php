@@ -95,7 +95,11 @@ final class SubmissionViewController extends BaseController
             ];
         }
 
-        $attachments = $this->attachmentRepo->findBySubmissionWithUploader($subId);
+        // CS-09 (audit 2026-07-26) : findBySubmissionWithUploader() était un faux-ami
+        // (faisait juste un délégué à findBySubmission, sans JOIN sur une table
+        // uploader — il n'y a pas de table users). On appelle directement la
+        // méthode source, plus honnête sur l'intention.
+        $attachments = $this->attachmentRepo->findBySubmission($subId);
 
         $validatorData = $this->submissionRepo->getValidatorDataOrdered($subId);
 
