@@ -132,7 +132,7 @@ final readonly class TokenService
             $pdo->prepare("UPDATE submissions SET closed_at = ?, status = '" . SubmissionStatus::Annule->value . "' WHERE id = ?")
                 ->execute([$now, $submissionId]);
 
-            $pdo->prepare('UPDATE tokens SET done_at = ? WHERE submission_id = ? AND done_at IS NULL')
+            $pdo->prepare('UPDATE tokens SET invalidated_at = ? WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL')
                 ->execute([$now, $submissionId]);
 
             $this->submissionRepository->appendToDataJson($submissionId, function (array $data) use ($now, $cancelledBy): array {
