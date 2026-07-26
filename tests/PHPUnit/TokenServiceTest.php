@@ -262,14 +262,20 @@ final class TokenServiceTest extends TestCase
         $this->assertNotNull($check->fetchColumn());
     }
 
-    public function testCancelMarksTokensAsDone(): void
+    public function testCancelMarksTokensAsInvalidated(): void
     {
+        // B3 fix (audit 2026-07-26) : cancel() marque invalidated_at au lieu de done_at.
+        // Les tokens non traités ne doivent PAS apparaître comme 'validés' dans
+        // l'historique validateur (findDoneByEmail).
         $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
 
         $pdo = $this->db->getPdo();
-        $check = $pdo->prepare("SELECT done_at FROM tokens WHERE submission_id = ? AND id = ?");
+        // done_at doit rester NULL (le validateur n'a rien fait)
+        $check = $pdo->prepare("SELECT done_at, invalidated_at FROM tokens WHERE submission_id = ? AND id = ?");
         $check->execute([$this->testSubmissionId, $this->testPendingTokenId]);
-        $this->assertNotNull($check->fetchColumn());
+        $row = $check->fetch(\PDO::FETCH_ASSOC);
+        $this->assertNull($row['done_at']);
+        $this->assertNotNull($row['invalidated_at']);
     }
 
     public function testCancelAddsValidationToData(): void
@@ -284,7 +290,8 @@ final class TokenServiceTest extends TestCase
         $this->assertNotEmpty($data['validations']);
         $lastValidation = end($data['validations']);
         $this->assertSame('Annulation', $lastValidation['step_label']);
-        $this->assertSame('refuser', $lastValidation['action']);
+        // CS-04 : 'annule' au lieu de 'refuser' (sémantique distincte)
+        $this->assertSame('annule', $lastValidation['action']);
     }
 
     public function testCancelSuccessAsAdmin(): void

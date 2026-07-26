@@ -64,8 +64,14 @@ abstract class Base extends TestCase
     {
         $subId = \generate_uuid();
         $closedAt = $closedAtOffset !== null ? gmdate('Y-m-d H:i:s', strtotime($closedAtOffset) ?: time()) : null;
-        $this->pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at, closed_at) VALUES (?, ?, ?, 'agent@test.com', ?, datetime('now'), ?)")
-            ->execute([$subId, $formId, $data, $status, $closedAt]);
+        // v32 (audit 2026-07-26) : index unique partiel sur (form_id, submitted_by)
+        // WHERE status = 'en_cours' AND closed_at IS NULL. Pour permettre à un même
+        // agent d'avoir plusieurs soumissions de test en_cours, on génère un email
+        // unique par submission — l'invariant business reste respecté (1 seul
+        // demandeur humain = 1 soumission en_cours active par formulaire).
+        $submittedBy = 'agent_' . $subId . '@test.com';
+        $this->pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at, closed_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
+            ->execute([$subId, $formId, $data, $submittedBy, $status, $closedAt]);
         $this->createdIds['submissions'][] = $subId;
         return $subId;
     }
