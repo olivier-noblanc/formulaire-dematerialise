@@ -625,8 +625,20 @@ parameters:
 			path: src/Controller/AdminStepCrudHandler.php
 
 		-
+			message: '#^Casting to int something that''s already int\<0, max\>\.$#'
+			identifier: cast.useless
+			count: 1
+			path: src/Controller/BackupController.php
+
+		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
+			count: 1
+			path: src/Controller/BackupController.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
 			count: 1
 			path: src/Controller/BackupController.php
 
