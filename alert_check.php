@@ -124,9 +124,26 @@ foreach ($rules as $rule) {
                 // T-01/P-01/O-02 : générer l'UUID côté PHP (generate_uuid est une
                 // fonction PHP, pas SQLite). Binding via paramètre ?.
                 $alert_log_id = generate_uuid();
-                $pdo->prepare("INSERT INTO alert_log (id, rule_id, submission_id, sent_at, message) VALUES (?, ?, ?, datetime('now'), ?)")
-                    ->execute([$alert_log_id, $rule['id'], $sub['id'], $message]);
-                $nb_alerts++;
+                // B11 fix : wrapper l'INSERT dans un try/catch pour ne pas tuer le script
+                // au milieu de la boucle recipients. Si l'INSERT échoue (DB locked,
+                // schéma incohérent), on log via error_log mais on continue à envoyer
+                // les alertes aux autres recipients. Sans ce catch, une seule erreur
+                // INSERT tuait toutes les alertes suivantes (boucle foreach avortée).
+                try {
+                    $pdo->prepare("INSERT INTO alert_log (id, rule_id, submission_id, sent_at, message) VALUES (?, ?, ?, datetime('now'), ?)")
+                        ->execute([$alert_log_id, $rule['id'], $sub['id'], $message]);
+                    $nb_alerts++;
+                } catch (\Throwable $logErr) {
+                    // L'email a été envoyé mais le log a échoué — on continue la
+                    // boucle pour les autres recipients mais on garde une trace.
+                    error_log(sprintf(
+                        '[ALERT_LOG_PERSIST_FAIL] rule=%s submission=%s recipient=%s error=%s',
+                        (string) $rule['id'],
+                        (string) $sub['id'],
+                        $recipient,
+                        $logErr->getMessage()
+                    ));
+                }
                 echo "[{$now->format('Y-m-d H:i:s')}] Alerte J-{$rule['days_before']} -> {$recipient} | {$nom_agent} | Deadline: {$deadline_formatted}\n";
             } else {
                 echo "[{$now->format('Y-m-d H:i:s')}] ERREUR envoi alerte a {$recipient} pour soumission #{$sub['id']}\n";
