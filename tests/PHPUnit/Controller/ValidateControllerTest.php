@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
  * Tests PHPUnit pour ValidateController.
@@ -107,6 +108,7 @@ final class ValidateControllerTest extends TestCase
         );
     }
 
+    #[RunInSeparateProcess]
     public function testHandleGetWithValidTokenRendersValidationPage(): void
     {
         [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
@@ -131,6 +133,7 @@ final class ValidateControllerTest extends TestCase
 
     // ── POST ──────────────────────────────────────────────────────────────
 
+    #[RunInSeparateProcess]
     public function testHandlePostRefuserWithoutMotifReturnsError(): void
     {
         [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
@@ -163,6 +166,7 @@ final class ValidateControllerTest extends TestCase
         $this->assertSame(SubmissionStatus::EnCours->value, $stmt->fetchColumn());
     }
 
+    #[RunInSeparateProcess]
     public function testHandlePostValiderWithValidTokenAdvancesWorkflow(): void
     {
         [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
@@ -189,6 +193,7 @@ final class ValidateControllerTest extends TestCase
         $this->assertNotNull($stmt->fetchColumn(), 'Token doit être marqué done_at après validation');
     }
 
+    #[RunInSeparateProcess]
     public function testHandlePostRefuserWithMotifClosesSubmissionAsRefuse(): void
     {
         [$formId, $stepId, $subId, $token] = $this->createFullSubmission(submittedBy: 'agent-refuse@test.com');

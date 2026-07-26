@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Enum\FieldType;
 use App\Enum\FilledBy;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
  * Tests PHPUnit pour FormController — couvre les branches principales :
@@ -98,6 +99,7 @@ final class FormControllerTest extends TestCase
         );
     }
 
+    #[RunInSeparateProcess]
     public function testHandleGetWithValidSlugRendersForm(): void
     {
         $slug = 'test-form-render-' . uniqid();
@@ -125,6 +127,7 @@ final class FormControllerTest extends TestCase
 
     // ── POST : validation ────────────────────────────────────────────────
 
+    #[RunInSeparateProcess]
     public function testHandlePostWithoutRgpdConsentReturnsError(): void
     {
         $slug = 'test-rgpd-' . uniqid();
@@ -159,6 +162,7 @@ final class FormControllerTest extends TestCase
         $this->assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission ne doit être créée sans RGPD');
     }
 
+    #[RunInSeparateProcess]
     public function testHandlePostWithInvalidEmailReturnsError(): void
     {
         // B-F1 : le champ field_type=email doit être validé
@@ -192,6 +196,7 @@ final class FormControllerTest extends TestCase
         $this->assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission ne doit être créée avec email invalide');
     }
 
+    #[RunInSeparateProcess]
     public function testHandlePostWithValidDataCreatesSubmissionAndSendsEmail(): void
     {
         $slug = 'test-success-' . uniqid();
@@ -229,6 +234,7 @@ final class FormControllerTest extends TestCase
         $this->assertNotEmpty($GLOBALS['_test_mails'], 'Au moins un email doit partir');
     }
 
+    #[RunInSeparateProcess]
     public function testHandlePostWithMissingRequiredFieldReturnsError(): void
     {
         $slug = 'test-required-' . uniqid();
