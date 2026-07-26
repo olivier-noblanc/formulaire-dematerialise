@@ -312,13 +312,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install Playwright + Firefox
+      - name: Install Playwright + Chromium
         run: |
           if [ -f package.json ]; then npm install; fi
-          npx playwright install firefox
-          npx playwright install-deps firefox
+          npx playwright install chromium
+          npx playwright install-deps chromium
       - name: Run Playwright tests
         env:
           # Le serveur PHP est démarré par le script de test lui-même via start_server.php
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
-        run: npx playwright test --project=firefox --reporter=list 2>&1 || true
+        # Les tests utilisent chromium (pas firefox) — cf tests/e2e/helpers.js
+        # run_all.js est l'orchestrateur custom (pas de playwright.config.js)
+        run: node tests/e2e/run_all.js 2>&1 || true

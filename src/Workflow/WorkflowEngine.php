@@ -33,6 +33,8 @@ final readonly class WorkflowEngine
      *   relance_at: string|null,
      *   expires_at: string|null,
      *   relance_count: int,
+     *   invalidated_at: string|null,
+     *   action: string|null,
      *   step_label: string,
      *   form_id: string,
      *   form_label: string,
@@ -61,6 +63,8 @@ final readonly class WorkflowEngine
      *   relance_at: string|null,
      *   expires_at: string|null,
      *   relance_count: int,
+     *   invalidated_at: string|null,
+     *   action: string|null,
      *   step_label: string,
      *   form_id: string,
      *   form_label: string,
@@ -93,6 +97,8 @@ final readonly class WorkflowEngine
      *   relance_at: string|null,
      *   expires_at: string|null,
      *   relance_count: int,
+     *   invalidated_at: string|null,
+     *   action: string|null,
      *   step_label: string,
      *   form_id: string,
      *   form_label: string,
@@ -107,7 +113,7 @@ final readonly class WorkflowEngine
         $pdo = $this->database->getPdo();
         $stmt = $pdo->prepare("
             SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
-                   t.done_at, t.relance_at, t.expires_at, t.relance_count,
+                   t.done_at, t.relance_at, t.expires_at, t.relance_count, t.invalidated_at, t.action,
                    st.label as step_label, s.form_id,
                    f.label as form_label, s.data, s.closed_at, s.status,
                    s.submitted_by
@@ -118,7 +124,7 @@ final readonly class WorkflowEngine
             WHERE {$whereClause}
         ");
         $stmt->execute($params);
-        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
     }
@@ -285,6 +291,13 @@ final readonly class WorkflowEngine
                 $tokensByStep[$t['step_id']][] = $t['done_at'];
             }
 
+            // B-W1 fix (audit fonctionnel 2026-07-26) : si toutes les étapes de TOUS les
+            // groupes ont leur condition=false (ou aucun recipient valide), on arrive
+            // ici sans avoir créé aucun token — et le code clôturait la soumission comme
+            // 'valide'. C'est un bug métier : une soumission sans aucune validation ne
+            // devrait pas être marquée validée. On lève une exception (rollback auto via
+            // le catch en bas) et on log pour diagnose.
+            $totalTokensCreated = 0;
             foreach ($byOrder as $groupe) {
                 $stepIds = array_column($groupe, 'step_id');
                 $allStarted = count(array_intersect($stepIds, array_keys($tokensByStep))) === count($groupe);
@@ -301,11 +314,25 @@ final readonly class WorkflowEngine
                         $expiresAt,
                         $pdo
                     );
+                    $totalTokensCreated += $tokenCreated ? 1 : 0;
                     if ($tokenCreated) {
                         $pdo->commit();
                         $committed = true;
                         return;
                     }
+                    // Si aucun token créé pour ce groupe (conditions false ou recipients
+                    // invalides), on ne le considère PAS comme complété. On sort en
+                    // attendant qu'une action humaine corrige la config (condition,
+                    // recipients) — la soumission reste en_cours, pas clôturée.
+                    $pdo->commit();
+                    $committed = true;
+                    \App\Core\App::audit()->log(
+                        'workflow_stalled',
+                        'submission:' . $submissionId,
+                        'Workflow bloqué : aucune étape du groupe ordre=' . ($groupe[0]['ordre'] ?? '?') . ' n\'a pu créer de token (conditions false ou recipients invalides). Soumission laissée en_cours — intervention admin requise.',
+                        'WorkflowEngine'
+                    );
+                    return;
                 }
 
                 // Vérifier si toutes les étapes de cet ordre sont validées
@@ -314,6 +341,24 @@ final readonly class WorkflowEngine
                     $committed = true;
                     return;
                 }
+            }
+
+            // B-W1 : on n'arrive ici QUE si tous les groupes sont déjà validés
+            // (tokens créés et done_at set pour tous). Si $totalTokensCreated === 0
+            // et qu'on est ici, c'est que la boucle n'a créé aucun token ET tous les
+            // groupes sont "complete" — ce qui est impossible sauf si la soumission
+            // n'avait aucune étape active. On ne clôture QUE si des tokens existent.
+            if ($tokensByStep === []) {
+                // Aucune étape active dans le formulaire → on ne clôture PAS
+                $pdo->commit();
+                $committed = true;
+                \App\Core\App::audit()->log(
+                    'workflow_no_steps',
+                    'submission:' . $submissionId,
+                    'Aucune étape active trouvée pour ce formulaire — soumission laissée en_cours.',
+                    'WorkflowEngine'
+                );
+                return;
             }
 
             // Toutes les étapes sont validées → clôturer
@@ -513,7 +558,12 @@ final readonly class WorkflowEngine
             $pdo->rollBack();
             return ['status' => 'invalid'];
         }
-        if (!empty($t['done_at'])) {
+        // B-V1 fix (audit fonctionnel 2026-07-26) : un token invalidé (par cancel,
+        // regenerate ou delegate) ne doit pas pouvoir être validé même si done_at
+        // est NULL. Avant, le check seul `!empty($t['done_at'])` laissait passer
+        // les tokens invalidés — l'utilisateur voyait une page de validation
+        // fonctionnelle alors que le token était mort.
+        if (!empty($t['done_at']) || !empty($t['invalidated_at'])) {
             $pdo->rollBack();
             return ['status' => 'already_done', 'data' => $t];
         }
