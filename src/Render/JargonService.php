@@ -6,6 +6,14 @@ namespace App\Render;
 
 /**
  * Anti-jargon dictionary — translates admin jargon to plain French.
+ *
+ * SINGLE SOURCE OF TRUTH for jargon translation. Both HtmlService::tJargon()
+ * and the global t_jargon() wrapper delegate to JargonService::translate().
+ *
+ * Previously HtmlService had its own JARGON_MAPPINGS (28 entries) and
+ * JargonService had its own (30 entries + 11 preg_replace), causing
+ * divergent translations for the same input on different pages (UX bug B4
+ * from audit 2026-07-26). This file is now the unique reference.
  */
 final class JargonService
 {
@@ -64,17 +72,41 @@ final class JargonService
             $text
         );
 
+        // Compound phrases (kept as plain str_replace above for speed)
+        // Acronyms handled via preg_replace with word boundaries so we don't
+        // replace inside compound words (e.g. "Tokenized" should not match "Token").
+
+        // ── Acronyms shared with former HtmlService dictionary ──────────
         $text = preg_replace('/\bEPI\b/u', 'Équipement de protection individuelle (EPI)', $text) ?? $text;
-        $text = preg_replace('/\bCSRF\b/u', 'Code de sécurité', $text) ?? $text;
+        $text = preg_replace('/\bCSRF\b/u', 'Jeton de sécurité (CSRF)', $text) ?? $text;
         $text = preg_replace('/\bRGPD\b/u', 'Protection des données (RGPD)', $text) ?? $text;
         $text = preg_replace('/\bToken\b/u', 'Lien de validation', $text) ?? $text;
         $text = preg_replace('/\btokens\b/u', 'liens de validation', $text) ?? $text;
         $text = preg_replace('/\btoken\b/u', 'lien de validation', $text) ?? $text;
         $text = preg_replace('/\bSlug\b/u', 'Nom technique', $text) ?? $text;
         $text = preg_replace('/\bslug\b/u', 'nom technique', $text) ?? $text;
-        $text = preg_replace('/\bSI\b/u', 'systèmes d\'information', $text) ?? $text;
+        $text = preg_replace('/\bSI\b/u', 'Système d\'information (SI)', $text) ?? $text;
         $text = preg_replace('/\bLDAP\b/u', 'Annuaire d\'entreprise (LDAP)', $text) ?? $text;
         $text = preg_replace('/\bSMTP\b/u', 'Serveur email (SMTP)', $text) ?? $text;
+        $text = preg_replace('/\bDSI\b/u', 'Direction des systèmes d\'information (DSI)', $text) ?? $text;
+        $text = preg_replace('/\bRH\b/u', 'Ressources humaines (RH)', $text) ?? $text;
+        $text = preg_replace('/\bDREETS\b/u', 'Direction régionale (DREETS)', $text) ?? $text;
+        $text = preg_replace('/\bFK\b/u', 'Clé étrangère (FK)', $text) ?? $text;
+        $text = preg_replace('/\bPK\b/u', 'Clé primaire (PK)', $text) ?? $text;
+        $text = preg_replace('/\bUUID\b/u', 'Identifiant unique (UUID)', $text) ?? $text;
+        $text = preg_replace('/\bCRON\b/u', 'Tâche planifiée (cron)', $text) ?? $text;
+        $text = preg_replace('/\bCSV\b/u', 'Tableur (CSV)', $text) ?? $text;
+        $text = preg_replace('/\bJSON\b/u', 'Format de données (JSON)', $text) ?? $text;
+        $text = preg_replace('/\bBDD\b/u', 'Base de données', $text) ?? $text;
+        $text = preg_replace('/\bIIS\b/u', 'Serveur web (IIS)', $text) ?? $text;
+        $text = preg_replace('/\bTLS\b/u', 'Chiffrement (TLS)', $text) ?? $text;
+        $text = preg_replace('/\bSSL\b/u', 'Chiffrement (SSL)', $text) ?? $text;
+        $text = preg_replace('/\bHTTP\b/u', 'Protocole web (HTTP)', $text) ?? $text;
+        $text = preg_replace('/\bHTTPS\b/u', 'Protocole web sécurisé (HTTPS)', $text) ?? $text;
+        $text = preg_replace('/\bURL\b/u', 'Adresse web (URL)', $text) ?? $text;
+        $text = preg_replace('/\bSEO\b/u', 'Référencement (SEO)', $text) ?? $text;
+        $text = preg_replace('/\bSAAS\b/u', 'Service en ligne (SaaS)', $text) ?? $text;
+        $text = preg_replace('/\bAPI\b/u', 'Interface de programmation (API)', $text) ?? $text;
 
         $text = str_replace("\x01", 'CircuitDémat', $text);
         $text = str_replace("\x02", 'Équipement de protection individuelle (EPI)', $text);
