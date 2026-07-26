@@ -684,12 +684,18 @@ final class SubmissionViewRenderer
 
         $items_html = '';
         foreach ($data['validations'] as $v) {
-            $is_valid = ($v['action'] ?? '') === ValidationAction::Valider->value;
-            $icon = $is_valid ? '✅' : '❌';
+            $action = (string) ($v['action'] ?? '');
+            $is_valid = $action === ValidationAction::Valider->value;
+            $is_annule = $action === ValidationAction::Annule->value;
+            // CS-04 : 3 états distincts — Validé (vert ✅), Refusé (rouge ❌),
+            // Annulé (orange ⚠️). Avant, l'annulation était enregistrée comme
+            // 'refuser' → affichée en rouge avec icône ❌ et label 'Refusé', ce qui
+            // était trompeur pour l'agent (≠ un refus validateur).
+            $icon = $is_valid ? '✅' : ($is_annule ? '⚠️' : '❌');
             $step_label = \App\Core\App::html()->escape((string) ($v['step_label'] ?? ''));
             $email_display = \App\Core\App::html()->displayUser((string) ($v['email'] ?? ''));
-            $color = $is_valid ? '#1a6b3c' : '#c0392b';
-            $action_label = $is_valid ? 'Validé' : 'Refusé';
+            $color = $is_valid ? '#1a6b3c' : ($is_annule ? '#b45309' : '#c0392b');
+            $action_label = $is_valid ? 'Validé' : ($is_annule ? 'Annulé' : 'Refusé');
             $date = \App\Core\App::html()->escape((string) ($v['date'] ?? ''));
 
             $done_by_html = '';

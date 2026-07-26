@@ -142,7 +142,7 @@ final readonly class TokenService
                 $data['validations'][] = [
                     'step_label' => 'Annulation',
                     'email' => $cancelledBy ?: 'system',
-                    'action' => ValidationAction::Refuser->value,
+                    'action' => ValidationAction::Annule->value,
                     'commentaire' => 'Soumission annulée',
                     'date' => $now,
                 ];
