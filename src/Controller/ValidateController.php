@@ -206,8 +206,9 @@ final class ValidateController extends BaseController
                     $response['csrf_token']  = $this->security->generateCsrfToken();
                 }
                 header('Content-Type: application/json; charset=utf-8');
-                echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                exit;
+                // B-EXIT (audit 2026-07-26) : utiliser test_json_response() pour
+                // permettre le mode 'no-exit' (tests PHPUnit) au lieu de echo+exit.
+                test_json_response($response);
             }
         }
 

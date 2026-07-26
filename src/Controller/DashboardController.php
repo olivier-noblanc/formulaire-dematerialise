@@ -130,11 +130,11 @@ final class DashboardController extends BaseController
             if ($sub_id) {
                 $confirmed = !empty($_POST['confirmed']);
                 if (!$confirmed) {
-                    header(
-                        'Location: index.php?p=confirm_action&action=cancel_submission&submission_id='
+                    // B-EXIT : utiliser redirect() pour mode 'no-exit' (tests PHPUnit)
+                    $this->redirect(
+                        'index.php?p=confirm_action&action=cancel_submission&submission_id='
                         . urlencode((string) $sub_id) . '&from=' . urlencode('index.php?p=dashboard')
                     );
-                    exit;
                 }
                 $actor = $this->auth->getUser();
                 // Vérifier que l'utilisateur est admin ou le propriétaire de la soumission
