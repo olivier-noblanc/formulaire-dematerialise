@@ -91,7 +91,7 @@ jobs:
           echo "$CI_CONFIG" > config.php
           mkdir -p db
       - name: Run PHPUnit with coverage
-        run: php vendor/bin/phpunit --coverage-clover coverage.xml --coverage-text=/dev/stdout
+        run: php vendor/bin/phpunit --coverage-clover coverage.xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
