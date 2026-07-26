@@ -76,6 +76,20 @@ final readonly class RgpdService
         try {
             $pdo->beginTransaction();
 
+            // B-RG1 fix (audit fonctionnel 2026-07-26) : avant d'anonymiser, on doit
+            // invalider les tokens actifs de l'agent ET fermer ses soumissions en cours.
+            // Sinon, l'agent se retrouvait avec submitted_by='[supprimé]' mais des
+            // soumissions toujours en_cours — les validateurs recevaient encore des
+            // relances, et l'agent pouvait théoriquement encore agir sur ses anciens
+            // tokens (lien email). Maintenant : on clôture explicitement.
+            $now = gmdate('Y-m-d H:i:s');
+            // 1. Invalider tous les tokens actifs de l'agent
+            $pdo->prepare("UPDATE tokens SET invalidated_at = ? WHERE email = ? AND done_at IS NULL AND invalidated_at IS NULL")
+                ->execute([$now, $email]);
+            // 2. Clôturer les soumissions en_cours de l'agent (status annule, closed_at now)
+            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = '" . SubmissionStatus::Annule->value . "' WHERE submitted_by = ? AND status = '" . SubmissionStatus::EnCours->value . "' AND closed_at IS NULL")
+                ->execute([$now, $email]);
+
             $stmt = $pdo->prepare('SELECT id, data FROM submissions WHERE submitted_by = ?');
             $stmt->execute([$email]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {

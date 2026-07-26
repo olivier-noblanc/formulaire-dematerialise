@@ -94,12 +94,25 @@ final class FormController extends BaseController
             // conserve la 1ère clé), ce qui faisait afficher 'Ce champ est
             // obligatoire' (générique) au lieu de 'Ce fichier est obligatoire'
             // (spécifique, setté par le second loop ci-dessous).
+            //
+            // B-F1 fix (audit fonctionnel 2026-07-26) : validation du format email
+            // sur les champs field_type=email. Avant, une valeur comme 'toto' était
+            // acceptée et stockée en base, puis affichée dans les emails de
+            // notification aux validateurs — pas de bounce visible côté app mais
+            // dégradation silencieuse de la qualité des données.
             foreach ($form_fields as $field) {
                 if ($field['field_type'] === FieldType::File->value) {
                     continue; // les fichiers sont validés dans le second loop
                 }
-                if ($field['required'] && in_array(trim($_POST[$field['field_name']] ?? ''), ['', '0'], true)) {
+                $value = trim((string)($_POST[$field['field_name']] ?? ''));
+                if ($field['required'] && in_array($value, ['', '0'], true)) {
                     $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
+                    continue;
+                }
+                // B-F1 : validation format email pour les champs field_type=email
+                if ($value !== '' && $field['field_type'] === FieldType::Email->value
+                    && filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
+                    $field_errors[$field['field_name']] = 'Adresse email invalide';
                 }
             }
 
