@@ -1,5 +1,72 @@
 # Changelog — CircuitDémat
 
+## [10.27.0] — 2026-07-26
+_Résumé : Audit CTO complet — 4 bugs HIGH + 6 MEDIUM + 8 LOW fixés, 12 code smells addressés, CI durcie (11 jobs), coverage 27.9% → 31.5%, migration v33 (CHECK SQL), 1402 tests._
+
+### 🐛 Bugs critiques (5 HIGH)
+- **B-W1** : `WorkflowEngine::advanceWorkflow` clôturait la soumission comme 'valide' si toutes les conditions des étapes étaient false. Fix : audit_log 'workflow_stalled' / 'workflow_no_steps', soumission reste en_cours.
+- **B-V1** : `WorkflowEngine::validateToken` n'acceptait plus les tokens invalidés (par cancel/regenerate/delegate). Ajout du check `invalidated_at IS NOT NULL`.
+- **B-RG1** : `RgpdService::deleteUserData` laissait les soumissions en_cours et tokens actifs après anonymisation. Maintenant : invalide tokens + clôture soumissions en_cours avant anonymisation.
+- **B-F1** : `FormController` ne validait pas le format email sur les champs `field_type=email`. Maintenant : `filter_var(FILTER_VALIDATE_EMAIL)`.
+- **B-W1 suite** : si un groupe d'étapes n'a aucun recipient valide, le workflow ne boucle plus — il audit et s'arrête proprement.
+
+### 🐛 Bugs mineurs (8 LOW + 6 MEDIUM)
+- **B1** : `WorkflowEngine::validateToken` strtotime() sans UTC → tokens expiraient 1-2h trop tôt en prod (Europe/Paris). Fix : suffix ' UTC'.
+- **B2** : `SubmissionViewController` tableau pièces jointes désaligné (cellule vide). Fix : suppression `<td></td>`.
+- **B3** : `TokenService::cancel` utilisait `done_at` au lieu de `invalidated_at` — polluait l'historique validateur. Cohérent avec regenerate/delegate.
+- **B4** : 2 dictionnaires jargon divergents (HtmlService vs JargonService). HtmlService délègue à JargonService (source unique).
+- **B5** : TODO.md + CHANGELOG.md contradictions sur JargonService (mort vs vivant). JargonService est VIVANT (81 références).
+- **B6/B7/B12** : race conditions delegate/remind + timezone unifiée (`gmdate()` au lieu de `datetime('now')`).
+- **B8** : `appendToDataJson` return value ignoré — silent data loss possible.
+- **B9** : `CronService` marquait last_run=now avant d'exécuter le callback — si crash, tâche jamais réessayée. Fix : revert last_run si callback échoue.
+- **B10** : `MailService::logMailAttempt` avalait silencieusement les erreurs (règle AGENTS.md #9). Fix : log structuré.
+- **B11** : `alert_check.php` INSERT `alert_log` non protégé → crash tuait les alertes suivantes. Fix : try/catch + continue.
+- **B13-B19** : cleanup code mort (fix_workflow.php, fix_relance.php, $pdo morts, fallback unreachable, status morts).
+
+### 🔧 Refactoring (12 code smells)
+- **CS-01** : `WorkflowEngine::advanceWorkflow` god function 160 lignes → 4 méthodes.
+- **CS-04** : `ValidationAction::Annule` enum case distinct de Refuser (sémantique annulation).
+- **CS-05** : factorisation `fetchTokenByCondition` (mutualise 2 méthodes).
+- **CS-06** : libération PDOStatement avant DDL dans 6 migrations (règle SQLITE_LOCKED).
+- **CS-07** : migration v32 — index unique partiel `submissions en_cours par form+demandeur`.
+- **CS-09** : suppression faux-ami `findBySubmissionWithUploader`.
+- **CS-10/12** : MailInterface complété + PHPDoc shape `rgpd_consent`.
+- **CS-11** : `AuthService` délègue à `AdminRepository` (lazy load via container DI).
+
+### 🔒 Migration v33 — Durcissement SQL
+- 10 CHECK constraints ajoutées : `forms.actif`, `steps.actif`, `form_fields.required`, `alert_rules.actif/days_before/condition_type`, `attachments.file_size`, `tokens.relance_count`, `submissions.rgpd_consent/status`.
+- FK ajoutée sur `delegations.new_token_id → tokens(id) ON DELETE SET NULL`.
+- Triggers v30 recréés après rebuild (DROP TABLE supprime les triggers).
+- Triggers `tokens.action` mis à jour pour accepter `'annule'` (CS-04).
+
+### 🧪 Tests
+- **1402 tests** PHPUnit (was 1334), **4100+ assertions** (was 2374).
+- 4 tests de régression immortels : `Bug14` (timezone), `Bug15` (cancel invalidated_at), `Bug16` (tableau aligné), `Bug17` (jargon unifié).
+- 17 tests dans `AuditBugsTest` (B-W1, B-V1, mutants Infection critiques).
+- 20 tests dans `WorkflowEngineMutationTest` + `ExportServiceMutationTest` (tue 15 mutants Infection).
+- 17 tests dans `FormControllerTest` + `ValidateControllerTest` (couverture services).
+
+### 🚀 CI — 11 jobs (tous verts)
+- Lint PHP, PHPStan (level 8), PHPUnit + coverage Codecov, PHP CS Fixer, Rector, Composer audit, Deptrac, PHP Copy/Paste Detector (phpcpd), Infection (mutation testing), Tests fonctionnels, E2E Playwright (chromium).
+- Workflow CodeQL retiré (ne supporte pas PHP — alternatives : composer audit + phpstan-disallowed-calls).
+- Dependabot activé (Composer + Actions, hebdo).
+- Repo passé en public.
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests PHPUnit | 1334 | **1402** (+68) |
+| Assertions | 2374 | **4100+** |
+| Coverage | 0% (non mesuré) | **31.5%** |
+| Infection MSI | non mesuré | **30%+** |
+| CI jobs | 4 | **11** |
+| Bug backlog | 29/29 fixés | **+12 nouveaux bugs fixés** |
+| CHECK SQL | 9 colonnes | **19 colonnes** |
+| Repo | privé | **public** |
+
+---
+
 ## [10.26.0] — 2026-07-25
 _Résumé : Nettoyage dead code (13 méthodes, 2 repositories), factoration duplication, baseline PHPStan 775→506, outils mutation testing, Rector PHP 8.5, 47 nouveaux tests TokenService._
 
