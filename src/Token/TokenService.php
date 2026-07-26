@@ -135,7 +135,7 @@ final readonly class TokenService
             $pdo->prepare('UPDATE tokens SET invalidated_at = ? WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL')
                 ->execute([$now, $submissionId]);
 
-            $this->submissionRepository->appendToDataJson($submissionId, function (array $data) use ($now, $cancelledBy): array {
+            $appended = $this->submissionRepository->appendToDataJson($submissionId, function (array $data) use ($now, $cancelledBy): array {
                 if (!isset($data['validations'])) {
                     $data['validations'] = [];
                 }
@@ -148,6 +148,19 @@ final readonly class TokenService
                 ];
                 return $data;
             });
+            // B8 fix : vérifier le retour — si l'optimistic locking a échoué 3x, la
+            // data JSON n'a pas été mise à jour mais les tokens et submissions le sont.
+            // Rollback pour rester cohérent (règle AGENTS.md #9 : surface l'échec).
+            if (!$appended) {
+                $pdo->rollBack();
+                $this->auditLogService->log(
+                    'cancel_data_append_failed',
+                    'submission:' . $submissionId,
+                    'Échec appendToDataJson (conflit optimistic locking 3x) pendant cancel()',
+                    $cancelledBy
+                );
+                return ['success' => false, 'message' => 'Conflit de mise à jour de la soumission. Réessayez.'];
+            }
 
             $pdo->commit();
         } catch (\Throwable $e) {
