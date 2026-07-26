@@ -88,7 +88,7 @@ final readonly class TokenService
         $stepStmt->execute([$old['step_id']]);
         $step = $stepStmt->fetch(\PDO::FETCH_ASSOC);
 
-        if ($submission && $step) {
+        if ($submission !== null && $step !== false) {
             $subject = '[Renvoi] ' . ($submission['form_label'] ?? '') . ' — ' . ($step['label'] ?? '');
             $this->mailService->send($old['email'], $subject, App::mail()->buildMailHtml($submission, $step['label'], $newToken));
         }
@@ -190,7 +190,7 @@ final readonly class TokenService
     {
         $tok = App::workflow()->getTokenByIdWithContext($tokenId);
 
-        if (!$tok) {
+        if ($tok === null) {
             return ['success' => false, 'message' => 'Token introuvable.'];
         }
         if ($tok['done_at']) {
@@ -253,7 +253,7 @@ final readonly class TokenService
     {
         $tok = App::workflow()->getTokenByIdWithContext($tokenId);
 
-        if (!$tok) {
+        if ($tok === null) {
             return ['success' => false, 'message' => 'Token introuvable.'];
         }
         if ($tok['done_at']) {

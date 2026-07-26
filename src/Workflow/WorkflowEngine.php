@@ -509,7 +509,7 @@ final readonly class WorkflowEngine
         $pdo->beginTransaction();
 
         $t = $this->getTokenWithContext($token);
-        if (!$t) {
+        if ($t === null) {
             $pdo->rollBack();
             return ['status' => 'invalid'];
         }
@@ -579,7 +579,7 @@ final readonly class WorkflowEngine
         if (!$appended) {
             $pdo->rollBack();
             // Audit l'échec pour diagnose (règle AGENTS.md #9 : ne pas avaler silencieusement)
-            $this->auditLogService->log(
+            \App\Core\App::audit()->log(
                 'validation_data_append_failed',
                 'submission:' . $t['submission_id'],
                 'Échec appendToDataJson (conflit optimistic locking 3x) pour token ' . $token,

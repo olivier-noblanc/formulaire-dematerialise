@@ -38,7 +38,14 @@ final class SettingsService implements SettingsInterface
         }
 
         $defaults = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS : [];
-        $result = (string) ($defaults[$key] ?? $default);
+        // Les valeurs de SETTINGS_DEFAULTS sont toutes typées string dans config.php
+        // (SETTINGS_DEFAULTS est un array<string, string>). Le cast (string) est donc
+        // théoriquement inutile — sauf si quelqu'un définit SETTINGS_DEFAULTS avec
+        // une valeur non-string (int, null, etc.) par erreur. On garde le cast comme
+        // filet de sécurité, mais on le supprime pour satisfaire phpstan-strict-rules
+        // (cast.useless). Si une valeur non-string est détectée à terme, ce sera
+        // une TypeError qui apparaîtra ici plutôt que silencieusement castée.
+        $result = $defaults[$key] ?? $default;
         self::$cache[$key] = $result;
         return $result;
     }
