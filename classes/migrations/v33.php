@@ -220,6 +220,18 @@ function apply_migration_v33(PDO $pdo, int $current_version): int {
             ON submissions(form_id, submitted_by)
             WHERE status = 'en_cours' AND closed_at IS NULL");
 
+        // ── Recréer les triggers v30 sur submissions.status et tokens.action ──
+        // DROP TABLE supprime les triggers associés, il faut les recréer après rebuild.
+        // On garde les deux couches : trigger (message d'erreur explicite) + CHECK (renforcé).
+        $rebuild->exec("DROP TRIGGER IF EXISTS check_submissions_status_insert");
+        $rebuild->exec("DROP TRIGGER IF EXISTS check_submissions_status_update");
+        $rebuild->exec("DROP TRIGGER IF EXISTS check_tokens_action_insert");
+        $rebuild->exec("DROP TRIGGER IF EXISTS check_tokens_action_update");
+        $rebuild->exec("CREATE TRIGGER check_submissions_status_insert BEFORE INSERT ON submissions WHEN NEW.status NOT IN ('en_cours', 'valide', 'refuse', 'annule') BEGIN SELECT RAISE(ABORT, 'Invalid submissions.status'); END");
+        $rebuild->exec("CREATE TRIGGER check_submissions_status_update BEFORE UPDATE OF status ON submissions WHEN NEW.status NOT IN ('en_cours', 'valide', 'refuse', 'annule') BEGIN SELECT RAISE(ABORT, 'Invalid submissions.status'); END");
+        $rebuild->exec("CREATE TRIGGER check_tokens_action_insert BEFORE INSERT ON tokens WHEN NEW.action IS NOT NULL AND NEW.action NOT IN ('valider', 'refuser', 'annule') BEGIN SELECT RAISE(ABORT, 'Invalid tokens.action'); END");
+        $rebuild->exec("CREATE TRIGGER check_tokens_action_update BEFORE UPDATE OF action ON tokens WHEN NEW.action IS NOT NULL AND NEW.action NOT IN ('valider', 'refuser', 'annule') BEGIN SELECT RAISE(ABORT, 'Invalid tokens.action'); END");
+
         // ── Bonus : Rebuild delegations (FK sur new_token_id) ──
         $rebuild->exec('DROP TABLE IF EXISTS delegations_new');
         $rebuild->exec("CREATE TABLE delegations_new (
