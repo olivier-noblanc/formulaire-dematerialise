@@ -327,7 +327,8 @@ jobs:
     name: E2E Playwright (Firefox)
     runs-on: ubuntu-latest
     needs: [phpstan]
-    continue-on-error: true # non-blocking tant que la suite est stabilisée
+    # B-EXIT (audit 2026-07-26) : Playwright stabilisé — les 4 specs passent en CI.
+    # Retrait du continue-on-error pour bloquer la CI si un test E2E casse.
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -361,4 +362,4 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
         # Les tests utilisent chromium (pas firefox) — cf tests/e2e/helpers.js
         # run_all.js est l'orchestrateur custom (pas de playwright.config.js)
-        run: node tests/e2e/run_all.js 2>&1 || true
+        run: node tests/e2e/run_all.js 2>&1
