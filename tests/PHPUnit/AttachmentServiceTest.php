@@ -638,10 +638,10 @@ final class AttachmentServiceTest extends TestCase
             ->execute([$formId, 'test-wrong-' . $formId, 'Test Wrong', '']);
         $sub1 = 'test-sub-wronga-' . uniqid();
         $sub2 = 'test-sub-wrongb-' . uniqid();
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
-            ->execute([$sub1, $formId]);
-        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', 'test@test.com', 'en_cours')")
-            ->execute([$sub2, $formId]);
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', ?, 'en_cours')")
+            ->execute([$sub1, $formId, 'test1@test.com']);
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status) VALUES (?, ?, '{}', ?, 'en_cours')")
+            ->execute([$sub2, $formId, 'test2@test.com']);
 
         $attId = bin2hex(random_bytes(8));
         $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")

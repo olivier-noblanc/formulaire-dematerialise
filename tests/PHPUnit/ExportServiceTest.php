@@ -487,10 +487,10 @@ final class ExportServiceTest extends TestCase
 
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
                         VALUES (?, ?, ?, ?, '2025-01-01 10:00:00', 'en_cours')")
-            ->execute([$subId1, $formId, $data1, 'agent@test.com']);
+            ->execute([$subId1, $formId, $data1, 'agent1@test.com']);
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
                         VALUES (?, ?, ?, ?, '2025-01-02 10:00:00', 'en_cours')")
-            ->execute([$subId2, $formId, $data2, 'agent@test.com']);
+            ->execute([$subId2, $formId, $data2, 'agent2@test.com']);
 
         try {
             $service = new ExportService($this->db, $this->auth);

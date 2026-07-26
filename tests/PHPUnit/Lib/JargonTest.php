@@ -62,13 +62,13 @@ final class JargonTest extends TestCase
 
     public function testTJargonMultipleCallsProduceSameResult(): void
     {
-        // The lib/ t_jargon is NOT fully idempotent due to nested replacements
-        // (e.g., RGPD → "Protection des données (RGPD)" contains RGPD which gets re-replaced).
-        // This is a known limitation of the procedural version vs the src/ HtmlService version.
+        // B4 fix (audit 2026-07-26) : t_jargon() et HtmlService::tJargon()
+        // utilisent maintenant le même dictionnaire (JargonService::translate()).
+        // CSRF → 'Jeton de sécurité (CSRF)' (et non plus 'Code de sécurité').
         $input = 'Le Workflow utilise le CSRF';
         $once = t_jargon($input);
         $this->assertStringContainsString('Parcours', $once);
-        $this->assertStringContainsString('Code de sécurité', $once);
+        $this->assertStringContainsString('Jeton de sécurité', $once);
     }
 
     public function testTJargonPreservesCircuitDematInContext(): void

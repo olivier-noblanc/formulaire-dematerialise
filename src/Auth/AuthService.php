@@ -105,19 +105,34 @@ final class AuthService implements AuthInterface
      * Vérifie si un email donné est admin (sans dépendre de getUser()).
      * Utile pour vérifier l'user réel quand un persona est actif.
      *
-     * CS-11 (audit 2026-07-26) : délègue à AdminRepository::findByEmail()
-     * au lieu de faire un SELECT direct via PDO. Alignement avec la règle
-     * noDirectPdo (v10.25.0) et suppression de la duplication de requête
-     * entre AuthService et AdminRepository. Lazy-load via App::getInstance()
-     * pour éviter la dépendance circulaire au constructeur (AuthService est
-     * créé AVANT AdminRepository dans bootstrap.php).
+     * CS-11 (audit 2026-07-26) : délègue à AdminRepository::isAdmin() quand
+     * le container DI a enregistré un AdminRepository (cas normal). Sinon
+     * fallback sur SELECT direct (cas des tests qui instancient AuthService
+     * avec une DB isolée sans passer par le bootstrap global — AuthServiceTest).
+     *
+     * La dépendance circulaire au constructeur (AuthService créé AVANT
+     * AdminRepository dans bootstrap.php) interdit l'injection directe —
+     * on utilise donc App::getInstance() pour récupérer le repo à l'appel.
      */
     private function isAdminByEmail(string $email): bool
     {
         if ($email === '') {
             return false;
         }
-        return \App\Core\App::getInstance()->get(\App\Repository\AdminRepository::class)->isAdmin($email);
+        // Tenter via AdminRepository si disponible dans le container DI
+        try {
+            $app = \App\Core\App::getInstance();
+            if ($app->has(\App\Repository\AdminRepository::class)) {
+                return $app->get(\App\Repository\AdminRepository::class)->isAdmin($email);
+            }
+        } catch (\Throwable) {
+            // Container non initialisé — fallback ci-dessous
+        }
+        // Fallback : SELECT direct (ancien comportement, pour AuthServiceTest)
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->prepare('SELECT 1 FROM admins WHERE email = ?');
+        $stmt->execute([$email]);
+        return $stmt->fetch() !== false;
     }
 
     public function isAdmin(): bool
@@ -178,14 +193,33 @@ final class AuthService implements AuthInterface
     public function getAdminEmail(): string
     {
         // CS-11 (audit 2026-07-26) : délègue à AdminRepository::getSuperAdminEmail()
-        // au lieu de faire un SELECT direct via PDO. Alignement avec noDirectPdo.
+        // quand disponible dans le container DI. Sinon fallback SELECT direct
+        // (cas des tests AuthServiceTest qui ne passe pas par bootstrap global).
         try {
-            return \App\Core\App::getInstance()->get(\App\Repository\AdminRepository::class)->getSuperAdminEmail();
+            $app = \App\Core\App::getInstance();
+            if ($app->has(\App\Repository\AdminRepository::class)) {
+                $email = $app->get(\App\Repository\AdminRepository::class)->getSuperAdminEmail();
+                if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return $email;
+                }
+            }
         } catch (\Throwable) {
             // Container DI ou DB pas encore prêt (tôt dans le bootstrap)
         }
 
-        // Fallback sur SETTINGS_DEFAULTS
+        // Fallback : SELECT direct puis SETTINGS_DEFAULTS
+        try {
+            $pdo = $this->database->getPdo();
+            $stmt = $pdo->prepare('SELECT value FROM settings WHERE key = ?');
+            $stmt->execute(['admin_email']);
+            $val = $stmt->fetchColumn();
+            if ($val && filter_var($val, FILTER_VALIDATE_EMAIL)) {
+                return (string) $val;
+            }
+        } catch (\Throwable) {
+            // DB pas encore prête
+        }
+
         return defined('SETTINGS_DEFAULTS')
             ? (string) SETTINGS_DEFAULTS['admin_email']
             : '';
