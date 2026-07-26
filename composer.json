@@ -34,11 +34,9 @@
         "shipmonk/dead-code-detector": "^1.3",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-strict-rules": "*",
-        "phpstan/phpstan-deprecation-rules": "*",
         "spaze/phpstan-disallowed-calls": "^4.13",
         "deptrac/deptrac": "^4.7",
         "infection/infection": "*",
-        "phpro/grumphp": "^2.23",
-        "pheromone/phpstan-cognitive-complexity": "*"
+        "phpro/grumphp": "^2.23"
     }
 }
