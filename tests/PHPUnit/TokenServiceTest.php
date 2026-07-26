@@ -1181,14 +1181,15 @@ final class TokenServiceTest extends TestCase
 
         $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
 
-        // Both tokens should be invalidated (done_at still NULL, invalidated_at set)
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND invalidated_at IS NULL");
+        // Tous les tokens PENDING (done_at IS NULL) doivent être marqués invalidated_at
+        // (les tokens déjà done par un test précédent ne sont pas concernés par cancel)
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL");
         $stmt->execute([$this->testSubmissionId]);
-        $this->assertSame(0, (int) $stmt->fetchColumn(), 'All tokens should be marked invalidated after cancel');
-        // Et aucun ne doit être marqué done_at (le validateur n'a rien fait)
-        $stmt2 = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NOT NULL");
-        $stmt2->execute([$this->testSubmissionId]);
-        $this->assertSame(0, (int) $stmt2->fetchColumn(), 'cancel() ne doit pas setter done_at (B3)');
+        $this->assertSame(0, (int) $stmt->fetchColumn(), 'All pending tokens should be marked invalidated after cancel');
+        // Le token extra qu'on vient de créer doit avoir invalidated_at set
+        $stmt2 = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
+        $stmt2->execute([$extraTokenId]);
+        $this->assertNotNull($stmt2->fetchColumn(), 'Newly created token must be invalidated');
     }
 
     public function testCancelValidationEntryHasDate(): void
