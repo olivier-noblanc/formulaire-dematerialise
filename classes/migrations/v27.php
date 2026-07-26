@@ -25,6 +25,8 @@ function apply_migration_v27(PDO $pdo, int $current_version): int {
             throw new \RuntimeException('v27: COUNT query failed');
         }
         $v27_done = (int) $v27_stmt->fetchColumn();
+        // CS-06 fix (audit 2026-07-26) : libérer le statement avant le prochain DDL
+        $v27_stmt = null;
         if ($v27_done > 0) {
             return max($current_version, 27);
         }

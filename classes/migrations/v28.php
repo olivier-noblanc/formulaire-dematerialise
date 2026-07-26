@@ -23,6 +23,8 @@ function apply_migration_v28(PDO $pdo, int $current_version): int {
             throw new \RuntimeException('v28: COUNT query failed');
         }
         $v28_done = (int) $v28_stmt->fetchColumn();
+        // CS-06 fix (audit 2026-07-26) : libérer le statement avant le prochain DDL
+        $v28_stmt = null;
         if ($v28_done > 0) {
             return max($current_version, 28);
         }
@@ -39,6 +41,8 @@ function apply_migration_v28(PDO $pdo, int $current_version): int {
                 }
             }
         }
+        // CS-06 : libérer avant le ALTER TABLE
+        $columns = null;
         if (!$hasAction) {
             $pdo->exec("ALTER TABLE tokens ADD COLUMN action TEXT");
         }
@@ -54,6 +58,8 @@ function apply_migration_v28(PDO $pdo, int $current_version): int {
                 }
             }
         }
+        // CS-06 : libérer avant le prochain ALTER TABLE
+        $columns = null;
         if (!$hasReviewedAt) {
             $pdo->exec("ALTER TABLE admin_requests ADD COLUMN reviewed_at DATETIME");
         }
@@ -69,13 +75,21 @@ function apply_migration_v28(PDO $pdo, int $current_version): int {
                 }
             }
         }
+        // CS-06 : libérer avant le prochain ALTER TABLE
+        $columns = null;
         if (!$hasReviewedBy) {
             $pdo->exec("ALTER TABLE admin_requests ADD COLUMN reviewed_by TEXT");
         }
 
         // Seed testeur@e2e.test dans admins pour les tests PHPUnit
         $testUser = $pdo->query("SELECT COUNT(*) FROM admins WHERE email = 'testeur@e2e.test'");
-        if ($testUser !== false && (int) $testUser->fetchColumn() === 0) {
+        $testUserExists = false;
+        if ($testUser !== false) {
+            $testUserExists = (int) $testUser->fetchColumn() === 0;
+        }
+        // CS-06 : libérer avant le prochain INSERT
+        $testUser = null;
+        if ($testUserExists) {
             $testUuid = sprintf('%08x-%04x-%04x-%04x-%012x', mt_rand(), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffffffffffff));
             $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, 'testeur@e2e.test', datetime('now'))")->execute([$testUuid]);
         }

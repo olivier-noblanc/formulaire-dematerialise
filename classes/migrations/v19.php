@@ -45,6 +45,8 @@ function apply_migration_v19(PDO $pdo, int $current_version): int {
                 throw new \RuntimeException('v19: COUNT query failed');
             }
             $v19_done = (int) $v19_stmt->fetchColumn();
+            // CS-06 fix (audit 2026-07-26) : libérer le statement avant le prochain DDL
+            $v19_stmt = null;
             if ($v19_done > 0) {
                 return max($current_version, 19);
             }
@@ -55,6 +57,8 @@ function apply_migration_v19(PDO $pdo, int $current_version): int {
                 throw new \RuntimeException('v19: PRAGMA table_info(steps) failed');
             }
             $cols = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
+            // CS-06 : libérer avant le ALTER TABLE (DDL) ci-dessous
+            $cols_stmt = null;
             $has_condition = false;
             if (is_array($cols)) {
                 foreach ($cols as $c) {
