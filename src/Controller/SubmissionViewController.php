@@ -152,7 +152,6 @@ final class SubmissionViewController extends BaseController
         <tr>
           <td><?= \App\Core\App::html()->escape($att['original_name']) ?></td>
           <td><?= \App\Core\App::html()->escape(format_bytes((int)$att['file_size'])) ?></td>
-          <td></td>
           <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($att['uploaded_at']))) ?></td>
           <td>
             <a href="index.php?p=download&id=<?= urlencode((string) ($att['id'] ?? '')) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Télécharger</a>
