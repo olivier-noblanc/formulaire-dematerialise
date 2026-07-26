@@ -4,11 +4,11 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1402** (0 fail, 6 skip) |
-| Assertions | **4100+** |
-| Coverage | **31.5%** (codecov.io) — cible 60% |
+| Tests | **1416** (0 fail, 6 skip) |
+| Assertions | **4200+** |
+| Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **507** (level 8, noDirectPdo: 0, noMagicString: 51) |
+| PHPStan erreurs baseline | **510** (level 8, auto-regenerate activé) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** (LazyCronRepository, PersonaRepository supprimés) |
 | CI | **GitHub Actions** (11 jobs, ~3 min) — Lint, PHPStan, PHPUnit+coverage, CS Fixer, Rector, Composer audit, Deptrac, phpcpd, Infection, Tests fonctionnels, Playwright |
