@@ -496,10 +496,25 @@ final readonly class WorkflowEngine
             'date' => gmdate('Y-m-d H:i:s'),
         ];
 
-        $this->submissionRepository->appendToDataJson($t['submission_id'], function (array $data) use ($validationEntry): array {
+        // B8 fix : appendToDataJson() fait de l'optimistic locking (WHERE data = old_json)
+        // et peut retourner false si 3 conflits successifs. Avant, ce retour était
+        // ignoré — l'audit_log disait 'validated' mais la data JSON n'avait pas la nouvelle
+        // validation. Maintenant on rollback et on informe l'appelant.
+        $appended = $this->submissionRepository->appendToDataJson($t['submission_id'], function (array $data) use ($validationEntry): array {
             $data['validations'][] = $validationEntry;
             return $data;
         });
+        if (!$appended) {
+            $pdo->rollBack();
+            // Audit l'échec pour diagnose (règle AGENTS.md #9 : ne pas avaler silencieusement)
+            $this->auditLogService->log(
+                'validation_data_append_failed',
+                'submission:' . $t['submission_id'],
+                'Échec appendToDataJson (conflit optimistic locking 3x) pour token ' . $token,
+                $doneBy
+            );
+            return ['status' => 'data_conflict', 'data' => $t];
+        }
 
         $pdo->commit();
 
