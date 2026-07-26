@@ -85,8 +85,19 @@ final class FormController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->security->requireCsrf();
 
-            // Validation dynamique des champs obligatoires
+            // Validation dynamique des champs obligatoires (sauf File, traité à part)
+            // B14 fix : avant, ce loop s'appliquait à TOUS les champs y compris les
+            // champ de type file — or $_POST[$file_field_name] est vide pour les
+            // uploads (les fichiers vont dans $_FILES), donc $field_errors[$fname]
+            // = 'Ce champ est obligatoire' était systématiquement setté. Ensuite,
+            // $field_errors + $file_errors favorise $field_errors (opérateur +
+            // conserve la 1ère clé), ce qui faisait afficher 'Ce champ est
+            // obligatoire' (générique) au lieu de 'Ce fichier est obligatoire'
+            // (spécifique, setté par le second loop ci-dessous).
             foreach ($form_fields as $field) {
+                if ($field['field_type'] === FieldType::File->value) {
+                    continue; // les fichiers sont validés dans le second loop
+                }
                 if ($field['required'] && in_array(trim($_POST[$field['field_name']] ?? ''), ['', '0'], true)) {
                     $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
                 }

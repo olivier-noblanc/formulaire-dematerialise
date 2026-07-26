@@ -108,14 +108,12 @@ if (array_key_exists($page, $CONTROLLER_MAP)) {
     exit;
 }
 
-$pageFile = __DIR__ . '/pages/' . $page . '.php';
-if (!file_exists($pageFile)) {
-    http_response_code(404);
-    (new \App\Render\ErrorRenderer())->errorPage(404, 'Page introuvable',
-        'Le fichier de page n\'existe pas : pages/' . \App\Core\App::html()->escape($page) . '.php',
-        'Contactez l\'administrateur.');
-    // errorPage() appelle exit() — pas besoin de exit ici
-}
-
-// ── Charger la page ──
-require $pageFile;
+// B17 fix (audit 2026-07-26) : le fallback $pageFile = pages/$page.php était
+// unreachable — $CONTROLLER_MAP couvre exhaustivement $ALLOWED_PAGES (25 vs 25
+// entrées), et le dossier pages/ n'existe plus (toutes les pages sont migrées
+// vers des controllers OOP dans src/Controller/). La whitelist check ligne 66
+// retourne déjà 404 si la page n'est pas autorisée. Si on arrive ici (page dans
+// la whitelist mais pas dans le CONTROLLER_MAP), c'est un bug de cohérence.
+(new \App\Render\ErrorRenderer())->errorPage(500, 'Configuration incomplète',
+    "La page '{$page}' est dans la whitelist mais n'a pas de contrôleur associé.",
+    'Contactez l\'administrateur — le CONTROLLER_MAP doit être synchronisé avec ALLOWED_PAGES.');
