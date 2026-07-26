@@ -199,7 +199,7 @@ final class AuthService implements AuthInterface
             $app = \App\Core\App::getInstance();
             if ($app->has(\App\Repository\AdminRepository::class)) {
                 $email = $app->get(\App\Repository\AdminRepository::class)->getSuperAdminEmail();
-                if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
                     return $email;
                 }
             }
@@ -213,7 +213,7 @@ final class AuthService implements AuthInterface
             $stmt = $pdo->prepare('SELECT value FROM settings WHERE key = ?');
             $stmt->execute(['admin_email']);
             $val = $stmt->fetchColumn();
-            if ($val && filter_var($val, FILTER_VALIDATE_EMAIL)) {
+            if ($val !== false && $val !== null && filter_var($val, FILTER_VALIDATE_EMAIL) !== false) {
                 return (string) $val;
             }
         } catch (\Throwable) {

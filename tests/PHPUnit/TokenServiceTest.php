@@ -1167,8 +1167,10 @@ final class TokenServiceTest extends TestCase
         $this->assertNotNull($stmt->fetchColumn());
     }
 
-    public function testCancelAllTokensMarkedDone(): void
+    public function testCancelAllTokensMarkedInvalidated(): void
     {
+        // B3 fix (audit 2026-07-26) : cancel() marque invalidated_at au lieu de done_at.
+        // Les tokens non traités ne doivent pas apparaître comme 'validés'.
         // Create multiple pending tokens for the same submission
         $pdo = $this->db->getPdo();
         $extraTokenId = generate_uuid();
@@ -1179,10 +1181,14 @@ final class TokenServiceTest extends TestCase
 
         $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
 
-        // Both tokens should be done
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL");
+        // Both tokens should be invalidated (done_at still NULL, invalidated_at set)
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND invalidated_at IS NULL");
         $stmt->execute([$this->testSubmissionId]);
-        $this->assertSame(0, (int) $stmt->fetchColumn(), 'All tokens should be marked done after cancel');
+        $this->assertSame(0, (int) $stmt->fetchColumn(), 'All tokens should be marked invalidated after cancel');
+        // Et aucun ne doit être marqué done_at (le validateur n'a rien fait)
+        $stmt2 = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NOT NULL");
+        $stmt2->execute([$this->testSubmissionId]);
+        $this->assertSame(0, (int) $stmt2->fetchColumn(), 'cancel() ne doit pas setter done_at (B3)');
     }
 
     public function testCancelValidationEntryHasDate(): void
