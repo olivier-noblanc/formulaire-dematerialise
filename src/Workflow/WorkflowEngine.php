@@ -451,7 +451,15 @@ final readonly class WorkflowEngine
         }
 
         if (!empty($t['expires_at'])) {
-            $expTs = strtotime($t['expires_at']);
+            // B1 fix (audit 2026-07-26) : les dates sont stockées en UTC (soit via
+            // SQLite datetime('now'), soit via PHP gmdate()). strtotime() sans
+            // fuseau explicite interprète la chaîne avec le fuseau serveur
+            // (Europe/Paris en prod), causant un décalage de 1-2h : tokens
+            // marqués expirés trop tôt. On force l'interprétation UTC en suffixant
+            // la chaîne avec ' UTC' (notation reconnue par strtotime).
+            // Même pattern que les fixes historiques #12 (alert_check.php) et
+            // v10.22.0 (remind.php) — n'avait pas été appliqué ici.
+            $expTs = strtotime($t['expires_at'] . ' UTC');
             if ($expTs !== false && $expTs < time()) {
                 $pdo->rollBack();
                 return ['status' => 'expired', 'data' => $t];
