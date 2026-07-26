@@ -36,7 +36,7 @@ final class ErrorRenderer
      * @param string $hint      Advice / next steps (optional)
      * @param string $back_url  Back button URL (default: index.php)
      */
-    public function errorPage(int $code, string $title, string $message, string $hint = '', string $back_url = 'index.php'): never
+    public function errorPage(int $code, string $title, string $message, string $hint = '', string $back_url = 'index.php'): void
     {
         http_response_code($code);
 
@@ -103,6 +103,19 @@ final class ErrorRenderer
         /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
         if (TEST_MODE && php_sapi_name() !== 'cli') {
             throw new ErrorResponseException($code, $title, $message, $hint, $back_url);
+        }
+        // B-EXIT (audit 2026-07-26) : mode 'no-exit' pour tests PHPUnit en CLI.
+        // Capture l'erreur dans $GLOBALS au lieu d'exit — permet de tester les
+        // controllers qui appellent errorPage() sans crasher PHPUnit.
+        if (isset($GLOBALS['_test_no_exit']) && $GLOBALS['_test_no_exit'] === true) {
+            $GLOBALS['_test_error_page'] = [
+                'code' => $code,
+                'title' => $title,
+                'message' => $message,
+                'hint' => $hint,
+                'back_url' => $back_url,
+            ];
+            return; // errorPage() est déclarée :never — on return pour le no-exit
         }
         echo $error_html;
         exit(1);

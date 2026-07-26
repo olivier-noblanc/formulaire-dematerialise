@@ -42,11 +42,12 @@ final class ValidateControllerTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $GLOBALS['_test_no_exit'] = true;
         $GLOBALS['_test_json_output'] = null;
+        $GLOBALS['_test_error_page'] = null;
     }
 
     protected function tearDown(): void
     {
-        unset($GLOBALS['_test_no_exit'], $GLOBALS['_test_json_output']);
+        unset($GLOBALS['_test_no_exit'], $GLOBALS['_test_json_output'], $GLOBALS['_test_error_page']);
 
         $pdo = $this->db->getPdo();
         foreach ($this->createdIds as $id) {
