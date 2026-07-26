@@ -141,11 +141,8 @@
 Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 - **29 confirmés fixés** par les sessions précédentes
 - **0 reste à corriger**
-- **1 faux positif** : #26 (JarnationService) — le service est vivant (81 références), le TODO avait tort
+- **1 faux positif** : #26 (JargonService) — le service est vivant (81 références via `t_jargon()` → `JargonService::translate()`), le TODO avait tort
 
-
-
-**Encore présent (1)** : #26 — JargonService entier mort, à supprimer
 
 ### Éléments conservés (décision antérieure)
 
