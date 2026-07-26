@@ -1685,24 +1685,3 @@ parameters:
                         identifier: argument.type
                         count: 1
                         path: src/lib_wrappers.php
-
-                -
-                        message: '#^Offset\ 'submission_id'\ might\ not\ exist\ on\ array<string,\ mixed>\|null\.$#'
-                        identifier: offsetAccess.notFound
-                        count: 1
-                        path: src/Controller/DownloadController.php
-                -
-                        message: '#^Offset\ 'mime_type'\ might\ not\ exist\ on\ array<string,\ mixed>\|null\.$#'
-                        identifier: offsetAccess.notFound
-                        count: 1
-                        path: src/Controller/DownloadController.php
-                -
-                        message: '#^Offset\ 'original_name'\ might\ not\ exist\ on\ array<string,\ mixed>\|null\.$#'
-                        identifier: offsetAccess.notFound
-                        count: 1
-                        path: src/Controller/DownloadController.php
-                -
-                        message: '#^Offset\ 'file_size'\ might\ not\ exist\ on\ array<string,\ mixed>\|null\.$#'
-                        identifier: offsetAccess.notFound
-                        count: 1
-                        path: src/Controller/DownloadController.php
