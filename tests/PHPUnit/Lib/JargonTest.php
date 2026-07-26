@@ -15,9 +15,10 @@ final class JargonTest extends TestCase
 
     public function testTJargonAcronyms(): void
     {
+        // B4 fix: CSRF now uses 'Jeton de sécurité (CSRF)' (consistent with HtmlService)
         $this->assertStringContainsString('Protection des données', t_jargon('RGPD'));
         $this->assertStringContainsString('Équipement de protection', t_jargon('EPI'));
-        $this->assertStringContainsString('Code de sécurité', t_jargon('CSRF'));
+        $this->assertStringContainsString('Jeton de sécurité', t_jargon('CSRF'));
     }
 
     public function testTJargonPreservesCircuitDemat(): void
@@ -85,8 +86,9 @@ final class JargonTest extends TestCase
 
     public function testTJargonReplacesUppercaseSI(): void
     {
+        // B4 fix: SI now uses 'Système d'information (SI)' (consistent with HtmlService)
         $result = t_jargon('SI');
-        $this->assertStringContainsString('systèmes', $result);
+        $this->assertStringContainsString('Système', $result);
     }
 
     public function testTJargonEmptyString(): void

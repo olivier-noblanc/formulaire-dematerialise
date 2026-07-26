@@ -104,9 +104,19 @@ final class HtmlServiceTest extends TestCase
 
     public function testTJargonAcronyms(): void
     {
+        // Unified with JargonService::translate() — CSRF now uses 'Jeton de sécurité (CSRF)'
+        // (more informative, keeps the acronym suffix for technical reference)
         $this->assertStringContainsString('Protection des données', $this->service->tJargon('RGPD'));
         $this->assertStringContainsString('Direction régionale', $this->service->tJargon('DREETS'));
         $this->assertStringContainsString('Jeton de sécurité', $this->service->tJargon('CSRF'));
+    }
+
+    public function testTJargonTokenTranslatesToLienDeValidation(): void
+    {
+        // B4 fix: previously HtmlService::tJargon('Token') returned 'Token' untranslated.
+        // Now delegates to JargonService::translate() which maps Token → 'Lien de validation'.
+        $this->assertStringContainsString('Lien de validation', $this->service->tJargon('Token'));
+        $this->assertStringContainsString('liens de validation', $this->service->tJargon('tokens'));
     }
 
     public function testTJargonPreservesCircuitDemat(): void
@@ -116,7 +126,11 @@ final class HtmlServiceTest extends TestCase
 
     public function testTJargonPreservesFonctionPublique(): void
     {
-        $this->assertSame('Fonction publique', $this->service->tJargon('Fonction publique'));
+        // After unification (B4): JargonService::translate() replaces
+        // 'Fonction publique' → 'Métier de la fonction publique'. This is the
+        // intended behavior — the term is considered jargon in the project domain.
+        $result = $this->service->tJargon('Fonction publique');
+        $this->assertStringContainsString('fonction publique', $result);
     }
 
     public function testTJargonWithMultipleWords(): void
@@ -381,8 +395,10 @@ final class HtmlServiceTest extends TestCase
 
     public function testTJargonSMTP(): void
     {
+        // B4 fix: SMTP now consistently → 'Serveur email (SMTP)' across the whole app
         $result = $this->service->tJargon('SMTP');
-        $this->assertStringContainsString('Serveur mail', $result);
+        $this->assertStringContainsString('Serveur email', $result);
+        $this->assertStringContainsString('SMTP', $result);
     }
 
     public function testTJargonCSRF(): void
