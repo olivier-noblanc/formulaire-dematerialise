@@ -64,6 +64,24 @@ final class FormController extends BaseController
         // Vérifier si l'agent a déjà une soumission en cours pour ce formulaire
         $existing_submission = $this->submissionRepo->findActiveByFormAndSubmitter($form['id'], $submitted_by);
 
+        // Palier de confirmation (v34) : avoir plusieurs soumissions actives sur un
+        // même formulaire est un cas métier légitime (ex. onboarding : un manager
+        // gère plusieurs arrivées ; matériel : plusieurs demandes distinctes), donc
+        // ce n'est plus bloqué en base (index unique retiré). On informe l'agent et
+        // on demande une confirmation explicite avant de soumettre une nouvelle
+        // demande, pour éviter uniquement les doublons accidentels.
+        /** @phpstan-ignore-next-line if.alwaysTrue */
+        $confirmed = TEST_MODE || isset($_GET['confirmed']) || isset($_POST['confirmed']);
+        if ($existing_submission !== null && !$confirmed) {
+            echo $this->renderPage(
+                $this->html->h($this->html->tJargon($form['label'])),
+                'forms',
+                $this->renderPageCss(),
+                $this->renderConfirmDuplicate($form, $existing_submission, (string) $slug)
+            );
+            return;
+        }
+
         // Charger les champs dynamiques du formulaire, ordonnés par ordre.
         // Exclure les champs réservés aux validateurs (filled_by='validator').
         $all_form_fields = App::validatorData()->getFormFields($form['id']);
@@ -309,6 +327,38 @@ final class FormController extends BaseController
     }
 
     /**
+     * Rendu HTML de l'écran de confirmation affiché quand l'agent a déjà une
+     * soumission en cours sur ce formulaire (v34 — remplace le blocage en base).
+     *
+     * @param array{label: string, description: string|null}    $form
+     * @param array{submitted_at: string|null, id: string}       $existing_submission
+     */
+    private function renderConfirmDuplicate(array $form, array $existing_submission, string $slug): string
+    {
+        $h       = $this->html->h(...);
+        $tJargon = $this->html->tJargon(...);
+        $date    = $h(date('d/m/Y à H:i', (int) strtotime((string) ($existing_submission['submitted_at'] ?? ''))));
+        $existingId = urlencode((string) ($existing_submission['id'] ?? ''));
+        $confirmUrl = 'index.php?p=form&f=' . urlencode($slug) . '&confirmed=1';
+
+        ob_start();
+        ?>
+  <h1><?= $h($tJargon($form['label'])) ?></h1>
+  <div class="warn-box">
+    <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $date ?>).</p>
+    <p>Voulez-vous vraiment en soumettre une nouvelle ?</p>
+  </div>
+  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;">
+    <a href="index.php?p=submission_view&id=<?= $existingId ?>" class="btn btn-secondary">Voir la demande existante</a>
+    <a href="<?= $h($confirmUrl) ?>" class="btn btn-primary">Soumettre quand même</a>
+    <a href="index.php" class="btn btn-secondary">Annuler</a>
+  </div>
+<?php
+        $content = ob_get_clean();
+        return $content === false ? '' : $content;
+    }
+
+    /**
      * Rendu HTML du formulaire (titre, champs, consentement RGPD,
      * bouton submit, script de progression). Reproduit à l'identique la
      * structure HTML historique de form.php (output buffering + inline PHP).
@@ -366,6 +416,7 @@ final class FormController extends BaseController
   <?php else: ?>
     <form method="POST" action="index.php?p=form&f=<?= urlencode($slug) ?>" enctype="multipart/form-data" id="form-main">
       <?= $this->security->csrfField() ?>
+      <?php if ($existing_submission): ?><input type="hidden" name="confirmed" value="1"><?php endif; ?>
     <?php // ITER1-B / Action B : encadré « Aide » en haut du formulaire.?>
     <aside class="form-help-box" aria-label="Aide pour remplir le formulaire">
       <span class="form-help-icon" aria-hidden="true">💡</span>
