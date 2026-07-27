@@ -7,10 +7,6 @@ on:
     branches: [master]
   workflow_dispatch:
 
-# Permissions pour permettre au job phpstan de commiter le baseline régénéré
-permissions:
-  contents: write
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -70,41 +66,7 @@ jobs:
       - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
-      - name: PHPStan (auto-regenerate baseline on failure)
-        # Si PHPStan échoue, on régénère le baseline et on le commit automatiquement.
-        # Cela évite le cycle 'baseline périmé → CI rouge → fix manuel'.
-        # Le commit est fait par github-actions[bot] avec un message clair.
-        run: |
-          set +e
-          php vendor/bin/phpstan analyse --memory-limit=512M --no-progress > /tmp/phpstan.txt 2>&1
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 0 ]; then
-            echo "PHPStan passe — 0 erreur"
-            exit 0
-          fi
-          echo "=== PHPStan output ==="
-          cat /tmp/phpstan.txt
-          echo "=== Régénération du baseline ==="
-          php vendor/bin/phpstan analyse --memory-limit=512M --no-progress --generate-baseline=phpstan-baseline.neon
-          # Vérifier que ça passe maintenant
-          php vendor/bin/phpstan analyse --memory-limit=512M --no-progress > /tmp/phpstan2.txt 2>&1
-          EXIT_CODE2=$?
-          if [ $EXIT_CODE2 -ne 0 ]; then
-            echo "PHPStan échoue même après régénération du baseline"
-            cat /tmp/phpstan2.txt
-            exit 1
-          fi
-          # Commit + push le nouveau baseline
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add phpstan-baseline.neon
-          git commit -m "chore(ci): regenerate phpstan-baseline (auto)
-
-          Nouvelles erreurs détectées après audit/test ajoutés. Baseline
-          régénéré automatiquement par la CI pour éviter le cycle
-          'baseline périmé → CI rouge → fix manuel'."
-          git push
-          echo "Baseline régénéré et commité — la prochaine CI run passera."
+      - run: php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
 
   # ── Tests unitaires + e2e + couverture ─────────────────────────
   phpunit:
