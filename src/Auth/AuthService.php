@@ -71,7 +71,7 @@ final class AuthService implements AuthInterface
         /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
         if (defined('TEST_MODE') && TEST_MODE) {
             $testUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
-            if (!empty($testUser)) {
+            if ($testUser !== '') {
                 if (str_contains((string) $testUser, '@')) {
                     return $testUser |> trim(...) |> strtolower(...);
                 }
@@ -81,7 +81,7 @@ final class AuthService implements AuthInterface
         }
 
         $authUser = $_SERVER['AUTH_USER'] ?? ($_SERVER['REMOTE_USER'] ?? '');
-        if (empty($authUser)) {
+        if ($authUser === '') {
             return '';
         }
 
@@ -190,8 +190,16 @@ final class AuthService implements AuthInterface
             exit;
         }
 
-        // Régénération session ID au premier accès authentifié
-        if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['_session_initialized'])) {
+        $this->regenerateSessionIdOnce();
+    }
+
+    /**
+     * Régénère l'ID de session au premier accès authentifié de la requête.
+     * Factorisé entre requireAdmin() et requireAdminEffective().
+     */
+    private function regenerateSessionIdOnce(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE && ($_SESSION['_session_initialized'] ?? false) !== true) {
             session_regenerate_id(true);
             $_SESSION['_session_initialized'] = true;
         }
@@ -224,10 +232,7 @@ final class AuthService implements AuthInterface
             exit;
         }
 
-        if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['_session_initialized'])) {
-            session_regenerate_id(true);
-            $_SESSION['_session_initialized'] = true;
-        }
+        $this->regenerateSessionIdOnce();
     }
 
     public function getAdminEmail(): string
