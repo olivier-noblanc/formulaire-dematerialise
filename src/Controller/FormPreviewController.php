@@ -14,7 +14,7 @@ final class FormPreviewController extends BaseController
 {
     public function handle(): void
     {
-        App::auth()->requireAdmin();
+        App::auth()->requireAdminEffective();
 
         $formId = trim($_GET['form_id'] ?? '');
 

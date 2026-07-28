@@ -11,6 +11,7 @@ interface AuthInterface
     public function isAdminEffective(): bool;
     public function isSuperAdmin(): bool;
     public function requireAdmin(): void;
+    public function requireAdminEffective(): void;
     public function getAdminEmail(): string;
     public function getEmailDomain(): string;
     public function isFormOwner(string $formId, ?string $email = null): bool;
