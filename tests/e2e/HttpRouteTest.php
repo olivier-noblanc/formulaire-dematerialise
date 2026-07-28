@@ -27,6 +27,10 @@ final class HttpRouteTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
+        // Ensure localhost bypasses corporate proxy for built-in server
+        putenv('no_proxy=127.0.0.1,localhost');
+        putenv('NO_PROXY=127.0.0.1,localhost');
+
         self::$docRoot = dirname(__DIR__, 2);
         self::$baseUrl = 'http://127.0.0.1:' . self::$port;
 
@@ -152,12 +156,16 @@ final class HttpRouteTest extends TestCase
     {
         $url = self::$baseUrl . $path;
 
+        // Default test user is admin; override via $headers['X-Test-User']
+        $testUser = $headers['X-Test-User'] ?? 'admin.local@exemple.invalid';
+        unset($headers['X-Test-User']);
+
         $httpHeaders = [
             'X-Test-Mode: 1',
-            'X-Test-User: admin.local@exemple.invalid',
+            'X-Test-User: ' . $testUser,
         ];
-        foreach ($headers as $key => $value) {
-            $httpHeaders[] = "$key: $value";
+        foreach ($headers as $value) {
+            $httpHeaders[] = $value;
         }
 
         $ctx = stream_context_create([
@@ -436,6 +444,55 @@ final class HttpRouteTest extends TestCase
         // Persona stop should either redirect (302) or succeed (200)
         // On success, the page should contain index.php link
         $this->assertContains($status, [200, 302], 'Persona stop should redirect or succeed');
+    }
+
+    /**
+     * Non-admin agent should NOT see admin sidebar links.
+     */
+    public function testAgentDoesNotSeeAdminLinks(): void
+    {
+        [$status, $body] = self::httpGet('/', [
+            'X-Test-User' => 'agent_' . uniqid() . '@test.com',
+        ]);
+
+        if ($status !== 200) {
+            $this->markTestSkipped("Agent page returned $status");
+        }
+
+        // Agent should see sidebar-user card WITHOUT admin class in rendered HTML
+        // (the string 'sidebar-user-card-admin' may appear in JS inline, but not in class attributes)
+        $this->assertDoesNotMatchRegularExpression(
+            '/class="[^"]*sidebar-user-card-admin[^"]*"/',
+            $body,
+            'Agent should not have admin user card class in rendered class attribute'
+        );
+
+        // Agent should NOT see 'Administration' section in sidebar
+        $this->assertStringNotContainsString(
+            'Administration',
+            $body,
+            'Agent should not see admin sidebar section'
+        );
+
+        // Agent should NOT see persona chevron in rendered HTML
+        $this->assertStringNotContainsString(
+            'sidebar-user-chevron',
+            $body,
+            'Agent should not have persona dropdown chevron'
+        );
+    }
+
+    /**
+     * Persona start action redirects to confirm_action page in GET.
+     */
+    public function testPersonaGetRedirectsToConfirmation(): void
+    {
+        // Persona start redirects to confirm_action which itself redirects to index
+        $uniqueEmail = 'agent_' . uniqid() . '@test.com';
+        [$status, $body] = self::httpGet('/?p=persona&action=start&email=' . urlencode($uniqueEmail));
+
+        // Expect 302 redirect to confirm_action (GET must be confirmed via POST)
+        $this->assertSame(302, $status, 'Persona GET should redirect to confirm_action');
     }
 
     public function testHealthPageShowsSystemChecks(): void

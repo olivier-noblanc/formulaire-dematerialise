@@ -66,6 +66,20 @@ final class ConfirmActionController extends BaseController
                 'param_label' => 'soumission',
                 'danger'      => true,
             ],
+            'persona_start' => [
+                'label'       => 'Activer le mode persona',
+                'description' => 'Voulez-vous vraiment activer le mode persona pour visualiser l\'interface comme',
+                'params'      => ['email'],
+                'param_label' => 'utilisateur',
+                'danger'      => false,
+            ],
+            'persona_stop' => [
+                'label'       => 'Désactiver le mode persona',
+                'description' => 'Voulez-vous vraiment quitter le mode persona et revenir en mode administrateur ?',
+                'params'      => ['persona_token'],
+                'param_label' => '',
+                'danger'      => false,
+            ],
         ];
 
         if (!isset($actionsConfig[$action])) {
@@ -127,6 +141,13 @@ final class ConfirmActionController extends BaseController
                 $subId = trim($_GET['submission_id']);
                 $detailText = '#' . \App\Core\App::html()->escape(substr($subId, 0, 8)) . ' ?';
                 break;
+            case 'persona_start':
+                $targetEmail = trim($_GET['email'] ?? '');
+                $detailText = \App\Core\App::html()->escape($targetEmail) . ' ?';
+                break;
+            case 'persona_stop':
+                $detailText = '';
+                break;
         }
 
         $cancelUrl = $from ?: 'index.php';
@@ -134,6 +155,12 @@ final class ConfirmActionController extends BaseController
         if ($action === 'remove_owner' && isset($_GET['form_id'])) {
             $postUrl = 'index.php?p=admin_forms&form_id=' . urlencode((string) ($_GET['form_id'] ?? '')) . '#owners';
             $cancelUrl = $postUrl;
+        } elseif ($action === 'persona_start') {
+            $targetEmail = strtolower(trim($_GET['email'] ?? ''));
+            $postUrl = 'index.php?p=persona&action=start&email=' . urlencode($targetEmail);
+        } elseif ($action === 'persona_stop') {
+            $currentToken = $_GET['persona_token'] ?? '';
+            $postUrl = 'index.php?p=persona&action=stop&persona_token=' . urlencode($currentToken);
         }
 
         $content = \App\Render\ConfirmActionRenderer::content($action, $config, $confirmMessage, $detailText, $cancelUrl, $postUrl, $_GET);

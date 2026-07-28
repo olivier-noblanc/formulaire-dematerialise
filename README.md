@@ -3,7 +3,7 @@
 > Système de validation dématérialisé pour la DREETS Bourgogne-Franche-Comté.
 > Workflows de formulaires, suivi en temps réel, alertes automatiques J-N, supervision complète.
 
-**Version 10.3.0** | PHP 8.4 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
+**Version 10.27.0** | PHP 8.4 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
 
 ---
 
@@ -67,14 +67,16 @@ chacun valide ou refuse à son rythme — le système trace, relance et alerte a
 
 | Composant | Technologie |
 |---|---|
-| Langage | PHP 8 procédural — aucun framework |
+| Langage | PHP 8.4 orienté objet — 0 framework |
 | Base de données | SQLite (embarquée, migration automatique versionnée, mode WAL) |
-| CSS | Pur — stylesheet partagée via `style.php` (`require_once`), design Marianne conforme RGAA |
-| JavaScript | Aucun (CSP `script-src 'none'`) — validation HTML5 native |
+| Architecture | Services (DI container) + Repository pattern — 10 repositories, 10+ services |
+| CSS | Pur — stylesheet partagée via `style.php`, design Marianne conforme RGAA |
+| JavaScript | Aucun (CSP `script-src 'none'`) |
 | Authentification | Windows Auth (IIS + Kerberos) via `$_SERVER['AUTH_USER']` |
-| Mail | PHPMailer (seule dépendance vendored) |
-| Tâches planifiées | **Lazy cron** intégré (depuis v4.2.0) — `remind.php` et `alert_check.php` s'exécutent au premier accès PDO, aucun Planificateur de tâches Windows requis |
-| Sécurité | CSRF, PDO prepared statements, chiffrement AES-256-CBC des settings sensibles, headers HTTP complets (CSP, HSTS, X-Frame-Options), rate limiting IIS natif |
+| Mail | PHPMailer (seule dépendance, vendored) |
+| Tâches planifiées | **Lazy cron** intégré — `remind.php` et `alert_check.php` au premier accès PDO |
+| Sécurité | CSRF, PDO prepared statements, AES-256-CBC des settings, headers HTTP complets (CSP, HSTS, X-Frame-Options), contraintes CHECK SQL, rate limiting IIS natif |
+| CI | GitHub Actions — 11 jobs (PHPStan level 8, PHPUnit coverage, Infection, Deptrac, CS Fixer, Rector, Composer audit, phpcpd, Playwright) |
 
 ### Principes
 
@@ -82,8 +84,10 @@ chacun valide ou refuse à son rythme — le système trace, relance et alerte a
 - **Zéro CDN** : aucune ressource externe, tout est local
 - **Zéro fichier .css** : le CSS passe exclusivement par `style.php`
 - **Future-proof** : le code doit tourner sans modification dans 10 ans
-- **KISS** : chaque fichier fait une chose, pas d'abstraction inutile
+- **KISS** : pas de sur-architecture, pas de cache superflu, pas de couches d'abstraction inutiles
 - **Erreurs visibles** : `display_errors=1` même en prod (sauf TEST_MODE)
+- **Repository pattern** : tout accès DB passe par des repositories — pas de `get_pdo()` direct
+- **Services via DI** : services enregistrés dans `src/bootstrap.php`, accessibles via `App::serviceName()`
 
 ---
 
@@ -139,76 +143,89 @@ Le script sauvegarde automatiquement l'existant et préserve `config.php`.
 ## Structure des fichiers
 
 ```
-# Application — cœur (4 fichiers)
-config.php            Configuration (protégée par update.ps1, SETTINGS_DEFAULTS)
-helpers.php           Fonctions partagées + moteur workflow + DB + cache + sécurité
-style.php             CSS commun (inclus via require_once) — design Marianne / RGAA
+# Application — racine (5 fichiers)
+config.php            Configuration (protégée par update.ps1)
+helpers.php           Fonctions partagées + compat legacy
+style.php             CSS commun — design Marianne / RGAA
 router.php            Routeur pour le serveur PHP intégré (dev only)
+health.php            Health check (HTTP 200/503)
 
 # Application — pages utilisateur (15 fichiers)
-index.php             Accueil adapté au rôle (agent / validateur / admin)
+index.php             Accueil adapté au rôle
 form.php              Formulaire dynamique (?f=slug)
 form_preview.php      Prévisualisation admin (?form_id=N)
-validate.php          Validation par token (?t=TOKEN) — accessible sans auth Windows
-submission_view.php   Détail complet d'une demande (?id=N)
-my_submissions.php    Suivi agent (« Mes demandes »)
-my_validations.php    Dashboard validateur (« Mes validations »)
+validate.php          Validation par token (?t=TOKEN)
+submission_view.php   Détail d'une demande (?id=N)
+my_submissions.php    Suivi agent
+my_validations.php    Dashboard validateur
 dashboard.php         Supervision admin
-form_tracking.php     Tableau de suivi propriétaire (owners + admins)
-stats.php             Statistiques et reporting
+form_tracking.php     Tableau de suivi propriétaire
+stats.php             Statistiques
 monitoring.php        Observabilité + audit log + SMTP health
-admin_access.php      Gestion des accès admin (demande / approbation / révocation)
-admin_forms.php       Back office formulaires (CRUD + champs + étapes + recipients)
+admin_access.php      Gestion des accès admin
+admin_forms.php       Back office formulaires
 admin_alerts.php      Configuration des alertes J-N
-admin_settings.php    Paramètres SMTP, relances, webhooks (super admin)
+admin_settings.php    Paramètres SMTP, relances
 
-# Application — utilitaires (8 fichiers)
+# Application — utilitaires (6 fichiers)
 docs.php              Documentation utilisateur in-app
-changelog.php         Journal des versions (parse CHANGELOG.md)
-rgpd.php              Conformité RGPD (mentions, export, anonymisation, purge)
-backup.php            Sauvegarde et restauration .db
-download.php          Téléchargement sécurisé des pièces jointes
+changelog.php         Journal des versions
+rgpd.php              Conformité RGPD
+backup.php            Sauvegarde / restauration .db
+download.php          Téléchargement des pièces jointes
 confirm_action.php    Confirmation d'actions sensibles
-health.php            Health check (HTTP 200/503 pour supervision externe)
-screenshot.php        Sert les captures depuis docs/screenshots/ (contourne IIS)
 
 # Installation / déploiement (2 fichiers)
 install.php           Assistant de génération de config.php
 update.ps1            Script PowerShell de mise à jour
 
-# Scripts CLI (2 fichiers) — exécutés par lazy_cron, pas de Task Scheduler requis
-alert_check.php       Vérification des deadlines + envoi des alertes J-N (lazy_cron 1×/jour)
-remind.php            Relance automatique des validateurs en attente (lazy_cron 1×/heure)
+# Scripts CLI (2 fichiers) — lazy_cron
+alert_check.php       Alertes J-N (1×/jour)
+remind.php            Relances validateurs (1×/heure)
 
-# Classes (1 dossier)
-classes/              DatabaseMigrations.php (migrations v0→v11 + seeding) + web.config
+# Code source (src/)
+src/
+├── bootstrap.php       Enregistrement des services DI
+├── helpers.php         Helpers chargés tardivement
+├── Core/               App (container), exceptions, Config
+├── Auth/               AuthService
+├── Security/           SecurityService
+├── Audit/              AuditLogService
+├── Mail/               MailService
+├── Cache/              CacheService
+├── Render/             Renderers HTML (HtmlService, SubmissionViewRenderer…)
+├── Forms/              Forms, Fields, ValidatorDataService
+├── Workflow/           WorkflowEngine
+├── Token/              TokenService
+├── Export/             ExportService
+├── Email/              EmailVerificationService
+├── Validation/         ValidationService
+├── Attachment/         AttachmentService
+├── Settings/           SettingsService
+├── Repository/         BaseRepository + 9 repositories métier
+├── Controller/         Controllers (FormController, SubmissionView…)
+└── Cron/               CronService
 
-# Tests (8 fichiers PHP + 4 Playwright)
-test_unit.php         Suite de tests unitaires CLI (282 tests)
-test_advanced.php     Tests avancés (workflow, délégation, send_mail)
-test_e2e.php          Tests end-to-end PHP
-test_all.php          Suite de tests d'intégration
-test_api.php          API de test (header X-Test-Mode sécurisé)
-test_http.php         Suite de tests HTTP
-test_bootstrap.php    Bootstrapper commun aux tests
-test_refactor.php     Tests ciblés pour refactoring v5.14.0
-test_v4.php           Tests de régression v4.x
-playwright_test.js    Tests Playwright (parcours agent / validateur / admin)
-playwright_advanced.js
-playwright_comprehensive.js
-take_screenshots.js   Régénération des captures docs/screenshots/
+# Tests (PHPUnit + PHP + Playwright)
+tests/
+├── PHPUnit/            1249 tests unitaires
+├── test_unit.php       Suite CLI legacy
+├── test_e2e.php        Tests end-to-end PHP
+├── test_bootstrap.php  Bootstrapper commun
+├── playwright_test.js  Playwright (Firefox)
+└── ...
 
 # Documentation (4 fichiers)
-README.md             Ce fichier
-CHANGELOG.md          Journal des modifications (source primaire de la version)
-AGENT.md              Guide technique pour agent IA
-agent.md              Suivi de remédiation audit (contraintes IIS, 40 constats)
+README.md
+CHANGELOG.md            Journal des modifications (30+ versions)
+AGENTS.md               Guide technique pour agent IA
+agent.md                Suivi de remédiation audit
 
 # Dépendances (1 dossier)
-PHPMailer/            Librairie PHPMailer 6.9.x (seule dépendance, vendored)
+PHPMailer/              PHPMailer 6.9.x (vendored)
 
-# Captures d'écran (1 dossier)
-docs/screenshots/     21 captures de l'application
+# Captures d'écran
+docs/screenshots/       21 captures
 ```
 
 ---
@@ -237,48 +254,46 @@ Les étapes peuvent être **séquentielles** (ordres différents) ou **parallèl
 
 > Le journal complet est dans [`CHANGELOG.md`](CHANGELOG.md) — 30+ versions documentées.
 
-### [5.22.0] — 2026-06-16 — Remédiation audit Wave 4 + Wave 5
+### [10.27.0] — 2026-07-26 — Audit CTO complet
 
-- **Architecture** : audit code mort (76 fonctions), déduplication (`get_submission_with_form_label()`), gestion d'erreurs consistante (`render_error_page()`), couche de cache file-based générique (`cache_get/set/clear()`), 7 patterns N+1 fixés via batched queries, 10 hardcodages remplacés par settings.
-- **Sécurité (Wave 5)** : 2 commentaires sanitizés, audit mots de passe faibles (0 trouvé), **+86 nouveaux tests unitaires** (validate_input, encrypt/decrypt_setting, parse_date, security_log, security_headers, rate_limit_check).
-- **Tests** : 273 tests unitaires (1 échec pré-existant — fixé en R2-TESTER).
+- **16 bugs fixés** (4 HIGH, 6 MEDIUM, 8 LOW) dont RgpdService deleteUserData, WorkflowEngine stalled, FormController email validation
+- **12 code smells** : god function `advanceWorkflow` splitée, enum `Annule`, migration v33 (10 CHECK constraints, FK delegations)
+- **CI durcie** : 11 jobs, liste blanche secrets, dépendabot auto-merge
+- **Coverage** : 27.9% → 33.5%
+- **1416 tests** (0 fail)
 
-### [5.21.x] — 2026-06-16 — Sécurité Wave 1-3 + IIS compat
+### [10.25.0] — Repository pattern via PHPStan
 
-- **v5.21.0** : 15 correctifs sécurité sur 11 fichiers — contrôle d'accès sur fonctions sensibles, durcissement upload, validation UUID sur tous les IDs, protection CLI-only pour scripts cron, erreurs n'exposant plus d'info système, validation centralisée `validate_input()`, chiffrement AES-256-CBC des settings sensibles, headers HTTP complets, rate limiting étendu, cookies sécurisés, logs sanitizés.
-- **v5.21.1** : `web.config` réécrit pour IIS 10+ standard (sans URL Rewrite Module), erreurs PHP toujours affichées même en prod.
-- **v5.21.2** : retrait du `web.config` racine (configuration IIS gérée hors dépôt).
+- Règle `noDirectPdo` avec `spaze/phpstan-disallowed-calls`
+- 14 services + 7 controllers migrés — 0 accès PDO direct
+- 7 enums métier (SubmissionStatus, FieldType, ValidationAction…)
+- Deptrac (6 layers, 0 violations)
+- NoMagicStringRule PHPStan custom
 
-### [5.20.0] — 2026-06-16 — Audit d'architecture (22 correctifs)
+### [10.22.0] — Bug bounty
 
-- **CRITICAL** : TEST_MODE activable par header HTTP corrigé (S-01), XSS dans `render_error_page()` corrigé (S-02), injection SQL dans `get_tokens_for_submission()` corrigée (S-03), décalage fuseau horaire PHP/SQLite corrigé (S-04).
-- **HIGH** : `require_admin()` sur dashboard, rotation CSRF après POST, validation HTTP_HOST, `REMOTE_ADDR` uniquement, régénération de session.
-- **Architecture** : transactions workflow, validation atomique de jeton, migration v9 sécurisée, lazy cron différé en shutdown, isolation CLI, cookie security, CSP `script-src 'none'`.
-- **Tests** : 399 tests PHP (0 échec).
-
-### Bug fix alertes J-N (R2-CTO, post-v5.22.0)
-
-Le bug **`generate_uuid()` utilisé en SQL SQLite** (la fonction n'existe pas en SQLite natif) empêchait la création de règles d'alerte via `admin_alerts.php` et l'envoi d'alertes via `alert_check.php` — la feature différenciante « Alertes J-N » était silencieusement cassée depuis plusieurs versions (P-01 / T-01 / O-02). **Réparé en R2-CTO** (Sprint 1) : les 3 INSERT concernés (`admin_alerts.php:43`, `alert_check.php:116`, `test_api.php:177`) génèrent désormais l'UUID côté PHP et le bindent en paramètre. 3 nouveaux tests (R2-TESTER) blindent la non-régression.
+- `send_mail()`/`build_mail_html()` n'existaient qu'en stub — Fatal Error runtime
+- Bug fuseau remind.php, code mort MailerService, BaseController
+- 16 bugs audit manuel confirmés fixés
 
 ---
 
 ## Conformité RGPD
 
 - **Durée de conservation** : configurable (défaut 24 mois après clôture)
-- **Purge automatique** : exécutée via lazy cron toutes les 24h (`rgpd_auto_purge()`)
-- **Droits utilisateur** : accès, rectification, effacement (page `rgpd.php`)
-- **Anonymisation** : les soumissions purgées sont anonymisées (email → "anonymized", données → supprimées)
-- **Journal d'audit** : toutes les actions RGPD sont tracées dans `audit_log`
+- **Purge automatique** : exécutée via lazy cron toutes les 24h
+- **Droits utilisateur** : accès, rectification, effacement (`rgpd.php`)
+- **Anonymisation** : soumissions purgées anonymisées (email → "anonymized", données supprimées)
+- **Export JSON** : export complet des données personnelles
+- **Journal d'audit** : toutes les actions RGPD tracées
 
-Voir : `pages/rgpd.php`, `lib/rgpd.php`, `docs/declaration-rgaa.md`
+Voir : `rgpd.php`, `docs/declaration-rgaa.md`
 
 ## Conformité RGAA 4.1
 
 Déclaration d'accessibilité : `docs/declaration-rgaa.md`
 
-CircuitDémat est **partiellement conforme** au RGAA 4.1. Les non-conformités
-connues (diagrammes SVG, tri de tableaux, notifications toast) sont documentées
-dans la déclaration.
+CircuitDémat est **partiellement conforme** au RGAA 4.1.
 
 ## Facteur bus (Bus Factor)
 
@@ -299,8 +314,8 @@ inmaintenable. À 1, une seule personne connaît tout le code.
 | Action | Statut | Priorité |
 |--------|--------|----------|
 | Documentation architecture (`docs/`) | ✅ Partiellement fait | Haute |
-| CHANGELOG complet | ✅ À jour (v10.0.9) | Haute |
-| Tests automatisés (gate qualité) | ✅ 57 tests + 12 audits | Haute |
+| CHANGELOG complet | ✅ À jour (v10.27.0) | Haute |
+| Tests automatisés (gate qualité) | ✅ 1416 tests PHPUnit + Playwright + PHPStan level 8 | Haute |
 | Déclaration RGAA | ✅ Créée (`docs/declaration-rgaa.md`) | Moyenne |
 | Guide de maintenance | ⬜ À faire | Moyenne |
 | Formation d'un 2e développeur | ⬜ À planifier | Haute |

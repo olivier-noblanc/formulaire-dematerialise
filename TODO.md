@@ -4,15 +4,16 @@
 
 | Métrique | Valeur |
 |----------|--------|
+| Métrique | Valeur |
+|----------|--------|
 | Tests | **1416** (0 fail, 6 skip) |
 | Assertions | **4200+** |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **510** (level 8, auto-regenerate activé) |
+| PHPStan erreurs baseline | **510** (level 8) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
-| Repositories | **10** (LazyCronRepository, PersonaRepository supprimés) |
-| CI | **GitHub Actions** (11 jobs, ~3 min) — Lint, PHPStan, PHPUnit+coverage, CS Fixer, Rector, Composer audit, Deptrac, phpcpd, Infection, Tests fonctionnels, Playwright |
-| Workflows | **2** (CI + Dependabot) |
+| Repositories | **10** |
+| CI | **GitHub Actions** (11 jobs, ~3 min) |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
 ---
@@ -188,4 +189,4 @@ Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 
 ---
 
-_Dernière mise à jour : 2026-07-25 (v10.26.0)_
+_Dernière mise à jour : 2026-07-28 (v10.27.0)_
