@@ -54,7 +54,7 @@ final readonly class TokenService
         if ($old === false) {
             return ['success' => false, 'message' => 'Token introuvable.'];
         }
-        if ($old['done_at']) {
+        if ($old['done_at'] !== null) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
         if ($old['sub_status'] !== SubmissionStatus::EnCours->value) {
@@ -194,7 +194,7 @@ final readonly class TokenService
         if ($tok === null) {
             return ['success' => false, 'message' => 'Token introuvable.'];
         }
-        if ($tok['done_at']) {
+        if ($tok['done_at'] !== null) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
         if ($tok['status'] !== SubmissionStatus::EnCours->value) {
@@ -257,7 +257,7 @@ final readonly class TokenService
         if ($tok === null) {
             return ['success' => false, 'message' => 'Token introuvable.'];
         }
-        if ($tok['done_at']) {
+        if ($tok['done_at'] !== null) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
         if ($tok['status'] !== SubmissionStatus::EnCours->value) {

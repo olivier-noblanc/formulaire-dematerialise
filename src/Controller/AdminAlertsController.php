@@ -13,7 +13,7 @@ final class AdminAlertsController extends BaseController
 {
     public function handle(): void
     {
-        App::auth()->requireAdmin();
+        App::auth()->requireAdminEffective();
 
         $successMsg = '';
         $errorMsg = '';

@@ -13,7 +13,7 @@ final class AdminSettingsController extends BaseController
 {
     public function handle(): void
     {
-        App::auth()->requireAdmin();
+        App::auth()->requireAdminEffective();
 
         $postResult = AdminSettingsHandlers::handlePost();
 

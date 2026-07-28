@@ -14,7 +14,7 @@ final class MonitoringController extends BaseController
 {
     public function handle(): void
     {
-        App::auth()->requireAdmin();
+        App::auth()->requireAdminEffective();
 
         // Query #1: Average processing time
         $avgSeconds = $this->submissionRepo->getAvgProcessingTime();

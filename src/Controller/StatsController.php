@@ -13,7 +13,7 @@ final class StatsController extends BaseController
 {
     public function handle(): void
     {
-        App::auth()->requireAdmin();
+        App::auth()->requireAdminEffective();
 
         $period = $_GET['period'] ?? 'month';
         if (!in_array($period, ['week', 'month', 'year'])) {

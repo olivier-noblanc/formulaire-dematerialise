@@ -12,7 +12,7 @@ final class AdminFormsController extends BaseController
 {
     public function handle(): void
     {
-        App::auth()->requireAdmin();
+        App::auth()->requireAdminEffective();
 
         $forms = App::getInstance()->get(\App\Repository\FormRepository::class)->findAll();
 

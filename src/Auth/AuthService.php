@@ -151,16 +151,23 @@ final class AuthService implements AuthInterface
         if (!$this->isAdmin()) {
             return false;
         }
+        return !$this->isPersonaTokenActive();
+    }
+
+    /**
+     * Vrai si un token persona valide est présent dans la requête courante
+     * (GET ou POST). Factorisé depuis isAdminEffective() pour être réutilisé
+     * par requireAdminEffective() sans dupliquer la lecture du token.
+     */
+    private function isPersonaTokenActive(): bool
+    {
         $token = '';
         if (isset($_GET['persona_token'])) {
             $token = (string) $_GET['persona_token'];
         } elseif (isset($_POST['persona_token'])) {
             $token = (string) $_POST['persona_token'];
         }
-        if ($token !== '' && function_exists('persona_lookup') && persona_lookup($token) !== '') {
-            return false;
-        }
-        return true;
+        return $token !== '' && function_exists('persona_lookup') && persona_lookup($token) !== '';
     }
 
     public function isSuperAdmin(): bool
@@ -184,6 +191,39 @@ final class AuthService implements AuthInterface
         }
 
         // Régénération session ID au premier accès authentifié
+        if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['_session_initialized'])) {
+            session_regenerate_id(true);
+            $_SESSION['_session_initialized'] = true;
+        }
+    }
+
+    /**
+     * Fix (bug persona — signalé 2026-07-28) : garde d'accès pour les
+     * contrôleurs admin qui doivent rester inaccessibles pendant un persona
+     * actif (downgrade réel, pas seulement masquage des liens UI). Avant ce
+     * correctif, requireAdmin() (basé sur l'user RÉEL) protégeait déjà ces
+     * pages, mais ne tenait jamais compte du persona — un admin en persona
+     * voyait donc toujours l'intégralité de l'interface et des données admin
+     * (paramètres, sauvegardes, RGPD, monitoring...), alors que
+     * PersonaService documente un modèle "downgrade uniquement".
+     *
+     * PersonaController garde volontairement requireAdmin() (pas celle-ci) :
+     * l'admin doit toujours pouvoir arrêter son propre persona même pendant
+     * qu'il est actif.
+     */
+    public function requireAdminEffective(): void
+    {
+        if ((!$this->isAdmin() && !$this->isSuperAdmin()) || $this->isPersonaTokenActive()) {
+            /** @phpstan-ignore-next-line booleanAnd.rightAlwaysFalse */
+            if (defined('TEST_MODE') && TEST_MODE && function_exists('test_json_response')) {
+                test_json_response(['error' => 'Accès refusé', 'redirect' => 'index.php?p=admin_access']);
+            }
+            if (class_exists(\App\Render\ErrorRenderer::class)) {
+                new \App\Render\ErrorRenderer()->errorPage(403, 'Accès refusé', 'Cette page n\'est pas accessible pendant un persona actif.');
+            }
+            exit;
+        }
+
         if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['_session_initialized'])) {
             session_regenerate_id(true);
             $_SESSION['_session_initialized'] = true;

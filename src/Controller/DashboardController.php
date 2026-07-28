@@ -25,7 +25,7 @@ final class DashboardController extends BaseController
 
 
         // Sécurité : le dashboard est réservé aux administrateurs
-        $this->auth->requireAdmin();
+        $this->auth->requireAdminEffective();
 
         $this->db->getPdo();
         $filtre  = $_GET['statut'] ?? 'tous';
@@ -54,6 +54,7 @@ final class DashboardController extends BaseController
         // Normalisation : $_GET peut théoriquement contenir array|float|false
         $filtre = (string) $filtre;
         $search = (string) $search;
+        $form_f = (string) $form_f;
 
         // Export CSV
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
