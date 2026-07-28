@@ -30,6 +30,7 @@ final class DashboardController extends BaseController
         $this->db->getPdo();
         $filtre  = $_GET['statut'] ?? 'tous';
         $form_f  = $_GET['form']   ?? '';
+        $form_f = is_string($form_f) ? $form_f : '';
         $search  = $_GET['search'] ?? '';
         $page    = max(1, (int) ($_GET['page'] ?? 1));
         $per_page = 25;
@@ -39,7 +40,7 @@ final class DashboardController extends BaseController
             if ($filtre !== 'tous' && $filtre !== 'complet') {
                 $filtre = validate_input($filtre, 'status');
             }
-            if ($form_f) {
+            if ($form_f !== '' && $form_f !== '0') {
                 $form_f = validate_input($form_f, 'slug', ['max_length' => 100]);
             }
             $page = validate_input($page, 'int', ['min' => 1, 'max' => 10000]);
@@ -52,8 +53,7 @@ final class DashboardController extends BaseController
         $page   = (int) $page;
         // Normalisation : $_GET peut théoriquement contenir array|float|false
         $filtre = (string) $filtre;
-        $form_f = is_scalar($form_f) ? (string) $form_f : '';
-        $search = is_scalar($search) ? (string) $search : '';
+        $search = (string) $search;
 
         // Export CSV
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
