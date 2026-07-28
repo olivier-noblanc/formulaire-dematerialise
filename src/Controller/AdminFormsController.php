@@ -35,7 +35,8 @@ final class AdminFormsController extends BaseController
             new \App\Render\ErrorRenderer()->errorPage(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
         }
 
-        $action = $_POST['action'] ?? '';
+        $rawAction = $_POST['action'] ?? '';
+        $action = is_string($rawAction) ? $rawAction : '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->security->requireCsrf();
@@ -46,7 +47,7 @@ final class AdminFormsController extends BaseController
         $validationHtml = '';
         $preservedJson  = '';
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action !== '') {
             $result = AdminFormsHandlers::dispatch($action, (string) $formId);
             if ($result !== null) {
                 if (isset($result['json_output']) && isset($result['filename'])) {
@@ -71,7 +72,7 @@ final class AdminFormsController extends BaseController
                 if (isset($result['preserved_json'])) {
                     $preservedJson  = $result['preserved_json'];
                 }
-                if (isset($result['form_id'])) {
+                if (isset($result['form_id']) && is_string($result['form_id'])) {
                     $formId         = $result['form_id'];
                 }
             }
@@ -81,12 +82,13 @@ final class AdminFormsController extends BaseController
         $formFields = [];
         $workflowSteps = [];
 
-        if ($formId) {
-            $selectedForm = App::getInstance()->get(\App\Repository\FormRepository::class)->findById($formId);
+        if ($formId !== '' && $formId !== '0') {
+            $formIdStr = (string) $formId;
+            $selectedForm = App::getInstance()->get(\App\Repository\FormRepository::class)->findById($formIdStr);
 
             if ($selectedForm) {
-                $formFields = App::validatorData()->getFormFields($formId);
-                $workflowSteps = App::workflow()->getWorkflowSteps($formId);
+                $formFields = App::validatorData()->getFormFields($formIdStr);
+                $workflowSteps = App::workflow()->getWorkflowSteps($formIdStr);
             }
         }
 

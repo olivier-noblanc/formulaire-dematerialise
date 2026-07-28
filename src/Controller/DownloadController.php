@@ -41,13 +41,14 @@ final class DownloadController extends BaseController
         }
 
         $attachment = App::attachment()->getAttachmentById($attachmentId);
-        if (!$attachment) {
+        if ($attachment === null) {
             new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Pièce jointe introuvable',
                 'La pièce jointe demandée n\'existe pas ou a été supprimée.',
                 'Si vous avez suivi un lien depuis un email, la pièce jointe a peut-être été supprimée. Contactez l\'expéditeur de la demande.'
             );
+            return;
         }
 
         $user = App::auth()->getUser();
@@ -79,17 +80,19 @@ final class DownloadController extends BaseController
                 'Vous n\'avez pas les droits nécessaires pour accéder à cette pièce jointe. Seuls l\'auteur de la demande, les validateurs concernés et les administrateurs peuvent la consulter.',
                 'Si vous pensez que vous devriez avoir accès, vérifiez que vous êtes bien connecté avec votre compte habituel. Contactez un administrateur si le problème persiste.'
             );
+            return;
         }
 
         $mime_type = $attachment['mime_type'];
         $allowed_mimes = App::attachment()->getAllowedMimeTypes();
-        if (!in_array($mime_type, $allowed_mimes)) {
+        if (!in_array($mime_type, $allowed_mimes, true)) {
             new \App\Render\ErrorRenderer()->errorPage(
                 403,
                 'Type de fichier non autorisé',
                 'Le type MIME de cette pièce jointe n\'est pas dans la liste autorisée.',
                 'Contactez un administrateur si vous pensez qu\'il s\'agit d\'une erreur.'
             );
+            return;
         }
         $original_name = $attachment['original_name'];
         $file_size = (int) $attachment['file_size'];

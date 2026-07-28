@@ -177,7 +177,7 @@ final readonly class AttachmentService
      * Récupère une pièce jointe par son ID.
      *
      * @param string $attachmentId ID de la pièce jointe
-     * @return array<string, mixed>|null Données de la pièce jointe ou null
+     * @return array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}|null
      */
     public function getAttachmentById(string $attachmentId): ?array
     {

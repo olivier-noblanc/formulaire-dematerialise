@@ -91,8 +91,9 @@ final readonly class PersonaService
                 LIMIT 1
             ');
             $stmt->execute([$token]);
+            /** @var array{target_email: string, expires_at: string, revoked_at: string|null, admin_email: string}|false $row */
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if (!$row) {
+            if ($row === false) {
                 return '';
             }
 

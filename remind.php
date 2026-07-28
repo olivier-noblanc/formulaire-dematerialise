@@ -48,9 +48,10 @@ foreach ($pendingIds as $tokenId) {
             WHERE t.id = ? AND t.done_at IS NULL AND s.closed_at IS NULL
         ");
         $stmt->execute([$tokenId]);
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_label: string, data: string}|false $tok */
         $tok = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$tok) {
+        if ($tok === false) {
             $pdo->rollBack();
             continue;
         }
@@ -65,7 +66,7 @@ foreach ($pendingIds as $tokenId) {
         }
 
         $sent     = new DateTimeImmutable($tok['sent_at'], new DateTimeZone('UTC'));
-        $last_ref = $tok['relance_at'] ? new DateTimeImmutable($tok['relance_at'], new DateTimeZone('UTC')) : $sent;
+        $last_ref = $tok['relance_at'] !== null ? new DateTimeImmutable($tok['relance_at'], new DateTimeZone('UTC')) : $sent;
         $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
 
         if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h', '48')) {

@@ -48,9 +48,10 @@ final readonly class TokenService
             WHERE t.id = ?
         ');
         $stmt->execute([$oldTokenId]);
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string, relance_count: int, sub_status: string}|false $old */
         $old = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$old) {
+        if ($old === false) {
             return ['success' => false, 'message' => 'Token introuvable.'];
         }
         if ($old['done_at']) {
