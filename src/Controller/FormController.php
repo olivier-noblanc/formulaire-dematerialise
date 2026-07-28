@@ -54,6 +54,7 @@ final class FormController extends BaseController
                 'Le formulaire demandé n\'existe pas ou a été désactivé.',
                 'Vérifiez l\'adresse dans votre navigateur. Vous pouvez retourner à l\'accueil pour voir les formulaires disponibles.'
             );
+            return;
         }
 
         $submitted_by = $this->auth->getUser();
@@ -72,6 +73,7 @@ final class FormController extends BaseController
         // demande, pour éviter uniquement les doublons accidentels.
         /** @phpstan-ignore-next-line if.alwaysTrue */
         $confirmed = TEST_MODE || isset($_GET['confirmed']) || isset($_POST['confirmed']);
+        /** @phpstan-ignore booleanNot.alwaysFalse, booleanAnd.alwaysFalse */
         if ($existing_submission !== null && !$confirmed) {
             echo $this->renderPage(
                 $this->html->h($this->html->tJargon($form['label'])),
@@ -330,7 +332,7 @@ final class FormController extends BaseController
      * Rendu HTML de l'écran de confirmation affiché quand l'agent a déjà une
      * soumission en cours sur ce formulaire (v34 — remplace le blocage en base).
      *
-     * @param array{label: string, description: string|null}    $form
+     * @param array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string} $form
      * @param array{submitted_at: string|null, id: string}       $existing_submission
      */
     private function renderConfirmDuplicate(array $form, array $existing_submission, string $slug): string
@@ -416,7 +418,7 @@ final class FormController extends BaseController
   <?php else: ?>
     <form method="POST" action="index.php?p=form&f=<?= urlencode($slug) ?>" enctype="multipart/form-data" id="form-main">
       <?= $this->security->csrfField() ?>
-      <?php if ($existing_submission): ?><input type="hidden" name="confirmed" value="1"><?php endif; ?>
+      <?php if ($existing_submission !== null): ?><input type="hidden" name="confirmed" value="1"><?php endif; ?>
     <?php // ITER1-B / Action B : encadré « Aide » en haut du formulaire.?>
     <aside class="form-help-box" aria-label="Aide pour remplir le formulaire">
       <span class="form-help-icon" aria-hidden="true">💡</span>
