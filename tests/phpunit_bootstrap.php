@@ -100,3 +100,8 @@ $app->set(ValidationService::class, new ValidationService());
 $app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class)));
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
 $app->set(DocumentationService::class, new DocumentationService());
+
+// Seed testeur@e2e.test in admins (s'assure qu'il existe même si la
+// migration v28 a été exécutée avant l'ajout de ce seed dans son code).
+$stmt = $db->getPdo()->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, 'testeur@e2e.test', datetime('now'))");
+$stmt->execute([\generate_uuid()]);
