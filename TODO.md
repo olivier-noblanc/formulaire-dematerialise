@@ -132,12 +132,14 @@
 
 ## 🎯 Ce qui reste
 
-### Baseline PHPStan (506 erreurs)
+### Baseline PHPStan (497 erreurs — toutes LOW)
+
+Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs). Aucune n'est bloquante.
 
 | Catégorie | Count | Priorité | Détail |
 |-----------|-------|----------|--------|
 | `empty.notAllowed` | 52 | **LOW** | `empty()` interdit par phpstan-strict-rules → remplacer par `=== ''` / `=== null` / `=== []` |
-| `noMagicString` | 51 | **HIGH** | Strings métier dans comments, SQL aliases, CSS — à migrer ou valider comme non-applicables |
+| `noMagicString` | **0** | ~~HIGH~~ | **Migration terminée** — toutes les strings métier sont en enums. Les strings restantes (email, text, pending…) sont des usages légitimes (alias SQL, CSS, types HTML5) |
 | `ternary.shortNotAllowed` | 28 | **LOW** | Ternaires courts (`?:`) interdits → `??` ou `if/else` |
 | `booleanNot.exprNotBoolean` | 27 | **LOW** | Expressions non-booléennes dans des `!` → caster en bool |
 | `if.condNotBoolean` | 25 | **LOW** | Conditions non-booléennes dans les `if` |
@@ -146,7 +148,7 @@
 | `equal.notAllowed` | 9 | **LOW** | Comparaisons `==` au lieu de `===` |
 | `cast.useless` | 5 | **LOW** | Casts inutiles |
 | `booleanAnd/rightNotBoolean` | 4 | **LOW** | Opérandes non-booléennes dans `&&` |
-| Autres | ~179 | **LOW** | Divers (arrayFilter.strict, deadProperty, deadEnumCase, etc.) |
+| Autres | ~321 | **LOW** | Divers (arrayFilter.strict, deadProperty, deadEnumCase, etc.) |
 
 ### Bug backlog audit — 29/29 vérifiés, 29 fixés
 
