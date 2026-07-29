@@ -1,5 +1,21 @@
 # Changelog — CircuitDémat
 
+## [10.28.1] — 2026-07-29
+_Résumé : Fix CI — 11 erreurs PHPStan cast.useless supprimées, baseline 510→497._
+
+### 🐛 Bug fixes
+- **PHPStan cast.useless** : 11 casts `(string)` inutiles supprimés dans `AdminFormCrudHandler` (6), `AdminRecipientHandler` (1), `AdminStepCrudHandler` (4) — les variables sont déjà des strings (retour de `postFormId()`/`postStepId()`).
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| PHPStan erreurs | 11 | **0** |
+| PHPStan baseline | 510 | **497** |
+| Tests | 1396 | 1396 (0 fail) |
+
+---
+
 ## [10.28.0] — 2026-07-29
 _Résumé : Persona simplifié — suppression de l'étape de confirmation, mode self-agent (l'admin visualise l'interface avec ses propres droits réduits), dropdown POST avec CSRF._
 
