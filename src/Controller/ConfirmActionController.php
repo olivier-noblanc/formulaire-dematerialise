@@ -161,6 +161,17 @@ final class ConfirmActionController extends BaseController
         } elseif ($action === 'persona_stop') {
             $currentToken = $_GET['persona_token'] ?? '';
             $postUrl = 'index.php?p=persona&action=stop&persona_token=' . urlencode($currentToken);
+        } elseif ($action === 'delete_submission') {
+            // Bug signalé 2026-07-29 : postUrl retombait sur $from (souvent
+            // index.php?p=dashboard, qui ne gère pas delete_submission en POST) au
+            // lieu de submission_view (seul endroit où deleteCascade() est appelé,
+            // cf. SubmissionViewController). Suppression silencieuse sans effet.
+            $postUrl = 'index.php?p=submission_view&id=' . urlencode($subId);
+        } elseif ($action === 'remove_admin') {
+            // Même bug : aucun from= n'est fourni par le lien (AdminAccessController),
+            // postUrl retombait donc sur index.php (page d'accueil), qui ne gère
+            // pas remove_admin en POST — seul admin_access le fait.
+            $postUrl = 'index.php?p=admin_access';
         }
 
         $content = \App\Render\ConfirmActionRenderer::content($action, $config, $confirmMessage, $detailText, $cancelUrl, $postUrl, $_GET);
