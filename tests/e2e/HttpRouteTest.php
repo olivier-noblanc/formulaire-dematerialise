@@ -180,15 +180,23 @@ final class HttpRouteTest extends TestCase
 
         $body = @file_get_contents($url, false, $ctx);
         $status = 200;
+        $location = '';
 
         if (isset($http_response_header)) {
             // Parse status from response header
             if (preg_match('#HTTP/\d\.\d\s+(\d+)#', $http_response_header[0] ?? '', $m)) {
                 $status = (int) $m[1];
             }
+            // Parse Location header for redirects
+            foreach ($http_response_header as $header) {
+                if (stripos($header, 'Location:') === 0) {
+                    $location = trim(substr($header, 9));
+                    break;
+                }
+            }
         }
 
-        return [$status, $body ?? ''];
+        return [$status, $body ?? '', $location];
     }
 
     // ── Route data providers ──────────────────────────────────
@@ -439,11 +447,11 @@ final class HttpRouteTest extends TestCase
 
     public function testPersonaStopRedirectsToIndex(): void
     {
-        [$status, $body] = self::httpGet('/?p=persona&action=stop');
+        [$status, $body, $location] = self::httpGet('/?p=persona&action=stop');
 
-        // Persona stop should either redirect (302) or succeed (200)
-        // On success, the page should contain index.php link
-        $this->assertContains($status, [200, 302], 'Persona stop should redirect or succeed');
+        // Persona stop should redirect to index (302) — no confirmation step
+        $this->assertSame(302, $status, 'Persona stop should redirect to index');
+        $this->assertStringNotContainsString('confirm_action', $location, 'Persona stop should NOT redirect to confirm_action');
     }
 
     /**
@@ -483,16 +491,44 @@ final class HttpRouteTest extends TestCase
     }
 
     /**
-     * Persona start action redirects to confirm_action page in GET.
+     * Persona start in GET should NOT redirect to confirm_action.
+     * It should execute directly (no confirmation step) — self-agent mode.
      */
-    public function testPersonaGetRedirectsToConfirmation(): void
+    public function testPersonaGetDoesNotRedirectToConfirmation(): void
     {
-        // Persona start redirects to confirm_action which itself redirects to index
-        $uniqueEmail = 'agent_' . uniqid() . '@test.com';
-        [$status, $body] = self::httpGet('/?p=persona&action=start&email=' . urlencode($uniqueEmail));
+        // Persona start with admin's own email → self-agent mode, direct activation
+        $adminEmail = 'olivier.noblanc@dreets.gouv.fr';
+        [$status, $body, $location] = self::httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
 
-        // Expect 302 redirect to confirm_action (GET must be confirmed via POST)
-        $this->assertSame(302, $status, 'Persona GET should redirect to confirm_action');
+        // Should redirect to index with persona_token (302) — NOT to confirm_action
+        $this->assertSame(302, $status, 'Persona GET should redirect directly (no confirmation step)');
+        $this->assertStringNotContainsString('confirm_action', $location, 'Persona GET should NOT redirect to confirm_action');
+        $this->assertStringContainsString('persona_token=', $location, 'Persona GET redirect should contain persona_token');
+    }
+
+    /**
+     * Persona stop in GET should NOT redirect to confirm_action.
+     */
+    public function testPersonaStopDoesNotRedirectToConfirmation(): void
+    {
+        // First activate a persona, then stop it
+        $adminEmail = 'olivier.noblanc@dreets.gouv.fr';
+        [$startStatus, $startBody, $startLocation] = self::httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
+        if ($startStatus !== 302) {
+            $this->markTestSkipped('Could not activate persona');
+        }
+
+        // Extract persona_token from Location header
+        if (!preg_match('/persona_token=([^&\s]+)/', $startLocation, $m)) {
+            $this->markTestSkipped('Could not extract persona_token from redirect');
+        }
+        $token = urldecode($m[1]);
+
+        // Now stop persona — should redirect directly, not to confirm_action
+        [$status, $body, $location] = self::httpGet('/?p=persona&action=stop&persona_token=' . urlencode($token));
+
+        $this->assertSame(302, $status, 'Persona stop GET should redirect directly');
+        $this->assertStringNotContainsString('confirm_action', $location, 'Persona stop should NOT redirect to confirm_action');
     }
 
     public function testHealthPageShowsSystemChecks(): void

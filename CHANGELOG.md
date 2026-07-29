@@ -1,5 +1,31 @@
 # Changelog — CircuitDémat
 
+## [10.28.0] — 2026-07-29
+_Résumé : Persona simplifié — suppression de l'étape de confirmation, mode self-agent (l'admin visualise l'interface avec ses propres droits réduits), dropdown POST avec CSRF._
+
+### ✨ Features
+- **Persona self-agent** : le mode "Vue agent" affiche l'interface avec les droits les plus faibles de l'admin lui-même (pas un autre utilisateur). L'admin ne bascule plus sur une autre personne.
+- **Plus d'étape de confirmation** : le switch persona s'effectue directement au clic dans le dropdown sidebar (avant : clic → page confirm_action → Confirmer → switch). Flow simplifié en 1 clic.
+
+### 🔧 Refactoring
+- **ConfirmActionController** : `persona_start` et `persona_stop` supprimés du config et du switch (actions directes, plus de page intermédiaire).
+- **NavigationRenderer** : dropdown persona réécrit en POST form avec CSRF (data-csrf-token sur la card) au lieu de `<a>` GET. Suppression de `findDistinctSubmitters()` (code mort).
+- **SubmissionRepository** : `findDistinctSubmitters()` supprimé (zero callers).
+
+### 🧪 Tests
+- **HttpRouteTest** : `testPersonaGetRedirectsToConfirmation` → `testPersonaGetDoesNotRedirectToConfirmation` (vérifie l'absence de `confirm_action` dans le redirect). Nouveau test `testPersonaStopDoesNotRedirectToConfirmation`. `httpGet()` retourne maintenant le header Location (3ème élément).
+- **test_confirm_action_dispatch** : corrigé pour lire depuis `ConfirmActionController.php` au lieu du fichier `pages/confirm_action.php` inexistant.
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1396 | 1396 (0 fail) |
+| PHPStan erreurs | 0 | 0 |
+| Étapes pour persona | 3 (clic → confirmation → POST) | **1** (clic → POST direct) |
+
+---
+
 ## [10.27.0] — 2026-07-26
 _Résumé : Audit CTO complet — 4 bugs HIGH + 6 MEDIUM + 8 LOW fixés, 12 code smells addressés, CI durcie (11 jobs), coverage 27.9% → 31.5%, migration v33 (CHECK SQL), 1402 tests._
 

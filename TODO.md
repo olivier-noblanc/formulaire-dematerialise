@@ -6,8 +6,8 @@
 |----------|--------|
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1416** (0 fail, 6 skip) |
-| Assertions | **4200+** |
+| Tests | **1396** (0 fail) |
+| Assertions | **4072** |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **510** (level 8) |
@@ -27,6 +27,14 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.28.0 — Persona self-agent, suppression confirmation
+| Tâche | Détail |
+|-------|--------|
+| Persona self-agent | L'admin voit l'interface avec ses propres droits réduits (pas un autre utilisateur) |
+| Suppression confirmation | Flow persona en 1 clic (avant : 3 étapes). ConfirmActionController allégé. |
+| Code mort supprimé | `findDistinctSubmitters()` (SubmissionRepository), `persona_start`/`persona_stop` (ConfirmActionController) |
+| Tests TDD | `testPersonaGetDoesNotRedirectToConfirmation`, `testPersonaStopDoesNotRedirectToConfirmation` |
 
 ### v10.25.0 — Enforcement du repository pattern via PHPStan
 | Tâche | Détail |
@@ -189,4 +197,4 @@ Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 
 ---
 
-_Dernière mise à jour : 2026-07-28 (v10.27.0)_
+_Dernière mise à jour : 2026-07-29 (v10.28.0)_
