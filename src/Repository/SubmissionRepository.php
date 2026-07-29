@@ -570,21 +570,4 @@ final class SubmissionRepository extends BaseRepository
         );
         return (int) ($result['cnt'] ?? 0);
     }
-
-    /**
-     * Liste des submitted_by distincts (pour le switch persona admin).
-     *
-     * @return array<int, string>
-     */
-    public function findDistinctSubmitters(int $limit = 50): array
-    {
-        /** @var array<int, array{submitted_by: string}> $result */
-        $result = $this->fetchAll(
-            "SELECT DISTINCT submitted_by FROM submissions
-             WHERE submitted_by IS NOT NULL AND submitted_by != ''
-             ORDER BY submitted_by LIMIT ?",
-            [$limit]
-        );
-        return array_column($result, 'submitted_by');
-    }
 }

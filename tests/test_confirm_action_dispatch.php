@@ -38,20 +38,20 @@ function check_cad(string $name, bool $ok, array $details = []): void {
 
 echo "── Test : dispatch des actions confirm_action ──\n";
 
-// ── Étape 1 : extraire les actions de confirm_action.php ──
-$confirmFile = __DIR__ . '/../pages/confirm_action.php';
+// ── Étape 1 : extraire les actions de ConfirmActionController ──
+$confirmFile = __DIR__ . '/../src/Controller/ConfirmActionController.php';
 $confirmSrc = file_get_contents($confirmFile);
 if ($confirmSrc === false) {
-    echo "❌ Impossible de lire confirm_action.php\n";
+    echo "❌ Impossible de lire ConfirmActionController.php\n";
     exit(1);
 }
 
 // Parser le tableau $actions_config pour extraire les clés d'action + params
 // v10.0.5 — Approche simple : extraire le bloc $actions_config = [...]; et l'eval
 // dans un sandbox (sécurisé car on contrôle le contenu du fichier).
-preg_match('/\$actions_config\s*=\s*(\[.*?\]);/s', $confirmSrc, $m);
+preg_match('/\$actions[Cc]onfig\s*=\s*(\[.*?\]);/s', $confirmSrc, $m);
 if (empty($m[1])) {
-    echo "❌ Impossible de parser \$actions_config dans confirm_action.php\n";
+    echo "❌ Impossible de parser \$actions_config dans ConfirmActionController.php\n";
     exit(1);
 }
 $array_src = $m[1];
@@ -66,7 +66,7 @@ foreach ($actions_config as $action => $cfg) {
 }
 $actions_config = $actions_params;
 
-echo "  Actions trouvées dans confirm_action.php : " . implode(', ', array_keys($actions_config)) . "\n\n";
+echo "  Actions trouvées dans ConfirmActionController.php : " . implode(', ', array_keys($actions_config)) . "\n\n";
 
 // ── Étape 2 : extraire tous les case 'xxx' des dispatchers ──
 $dispatchers = [

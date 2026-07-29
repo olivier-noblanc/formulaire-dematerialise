@@ -18,34 +18,19 @@ final class PersonaController extends BaseController
         $action = $_GET['action'] ?? '';
         $currentToken = $_GET['persona_token'] ?? '';
 
-        // B-02-5 fix (audit 2026-07-26) : start et stop sont des actions state-changing
-        // (activation/désactivation d'un persona admin→user). Avant, elles étaient en
-        // GET sans CSRF — un attaquant pouvait forcer un admin à activer un persona
-        // via un lien/image piégé (CSRF GET). Maintenant on exige POST + CSRF.
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            // Afficher une page de confirmation qui fait un POST avec CSRF
-            // plutôt que d'exécuter directement l'action en GET.
-            $redirectUrl = 'index.php';
-            if ($action === 'start') {
-                $targetEmail = strtolower(trim($_GET['email'] ?? ''));
-                // Rediriger vers confirm_action avec les params pour GET→POST
-                $redirectUrl = 'index.php?p=confirm_action&action=persona_start'
-                    . '&email=' . urlencode($targetEmail)
-                    . '&from=' . urlencode('index.php');
-            } elseif ($action === 'stop') {
-                $redirectUrl = 'index.php?p=confirm_action&action=persona_stop'
-                    . '&from=' . urlencode('index.php');
-            }
-            $this->redirect($redirectUrl);
+        // v10.28.0 : plus d'étape de confirmation pour persona.
+        // GET exécute directement l'action (self-agent mode : l'admin voit l'interface
+        // avec ses propres droits les plus faibles — jamais d'upgrade vers un autre user).
+        // POST vérifie CSRF (depuis le form sidebar).
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->security->requireCsrf();
         }
-
-        // POST : vérifier CSRF
-        $this->security->requireCsrf();
 
         $redirectUrl = 'index.php';
 
         if ($action === 'start') {
-            $targetEmail = strtolower(trim($_POST['email'] ?? ''));
+            $adminEmail = App::auth()->getUser();
+            $targetEmail = strtolower(trim($_POST['email'] ?? $_GET['email'] ?? ''));
             if ($targetEmail === '') {
                 http_response_code(400);
                 new \App\Render\ErrorRenderer()->errorPage(
@@ -58,7 +43,9 @@ final class PersonaController extends BaseController
 
             try {
                 $subRepo = App::getInstance()->get(\App\Repository\SubmissionRepository::class);
-                if (!$subRepo->existsBySubmitter($targetEmail)) {
+                // v10.28.0 : self-agent mode autorisé même sans soumissions
+                // (l'admin visualise l'interface avec ses propres droits réduits)
+                if ($targetEmail !== $adminEmail && !$subRepo->existsBySubmitter($targetEmail)) {
                     new \App\Render\ErrorRenderer()->errorPage(
                         404,
                         'Utilisateur inconnu',
@@ -70,7 +57,6 @@ final class PersonaController extends BaseController
                 new \App\Render\ErrorRenderer()->errorPage(500, 'Erreur DB', \App\Core\App::html()->escape($e->getMessage()), '');
             }
 
-            $adminEmail = App::auth()->getUser();
             $token = persona_create_token($adminEmail, $targetEmail);
             if ($token === '') {
                 new \App\Render\ErrorRenderer()->errorPage(
@@ -92,7 +78,7 @@ final class PersonaController extends BaseController
             new \App\Render\ErrorRenderer()->errorPage(
                 400,
                 'Action invalide',
-                'Action non reconnue. Utilisez POST ?action=start&email=XXX ou ?action=stop.',
+                'Action non reconnue. Utilisez ?action=start&email=XXX ou ?action=stop.',
                 ''
             );
         }
