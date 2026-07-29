@@ -3,7 +3,7 @@
 > Système de validation dématérialisé pour la DREETS Bourgogne-Franche-Comté.
 > Workflows de formulaires, suivi en temps réel, alertes automatiques J-N, supervision complète.
 
-**Version 10.27.0** | PHP 8.4 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
+**Version 10.28.1** | PHP 8.4 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
 
 ---
 
@@ -254,7 +254,12 @@ Les étapes peuvent être **séquentielles** (ordres différents) ou **parallèl
 
 > Le journal complet est dans [`CHANGELOG.md`](CHANGELOG.md) — 30+ versions documentées.
 
-### [10.27.0] — 2026-07-26 — Audit CTO complet
+### [10.28.1] — 2026-07-29 — Fix CI
+
+- **11 erreurs PHPStan** `cast.useless` supprimées (baseline 510→497)
+- CI repasse au vert (11/11 jobs)
+
+### [10.28.0] — 2026-07-29 — Persona self-agent
 
 - **16 bugs fixés** (4 HIGH, 6 MEDIUM, 8 LOW) dont RgpdService deleteUserData, WorkflowEngine stalled, FormController email validation
 - **12 code smells** : god function `advanceWorkflow` splitée, enum `Annule`, migration v33 (10 CHECK constraints, FK delegations)
@@ -314,8 +319,8 @@ inmaintenable. À 1, une seule personne connaît tout le code.
 | Action | Statut | Priorité |
 |--------|--------|----------|
 | Documentation architecture (`docs/`) | ✅ Partiellement fait | Haute |
-| CHANGELOG complet | ✅ À jour (v10.27.0) | Haute |
-| Tests automatisés (gate qualité) | ✅ 1416 tests PHPUnit + Playwright + PHPStan level 8 | Haute |
+| CHANGELOG complet | ✅ À jour (v10.28.1) | Haute |
+| Tests automatisés (gate qualité) | ✅ 1396 tests PHPUnit + Playwright + PHPStan level 8 | Haute |
 | Déclaration RGAA | ✅ Créée (`docs/declaration-rgaa.md`) | Moyenne |
 | Guide de maintenance | ⬜ À faire | Moyenne |
 | Formation d'un 2e développeur | ⬜ À planifier | Haute |

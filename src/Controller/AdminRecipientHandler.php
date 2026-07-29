@@ -30,7 +30,7 @@ final class AdminRecipientHandler
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
-            $repo->createRecipient((string) $step_id, $email);
+            $repo->createRecipient($step_id, $email);
             $label = $is_dynamic ? "Destinataire dynamique $email ajouté" : "Destinataire $email ajouté";
             App::audit()->log('recipient_add', 'step:' . $step_id, $label);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];

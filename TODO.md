@@ -10,7 +10,7 @@
 | Assertions | **4072** |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **510** (level 8) |
+| PHPStan erreurs baseline | **497** (level 8) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** |
 | CI | **GitHub Actions** (11 jobs, ~3 min) |
@@ -197,4 +197,4 @@ Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 
 ---
 
-_Dernière mise à jour : 2026-07-29 (v10.28.0)_
+_Dernière mise à jour : 2026-07-29 (v10.28.1)_

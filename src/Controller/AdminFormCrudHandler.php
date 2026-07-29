@@ -51,10 +51,10 @@ final class AdminFormCrudHandler
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
-            $slug = \generate_slug($label, (string) $form_id);
-            $repo->update((string) $form_id, ['slug' => $slug, 'label' => $label, 'description' => $description, 'actif' => $actif]);
+            $slug = \generate_slug($label, $form_id);
+            $repo->update($form_id, ['slug' => $slug, 'label' => $label, 'description' => $description, 'actif' => $actif]);
             App::audit()->log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
-            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode((string) $form_id)];
+            return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id)];
         } catch (\PDOException $e) {
             error_log('handleUpdateForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
@@ -73,10 +73,10 @@ final class AdminFormCrudHandler
         if (empty($form_id)) {
             return ['form_id' => ''];
         }
-        if (!App::auth()->isFormOwner((string) $form_id) && !App::auth()->isSuperAdmin()) {
+        if (!App::auth()->isFormOwner($form_id) && !App::auth()->isSuperAdmin()) {
             return ['error' => 'Seuls les propriétaires du formulaire peuvent le supprimer.', 'form_id' => $form_id];
         }
-        $active_count = App::workflow()->hasActiveSubmissions((string) $form_id);
+        $active_count = App::workflow()->hasActiveSubmissions($form_id);
         if ($active_count > 0) {
             return ['error' => 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.', 'form_id' => $form_id];
         }
@@ -84,7 +84,7 @@ final class AdminFormCrudHandler
         $db = App::db();
         $db->beginTransaction();
         try {
-            $formRepository->deleteCascade((string) $form_id);
+            $formRepository->deleteCascade($form_id);
             $db->commit();
         } catch (\Throwable $e) {
             $db->rollBack();

@@ -121,18 +121,6 @@ parameters:
 			path: lib/core_bootstrap.php
 
 		-
-			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: remind.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: remind.php
-
-		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
 			count: 2
@@ -529,18 +517,6 @@ parameters:
 			path: src/Controller/AdminFormsController.php
 
 		-
-			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Controller/AdminFormsController.php
-
-		-
-			message: '#^Only booleans are allowed in \|\|, mixed given on the right side\.$#'
-			identifier: booleanOr.rightNotBoolean
-			count: 1
-			path: src/Controller/AdminFormsController.php
-
-		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
 			count: 1
@@ -703,87 +679,21 @@ parameters:
 			path: src/Controller/DashboardController.php
 
 		-
-			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Controller/DashboardController.php
-
-		-
 			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
 			identifier: if.condNotBoolean
 			count: 2
 			path: src/Controller/DashboardController.php
 
 		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/DownloadController.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 2
-			path: src/Controller/DownloadController.php
-
-		-
-			message: '#^Offset ''file_size'' might not exist on array\<string, mixed\>\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/DownloadController.php
-
-		-
-			message: '#^Offset ''mime_type'' might not exist on array\<string, mixed\>\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/DownloadController.php
-
-		-
-			message: '#^Offset ''original_name'' might not exist on array\<string, mixed\>\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 2
-			path: src/Controller/DownloadController.php
-
-		-
-			message: '#^Offset ''submission_id'' might not exist on array\<string, mixed\>\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 2
-			path: src/Controller/DownloadController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
 			path: src/Controller/DownloadController.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 11
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Offset ''description'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Offset ''id'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 4
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Offset ''label'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 5
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Offset ''slug'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
 			path: src/Controller/FormController.php
 
 		-
@@ -813,12 +723,6 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
 			identifier: if.condNotBoolean
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Parameter \#1 \$form of method App\\Controller\\FormController\:\:renderContent\(\) expects array\{label\: string, description\: string\|null\}, array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null given\.$#'
-			identifier: argument.type
 			count: 1
 			path: src/Controller/FormController.php
 
@@ -1051,12 +955,6 @@ parameters:
 			path: src/Controller/ValidateController.php
 
 		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 3
-			path: src/Controller/ValidateController.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 5
@@ -1220,12 +1118,6 @@ parameters:
 
 		-
 			message: '#^Only booleans are allowed in a negated boolean, int\|string\|false\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Persona/PersonaService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
 			path: src/Persona/PersonaService.php
@@ -1639,12 +1531,6 @@ parameters:
 			path: src/Token/TokenService.php
 
 		-
-			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -1653,7 +1539,7 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
 			identifier: if.condNotBoolean
-			count: 2
+			count: 1
 			path: src/Token/TokenService.php
 
 		-
