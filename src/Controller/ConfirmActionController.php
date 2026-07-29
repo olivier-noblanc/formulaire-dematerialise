@@ -172,6 +172,14 @@ final class ConfirmActionController extends BaseController
             // postUrl retombait donc sur index.php (page d'accueil), qui ne gère
             // pas remove_admin en POST — seul admin_access le fait.
             $postUrl = 'index.php?p=admin_access';
+        } elseif ($action === 'delete_rule') {
+            // Non utilisée via ce lien dans l'UI actuelle (AdminAlertsRenderer
+            // poste directement sur admin_alerts, sans passer par confirm_action),
+            // mais restait routable via $from sans garantie si quelqu'un
+            // construit l'URL confirm_action à la main — même bug que ci-dessus.
+            $postUrl = 'index.php?p=admin_alerts';
+        } elseif ($action === 'delete_alert_log') {
+            $postUrl = 'index.php?p=admin_alerts';
         }
 
         $content = \App\Render\ConfirmActionRenderer::content($action, $config, $confirmMessage, $detailText, $cancelUrl, $postUrl, $_GET);

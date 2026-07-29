@@ -1,217 +1,230 @@
 <?php
 declare(strict_types=1);
 /**
- * test_confirm_action_dispatch.php — Vérifie que toutes les actions de
- * confirm_action.php sont bien dispatchées par un handler quelque part
- * dans le code (admin_forms_handlers.php OU pages/*.php).
+ * test_confirm_action_dispatch.php — Vérifie que chaque action déclarée dans
+ * ConfirmActionController route réellement (via $postUrl) vers un contrôleur
+ * qui la traite en POST.
  *
- * Bug historique (v10.0.4) : confirm_action.php POSTe 'remove_owner' mais
- * le dispatcher ne connaissait que 'delete_owner' → rien ne se passait.
- * Ce test aurait détecté le bug.
+ * Réécrit le 2026-07-29. L'ancienne version référençait l'architecture
+ * pré-refactor (pages/confirm_action.php, pages/*.php — supprimés lors de la
+ * migration vers src/Controller/, commit 1871b71, v10.6.0) et faisait un
+ * `continue` silencieux dès qu'un fichier attendu était absent. Résultat :
+ * depuis la migration, ce test ne vérifiait plus RIEN du tout tout en
+ * continuant de rapporter un succès (0 violation).
  *
- * Vérifie aussi que les params envoyés par confirm_action (hidden inputs)
- * correspondent aux clés $_POST attendues par le handler.
+ * Bug qu'une version à jour de ce test aurait dû détecter (trouvé le
+ * 2026-07-29) : delete_submission et remove_admin n'avaient pas de $postUrl
+ * explicite dans ConfirmActionController → retombaient sur $from (fourni par
+ * l'appelant), qui ne pointait pas toujours vers un contrôleur gérant
+ * l'action en POST → confirmation affichée, clic "confirmer" sans aucun
+ * effet, silencieusement.
  *
- * Fichier : tests/test_confirm_action_dispatch.php
+ * Principe directeur de ce fichier : toute impossibilité de vérifier
+ * (fichier introuvable, regex qui ne matche plus, structure inattendue) est
+ * un CRASH DUR — exit(1) immédiat avec message explicite — jamais un
+ * `continue` qui laisse le test terminer en rapportant un succès alors qu'il
+ * n'a rien vérifié. Un test qui peut passer au vert sans avoir réellement
+ * exécuté ses vérifications est pire qu'aucun test : il donne une fausse
+ * confiance et peut laisser passer une régression jusqu'en E2E, voire en
+ * production.
  */
 
-require_once __DIR__ . '/test_bootstrap.php';
-
-$passed = 0;
-$failed = 0;
-$violations = [];
-
-function check_cad(string $name, bool $ok, array $details = []): void {
-    global $passed, $failed, $violations;
-    if ($ok) {
-        echo "  ✅ $name\n";
-        $passed++;
-    } else {
-        echo "  ❌ $name (" . count($details) . " violation(s))\n";
-        foreach ($details as $d) {
-            echo "     • $d\n";
-        }
-        $failed++;
-        $violations = array_merge($violations, $details);
-    }
-}
-
-echo "── Test : dispatch des actions confirm_action ──\n";
-
-// ── Étape 1 : extraire les actions de confirm_action.php ──
-$confirmFile = __DIR__ . '/../pages/confirm_action.php';
-$confirmSrc = file_get_contents($confirmFile);
-if ($confirmSrc === false) {
-    echo "❌ Impossible de lire confirm_action.php\n";
+/** @return never */
+function cad_crash(string $message)
+{
+    fwrite(STDERR, "\n");
+    fwrite(STDERR, "💥 CRASH — test_confirm_action_dispatch.php ne peut pas continuer\n");
+    fwrite(STDERR, "   $message\n");
+    fwrite(STDERR, "   (voir le commentaire d'en-tête de ce fichier : un `continue` silencieux\n");
+    fwrite(STDERR, "    ici équivaudrait à un faux succès — c'est exactement le bug qui a\n");
+    fwrite(STDERR, "    laissé ce test ne rien vérifier depuis la migration v10.6.0)\n\n");
     exit(1);
 }
 
-// Parser le tableau $actions_config pour extraire les clés d'action + params
-// v10.0.5 — Approche simple : extraire le bloc $actions_config = [...]; et l'eval
-// dans un sandbox (sécurisé car on contrôle le contenu du fichier).
-preg_match('/\$actions_config\s*=\s*(\[.*?\]);/s', $confirmSrc, $m);
-if (empty($m[1])) {
-    echo "❌ Impossible de parser \$actions_config dans confirm_action.php\n";
-    exit(1);
+function cad_read_or_crash(string $path): string
+{
+    if (!is_file($path)) {
+        cad_crash("Fichier introuvable : $path");
+    }
+    $src = file_get_contents($path);
+    if ($src === false) {
+        cad_crash("Impossible de lire : $path");
+    }
+    return $src;
 }
-$array_src = $m[1];
-// Eval le tableau dans un sandbox — sécurisé car confirm_action.php est un
-// fichier du projet (pas une entrée utilisateur)
-$actions_config = eval("return $array_src;");
 
-// Extraire seulement action => params (on ignore les autres clés)
-$actions_params = [];
-foreach ($actions_config as $action => $cfg) {
-    $actions_params[$action] = $cfg['params'] ?? [];
+echo "── Test : routage des actions ConfirmActionController ──\n\n";
+
+$repoRoot = __DIR__ . '/..';
+
+// ── Étape 1 : extraire $actionsConfig de ConfirmActionController ──
+$controllerPath = $repoRoot . '/src/Controller/ConfirmActionController.php';
+$controllerSrc = cad_read_or_crash($controllerPath);
+
+if (!preg_match('/\$actionsConfig\s*=\s*(\[.*?\]);/s', $controllerSrc, $m)) {
+    cad_crash("Impossible de parser \$actionsConfig dans $controllerPath — la regex ne matche plus la structure du fichier, ce test doit être mis à jour AVANT d'être considéré fiable.");
 }
-$actions_config = $actions_params;
+$actionsConfig = eval("return {$m[1]};");
+if (!is_array($actionsConfig) || $actionsConfig === []) {
+    cad_crash("\$actionsConfig est vide ou n'est pas un tableau après eval — ce test doit être mis à jour.");
+}
+echo "  Actions déclarées : " . implode(', ', array_keys($actionsConfig)) . "\n\n";
 
-echo "  Actions trouvées dans confirm_action.php : " . implode(', ', array_keys($actions_config)) . "\n\n";
+// ── Étape 2 : extraire les postUrl explicites ──
+// (if|elseif ($action === 'xxx' ...) { ... $postUrl = 'index.php?p=YYY...'; ... })
+if (!preg_match_all(
+    "/(?:if|elseif)\s*\(\s*\\\$action\s*===\s*'([a-z_]+)'.*?\)\s*\{(.*?)\n\s*\}(?=\s*(?:elseif|else\b|\n))/s",
+    $controllerSrc,
+    $branches,
+    PREG_SET_ORDER
+)) {
+    cad_crash("Aucune branche if/elseif (\$action === ...) trouvée dans ConfirmActionController — la regex ne matche plus, ce test doit être mis à jour AVANT d'être considéré fiable.");
+}
+$explicitTargets = [];
+foreach ($branches as $b) {
+    $action = $b[1];
+    $body = $b[2];
+    if (preg_match("/\\\$postUrl\s*=\s*'index\.php\?p=([a-z_]+)/", $body, $pm)) {
+        $explicitTargets[$action] = $pm[1];
+    }
+}
+echo "  postUrl explicite trouvé pour : " . (empty($explicitTargets) ? '(aucun)' : implode(', ', array_map(
+    static fn($a) => "{$a}→p={$explicitTargets[$a]}",
+    array_keys($explicitTargets)
+))) . "\n\n";
 
-// ── Étape 2 : extraire tous les case 'xxx' des dispatchers ──
-$dispatchers = [
-    'lib/admin_forms_handlers.php',
-    'pages/admin_alerts.php',
-    'pages/admin_access.php',
-    'pages/submission_view.php',
-    'pages/dashboard.php',
+// ── Étape 3 : actions SANS postUrl explicite ──
+// Elles retombent sur $from (fourni par l'appelant du lien confirm_action).
+// Chaque entrée ci-dessous doit être vérifiée MANUELLEMENT : lister toutes
+// les pages qui génèrent un lien vers cette action, et confirmer qu'elles
+// pointent bien (via from=) vers un contrôleur qui gère l'action en POST.
+// N'AJOUTER une action ici qu'après cette vérification — sinon utiliser un
+// postUrl explicite dans ConfirmActionController (plus sûr, statiquement
+// vérifiable, c'est la voie recommandée pour toute nouvelle action).
+$RELIES_ON_CALLER_FROM = [
+    // Vérifié 2026-07-29 : SubmissionViewController (from=submission_view) ET
+    // DashboardController (from=dashboard) gèrent tous les deux
+    // cancel_submission en POST — fonctionne quel que soit l'appelant.
+    'cancel_submission' => ['submission_view', 'dashboard'],
+    // Vérifié 2026-07-29 : seul le lien depuis DashboardController::renderContent
+    // génère cette action, avec from= pointant toujours vers dashboard, qui
+    // gère regenerate_token en POST.
+    'regenerate_token' => ['dashboard'],
 ];
 
-$all_cases = [];
-foreach ($dispatchers as $disp) {
-    $path = __DIR__ . '/../' . $disp;
-    if (!file_exists($path)) continue;
-    $src = file_get_contents($path);
-    // Cherche case 'xxx' ou $action === 'xxx' ou $action == 'xxx'
-    preg_match_all("/case\s+'([a-z_]+)'/", $src, $caseMatches);
-    foreach ($caseMatches[1] as $c) {
-        $all_cases[$c] = $disp;
+$missingRouting = [];
+foreach (array_keys($actionsConfig) as $action) {
+    if (isset($explicitTargets[$action])) {
+        continue;
     }
-    preg_match_all("/\\\$action\s*===?\s*'([a-z_]+)'/", $src, $eqMatches);
-    foreach ($eqMatches[1] as $c) {
-        $all_cases[$c] = $disp;
+    if (isset($RELIES_ON_CALLER_FROM[$action])) {
+        continue;
     }
+    $missingRouting[] = $action;
+}
+if ($missingRouting !== []) {
+    cad_crash(
+        "Action(s) sans routage vérifiable : " . implode(', ', $missingRouting) . "\n" .
+        "   → Soit ajouter un postUrl explicite dans ConfirmActionController (recommandé),\n" .
+        "   → soit documenter dans \$RELIES_ON_CALLER_FROM (ce fichier) après avoir\n" .
+        "     vérifié manuellement TOUS les callers connus de cette action.\n" .
+        "   C'est exactement l'absence de cette vérification qui a causé le bug\n" .
+        "   delete_submission/remove_admin du 2026-07-29 (non détecté avant la\n" .
+        "   réécriture de ce test)."
+    );
 }
 
-echo "  Cases trouvés dans les dispatchers : " . count($all_cases) . "\n\n";
-
-// ── Test 1 : chaque action confirm_action a un case correspondant ──
-echo "── Test 1 : chaque action confirm_action a un dispatcher ──\n";
-$missing_dispatch = [];
-foreach (array_keys($actions_config) as $action) {
-    if (!isset($all_cases[$action])) {
-        $missing_dispatch[] = "Action '$action' déclarée dans confirm_action.php mais AUCUN case trouvé dans : " . implode(', ', $dispatchers);
-    }
+// ── Étape 4 : résoudre page → contrôleur via le mapping de index.php ──
+$indexSrc = cad_read_or_crash($repoRoot . '/index.php');
+if (!preg_match_all("/'([a-z_]+)'\s*=>\s*\\\\App\\\\Controller\\\\(\w+)::class/", $indexSrc, $cm, PREG_SET_ORDER)) {
+    cad_crash("Impossible de parser le mapping page→contrôleur dans index.php — la regex ne matche plus, ce test doit être mis à jour AVANT d'être considéré fiable.");
 }
-check_cad('Toutes les actions confirm_action sont dispatchées', empty($missing_dispatch), $missing_dispatch);
+$pageToController = [];
+foreach ($cm as $c) {
+    $pageToController[$c[1]] = $c[2];
+}
+if ($pageToController === []) {
+    cad_crash("Le mapping page→contrôleur extrait de index.php est vide — la regex ne matche plus.");
+}
 
-// ── Test 2 : les params envoyés par confirm_action sont lus par le handler ──
-echo "\n── Test 2 : les params envoyés correspondent aux \$_POST lus par les handlers ──\n";
-$mismatch_params = [];
-
-// Map : action confirm_action → nom du handler (par convention)
-// v10.0.5 — pour chaque action, on sait quel handler la traite (soit via
-// handle_admin_action_<action>, soit via un alias documenté)
-$action_to_handler = [
-    'cancel_submission'  => ['pages/submission_view.php', 'inline'],  // inline if/elseif
-    'regenerate_token'   => ['pages/submission_view.php', 'inline'],
-    'delete_rule'        => ['pages/admin_alerts.php', 'inline'],
-    'delete_alert_log'   => ['pages/admin_alerts.php', 'inline'],
-    'remove_admin'       => ['pages/admin_access.php', 'inline'],
-    'remove_owner'       => ['lib/admin_forms_handlers_forms.php', 'handle_admin_action_delete_owner'],  // alias
-    'delete_submission'  => ['pages/submission_view.php', 'inline'],  // v10.1.14
+// ── Étape 5 : chaque action doit avoir un handler POST sur SA page cible ──
+//
+// Remappings connus, chacun vérifié manuellement le 2026-07-29 — ne pas
+// ajouter d'entrée ici "pour faire passer le test" sans avoir confirmé par
+// lecture du code que le handler réel existe bien :
+// - persona_start/persona_stop : $postUrl réécrit action= dans sa propre
+//   query string ('index.php?p=persona&action=start&...'), et
+//   PersonaController lit exclusivement $_GET['action'] (jamais $_POST) —
+//   donc le nom réellement recherché par le contrôleur est 'start'/'stop',
+//   pas 'persona_start'/'persona_stop'.
+// - remove_owner : délégué à AdminFormsHandlers::dispatch(), un tableau de
+//   dispatch ('remove_owner' => AdminRecipientHandler::handleDeleteOwner())
+//   et non un if/switch sur $action — le nom cherché est le même, mais le
+//   fichier à inspecter n'est pas le contrôleur lui-même.
+$KNOWN_ACTION_REMAP = [
+    'persona_start' => ['searchFor' => 'start', 'files' => ['src/Controller/PersonaController.php']],
+    'persona_stop'  => ['searchFor' => 'stop',  'files' => ['src/Controller/PersonaController.php']],
+    'remove_owner'  => ['searchFor' => 'remove_owner', 'files' => ['src/Controller/AdminFormsController.php', 'src/Controller/AdminFormsHandlers.php']],
 ];
 
-foreach ($actions_config as $action => $params) {
-    if (empty($params)) continue;
-    if (!isset($action_to_handler[$action])) {
-        $mismatch_params[] = "Action '$action' : handler non documenté dans action_to_handler (test incomplet)";
-        continue;
+function cad_file_has_handler(string $file, string $searchFor): bool
+{
+    $src = file_get_contents($file);
+    if ($src === false) {
+        cad_crash("Impossible de lire : $file");
     }
+    $q = preg_quote($searchFor, '/');
+    return preg_match(
+        "/\\\$action\s*===\s*'$q'|\\\$_POST\[\s*'action'\s*\]\s*===\s*'$q'|\\\$_GET\[\s*'action'\s*\]\s*===\s*'$q'|'$q'\s*=>/",
+        $src
+    ) === 1;
+}
 
-    [$file, $handler_name] = $action_to_handler[$action];
-    $path = __DIR__ . '/../' . $file;
-    if (!file_exists($path)) continue;
-
-    $src = file_get_contents($path);
-    $posts_read = [];
-
-    if ($handler_name === 'inline') {
-        // Handler inline dans pages/*.php : extraire le bloc if/elseif ($action === 'xxx') { ... }
-        // jusqu'au prochain elseif/else/}
-        if (preg_match(
-            '/(?:if|elseif)\s*\(\s*\$action\s*===?\s*\'' . preg_quote($action, '/') . "'[^{]*\{(.*?)(?:\n\s*\}\s*elseif|\n\s*\}\s*else\b|\n\s*\}\s*\n)/s",
-            $src,
-            $bm
-        )) {
-            preg_match_all('/\$_POST\[\'([^\']+)\'\]/', $bm[1], $postMatches);
-            $posts_read = $postMatches[1];
-        }
-    } else {
-        // Handler nommé dans lib/ : extraire function handle_admin_action_xxx() { ... }
-        if (preg_match(
-            '/function\s+' . preg_quote($handler_name, '/') . '\s*\([^)]*\)[^{]*\{(.*?)\n\}/s',
-            $src,
-            $fm
-        )) {
-            preg_match_all('/\$_POST\[\'([^\']+)\'\]/', $fm[1], $postMatches);
-            $posts_read = $postMatches[1];
-        }
-    }
-
-    $posts_read = array_unique($posts_read);
-
-    // Vérifier que chaque param envoyé est lu par le handler
-    // Alias explicitement documentés (chaque alias doit être justifié)
-    // v10.0.5 — KNOWN_MISMATCHES : actions où le handler ne lit pas le param
-    // envoyé par confirm_action, pour une raison documentée. Chaque entrée
-    // doit avoir un commentaire expliquant POURQUOI.
-    $KNOWN_ALIASES = [
-        // action => [param_envoyé => [clés $_POST acceptées par le handler]]
-    ];
-    $KNOWN_MISMATCHES = [
-        // action => [param => raison]
-        'cancel_submission' => ['submission_id' => 'handler utilise $sub_id ($_GET[id]) au lieu de $_POST[submission_id]'],
-        'delete_alert_log' => ['log_id' => 'handler purge tous les logs > N jours, ignore log_id'],
-        'delete_submission' => ['submission_id' => 'handler utilise $sub_id ($_GET[id]) au lieu de $_POST[submission_id]'],
-    ];
-
-    // Si tous les params sont des mismatches documentés, on skip le check empty
-    $all_params_documented = true;
-    foreach ($params as $p) {
-        if (!isset($KNOWN_MISMATCHES[$action][$p]) && !isset($KNOWN_ALIASES[$action][$p])) {
-            $all_params_documented = false;
-            break;
-        }
-    }
-
-    if (empty($posts_read) && !$all_params_documented) {
-        $mismatch_params[] = "Action '$action' : handler '$handler_name' trouvé mais aucun \$_POST lu (bug?)";
-        continue;
-    }
-
-    foreach ($params as $p) {
-        // Skip si mismatch documenté
-        if (isset($KNOWN_MISMATCHES[$action][$p])) continue;
-
-        $accepted_keys = $KNOWN_ALIASES[$action][$p] ?? [$p];
-        $found = false;
-        foreach ($accepted_keys as $k) {
-            if (in_array($k, $posts_read, true)) {
-                $found = true;
-                break;
+function cad_controller_has_handler(string $repoRoot, string $controllerFile, string $action, array $remap): bool
+{
+    if (isset($remap[$action])) {
+        foreach ($remap[$action]['files'] as $relFile) {
+            if (cad_file_has_handler($repoRoot . '/' . $relFile, $remap[$action]['searchFor'])) {
+                return true;
             }
         }
-        if (!$found) {
-            $mismatch_params[] = "Action '$action' envoie param '$p' mais le handler ne lit aucun \$_POST['" . implode("', '\$_POST['", $accepted_keys) . "'] (lit : " . implode(', ', $posts_read) . ")";
+        return false;
+    }
+    return cad_file_has_handler($controllerFile, $action);
+}
+
+$passed = 0;
+$violations = [];
+
+foreach (array_keys($actionsConfig) as $action) {
+    $targetPages = $explicitTargets[$action] ?? null;
+    $targetPages = $targetPages !== null ? [$targetPages] : $RELIES_ON_CALLER_FROM[$action];
+
+    foreach ($targetPages as $page) {
+        if (!isset($pageToController[$page])) {
+            cad_crash("Action '$action' route vers p=$page, mais cette page n'existe pas dans le mapping index.php (renommée ? supprimée ?).");
+        }
+        $controllerClass = $pageToController[$page];
+        $controllerFile = $repoRoot . '/src/Controller/' . $controllerClass . '.php';
+        if (!is_file($controllerFile)) {
+            cad_crash("Contrôleur '$controllerClass' introuvable ($controllerFile) pour l'action '$action' (page p=$page).");
+        }
+
+        if (cad_controller_has_handler($repoRoot, $controllerFile, $action, $KNOWN_ACTION_REMAP)) {
+            $passed++;
+            echo "  ✅ $action → p=$page ($controllerClass)\n";
+        } else {
+            $violations[] = "Action '$action' route vers p=$page ($controllerClass) mais ce contrôleur n'a AUCUN handler POST pour '$action'.";
+            echo "  ❌ $action → p=$page ($controllerClass) : PAS DE HANDLER\n";
         }
     }
 }
-check_cad('Les params envoyés par confirm_action sont lus par les handlers', empty($mismatch_params), $mismatch_params);
 
-// ── Résumé ──
 echo "\n═══════════════════════════════════════════════════\n";
-echo "  DISPATCH TESTS — " . (empty($violations) ? "✅ AUCUNE VIOLATION" : "❌ " . count($violations) . " violation(s)") . "\n";
-echo "  $passed test(s) réussi(s) / $failed échoué(s) / " . ($passed + $failed) . " total\n";
+echo "  ROUTING TESTS — " . ($violations === [] ? "✅ AUCUNE VIOLATION" : "❌ " . count($violations) . " violation(s)") . "\n";
+foreach ($violations as $v) {
+    echo "    • $v\n";
+}
+echo "  $passed vérification(s) réussie(s) / " . count($violations) . " échouée(s)\n";
 echo "═══════════════════════════════════════════════════\n";
-exit($failed > 0 ? 1 : 0);
+exit($violations === [] ? 0 : 1);
