@@ -131,17 +131,17 @@ test('render_breadcrumb() tableau vide', function() {
 });
 
 test('render_donut_chart() avec toutes valeurs à zéro', function() {
-    $html = render_donut_chart(0, 0, 0, 0);
+    $html = \App\Core\App::html()->renderDonutChart(0, 0, 0, 0);
     return strpos($html, 'donut-chart') !== false && strpos($html, 'Total') !== false ? true : "Got: $html";
 });
 
 test('render_donut_chart() avec valeurs mixtes', function() {
-    $html = render_donut_chart(10, 5, 3, 2);
+    $html = \App\Core\App::html()->renderDonutChart(10, 5, 3, 2);
     return strpos($html, 'conic-gradient') !== false && strpos($html, '10') !== false ? true : "Got: " . substr($html, 0, 200);
 });
 
 test('render_donut_chart() avec toutes identiques', function() {
-    $html = render_donut_chart(9, 3, 3, 3);
+    $html = \App\Core\App::html()->renderDonutChart(9, 3, 3, 3);
     return strpos($html, '33%') !== false ? true : "Pourcentage manquant: " . substr($html, 0, 200);
 });
 
@@ -200,22 +200,22 @@ test('render_submission_data() ignore les valeurs vides', function() {
 });
 
 test('render_pagination() avec plusieurs pages', function() {
-    $html = render_pagination(2, 5, 'dashboard.php');
+    $html = \App\Core\App::html()->renderPagination(2, 5, 'dashboard.php');
     return strpos($html, 'pagination') !== false && strpos($html, '2 / 5') !== false ? true : "Got: $html";
 });
 
 test('render_pagination() page unique = chaîne vide', function() {
-    $html = render_pagination(1, 1, 'dashboard.php');
+    $html = \App\Core\App::html()->renderPagination(1, 1, 'dashboard.php');
     return $html === '' ? true : "Got: $html";
 });
 
 test('render_pagination() première page = pas de bouton Précédent', function() {
-    $html = render_pagination(1, 5, 'dashboard.php');
+    $html = \App\Core\App::html()->renderPagination(1, 5, 'dashboard.php');
     return strpos($html, 'Précédent') === false ? true : 'Bouton Précédent sur page 1';
 });
 
 test('render_pagination() dernière page = pas de bouton Suivant', function() {
-    $html = render_pagination(5, 5, 'dashboard.php');
+    $html = \App\Core\App::html()->renderPagination(5, 5, 'dashboard.php');
     return strpos($html, 'Suivant') === false ? true : 'Bouton Suivant sur dernière page';
 });
 

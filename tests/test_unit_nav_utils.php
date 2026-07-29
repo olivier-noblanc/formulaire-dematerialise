@@ -121,32 +121,32 @@ echo "\n";
 echo "── 11. Utilitaires supplémentaires ──\n";
 
 test('format_file_size() octets', function() {
-    $result = format_file_size(500);
+    $result = \App\Core\App::html()->formatFileSize(500);
     return strpos($result, 'octets') !== false ? true : "Got: $result";
 });
 
 test('format_file_size() kilo-octets', function() {
-    $result = format_file_size(2048);
+    $result = \App\Core\App::html()->formatFileSize(2048);
     return strpos($result, 'Ko') !== false ? true : "Got: $result";
 });
 
 test('format_file_size() méga-octets', function() {
-    $result = format_file_size(5 * 1024 * 1024);
+    $result = \App\Core\App::html()->formatFileSize(5 * 1024 * 1024);
     return strpos($result, 'Mo') !== false ? true : "Got: $result";
 });
 
 test('get_file_icon() PDF', function() {
-    $icon = get_file_icon('application/pdf');
+    $icon = \App\Core\App::html()->getFileIcon('application/pdf');
     return !empty($icon) ? true : 'Icône vide pour PDF';
 });
 
 test('get_file_icon() image', function() {
-    $icon = get_file_icon('image/jpeg');
+    $icon = \App\Core\App::html()->getFileIcon('image/jpeg');
     return !empty($icon) ? true : 'Icône vide pour image';
 });
 
 test('get_file_icon() type inconnu', function() {
-    $icon = get_file_icon('application/unknown');
+    $icon = \App\Core\App::html()->getFileIcon('application/unknown');
     return !empty($icon) ? true : 'Icône vide pour type inconnu';
 });
 

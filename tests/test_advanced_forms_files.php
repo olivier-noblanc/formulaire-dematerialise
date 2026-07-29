@@ -155,17 +155,17 @@ function run_tests_advanced_files(): void {
     });
 
     test('format_file_size() with 0 bytes', function() {
-        $result = format_file_size(0);
+        $result = \App\Core\App::html()->formatFileSize(0);
         return $result === '0 octets' ? true : "Expected '0 octets', got: $result";
     });
 
     test('format_file_size() with exact KB boundary (1024)', function() {
-        $result = format_file_size(1024);
+        $result = \App\Core\App::html()->formatFileSize(1024);
         return $result === '1 Ko' ? true : "Expected '1 Ko', got: $result";
     });
 
     test('format_file_size() with exact MB boundary (1048576)', function() {
-        $result = format_file_size(1048576);
+        $result = \App\Core\App::html()->formatFileSize(1048576);
         return $result === '1 Mo' ? true : "Expected '1 Mo', got: $result";
     });
 
@@ -179,12 +179,12 @@ function run_tests_advanced_files(): void {
             'application/unknown' => '📎',
         ];
         foreach ($tests as $mime => $expected) {
-            $icon = get_file_icon($mime);
+            $icon = \App\Core\App::html()->getFileIcon($mime);
             if ($icon !== $expected) return "MIME $mime: expected '$expected', got '$icon'";
         }
         // spreadsheetml.sheet MIME contains 'document' but also 'sheet' —
         // since fix, 'sheet' is checked before 'document', so it returns 📊
-        $sheet_icon = get_file_icon('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $sheet_icon = \App\Core\App::html()->getFileIcon('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         if ($sheet_icon !== '📊') {
             return "Spreadsheet MIME should return 📊, got '$sheet_icon'";
         }

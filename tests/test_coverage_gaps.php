@@ -51,31 +51,31 @@ echo "\n── Section 2 : Fonctions display_user() + display_user_short() ─�
 $_test_user = 'olivier.noblanc@dreets.gouv.fr';
 
 check_gap('display_user: = user → "Vous"',
-    display_user('olivier.noblanc@dreets.gouv.fr', $_test_user) === '<strong>Vous</strong>');
+    \App\Core\App::html()->displayUser('olivier.noblanc@dreets.gouv.fr', $_test_user) === '<strong>Vous</strong>');
 
 check_gap('display_user: même domaine → masque',
-    display_user('jean.dupont@dreets.gouv.fr', $_test_user) === 'jean.dupont@');
+    \App\Core\App::html()->displayUser('jean.dupont@dreets.gouv.fr', $_test_user) === 'jean.dupont@');
 
 check_gap('display_user: domaine différent → complet',
-    display_user('jean.dupont@externe.fr', $_test_user) === 'jean.dupont@externe.fr');
+    \App\Core\App::html()->displayUser('jean.dupont@externe.fr', $_test_user) === 'jean.dupont@externe.fr');
 
 check_gap('display_user: vide → vide',
-    display_user('', $_test_user) === '');
+    \App\Core\App::html()->displayUser('', $_test_user) === '');
 
 check_gap('display_user: force_email → complet',
-    display_user('olivier.noblanc@dreets.gouv.fr', $_test_user, true) === 'olivier.noblanc@dreets.gouv.fr');
+    \App\Core\App::html()->displayUser('olivier.noblanc@dreets.gouv.fr', $_test_user, true) === 'olivier.noblanc@dreets.gouv.fr');
 
 check_gap('display_user_short: email → local',
-    display_user_short('olivier.noblanc@dreets.gouv.fr') === 'olivier.noblanc');
+    \App\Core\App::html()->displayUserShort('olivier.noblanc@dreets.gouv.fr') === 'olivier.noblanc');
 
 check_gap('display_user_short: sans @ → inchangé',
-    display_user_short('olivier.noblanc') === 'olivier.noblanc');
+    \App\Core\App::html()->displayUserShort('olivier.noblanc') === 'olivier.noblanc');
 
 check_gap('display_user_short: Windows format',
-    display_user_short('DREETS\olivier.noblanc') === 'olivier.noblanc');
+    \App\Core\App::html()->displayUserShort('DREETS\olivier.noblanc') === 'olivier.noblanc');
 
 check_gap('display_user_short: vide → vide',
-    display_user_short('') === '');
+    \App\Core\App::html()->displayUserShort('') === '');
 
 // ═══ SECTION 3 : Handlers POST (structurel) ═══
 echo "\n── Section 3 : Handlers POST ──\n";
