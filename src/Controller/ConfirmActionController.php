@@ -166,7 +166,7 @@ final class ConfirmActionController extends BaseController
             // index.php?p=dashboard, qui ne gère pas delete_submission en POST) au
             // lieu de submission_view (seul endroit où deleteCascade() est appelé,
             // cf. SubmissionViewController). Suppression silencieuse sans effet.
-            $postUrl = 'index.php?p=submission_view&id=' . urlencode($subId);
+            $postUrl = 'index.php?p=submission_view&id=' . urlencode(trim($_GET['submission_id'] ?? ''));
         } elseif ($action === 'remove_admin') {
             // Même bug : aucun from= n'est fourni par le lien (AdminAccessController),
             // postUrl retombait donc sur index.php (page d'accueil), qui ne gère
