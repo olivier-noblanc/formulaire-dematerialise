@@ -281,6 +281,8 @@ jobs:
         run: php tests/test_email_urls.php
       - name: test_assets_cache.php
         run: php tests/test_assets_cache.php
+      - name: test_confirm_action_dispatch.php
+        run: php tests/test_confirm_action_dispatch.php
       - name: tests/regression/run_all.php
         run: php tests/regression/run_all.php
 
