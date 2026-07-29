@@ -116,13 +116,13 @@ echo "── 17. Tests Wave 9 — S4-TESTS (runtime HTTP + t_jargon) ──\n";
 // t_jargon() est définie dans helpers.php (chargée via test_bootstrap.php).
 
 test('t_jargon — Dématérialisation → Demande en ligne', function() {
-    $result = t_jargon('Dématérialisation des procédures');
+    $result = \App\Core\App::html()->tJargon('Dématérialisation des procédures');
     return strpos($result, 'Demande en ligne') !== false
         ? true : "Traduction manquante : $result";
 });
 
 test('t_jargon — Circuit de validation → Étapes de validation', function() {
-    $result = t_jargon('Circuit de validation à 3 étapes');
+    $result = \App\Core\App::html()->tJargon('Circuit de validation à 3 étapes');
     return strpos($result, 'Étapes de validation') !== false
         ? true : "Traduction manquante : $result";
 });
@@ -130,45 +130,45 @@ test('t_jargon — Circuit de validation → Étapes de validation', function() 
 test('t_jargon — Workflow → Parcours (casse sensible)', function() {
     // "Workflow" (W majuscule) doit devenir "Parcours" (P majuscule).
     // On vérifie aussi que "Workflow" n'est plus présent dans le résultat.
-    $result = t_jargon('Workflow de validation');
+    $result = \App\Core\App::html()->tJargon('Workflow de validation');
     if (strpos($result, 'Parcours') === false) return "Parcours manquant : $result";
     if (strpos($result, 'Workflow') !== false) return "Workflow encore présent : $result";
     return true;
 });
 
 test('t_jargon — Token → Lien de validation', function() {
-    $result = t_jargon('Token de sécurité');
+    $result = \App\Core\App::html()->tJargon('Token de sécurité');
     return strpos($result, 'Lien de validation') !== false
         ? true : "Traduction Token manquante : $result";
 });
 
 test('t_jargon — Slug → Nom technique', function() {
-    $result = t_jargon('Slug du formulaire');
+    $result = \App\Core\App::html()->tJargon('Slug du formulaire');
     return strpos($result, 'Nom technique') !== false
         ? true : "Traduction Slug manquante : $result";
 });
 
 test('t_jargon — Quotité → Temps de travail (en %)', function() {
-    $result = t_jargon('Quotité : 80%');
+    $result = \App\Core\App::html()->tJargon('Quotité : 80%');
     return strpos($result, 'Temps de travail (en %)') !== false
         ? true : "Traduction Quotité manquante : $result";
 });
 
 test('t_jargon — EPI → Équipement de protection individuelle (EPI)', function() {
-    $result = t_jargon('EPI obligatoire');
+    $result = \App\Core\App::html()->tJargon('EPI obligatoire');
     return strpos($result, 'Équipement de protection individuelle (EPI)') !== false
         ? true : "Traduction EPI manquante : $result";
 });
 
 test('t_jargon — CSRF → Code de sécurité', function() {
-    $result = t_jargon('CSRF invalide');
+    $result = \App\Core\App::html()->tJargon('CSRF invalide');
     return strpos($result, 'Code de sécurité') !== false
         ? true : "Traduction CSRF manquante : $result";
 });
 
 test('t_jargon — tokens (pluriel, minuscule) → liens de validation', function() {
     // Test le 9e mapping : tokens (pluriel) → liens de validation (pluriel).
-    $result = t_jargon('2 tokens actifs');
+    $result = \App\Core\App::html()->tJargon('2 tokens actifs');
     return strpos($result, 'liens de validation') !== false
         ? true : "Traduction tokens (pluriel) manquante : $result";
 });
@@ -178,15 +178,15 @@ test('t_jargon — idempotence (EPI 2× ne double-traduit pas)', function() {
     // doubler la traduction (ex. "Équipement de protection individuelle (EPI)" →
     // ne doit pas devenir "Équipement de protection individuelle (Équipement de
     // protection individuelle (EPI))"). S4-UI garantit cela via placeholders \x01/\x02.
-    $once = t_jargon('EPI obligatoire');
-    $twice = t_jargon($once);
+    $once = \App\Core\App::html()->tJargon('EPI obligatoire');
+    $twice = \App\Core\App::html()->tJargon($once);
     return $once === $twice ? true : "Non idempotent : once='$once', twice='$twice'";
 });
 
 test('t_jargon — CircuitDémat préservé (nom de l\'app)', function() {
     // Le nom de l'application "CircuitDémat" contient "Démat" qui pourrait être
     // confondu avec "Dématérialisation". S4-UI le préserve via placeholder \x01.
-    $result = t_jargon('Bienvenue sur CircuitDémat v5.25.3');
+    $result = \App\Core\App::html()->tJargon('Bienvenue sur CircuitDémat v5.25.3');
     return strpos($result, 'CircuitDémat') !== false
         ? true : "Nom de l'app altéré : $result";
 });
@@ -194,7 +194,7 @@ test('t_jargon — CircuitDémat préservé (nom de l\'app)', function() {
 test('t_jargon — faux positif (EPIsode non touché, frontière de mot \\b)', function() {
     // "EPIsode" contient "EPI" mais ne doit pas être traduit (frontière de mot \b).
     // S4-UI utilise preg_replace('/\bEPI\b/u', ...) qui respecte les frontières de mot.
-    $result = t_jargon('EPIsode de la série');
+    $result = \App\Core\App::html()->tJargon('EPIsode de la série');
     return strpos($result, 'Équipement') === false
         ? true : "Faux positif : EPI dans EPIsode a été traduit → $result";
 });

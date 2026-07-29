@@ -51,31 +51,31 @@ echo "\n── Section 2 : Fonctions display_user() + display_user_short() ─�
 $_test_user = 'admin.local@exemple.invalid';
 
 check_gap('display_user: = user → "Vous"',
-    display_user('admin.local@exemple.invalid', $_test_user) === '<strong>Vous</strong>');
+    \App\Core\App::html()->displayUser('admin.local@exemple.invalid', $_test_user) === '<strong>Vous</strong>');
 
 check_gap('display_user: même domaine → masque',
-    display_user('jean.dupont@exemple.invalid', $_test_user) === 'jean.dupont@');
+    \App\Core\App::html()->displayUser('jean.dupont@exemple.invalid', $_test_user) === 'jean.dupont@');
 
 check_gap('display_user: domaine différent → complet',
-    display_user('jean.dupont@externe.fr', $_test_user) === 'jean.dupont@externe.fr');
+    \App\Core\App::html()->displayUser('jean.dupont@externe.fr', $_test_user) === 'jean.dupont@externe.fr');
 
 check_gap('display_user: vide → vide',
-    display_user('', $_test_user) === '');
+    \App\Core\App::html()->displayUser('', $_test_user) === '');
 
 check_gap('display_user: force_email → complet',
-    display_user('admin.local@exemple.invalid', $_test_user, true) === 'admin.local@exemple.invalid');
+    \App\Core\App::html()->displayUser('admin.local@exemple.invalid', $_test_user, true) === 'admin.local@exemple.invalid');
 
 check_gap('display_user_short: email → local',
-    display_user_short('admin.local@exemple.invalid') === 'admin.local');
+    \App\Core\App::html()->displayUserShort('admin.local@exemple.invalid') === 'admin.local');
 
 check_gap('display_user_short: sans @ → inchangé',
-    display_user_short('admin.local') === 'admin.local');
+    \App\Core\App::html()->displayUserShort('admin.local') === 'admin.local');
 
 check_gap('display_user_short: Windows format',
-    display_user_short('DREETS\admin.local') === 'admin.local');
+    \App\Core\App::html()->displayUserShort('DREETS\admin.local') === 'admin.local');
 
 check_gap('display_user_short: vide → vide',
-    display_user_short('') === '');
+    \App\Core\App::html()->displayUserShort('') === '');
 
 // ═══ SECTION 3 : Handlers POST (structurel) ═══
 echo "\n── Section 3 : Handlers POST ──\n";

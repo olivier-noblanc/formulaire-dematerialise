@@ -29,7 +29,7 @@ function run_tests_advanced_admin(): void {
         $old_user = $_SERVER['HTTP_X_TEST_USER'];
         $_SERVER['HTTP_X_TEST_USER'] = $test_email;
 
-        $result = process_admin_request($test_email);
+        $result = \App\Core\App::auth()->processAdminRequest($test_email);
 
         // Verify request was created
         $stmt = $pdo->prepare("SELECT status FROM admin_requests WHERE email = ?");
@@ -54,7 +54,7 @@ function run_tests_advanced_admin(): void {
         $pdo->prepare("INSERT INTO admin_requests (id, email, status, token, requested_at) VALUES (?, ?, 'pending', ?, datetime('now'))")
             ->execute([$ar_id, $test_email, generate_token()]);
 
-        $result = approve_admin_request($test_email);
+        $result = \App\Core\App::auth()->approveAdminRequest($test_email);
 
         // Check user is in admins table
         $stmt = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
@@ -84,7 +84,7 @@ function run_tests_advanced_admin(): void {
         $pdo->prepare("INSERT INTO admin_requests (id, email, status, token, requested_at) VALUES (?, ?, 'pending', ?, datetime('now'))")
             ->execute([$ar_id, $test_email, generate_token()]);
 
-        $result = reject_admin_request($test_email);
+        $result = \App\Core\App::auth()->rejectAdminRequest($test_email);
 
         // Check request status
         $stmt = $pdo->prepare("SELECT status FROM admin_requests WHERE email = ?");
@@ -108,7 +108,7 @@ function run_tests_advanced_admin(): void {
         $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))")
             ->execute([generate_uuid(), $test_email]);
 
-        $result = remove_admin($test_email);
+        $result = \App\Core\App::auth()->removeAdmin($test_email);
 
         // Check user is no longer admin
         $stmt = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
@@ -143,7 +143,7 @@ function run_tests_advanced_admin(): void {
         // Add then remove
         $pdo->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))")
             ->execute([generate_uuid(), $test_email]);
-        remove_admin($test_email);
+        \App\Core\App::auth()->removeAdmin($test_email);
 
         $old_user = $_SERVER['HTTP_X_TEST_USER'];
         $_SERVER['HTTP_X_TEST_USER'] = $test_email;
@@ -165,10 +165,10 @@ function run_tests_advanced_admin(): void {
         $_SERVER['HTTP_X_TEST_USER'] = $test_email;
 
         // First request should succeed
-        $result1 = process_admin_request($test_email);
+        $result1 = \App\Core\App::auth()->processAdminRequest($test_email);
 
         // Second request (pending still exists) should return false
-        $result2 = process_admin_request($test_email);
+        $result2 = \App\Core\App::auth()->processAdminRequest($test_email);
 
         // Cleanup
         $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$test_email]);
