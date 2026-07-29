@@ -27,7 +27,7 @@ final class FormRenderer
         $name          = \App\Core\App::html()->escape($field['field_name']);
         $label         = \App\Core\App::html()->escape(t_jargon($field['label']));
         $req_span      = $field['required'] ? ' <span class="req">*</span>' : '';
-        $required_attr = (!$disabled && $field['required'] && $field['field_type'] !== FieldType::Checkbox->value) ? ' required aria-required="true"' : '';
+        $required_attr = (!$disabled && $field['required']) ? ' required aria-required="true"' : '';
         $error_class   = isset($field_errors[$field['field_name']]) ? ' field-error' : '';
         $disabled_attr = $disabled ? ' disabled' : '';
 
@@ -152,7 +152,7 @@ final class FormRenderer
             case FieldType::Checkbox->value:
                 $checked = empty($posted_val) ? '' : ' checked';
                 return <<<HTML
-                    <label class="checkbox-item"><input type="checkbox" name="{$name}" value="1"{$checked}{$disabled_attr}> {$label}</label>
+                    <label class="checkbox-item"><input type="checkbox" name="{$name}" value="1"{$checked}{$required_attr}{$disabled_attr}> {$label}{$req_span}</label>
                     HTML;
 
             case FieldType::Textarea->value:

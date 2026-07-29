@@ -78,11 +78,14 @@ final class NavigationRenderer
             $persona_active_email = persona_lookup($persona_current_token);
             if ($persona_active_email !== '') {
                 $persona_display = App::html()->displayUserShort($persona_active_email);
-                $stop_url = 'index.php?p=persona&action=stop&persona_token=' . urlencode($persona_current_token);
                 $persona_active = '<div class="persona-banner" role="status">'
                     . '<span aria-hidden="true">🎭</span> '
                     . 'Mode persona : <strong>' . \App\Core\App::html()->escape($persona_display) . '</strong>'
-                    . ' <a href="' . \App\Core\App::html()->escape($stop_url) . '" class="persona-reset">✕ Quitter</a>'
+                    . ' <form method="POST" action="index.php?p=persona&action=stop" style="display:inline">'
+                    . \App\Core\App::security()->csrfField()
+                    . '<input type="hidden" name="persona_token" value="' . \App\Core\App::html()->escape($persona_current_token) . '">'
+                    . '<button type="submit" class="persona-reset" style="background:none;border:none;cursor:pointer;padding:0;color:inherit;text-decoration:underline">✕ Quitter</button>'
+                    . '</form>'
                     . '</div>';
             }
         }
@@ -151,29 +154,21 @@ final class NavigationRenderer
                 . '</a>';
         }
 
-        $persona_users_json = '[]';
+        // v10.28.0 : self-agent mode — pas de liste d'autres users.
+        // L'admin voit l'interface avec ses propres droits réduits.
+        $persona_self_email = '';
         if ($is_admin) {
-            try {
-                $persona_rows = App::submissionRepo()->findDistinctSubmitters(50);
-                $persona_users = [];
-                foreach ($persona_rows as $persona_row) {
-                    $persona_users[] = [
-                        'email' => $persona_row,
-                        'display' => App::html()->displayUserShort($persona_row),
-                    ];
-                }
-                $persona_users_json = json_encode($persona_users, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            } catch (\Throwable) {
-                // ignore
-            }
+            $persona_self_email = $user;
         }
 
         $user_initials = strtoupper(substr($user, 0, 1));
         $user_short = App::html()->displayUserShort($user);
 
         $persona_active_short = $persona_active_email !== '' ? App::html()->displayUserShort($persona_active_email) : '';
-        $user_card_data_persona = $is_admin ? ' data-persona-users="' . \App\Core\App::html()->escape((string) $persona_users_json) . '"' : '';
+        $user_card_data_persona = $is_admin ? ' data-persona-self="' . \App\Core\App::html()->escape($persona_self_email) . '"' : '';
         $user_card_data_active  = $persona_active_email !== '' ? ' data-persona-active="' . \App\Core\App::html()->escape($persona_active_email) . '"' : '';
+        $csrfToken = $is_admin ? \App\Core\App::security()->generateCsrfToken() : '';
+        $user_card_data_csrf = $is_admin ? ' data-csrf-token="' . \App\Core\App::html()->escape($csrfToken) . '"' : '';
 
         $displayed_user_short = $persona_active_short !== '' ? $persona_active_short : $user_short;
         $displayed_user_title = $persona_active_email !== '' ? $persona_active_email : $user;
@@ -186,6 +181,7 @@ final class NavigationRenderer
             . ' title="' . \App\Core\App::html()->escape($displayed_user_title) . '"'
             . $user_card_data_persona
             . $user_card_data_active
+            . $user_card_data_csrf
             . '>'
             . '<span class="sidebar-user-avatar' . ($persona_active_email !== '' ? ' persona-active' : '') . '">' . $displayed_initials . '</span>'
             . '<span class="sidebar-user-email">' . \App\Core\App::html()->escape($displayed_user_short) . '</span>'
@@ -224,29 +220,60 @@ final class NavigationRenderer
           dropdown.className = 'sidebar-persona-dropdown';
           dropdown.id = 'sidebar-persona-dropdown';
         
-          var usersJson = card.getAttribute('data-persona-users') || '[]';
+          var selfEmail = card.getAttribute('data-persona-self') || '';
           var activeEmail = card.getAttribute('data-persona-active') || '';
-          var users = [];
-          try { users = JSON.parse(usersJson); } catch(e) { users = []; }
+          var csrfToken = card.getAttribute('data-csrf-token') || '';
+        
+          function createPersonaForm(action, email, token) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'index.php?p=persona&action=' + action;
+            var fields = {csrf_token: csrfToken};
+            if (email) fields.email = email;
+            if (token) fields.persona_token = token;
+            for (var k in fields) {
+              var inp = document.createElement('input');
+              inp.type = 'hidden';
+              inp.name = k;
+              inp.value = fields[k];
+              form.appendChild(inp);
+            }
+            return form;
+          }
         
           var html = '<div class="sidebar-persona-dropdown-header">🎭 Changer de rôle</div>';
           if (activeEmail) {
-            var stopUrl = 'index.php?p=persona&action=stop';
-            var currentToken = new URLSearchParams(window.location.search).get('persona_token');
-            if (currentToken) stopUrl += '&persona_token=' + encodeURIComponent(currentToken);
-            html += '<a class="sidebar-persona-option-reset" href="' + stopUrl + '">✕ Revenir en mode admin</a>';
+            var stopLink = document.createElement('a');
+            stopLink.className = 'sidebar-persona-option-reset';
+            stopLink.href = '#';
+            stopLink.textContent = '✕ Revenir en mode admin';
+            stopLink.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var form = createPersonaForm('stop', '', new URLSearchParams(window.location.search).get('persona_token') || '');
+              document.body.appendChild(form);
+              form.submit();
+            });
+            dropdown.innerHTML = html;
+            dropdown.appendChild(stopLink);
+          } else if (selfEmail) {
+            var startLink = document.createElement('a');
+            startLink.className = 'sidebar-persona-option';
+            startLink.href = '#';
+            startLink.innerHTML = '<span style="font-size:1.1em;margin-right:6px;">👤</span> Vue agent'
+                  + '<div style="font-size:11px;color:#888;margin-top:2px;">Visualiser l\'interface avec des droits réduits</div>';
+            startLink.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var form = createPersonaForm('start', selfEmail, '');
+              document.body.appendChild(form);
+              form.submit();
+            });
+            dropdown.innerHTML = html;
+            dropdown.appendChild(startLink);
+          } else {
+            dropdown.innerHTML = html + '<div style="padding:8px 12px;font-size:12px;color:#888;">Mode admin uniquement</div>';
           }
-          if (users.length > 0 && !activeEmail) {
-            var firstUser = users[0];
-            var url = 'index.php?p=persona&action=start&email=' + encodeURIComponent(firstUser.email);
-            html += '<a class="sidebar-persona-option" href="' + url + '">'
-                  + '<span style="font-size:1.1em;margin-right:6px;">👤</span> Vue agent'
-                  + '<div style="font-size:11px;color:#888;margin-top:2px;">Visualiser l\'interface comme un utilisateur non-admin</div>'
-                  + '</a>';
-          } else if (users.length === 0 && !activeEmail) {
-            html += '<div style="padding:8px 12px;font-size:12px;color:#888;">Aucun utilisateur à afficher</div>';
-          }
-          dropdown.innerHTML = html;
           card.appendChild(dropdown);
         
           card.addEventListener('click', function(e) {

@@ -152,19 +152,12 @@ if ($pageToController === []) {
 // Remappings connus, chacun vérifié manuellement le 2026-07-29 — ne pas
 // ajouter d'entrée ici "pour faire passer le test" sans avoir confirmé par
 // lecture du code que le handler réel existe bien :
-// - persona_start/persona_stop : $postUrl réécrit action= dans sa propre
-//   query string ('index.php?p=persona&action=start&...'), et
-//   PersonaController lit exclusivement $_GET['action'] (jamais $_POST) —
-//   donc le nom réellement recherché par le contrôleur est 'start'/'stop',
-//   pas 'persona_start'/'persona_stop'.
 // - remove_owner : délégué à AdminFormsHandlers::dispatch(), un tableau de
 //   dispatch ('remove_owner' => AdminRecipientHandler::handleDeleteOwner())
 //   et non un if/switch sur $action — le nom cherché est le même, mais le
 //   fichier à inspecter n'est pas le contrôleur lui-même.
 $KNOWN_ACTION_REMAP = [
-    'persona_start' => ['searchFor' => 'start', 'files' => ['src/Controller/PersonaController.php']],
-    'persona_stop'  => ['searchFor' => 'stop',  'files' => ['src/Controller/PersonaController.php']],
-    'remove_owner'  => ['searchFor' => 'remove_owner', 'files' => ['src/Controller/AdminFormsController.php', 'src/Controller/AdminFormsHandlers.php']],
+    'remove_owner' => ['searchFor' => 'remove_owner', 'files' => ['src/Controller/AdminFormsController.php', 'src/Controller/AdminFormsHandlers.php']],
 ];
 
 function cad_file_has_handler(string $file, string $searchFor): bool
