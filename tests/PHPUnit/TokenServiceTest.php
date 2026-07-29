@@ -603,6 +603,51 @@ final class TokenServiceTest extends TestCase
         $this->assertSame($this->testStepId, $stmt->fetchColumn());
     }
 
+    /**
+     * Couvre 7 des 8 mutants Infection échappés sur TokenService::regenerate()
+     * (lignes 89-94 — construction du sujet '[Renvoi] {form} — {step}' et
+     * garde `if ($submission !== null && $step !== false)`), constatés le
+     * 2026-07-29. Contrairement à testRegenerateSubjectContains{Form,Step}Label
+     * ci-dessus (qui, malgré leur nom, ne vérifient PAS le sujet réel mais
+     * l'audit log / le step_id du nouveau token), ce test inspecte le
+     * contenu exact de l'email intercepté (TEST_MODE → $GLOBALS['_test_mails']).
+     *
+     * Tue : Concat (×2), ConcatOperandRemoval, Coalesce (contenu du sujet
+     * modifié), ArrayItemRemoval sur execute([$old['step_id']]) (le
+     * paramètre non lié fait échouer la recherche du step → $step devient
+     * false → aucun email n'est envoyé), LogicalAndNegation et NotIdentical
+     * sur la garde (les deux changent l'issue du chemin nominal : garde
+     * franchie → email envoyé devient garde non franchie → rien envoyé).
+     *
+     * Ne tue PAS le mutant LogicalAnd (&&→||) : sous le chemin nominal, les
+     * deux opérandes sont vraies, donc && et || donnent le même résultat.
+     * Le distinguer demanderait un token dont le step_id ne correspond à
+     * aucune ligne `steps` — impossible à construire via la DB : tokens.step_id
+     * a une contrainte FOREIGN KEY ... REFERENCES steps(id) ON DELETE CASCADE
+     * (schema_initial.php), donc supprimer le step supprimerait aussi le
+     * token en cascade. Mutant non observable via l'API publique, même
+     * limitation que les mutants #1/#6 déjà documentés dans
+     * ExportServiceMutationTest.php.
+     */
+    public function testRegenerateSendsEmailWithExactSubject(): void
+    {
+        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $GLOBALS['_test_mails'] = [];
+
+        $result = $this->tokenService->regenerate($this->testPendingTokenId);
+        $this->assertTrue($result['success']);
+
+        $this->assertNotEmpty($GLOBALS['_test_mails'], 'Un email doit avoir été envoyé (chemin nominal : soumission et étape existent).');
+        $sent = $GLOBALS['_test_mails'][count($GLOBALS['_test_mails']) - 1];
+
+        $this->assertSame($this->testTokenEmail, $sent['to']);
+        $this->assertSame(
+            '[Renvoi] Test Form — Validation test',
+            $sent['subject'],
+            'Sujet exact attendu : "[Renvoi] {form_label} — {step_label}", séparateur inclus.'
+        );
+    }
+
     public function testRemindSubjectContainsFormLabelAndStepLabel(): void
     {
         $this->tokenService->remind($this->testPendingTokenId);
