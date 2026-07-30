@@ -69,14 +69,16 @@ final class AdminFormsController extends BaseController
         }
 
         $selectedForm = null;
+        $allForms = App::getInstance()->get(\App\Repository\FormRepository::class)->findAll();
         if ($formId !== '' && $formId !== '0') {
             $selectedForm = App::getInstance()->get(\App\Repository\FormRepository::class)->findById((string) $formId);
         }
 
         render_admin_forms_page([
-            'form_id'   => (string) $formId,
-            'form'      => $selectedForm,
-            'error_msg' => $errorMsg,
+            'forms'      => $allForms,
+            'form_id'    => (string) $formId,
+            'form'       => $selectedForm,
+            'error_msg'  => $errorMsg,
             'success_msg' => $successMsg,
         ]);
     }
