@@ -134,6 +134,8 @@ final class FormJsonValidator
                 // hint
                 if (isset($f['hint']) && !is_string($f['hint'])) {
                     $errors[] = "$prefix.hint doit être une chaîne de caractères.";
+                } elseif (isset($f['hint']) && is_string($f['hint']) && preg_match('/^\d+$/', $f['hint']) === 1) {
+                    $errors[] = "$prefix.hint = \"{$f['hint']}\" n'est pas un texte d'aide valide. Un hint ne doit pas être un simple chiffre — décrivez le format attendu (ex: \"en euros TTC\", \"JJ/MM/AAAA\").";
                 }
 
                 // ── P2-A : validation filled_by et validator_step ──

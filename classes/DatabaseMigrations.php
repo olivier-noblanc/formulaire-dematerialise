@@ -21,7 +21,7 @@ declare(strict_types=1);
 // ── Chargement des modules de migration ──
 require_once __DIR__ . '/migrations/schema_initial.php';
 require_once __DIR__ . '/migrations/seed_default_forms.php';
-for ($v = 10; $v <= 34; $v++) {
+for ($v = 10; $v <= 35; $v++) {
     require_once __DIR__ . '/migrations/v' . sprintf('%02d', $v) . '.php';
 }
 require_once __DIR__ . '/migrations/post_migration.php';
@@ -88,6 +88,7 @@ function db_migrate(PDO $pdo): void {
     $current_version = apply_migration_v32($pdo, $current_version);
     $current_version = apply_migration_v33($pdo, $current_version);
     $current_version = apply_migration_v34($pdo, $current_version);
+    $current_version = apply_migration_v35($pdo, $current_version);
 
     // ── 3. Post-migration fixes (seeds différés, etc.) ──
     apply_post_migration_fixes($pdo, $seed_needed);
