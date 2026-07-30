@@ -392,19 +392,15 @@ final class SubmissionViewRenderer
                     $is_current   = ($ws['step_status'] ?? '') === 'current';
 
                     if ($done) {
-                        $tooltip = 'Validé par ' . $email . ' le ' . date('d/m/Y à H:i', (int) strtotime((string) ($token['done_at'] ?? '')));
-                        if ($relance > 0) {
-                            $tooltip .= ' — ' . $relance . ' rappel' . ($relance > 1 ? 's' : '') . ' envoyé' . ($relance > 1 ? 's' : '');
-                        }
+                        $tooltip = 'Validé par ' . $email . ' le ' . \App\Core\App::html()->formatDateTimeFr((string) ($token['done_at'] ?? ''));
+                        $tooltip .= \App\Core\App::html()->formatRelanceSuffix($relance);
                         $icon = '<span class="wf-check" aria-hidden="true" title="' . \App\Core\App::html()->escape($tooltip) . '">✓</span>';
                     } elseif ($is_current) {
-                        $tooltip = 'Email envoyé le ' . date('d/m/Y à H:i', (int) strtotime((string) ($token['sent_at'] ?? '')));
+                        $tooltip = 'Email envoyé le ' . \App\Core\App::html()->formatDateTimeFr((string) ($token['sent_at'] ?? ''));
                         if (isset($token['expires_at']) && $token['expires_at'] !== '' && $token['expires_at'] !== '0') {
-                            $tooltip .= ' — expire le ' . date('d/m/Y à H:i', (int) strtotime((string) $token['expires_at']));
+                            $tooltip .= ' — expire le ' . \App\Core\App::html()->formatDateTimeFr((string) $token['expires_at']);
                         }
-                        if ($relance > 0) {
-                            $tooltip .= ' — ' . $relance . ' rappel' . ($relance > 1 ? 's' : '') . ' envoyé' . ($relance > 1 ? 's' : '');
-                        }
+                        $tooltip .= \App\Core\App::html()->formatRelanceSuffix($relance);
                         $icon = '<span class="wf-pending" aria-hidden="true" title="' . \App\Core\App::html()->escape($tooltip) . '">⏳</span>';
                     } else {
                         $icon = '<span class="wf-waiting" aria-hidden="true">○</span>';

@@ -87,6 +87,16 @@ Tous les services sont enregistrés dans `src/bootstrap.php` et accessibles via 
 ### Règle
 Toujours utiliser `App::serviceName()` ou injecter via constructeur. Ne jamais instancier un service directement (`new XxxService(...)`) hors de `src/bootstrap.php`.
 
+### Formatage partagé (statut token, dates...) — éviter la duplication entre renderers
+Avant d'ajouter un formatage inline dans un renderer (date, pluriel, statut de token —
+`sent_at`/`expires_at`/`relance_count`...), vérifier dans `HtmlService` si une méthode
+existe déjà (`formatDateTimeFr()`, `formatRelanceSuffix()`...). Sinon, l'ajouter là plutôt
+que de la dupliquer inline. Signalé 2026-07-30 : la même logique (date `d/m/Y à H:i`,
+pluriel "N rappel(s) envoyé(s)") s'était retrouvée réimplémentée dans
+`SubmissionViewRenderer` (×2, dans le même fichier), `MyValidationsRenderer` et
+`MonitoringRenderer` — ni PHPStan ni le Copy/Paste Detector ne l'ont détecté (formulations
+différentes, pas de séquence de tokens identique).
+
 ---
 
 ## Documentation obligatoire
