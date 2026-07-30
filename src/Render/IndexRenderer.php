@@ -70,7 +70,7 @@ final class IndexRenderer
                         <span class="tutorial-step-num" aria-hidden="true">4</span>
                         <span class="tutorial-step-icon" aria-hidden="true">📂</span>
                         <div class="tutorial-step-body">
-                          <div class="tutorial-step-title"><a href="index.php?p=my_submissions" style="color:inherit;text-decoration:underline;">Voir mes demandes</a></div>
+                          <div class="tutorial-step-title"><a href="index.php?p=my_submissions" class="s-ec581898">Voir mes demandes</a></div>
                           <div class="tutorial-step-desc">Retrouvez vos demandes à tout moment dans la rubrique « Mes demandes » (à gauche ou ci-dessous).</div>
                         </div>
                       </li>
@@ -136,7 +136,7 @@ final class IndexRenderer
         if ($active_forms === []) {
             return <<<'HTML'
                   <h2 class="section-title"><span aria-hidden="true">📝</span> Formulaires</h2>
-                    <p style="color:#595959;font-style:italic;margin-bottom:2rem;">Aucun formulaire disponible pour le moment.</p>
+                    <p class="s-5a034b23">Aucun formulaire disponible pour le moment.</p>
                 HTML;
         }
         $cards = '';

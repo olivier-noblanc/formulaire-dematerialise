@@ -93,7 +93,7 @@ final class MyValidationsRenderer
                 }
                 $html .= '<br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($pendingToken['submitted_at'] ?? '')))) . "\n";
                 if ($pendingToken['relance_count'] > 0) {
-                    $html .= '<br><span style="color:#b45309;">Relance(s) : ' . (int) $pendingToken['relance_count'] . '</span>' . "\n";
+                    $html .= '<br><span class="s-e04aeda4">Relance(s) : ' . (int) $pendingToken['relance_count'] . '</span>' . "\n";
                 }
                 $html .= '      </div>' . "\n";
                 $html .= '    </div>' . "\n";
@@ -132,17 +132,17 @@ final class MyValidationsRenderer
                 if (!$expired) {
                     $html .= '    <a href="index.php?p=validate&token=' . urlencode((string) ($pendingToken['token'] ?? '')) . '" class="btn btn-primary"><span aria-hidden="true">✓</span> Valider / Refuser</a>' . "\n";
                 } else {
-                    $html .= '    <span style="font-size:.85rem;color:#c0392b;">Token expiré — contactez un administrateur pour régénérer</span>' . "\n";
+                    $html .= '    <span class="s-8c60cb15">Token expiré — contactez un administrateur pour régénérer</span>' . "\n";
                 }
-                $html .= '    <details style="margin-left:.5rem;">' . "\n";
-                $html .= '      <summary class="btn btn-secondary" style="font-size:.8rem;padding:.4rem .75rem;cursor:pointer;display:inline;"><span aria-hidden="true">🔄</span> Déléguer</summary>' . "\n";
-                $html .= '      <form method="POST" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;padding:.75rem;background:#f8f8fc;border-radius:4px;border:1px solid #ddd;">' . "\n";
+                $html .= '    <details class="s-8a59a7ce">' . "\n";
+                $html .= '      <summary class="btn btn-secondary s-a5abb939"><span aria-hidden="true">🔄</span> Déléguer</summary>' . "\n";
+                $html .= '      <form method="POST" class="s-e4b8a93e">' . "\n";
                 $html .= '        ' . App::security()->csrfField() . "\n";
                 $html .= '        <input type="hidden" name="action" value="delegate_token">' . "\n";
                 $html .= '        <input type="hidden" name="token_id" value="' . $htmlService->escape($pendingToken['token_id']) . '">' . "\n";
-                $html .= '        <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:220px;">' . "\n";
-                $html .= '        <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" style="padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px;">' . "\n";
-                $html .= '        <button type="submit" style="font-size:.8rem;padding:.3rem .75rem;background:#6c3483;color:#fff;border:none;border-radius:3px;cursor:pointer;">Confirmer</button>' . "\n";
+                $html .= '        <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required class="s-da87df1a">' . "\n";
+                $html .= '        <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" class="s-6cf5ed0c">' . "\n";
+                $html .= '        <button type="submit" class="s-79148f91">Confirmer</button>' . "\n";
                 $html .= '      </form>' . "\n";
                 $html .= '    </details>' . "\n";
                 $html .= '  </div>' . "\n";
@@ -245,11 +245,11 @@ final class MyValidationsRenderer
             return '';
         }
 
-        $html = '<details style="margin-top: 1.5rem;">' . "\n";
-        $html .= '  <summary style="cursor:pointer;font-weight:600;color:var(--c-primary, #003189);font-size:.9rem;">' . "\n";
+        $html = '<details class="s-185d793c">' . "\n";
+        $html .= '  <summary class="s-6a2280e7">' . "\n";
         $html .= '    📝 Champs validateur que j\'ai remplis (' . count($myVdRows) . ')' . "\n";
         $html .= '  </summary>' . "\n";
-        $html .= '  <div class="card" style="margin-top:.5rem;">' . "\n";
+        $html .= '  <div class="card s-4838e7ab">' . "\n";
         $html .= '    <table>' . "\n";
         $html .= '      <thead>' . "\n";
         $html .= '        <tr>' . "\n";

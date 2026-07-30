@@ -184,7 +184,7 @@ final class InstallRenderer
          ════════════════════════════════════════════════════════════ -->
     <div class="card">
         <h2>Étape 1 — Vérification des prérequis</h2>
-        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+        <p class="s-270b7dca">
             L'assistant vérifie que votre environnement répond aux exigences minimales pour faire fonctionner <?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>.
         </p>
         <ul class="check-list">
@@ -297,9 +297,9 @@ final class InstallRenderer
         </div>
 
     <!-- Test SMTP (formulaire séparé) -->
-    <div class="card" style="margin-top:1.5rem;">
+    <div class="card s-c9d9eba7">
         <h2>Test d'envoi SMTP</h2>
-        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+        <p class="s-270b7dca">
             Envoyer un email de test pour vérifier que la configuration SMTP est correcte avant de valider l'installation.
             L'email sera envoyé à l'adresse administrateur indiquée ci-dessus.
         </p>
@@ -315,7 +315,7 @@ final class InstallRenderer
             <input type="hidden" name="delai_relance_h" value="<?= inst_h((string) $default_delai_relance_h) ?>">
             <button type="submit" class="btn btn-test" <?= empty($default_admin_email) ? 'disabled' : '' ?>><span aria-hidden="true">📧</span> Envoyer un email de test</button>
             <?php if (empty($default_admin_email)): ?>
-                <span class="hint" style="margin-left:.5rem;">Renseignez l'email administrateur ci-dessus d'abord.</span>
+                <span class="hint s-8a59a7ce">Renseignez l'email administrateur ci-dessus d'abord.</span>
             <?php endif; ?>
         </form>
     </div>
@@ -346,7 +346,7 @@ final class InstallRenderer
     <?php else: ?>
     <div class="card">
         <h2>Étape 3 — Confirmation de l'installation</h2>
-        <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">
+        <p class="s-270b7dca">
             Vérifiez la configuration ci-dessous. Si tout est correct, cliquez sur « Installer » pour créer le fichier
             <strong>config.php</strong> et lancer l'application.
         </p>
@@ -372,7 +372,7 @@ final class InstallRenderer
     <div class="warn-box">
         <span aria-hidden="true">⚠</span> En cliquant sur « Installer », le fichier <strong>config.php</strong> sera créé dans le répertoire
         <code><?= inst_h($install_dir) ?></code> et le répertoire <strong>db/</strong> sera créé si nécessaire.
-        L'application sera alors accessible via <a href="index.php" style="color:#7c4700;font-weight:bold;">index.php</a>.
+        L'application sera alors accessible via <a href="index.php" class="s-8e9ad5f0">index.php</a>.
     </div>
 
     <form method="POST">
