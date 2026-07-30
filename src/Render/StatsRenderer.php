@@ -98,10 +98,10 @@ final class StatsRenderer
                 $html .= '</div>';
             }
             $html .= '</div>';
-            $html .= '<div class="chart-legend" style="flex-direction:row;gap:1.5rem;margin-top:1rem;">';
-            $html .= '<div class="legend-item"><span class="legend-dot" style="background:#1a6b3c;"></span>Validées</div>';
-            $html .= '<div class="legend-item"><span class="legend-dot" style="background:#b45309;"></span>En cours</div>';
-            $html .= '<div class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span>Refusées</div>';
+            $html .= '<div class="chart-legend s-1331af69">';
+            $html .= '<div class="legend-item"><span class="legend-dot s-f6b28ae9"></span>Validées</div>';
+            $html .= '<div class="legend-item"><span class="legend-dot s-68531ac9"></span>En cours</div>';
+            $html .= '<div class="legend-item"><span class="legend-dot s-65fcf39f"></span>Refusées</div>';
             $html .= '</div>';
         }
         $html .= '</div>';

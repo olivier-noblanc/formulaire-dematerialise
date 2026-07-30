@@ -166,14 +166,14 @@ final class HtmlService implements HtmlInterface
         if ($total_pages <= 1) {
             return '';
         }
-        $html = '<div class="pagination" style="display:flex;gap:.5rem;align-items:center;margin:1.5rem 0;flex-wrap:wrap;">';
+        $html = '<div class="pagination s-a51ff3aa">';
         $sep = (str_contains($base_url, '?')) ? '&' : '?';
         if ($page > 1) {
-            $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page - 1)) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .75rem;">← Précédent</a>';
+            $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page - 1)) . '" class="btn btn-secondary s-2c75a605">← Précédent</a>';
         }
-        $html .= '<span style="font-size:.85rem;color:var(--c-text-secondary);">Page ' . $page . ' / ' . $total_pages . '</span>';
+        $html .= '<span class="s-928cdff4">Page ' . $page . ' / ' . $total_pages . '</span>';
         if ($page < $total_pages) {
-            $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page + 1)) . '" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .75rem;">Suivant →</a>';
+            $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page + 1)) . '" class="btn btn-secondary s-2c75a605">Suivant →</a>';
         }
         return $html . '</div>';
     }
@@ -207,15 +207,15 @@ final class HtmlService implements HtmlInterface
     {
         if ($total <= 0) {
             return '<div class="chart-row">'
-                 . '<div class="donut-chart" style="background:#e0e0e0;">'
+                 . '<div class="donut-chart s-07aaa5d7">'
                  . '<div class="donut-center">'
                  . '<span class="donut-value">0</span>'
                  . '<span class="donut-label">Total</span>'
                  . '</div></div>'
                  . '<div class="chart-legend">'
-                 . '<div class="legend-item"><span class="legend-dot" style="background:#1a6b3c;"></span><strong>Validées</strong> : 0 (0%)</div>'
-                 . '<div class="legend-item"><span class="legend-dot" style="background:#b45309;"></span><strong>En cours</strong> : 0 (0%)</div>'
-                 . '<div class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span><strong>Refusées</strong> : 0 (0%)</div>'
+                 . '<div class="legend-item"><span class="legend-dot s-f6b28ae9"></span><strong>Validées</strong> : 0 (0%)</div>'
+                 . '<div class="legend-item"><span class="legend-dot s-68531ac9"></span><strong>En cours</strong> : 0 (0%)</div>'
+                 . '<div class="legend-item"><span class="legend-dot s-65fcf39f"></span><strong>Refusées</strong> : 0 (0%)</div>'
                  . '</div></div>';
         }
 
@@ -238,9 +238,9 @@ final class HtmlService implements HtmlInterface
              . '<span class="donut-label">Total</span>'
              . '</div></div>'
              . '<div class="chart-legend">'
-             . '<div class="legend-item"><span class="legend-dot" style="background:#1a6b3c;"></span><strong>Validées</strong> : ' . $valide . ' (' . $p_valide . '%)</div>'
-             . '<div class="legend-item"><span class="legend-dot" style="background:#b45309;"></span><strong>En cours</strong> : ' . $en_cours . ' (' . $p_en_cours . '%)</div>'
-             . '<div class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span><strong>Refusées</strong> : ' . $refuse . ' (' . $p_refuse . '%)</div>'
+             . '<div class="legend-item"><span class="legend-dot s-f6b28ae9"></span><strong>Validées</strong> : ' . $valide . ' (' . $p_valide . '%)</div>'
+             . '<div class="legend-item"><span class="legend-dot s-68531ac9"></span><strong>En cours</strong> : ' . $en_cours . ' (' . $p_en_cours . '%)</div>'
+             . '<div class="legend-item"><span class="legend-dot s-65fcf39f"></span><strong>Refusées</strong> : ' . $refuse . ' (' . $p_refuse . '%)</div>'
              . '</div></div>';
     }
 }

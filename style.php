@@ -29,6 +29,7 @@ $style_sections = [
     'features',    // U-08 progression, P-02 brouillons, U-04 refus mobile
     'onboarding',  // U-06 field hints + welcome state + legacy bandeau
     'pages',      // CSS spécifique aux pages (validate, admin, etc.)
+    'generated-inline', // Classes générées depuis les style="" extraits (2026-07-30, cf. TODO.md § CSP — zéro inline)
 ];
 
 ?>

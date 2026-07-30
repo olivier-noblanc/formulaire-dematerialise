@@ -63,7 +63,7 @@ final class ErrorRenderer
         $bandeau_links = '';
         if ($user !== '' && $user !== '0') {
             $bandeau_links = '<span>Connecté en tant que : <strong>' . \App\Core\App::html()->escape($user) . '</strong></span>
-    <span><a href="index.php" style="color:#b3c8f0;font-size:.8rem;text-decoration:none;">Accueil</a></span>';
+    <span><a href="index.php" class="s-3d9b7035">Accueil</a></span>';
         }
 
         $css = $this->loadCss();

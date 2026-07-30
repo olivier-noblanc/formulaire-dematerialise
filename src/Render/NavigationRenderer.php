@@ -81,10 +81,10 @@ final class NavigationRenderer
                 $persona_active = '<div class="persona-banner" role="status">'
                     . '<span aria-hidden="true">🎭</span> '
                     . 'Mode persona : <strong>' . \App\Core\App::html()->escape($persona_display) . '</strong>'
-                    . ' <form method="POST" action="index.php?p=persona&action=stop" style="display:inline">'
+                    . ' <form method="POST" action="index.php?p=persona&action=stop" class="s-5677b988">'
                     . \App\Core\App::security()->csrfField()
                     . '<input type="hidden" name="persona_token" value="' . \App\Core\App::html()->escape($persona_current_token) . '">'
-                    . '<button type="submit" class="persona-reset" style="background:none;border:none;cursor:pointer;padding:0;color:inherit;text-decoration:underline">✕ Quitter</button>'
+                    . '<button type="submit" class="persona-reset s-5d15e208">✕ Quitter</button>'
                     . '</form>'
                     . '</div>';
             }
@@ -260,8 +260,8 @@ final class NavigationRenderer
             var startLink = document.createElement('a');
             startLink.className = 'sidebar-persona-option';
             startLink.href = '#';
-            startLink.innerHTML = '<span style="font-size:1.1em;margin-right:6px;">👤</span> Vue agent'
-                  + '<div style="font-size:11px;color:#888;margin-top:2px;">Visualiser l\'interface avec des droits réduits</div>';
+            startLink.innerHTML = '<span class="s-c68d3b3f">👤</span> Vue agent'
+                  + '<div class="s-275330b6">Visualiser l\'interface avec des droits réduits</div>';
             startLink.addEventListener('click', function(e) {
               e.preventDefault();
               e.stopPropagation();
@@ -272,7 +272,7 @@ final class NavigationRenderer
             dropdown.innerHTML = html;
             dropdown.appendChild(startLink);
           } else {
-            dropdown.innerHTML = html + '<div style="padding:8px 12px;font-size:12px;color:#888;">Mode admin uniquement</div>';
+            dropdown.innerHTML = html + '<div class="s-086b79b1">Mode admin uniquement</div>';
           }
           card.appendChild(dropdown);
         

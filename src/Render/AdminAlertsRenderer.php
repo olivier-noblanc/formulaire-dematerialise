@@ -53,12 +53,12 @@ final class AdminAlertsRenderer
             $html .= '        <span class="health-dot ' . ($checkOk ? 'health-ok' : 'health-warn') . '"></span>' . "\n";
             $html .= '        Dernière exécution : <strong>' . $h(date('d/m/Y à H:i', $checkTs !== false ? $checkTs : 0)) . '</strong>' . "\n";
             if (!$checkOk) {
-                $html .= '          <span class="badge badge-warn" style="margin-left:.5rem;"><span aria-hidden="true">⚠</span> Dernière exécution il y a plus de 24h</span>' . "\n";
+                $html .= '          <span class="badge badge-warn s-8a59a7ce"><span aria-hidden="true">⚠</span> Dernière exécution il y a plus de 24h</span>' . "\n";
             } else {
-                $html .= '          <span class="badge badge-ok" style="margin-left:.5rem;"><span aria-hidden="true">✓</span> Script actif</span>' . "\n";
+                $html .= '          <span class="badge badge-ok s-8a59a7ce"><span aria-hidden="true">✓</span> Script actif</span>' . "\n";
             }
             $html .= '      </div>' . "\n";
-            $html .= '      <p style="font-size:.85rem;color:#595959;">' . "\n";
+            $html .= '      <p class="s-84785257">' . "\n";
             $html .= '        Script : <strong>alert_check.php</strong> — À planifier via Task Scheduler (ex: toutes les 6h).' . "\n";
             $html .= '        <br>Le script vérifie les soumissions en cours et envoie des alertes si les étapes ne sont pas complétées à l\'approche de la date cible.' . "\n";
             $html .= '      </p>' . "\n";
@@ -68,9 +68,9 @@ final class AdminAlertsRenderer
             $html .= '        <span class="badge badge-info">Jamais exécuté</span>' . "\n";
             $html .= '        Le script <strong>alert_check.php</strong> n\'a jamais été lancé.' . "\n";
             $html .= '      </div>' . "\n";
-            $html .= '      <p style="font-size:.85rem;color:#595959;">' . "\n";
+            $html .= '      <p class="s-84785257">' . "\n";
             $html .= '        Planifiez-le via Windows Task Scheduler (ex: toutes les 6h) :<br>' . "\n";
-            $html .= '        <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.8rem;">php ' . $h(realpath(dirname(__DIR__, 2) . '/alert_check.php') ?: '') . '</code>' . "\n";
+            $html .= '        <code class="s-adea679d">php ' . $h(realpath(dirname(__DIR__, 2) . '/alert_check.php') ?: '') . '</code>' . "\n";
             $html .= '      </p>' . "\n";
         }
 
@@ -80,7 +80,7 @@ final class AdminAlertsRenderer
         // ── Deadline config ──
         $html .= '  <div class="card">' . "\n";
         $html .= '    <h2><span aria-hidden="true">📋</span> Champ date limite par formulaire</h2>' . "\n";
-        $html .= '    <p style="margin-bottom:1rem;color:#555;font-size:.9rem;">' . "\n";
+        $html .= '    <p class="s-270b7dca">' . "\n";
         $html .= '      Pour chaque formulaire, indiquez quel champ de type <strong>date</strong> représente la date cible (deadline).' . "\n";
         $html .= '      C\'est cette date qui sera utilisée pour déclencher les alertes.' . "\n";
         $html .= '    </p>' . "\n";
@@ -90,12 +90,12 @@ final class AdminAlertsRenderer
             $dateFields = $dateFieldsByForm[$f['id']] ?? [];
 
             $html .= '      <div class="deadline-config">' . "\n";
-            $html .= '        <form method="POST" style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">' . "\n";
+            $html .= '        <form method="POST" class="s-9677da37">' . "\n";
             $html .= '          ' . App::security()->csrfField() . "\n";
             $html .= '          <input type="hidden" name="action" value="update_deadline_field">' . "\n";
             $html .= '          <input type="hidden" name="form_id" value="' . $h($f['id']) . '">' . "\n";
-            $html .= '          <strong style="min-width:150px;">' . $h($f['label']) . '</strong>' . "\n";
-            $html .= '          <select name="deadline_field" style="flex:1;">' . "\n";
+            $html .= '          <strong class="s-c4c2a0c3">' . $h($f['label']) . '</strong>' . "\n";
+            $html .= '          <select name="deadline_field" class="s-d5e8c5f3">' . "\n";
             $html .= '            <option value="">— Aucun champ date —</option>' . "\n";
             foreach ($dateFields as $dateField) {
                 $selected = (($f['deadline_field'] ?? '') === $dateField['field_name']) ? ' selected' : '';
@@ -104,15 +104,15 @@ final class AdminAlertsRenderer
                 $html .= '              </option>' . "\n";
             }
             $html .= '          </select>' . "\n";
-            $html .= '          <button type="submit" class="btn btn-primary" style="font-size:.8rem;padding:.4rem .8rem;">Enregistrer</button>' . "\n";
+            $html .= '          <button type="submit" class="btn btn-primary s-35ba6b8d">Enregistrer</button>' . "\n";
             $html .= '        </form>' . "\n";
 
             if (!empty($f['deadline_field'])) {
-                $html .= '          <p style="font-size:.8rem;color:#1a6b3c;margin-top:.5rem;">' . "\n";
+                $html .= '          <p class="s-e89ea527">' . "\n";
                 $html .= '            <span aria-hidden="true">✓</span> Champ date limite : <strong>' . $h($f['deadline_field']) . '</strong>' . "\n";
                 $html .= '          </p>' . "\n";
             } else {
-                $html .= '          <p style="font-size:.8rem;color:#c0392b;margin-top:.5rem;">' . "\n";
+                $html .= '          <p class="s-761fb482">' . "\n";
                 $html .= '            <span aria-hidden="true">⚠</span> Aucun champ date limite configuré — les alertes ne se déclencheront pas pour ce formulaire.' . "\n";
                 $html .= '          </p>' . "\n";
             }
@@ -138,16 +138,16 @@ final class AdminAlertsRenderer
                 $html .= '        <div class="rule-card ' . ($isInactive ? 'inactive' : '') . '">' . "\n";
                 $html .= '          <div class="rule-header">' . "\n";
                 $html .= '            <h3>' . "\n";
-                $html .= '              <span style="font-size:.8rem;color:#595959;">' . $h($rule['form_label']) . '</span> —' . "\n";
+                $html .= '              <span class="s-84b64e4f">' . $h($rule['form_label']) . '</span> —' . "\n";
                 $html .= '              ' . $h($rule['label']) . "\n";
                 $html .= '            </h3>' . "\n";
                 $html .= '            <div class="rule-actions">' . "\n";
-                $html .= '              <a href="index.php?p=admin_alerts&edit_rule=' . urlencode((string) ($rule['id'] ?? '')) . '" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .6rem;text-decoration:none;">Modifier</a>' . "\n";
-                $html .= '              <form method="POST" style="display:inline;">' . "\n";
+                $html .= '              <a href="index.php?p=admin_alerts&edit_rule=' . urlencode((string) ($rule['id'] ?? '')) . '" class="btn btn-secondary s-752bb4d8">Modifier</a>' . "\n";
+                $html .= '              <form method="POST" class="s-5f8f4af2">' . "\n";
                 $html .= '                ' . App::security()->csrfField() . "\n";
                 $html .= '                <input type="hidden" name="action" value="delete_rule">' . "\n";
                 $html .= '                <input type="hidden" name="rule_id" value="' . $h($rule['id']) . '">' . "\n";
-                $html .= '                <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .6rem;" onclick="return confirm(\'Supprimer cette règle d\\\\\'alerte ?\');">Supprimer</button>' . "\n";
+                $html .= '                <button type="submit" class="btn btn-danger s-f54e9c23" onclick="return confirm(\'Supprimer cette règle d\\\\\'alerte ?\');">Supprimer</button>' . "\n";
                 $html .= '              </form>' . "\n";
                 $html .= '            </div>' . "\n";
                 $html .= '          </div>' . "\n";
@@ -163,7 +163,7 @@ final class AdminAlertsRenderer
                 $html .= '          </div>' . "\n";
 
                 if ($editRuleId === $rule['id']) {
-                    $html .= '          <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;">' . "\n";
+                    $html .= '          <div class="s-8f11e4ae">' . "\n";
                     $html .= '            <form method="POST">' . "\n";
                     $html .= '              ' . App::security()->csrfField() . "\n";
                     $html .= '              <input type="hidden" name="action" value="update_rule">' . "\n";
@@ -279,12 +279,12 @@ final class AdminAlertsRenderer
 
         // ── Alert logs ──
         $html .= '  <div class="card">' . "\n";
-        $html .= '    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' . "\n";
-        $html .= '      <h2 style="margin:0;border:none;padding:0;">📬 Historique des alertes envoyées</h2>' . "\n";
+        $html .= '    <div class="s-37ff55eb">' . "\n";
+        $html .= '      <h2 class="s-fc99e82a">📬 Historique des alertes envoyées</h2>' . "\n";
         $html .= '      <form method="POST">' . "\n";
         $html .= '        ' . App::security()->csrfField() . "\n";
         $html .= '        <input type="hidden" name="action" value="delete_alert_log">' . "\n";
-        $html .= '        <button type="submit" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .6rem;" onclick="return confirm(\'Purger les logs d\\\\\'alerte de plus de ' . $purgeDays . ' jours ?\');"><span aria-hidden="true">🗑</span> Purger &gt; ' . $purgeDays . 'j</button>' . "\n";
+        $html .= '        <button type="submit" class="btn btn-secondary s-4ba902aa" onclick="return confirm(\'Purger les logs d\\\\\'alerte de plus de ' . $purgeDays . ' jours ?\');"><span aria-hidden="true">🗑</span> Purger &gt; ' . $purgeDays . 'j</button>' . "\n";
         $html .= '      </form>' . "\n";
         $html .= '    </div>' . "\n";
         $html .= "\n";
@@ -299,10 +299,10 @@ final class AdminAlertsRenderer
             $html .= '        <tbody>' . "\n";
             foreach ($alertLogs as $alertLog) {
                 $html .= '          <tr>' . "\n";
-                $html .= '            <td style="white-space:nowrap;font-size:.8rem;">' . $h(date('d/m/Y H:i', (int) strtotime((string) ($alertLog['sent_at'] ?? '')))) . '</td>' . "\n";
+                $html .= '            <td class="s-530cd48f">' . $h(date('d/m/Y H:i', (int) strtotime((string) ($alertLog['sent_at'] ?? '')))) . '</td>' . "\n";
                 $html .= '            <td><span class="badge badge-info">' . $h($alertLog['rule_label'] ?? 'Règle supprimée') . '</span></td>' . "\n";
                 $html .= '            <td>' . $h($alertLog['form_label']) . '</td>' . "\n";
-                $html .= '            <td style="font-size:.8rem;">' . $h((string) ($alertLog['message'] ?? '')) . '</td>' . "\n";
+                $html .= '            <td class="s-3cfc5dc8">' . $h((string) ($alertLog['message'] ?? '')) . '</td>' . "\n";
                 $html .= '          </tr>' . "\n";
             }
             $html .= '        </tbody>' . "\n";
