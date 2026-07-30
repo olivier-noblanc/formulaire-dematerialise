@@ -177,6 +177,10 @@ final class AdminImportExportHandler
                     if (!is_string($visibility) || !in_array($visibility, ['all', FieldVisibility::OwnerOnly->value], true)) {
                         $visibility = 'all';
                     }
+                    $raw_hint = trim((string) ($f['hint'] ?? ''));
+                    if (preg_match('/^\d+$/', $raw_hint) === 1) {
+                        $raw_hint = '';
+                    }
                     $repo->createField([
                         'form_id' => $new_id,
                         'label' => $f['label'] ?? 'Champ',
@@ -186,7 +190,7 @@ final class AdminImportExportHandler
                         'required' => (int) ($f['required'] ?? 0),
                         'ordre' => (int) ($f['ordre'] ?? $ordre),
                         'card_group' => $f['card_group'] ?? 'Général',
-                        'hint' => $f['hint'] ?? '',
+                        'hint' => $raw_hint,
                         'filled_by' => $filled_by,
                         'validator_step' => $f['validator_step'] ?? '',
                         'visibility' => $visibility,
