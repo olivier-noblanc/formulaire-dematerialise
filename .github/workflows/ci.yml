@@ -98,6 +98,32 @@ jobs:
         run: echo "$CI_CONFIG" > config.php
       - run: php vendor/bin/phpstan analyse -c tests/phpstan.neon --memory-limit=512M --no-progress
 
+  # ── PHPStan : détection style=/onXxx=/<script> inline ──────────
+  # Règle custom (phpstan-rules/NoInlineHtmlRule.php), config et job
+  # séparés du job "phpstan" principal (src/, level 8, déjà vert avec sa
+  # baseline curée) — volume réel de violations inconnu tant que ça n'a
+  # pas tourné une fois en CI (même précaution que phpstan-tests
+  # ci-dessus). Pas de config.php nécessaire : la règle n'exécute aucun
+  # code applicatif, juste de l'analyse AST des littéraux de chaîne.
+  phpstan-no-inline:
+    name: PHPStan (no inline HTML)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+      - run: composer update --no-interaction --prefer-dist --no-scripts
+      - run: php vendor/bin/phpstan analyse -c phpstan-no-inline.neon --memory-limit=512M --no-progress
+
   # ── Tests unitaires + e2e + couverture ─────────────────────────
   phpunit:
     name: PHPUnit (unit + e2e + coverage)
