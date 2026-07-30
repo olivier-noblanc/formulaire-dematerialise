@@ -68,6 +68,36 @@ jobs:
         run: echo "$CI_CONFIG" > config.php
       - run: php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
 
+  # ── PHPStan sur tests/ ──────────────────────────────────────────
+  # tests/phpstan.neon existe depuis longtemps (niveau 7, scope tests/) mais
+  # n'était câblé dans aucune CI. C'est directement ce qui a laissé passer
+  # 47 scripts orphelins appelant des fonctions procédurales supprimées
+  # (session du 2026-07-29) — PHPStan aurait détecté "Function xxx not
+  # found" immédiatement si ce job avait tourné. Pas de baseline existante :
+  # continue-on-error tant que le volume réel d'erreurs pré-existantes n'a
+  # pas été mesuré et baseliné (voir TODO.md) — à retirer une fois fait.
+  phpstan-tests:
+    name: PHPStan (tests/)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_sqlite, sqlite3
+          coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+      - run: composer update --no-interaction --prefer-dist --no-scripts
+      - name: Create config.php
+        run: echo "$CI_CONFIG" > config.php
+      - run: php vendor/bin/phpstan analyse -c tests/phpstan.neon --memory-limit=512M --no-progress
+
   # ── Tests unitaires + e2e + couverture ─────────────────────────
   phpunit:
     name: PHPUnit (unit + e2e + coverage)
