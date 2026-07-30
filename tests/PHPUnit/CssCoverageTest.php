@@ -119,7 +119,7 @@ final class CssCoverageTest extends TestCase
         $relevantHtmlClasses = $this->filterByPrefixes($htmlClasses, $prefixes);
         $missing = array_diff($relevantHtmlClasses, self::$allCssClasses);
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $missing,
             "$rendererName uses prefixed classes not found in any CSS file: " . implode(', ', array_values($missing))
         );
@@ -133,7 +133,7 @@ final class CssCoverageTest extends TestCase
         $relevantHtmlClasses = $this->filterByPrefixes($htmlClasses, $prefixes);
         $missing = array_diff($relevantHtmlClasses, $cssClasses);
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $missing,
             "$rendererName uses classes not found in its CSS file: " . implode(', ', array_values($missing))
         );
@@ -177,24 +177,24 @@ final class CssCoverageTest extends TestCase
         // renderWorkflowDiagram
         $html1 = $renderer->renderWorkflowDiagram($steps, 'en_cours');
         $classes1 = $this->extractHtmlClasses($html1);
-        $this->assertCssClassesInFile($classes1, $cssClasses, ['wf-', 'sub-'], 'SubmissionViewRenderer::renderWorkflowDiagram');
+        self::assertCssClassesInFile($classes1, $cssClasses, ['wf-', 'sub-'], 'SubmissionViewRenderer::renderWorkflowDiagram');
 
         // renderProgress
         $html2 = $renderer->renderProgress(50, 1, 3);
         $classes2 = $this->extractHtmlClasses($html2);
-        $this->assertCssClassesInFile($classes2, $cssClasses, ['progress-', 'sub-'], 'SubmissionViewRenderer::renderProgress');
+        self::assertCssClassesInFile($classes2, $cssClasses, ['progress-', 'sub-'], 'SubmissionViewRenderer::renderProgress');
 
         // renderDeadline
         $html3 = $renderer->renderDeadline(['urgency' => 'critical'], time() + 3600, 1, 'en_cours');
         $classes3 = $this->extractHtmlClasses($html3);
-        $this->assertCssClassesInFile($classes3, $cssClasses, ['deadline-', 'dl-'], 'SubmissionViewRenderer::renderDeadline');
+        self::assertCssClassesInFile($classes3, $cssClasses, ['deadline-', 'dl-'], 'SubmissionViewRenderer::renderDeadline');
 
         // renderDelegations
         $html4 = $renderer->renderDelegations([
             ['step_label' => 'RH', 'from_email' => 'a@test.fr', 'to_email' => 'b@test.fr', 'delegated_at' => '2025-01-01', 'reason' => 'Absence'],
         ]);
         $classes4 = $this->extractHtmlClasses($html4);
-        $this->assertCssClassesInFile($classes4, $cssClasses, ['val-'], 'SubmissionViewRenderer::renderDelegations');
+        self::assertCssClassesInFile($classes4, $cssClasses, ['val-'], 'SubmissionViewRenderer::renderDelegations');
 
         // renderValidationHistory
         $html5 = $renderer->renderValidationHistory(['validations' => [
@@ -202,13 +202,13 @@ final class CssCoverageTest extends TestCase
             ['action' => 'refuser', 'step_label' => 'DSI', 'email' => 'dsi@test.fr', 'date' => '2025-01-03', 'done_by' => 'other@test.fr'],
         ]]);
         $classes5 = $this->extractHtmlClasses($html5);
-        $this->assertCssClassesInFile($classes5, $cssClasses, ['val-'], 'SubmissionViewRenderer::renderValidationHistory');
+        self::assertCssClassesInFile($classes5, $cssClasses, ['val-'], 'SubmissionViewRenderer::renderValidationHistory');
 
         // renderHeader
         $sub = ['form_label' => 'Test', 'submitted_by' => 'agent@test.fr', 'submitted_at' => '2025-01-01'];
         $html6 = $renderer->renderHeader($sub, 'sub-1', 'Agent', 'En cours', 'badge-en-cours');
         $classes6 = $this->extractHtmlClasses($html6);
-        $this->assertCssClassesInFile($classes6, $cssClasses, ['sub-'], 'SubmissionViewRenderer::renderHeader');
+        self::assertCssClassesInFile($classes6, $cssClasses, ['sub-'], 'SubmissionViewRenderer::renderHeader');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -222,7 +222,7 @@ final class CssCoverageTest extends TestCase
         // toolbar — token-grid, token-badge, token-ok, token-wait, token-pend are in dashboard_page.css
         $html1 = DashboardRenderer::toolbar('tous', '', '', [['slug' => 'test', 'label' => 'Test']]);
         $classes1 = $this->extractHtmlClasses($html1);
-        $this->assertCssClassesInFile($classes1, $cssClasses, ['token-', 'toolbar-', 'admin-'], 'DashboardRenderer::toolbar');
+        self::assertCssClassesInFile($classes1, $cssClasses, ['token-', 'toolbar-', 'admin-'], 'DashboardRenderer::toolbar');
 
         // table with tokens
         $row = [
@@ -241,7 +241,7 @@ final class CssCoverageTest extends TestCase
         ];
         $html2 = DashboardRenderer::table([$row], $tokens);
         $classes2 = $this->extractHtmlClasses($html2);
-        $this->assertCssClassesInFile($classes2, $cssClasses, ['token-', 'ordre-', 'detail-'], 'DashboardRenderer::table');
+        self::assertCssClassesInFile($classes2, $cssClasses, ['token-', 'ordre-', 'detail-'], 'DashboardRenderer::table');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -260,7 +260,7 @@ final class CssCoverageTest extends TestCase
              'deadline_formatted' => '15/01/2025', 'pending_steps' => 3],
         ]);
         $classes1 = $this->extractHtmlClasses($html1);
-        $this->assertCssClassesInFile($classes1, $cssClasses, ['alert-', 'days-'], 'MonitoringRenderer::activeAlerts');
+        self::assertCssClassesInFile($classes1, $cssClasses, ['alert-', 'days-'], 'MonitoringRenderer::activeAlerts');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -278,7 +278,7 @@ final class CssCoverageTest extends TestCase
         // Empty submissions
         $html1 = MySubmissionsRenderer::content([], 'tous', 0, 0, 0, 0, 0, '', []);
         $classes1 = $this->extractHtmlClasses($html1);
-        $this->assertCssClassesInFile($classes1, $cssClasses, ['sub-', 'empty-'], 'MySubmissionsRenderer::content (empty)');
+        self::assertCssClassesInFile($classes1, $cssClasses, ['sub-', 'empty-'], 'MySubmissionsRenderer::content (empty)');
 
         // With submissions — sub-card, sub-card-header, sub-card-title, sub-card-date, sub-card-body
         $html2 = MySubmissionsRenderer::content(
@@ -296,7 +296,7 @@ final class CssCoverageTest extends TestCase
             'en_cours', 1, 1, 0, 0, 0, '', []
         );
         $classes2 = $this->extractHtmlClasses($html2);
-        $this->assertCssClassesInFile($classes2, $cssClasses, ['sub-', 'deadline-', 'tl-', 'inline-progress-', 'card-actions', 'refusal-', 'validation-box'], 'MySubmissionsRenderer::content (with data)');
+        self::assertCssClassesInFile($classes2, $cssClasses, ['sub-', 'deadline-', 'tl-', 'inline-progress-', 'card-actions', 'refusal-', 'validation-box'], 'MySubmissionsRenderer::content (with data)');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -322,7 +322,7 @@ final class CssCoverageTest extends TestCase
             ], [], 'test@test.fr'
         );
         $classes1 = $this->extractHtmlClasses($html1);
-        $this->assertCssClassesInFile($classes1, $cssClasses, ['wf-', 'validation-', 'vc-', 'expired-'], 'MyValidationsRenderer::content (pending)');
+        self::assertCssClassesInFile($classes1, $cssClasses, ['wf-', 'validation-', 'vc-', 'expired-'], 'MyValidationsRenderer::content (pending)');
 
         // Done tab
         $html2 = MyValidationsRenderer::content(
@@ -337,7 +337,7 @@ final class CssCoverageTest extends TestCase
             'done', 0, 1, '', '', [], [], 'test@test.fr'
         );
         $classes2 = $this->extractHtmlClasses($html2);
-        $this->assertCssClassesInFile($classes2, $cssClasses, ['validation-', 'done-', 'vc-'], 'MyValidationsRenderer::content (done)');
+        self::assertCssClassesInFile($classes2, $cssClasses, ['validation-', 'done-', 'vc-'], 'MyValidationsRenderer::content (done)');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -367,7 +367,7 @@ final class CssCoverageTest extends TestCase
             ['f1' => [['field_name' => 'date_limite', 'label' => 'Date limite']]]
         );
         $classes = $this->extractHtmlClasses($html);
-        $this->assertCssClassesInFile($classes, $cssClasses, ['alert-', 'rule-', 'deadline-', 'script-', 'health-', 'days-', 'cond-', 'notify-', 'custom-email-'], 'AdminAlertsRenderer::content');
+        self::assertCssClassesInFile($classes, $cssClasses, ['alert-', 'rule-', 'deadline-', 'script-', 'health-', 'days-', 'cond-', 'notify-', 'custom-email-'], 'AdminAlertsRenderer::content');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -392,7 +392,7 @@ final class CssCoverageTest extends TestCase
             'edit_step_id' => '',
         ]);
         $classes1 = $this->extractHtmlClasses($html1);
-        $this->assertCssClassesInFile($classes1, $cssClasses, ['section-', 'workflow-', 'add-sub-', 'step-', 'recipient-', 'chip-', 'form-grid', 'field-type-', 'required-star', 'ff-', 'fields-table', 'actions', 'empty-'], 'AdminFormsRenderer::renderWorkflowDiagramSection');
+        self::assertCssClassesInFile($classes1, $cssClasses, ['section-', 'workflow-', 'add-sub-', 'step-', 'recipient-', 'chip-', 'form-grid', 'field-type-', 'required-star', 'ff-', 'fields-table', 'actions', 'empty-'], 'AdminFormsRenderer::renderWorkflowDiagramSection');
 
         // renderFormFieldsSection
         $html2 = $renderer->renderFormFieldsSection([
@@ -406,7 +406,7 @@ final class CssCoverageTest extends TestCase
             'steps' => [['id' => 's1', 'label' => 'RH', 'ordre' => 1]],
         ]);
         $classes2 = $this->extractHtmlClasses($html2);
-        $this->assertCssClassesInFile($classes2, $cssClasses, ['section-', 'fields-table', 'field-type-', 'required-star', 'add-sub-', 'form-grid', 'ff-', 'actions', 'empty-'], 'AdminFormsRenderer::renderFormFieldsSection');
+        self::assertCssClassesInFile($classes2, $cssClasses, ['section-', 'fields-table', 'field-type-', 'required-star', 'add-sub-', 'form-grid', 'ff-', 'actions', 'empty-'], 'AdminFormsRenderer::renderFormFieldsSection');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -434,7 +434,7 @@ final class CssCoverageTest extends TestCase
             'semaine', 1024000
         );
         $classes = $this->extractHtmlClasses($html);
-        $this->assertCssClassesInFile($classes, $cssClasses, ['period-', 'bar-', 'segment-', 'stacked-', 'chart-', 'legend-', 'grid-'], 'StatsRenderer::content');
+        self::assertCssClassesInFile($classes, $cssClasses, ['period-', 'bar-', 'segment-', 'stacked-', 'chart-', 'legend-', 'grid-'], 'StatsRenderer::content');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -459,7 +459,7 @@ final class CssCoverageTest extends TestCase
             [], [], [], [], [], '', ''
         );
         $classes = $this->extractHtmlClasses($html);
-        $this->assertCssClassesInFile($classes, $cssClasses, ['wf-prog-', 'btn-validate', 'btn-refuse-', 'refusal-', 'what-to-do-', 'submit-buttons', 'validation-details', 'back-link'], 'ValidateRenderer::content (pending)');
+        self::assertCssClassesInFile($classes, $cssClasses, ['wf-prog-', 'btn-validate', 'btn-refuse-', 'refusal-', 'what-to-do-', 'submit-buttons', 'validation-details', 'back-link'], 'ValidateRenderer::content (pending)');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -480,7 +480,7 @@ final class CssCoverageTest extends TestCase
             null, '', '', ''
         );
         $classes = $this->extractHtmlClasses($html);
-        $this->assertCssClassesInFile($classes, $cssClasses, ['backup-', 'info-', 'danger-', 'purge-', 'stat-table', 'upload-zone'], 'BackupRenderer::renderContent');
+        self::assertCssClassesInFile($classes, $cssClasses, ['backup-', 'info-', 'danger-', 'purge-', 'stat-table', 'upload-zone'], 'BackupRenderer::renderContent');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -496,7 +496,7 @@ final class CssCoverageTest extends TestCase
         // renderStepper
         $html1 = $renderer->renderStepper(2);
         $classes1 = $this->extractHtmlClasses($html1);
-        $this->assertCssClassesInFile($classes1, $cssClasses, ['stepper', 'step-'], 'InstallRenderer::renderStepper');
+        self::assertCssClassesInFile($classes1, $cssClasses, ['stepper', 'step-'], 'InstallRenderer::renderStepper');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -547,6 +547,6 @@ final class CssCoverageTest extends TestCase
         ]);
 
         $classes = $this->extractHtmlClasses($html);
-        $this->assertPrefixedClassesCovered($classes, 'SubmissionViewRenderer (comprehensive)');
+        self::assertPrefixedClassesCovered($classes, 'SubmissionViewRenderer (comprehensive)');
     }
 }

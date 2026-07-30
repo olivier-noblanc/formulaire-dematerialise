@@ -35,20 +35,20 @@ final class CacheServiceTest extends TestCase
     {
         $this->cache->set('test_key', 'test_value', 60);
         $result = $this->cache->get('test_key', 60, fn() => 'default');
-        $this->assertSame('test_value', $result);
+        self::assertSame('test_value', $result);
     }
 
     public function testGetReturnsCallbackOnMiss(): void
     {
         $result = $this->cache->get('nonexistent', 60, fn() => 'computed_value');
-        $this->assertSame('computed_value', $result);
+        self::assertSame('computed_value', $result);
     }
 
     public function testGetReturnsCachedValueOnHit(): void
     {
         $this->cache->set('key', 'cached', 60);
         $result = $this->cache->get('key', 60, fn() => 'new_value');
-        $this->assertSame('cached', $result);
+        self::assertSame('cached', $result);
     }
 
     public function testSetArrayValue(): void
@@ -56,7 +56,7 @@ final class CacheServiceTest extends TestCase
         $data = ['name' => 'John', 'age' => 30];
         $this->cache->set('array_key', $data, 60);
         $result = $this->cache->get('array_key', 60, fn() => []);
-        $this->assertSame($data, $result);
+        self::assertSame($data, $result);
     }
 
     public function testSetNullValueTreatedAsMiss(): void
@@ -64,22 +64,22 @@ final class CacheServiceTest extends TestCase
         // CacheService treats null values as cache miss (isset check)
         $this->cache->set('null_key', null, 60);
         $result = $this->cache->get('null_key', 60, fn() => 'default');
-        $this->assertSame('default', $result);
+        self::assertSame('default', $result);
     }
 
     public function testGetLatestVersion(): void
     {
         $version = $this->cache->getLatestVersion();
-        $this->assertIsString($version);
+        self::assertIsString($version);
         // Should match semver pattern or be 0.0.0
-        $this->assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $version);
+        self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $version);
     }
 
     public function testCacheDirCreatedAutomatically(): void
     {
         $newDir = sys_get_temp_dir() . '/phpunit_cache_new_' . uniqid();
         $cache = new CacheService($newDir);
-        $this->assertDirectoryExists($newDir);
+        self::assertDirectoryExists($newDir);
         @rmdir($newDir);
     }
 }

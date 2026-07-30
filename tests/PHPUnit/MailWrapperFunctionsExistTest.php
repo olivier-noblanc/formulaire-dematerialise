@@ -24,22 +24,22 @@ final class MailWrapperFunctionsExistTest extends TestCase
 {
     public function testSendMailFunctionExists(): void
     {
-        $this->assertTrue(function_exists('send_mail'), 'send_mail() doit être une vraie fonction, pas seulement un stub PHPStan');
+        self::assertTrue(function_exists('send_mail'), 'send_mail() doit être une vraie fonction, pas seulement un stub PHPStan');
     }
 
     public function testBuildMailHtmlFunctionExists(): void
     {
-        $this->assertTrue(function_exists('build_mail_html'));
+        self::assertTrue(function_exists('build_mail_html'));
     }
 
     public function testRenderEmailTemplateFunctionExists(): void
     {
-        $this->assertTrue(function_exists('render_email_template'));
+        self::assertTrue(function_exists('render_email_template'));
     }
 
     public function testFormatBytesFunctionExists(): void
     {
-        $this->assertTrue(function_exists('format_bytes'));
+        self::assertTrue(function_exists('format_bytes'));
     }
 
     public function testSendMailReturnsBoolInDryRunMode(): void
@@ -50,8 +50,8 @@ final class MailWrapperFunctionsExistTest extends TestCase
 
         $result = send_mail('test@example.com', 'Sujet test', '<p>Corps</p>');
 
-        $this->assertIsBool($result);
-        $this->assertTrue($result, 'send_mail() en mode dry-run doit retourner true (envoi simulé)');
+        self::assertIsBool($result);
+        self::assertTrue($result, 'send_mail() en mode dry-run doit retourner true (envoi simulé)');
 
         // Restaurer
         if ($before !== false) {
@@ -64,22 +64,22 @@ final class MailWrapperFunctionsExistTest extends TestCase
         $submission = ['data' => '{}'];
         $html = build_mail_html($submission, 'Étape test', 'token123');
 
-        $this->assertIsString($html);
-        $this->assertNotSame('', $html);
+        self::assertIsString($html);
+        self::assertNotSame('', $html);
     }
 
     public function testRenderEmailTemplateWrapsBodyInHtml(): void
     {
         $html = render_email_template('Titre test', '<p>Contenu</p>');
 
-        $this->assertIsString($html);
-        $this->assertStringContainsString('<p>Contenu</p>', $html);
+        self::assertIsString($html);
+        self::assertStringContainsString('<p>Contenu</p>', $html);
     }
 
     public function testFormatBytesReturnsHumanReadableString(): void
     {
-        $this->assertSame('2 Ko', format_bytes(2048));
-        $this->assertIsString(format_bytes(0));
-        $this->assertIsString(format_bytes(1_000_000));
+        self::assertSame('2 Ko', format_bytes(2048));
+        self::assertIsString(format_bytes(0));
+        self::assertIsString(format_bytes(1_000_000));
     }
 }

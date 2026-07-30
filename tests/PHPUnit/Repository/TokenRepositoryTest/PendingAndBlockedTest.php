@@ -19,8 +19,8 @@ final class PendingAndBlockedTest extends Base
 
         $result = $this->repo->findPendingByEmail($email);
 
-        $this->assertCount(1, $result);
-        $this->assertSame($subId, $result[0]['submission_id']);
+        self::assertCount(1, $result);
+        self::assertSame($subId, $result[0]['submission_id']);
     }
 
     public function testFindPendingByEmailExcludesDoneTokens(): void
@@ -30,7 +30,7 @@ final class PendingAndBlockedTest extends Base
         $email = 'done-' . uniqid() . '@test.com';
         $this->createToken($subId, $stepId, $email, doneAtOffset: '-1 hour');
 
-        $this->assertSame([], $this->repo->findPendingByEmail($email));
+        self::assertSame([], $this->repo->findPendingByEmail($email));
     }
 
     public function testFindPendingByEmailExcludesExpiredTokens(): void
@@ -40,7 +40,7 @@ final class PendingAndBlockedTest extends Base
         $email = 'expired-' . uniqid() . '@test.com';
         $this->createToken($subId, $stepId, $email, expiresInOffset: '-1 day');
 
-        $this->assertSame([], $this->repo->findPendingByEmail($email));
+        self::assertSame([], $this->repo->findPendingByEmail($email));
     }
 
     public function testFindPendingByEmailExcludesClosedSubmissions(): void
@@ -50,7 +50,7 @@ final class PendingAndBlockedTest extends Base
         $email = 'closed-' . uniqid() . '@test.com';
         $this->createToken($subId, $stepId, $email);
 
-        $this->assertSame([], $this->repo->findPendingByEmail($email));
+        self::assertSame([], $this->repo->findPendingByEmail($email));
     }
 
     public function testFindPendingByEmailWithSearchMatchesFormLabel(): void
@@ -62,8 +62,8 @@ final class PendingAndBlockedTest extends Base
 
         $result = $this->repo->findPendingByEmail($email, 'mutation spéciale');
 
-        $this->assertCount(1, $result);
-        $this->assertSame($subId, $result[0]['submission_id']);
+        self::assertCount(1, $result);
+        self::assertSame($subId, $result[0]['submission_id']);
     }
 
     public function testFindPendingByEmailWithSearchReturnsEmptyWhenNoMatch(): void
@@ -73,7 +73,7 @@ final class PendingAndBlockedTest extends Base
         $subId = $this->createSubmission($formId, status: 'en_cours');
         $this->createToken($subId, $stepId, $email);
 
-        $this->assertSame([], $this->repo->findPendingByEmail($email, 'texte-absent-xyz'));
+        self::assertSame([], $this->repo->findPendingByEmail($email, 'texte-absent-xyz'));
     }
 
     // ── findBlocked() ─────────────────────────────────────────────
@@ -87,7 +87,7 @@ final class PendingAndBlockedTest extends Base
         $result = $this->repo->findBlocked(48);
 
         $ids = array_column($result, 'id');
-        $this->assertContains($tokenId, $ids);
+        self::assertContains($tokenId, $ids);
     }
 
     public function testFindBlockedExcludesRecentToken(): void
@@ -99,7 +99,7 @@ final class PendingAndBlockedTest extends Base
         $result = $this->repo->findBlocked(48);
 
         $ids = array_column($result, 'id');
-        $this->assertNotContains($tokenId, $ids);
+        self::assertNotContains($tokenId, $ids);
     }
 
     public function testFindBlockedExcludesDoneTokens(): void
@@ -111,7 +111,7 @@ final class PendingAndBlockedTest extends Base
         $result = $this->repo->findBlocked(48);
 
         $ids = array_column($result, 'id');
-        $this->assertNotContains($tokenId, $ids);
+        self::assertNotContains($tokenId, $ids);
     }
 
     // ── countExpired() ────────────────────────────────────────────
@@ -122,7 +122,7 @@ final class PendingAndBlockedTest extends Base
         $subId = $this->createSubmission($formId, status: 'en_cours');
         $this->createToken($subId, $stepId, expiresInOffset: '-1 day');
 
-        $this->assertGreaterThanOrEqual(1, $this->repo->countExpired());
+        self::assertGreaterThanOrEqual(1, $this->repo->countExpired());
     }
 
     public function testCountExpiredExcludesDoneTokenPastExpiry(): void
@@ -132,7 +132,7 @@ final class PendingAndBlockedTest extends Base
         $before = $this->repo->countExpired();
         $this->createToken($subId, $stepId, doneAtOffset: '-1 hour', expiresInOffset: '-1 day');
 
-        $this->assertSame($before, $this->repo->countExpired());
+        self::assertSame($before, $this->repo->countExpired());
     }
 
     public function testCountExpiredExcludesNonExpiredToken(): void
@@ -142,6 +142,6 @@ final class PendingAndBlockedTest extends Base
         $before = $this->repo->countExpired();
         $this->createToken($subId, $stepId, expiresInOffset: '+7 days');
 
-        $this->assertSame($before, $this->repo->countExpired());
+        self::assertSame($before, $this->repo->countExpired());
     }
 }

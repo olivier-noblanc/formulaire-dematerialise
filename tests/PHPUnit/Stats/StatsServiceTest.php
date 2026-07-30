@@ -69,9 +69,9 @@ final class StatsServiceTest extends TestCase
             }
         }
 
-        $this->assertNotNull($validatorStats, 'Validator stats should exist');
-        $this->assertSame(1, $validatorStats['done'], 'Only validated tokens should be counted as done');
-        $this->assertSame(0, $validatorStats['pending'], 'No pending tokens');
+        self::assertNotNull($validatorStats, 'Validator stats should exist');
+        self::assertSame(1, $validatorStats['done'], 'Only validated tokens should be counted as done');
+        self::assertSame(0, $validatorStats['pending'], 'No pending tokens');
     }
 
     public function testGetValidatorStatsCountsPendingTokens(): void
@@ -105,8 +105,8 @@ final class StatsServiceTest extends TestCase
             }
         }
 
-        $this->assertNotNull($validatorStats, 'Validator stats should exist');
-        $this->assertSame(0, $validatorStats['done'], 'No done tokens');
-        $this->assertSame(1, $validatorStats['pending'], 'One pending token');
+        self::assertNotNull($validatorStats, 'Validator stats should exist');
+        self::assertSame(0, $validatorStats['done'], 'No done tokens');
+        self::assertSame(1, $validatorStats['pending'], 'One pending token');
     }
 }

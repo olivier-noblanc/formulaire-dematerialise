@@ -15,20 +15,20 @@ class HasActiveTest extends Base
         [$formId] = $this->createTestForm();
 
         $count = $this->workflow->hasActiveSubmissions($formId);
-        $this->assertIsInt($count);
-        $this->assertGreaterThanOrEqual(0, $count);
+        self::assertIsInt($count);
+        self::assertGreaterThanOrEqual(0, $count);
     }
 
     public function testHasActiveSubmissionsReturnsZeroForNonexistentForm(): void
     {
         $count = $this->workflow->hasActiveSubmissions('nonexistent-form-id');
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
     }
 
     public function testHasActiveSubmissionsReturnsZeroForEmptyFormId(): void
     {
         $count = $this->workflow->hasActiveSubmissions('');
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
     }
 
     public function testHasActiveSubmissionsMatchesDirectQuery(): void
@@ -42,7 +42,7 @@ class HasActiveTest extends Base
         $stmt->execute([$formId]);
         $directCount = $stmt->fetchColumn();
 
-        $this->assertSame((int) $directCount, $methodResult);
+        self::assertSame((int) $directCount, $methodResult);
     }
 
     public function testHasActiveSubmissionsReturnsCountForFormWithActiveSubmissions(): void
@@ -51,7 +51,7 @@ class HasActiveTest extends Base
         $this->createTestSubmission($formId);
 
         $count = $this->workflow->hasActiveSubmissions($formId);
-        $this->assertGreaterThan(0, $count);
+        self::assertGreaterThan(0, $count);
     }
 
     public function testHasActiveSubmissionsReturnsCorrectCount(): void
@@ -59,8 +59,8 @@ class HasActiveTest extends Base
         [$formId] = $this->createTestForm();
 
         $count = $this->workflow->hasActiveSubmissions($formId);
-        $this->assertIsInt($count);
-        $this->assertGreaterThanOrEqual(0, $count);
+        self::assertIsInt($count);
+        self::assertGreaterThanOrEqual(0, $count);
     }
 
     public function testHasActiveSubmissionsOnlyCountsEnCours(): void
@@ -76,7 +76,7 @@ class HasActiveTest extends Base
         $stmt->execute([$formId]);
         $expected = (int) $stmt->fetchColumn();
 
-        $this->assertSame($expected, $count);
+        self::assertSame($expected, $count);
     }
 
     public function testHasActiveSubmissionsReturnsZeroForFormWithNoSubmissions(): void
@@ -89,7 +89,7 @@ class HasActiveTest extends Base
             ->execute([$formId, $slug]);
 
         $count = $this->workflow->hasActiveSubmissions($formId);
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
 
         $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
@@ -101,14 +101,14 @@ class HasActiveTest extends Base
         [, $stepId] = $this->createTestForm();
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertIsInt($count);
-        $this->assertGreaterThanOrEqual(0, $count);
+        self::assertIsInt($count);
+        self::assertGreaterThanOrEqual(0, $count);
     }
 
     public function testHasActiveStepSubmissionsReturnsZeroForNonexistentStep(): void
     {
         $count = $this->workflow->hasActiveStepSubmissions('nonexistent-step-id');
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
     }
 
     public function testHasActiveStepSubmissionsReturnsCountForStepWithPendingTokens(): void
@@ -118,7 +118,7 @@ class HasActiveTest extends Base
         $this->createTestToken($subId, $stepId);
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertGreaterThan(0, $count);
+        self::assertGreaterThan(0, $count);
     }
 
     public function testHasActiveStepSubmissionsMatchesDirectQuery(): void
@@ -135,13 +135,13 @@ class HasActiveTest extends Base
         $stmt->execute([$stepId]);
         $directCount = $stmt->fetchColumn();
 
-        $this->assertSame((int) $directCount, $methodResult);
+        self::assertSame((int) $directCount, $methodResult);
     }
 
     public function testHasActiveStepSubmissionsReturnsZeroForEmptyStepId(): void
     {
         $count = $this->workflow->hasActiveStepSubmissions('');
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
     }
 
     public function testHasActiveStepSubmissionsReturnsZeroForCompletedStep(): void
@@ -151,7 +151,7 @@ class HasActiveTest extends Base
         $this->createTestToken($subId, $stepId, doneAtOffset: '-1 minute');
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertIsInt($count);
+        self::assertIsInt($count);
     }
 
     public function testHasActiveStepSubmissionsReturnsZeroForInactiveStep(): void
@@ -159,7 +159,7 @@ class HasActiveTest extends Base
         [, $stepId] = $this->createTestForm();
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
     }
 
     public function testHasActiveStepSubmissionsReturnsZeroForStepWithNoTokens(): void
@@ -172,7 +172,7 @@ class HasActiveTest extends Base
             ->execute([$stepId, $formId]);
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
 
         $pdo->prepare("DELETE FROM steps WHERE id = ?")->execute([$stepId]);
     }
@@ -195,7 +195,7 @@ class HasActiveTest extends Base
             ->execute([$tokenId, $subId, $stepId, $token]);
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
 
         $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$tokenId]);
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
@@ -220,7 +220,7 @@ class HasActiveTest extends Base
             ->execute([$tokenId, $subId, $stepId, $token]);
 
         $count = $this->workflow->hasActiveStepSubmissions($stepId);
-        $this->assertGreaterThan(0, $count);
+        self::assertGreaterThan(0, $count);
 
         $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$tokenId]);
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);

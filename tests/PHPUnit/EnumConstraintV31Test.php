@@ -77,7 +77,7 @@ final class EnumConstraintV31Test extends TestCase
             $fieldId = $this->createTestFormField($pdo, $formId, $type);
             $fetched = $pdo->prepare('SELECT field_type FROM form_fields WHERE id = ?');
             $fetched->execute([$fieldId]);
-            $this->assertSame($type, $fetched->fetchColumn());
+            self::assertSame($type, $fetched->fetchColumn());
         }
     }
 
@@ -107,7 +107,7 @@ final class EnumConstraintV31Test extends TestCase
             $svdId = $this->createTestValidatorData($pdo, $subId, 'field_' . $i, $type);
             $fetched = $pdo->prepare('SELECT field_type FROM submission_validator_data WHERE id = ?');
             $fetched->execute([$svdId]);
-            $this->assertSame($type, $fetched->fetchColumn());
+            self::assertSame($type, $fetched->fetchColumn());
         }
     }
 
@@ -151,7 +151,7 @@ final class EnumConstraintV31Test extends TestCase
             $svdId = $this->createTestValidatorData($pdo, $subId, 'ffield_' . $i, 'text', $filledBy);
             $fetched = $pdo->prepare('SELECT filled_by FROM submission_validator_data WHERE id = ?');
             $fetched->execute([$svdId]);
-            $this->assertSame($filledBy, $fetched->fetchColumn());
+            self::assertSame($filledBy, $fetched->fetchColumn());
         }
     }
 
@@ -189,7 +189,7 @@ final class EnumConstraintV31Test extends TestCase
             $logId = $this->createTestMailLog($pdo, $status);
             $fetched = $pdo->prepare('SELECT status FROM mail_log WHERE id = ?');
             $fetched->execute([$logId]);
-            $this->assertSame($status, $fetched->fetchColumn());
+            self::assertSame($status, $fetched->fetchColumn());
         }
     }
 

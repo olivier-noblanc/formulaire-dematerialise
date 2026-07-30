@@ -35,26 +35,26 @@ final class CronServiceTest extends TestCase
 
     public function testConstructorCreatesInstance(): void
     {
-        $this->assertInstanceOf(CronService::class, $this->cron);
+        self::assertInstanceOf(CronService::class, $this->cron);
     }
 
     public function testServiceRegistrableInContainer(): void
     {
         $app = \App\Core\App::getInstance();
-        $this->assertTrue($app->has(CronService::class));
+        self::assertTrue($app->has(CronService::class));
     }
 
     public function testAppCronAccessorReturnsCronService(): void
     {
         $cron = \App\Core\App::cron();
-        $this->assertInstanceOf(CronService::class, $cron);
+        self::assertInstanceOf(CronService::class, $cron);
     }
 
     public function testAppCronReturnsSameInstance(): void
     {
         $cron1 = \App\Core\App::cron();
         $cron2 = \App\Core\App::cron();
-        $this->assertSame($cron1, $cron2);
+        self::assertSame($cron1, $cron2);
     }
 
     // ── parseDbDatetime ─────────────────────────────────────────
@@ -62,64 +62,64 @@ final class CronServiceTest extends TestCase
     public function testParseDbDatetimeReturnsTimestampForValidDatetime(): void
     {
         $result = CronService::parseDbDatetime('2025-01-15 10:30:00');
-        $this->assertIsInt($result);
-        $this->assertSame(1736937000, $result);
+        self::assertIsInt($result);
+        self::assertSame(1736937000, $result);
     }
 
     public function testParseDbDatetimeReturnsNullForInvalidDatetime(): void
     {
         $result = CronService::parseDbDatetime('not-a-date');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testParseDbDatetimeReturnsNullForEmptyString(): void
     {
         $result = CronService::parseDbDatetime('');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testParseDbDatetimeHandlesEpochZero(): void
     {
         $result = CronService::parseDbDatetime('1970-01-01 00:00:00');
-        $this->assertSame(0, $result);
+        self::assertSame(0, $result);
     }
 
     public function testParseDbDatetimeHandlesFarFutureDate(): void
     {
         $result = CronService::parseDbDatetime('2099-12-31 23:59:59');
-        $this->assertIsInt($result);
-        $this->assertGreaterThan(time(), $result);
+        self::assertIsInt($result);
+        self::assertGreaterThan(time(), $result);
     }
 
     public function testParseDbDatetimeHandlesLeapYearDate(): void
     {
         $result = CronService::parseDbDatetime('2024-02-29 12:00:00');
-        $this->assertIsInt($result);
+        self::assertIsInt($result);
     }
 
     public function testParseDbDatetimeReturnsNullForPartialDate(): void
     {
         $result = CronService::parseDbDatetime('2025-01-15');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testParseDbDatetimeReturnsNullForDateWithMilliseconds(): void
     {
         $result = CronService::parseDbDatetime('2025-01-15 10:30:00.123456');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testParseDbDatetimeHandlesMidnight(): void
     {
         $result = CronService::parseDbDatetime('2025-06-15 00:00:00');
-        $this->assertIsInt($result);
-        $this->assertGreaterThan(0, $result);
+        self::assertIsInt($result);
+        self::assertGreaterThan(0, $result);
     }
 
     public function testParseDbDatetimeHandlesEndOfDay(): void
     {
         $result = CronService::parseDbDatetime('2025-06-15 23:59:59');
-        $this->assertIsInt($result);
+        self::assertIsInt($result);
     }
 
     // ── runLazyCron ─────────────────────────────────────────────
@@ -132,11 +132,11 @@ final class CronServiceTest extends TestCase
         $stmt = $pdo->query("SELECT task_key, run_count FROM lazy_cron ORDER BY task_key");
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $this->assertNotEmpty($rows);
+        self::assertNotEmpty($rows);
         $keys = array_column($rows, 'task_key');
-        $this->assertContains('remind', $keys);
-        $this->assertContains('alert_check', $keys);
-        $this->assertContains('rgpd_purge', $keys);
+        self::assertContains('remind', $keys);
+        self::assertContains('alert_check', $keys);
+        self::assertContains('rgpd_purge', $keys);
     }
 
     public function testRunLazyCronSkipsTasksWithinInterval(): void
@@ -153,7 +153,7 @@ final class CronServiceTest extends TestCase
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count2 = (int)$stmt2->fetchColumn();
 
-        $this->assertSame($count1, $count2);
+        self::assertSame($count1, $count2);
     }
 
     public function testRunLazyCronRunsTaskWhenIntervalElapsed(): void
@@ -174,7 +174,7 @@ final class CronServiceTest extends TestCase
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count2 = (int)$stmt2->fetchColumn();
 
-        $this->assertGreaterThan($count1, $count2);
+        self::assertGreaterThan($count1, $count2);
     }
 
     public function testRunLazyCronHandlesConcurrentReentry(): void
@@ -184,7 +184,7 @@ final class CronServiceTest extends TestCase
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->query("SELECT COUNT(*) FROM lazy_cron");
-        $this->assertGreaterThanOrEqual(1, (int)$stmt->fetchColumn());
+        self::assertGreaterThanOrEqual(1, (int)$stmt->fetchColumn());
     }
 
     public function testRunLazyCronIncrementsRunCount(): void
@@ -194,7 +194,7 @@ final class CronServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count = (int) $stmt->fetchColumn();
-        $this->assertGreaterThanOrEqual(1, $count);
+        self::assertGreaterThanOrEqual(1, $count);
     }
 
     public function testRunLazyCronSetsLastRunTimestamp(): void
@@ -207,8 +207,8 @@ final class CronServiceTest extends TestCase
         $stmt = $pdo->query("SELECT last_run FROM lazy_cron WHERE task_key = 'remind'");
         $lastRun = (string) $stmt->fetchColumn();
 
-        $this->assertGreaterThanOrEqual($before, $lastRun);
-        $this->assertLessThanOrEqual($after, $lastRun);
+        self::assertGreaterThanOrEqual($before, $lastRun);
+        self::assertLessThanOrEqual($after, $lastRun);
     }
 
     public function testRunLazyCronCreatesAllThreeTaskKeys(): void
@@ -219,10 +219,10 @@ final class CronServiceTest extends TestCase
         $stmt = $pdo->query("SELECT task_key FROM lazy_cron ORDER BY task_key");
         $keys = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
-        $this->assertCount(3, $keys);
-        $this->assertContains('alert_check', $keys);
-        $this->assertContains('remind', $keys);
-        $this->assertContains('rgpd_purge', $keys);
+        self::assertCount(3, $keys);
+        self::assertContains('alert_check', $keys);
+        self::assertContains('remind', $keys);
+        self::assertContains('rgpd_purge', $keys);
     }
 
     public function testRunLazyCronHandlesAlertCheckInterval(): void
@@ -244,7 +244,7 @@ final class CronServiceTest extends TestCase
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'alert_check'");
         $count2 = (int)$stmt2->fetchColumn();
 
-        $this->assertGreaterThan($count1, $count2);
+        self::assertGreaterThan($count1, $count2);
     }
 
     public function testRunLazyCronHandlesRgpdPurgeInterval(): void
@@ -265,7 +265,7 @@ final class CronServiceTest extends TestCase
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'rgpd_purge'");
         $count2 = (int)$stmt2->fetchColumn();
 
-        $this->assertGreaterThan($count1, $count2);
+        self::assertGreaterThan($count1, $count2);
     }
 
     public function testRunLazyCronDoesNotRunRemindWhenRecentlyRun(): void
@@ -287,7 +287,7 @@ final class CronServiceTest extends TestCase
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count2 = (int)$stmt2->fetchColumn();
 
-        $this->assertSame($count1, $count2);
+        self::assertSame($count1, $count2);
     }
 
     // ── Edge cases ──────────────────────────────────────────────
@@ -295,15 +295,15 @@ final class CronServiceTest extends TestCase
     public function testParseDbDatetimeHandlesNewYearsEve(): void
     {
         $result = CronService::parseDbDatetime('2025-12-31 23:59:59');
-        $this->assertIsInt($result);
-        $this->assertGreaterThan(0, $result);
+        self::assertIsInt($result);
+        self::assertGreaterThan(0, $result);
     }
 
     public function testParseDbDatetimeHandlesNewYearsDay(): void
     {
         $result = CronService::parseDbDatetime('2025-01-01 00:00:00');
-        $this->assertIsInt($result);
-        $this->assertGreaterThan(0, $result);
+        self::assertIsInt($result);
+        self::assertGreaterThan(0, $result);
     }
 
     public function testRunLazyCronIdempotentWhenAllTasksRecentlyRun(): void
@@ -321,7 +321,7 @@ final class CronServiceTest extends TestCase
         $stmt = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count2 = (int) $stmt->fetchColumn();
 
-        $this->assertSame($count1, $count2);
+        self::assertSame($count1, $count2);
     }
 
     public function testRunLazyCronUsesInsertOrReplace(): void
@@ -338,6 +338,6 @@ final class CronServiceTest extends TestCase
         $this->cron->runLazyCron();
 
         $stmt = $pdo->query("SELECT COUNT(*) FROM lazy_cron WHERE task_key = 'remind'");
-        $this->assertSame(1, (int) $stmt->fetchColumn());
+        self::assertSame(1, (int) $stmt->fetchColumn());
     }
 }

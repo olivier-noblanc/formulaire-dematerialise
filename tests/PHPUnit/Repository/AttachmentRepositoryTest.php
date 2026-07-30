@@ -19,13 +19,13 @@ final class AttachmentRepositoryTest extends TestCase
     public function testFindByIdReturnsNullForNonexistent(): void
     {
         $result = $this->repo->findById('nonexistent');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testFindBySubmissionReturnsArray(): void
     {
         $result = $this->repo->findBySubmission('nonexistent');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 }

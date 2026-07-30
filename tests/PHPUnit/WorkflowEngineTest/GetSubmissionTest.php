@@ -11,7 +11,7 @@ class GetSubmissionTest extends Base
     public function testGetSubmissionWithFormLabelReturnsNullForInvalidId(): void
     {
         $result = $this->workflow->getSubmissionWithFormLabel('nonexistent_id');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testGetSubmissionWithFormLabelReturnsDataForRealSubmission(): void
@@ -20,16 +20,16 @@ class GetSubmissionTest extends Base
         $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
-        $this->assertNotNull($result);
-        $this->assertArrayHasKey('form_label', $result);
-        $this->assertArrayHasKey('status', $result);
-        $this->assertArrayHasKey('data', $result);
+        self::assertNotNull($result);
+        self::assertArrayHasKey('form_label', $result);
+        self::assertArrayHasKey('status', $result);
+        self::assertArrayHasKey('data', $result);
     }
 
     public function testGetSubmissionWithFormLabelReturnsNullForEmptyString(): void
     {
         $result = $this->workflow->getSubmissionWithFormLabel('');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testGetSubmissionWithFormLabelReturnsSubmittedByField(): void
@@ -38,7 +38,7 @@ class GetSubmissionTest extends Base
         $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
-        $this->assertArrayHasKey('submitted_by', $result);
+        self::assertArrayHasKey('submitted_by', $result);
     }
 
     public function testGetSubmissionWithFormLabelReturnsClosedAtField(): void
@@ -47,7 +47,7 @@ class GetSubmissionTest extends Base
         $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
-        $this->assertArrayHasKey('closed_at', $result);
+        self::assertArrayHasKey('closed_at', $result);
     }
 
     public function testGetSubmissionWithFormLabelReturnsAllRequiredFields(): void
@@ -57,11 +57,11 @@ class GetSubmissionTest extends Base
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
 
-        $this->assertArrayHasKey('form_label', $result);
-        $this->assertArrayHasKey('data', $result);
-        $this->assertArrayHasKey('status', $result);
-        $this->assertArrayHasKey('submitted_by', $result);
-        $this->assertArrayHasKey('closed_at', $result);
+        self::assertArrayHasKey('form_label', $result);
+        self::assertArrayHasKey('data', $result);
+        self::assertArrayHasKey('status', $result);
+        self::assertArrayHasKey('submitted_by', $result);
+        self::assertArrayHasKey('closed_at', $result);
     }
 
     public function testGetSubmissionWithFormLabelReturnsFormLabel(): void
@@ -70,8 +70,8 @@ class GetSubmissionTest extends Base
         $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
-        $this->assertArrayHasKey('form_label', $result);
-        $this->assertNotEmpty($result['form_label']);
+        self::assertArrayHasKey('form_label', $result);
+        self::assertNotEmpty($result['form_label']);
     }
 
     public function testGetSubmissionWithFormLabelReturnsStatus(): void
@@ -80,8 +80,8 @@ class GetSubmissionTest extends Base
         $subId = $this->createTestSubmission($formId);
 
         $result = $this->workflow->getSubmissionWithFormLabel($subId);
-        $this->assertArrayHasKey('status', $result);
-        $this->assertContains($result['status'], ['en_cours', 'valide', 'refuse', 'annule']);
+        self::assertArrayHasKey('status', $result);
+        self::assertContains($result['status'], ['en_cours', 'valide', 'refuse', 'annule']);
     }
 
     public function testGetSubmissionWithFormLabelReturnsDataField(): void
@@ -91,8 +91,8 @@ class GetSubmissionTest extends Base
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
-            $this->assertArrayHasKey('data', $result);
-            $this->assertIsString($result['data']);
+            self::assertArrayHasKey('data', $result);
+            self::assertIsString($result['data']);
         }
     }
 
@@ -104,7 +104,7 @@ class GetSubmissionTest extends Base
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
             $decoded = json_decode($result['data'], true);
-            $this->assertIsArray($decoded);
+            self::assertIsArray($decoded);
         }
     }
 
@@ -115,7 +115,7 @@ class GetSubmissionTest extends Base
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
-            $this->assertTrue(
+            self::assertTrue(
                 $result['submitted_by'] === null || is_string($result['submitted_by']),
                 'submitted_by should be null or string'
             );
@@ -129,7 +129,7 @@ class GetSubmissionTest extends Base
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
-            $this->assertTrue(
+            self::assertTrue(
                 $result['closed_at'] === null || is_string($result['closed_at']),
                 'closed_at should be null or string'
             );
@@ -143,7 +143,7 @@ class GetSubmissionTest extends Base
 
         $result = $this->workflow->getSubmissionWithFormLabel((string) $subId);
         if ($result) {
-            $this->assertContains($result['status'], ['en_cours', 'valide', 'refuse', 'annule']);
+            self::assertContains($result['status'], ['en_cours', 'valide', 'refuse', 'annule']);
         }
     }
 }

@@ -52,14 +52,14 @@ final class SubmissionRepositoryTest extends TestCase
         $pdo->prepare("UPDATE submissions SET rgpd_consent = 1 WHERE id = ?")->execute([$subId]);
 
         $result = $this->repo->findByIdWithForm($subId);
-        $this->assertNotNull($result);
-        $this->assertArrayHasKey('rgpd_consent', $result, 'findByIdWithForm must include rgpd_consent');
-        $this->assertSame(1, $result['rgpd_consent'], 'rgpd_consent should be 1 after update');
+        self::assertNotNull($result);
+        self::assertArrayHasKey('rgpd_consent', $result, 'findByIdWithForm must include rgpd_consent');
+        self::assertSame(1, $result['rgpd_consent'], 'rgpd_consent should be 1 after update');
 
         // Also test with consent = 0
         $pdo->prepare("UPDATE submissions SET rgpd_consent = 0 WHERE id = ?")->execute([$subId]);
         $result2 = $this->repo->findByIdWithForm($subId);
-        $this->assertSame(0, $result2['rgpd_consent']);
+        self::assertSame(0, $result2['rgpd_consent']);
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
@@ -69,8 +69,8 @@ final class SubmissionRepositoryTest extends TestCase
     public function testGetValidatorDataReturnsArray(): void
     {
         $result = $this->repo->getValidatorData('nonexistent');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     // ── getValidatorData() with stepId ──────────────────────────
@@ -78,8 +78,8 @@ final class SubmissionRepositoryTest extends TestCase
     public function testGetValidatorDataWithStepIdReturnsArray(): void
     {
         $result = $this->repo->getValidatorData('nonexistent', 'step1');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     // ── appendToDataJson() ─────────────────────────────────────
@@ -104,12 +104,12 @@ final class SubmissionRepositoryTest extends TestCase
             return $data;
         });
 
-        $this->assertTrue($result);
+        self::assertTrue($result);
 
         $fetched = $pdo->query("SELECT data FROM submissions WHERE id = '{$subId}'")->fetch(\PDO::FETCH_ASSOC);
         $decoded = json_decode($fetched['data'], true);
-        $this->assertArrayHasKey('mutations', $decoded);
-        $this->assertSame('test', $decoded['mutations'][0]['type']);
+        self::assertArrayHasKey('mutations', $decoded);
+        self::assertSame('test', $decoded['mutations'][0]['type']);
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
@@ -144,9 +144,9 @@ final class SubmissionRepositoryTest extends TestCase
 
         $fetched = $pdo->query("SELECT data FROM submissions WHERE id = '{$subId}'")->fetch(\PDO::FETCH_ASSOC);
         $decoded = json_decode($fetched['data'], true);
-        $this->assertCount(2, $decoded['mutations'], 'Both mutations should survive');
-        $this->assertSame(1, $decoded['mutations'][0]['n']);
-        $this->assertSame(2, $decoded['mutations'][1]['n']);
+        self::assertCount(2, $decoded['mutations'], 'Both mutations should survive');
+        self::assertSame(1, $decoded['mutations'][0]['n']);
+        self::assertSame(2, $decoded['mutations'][1]['n']);
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
@@ -182,8 +182,8 @@ final class SubmissionRepositoryTest extends TestCase
             return $data;
         });
 
-        $this->assertFalse($result, 'Should return false after max retries');
-        $this->assertSame(3, $attempt, 'Should have attempted 3 times');
+        self::assertFalse($result, 'Should return false after max retries');
+        self::assertSame(3, $attempt, 'Should have attempted 3 times');
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);

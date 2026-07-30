@@ -20,10 +20,10 @@ final class FindQueriesTest extends Base
 
         $result = $this->repo->findWithStepsBySubmission($subId);
 
-        $this->assertCount(1, $result);
-        $this->assertSame('validator@test.com', $result[0]['email']);
-        $this->assertSame('Étape 1', $result[0]['step_label']);
-        $this->assertSame(1, $result[0]['ordre']);
+        self::assertCount(1, $result);
+        self::assertSame('validator@test.com', $result[0]['email']);
+        self::assertSame('Étape 1', $result[0]['step_label']);
+        self::assertSame(1, $result[0]['ordre']);
     }
 
     public function testFindWithStepsBySubmissionOrdersByStepOrdre(): void
@@ -40,15 +40,15 @@ final class FindQueriesTest extends Base
 
         $result = $this->repo->findWithStepsBySubmission($subId);
 
-        $this->assertCount(2, $result);
-        $this->assertSame('first@test.com', $result[0]['email']);
-        $this->assertSame('second@test.com', $result[1]['email']);
+        self::assertCount(2, $result);
+        self::assertSame('first@test.com', $result[0]['email']);
+        self::assertSame('second@test.com', $result[1]['email']);
     }
 
     public function testFindWithStepsBySubmissionReturnsEmptyForUnknownSubmission(): void
     {
         $result = $this->repo->findWithStepsBySubmission('nonexistent');
-        $this->assertSame([], $result);
+        self::assertSame([], $result);
     }
 
     // ── findDetailedWithStepsBySubmission() ─────────────────────
@@ -61,11 +61,11 @@ final class FindQueriesTest extends Base
 
         $result = $this->repo->findDetailedWithStepsBySubmission($subId);
 
-        $this->assertCount(1, $result);
-        $this->assertSame($subId, $result[0]['submission_id']);
-        $this->assertNotNull($result[0]['done_at']);
-        $this->assertArrayHasKey('relance_count', $result[0]);
-        $this->assertArrayHasKey('expires_at', $result[0]);
+        self::assertCount(1, $result);
+        self::assertSame($subId, $result[0]['submission_id']);
+        self::assertNotNull($result[0]['done_at']);
+        self::assertArrayHasKey('relance_count', $result[0]);
+        self::assertArrayHasKey('expires_at', $result[0]);
     }
 
     public function testFindDetailedWithStepsBySubmissionOrdersBySentAtWithinSameStep(): void
@@ -77,9 +77,9 @@ final class FindQueriesTest extends Base
 
         $result = $this->repo->findDetailedWithStepsBySubmission($subId);
 
-        $this->assertCount(2, $result);
-        $this->assertSame('earlier@test.com', $result[0]['email']);
-        $this->assertSame('later@test.com', $result[1]['email']);
+        self::assertCount(2, $result);
+        self::assertSame('earlier@test.com', $result[0]['email']);
+        self::assertSame('later@test.com', $result[1]['email']);
     }
 
     // ── findBySubmissionIds() ────────────────────────────────────
@@ -94,15 +94,15 @@ final class FindQueriesTest extends Base
 
         $result = $this->repo->findBySubmissionIds([$sub1, $sub2]);
 
-        $this->assertArrayHasKey($sub1, $result);
-        $this->assertArrayHasKey($sub2, $result);
-        $this->assertCount(1, $result[$sub1]);
-        $this->assertSame('a@test.com', $result[$sub1][0]['email']);
+        self::assertArrayHasKey($sub1, $result);
+        self::assertArrayHasKey($sub2, $result);
+        self::assertCount(1, $result[$sub1]);
+        self::assertSame('a@test.com', $result[$sub1][0]['email']);
     }
 
     public function testFindBySubmissionIdsReturnsEmptyArrayForEmptyInput(): void
     {
-        $this->assertSame([], $this->repo->findBySubmissionIds([]));
+        self::assertSame([], $this->repo->findBySubmissionIds([]));
     }
 
     // ── existsForSubmissionAndEmail() ────────────────────────────
@@ -113,7 +113,7 @@ final class FindQueriesTest extends Base
         $subId = $this->createSubmission($formId);
         $this->createToken($subId, $stepId, 'present@test.com');
 
-        $this->assertTrue($this->repo->existsForSubmissionAndEmail($subId, 'present@test.com'));
+        self::assertTrue($this->repo->existsForSubmissionAndEmail($subId, 'present@test.com'));
     }
 
     public function testExistsForSubmissionAndEmailReturnsFalseWhenAbsent(): void
@@ -122,7 +122,7 @@ final class FindQueriesTest extends Base
         $subId = $this->createSubmission($formId);
         $this->createToken($subId, $stepId, 'present@test.com');
 
-        $this->assertFalse($this->repo->existsForSubmissionAndEmail($subId, 'absent@test.com'));
+        self::assertFalse($this->repo->existsForSubmissionAndEmail($subId, 'absent@test.com'));
     }
 
     // ── findEmailAndStepLabelById() ──────────────────────────────
@@ -135,14 +135,14 @@ final class FindQueriesTest extends Base
 
         $result = $this->repo->findEmailAndStepLabelById($tokenId);
 
-        $this->assertNotNull($result);
-        $this->assertSame('lookup@test.com', $result['email']);
-        $this->assertSame('Étape validation', $result['step_label']);
+        self::assertNotNull($result);
+        self::assertSame('lookup@test.com', $result['email']);
+        self::assertSame('Étape validation', $result['step_label']);
     }
 
     public function testFindEmailAndStepLabelByIdReturnsNullForUnknownToken(): void
     {
-        $this->assertNull($this->repo->findEmailAndStepLabelById('nonexistent'));
+        self::assertNull($this->repo->findEmailAndStepLabelById('nonexistent'));
     }
 
     // ── findForExport() ───────────────────────────────────────────
@@ -155,16 +155,16 @@ final class FindQueriesTest extends Base
 
         $result = $this->repo->findForExport($subId);
 
-        $this->assertCount(1, $result);
-        $this->assertSame($stepId, $result[0]['step_id']);
-        $this->assertSame('export@test.com', $result[0]['email']);
-        $this->assertArrayHasKey('sent_at', $result[0]);
-        $this->assertArrayHasKey('done_at', $result[0]);
-        $this->assertArrayHasKey('expires_at', $result[0]);
+        self::assertCount(1, $result);
+        self::assertSame($stepId, $result[0]['step_id']);
+        self::assertSame('export@test.com', $result[0]['email']);
+        self::assertArrayHasKey('sent_at', $result[0]);
+        self::assertArrayHasKey('done_at', $result[0]);
+        self::assertArrayHasKey('expires_at', $result[0]);
     }
 
     public function testFindForExportReturnsEmptyForUnknownSubmission(): void
     {
-        $this->assertSame([], $this->repo->findForExport('nonexistent'));
+        self::assertSame([], $this->repo->findForExport('nonexistent'));
     }
 }

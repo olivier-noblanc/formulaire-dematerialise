@@ -62,24 +62,24 @@ final class FieldServiceTest extends TestCase
     public function testGetFieldsReturnsArray(): void
     {
         $fields = $this->fields->getFields($this->testFormId);
-        $this->assertIsArray($fields);
-        $this->assertNotEmpty($fields);
+        self::assertIsArray($fields);
+        self::assertNotEmpty($fields);
     }
 
     public function testGetFieldsWithFilledByFilter(): void
     {
         $fields = $this->fields->getFields($this->testFormId, 'validator');
-        $this->assertIsArray($fields);
+        self::assertIsArray($fields);
         foreach ($fields as $field) {
-            $this->assertSame('validator', $field['filled_by']);
+            self::assertSame('validator', $field['filled_by']);
         }
     }
 
     public function testGetFieldsWithNonexistentFormReturnsEmpty(): void
     {
         $fields = $this->fields->getFields('nonexistent-form-id');
-        $this->assertIsArray($fields);
-        $this->assertEmpty($fields);
+        self::assertIsArray($fields);
+        self::assertEmpty($fields);
     }
 
     // ── getValidatorFields ─────────────────────────────────────
@@ -87,23 +87,23 @@ final class FieldServiceTest extends TestCase
     public function testGetValidatorFieldsReturnsArray(): void
     {
         $fields = $this->fields->getValidatorFields($this->testFormId);
-        $this->assertIsArray($fields);
-        $this->assertNotEmpty($fields);
+        self::assertIsArray($fields);
+        self::assertNotEmpty($fields);
         foreach ($fields as $field) {
-            $this->assertSame('validator', $field['filled_by']);
+            self::assertSame('validator', $field['filled_by']);
         }
     }
 
     public function testGetValidatorFieldsWithStepId(): void
     {
         $fields = $this->fields->getValidatorFields($this->testFormId, $this->testStepId);
-        $this->assertIsArray($fields);
+        self::assertIsArray($fields);
     }
 
     public function testGetValidatorFieldsWithEmptyStepId(): void
     {
         $fields = $this->fields->getValidatorFields($this->testFormId, '');
-        $this->assertIsArray($fields);
+        self::assertIsArray($fields);
     }
 
     // ── getValidatorData ───────────────────────────────────────
@@ -111,19 +111,19 @@ final class FieldServiceTest extends TestCase
     public function testGetValidatorDataReturnsArray(): void
     {
         $data = $this->fields->getValidatorData($this->testSubmissionId);
-        $this->assertIsArray($data);
+        self::assertIsArray($data);
     }
 
     public function testGetValidatorDataWithStepId(): void
     {
         $data = $this->fields->getValidatorData($this->testSubmissionId, $this->testStepId);
-        $this->assertIsArray($data);
+        self::assertIsArray($data);
     }
 
     public function testGetValidatorDataWithEmptyStepId(): void
     {
         $data = $this->fields->getValidatorData($this->testSubmissionId, '');
-        $this->assertIsArray($data);
+        self::assertIsArray($data);
     }
 
     // ── saveValidatorData ──────────────────────────────────────
@@ -143,11 +143,11 @@ final class FieldServiceTest extends TestCase
         foreach ($data as $row) {
             if ($row['field_name'] === $this->testFieldName) {
                 $found = true;
-                $this->assertSame('test_value', $row['value']);
-                $this->assertSame('validator', $row['filled_by']);
+                self::assertSame('test_value', $row['value']);
+                self::assertSame('validator', $row['filled_by']);
             }
         }
-        $this->assertTrue($found, 'Saved validator data should be retrievable');
+        self::assertTrue($found, 'Saved validator data should be retrievable');
     }
 
     public function testSaveValidatorDataUpsertsExistingRecord(): void
@@ -170,9 +170,9 @@ final class FieldServiceTest extends TestCase
 
         $data = $this->fields->getValidatorData($this->testSubmissionId);
         $matchingRows = array_filter($data, fn($row) => $row['field_name'] === $this->testFieldName);
-        $this->assertCount(1, $matchingRows, 'UPSERT should not create duplicate records');
+        self::assertCount(1, $matchingRows, 'UPSERT should not create duplicate records');
         $row = array_values($matchingRows)[0];
-        $this->assertSame('updated_value', $row['value']);
+        self::assertSame('updated_value', $row['value']);
     }
 
     public function testSaveValidatorDataWithStepLabel(): void
@@ -189,7 +189,7 @@ final class FieldServiceTest extends TestCase
         $data = $this->fields->getValidatorData($this->testSubmissionId);
         foreach ($data as $row) {
             if ($row['field_name'] === $this->testFieldName) {
-                $this->assertSame('Custom Step Label', $row['step_label']);
+                self::assertSame('Custom Step Label', $row['step_label']);
             }
         }
     }
@@ -208,7 +208,7 @@ final class FieldServiceTest extends TestCase
         $data = $this->fields->getValidatorData($this->testSubmissionId);
         foreach ($data as $row) {
             if ($row['field_name'] === $this->testFieldName) {
-                $this->assertSame('Étape Test', $row['step_label']);
+                self::assertSame('Étape Test', $row['step_label']);
             }
         }
     }
@@ -227,8 +227,8 @@ final class FieldServiceTest extends TestCase
         $data = $this->fields->getValidatorData($this->testSubmissionId);
         foreach ($data as $row) {
             if ($row['field_name'] === $this->testFieldName) {
-                $this->assertSame('no_step', $row['value']);
-                $this->assertNull($row['step_id']);
+                self::assertSame('no_step', $row['value']);
+                self::assertNull($row['step_id']);
             }
         }
     }
@@ -249,8 +249,8 @@ final class FieldServiceTest extends TestCase
         $data = $this->fields->getValidatorData($this->testSubmissionId);
         foreach ($data as $row) {
             if ($row['field_name'] === $this->testFieldName) {
-                $this->assertSame('validator@test.com', $row['filled_by_email']);
-                $this->assertSame('token-abc-123', $row['token_id']);
+                self::assertSame('validator@test.com', $row['filled_by_email']);
+                self::assertSame('token-abc-123', $row['token_id']);
             }
         }
     }
@@ -275,7 +275,7 @@ final class FieldServiceTest extends TestCase
                 $foundBefore = true;
             }
         }
-        $this->assertTrue($foundBefore, 'Record should exist before deletion');
+        self::assertTrue($foundBefore, 'Record should exist before deletion');
 
         // Delete
         $this->fields->deleteValidatorData($this->testSubmissionId, $this->testFieldName);
@@ -288,14 +288,14 @@ final class FieldServiceTest extends TestCase
                 $foundAfter = true;
             }
         }
-        $this->assertFalse($foundAfter, 'Record should be deleted');
+        self::assertFalse($foundAfter, 'Record should be deleted');
     }
 
     public function testDeleteValidatorDataDoesNothingForNonexistentRecord(): void
     {
         // Should not throw
         $this->fields->deleteValidatorData('nonexistent-submission', 'nonexistent-field');
-        $this->assertTrue(true, 'Deleting nonexistent record should not throw');
+        self::assertTrue(true, 'Deleting nonexistent record should not throw');
     }
 
 }

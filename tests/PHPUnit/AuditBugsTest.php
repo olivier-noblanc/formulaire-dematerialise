@@ -70,15 +70,15 @@ final class AuditBugsTest extends TestCase
 
         // Vérifier que la soumission est TOUJOURS en_cours
         $sub = $this->subRepo->findByIdWithForm($subId);
-        $this->assertNotNull($sub);
-        $this->assertSame(SubmissionStatus::EnCours->value, $sub['status']);
-        $this->assertNull($sub['closed_at']);
+        self::assertNotNull($sub);
+        self::assertSame(SubmissionStatus::EnCours->value, $sub['status']);
+        self::assertNull($sub['closed_at']);
 
         // Vérifier qu'un audit_log 'workflow_stalled' a été créé
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log WHERE action = 'workflow_stalled' AND target = ?");
         $stmt->execute(['submission:' . $subId]);
-        $this->assertGreaterThan(0, (int) $stmt->fetchColumn(), 'audit_log workflow_stalled doit être créé');
+        self::assertGreaterThan(0, (int) $stmt->fetchColumn(), 'audit_log workflow_stalled doit être créé');
     }
 
     public function testAdvanceWorkflowNoActiveStepsDoesNotClose(): void
@@ -90,12 +90,12 @@ final class AuditBugsTest extends TestCase
         $this->workflow->advanceWorkflow($subId);
 
         $sub = $this->subRepo->findByIdWithForm($subId);
-        $this->assertSame(SubmissionStatus::EnCours->value, $sub['status'], 'ne doit pas clôturer une soumission sans étape');
+        self::assertSame(SubmissionStatus::EnCours->value, $sub['status'], 'ne doit pas clôturer une soumission sans étape');
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log WHERE action = 'workflow_no_steps' AND target = ?");
         $stmt->execute(['submission:' . $subId]);
-        $this->assertGreaterThan(0, (int) $stmt->fetchColumn(), 'audit_log workflow_no_steps doit être créé');
+        self::assertGreaterThan(0, (int) $stmt->fetchColumn(), 'audit_log workflow_no_steps doit être créé');
     }
 
     // ── B-V1 : validateToken refuse les tokens invalidés ─────────────────
@@ -115,7 +115,7 @@ final class AuditBugsTest extends TestCase
         // validateToken doit retourner already_done, pas 'ok'
         $result = $this->workflow->validateToken($token, ValidationAction::Valider->value);
 
-        $this->assertContains(
+        self::assertContains(
             $result['status'],
             ['already_done', 'invalid'],
             "Token invalidé doit être refusé. Reçu : " . ($result['status'] ?? '?')
@@ -123,7 +123,7 @@ final class AuditBugsTest extends TestCase
 
         // La soumission doit rester en_cours
         $sub = $this->subRepo->findByIdWithForm($subId);
-        $this->assertSame(SubmissionStatus::EnCours->value, $sub['status']);
+        self::assertSame(SubmissionStatus::EnCours->value, $sub['status']);
     }
 
     // ── Mutant Infection #6 : valider/refuser inversé ─────────────────────
@@ -135,7 +135,7 @@ final class AuditBugsTest extends TestCase
         $token = $this->createToken($subId, $stepId, 'validator-ok@test.com');
 
         $result = $this->workflow->validateToken($token, ValidationAction::Valider->value);
-        $this->assertSame('ok', $result['status'], "Valider doit retourner ok, pas autre chose");
+        self::assertSame('ok', $result['status'], "Valider doit retourner ok, pas autre chose");
     }
 
     public function testValidateTokenRefuserActionSendsRefusedEmail(): void
@@ -147,15 +147,15 @@ final class AuditBugsTest extends TestCase
         $beforeMails = count($GLOBALS['_test_mails'] ?? []);
         $result = $this->workflow->validateToken($token, ValidationAction::Refuser->value, 'Motif test');
 
-        $this->assertSame('ok', $result['status']);
-        $this->assertSame(SubmissionStatus::Refuse->value, $this->subRepo->findByIdWithForm($subId)['status']);
+        self::assertSame('ok', $result['status']);
+        self::assertSame(SubmissionStatus::Refuse->value, $this->subRepo->findByIdWithForm($subId)['status']);
 
         // Vérifier qu'un email a été envoyé à l'agent pour le refus
         $afterMails = $GLOBALS['_test_mails'] ?? [];
-        $this->assertGreaterThan($beforeMails, count($afterMails), 'un email doit partir');
+        self::assertGreaterThan($beforeMails, count($afterMails), 'un email doit partir');
         $lastMail = end($afterMails);
-        $this->assertSame('refuser-agent@test.com', $lastMail['to']);
-        $this->assertStringContainsString('refusée', $lastMail['subject']);
+        self::assertSame('refuser-agent@test.com', $lastMail['to']);
+        self::assertStringContainsString('refusée', $lastMail['subject']);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────

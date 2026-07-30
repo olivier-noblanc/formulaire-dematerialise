@@ -19,42 +19,42 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateEmailValid(): void
     {
-        $this->assertSame('test@example.com', $this->service->validateEmail('test@example.com'));
+        self::assertSame('test@example.com', $this->service->validateEmail('test@example.com'));
     }
 
     public function testValidateEmailNormalizesCase(): void
     {
-        $this->assertSame('test@example.com', $this->service->validateEmail('  TEST@Example.COM  '));
+        self::assertSame('test@example.com', $this->service->validateEmail('  TEST@Example.COM  '));
     }
 
     public function testValidateEmailInvalidReturnsEmpty(): void
     {
-        $this->assertSame('', $this->service->validateEmail('not-an-email'));
-        $this->assertSame('', $this->service->validateEmail(''));
-        $this->assertSame('', $this->service->validateEmail('@example.com'));
+        self::assertSame('', $this->service->validateEmail('not-an-email'));
+        self::assertSame('', $this->service->validateEmail(''));
+        self::assertSame('', $this->service->validateEmail('@example.com'));
     }
 
     // ── sanitize() ───────────────────────────────────────────────
 
     public function testSanitizeTrimsWhitespace(): void
     {
-        $this->assertSame('hello', $this->service->sanitize('  hello  '));
+        self::assertSame('hello', $this->service->sanitize('  hello  '));
     }
 
     public function testSanitizeEscapesHtml(): void
     {
-        $this->assertSame('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', $this->service->sanitize('<script>alert("xss")</script>'));
+        self::assertSame('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', $this->service->sanitize('<script>alert("xss")</script>'));
     }
 
     public function testSanitizeStripsSlashes(): void
     {
-        $this->assertSame('it&#039;s', $this->service->sanitize("it\\'s"));
+        self::assertSame('it&#039;s', $this->service->sanitize("it\\'s"));
     }
 
     public function testSanitizeHandlesQuotes(): void
     {
         $result = $this->service->sanitize('say "hello"');
-        $this->assertSame('say &quot;hello&quot;', $result);
+        self::assertSame('say &quot;hello&quot;', $result);
     }
 
     // ── validate() — uuid ────────────────────────────────────────
@@ -62,7 +62,7 @@ final class ValidationServiceTest extends TestCase
     public function testValidateUuidValid(): void
     {
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
-        $this->assertSame(strtolower($uuid), $this->service->validate($uuid, 'uuid'));
+        self::assertSame(strtolower($uuid), $this->service->validate($uuid, 'uuid'));
     }
 
     public function testValidateUuidInvalidThrows(): void
@@ -74,14 +74,14 @@ final class ValidationServiceTest extends TestCase
     public function testValidateUuidUppercaseNormalized(): void
     {
         $uuid = '550E8400-E29B-41D4-A716-446655440000';
-        $this->assertSame(strtolower($uuid), $this->service->validate($uuid, 'uuid'));
+        self::assertSame(strtolower($uuid), $this->service->validate($uuid, 'uuid'));
     }
 
     // ── validate() — email ───────────────────────────────────────
 
     public function testValidateEmailRuleValid(): void
     {
-        $this->assertSame('test@example.com', $this->service->validate('TEST@EXAMPLE.COM', 'email'));
+        self::assertSame('test@example.com', $this->service->validate('TEST@EXAMPLE.COM', 'email'));
     }
 
     public function testValidateEmailRuleInvalidThrows(): void
@@ -98,16 +98,16 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateEmailMaxLengthValid(): void
     {
-        $this->assertSame('test@example.com', $this->service->validate('test@example.com', 'email', ['max_length' => 50]));
+        self::assertSame('test@example.com', $this->service->validate('test@example.com', 'email', ['max_length' => 50]));
     }
 
     // ── validate() — slug ────────────────────────────────────────
 
     public function testValidateSlugValid(): void
     {
-        $this->assertSame('onboarding', $this->service->validate('onboarding', 'slug'));
-        $this->assertSame('acces-si', $this->service->validate('acces-si', 'slug'));
-        $this->assertSame('test_form', $this->service->validate('test_form', 'slug'));
+        self::assertSame('onboarding', $this->service->validate('onboarding', 'slug'));
+        self::assertSame('acces-si', $this->service->validate('acces-si', 'slug'));
+        self::assertSame('test_form', $this->service->validate('test_form', 'slug'));
     }
 
     public function testValidateSlugInvalidThrows(): void
@@ -120,7 +120,7 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateActionValid(): void
     {
-        $this->assertSame('add_form', $this->service->validate('add_form', 'action'));
+        self::assertSame('add_form', $this->service->validate('add_form', 'action'));
     }
 
     public function testValidateActionInvalidThrows(): void
@@ -133,8 +133,8 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateStatusValid(): void
     {
-        $this->assertSame('en_cours', $this->service->validate('en_cours', 'status'));
-        $this->assertSame('valide', $this->service->validate('valide', 'status'));
+        self::assertSame('en_cours', $this->service->validate('en_cours', 'status'));
+        self::assertSame('valide', $this->service->validate('valide', 'status'));
     }
 
     public function testValidateStatusInvalidThrows(): void
@@ -145,7 +145,7 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateStatusCustomAllowedValues(): void
     {
-        $this->assertSame('custom', $this->service->validate('custom', 'status', [
+        self::assertSame('custom', $this->service->validate('custom', 'status', [
             'allowed_values' => ['custom', 'other'],
         ]));
     }
@@ -154,12 +154,12 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateAlphaNumValid(): void
     {
-        $this->assertSame('Hello World 123', $this->service->validate('Hello World 123', 'alpha_num'));
+        self::assertSame('Hello World 123', $this->service->validate('Hello World 123', 'alpha_num'));
     }
 
     public function testValidateAlphaNumWithAccents(): void
     {
-        $this->assertSame('café résumé', $this->service->validate('café résumé', 'alpha_num'));
+        self::assertSame('café résumé', $this->service->validate('café résumé', 'alpha_num'));
     }
 
     public function testValidateAlphaNumInvalidThrows(): void
@@ -172,7 +172,7 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateIntValid(): void
     {
-        $this->assertSame(42, $this->service->validate('42', 'int'));
+        self::assertSame(42, $this->service->validate('42', 'int'));
     }
 
     public function testValidateIntInvalidThrows(): void
@@ -197,7 +197,7 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateDateValid(): void
     {
-        $this->assertSame('2026-01-15', $this->service->validate('2026-01-15', 'date'));
+        self::assertSame('2026-01-15', $this->service->validate('2026-01-15', 'date'));
     }
 
     public function testValidateDateInvalidFormatThrows(): void
@@ -217,7 +217,7 @@ final class ValidationServiceTest extends TestCase
     public function testValidateTokenValid(): void
     {
         $token = str_repeat('a', 64);
-        $this->assertSame($token, $this->service->validate($token, 'token'));
+        self::assertSame($token, $this->service->validate($token, 'token'));
     }
 
     public function testValidateTokenInvalidThrows(): void
@@ -230,7 +230,7 @@ final class ValidationServiceTest extends TestCase
 
     public function testValidateUnknownRulePassesThrough(): void
     {
-        $this->assertSame('hello', $this->service->validate('hello', 'unknown_rule'));
+        self::assertSame('hello', $this->service->validate('hello', 'unknown_rule'));
     }
 
     // ── DI container integration ─────────────────────────────────
@@ -240,7 +240,7 @@ final class ValidationServiceTest extends TestCase
         $app = \App\Core\App::getInstance();
         $svc = new ValidationService();
         $app->set(ValidationService::class, $svc);
-        $this->assertSame($svc, $app->get(ValidationService::class));
+        self::assertSame($svc, $app->get(ValidationService::class));
     }
 
     public function testServiceStaticAccessor(): void
@@ -248,6 +248,6 @@ final class ValidationServiceTest extends TestCase
         $app = \App\Core\App::getInstance();
         $app->set(ValidationService::class, new ValidationService());
         // Verify it's retrievable — App::validation() accessor exists
-        $this->assertTrue($app->has(ValidationService::class));
+        self::assertTrue($app->has(ValidationService::class));
     }
 }

@@ -17,7 +17,7 @@ final class GetWorkflowStepsTest extends Base
 
         if ($formId) {
             $steps = $this->workflow->getWorkflowSteps($formId);
-            $this->assertIsArray($steps);
+            self::assertIsArray($steps);
         }
     }
 
@@ -26,24 +26,24 @@ final class GetWorkflowStepsTest extends Base
         [$formId] = $this->createTestForm();
 
         $steps = $this->workflow->getWorkflowSteps($formId);
-        $this->assertArrayHasKey('step_id', $steps[0]);
-        $this->assertArrayHasKey('step_label', $steps[0]);
-        $this->assertArrayHasKey('ordre', $steps[0]);
-        $this->assertArrayHasKey('actif', $steps[0]);
+        self::assertArrayHasKey('step_id', $steps[0]);
+        self::assertArrayHasKey('step_label', $steps[0]);
+        self::assertArrayHasKey('ordre', $steps[0]);
+        self::assertArrayHasKey('actif', $steps[0]);
     }
 
     public function testGetWorkflowStepsReturnsEmptyForNonexistentForm(): void
     {
         $steps = $this->workflow->getWorkflowSteps('nonexistent-form-id');
-        $this->assertIsArray($steps);
-        $this->assertEmpty($steps);
+        self::assertIsArray($steps);
+        self::assertEmpty($steps);
     }
 
     public function testGetWorkflowStepsReturnsEmptyForEmptyFormId(): void
     {
         $steps = $this->workflow->getWorkflowSteps('');
-        $this->assertIsArray($steps);
-        $this->assertEmpty($steps);
+        self::assertIsArray($steps);
+        self::assertEmpty($steps);
     }
 
     public function testGetWorkflowStepsReturnsConditionField(): void
@@ -51,7 +51,7 @@ final class GetWorkflowStepsTest extends Base
         [$formId] = $this->createTestForm();
 
         $steps = $this->workflow->getWorkflowSteps($formId);
-        $this->assertArrayHasKey('condition', $steps[0]);
+        self::assertArrayHasKey('condition', $steps[0]);
     }
 
     public function testGetWorkflowStepsReturnsRecipientEmailsField(): void
@@ -59,7 +59,7 @@ final class GetWorkflowStepsTest extends Base
         [$formId] = $this->createTestForm();
 
         $steps = $this->workflow->getWorkflowSteps($formId);
-        $this->assertArrayHasKey('recipient_emails', $steps[0]);
+        self::assertArrayHasKey('recipient_emails', $steps[0]);
     }
 
     // ── getWorkflowSteps caching ─────────────────────────────────
@@ -70,7 +70,7 @@ final class GetWorkflowStepsTest extends Base
 
         $first = $this->workflow->getWorkflowSteps($formId);
         $second = $this->workflow->getWorkflowSteps($formId);
-        $this->assertSame($first, $second);
+        self::assertSame($first, $second);
     }
 
     // ── getWorkflowSteps: ordering ──────────────────────────────
@@ -85,12 +85,12 @@ final class GetWorkflowStepsTest extends Base
         $this->createdIds['steps'][] = $step2Id;
 
         $steps = $this->workflow->getWorkflowSteps($formId);
-        $this->assertGreaterThanOrEqual(2, count($steps));
+        self::assertGreaterThanOrEqual(2, count($steps));
 
         $ordres = array_column($steps, 'ordre');
         $sortedOrdres = $ordres;
         sort($sortedOrdres);
-        $this->assertSame($sortedOrdres, $ordres);
+        self::assertSame($sortedOrdres, $ordres);
     }
 
     public function testGetWorkflowStepsOrderingByOrdreThenId(): void
@@ -107,7 +107,7 @@ final class GetWorkflowStepsTest extends Base
         for ($i = 0; $i < count($steps) - 1; $i++) {
             $current = (int) $steps[$i]['ordre'];
             $next = (int) $steps[$i + 1]['ordre'];
-            $this->assertLessThanOrEqual($next, $current);
+            self::assertLessThanOrEqual($next, $current);
         }
     }
 
@@ -119,9 +119,9 @@ final class GetWorkflowStepsTest extends Base
 
         $steps = $this->workflow->getWorkflowSteps($formId);
         foreach ($steps as $step) {
-            $this->assertArrayHasKey('condition', $step);
-            $this->assertArrayHasKey('actif', $step);
-            $this->assertSame(1, (int) $step['actif']);
+            self::assertArrayHasKey('condition', $step);
+            self::assertArrayHasKey('actif', $step);
+            self::assertSame(1, (int) $step['actif']);
         }
     }
 
@@ -131,7 +131,7 @@ final class GetWorkflowStepsTest extends Base
 
         $steps = $this->workflow->getWorkflowSteps($formId);
         foreach ($steps as $step) {
-            $this->assertSame(1, (int) $step['actif']);
+            self::assertSame(1, (int) $step['actif']);
         }
     }
 
@@ -154,8 +154,8 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps((string) $formId);
         $stepIds = array_column($steps, 'step_id');
 
-        $this->assertContains($activeStepId, $stepIds);
-        $this->assertNotContains($inactiveStepId, $stepIds);
+        self::assertContains($activeStepId, $stepIds);
+        self::assertNotContains($inactiveStepId, $stepIds);
 
         $pdo->prepare("DELETE FROM steps WHERE form_id = ?")->execute([$formId]);
         $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
@@ -170,7 +170,7 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertArrayHasKey('condition', $step);
+            self::assertArrayHasKey('condition', $step);
         }
     }
 
@@ -180,7 +180,7 @@ final class GetWorkflowStepsTest extends Base
 
         $steps = $this->workflow->getWorkflowSteps($formId);
         foreach ($steps as $step) {
-            $this->assertArrayHasKey('recipient_emails', $step);
+            self::assertArrayHasKey('recipient_emails', $step);
         }
     }
 
@@ -193,8 +193,8 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertIsString($step['step_id']);
-            $this->assertNotEmpty($step['step_id']);
+            self::assertIsString($step['step_id']);
+            self::assertNotEmpty($step['step_id']);
         }
     }
 
@@ -205,7 +205,7 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertIsString($step['step_label']);
+            self::assertIsString($step['step_label']);
         }
     }
 
@@ -216,7 +216,7 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertIsNumeric($step['ordre']);
+            self::assertIsNumeric($step['ordre']);
         }
     }
 
@@ -229,9 +229,9 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertArrayHasKey('step_id', $step, 'getWorkflowSteps must return step_id key (not id)');
-            $this->assertIsString($step['step_id']);
-            $this->assertNotEmpty($step['step_id']);
+            self::assertArrayHasKey('step_id', $step, 'getWorkflowSteps must return step_id key (not id)');
+            self::assertIsString($step['step_id']);
+            self::assertNotEmpty($step['step_id']);
         }
     }
 
@@ -242,8 +242,8 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertArrayHasKey('step_label', $step, 'getWorkflowSteps must return step_label key (not label)');
-            $this->assertIsString($step['step_label']);
+            self::assertArrayHasKey('step_label', $step, 'getWorkflowSteps must return step_label key (not label)');
+            self::assertIsString($step['step_label']);
         }
     }
 
@@ -254,8 +254,8 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertArrayNotHasKey('id', $step, 'getWorkflowSteps must NOT return legacy "id" key (use step_id)');
-            $this->assertArrayNotHasKey('label', $step, 'getWorkflowSteps must NOT return legacy "label" key (use step_label)');
+            self::assertArrayNotHasKey('id', $step, 'getWorkflowSteps must NOT return legacy "id" key (use step_id)');
+            self::assertArrayNotHasKey('label', $step, 'getWorkflowSteps must NOT return legacy "label" key (use step_label)');
         }
     }
 
@@ -268,7 +268,7 @@ final class GetWorkflowStepsTest extends Base
         $steps = $this->workflow->getWorkflowSteps($formId);
 
         foreach ($steps as $step) {
-            $this->assertSame(1, (int) $step['actif']);
+            self::assertSame(1, (int) $step['actif']);
         }
     }
 }

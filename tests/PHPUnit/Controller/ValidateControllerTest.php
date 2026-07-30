@@ -77,9 +77,9 @@ final class ValidateControllerTest extends TestCase
         // ou retourne du JSON avec result.status='invalid' via test_json_response
         if ($output !== null) {
             $status = $output['result']['status'] ?? ($output['result'] ?? null);
-            $this->assertSame('invalid', $status);
+            self::assertSame('invalid', $status);
         }
-        $this->assertTrue(true, 'Controller handle sans token ne doit pas crasher');
+        self::assertTrue(true, 'Controller handle sans token ne doit pas crasher');
     }
 
     public function testHandleGetWithInvalidTokenFormatReturnsInvalid(): void
@@ -91,9 +91,9 @@ final class ValidateControllerTest extends TestCase
 
         if ($output !== null) {
             $status = $output['result']['status'] ?? ($output['result'] ?? null);
-            $this->assertSame('invalid', $status);
+            self::assertSame('invalid', $status);
         }
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testHandleGetWithNonexistentTokenReturnsInvalid(): void
@@ -105,9 +105,9 @@ final class ValidateControllerTest extends TestCase
 
         if ($output !== null) {
             $status = $output['result']['status'] ?? ($output['result'] ?? null);
-            $this->assertSame('invalid', $status);
+            self::assertSame('invalid', $status);
         }
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testHandleGetWithValidTokenReturnsTokenContext(): void
@@ -121,9 +121,9 @@ final class ValidateControllerTest extends TestCase
 
         // Soit JSON avec result.status='ok'/'pending', soit HTML rendu
         if ($output !== null) {
-            $this->assertArrayHasKey('result', $output);
+            self::assertArrayHasKey('result', $output);
         }
-        $this->assertTrue(true, 'Token valide ne doit pas crasher');
+        self::assertTrue(true, 'Token valide ne doit pas crasher');
     }
 
     // ── POST ──────────────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ final class ValidateControllerTest extends TestCase
         if ($output !== null) {
             // Si JSON error : on vérifie le message
             if (isset($output['error'])) {
-                $this->assertStringContainsString('motif', $output['error']);
+                self::assertStringContainsString('motif', $output['error']);
             }
         }
 
@@ -155,7 +155,7 @@ final class ValidateControllerTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT status FROM submissions WHERE id = ?');
         $stmt->execute([$subId]);
-        $this->assertSame(SubmissionStatus::EnCours->value, $stmt->fetchColumn());
+        self::assertSame(SubmissionStatus::EnCours->value, $stmt->fetchColumn());
     }
 
     public function testHandlePostValiderWithValidTokenMarksDone(): void
@@ -176,7 +176,7 @@ final class ValidateControllerTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT done_at FROM tokens WHERE token = ?');
         $stmt->execute([$token]);
-        $this->assertNotNull($stmt->fetchColumn(), 'Token doit être marqué done_at après validation');
+        self::assertNotNull($stmt->fetchColumn(), 'Token doit être marqué done_at après validation');
     }
 
     public function testHandlePostRefuserWithMotifClosesSubmissionAsRefuse(): void
@@ -197,18 +197,18 @@ final class ValidateControllerTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT status FROM submissions WHERE id = ?');
         $stmt->execute([$subId]);
-        $this->assertSame(SubmissionStatus::Refuse->value, $stmt->fetchColumn(), 'Soumission doit être refuse');
+        self::assertSame(SubmissionStatus::Refuse->value, $stmt->fetchColumn(), 'Soumission doit être refuse');
 
         // Un email doit être envoyé à l'agent
         $foundAgentEmail = false;
         foreach ($GLOBALS['_test_mails'] ?? [] as $mail) {
             if ($mail['to'] === 'agent-refuse@test.com') {
                 $foundAgentEmail = true;
-                $this->assertStringContainsString('refus', $mail['subject']);
+                self::assertStringContainsString('refus', $mail['subject']);
                 break;
             }
         }
-        $this->assertTrue($foundAgentEmail, 'Agent doit recevoir un email de refus');
+        self::assertTrue($foundAgentEmail, 'Agent doit recevoir un email de refus');
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────

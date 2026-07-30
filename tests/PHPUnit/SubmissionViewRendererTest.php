@@ -29,15 +29,15 @@ final class SubmissionViewRendererTest extends TestCase
             ['step_status' => 'validated', 'step_label' => 'Directeur', 'ordre' => 1, 'tokens' => []],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
-        $this->assertStringContainsString('class="workflow-diagram"', $html);
-        $this->assertStringContainsString('class="wf-flow"', $html);
+        self::assertStringContainsString('class="workflow-diagram"', $html);
+        self::assertStringContainsString('class="wf-flow"', $html);
     }
 
     public function testRenderWorkflowDiagramContainsCardTitle(): void
     {
         $steps = [];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('Circuit de validation', $html);
+        self::assertStringContainsString('Circuit de validation', $html);
     }
 
     // ── CSS classes: validated ──────────────────────────────────
@@ -55,8 +55,8 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
-        $this->assertStringContainsString('class="wf-step validated"', $html);
-        $this->assertStringNotContainsString('class="wf-step done"', $html);
+        self::assertStringContainsString('class="wf-step validated"', $html);
+        self::assertStringNotContainsString('class="wf-step done"', $html);
     }
 
     // ── CSS classes: current ────────────────────────────────────
@@ -74,7 +74,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('class="wf-step current"', $html);
+        self::assertStringContainsString('class="wf-step current"', $html);
     }
 
     // ── CSS classes: upcoming ───────────────────────────────────
@@ -90,7 +90,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('class="wf-step upcoming"', $html);
+        self::assertStringContainsString('class="wf-step upcoming"', $html);
     }
 
     // ── CSS classes: refused ────────────────────────────────────
@@ -108,7 +108,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'refuse');
-        $this->assertStringContainsString('class="wf-step refused"', $html);
+        self::assertStringContainsString('class="wf-step refused"', $html);
     }
 
     // ── Sub-elements: wf-ordre, wf-label, wf-validators ────────
@@ -126,11 +126,11 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
-        $this->assertStringContainsString('class="wf-ordre"', $html);
-        $this->assertStringContainsString('Étape 3', $html);
-        $this->assertStringContainsString('class="wf-label"', $html);
-        $this->assertStringContainsString('Directeur', $html);
-        $this->assertStringContainsString('class="wf-validators"', $html);
+        self::assertStringContainsString('class="wf-ordre"', $html);
+        self::assertStringContainsString('Étape 3', $html);
+        self::assertStringContainsString('class="wf-label"', $html);
+        self::assertStringContainsString('Directeur', $html);
+        self::assertStringContainsString('class="wf-validators"', $html);
     }
 
     // ── No legacy classes ───────────────────────────────────────
@@ -149,8 +149,8 @@ final class SubmissionViewRendererTest extends TestCase
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
         // Vérifie que les anciennes classes CSS ne sont pas utilisées
-        $this->assertStringNotContainsString('wf-step-label', $html);
-        $this->assertStringNotContainsString('wf-step-detail', $html);
+        self::assertStringNotContainsString('wf-step-label', $html);
+        self::assertStringNotContainsString('wf-step-detail', $html);
     }
 
     // ── Step label escaping ─────────────────────────────────────
@@ -166,8 +166,8 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringNotContainsString('<script>', $html);
-        $this->assertStringContainsString('&lt;script&gt;', $html);
+        self::assertStringNotContainsString('<script>', $html);
+        self::assertStringContainsString('&lt;script&gt;', $html);
     }
 
     // ── Connector between steps ─────────────────────────────────
@@ -179,8 +179,8 @@ final class SubmissionViewRendererTest extends TestCase
             ['step_status' => 'current', 'step_label' => 'B', 'ordre' => 2, 'tokens' => []],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('class="wf-connector"', $html);
-        $this->assertStringContainsString('→', $html);
+        self::assertStringContainsString('class="wf-connector"', $html);
+        self::assertStringContainsString('→', $html);
     }
 
     // ── No connector before first step ──────────────────────────
@@ -191,7 +191,7 @@ final class SubmissionViewRendererTest extends TestCase
             ['step_status' => 'validated', 'step_label' => 'A', 'ordre' => 1, 'tokens' => []],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
-        $this->assertStringNotContainsString('wf-connector', $html);
+        self::assertStringNotContainsString('wf-connector', $html);
     }
 
     // ── Token icons ─────────────────────────────────────────────
@@ -209,7 +209,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
-        $this->assertStringContainsString('wf-check', $html);
+        self::assertStringContainsString('wf-check', $html);
     }
 
     public function testRenderWorkflowDiagramShowsPendingIconForCurrentTokens(): void
@@ -225,7 +225,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('wf-pending', $html);
+        self::assertStringContainsString('wf-pending', $html);
     }
 
     // ── Relance count ───────────────────────────────────────────
@@ -243,7 +243,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('3 rappels', $html);
+        self::assertStringContainsString('3 rappels', $html);
     }
 
     // ── Empty step: waiting message ─────────────────────────────
@@ -259,7 +259,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('En attente de démarrage', $html);
+        self::assertStringContainsString('En attente de démarrage', $html);
     }
 
     // ── Multiple steps: full structure ──────────────────────────
@@ -281,8 +281,8 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
-        $this->assertStringContainsString('Direction', $html);
-        $this->assertStringContainsString('class="wf-label"', $html);
+        self::assertStringContainsString('Direction', $html);
+        self::assertStringContainsString('class="wf-label"', $html);
     }
 
     public function testRenderWorkflowDiagramDoesNotRequireLabelOrIdKey(): void
@@ -299,7 +299,7 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringContainsString('Test', $html);
+        self::assertStringContainsString('Test', $html);
     }
 
     // ── REGRESSION: urlencode null TypeError ───────────────────
@@ -318,7 +318,7 @@ final class SubmissionViewRendererTest extends TestCase
         ];
         // Should not throw TypeError even with empty label
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertIsString($html);
+        self::assertIsString($html);
     }
 
     // ── REGRESSION: no legacy class wf-step-label in renderer ──
@@ -346,8 +346,8 @@ final class SubmissionViewRendererTest extends TestCase
             ],
         ];
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
-        $this->assertStringNotContainsString('wf-step-label', $html);
-        $this->assertStringContainsString('class="wf-label"', $html);
+        self::assertStringNotContainsString('wf-step-label', $html);
+        self::assertStringContainsString('class="wf-label"', $html);
     }
 
     // ── Multiple steps: full structure ──────────────────────────
@@ -381,23 +381,23 @@ final class SubmissionViewRendererTest extends TestCase
         $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
 
         // Les 3 étapes avec les bonnes classes
-        $this->assertStringContainsString('class="wf-step validated"', $html);
-        $this->assertStringContainsString('class="wf-step current"', $html);
-        $this->assertStringContainsString('class="wf-step upcoming"', $html);
+        self::assertStringContainsString('class="wf-step validated"', $html);
+        self::assertStringContainsString('class="wf-step current"', $html);
+        self::assertStringContainsString('class="wf-step upcoming"', $html);
 
         // Les labels
-        $this->assertStringContainsString('Directeur', $html);
-        $this->assertStringContainsString('Contrôleur', $html);
-        $this->assertStringContainsString('Comptable', $html);
+        self::assertStringContainsString('Directeur', $html);
+        self::assertStringContainsString('Contrôleur', $html);
+        self::assertStringContainsString('Comptable', $html);
 
         // Les connecteurs (2 entre 3 étapes)
         preg_match_all('/wf-connector/', $html, $connectors);
-        $this->assertCount(2, $connectors[0]);
+        self::assertCount(2, $connectors[0]);
 
         // La relance
-        $this->assertStringContainsString('1 rappel', $html);
+        self::assertStringContainsString('1 rappel', $html);
 
         // Le message d'attente pour l'étape vide
-        $this->assertStringContainsString('En attente de démarrage', $html);
+        self::assertStringContainsString('En attente de démarrage', $html);
     }
 }

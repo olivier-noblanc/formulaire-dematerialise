@@ -20,7 +20,7 @@ final class EmailVerificationServiceTest extends TestCase
 
     public function testConstructorCreatesInstance(): void
     {
-        $this->assertInstanceOf(EmailVerificationService::class, $this->service);
+        self::assertInstanceOf(EmailVerificationService::class, $this->service);
     }
 
     public function testServiceRegistrable(): void
@@ -28,13 +28,13 @@ final class EmailVerificationServiceTest extends TestCase
         $app = \App\Core\App::getInstance();
         $svc = new EmailVerificationService(new CacheService());
         $app->set(EmailVerificationService::class, $svc);
-        $this->assertSame($svc, $app->get(EmailVerificationService::class));
+        self::assertSame($svc, $app->get(EmailVerificationService::class));
     }
 
     public function testServiceRegistrableViaAppAccessor(): void
     {
         $app = \App\Core\App::getInstance();
-        $this->assertTrue($app->has(EmailVerificationService::class));
+        self::assertTrue($app->has(EmailVerificationService::class));
     }
 
     // ── verify() — format validation ───────────────────────────
@@ -42,46 +42,46 @@ final class EmailVerificationServiceTest extends TestCase
     public function testVerifyInvalidEmailReturnsError(): void
     {
         $result = $this->service->verify('not-an-email');
-        $this->assertFalse($result['ok']);
-        $this->assertSame('format', $result['method']);
-        $this->assertStringContainsString('invalide', $result['detail']);
+        self::assertFalse($result['ok']);
+        self::assertSame('format', $result['method']);
+        self::assertStringContainsString('invalide', $result['detail']);
     }
 
     public function testVerifyEmptyEmailReturnsError(): void
     {
         $result = $this->service->verify('');
-        $this->assertFalse($result['ok']);
-        $this->assertSame('format', $result['method']);
+        self::assertFalse($result['ok']);
+        self::assertSame('format', $result['method']);
     }
 
     public function testVerifyValidEmailFormatPassesFormatCheck(): void
     {
         $result = $this->service->verify('test@example.com');
-        $this->assertArrayHasKey('ok', $result);
-        $this->assertArrayHasKey('method', $result);
-        $this->assertArrayHasKey('detail', $result);
+        self::assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('method', $result);
+        self::assertArrayHasKey('detail', $result);
     }
 
     public function testVerifyEmailWithSpecialCharsPassesFormatCheck(): void
     {
         $result = $this->service->verify('user+tag@sub.domain.com');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
         // Format should be valid even if LDAP/SMTP fails
         if ($result['method'] === 'format') {
-            $this->assertFalse($result['ok']);
+            self::assertFalse($result['ok']);
         }
     }
 
     public function testVerifyEmailWithDotsInLocalPartPassesFormatCheck(): void
     {
         $result = $this->service->verify('first.last@example.com');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     public function testVerifyEmailWithUnderscoreInLocalPartPassesFormatCheck(): void
     {
         $result = $this->service->verify('user_name@example.com');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     // ── verify() — mode routing ─────────────────────────────────
@@ -90,20 +90,20 @@ final class EmailVerificationServiceTest extends TestCase
     {
         $result = $this->service->verify('test@example.com');
         if ($result['method'] === 'none') {
-            $this->assertTrue($result['ok']);
+            self::assertTrue($result['ok']);
         }
     }
 
     public function testVerifyResultStructure(): void
     {
         $result = $this->service->verify('test@example.com');
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('ok', $result);
-        $this->assertIsBool($result['ok']);
-        $this->assertArrayHasKey('method', $result);
-        $this->assertIsString($result['method']);
-        $this->assertArrayHasKey('detail', $result);
-        $this->assertIsString($result['detail']);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('ok', $result);
+        self::assertIsBool($result['ok']);
+        self::assertArrayHasKey('method', $result);
+        self::assertIsString($result['method']);
+        self::assertArrayHasKey('detail', $result);
+        self::assertIsString($result['detail']);
     }
 
     public function testVerifyReturnsOkTrueForNoneMode(): void
@@ -111,28 +111,28 @@ final class EmailVerificationServiceTest extends TestCase
         // Default test mode should be 'none'
         $result = $this->service->verify('test@example.com');
         if ($result['method'] === 'none') {
-            $this->assertTrue($result['ok']);
-            $this->assertStringContainsString('configurée', $result['detail']);
+            self::assertTrue($result['ok']);
+            self::assertStringContainsString('configurée', $result['detail']);
         }
     }
 
     public function testVerifyReturnsOkFalseForFormatInvalidEmail(): void
     {
         $result = $this->service->verify('invalid');
-        $this->assertFalse($result['ok']);
-        $this->assertSame('format', $result['method']);
+        self::assertFalse($result['ok']);
+        self::assertSame('format', $result['method']);
     }
 
     public function testVerifyReturnsOkForEmailWithSubdomain(): void
     {
         $result = $this->service->verify('user@mail.example.co.uk');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     public function testVerifyReturnsOkForEmailWithNumbers(): void
     {
         $result = $this->service->verify('user123@example.com');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     // ── verifyLdap() — basic checks ────────────────────────────
@@ -140,37 +140,37 @@ final class EmailVerificationServiceTest extends TestCase
     public function testVerifyLdapReturnsArray(): void
     {
         $result = $this->service->verifyLdap('test@example.com');
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('ok', $result);
-        $this->assertArrayHasKey('method', $result);
-        $this->assertArrayHasKey('detail', $result);
-        $this->assertSame('ldap', $result['method']);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('method', $result);
+        self::assertArrayHasKey('detail', $result);
+        self::assertSame('ldap', $result['method']);
     }
 
     public function testVerifyLdapReturnsOkFalseWhenNotConnected(): void
     {
         $result = $this->service->verifyLdap('test@example.com');
-        $this->assertFalse($result['ok']);
+        self::assertFalse($result['ok']);
     }
 
     public function testVerifyLdapReturnsMethodLdap(): void
     {
         $result = $this->service->verifyLdap('any@example.com');
-        $this->assertSame('ldap', $result['method']);
+        self::assertSame('ldap', $result['method']);
     }
 
     public function testVerifyLdapReturnsDetailString(): void
     {
         $result = $this->service->verifyLdap('test@example.com');
-        $this->assertIsString($result['detail']);
-        $this->assertNotEmpty($result['detail']);
+        self::assertIsString($result['detail']);
+        self::assertNotEmpty($result['detail']);
     }
 
     public function testVerifyLdapHandlesSpecialCharsInEmail(): void
     {
         $result = $this->service->verifyLdap('user+tag@example.com');
-        $this->assertIsArray($result);
-        $this->assertSame('ldap', $result['method']);
+        self::assertIsArray($result);
+        self::assertSame('ldap', $result['method']);
     }
 
     // ── verifySmtp() — basic checks ────────────────────────────
@@ -178,36 +178,36 @@ final class EmailVerificationServiceTest extends TestCase
     public function testVerifySmtpReturnsArray(): void
     {
         $result = $this->service->verifySmtp('test@example.com');
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('ok', $result);
-        $this->assertArrayHasKey('method', $result);
-        $this->assertArrayHasKey('detail', $result);
-        $this->assertSame('smtp', $result['method']);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('method', $result);
+        self::assertArrayHasKey('detail', $result);
+        self::assertSame('smtp', $result['method']);
     }
 
     public function testVerifySmtpReturnsOkFalseWhenNoHost(): void
     {
         $result = $this->service->verifySmtp('test@example.com');
-        $this->assertFalse($result['ok']);
+        self::assertFalse($result['ok']);
     }
 
     public function testVerifySmtpReturnsMethodSmtp(): void
     {
         $result = $this->service->verifySmtp('any@example.com');
-        $this->assertSame('smtp', $result['method']);
+        self::assertSame('smtp', $result['method']);
     }
 
     public function testVerifySmtpReturnsDetailString(): void
     {
         $result = $this->service->verifySmtp('test@example.com');
-        $this->assertIsString($result['detail']);
-        $this->assertNotEmpty($result['detail']);
+        self::assertIsString($result['detail']);
+        self::assertNotEmpty($result['detail']);
     }
 
     public function testVerifySmtpReturnsErrorDetail(): void
     {
         $result = $this->service->verifySmtp('test@example.com');
-        $this->assertNotEmpty($result['detail']);
+        self::assertNotEmpty($result['detail']);
     }
 
     // ── ldapSuggest() ───────────────────────────────────────────
@@ -215,51 +215,51 @@ final class EmailVerificationServiceTest extends TestCase
     public function testLdapSuggestReturnsArray(): void
     {
         $result = $this->service->ldapSuggest('test');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestWithEmptyQuery(): void
     {
         $result = $this->service->ldapSuggest('');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestLimitClamped(): void
     {
         $result = $this->service->ldapSuggest('test', 1000);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestNegativeLimitClamped(): void
     {
         $result = $this->service->ldapSuggest('test', -5);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestDefaultLimit(): void
     {
         // Default limit is 100
         $result = $this->service->ldapSuggest('test');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestZeroLimitClampedToOne(): void
     {
         $result = $this->service->ldapSuggest('test', 0);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestWithSpecialCharsInQuery(): void
     {
         $result = $this->service->ldapSuggest('test*()');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestReturnsEmptyWhenSuggestDisabled(): void
     {
         // ldap_suggest_enabled defaults to '0' in test environment
         $result = $this->service->ldapSuggest('test');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     // ── testVerification() ─────────────────────────────────────
@@ -267,66 +267,66 @@ final class EmailVerificationServiceTest extends TestCase
     public function testTestVerificationReturnsArray(): void
     {
         $result = $this->service->testVerification('test@example.com');
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('email', $result);
-        $this->assertArrayHasKey('mode', $result);
-        $this->assertArrayHasKey('format_valid', $result);
-        $this->assertArrayHasKey('verify', $result);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('email', $result);
+        self::assertArrayHasKey('mode', $result);
+        self::assertArrayHasKey('format_valid', $result);
+        self::assertArrayHasKey('verify', $result);
     }
 
     public function testTestVerificationInvalidEmail(): void
     {
         $result = $this->service->testVerification('not-email');
-        $this->assertFalse($result['format_valid']);
-        $this->assertSame('not-email', $result['email']);
+        self::assertFalse($result['format_valid']);
+        self::assertSame('not-email', $result['email']);
     }
 
     public function testTestVerificationValidEmail(): void
     {
         $result = $this->service->testVerification('user@example.com');
-        $this->assertTrue($result['format_valid']);
+        self::assertTrue($result['format_valid']);
     }
 
     public function testTestVerificationVerifyKeyHasCorrectStructure(): void
     {
         $result = $this->service->testVerification('test@example.com');
-        $this->assertArrayHasKey('ok', $result['verify']);
-        $this->assertArrayHasKey('method', $result['verify']);
-        $this->assertArrayHasKey('detail', $result['verify']);
+        self::assertArrayHasKey('ok', $result['verify']);
+        self::assertArrayHasKey('method', $result['verify']);
+        self::assertArrayHasKey('detail', $result['verify']);
     }
 
     public function testTestVerificationReturnsEmailInResult(): void
     {
         $email = 'specific-' . uniqid() . '@test.com';
         $result = $this->service->testVerification($email);
-        $this->assertSame($email, $result['email']);
+        self::assertSame($email, $result['email']);
     }
 
     public function testTestVerificationReturnsModeFromSettings(): void
     {
         $result = $this->service->testVerification('test@example.com');
-        $this->assertArrayHasKey('mode', $result);
-        $this->assertIsString($result['mode']);
+        self::assertArrayHasKey('mode', $result);
+        self::assertIsString($result['mode']);
     }
 
     public function testTestVerificationWithInvalidEmailReturnsFormatInvalid(): void
     {
         $result = $this->service->testVerification('bad@@email');
-        $this->assertFalse($result['format_valid']);
+        self::assertFalse($result['format_valid']);
     }
 
     public function testTestVerificationVerifyMatchesVerifyMethod(): void
     {
         $result = $this->service->testVerification('test@example.com');
         $directVerify = $this->service->verify('test@example.com');
-        $this->assertSame($directVerify, $result['verify']);
+        self::assertSame($directVerify, $result['verify']);
     }
 
     public function testTestVerificationWithEmptyEmail(): void
     {
         $result = $this->service->testVerification('');
-        $this->assertFalse($result['format_valid']);
-        $this->assertSame('', $result['email']);
+        self::assertFalse($result['format_valid']);
+        self::assertSame('', $result['email']);
     }
 
     // ── Direct service calls (replaces removed global wrappers) ──
@@ -334,20 +334,20 @@ final class EmailVerificationServiceTest extends TestCase
     public function testDirectServiceCallsReturnArrays(): void
     {
         $result = \App\Core\App::emailVerify()->verify('test@example.com');
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('ok', $result);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('ok', $result);
 
         $result = \App\Core\App::emailVerify()->verifyLdap('test@example.com');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
 
         $result = \App\Core\App::emailVerify()->verifySmtp('test@example.com');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
 
         $result = \App\Core\App::emailVerify()->ldapSuggest('test');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
 
         $result = \App\Core\App::emailVerify()->testVerification('test@example.com');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     // ── Edge cases ──────────────────────────────────────────────
@@ -356,34 +356,34 @@ final class EmailVerificationServiceTest extends TestCase
     {
         $result = $this->service->verify('用户@例子.中国');
         // Unicode emails may not pass filter_var — format check
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     public function testVerifyWithVeryLongEmail(): void
     {
         $longLocal = str_repeat('a', 100);
         $result = $this->service->verify("$longLocal@example.com");
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     public function testVerifyLdapWithEmptyEmail(): void
     {
         $result = $this->service->verifyLdap('');
-        $this->assertIsArray($result);
-        $this->assertSame('ldap', $result['method']);
+        self::assertIsArray($result);
+        self::assertSame('ldap', $result['method']);
     }
 
     public function testVerifySmtpWithEmptyEmail(): void
     {
         $result = $this->service->verifySmtp('');
-        $this->assertIsArray($result);
-        $this->assertSame('smtp', $result['method']);
+        self::assertIsArray($result);
+        self::assertSame('smtp', $result['method']);
     }
 
     public function testLdapSuggestWithWhitespaceQuery(): void
     {
         $result = $this->service->ldapSuggest('   ');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     // ── verify() mode routing ───────────────────────────────────
@@ -393,16 +393,16 @@ final class EmailVerificationServiceTest extends TestCase
         // Default mode is 'none'
         $result = $this->service->verify('test@example.com');
         if ($result['method'] === 'none') {
-            $this->assertTrue($result['ok']);
-            $this->assertSame('none', $result['method']);
+            self::assertTrue($result['ok']);
+            self::assertSame('none', $result['method']);
         }
     }
 
     public function testVerifyWithInvalidEmailDoesNotRouteToLdapOrSmtp(): void
     {
         $result = $this->service->verify('not-valid-email');
-        $this->assertFalse($result['ok']);
-        $this->assertSame('format', $result['method']);
+        self::assertFalse($result['ok']);
+        self::assertSame('format', $result['method']);
     }
 
     public function testVerifyReturnsThreeKeysAlways(): void
@@ -410,9 +410,9 @@ final class EmailVerificationServiceTest extends TestCase
         $emails = ['test@example.com', 'invalid', '', 'user+tag@domain.com'];
         foreach ($emails as $email) {
             $result = $this->service->verify($email);
-            $this->assertArrayHasKey('ok', $result, "Failed for email: $email");
-            $this->assertArrayHasKey('method', $result, "Failed for email: $email");
-            $this->assertArrayHasKey('detail', $result, "Failed for email: $email");
+            self::assertArrayHasKey('ok', $result, "Failed for email: $email");
+            self::assertArrayHasKey('method', $result, "Failed for email: $email");
+            self::assertArrayHasKey('detail', $result, "Failed for email: $email");
         }
     }
 
@@ -423,22 +423,22 @@ final class EmailVerificationServiceTest extends TestCase
         // When ldap_connect exists but host config is empty, returns config error
         if (function_exists('ldap_connect')) {
             $result = $this->service->verifyLdap('test@example.com');
-            $this->assertIsArray($result);
-            $this->assertSame('ldap', $result['method']);
+            self::assertIsArray($result);
+            self::assertSame('ldap', $result['method']);
             // Should fail because LDAP host is not configured in test
-            $this->assertFalse($result['ok']);
+            self::assertFalse($result['ok']);
         } else {
             $result = $this->service->verifyLdap('test@example.com');
-            $this->assertFalse($result['ok']);
-            $this->assertStringContainsString('ldap', $result['detail']);
+            self::assertFalse($result['ok']);
+            self::assertStringContainsString('ldap', $result['detail']);
         }
     }
 
     public function testVerifyLdapDetailIsNonEmptyString(): void
     {
         $result = $this->service->verifyLdap('anyone@example.com');
-        $this->assertIsString($result['detail']);
-        $this->assertNotEmpty($result['detail']);
+        self::assertIsString($result['detail']);
+        self::assertNotEmpty($result['detail']);
     }
 
     // ── verifySmtp() edge cases ─────────────────────────────────
@@ -447,20 +447,20 @@ final class EmailVerificationServiceTest extends TestCase
     {
         // Smtp will fail because no SMTP host configured in test
         $result = $this->service->verifySmtp('test@example.com');
-        $this->assertFalse($result['ok']);
-        $this->assertSame('smtp', $result['method']);
+        self::assertFalse($result['ok']);
+        self::assertSame('smtp', $result['method']);
     }
 
     public function testVerifySmtpWithEmptyEmailReturnsSmtpMethod(): void
     {
         $result = $this->service->verifySmtp('');
-        $this->assertSame('smtp', $result['method']);
+        self::assertSame('smtp', $result['method']);
     }
 
     public function testVerifySmtpDetailContainsErrorInformation(): void
     {
         $result = $this->service->verifySmtp('test@example.com');
-        $this->assertNotEmpty($result['detail']);
+        self::assertNotEmpty($result['detail']);
     }
 
     // ── ldapSuggest() paths ─────────────────────────────────────
@@ -469,26 +469,26 @@ final class EmailVerificationServiceTest extends TestCase
     {
         // ldap_suggest_enabled defaults to '0' in test
         $result = $this->service->ldapSuggest('test');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testLdapSuggestReturnsEmptyForSpecialCharsQuery(): void
     {
         $result = $this->service->ldapSuggest('test)(|*)(*');
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestLimitOne(): void
     {
         $result = $this->service->ldapSuggest('test', 1);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestLimitFiveHundred(): void
     {
         $result = $this->service->ldapSuggest('test', 500);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     // ── testVerification() mode paths ───────────────────────────
@@ -496,25 +496,25 @@ final class EmailVerificationServiceTest extends TestCase
     public function testTestVerificationWithValidEmailAndNoneMode(): void
     {
         $result = $this->service->testVerification('test@example.com');
-        $this->assertTrue($result['format_valid']);
-        $this->assertSame('test@example.com', $result['email']);
-        $this->assertArrayHasKey('verify', $result);
-        $this->assertArrayHasKey('mode', $result);
+        self::assertTrue($result['format_valid']);
+        self::assertSame('test@example.com', $result['email']);
+        self::assertArrayHasKey('verify', $result);
+        self::assertArrayHasKey('mode', $result);
     }
 
     public function testTestVerificationWithLongEmail(): void
     {
         $longEmail = str_repeat('a', 60) . '@example.com';
         $result = $this->service->testVerification($longEmail);
-        $this->assertSame($longEmail, $result['email']);
+        self::assertSame($longEmail, $result['email']);
     }
 
     public function testTestVerificationResultContainsVerifyArray(): void
     {
         $result = $this->service->testVerification('test@example.com');
-        $this->assertArrayHasKey('ok', $result['verify']);
-        $this->assertArrayHasKey('method', $result['verify']);
-        $this->assertArrayHasKey('detail', $result['verify']);
+        self::assertArrayHasKey('ok', $result['verify']);
+        self::assertArrayHasKey('method', $result['verify']);
+        self::assertArrayHasKey('detail', $result['verify']);
     }
 
     // ── verify() edge cases ─────────────────────────────────────
@@ -522,25 +522,25 @@ final class EmailVerificationServiceTest extends TestCase
     public function testVerifyEmailWithNumericDomain(): void
     {
         $result = $this->service->verify('user@123.456.789');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     public function testVerifyEmailWithLongTld(): void
     {
         $result = $this->service->verify('user@example.museum');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     public function testVerifyEmailWithHyphenDomain(): void
     {
         $result = $this->service->verify('user@my-domain.co.uk');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     public function testVerifyEmailWithSingleCharLocalPart(): void
     {
         $result = $this->service->verify('a@b.co');
-        $this->assertArrayHasKey('ok', $result);
+        self::assertArrayHasKey('ok', $result);
     }
 
     // ── ldapSuggest() boundary values ───────────────────────────
@@ -548,13 +548,13 @@ final class EmailVerificationServiceTest extends TestCase
     public function testLdapSuggestLimitExactBoundary(): void
     {
         $result = $this->service->ldapSuggest('test', 100);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLdapSuggestLimitMinusOne(): void
     {
         $result = $this->service->ldapSuggest('test', -1);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     // ── verifyLdap() email variations ───────────────────────────
@@ -562,15 +562,15 @@ final class EmailVerificationServiceTest extends TestCase
     public function testVerifyLdapWithUppercaseEmail(): void
     {
         $result = $this->service->verifyLdap('TEST@EXAMPLE.COM');
-        $this->assertIsArray($result);
-        $this->assertSame('ldap', $result['method']);
+        self::assertIsArray($result);
+        self::assertSame('ldap', $result['method']);
     }
 
     public function testVerifyLdapWithDotInLocalPart(): void
     {
         $result = $this->service->verifyLdap('first.last@example.com');
-        $this->assertIsArray($result);
-        $this->assertSame('ldap', $result['method']);
+        self::assertIsArray($result);
+        self::assertSame('ldap', $result['method']);
     }
 
     // ── Integration with service calls ───────────────────────
@@ -578,21 +578,21 @@ final class EmailVerificationServiceTest extends TestCase
     public function testDirectVerifyEmailWithInvalidEmail(): void
     {
         $result = \App\Core\App::emailVerify()->verify('not-valid');
-        $this->assertFalse($result['ok']);
-        $this->assertSame('format', $result['method']);
+        self::assertFalse($result['ok']);
+        self::assertSame('format', $result['method']);
     }
 
     public function testDirectVerifyEmailLdapMatchesServiceLdap(): void
     {
         $global = \App\Core\App::emailVerify()->verifyLdap('test@example.com');
         $service = $this->service->verifyLdap('test@example.com');
-        $this->assertSame($service, $global);
+        self::assertSame($service, $global);
     }
 
     public function testDirectVerifyEmailSmtpMatchesServiceSmtp(): void
     {
         $global = \App\Core\App::emailVerify()->verifySmtp('test@example.com');
         $service = $this->service->verifySmtp('test@example.com');
-        $this->assertSame($service, $global);
+        self::assertSame($service, $global);
     }
 }

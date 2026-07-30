@@ -77,9 +77,9 @@ final class FormControllerTest extends TestCase
 
         $output = $this->captureJson(fn() => (new \App\Controller\FormController())->handle());
 
-        $this->assertNotNull($output, 'Doit produire une sortie JSON');
-        $this->assertArrayHasKey('error', $output);
-        $this->assertStringContainsString('introuvable', $output['error']);
+        self::assertNotNull($output, 'Doit produire une sortie JSON');
+        self::assertArrayHasKey('error', $output);
+        self::assertStringContainsString('introuvable', $output['error']);
     }
 
     public function testHandleGetWithInvalidSlugReturnsErrorJson(): void
@@ -89,9 +89,9 @@ final class FormControllerTest extends TestCase
 
         $output = $this->captureJson(fn() => (new \App\Controller\FormController())->handle());
 
-        $this->assertNotNull($output);
-        $this->assertArrayHasKey('error', $output);
-        $this->assertStringContainsString('introuvable', $output['error']);
+        self::assertNotNull($output);
+        self::assertArrayHasKey('error', $output);
+        self::assertStringContainsString('introuvable', $output['error']);
     }
 
     public function testHandleGetWithValidSlugReturnsFormJson(): void
@@ -105,12 +105,12 @@ final class FormControllerTest extends TestCase
 
         $output = $this->captureJson(fn() => (new \App\Controller\FormController())->handle());
 
-        $this->assertNotNull($output, 'GET valide doit retourner JSON avec form + fields');
-        $this->assertArrayHasKey('form', $output);
-        $this->assertSame($formId, $output['form']['id']);
-        $this->assertArrayHasKey('fields', $output);
-        $this->assertNotEmpty($output['fields']);
-        $this->assertSame('nom', $output['fields'][0]['field_name']);
+        self::assertNotNull($output, 'GET valide doit retourner JSON avec form + fields');
+        self::assertArrayHasKey('form', $output);
+        self::assertSame($formId, $output['form']['id']);
+        self::assertArrayHasKey('fields', $output);
+        self::assertNotEmpty($output['fields']);
+        self::assertSame('nom', $output['fields'][0]['field_name']);
     }
 
     // ── POST ──────────────────────────────────────────────────────────────
@@ -130,15 +130,15 @@ final class FormControllerTest extends TestCase
 
         $output = $this->captureJson(fn() => (new \App\Controller\FormController())->handle());
 
-        $this->assertNotNull($output, 'Doit retourner JSON error validation');
-        $this->assertArrayHasKey('error', $output);
-        $this->assertArrayHasKey('field_errors', $output);
-        $this->assertArrayHasKey('rgpd_consent', $output['field_errors']);
+        self::assertNotNull($output, 'Doit retourner JSON error validation');
+        self::assertArrayHasKey('error', $output);
+        self::assertArrayHasKey('field_errors', $output);
+        self::assertArrayHasKey('rgpd_consent', $output['field_errors']);
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM submissions WHERE form_id = ?');
         $stmt->execute([$formId]);
-        $this->assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission ne doit être créée sans RGPD');
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission ne doit être créée sans RGPD');
     }
 
     public function testHandlePostWithInvalidEmailReturnsValidationError(): void
@@ -158,15 +158,15 @@ final class FormControllerTest extends TestCase
 
         $output = $this->captureJson(fn() => (new \App\Controller\FormController())->handle());
 
-        $this->assertNotNull($output);
-        $this->assertArrayHasKey('field_errors', $output);
-        $this->assertArrayHasKey('email_validateur', $output['field_errors']);
-        $this->assertStringContainsString('invalide', $output['field_errors']['email_validateur']);
+        self::assertNotNull($output);
+        self::assertArrayHasKey('field_errors', $output);
+        self::assertArrayHasKey('email_validateur', $output['field_errors']);
+        self::assertStringContainsString('invalide', $output['field_errors']['email_validateur']);
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM submissions WHERE form_id = ?');
         $stmt->execute([$formId]);
-        $this->assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission avec email invalide');
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission avec email invalide');
     }
 
     public function testHandlePostWithValidDataCreatesSubmissionAndSendsEmail(): void
@@ -186,9 +186,9 @@ final class FormControllerTest extends TestCase
 
         $output = $this->captureJson(fn() => (new \App\Controller\FormController())->handle());
 
-        $this->assertNotNull($output, 'POST valide doit retourner JSON success');
-        $this->assertTrue($output['success'] ?? false, 'success doit être true');
-        $this->assertArrayHasKey('submission_id', $output);
+        self::assertNotNull($output, 'POST valide doit retourner JSON success');
+        self::assertTrue($output['success'] ?? false, 'success doit être true');
+        self::assertArrayHasKey('submission_id', $output);
 
         // Vérifier qu'une soumission a été créée
         $pdo = $this->db->getPdo();
@@ -196,17 +196,17 @@ final class FormControllerTest extends TestCase
         $stmt->execute([$formId]);
         $sub = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $this->assertNotNull($sub, 'Une soumission doit être créée');
-        $this->assertSame('en_cours', $sub['status']);
-        $this->assertSame('1', (string) $sub['rgpd_consent']);
+        self::assertNotNull($sub, 'Une soumission doit être créée');
+        self::assertSame('en_cours', $sub['status']);
+        self::assertSame('1', (string) $sub['rgpd_consent']);
 
         // Vérifier qu'un token a été créé (workflow déclenché)
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM tokens WHERE submission_id = ?');
         $stmt->execute([$sub['id']]);
-        $this->assertGreaterThan(0, (int) $stmt->fetchColumn(), 'Au moins un token doit être créé');
+        self::assertGreaterThan(0, (int) $stmt->fetchColumn(), 'Au moins un token doit être créé');
 
         // Vérifier qu'au moins un email a été envoyé
-        $this->assertNotEmpty($GLOBALS['_test_mails'], 'Au moins un email doit partir');
+        self::assertNotEmpty($GLOBALS['_test_mails'], 'Au moins un email doit partir');
     }
 
     public function testHandlePostWithMissingRequiredFieldReturnsValidationError(): void
@@ -225,15 +225,15 @@ final class FormControllerTest extends TestCase
 
         $output = $this->captureJson(fn() => (new \App\Controller\FormController())->handle());
 
-        $this->assertNotNull($output);
-        $this->assertArrayHasKey('field_errors', $output);
-        $this->assertArrayHasKey('nom', $output['field_errors']);
-        $this->assertStringContainsString('obligatoire', $output['field_errors']['nom']);
+        self::assertNotNull($output);
+        self::assertArrayHasKey('field_errors', $output);
+        self::assertArrayHasKey('nom', $output['field_errors']);
+        self::assertStringContainsString('obligatoire', $output['field_errors']['nom']);
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM submissions WHERE form_id = ?');
         $stmt->execute([$formId]);
-        $this->assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission avec required vide');
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'Aucune soumission avec required vide');
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────

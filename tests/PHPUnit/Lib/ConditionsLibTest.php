@@ -10,37 +10,37 @@ final class ConditionsLibTest extends TestCase
     public function testEvaluateConditionDelegatesToEvaluator(): void
     {
         $condition = json_encode(['field' => 'status', 'op' => 'eq', 'value' => 'active']);
-        $this->assertTrue(evaluate_condition($condition, ['status' => 'active']));
+        self::assertTrue(evaluate_condition($condition, ['status' => 'active']));
     }
 
     public function testEvaluateConditionEmptyReturnsTrue(): void
     {
-        $this->assertTrue(evaluate_condition('', []));
-        $this->assertTrue(evaluate_condition(null, []));
+        self::assertTrue(evaluate_condition('', []));
+        self::assertTrue(evaluate_condition(null, []));
     }
 
     public function testEvaluateConditionFalse(): void
     {
         $condition = json_encode(['field' => 'status', 'op' => 'eq', 'value' => 'active']);
-        $this->assertFalse(evaluate_condition($condition, ['status' => 'inactive']));
+        self::assertFalse(evaluate_condition($condition, ['status' => 'inactive']));
     }
 
     public function testEvaluateFieldConditionDelegates(): void
     {
         $field = ['condition' => json_encode(['field' => 'type', 'op' => 'eq', 'value' => 'A'])];
-        $this->assertTrue(evaluate_field_condition($field, ['type' => 'A']));
-        $this->assertFalse(evaluate_field_condition($field, ['type' => 'B']));
+        self::assertTrue(evaluate_field_condition($field, ['type' => 'A']));
+        self::assertFalse(evaluate_field_condition($field, ['type' => 'B']));
     }
 
     public function testEvaluateFieldConditionEmptyCondition(): void
     {
         $field = ['condition' => ''];
-        $this->assertTrue(evaluate_field_condition($field, []));
+        self::assertTrue(evaluate_field_condition($field, []));
     }
 
     public function testEvaluateFieldConditionNoConditionKey(): void
     {
         $field = [];
-        $this->assertTrue(evaluate_field_condition($field, []));
+        self::assertTrue(evaluate_field_condition($field, []));
     }
 }

@@ -21,32 +21,32 @@ final class AuditLogServiceTest extends TestCase
     public function testLogDoesNotThrow(): void
     {
         $this->audit->log('test_action', 'test_target', 'test_detail');
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testLogWithActor(): void
     {
         $this->audit->log('test_action', 'target', 'detail', 'actor@test.com');
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testSecurityLogDoesNotThrow(): void
     {
         $this->audit->securityLog('test_event', 'test_detail');
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testSecurityLogWithActor(): void
     {
         $this->audit->securityLog('test_event', 'detail', 'actor@test.com');
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
 
     public function testLogMaskEmailsInNonCli(): void
     {
         $this->audit->log('test_action', 'target', 'user@example.com detail');
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testLogWritesToDatabase(): void
@@ -59,9 +59,9 @@ final class AuditLogServiceTest extends TestCase
         $stmt->execute(['target:' . $marker]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $this->assertNotEmpty($row, 'Row should be written to audit_log');
-        $this->assertSame('test_write', $row['action']);
-        $this->assertSame('writer@test.com', $row['actor']);
+        self::assertNotEmpty($row, 'Row should be written to audit_log');
+        self::assertSame('test_write', $row['action']);
+        self::assertSame('writer@test.com', $row['actor']);
     }
 
     public function testSecurityLogWritesToDatabase(): void
@@ -74,9 +74,9 @@ final class AuditLogServiceTest extends TestCase
         $stmt->execute(['security:' . $marker]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $this->assertNotEmpty($row, 'Row should be written to audit_log via securityLog');
-        $this->assertSame('security_event', $row['action']);
-        $this->assertSame('sec@test.com', $row['actor']);
+        self::assertNotEmpty($row, 'Row should be written to audit_log via securityLog');
+        self::assertSame('security_event', $row['action']);
+        self::assertSame('sec@test.com', $row['actor']);
     }
 
 }

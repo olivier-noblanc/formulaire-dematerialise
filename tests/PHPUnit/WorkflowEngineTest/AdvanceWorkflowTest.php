@@ -7,19 +7,19 @@ final class AdvanceWorkflowTest extends Base
     public function testAdvanceWorkflowReturnsEarlyForNonexistentSubmission(): void
     {
         $this->workflow->advanceWorkflow('nonexistent-submission-id');
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
     public function testAdvanceWorkflowReturnsEarlyForClosedSubmission(): void
     {
         [$formId] = $this->createTestForm();
         $subId = $this->createTestSubmission($formId, closedAtOffset: '-0 seconds');
         $this->workflow->advanceWorkflow($subId);
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
     public function testAdvanceWorkflowReturnsEarlyForEmptySubmissionId(): void
     {
         $this->workflow->advanceWorkflow('');
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
     public function testAdvanceWorkflowCreatesTokensForActiveSubmission(): void
     {
@@ -32,7 +32,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $countStmt->execute([$subId]);
         $tokensAfter = $countStmt->fetchColumn();
-        $this->assertGreaterThan((int) $tokensBefore, (int) $tokensAfter, 'advanceWorkflow should create new tokens');
+        self::assertGreaterThan((int) $tokensBefore, (int) $tokensAfter, 'advanceWorkflow should create new tokens');
     }
     public function testAdvanceWorkflowSkipsInvalidEmailRecipients(): void
     {
@@ -44,7 +44,7 @@ final class AdvanceWorkflowTest extends Base
         $this->createdIds['step_recipients'][] = $srId;
         $subId = $this->createTestSubmission($formId);
         $this->workflow->advanceWorkflow($subId);
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
     public function testAdvanceWorkflowSkipsConditionWhenNotMet(): void
     {
@@ -56,7 +56,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
         $countStmt->execute([$subId]);
-        $this->assertSame(0, (int) $countStmt->fetchColumn(), 'No token should be created when the step condition is not met');
+        self::assertSame(0, (int) $countStmt->fetchColumn(), 'No token should be created when the step condition is not met');
     }
     public function testAdvanceWorkflowWithCompletedSubmissionClosesIt(): void
     {
@@ -66,7 +66,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $this->db->getPdo()->prepare("SELECT closed_at FROM submissions WHERE id = ?");
         $check->execute([$subId]);
-        $this->assertNotEmpty($check->fetchColumn());
+        self::assertNotEmpty($check->fetchColumn());
     }
     public function testAdvanceWorkflowWithMixedDoneAndPendingWaits(): void
     {
@@ -87,7 +87,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $after = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
         $after->execute([$subId]);
-        $this->assertSame($closedBefore, $after->fetchColumn());
+        self::assertSame($closedBefore, $after->fetchColumn());
     }
     public function testAdvanceWorkflowDoesNotCreateDuplicateTokens(): void
     {
@@ -101,7 +101,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $countAfter = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ?");
         $countAfter->execute([$subId]);
-        $this->assertGreaterThanOrEqual($before, (int) $countAfter->fetchColumn());
+        self::assertGreaterThanOrEqual($before, (int) $countAfter->fetchColumn());
     }
     public function testAdvanceWorkflowClosesAndNotifiesAgentWhenAllDone(): void
     {
@@ -112,8 +112,8 @@ final class AdvanceWorkflowTest extends Base
         $check = $this->db->getPdo()->prepare("SELECT closed_at, status FROM submissions WHERE id = ?");
         $check->execute([$subId]);
         $row = $check->fetch(\PDO::FETCH_ASSOC);
-        $this->assertNotEmpty($row['closed_at']);
-        $this->assertSame('valide', $row['status']);
+        self::assertNotEmpty($row['closed_at']);
+        self::assertSame('valide', $row['status']);
     }
     public function testAdvanceWorkflowCreatesTokensForFirstGroup(): void
     {
@@ -125,7 +125,7 @@ final class AdvanceWorkflowTest extends Base
         $countBefore = (int) $countStmt->fetchColumn();
         $this->workflow->advanceWorkflow($subId);
         $countStmt->execute([$subId]);
-        $this->assertGreaterThanOrEqual($countBefore, (int) $countStmt->fetchColumn());
+        self::assertGreaterThanOrEqual($countBefore, (int) $countStmt->fetchColumn());
     }
     public function testAdvanceWorkflowSkipsStepAlreadyStarted(): void
     {
@@ -138,7 +138,7 @@ final class AdvanceWorkflowTest extends Base
         $countBefore = (int) $countStmt->fetchColumn();
         $this->workflow->advanceWorkflow($subId);
         $countStmt->execute([$subId]);
-        $this->assertSame($countBefore, (int) $countStmt->fetchColumn());
+        self::assertSame($countBefore, (int) $countStmt->fetchColumn());
     }
     public function testAdvanceWorkflowMovesToNextGroupWhenAllDone(): void
     {
@@ -156,7 +156,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $closed = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
         $closed->execute([$subId]);
-        $this->assertNotEmpty($closed->fetchColumn());
+        self::assertNotEmpty($closed->fetchColumn());
     }
     public function testAdvanceWorkflowSkipsRecipientZero(): void
     {
@@ -174,7 +174,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND email = '0'");
         $check->execute([$subId]);
-        $this->assertSame(0, (int) $check->fetchColumn());
+        self::assertSame(0, (int) $check->fetchColumn());
     }
     public function testAdvanceWorkflowSkipsEmptyRecipient(): void
     {
@@ -192,7 +192,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND email = ''");
         $check->execute([$subId]);
-        $this->assertSame(0, (int) $check->fetchColumn());
+        self::assertSame(0, (int) $check->fetchColumn());
     }
     public function testAdvanceWorkflowClosesImmediatelyWithNoSteps(): void
     {
@@ -210,12 +210,12 @@ final class AdvanceWorkflowTest extends Base
         $check->execute([$subId]);
         $row = $check->fetch(\PDO::FETCH_ASSOC);
         // B-W1 : ne doit PAS clôturer — la soumission reste en_cours
-        $this->assertEmpty($row['closed_at'], 'B-W1: soumission sans étape ne doit pas être clôturée');
-        $this->assertSame('en_cours', $row['status']);
+        self::assertEmpty($row['closed_at'], 'B-W1: soumission sans étape ne doit pas être clôturée');
+        self::assertSame('en_cours', $row['status']);
         // Vérifier qu'un audit_log a été créé
         $auditStmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log WHERE action = 'workflow_no_steps' AND target = ?");
         $auditStmt->execute(['submission:' . $subId]);
-        $this->assertGreaterThan(0, (int) $auditStmt->fetchColumn(), 'audit_log workflow_no_steps doit être créé');
+        self::assertGreaterThan(0, (int) $auditStmt->fetchColumn(), 'audit_log workflow_no_steps doit être créé');
     }
     public function testAdvanceWorkflowSkipsStepWithFalseCondition(): void
     {
@@ -232,7 +232,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ?");
         $check->execute([$subId, $stepId]);
-        $this->assertSame(0, (int) $check->fetchColumn());
+        self::assertSame(0, (int) $check->fetchColumn());
     }
     public function testAdvanceWorkflowCreatesTokenWhenConditionTrue(): void
     {
@@ -249,7 +249,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ?");
         $check->execute([$subId, $stepId]);
-        $this->assertGreaterThan(0, (int) $check->fetchColumn());
+        self::assertGreaterThan(0, (int) $check->fetchColumn());
     }
     public function testAdvanceWorkflowSkipsInvalidEmailRecipient(): void
     {
@@ -267,7 +267,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ?");
         $check->execute([$subId, $stepId]);
-        $this->assertSame(0, (int) $check->fetchColumn());
+        self::assertSame(0, (int) $check->fetchColumn());
     }
     public function testAdvanceWorkflowResolvesOwnerRecipient(): void
     {
@@ -287,8 +287,8 @@ final class AdvanceWorkflowTest extends Base
         $check = $pdo->prepare("SELECT email FROM tokens WHERE submission_id = ? AND step_id = ?");
         $check->execute([$subId, $stepId]);
         $tokenEmail = $check->fetchColumn();
-        $this->assertNotFalse($tokenEmail, 'Token should be created for owner step');
-        $this->assertStringContainsString('@', (string) $tokenEmail);
+        self::assertNotFalse($tokenEmail, 'Token should be created for owner step');
+        self::assertStringContainsString('@', (string) $tokenEmail);
     }
     public function testAdvanceWorkflowWithEmptyFormData(): void
     {
@@ -301,7 +301,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT id FROM submissions WHERE id = ?");
         $check->execute([$subId]);
-        $this->assertNotNull($check->fetchColumn());
+        self::assertNotNull($check->fetchColumn());
     }
     public function testAdvanceWorkflowWithNullFormData(): void
     {
@@ -314,7 +314,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT id FROM submissions WHERE id = ?");
         $check->execute([$subId]);
-        $this->assertNotNull($check->fetchColumn());
+        self::assertNotNull($check->fetchColumn());
     }
     public function testAdvanceWorkflowWithComplexFormData(): void
     {
@@ -328,7 +328,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT id FROM submissions WHERE id = ?");
         $check->execute([$subId]);
-        $this->assertNotNull($check->fetchColumn());
+        self::assertNotNull($check->fetchColumn());
     }
     public function testAdvanceWorkflowWithInvalidJsonFormData(): void
     {
@@ -341,7 +341,7 @@ final class AdvanceWorkflowTest extends Base
         $this->workflow->advanceWorkflow($subId);
         $check = $pdo->prepare("SELECT id FROM submissions WHERE id = ?");
         $check->execute([$subId]);
-        $this->assertNotNull($check->fetchColumn());
+        self::assertNotNull($check->fetchColumn());
     }
     public function testAdvanceWorkflowCalledTwiceDoesNotDuplicateTokens(): void
     {
@@ -352,6 +352,6 @@ final class AdvanceWorkflowTest extends Base
         $countAfterFirst = (int) $pdo->query("SELECT COUNT(*) FROM tokens WHERE submission_id = '$subId'")->fetchColumn();
         $this->workflow->advanceWorkflow($subId);
         $countAfterSecond = (int) $pdo->query("SELECT COUNT(*) FROM tokens WHERE submission_id = '$subId'")->fetchColumn();
-        $this->assertGreaterThanOrEqual($countAfterFirst, $countAfterSecond);
+        self::assertGreaterThanOrEqual($countAfterFirst, $countAfterSecond);
     }
 }

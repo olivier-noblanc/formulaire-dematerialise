@@ -77,7 +77,7 @@ final class EnumConstraintTest extends TestCase
             $subId = $this->createTestSubmission($pdo, $formId, $status);
             $fetched = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
             $fetched->execute([$subId]);
-            $this->assertSame($status, $fetched->fetchColumn());
+            self::assertSame($status, $fetched->fetchColumn());
         }
     }
 
@@ -121,19 +121,19 @@ final class EnumConstraintTest extends TestCase
         $tokenId1 = $this->createTestToken($pdo, $subId, $stepId1);
         $fetched = $pdo->prepare("SELECT action FROM tokens WHERE id = ?");
         $fetched->execute([$tokenId1]);
-        $this->assertNull($fetched->fetchColumn());
+        self::assertNull($fetched->fetchColumn());
 
         // 'valider'
         $stepId2 = $this->createTestStep($pdo, $formId, 'Step A2');
         $tokenId2 = $this->createTestToken($pdo, $subId, $stepId2, 'valider');
         $fetched->execute([$tokenId2]);
-        $this->assertSame('valider', $fetched->fetchColumn());
+        self::assertSame('valider', $fetched->fetchColumn());
 
         // 'refuser'
         $stepId3 = $this->createTestStep($pdo, $formId, 'Step A3');
         $tokenId3 = $this->createTestToken($pdo, $subId, $stepId3, 'refuser');
         $fetched->execute([$tokenId3]);
-        $this->assertSame('refuser', $fetched->fetchColumn());
+        self::assertSame('refuser', $fetched->fetchColumn());
     }
 
     // ── form_fields.filled_by (CHECK via rebuild) ──────────────────
@@ -173,7 +173,7 @@ final class EnumConstraintTest extends TestCase
             $fieldId = $this->createTestFormField($pdo, $formId, filledBy: $filledBy);
             $fetched = $pdo->prepare("SELECT filled_by FROM form_fields WHERE id = ?");
             $fetched->execute([$fieldId]);
-            $this->assertSame($filledBy, $fetched->fetchColumn());
+            self::assertSame($filledBy, $fetched->fetchColumn());
         }
     }
 
@@ -214,7 +214,7 @@ final class EnumConstraintTest extends TestCase
             $fieldId = $this->createTestFormField($pdo, $formId, visibility: $visibility);
             $fetched = $pdo->prepare("SELECT visibility FROM form_fields WHERE id = ?");
             $fetched->execute([$fieldId]);
-            $this->assertSame($visibility, $fetched->fetchColumn());
+            self::assertSame($visibility, $fetched->fetchColumn());
         }
     }
 
@@ -252,7 +252,7 @@ final class EnumConstraintTest extends TestCase
             $reqId = $this->createTestAdminRequest($pdo, $status);
             $fetched = $pdo->prepare("SELECT status FROM admin_requests WHERE id = ?");
             $fetched->execute([$reqId]);
-            $this->assertSame($status, $fetched->fetchColumn());
+            self::assertSame($status, $fetched->fetchColumn());
         }
     }
 
@@ -284,7 +284,7 @@ final class EnumConstraintTest extends TestCase
 
         $versionBefore = $crashDb->query('SELECT MAX(version) FROM schema_version')->fetchColumn();
         $ffCount = $crashDb->query('SELECT COUNT(*) FROM form_fields')->fetchColumn();
-        $this->assertGreaterThan(0, $ffCount, 'form_fields doit avoir des données avant le test');
+        self::assertGreaterThan(0, $ffCount, 'form_fields doit avoir des données avant le test');
 
         // Simuler une panne : DROP form_fields sans RENAME (DDL auto-committed, pas de transaction)
         $crashDb->exec('PRAGMA foreign_keys = OFF');
@@ -299,8 +299,8 @@ final class EnumConstraintTest extends TestCase
         $checkDb->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $hasFF = $checkDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name='form_fields'")->fetchColumn();
         $hasFFNew = $checkDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name='form_fields_new'")->fetchColumn();
-        $this->assertEmpty($hasFF, 'form_fields ne doit plus exister après la panne simulée');
-        $this->assertEquals('form_fields_new', $hasFFNew, 'form_fields_new doit exister avec les données');
+        self::assertEmpty($hasFF, 'form_fields ne doit plus exister après la panne simulée');
+        self::assertEquals('form_fields_new', $hasFFNew, 'form_fields_new doit exister avec les données');
         $checkDb = null;
 
         // Simuler le rejeu de la migration (self-healing)
@@ -321,7 +321,7 @@ final class EnumConstraintTest extends TestCase
 
         // Vérifier que form_fields est restaurée avec les données
         $ffAfter = $replayDb->query('SELECT COUNT(*) FROM form_fields')->fetchColumn();
-        $this->assertSame($ffCount, $ffAfter, 'form_fields doit avoir les mêmes données après self-healing');
+        self::assertSame($ffCount, $ffAfter, 'form_fields doit avoir les mêmes données après self-healing');
         $replayDb = null;
 
         @unlink($tmpDb);

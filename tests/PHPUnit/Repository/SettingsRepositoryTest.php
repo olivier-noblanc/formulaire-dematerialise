@@ -19,7 +19,7 @@ final class SettingsRepositoryTest extends TestCase
     public function testGetReturnsDefaultForMissingKey(): void
     {
         $result = $this->repo->get('nonexistent_key', 'default');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testSetAndGetRoundTrip(): void
@@ -27,6 +27,6 @@ final class SettingsRepositoryTest extends TestCase
         $key = 'test_repo_' . uniqid();
         $this->repo->set($key, 'test_value');
         $result = $this->repo->get($key);
-        $this->assertSame('test_value', $result);
+        self::assertSame('test_value', $result);
     }
 }

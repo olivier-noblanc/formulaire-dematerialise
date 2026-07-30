@@ -16,13 +16,13 @@ final class ValidateTokenRefuseTest extends Base
         $pdo = $this->db->getPdo();
 
         $result = $this->workflow->validateToken($tokenVal, 'refuser', '');
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $checkData->execute([$subId]);
         $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame('', $validation['commentaire']);
+        self::assertSame('', $validation['commentaire']);
     }
 
     public function testValidateTokenRefuseStoresRefuserAction(): void
@@ -33,13 +33,13 @@ final class ValidateTokenRefuseTest extends Base
         $pdo = $this->db->getPdo();
 
         $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $checkData->execute([$subId]);
         $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame('refuser', $validation['action']);
+        self::assertSame('refuser', $validation['action']);
     }
 
     public function testValidateTokenRefuseStoresDoneBy(): void
@@ -51,13 +51,13 @@ final class ValidateTokenRefuseTest extends Base
 
         $doneBy = 'refuser-' . uniqid() . '@test.com';
         $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif', $doneBy);
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $checkData->execute([$subId]);
         $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame($doneBy, $validation['done_by']);
+        self::assertSame($doneBy, $validation['done_by']);
     }
 
     public function testValidateTokenRefuseStoresDate(): void
@@ -71,14 +71,14 @@ final class ValidateTokenRefuseTest extends Base
         $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
         $after = gmdate('Y-m-d H:i:s');
 
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $checkData->execute([$subId]);
         $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertGreaterThanOrEqual($before, $validation['date']);
-        $this->assertLessThanOrEqual($after, $validation['date']);
+        self::assertGreaterThanOrEqual($before, $validation['date']);
+        self::assertLessThanOrEqual($after, $validation['date']);
     }
 
     public function testValidateTokenRefuseStoresEmail(): void
@@ -89,13 +89,13 @@ final class ValidateTokenRefuseTest extends Base
         $pdo = $this->db->getPdo();
 
         $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $checkData->execute([$subId]);
         $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame('validator@test.com', $validation['email']);
+        self::assertSame('validator@test.com', $validation['email']);
     }
 
     public function testValidateTokenRefuseStoresStepLabel(): void
@@ -106,13 +106,13 @@ final class ValidateTokenRefuseTest extends Base
         $pdo = $this->db->getPdo();
 
         $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $checkData = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $checkData->execute([$subId]);
         $data = json_decode((string) $checkData->fetchColumn(), true);
         $validation = end($data['validations']);
-        $this->assertSame('Validation', $validation['step_label']);
+        self::assertSame('Validation', $validation['step_label']);
     }
 
     public function testValidateTokenRefuseSetsDoneAtOnToken(): void
@@ -123,11 +123,11 @@ final class ValidateTokenRefuseTest extends Base
         $pdo = $this->db->getPdo();
 
         $result = $this->workflow->validateToken($tokenVal, 'refuser', 'Motif');
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $check = $pdo->prepare("SELECT done_at FROM tokens WHERE token = ?");
         $check->execute([$tokenVal]);
-        $this->assertNotEmpty($check->fetchColumn());
+        self::assertNotEmpty($check->fetchColumn());
     }
 
     public function testValidateTokenValiderKeepsSubmissionOpenIfMoreSteps(): void
@@ -138,11 +138,11 @@ final class ValidateTokenRefuseTest extends Base
         $pdo = $this->db->getPdo();
 
         $result = $this->workflow->validateToken($tokenVal, 'valider');
-        $this->assertSame('ok', $result['status']);
+        self::assertSame('ok', $result['status']);
 
         $check = $pdo->prepare("SELECT status, closed_at FROM submissions WHERE id = ?");
         $check->execute([$subId]);
         $sub = $check->fetch(\PDO::FETCH_ASSOC);
-        $this->assertContains($sub['status'], ['en_cours', 'valide']);
+        self::assertContains($sub['status'], ['en_cours', 'valide']);
     }
 }

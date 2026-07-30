@@ -45,20 +45,20 @@ final class SettingsServiceTest extends TestCase
     public function testGetReturnsDefaultForMissingKey(): void
     {
         $result = $this->settings->get('nonexistent_key_xyz', 'default_value');
-        $this->assertSame('default_value', $result);
+        self::assertSame('default_value', $result);
     }
 
     public function testGetReturnsEmptyStringAsDefault(): void
     {
         $result = $this->settings->get('nonexistent_key_xyz');
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testGetReturnsConfigDefault(): void
     {
         // smtp_host is defined in SETTINGS_DEFAULTS
         $result = $this->settings->get('smtp_host');
-        $this->assertNotEmpty($result);
+        self::assertNotEmpty($result);
     }
 
     public function testGetReturnsCachedValueOnSecondCall(): void
@@ -68,7 +68,7 @@ final class SettingsServiceTest extends TestCase
 
         // First call populates cache
         $first = $this->settings->get($key);
-        $this->assertSame('cached_value', $first);
+        self::assertSame('cached_value', $first);
 
         // Update DB value directly (bypassing service) to prove cache is used
         $pdo = $this->db->getPdo();
@@ -76,7 +76,7 @@ final class SettingsServiceTest extends TestCase
 
         // Second call should still return cached value
         $second = $this->settings->get($key);
-        $this->assertSame('cached_value', $second);
+        self::assertSame('cached_value', $second);
     }
 
     // ── set ────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ final class SettingsServiceTest extends TestCase
         $testKey = 'test_setting_' . uniqid();
         $this->settings->set($testKey, 'test_value');
         $result = $this->settings->get($testKey);
-        $this->assertSame('test_value', $result);
+        self::assertSame('test_value', $result);
     }
 
     public function testSetWithUpdatedBy(): void
@@ -94,13 +94,13 @@ final class SettingsServiceTest extends TestCase
         $testKey = 'test_updated_by_' . uniqid();
         $this->settings->set($testKey, 'value', 'admin@test.com');
         $result = $this->settings->get($testKey);
-        $this->assertSame('value', $result);
+        self::assertSame('value', $result);
 
         // Verify updated_by is stored in DB
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT updated_by FROM settings WHERE key = ?");
         $stmt->execute([$testKey]);
-        $this->assertSame('admin@test.com', $stmt->fetchColumn());
+        self::assertSame('admin@test.com', $stmt->fetchColumn());
     }
 
     public function testSetOverwritesExistingValue(): void
@@ -109,7 +109,7 @@ final class SettingsServiceTest extends TestCase
         $this->settings->set($testKey, 'first_value');
         $this->settings->set($testKey, 'second_value');
         $result = $this->settings->get($testKey);
-        $this->assertSame('second_value', $result);
+        self::assertSame('second_value', $result);
     }
 
     public function testSetStoresTimestamp(): void
@@ -121,7 +121,7 @@ final class SettingsServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT updated_at FROM settings WHERE key = ?");
         $stmt->execute([$testKey]);
         $updatedAt = $stmt->fetchColumn();
-        $this->assertNotEmpty($updatedAt);
+        self::assertNotEmpty($updatedAt);
     }
 
     // ── sensitive keys ─────────────────────────────────────────
@@ -137,7 +137,7 @@ final class SettingsServiceTest extends TestCase
         $rawValue = $stmt->fetchColumn();
 
         // Without APP_ENCRYPTION_KEY, encrypt returns plaintext, so verify it's stored
-        $this->assertNotFalse($rawValue);
+        self::assertNotFalse($rawValue);
     }
 
     public function testSetSensitiveKeyWithEmptyValueSkipsEncryption(): void
@@ -148,21 +148,21 @@ final class SettingsServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT value FROM settings WHERE key = 'smtp_pass'");
         $stmt->execute([]);
         $rawValue = $stmt->fetchColumn();
-        $this->assertSame('', $rawValue);
+        self::assertSame('', $rawValue);
     }
 
     public function testSetLdapBindPassIsSensitive(): void
     {
         $this->settings->set('ldap_bind_pass', 'ldap_secret');
         $result = $this->settings->get('ldap_bind_pass');
-        $this->assertIsString($result);
+        self::assertIsString($result);
     }
 
     public function testSetAppTestSecretIsSensitive(): void
     {
         $this->settings->set('app_test_secret', 'test_secret_value');
         $result = $this->settings->get('app_test_secret');
-        $this->assertIsString($result);
+        self::assertIsString($result);
     }
 
     // ── encrypt / decrypt ──────────────────────────────────────
@@ -172,21 +172,21 @@ final class SettingsServiceTest extends TestCase
         $original = 'sensitive_password';
         $encrypted = $this->settings->encrypt($original);
         // Without APP_ENCRYPTION_KEY, encrypt returns the original value
-        $this->assertIsString($encrypted);
+        self::assertIsString($encrypted);
     }
 
     public function testDecryptNonEncryptedReturnsOriginal(): void
     {
         $value = 'plain_text_value';
         $result = $this->settings->decrypt($value);
-        $this->assertSame($value, $result);
+        self::assertSame($value, $result);
     }
 
     public function testDecryptEncryptedWithoutKeyReturnsPlaceholder(): void
     {
         $value = 'enc:' . base64_encode('test');
         $result = $this->settings->decrypt($value);
-        $this->assertIsString($result);
+        self::assertIsString($result);
     }
 
     public function testEncryptDecryptRoundtripWithKey(): void
@@ -201,11 +201,11 @@ final class SettingsServiceTest extends TestCase
             $encrypted = $this->settings->encrypt($plaintext);
 
             // Should be encrypted (different from plaintext)
-            $this->assertNotSame($plaintext, $encrypted, 'Encrypted value should differ from plaintext');
-            $this->assertStringStartsWith('enc:', $encrypted);
+            self::assertNotSame($plaintext, $encrypted, 'Encrypted value should differ from plaintext');
+            self::assertStringStartsWith('enc:', $encrypted);
 
             $decrypted = $this->settings->decrypt($encrypted);
-            $this->assertSame($plaintext, $decrypted);
+            self::assertSame($plaintext, $decrypted);
         } finally {
             // Restore original env
             if ($originalKey !== false) {
@@ -223,7 +223,7 @@ final class SettingsServiceTest extends TestCase
 
         try {
             $result = $this->settings->decrypt('enc:not-valid-base64!!!');
-            $this->assertSame('[chiffré]', $result);
+            self::assertSame('[chiffré]', $result);
         } finally {
             if ($originalKey !== false) {
                 putenv("APP_ENCRYPTION_KEY=$originalKey");
@@ -243,7 +243,7 @@ final class SettingsServiceTest extends TestCase
             $ivLength = openssl_cipher_iv_length('aes-256-cbc');
             $fakeData = random_bytes($ivLength + 10); // enough bytes but wrong content
             $result = $this->settings->decrypt('enc:' . base64_encode($fakeData));
-            $this->assertSame('[chiffré]', $result);
+            self::assertSame('[chiffré]', $result);
         } finally {
             if ($originalKey !== false) {
                 putenv("APP_ENCRYPTION_KEY=$originalKey");
@@ -260,7 +260,7 @@ final class SettingsServiceTest extends TestCase
 
         try {
             $result = $this->settings->encrypt('plaintext_value');
-            $this->assertSame('plaintext_value', $result);
+            self::assertSame('plaintext_value', $result);
         } finally {
             if ($originalKey !== false) {
                 putenv("APP_ENCRYPTION_KEY=$originalKey");
@@ -271,6 +271,6 @@ final class SettingsServiceTest extends TestCase
     public function testDecryptWithoutEncPrefixReturnsOriginal(): void
     {
         $result = $this->settings->decrypt('some_plain_text');
-        $this->assertSame('some_plain_text', $result);
+        self::assertSame('some_plain_text', $result);
     }
 }

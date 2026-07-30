@@ -21,28 +21,28 @@ final class UrlencodeNullRegressionTest extends TestCase
     {
         $null_var = null;
         $result = urlencode((string) ($null_var ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testUrlencodePatternPreservesStringValue(): void
     {
         $str_var = 'hello world';
         $result = urlencode((string) ($str_var ?? ''));
-        $this->assertSame('hello+world', $result);
+        self::assertSame('hello+world', $result);
     }
 
     public function testUrlencodePatternPreservesUuid(): void
     {
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
         $result = urlencode((string) ($uuid ?? ''));
-        $this->assertSame($uuid, $result);
+        self::assertSame($uuid, $result);
     }
 
     public function testUrlencodePatternHandlesEmptyString(): void
     {
         $empty = '';
         $result = urlencode((string) ($empty ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     // ── Direct null would throw TypeError (PHP 8.1+) ──────────
@@ -62,8 +62,8 @@ final class UrlencodeNullRegressionTest extends TestCase
         // AdminFormsController: urlencode((string) $formId) — $formId can be ''
         $formId = '';
         $url = 'index.php?p=admin_forms&form_id=' . urlencode((string) $formId);
-        $this->assertIsString($url);
-        $this->assertStringContainsString('form_id=', $url);
+        self::assertIsString($url);
+        self::assertStringContainsString('form_id=', $url);
     }
 
     public function testAdminFormsControllerEditStepUrlencode(): void
@@ -71,11 +71,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // AdminFormsController: urlencode((string) ($workflowStep['step_id'] ?? ''))
         $workflowStep = ['step_id' => null];
         $result = urlencode((string) ($workflowStep['step_id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $workflowStep = ['step_id' => 'abc-123'];
         $result = urlencode((string) ($workflowStep['step_id'] ?? ''));
-        $this->assertSame('abc-123', $result);
+        self::assertSame('abc-123', $result);
     }
 
     public function testAdminFormsControllerEditFieldUrlencode(): void
@@ -83,11 +83,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // AdminFormsController: urlencode((string) ($formField['id'] ?? ''))
         $formField = ['id' => null];
         $result = urlencode((string) ($formField['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $formField = [];
         $result = urlencode((string) ($formField['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testFormPreviewControllerFormIdUrlencode(): void
@@ -95,11 +95,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // FormPreviewController: urlencode((string) ($form['id'] ?? ''))
         $form = ['id' => null];
         $result = urlencode((string) ($form['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $form = [];
         $result = urlencode((string) ($form['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testSubmissionViewControllerUrls(): void
@@ -107,11 +107,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // SubmissionViewController: urlencode((string) ($att['id'] ?? ''))
         $att = ['id' => null];
         $result = urlencode((string) ($att['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $att = [];
         $result = urlencode((string) ($att['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testFormTrackingControllerUrls(): void
@@ -119,11 +119,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // FormTrackingController: urlencode((string) ($submission['id'] ?? ''))
         $submission = ['id' => null];
         $result = urlencode((string) ($submission['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $submission = [];
         $result = urlencode((string) ($submission['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testConfirmActionControllerUrls(): void
@@ -131,11 +131,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // ConfirmActionController: urlencode((string) ($_GET['form_id'] ?? ''))
         $_GET['form_id'] = null;
         $result = urlencode((string) ($_GET['form_id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         unset($_GET['form_id']);
         $result = urlencode((string) ($_GET['form_id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testFormControllerUrls(): void
@@ -143,11 +143,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // FormController: urlencode((string) ($existing_submission['id'] ?? ''))
         $existing_submission = ['id' => null];
         $result = urlencode((string) ($existing_submission['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $existing_submission = [];
         $result = urlencode((string) ($existing_submission['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testAdminAccessControllerUrls(): void
@@ -155,11 +155,11 @@ final class UrlencodeNullRegressionTest extends TestCase
         // AdminAccessController: urlencode((string) ($allAdmin['email'] ?? ''))
         $allAdmin = ['email' => null];
         $result = urlencode((string) ($allAdmin['email'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $allAdmin = [];
         $result = urlencode((string) ($allAdmin['email'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testMySubmissionsRendererUrls(): void
@@ -167,7 +167,7 @@ final class UrlencodeNullRegressionTest extends TestCase
         // MySubmissionsRenderer: urlencode((string) ($submission['id'] ?? ''))
         $submission = ['id' => null];
         $result = urlencode((string) ($submission['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testMyValidationsRendererUrls(): void
@@ -175,7 +175,7 @@ final class UrlencodeNullRegressionTest extends TestCase
         // MyValidationsRenderer: urlencode((string) ($pendingToken['token'] ?? ''))
         $pendingToken = ['token' => null];
         $result = urlencode((string) ($pendingToken['token'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 
     public function testAdminAlertsRendererUrls(): void
@@ -183,10 +183,10 @@ final class UrlencodeNullRegressionTest extends TestCase
         // AdminAlertsRenderer: urlencode((string) ($rule['id'] ?? ''))
         $rule = ['id' => null];
         $result = urlencode((string) ($rule['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
 
         $rule = [];
         $result = urlencode((string) ($rule['id'] ?? ''));
-        $this->assertSame('', $result);
+        self::assertSame('', $result);
     }
 }
