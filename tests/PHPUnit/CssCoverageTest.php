@@ -112,11 +112,22 @@ final class CssCoverageTest extends TestCase
 
     /**
      * Assert that every HTML class with given prefixes exists in ANY CSS file.
+     * Excludes dynamic CSS classes (generated at runtime by DynamicCssService).
      */
     private function assertPrefixedClassesCovered(array $htmlClasses, string $rendererName): void
     {
         $prefixes = ['wf-', 'sub-', 'val-', 'dl-', 'dash-', 'monitor-', 'alert-', 'stat', 'backup-', 'progress-', 'token-', 'deadline-', 'grid-', 'bar-', 'segment-', 'chart-', 'legend-'];
         $relevantHtmlClasses = $this->filterByPrefixes($htmlClasses, $prefixes);
+        // Exclure les classes dynamiques générées par DynamicCssService (bar-w-N, seg-val-N, etc.)
+        $dynamicPrefixes = ['bar-w-', 'seg-val-', 'seg-enc-', 'seg-ref-', 'pw-', 'ipw-', 'mp-', 'donut-'];
+        $relevantHtmlClasses = array_filter($relevantHtmlClasses, function ($cls) use ($dynamicPrefixes) {
+            foreach ($dynamicPrefixes as $dp) {
+                if (str_starts_with($cls, $dp)) {
+                    return false;
+                }
+            }
+            return true;
+        });
         $missing = array_diff($relevantHtmlClasses, self::$allCssClasses);
 
         self::assertEmpty(
@@ -127,10 +138,21 @@ final class CssCoverageTest extends TestCase
 
     /**
      * Assert that every HTML class with given prefixes exists in the specific CSS file.
+     * Excludes dynamic CSS classes (generated at runtime by DynamicCssService).
      */
     private function assertCssClassesInFile(array $htmlClasses, array $cssClasses, array $prefixes, string $rendererName): void
     {
         $relevantHtmlClasses = $this->filterByPrefixes($htmlClasses, $prefixes);
+        // Exclure les classes dynamiques
+        $dynamicPrefixes = ['bar-w-', 'seg-val-', 'seg-enc-', 'seg-ref-', 'pw-', 'ipw-', 'mp-', 'donut-'];
+        $relevantHtmlClasses = array_filter($relevantHtmlClasses, function ($cls) use ($dynamicPrefixes) {
+            foreach ($dynamicPrefixes as $dp) {
+                if (str_starts_with($cls, $dp)) {
+                    return false;
+                }
+            }
+            return true;
+        });
         $missing = array_diff($relevantHtmlClasses, $cssClasses);
 
         self::assertEmpty(

@@ -110,7 +110,7 @@ final class DateTest extends TestCase
         $tomorrow = date('Y-m-d', strtotime('+1 day'));
         $result = calculate_deadline_urgency($tomorrow);
         self::assertSame('critical', $result['urgency']);
-        self::assertStringContainsString('font-weight:bold', $result['style']);
+        self::assertSame('deadline-critical', $result['style']);
     }
 
     public function testCalculateDeadlineUrgencyWarningRange(): void
