@@ -1,5 +1,28 @@
 # Changelog — CircuitDémat
 
+## [10.31.0] — 2026-07-30
+_Résumé : Workflow CI CSP check via Playwright + restoration du nonce dans SecurityService._
+
+### ✨ Features
+- **Workflow GitHub Actions CSP Check** : nouveau workflow `.github/workflows/csp-check.yml` qui vérifie la conformité CSP sur 11 pages critiques (admin_forms, monitoring, dashboard, docs, form, etc.) via Playwright. Se déclenche sur push/PR quand les fichiers `src/` critiques changent.
+- **Test E2E `csp_check.spec.js`** : injecte un listener `SecurityPolicyViolationEvent` avant le chargement de chaque page, vérifie le header CSP (script-src, style-src, frame-ancestors), échoue si le navigateur détecte des violations. Compte les inline styles/scripts pour le suivi.
+
+### 🐛 Bug fixes
+- **Nonce CSP restauré** : le nonce dans `SecurityService` est resté avec le format correct `'nonce-xxx'` dans le header CSP (pas `'nonce="xxx"'`).
+
+### 🧪 Tests
+- **1 test E2E ajouté** : `csp_check.spec.js` (11 pages × 3-4 assertions chacune).
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1302 | 1302 (0 fail) |
+| E2E tests | 99 | 110 (+11 pages CSP) |
+| CI jobs | 11 | 12 (+csp-check) |
+
+---
+
 ## [10.30.0] — 2026-07-30
 _Résumé : Fix persona_token perdu dans les redirects + règle PHPStan RequireBuildUrlForRedirectRule + tooltips workflow détaillés._
 

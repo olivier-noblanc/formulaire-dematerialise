@@ -1,0 +1,79 @@
+# csp-check.yml — Vérifie la conformité CSP via Playwright (E2E).
+#
+# Pour chaque page critique, le test :
+#   1. Injecte un listener SecurityPolicyViolationEvent
+#   2. Vérifie la présence et le format du header Content-Security-Policy
+#   3. Détecte les violations CSP runtime côté navigateur
+#   4. Compte les inline style= et <style> pour le suivi
+#
+# Le CSP autorise 'unsafe-inline' tant que le code utilise du inline.
+# Ce workflow servira de filet de sécurité dès que 'unsafe-inline' sera retiré.
+
+name: CSP Check
+
+on:
+  push:
+    paths:
+      - 'src/Security/**'
+      - 'src/Render/**'
+      - 'src/Controller/**'
+      - 'src/Mail/**'
+      - 'src/Token/**'
+      - 'src/Workflow/**'
+      - 'src/Auth/**'
+      - 'index.php'
+      - 'assets.php'
+      - 'style.php'
+      - 'tests/e2e/csp_check.spec.js'
+      - '.github/workflows/csp-check.yml'
+  pull_request:
+    paths:
+      - 'src/Security/**'
+      - 'src/Render/**'
+      - 'src/Controller/**'
+      - 'src/Mail/**'
+      - 'src/Token/**'
+      - 'src/Workflow/**'
+      - 'src/Auth/**'
+      - 'index.php'
+      - 'assets.php'
+      - 'style.php'
+      - 'tests/e2e/csp_check.spec.js'
+      - '.github/workflows/csp-check.yml'
+
+jobs:
+  csp-check:
+    name: CSP Compliance (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+
+      - name: Composer install (autoloader + dev deps)
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci || npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run CSP check
+        run: node tests/e2e/csp_check.spec.js
+        env:
+          APP_TEST_MODE: ''
+          APP_TEST_SECRET: ''
