@@ -1,19 +1,24 @@
 # Changelog — CircuitDémat
 
 ## [10.29.0] — 2026-07-30
-_Résumé : Fix hints "1" — validation JSON rejette les hints chiffres, import les nettoie, migration v35 purge la DB._
+_Résumé : Fix hints "1" + admin_forms UI restaurée + test e2e non-régression._
 
 ### 🐛 Bug fixes
 - **Hints "1" sous les champs** : `<span class="hint">1</span>` affiché sous chaque champ du formulaire quand la colonne `hint` de `form_fields` contenait un simple chiffre (probablement issu d'un import JSON généré par IA).
   - `FormJsonValidator` : erreur bloquante si `hint` est un chiffre seul (ex: `"1"`, `"2"`).
   - `AdminImportExportHandler` : nettoyage automatique des hints chiffres lors de l'import.
   - Migration v35 : purge les hints contenant uniquement un chiffre en base.
+- **admin_forms incomplet** : le contrôleur utilisait du HTML inline simplifié qui omettait le panneau "Créer un formulaire", l'import JSON, le prompt IA, et l'édition complète des champs/workflow. Remplacement par `render_admin_forms_page()` qui délègue à `AdminFormsRenderer::renderPage()`.
+
+### 🧪 Tests
+- **testAdminFormsRendersFormSelector** : 4 assertions ajoutées (panneau création, import JSON, prompt IA, action add_form).
 
 ### 📊 Résultat
 
 | Métrique | Avant | Après |
 |----------|-------|-------|
 | Tests | 1298 | 1298 (0 fail) |
+| E2E tests | 95 | 99 (+4 assertions) |
 | PHPStan | 0 | 0 |
 
 ---

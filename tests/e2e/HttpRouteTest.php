@@ -946,7 +946,7 @@ final class HttpRouteTest extends TestCase
         self::assertGreaterThanOrEqual(8, count($m[0]), 'Dashboard filter should have form options from DB');
     }
 
-    /** Admin forms: selector with 9 options (1 default + 8 forms). */
+    /** Admin forms: selector, new form panel, import JSON, prompt IA. */
     public function testAdminFormsRendersFormSelector(): void
     {
         [$status, $body] = self::httpGet('/?p=admin_forms');
@@ -955,6 +955,13 @@ final class HttpRouteTest extends TestCase
         self::assertStringContainsString('Sélectionner un formulaire', $body);
         preg_match_all('/<option[^>]+value="[0-9a-f-]+"/', $body, $m);
         self::assertGreaterThanOrEqual(1, count($m[0]), 'Form selector should have form UUIDs from DB');
+        // New form panel (regression: was missing with inline HTML controller)
+        self::assertStringContainsString('Créer un nouveau formulaire', $body, 'New form panel');
+        self::assertStringContainsString('action" value="add_form"', $body, 'New form action');
+        // Import JSON panel
+        self::assertStringContainsString('import-panel', $body, 'Import JSON panel');
+        // Prompt IA panel
+        self::assertStringContainsString('ai-prompt-panel', $body, 'Prompt IA panel');
     }
 
     /** Admin settings: 7 nav sections, SMTP config, security settings. */
