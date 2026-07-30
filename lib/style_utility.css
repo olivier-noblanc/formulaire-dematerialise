@@ -224,3 +224,13 @@
 
 /* Espacement workflow steps (AdminFormsRenderer) */
 .wf-gap { margin-top: .5rem; }
+
+/* Bouton compact (MySubmissionsRenderer) */
+.btn-margin-sm { margin: .25rem; }
+
+/* Bouton email (MailService — pas soumis à CSP web) */
+.email-btn { background:#000091;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;display:inline-block; }
+.email-hint { color:#666;font-size:.85rem; }
+.email-body { font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222; }
+.email-h2 { color:#003189; }
+.email-footer { font-size:12px;color:#999;margin-top:24px; }
