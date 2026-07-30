@@ -1,4 +1,22 @@
+# Isolation de shipmonk/dead-code-detector (2026-07-30) : cette extension
+# est auto-chargée par phpstan/extension-installer pour TOUTE analyse du
+# projet (comportement global, pas configurable par fichier de config —
+# vérifié sur phpstan.org/config-reference et le README de
+# phpstan/extension-installer). Sans isolation, elle tourne une 2e fois
+# ici en plus de l'analyse src/ (job "PHPStan (level 8)"), redondant et
+# coûteux en mémoire sur l'ensemble de tests/ (collecte les usages sur
+# tout le graphe d'appel). customRulesetUsed: true désactive les
+# extensions auto-chargées pour CE fichier uniquement — la configuration
+# racine (phpstan.neon, src/) n'est pas touchée, shipmonk continue d'y
+# tourner normalement. phpstan-strict-rules explicitement réintégré via
+# includes: ci-dessous pour garder les vérifications déjà exploitées
+# cette session (appel statique, empty(), ternaire court...).
+includes:
+    - ../vendor/phpstan/phpstan-strict-rules/rules.neon
+
 parameters:
+    customRulesetUsed: true
+
     # Niveau volontairement différent de src/ (niveau 8) : les tests n'ont
     # pas les mêmes enjeux de typage strict que le code de production.
     # Décision explicite (2026-07-29), pas dans AGENTS.md à ce jour.
