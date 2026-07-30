@@ -1,5 +1,31 @@
 # Changelog — CircuitDémat
 
+## [10.30.0] — 2026-07-30
+_Résumé : Fix persona_token perdu dans les redirects + règle PHPStan RequireBuildUrlForRedirectRule + tooltips workflow détaillés._
+
+### 🐛 Bug fixes
+- **persona_token perdu après annulation** : confirmer l'annulation d'une soumission depuis le mode persona quittait automatiquement le mode persona. Les `redirect()` dans `SubmissionViewController` et `ConfirmActionController` n'incluaient pas `persona_token`. Fix : tous les redirects internes passent par `App::html()->buildUrl()`.
+- **GrumPHP phpstan échouait sur commits de tests** : `use_grumphp_paths: true` (défaut) ne transmettait que les fichiers staged à PHPStan — un commit de seul fichier test → "No files found to analyse" car `phpstan.neon` exclut `tests/*`. Fix : `use_grumphp_paths: false`.
+
+### ✨ Features
+- **Tooltips workflow détaillés** : les icônes ✓ et ⏳ dans le diagramme workflow affichent des informations complètes au survol :
+  - ✓ : email du validateur, date de validation, nombre de rappels + date du dernier rappel
+  - ⏳ : date d'envoi de l'email, date d'expiration, nombre de rappels + date du dernier rappel
+- **Règle PHPStan RequireBuildUrlForRedirectRule** : détecte tout `$this->redirect('index.php...')` avec un string brut et impose `App::html()->buildUrl()` pour préserver `persona_token`. Empêche les régressions futures.
+
+### 🧪 Tests
+- **4 tests tooltips workflow** : `testRenderWorkflowCheckTooltipShowsValidatorAndDate`, `testRenderWorkflowCheckTooltipShowsRelanceDetails`, `testRenderWorkflowPendingTooltipShowsEmailDateAndExpiry`, `testRenderWorkflowPendingTooltipShowsRelanceWithLastDate`.
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1298 | 1302 (0 fail) |
+| Assertions | 3748 | 3758 |
+| PHPStan baseline | 497 | 490 |
+
+---
+
 ## [10.29.0] — 2026-07-30
 _Résumé : Fix hints "1" + admin_forms UI restaurée + test e2e non-régression._
 
