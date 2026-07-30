@@ -98,6 +98,15 @@ final class App
         return self::getInstance()->get(\App\Render\HtmlService::class);
     }
 
+    /**
+     * Accès au collecteur de CSS dynamique.
+     * Usage : App::css()->rule('btn-search', 'font-size:.8rem;');
+     */
+    public static function css(): \App\Render\DynamicCssService
+    {
+        return self::getInstance()->get(\App\Render\DynamicCssService::class);
+    }
+
     public static function workflow(): \App\Workflow\WorkflowEngine
     {
         return self::getInstance()->get(\App\Workflow\WorkflowEngine::class);
