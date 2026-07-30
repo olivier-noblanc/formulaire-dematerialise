@@ -28,6 +28,11 @@ final class DynamicCssService
     /**
      * Enregistre une règle CSS dynamique.
      *
+     * Méthode publique de l'API — utilisée par les renderers pour les styles
+     * calculés à l'exécution. Actuellement aucun renderer ne l'utilise (les
+     * 14 styles dynamiques restants sont encore en style="" inline — cf. TODO
+     * CSP zéro inline). Quand ils migreront, ils appelleront cette méthode.
+     *
      * @param string $className Nom de classe CSS (sans le point)
      * @param string $declarations Déclarations CSS (ex: "width:45%;")
      */

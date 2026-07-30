@@ -1625,3 +1625,9 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/lib_wrappers.php
+
+		-
+			message: '#^Unused App\\Render\\DynamicCssService::rule$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/DynamicCssService.php
