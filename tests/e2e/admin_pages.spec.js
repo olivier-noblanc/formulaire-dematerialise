@@ -1,8 +1,8 @@
 // admin_pages.spec.js — Test e2e des pages admin (chargement correct).
 //
 // Pour chaque page admin :
-//   1. GET /index.php?p=index?p=admin_settings, /index.php?p=index?p=monitoring, /index.php?p=index?p=admin_forms,
-//      /index.php?p=index?p=admin_access, /index.php?p=index?p=admin_alerts, /index.php?p=index?p=dashboard, /index.php?p=stats
+//   1. GET /index.php?p=admin_settings, /index.php?p=monitoring, /index.php?p=admin_forms,
+//      /index.php?p=admin_access, /index.php?p=admin_alerts, /index.php?p=dashboard, /index.php?p=stats
 //   2. Vérifier status 200
 //   3. Vérifier pas de warning PHP dans stderr du serveur
 //      (Warning / Notice / Deprecated / Fatal error / Parse error)
@@ -33,12 +33,12 @@ const {
 // la page où l'utilisateur demande l'accès admin). On utilise le header
 // AUTH_USER= DREETS\admin.local (admin en DB).
 const ADMIN_PAGES = [
-    { url: '/index.php?p=index?p=admin_settings', label: 'admin_settings.php (config SMTP/sécurité)' },
-    { url: '/index.php?p=index?p=monitoring',     label: 'monitoring.php (tableau de bord monitoring)' },
-    { url: '/index.php?p=index?p=admin_forms',    label: 'admin_forms.php (gestion formulaires/étapes)' },
-    { url: '/index.php?p=index?p=admin_access',   label: 'admin_access.php (demande accès admin)' },
-    { url: '/index.php?p=index?p=admin_alerts',   label: 'admin_alerts.php (règles d\'alerte)' },
-    { url: '/index.php?p=index?p=dashboard',      label: 'dashboard.php (dashboard admin)' },
+    { url: '/index.php?p=admin_settings', label: 'admin_settings.php (config SMTP/sécurité)' },
+    { url: '/index.php?p=monitoring',     label: 'monitoring.php (tableau de bord monitoring)' },
+    { url: '/index.php?p=admin_forms',    label: 'admin_forms.php (gestion formulaires/étapes)' },
+    { url: '/index.php?p=admin_access',   label: 'admin_access.php (demande accès admin)' },
+    { url: '/index.php?p=admin_alerts',   label: 'admin_alerts.php (règles d\'alerte)' },
+    { url: '/index.php?p=dashboard',      label: 'dashboard.php (dashboard admin)' },
     { url: '/index.php?p=stats',          label: 'stats.php (statistiques)' },
 ];
 
@@ -104,7 +104,7 @@ async function main() {
         // Recharger monitoring.php et vérifier qu'on n'est pas sur une 403
         const checkPage = await context.newPage();
         try {
-            const { html, status } = await getPageHtml(checkPage, '/index.php?p=index?p=monitoring');
+            const { html, status } = await getPageHtml(checkPage, '/index.php?p=monitoring');
             if (status === 200 && !html.includes('Accès refusé') && !html.includes('Vous devez être administrateur')) {
                 t.ok('Accès admin accordé (pas de page "Accès refusé")');
             } else {

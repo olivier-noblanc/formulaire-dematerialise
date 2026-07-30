@@ -3,7 +3,7 @@
 // Étapes :
 //   1. Démarrer serveur PHP avec auth validateur (DREETS\responsable.direct)
 //      → responsable.direct@exemple.invalid a des tokens en attente en DB
-//   2. GET /index.php?p=index?p=my_validations → vérifier status 200
+//   2. GET /index.php?p=my_validations → vérifier status 200
 //   3. Si au moins une validation en attente → cliquer sur "Valider / Refuser"
 //   4. Vérifier que validate.php se charge (status 200)
 //   5. Vérifier que la page contient :
@@ -44,19 +44,19 @@ async function main() {
         const context = await newContext(browser, VALIDATOR_AUTH);
 
         // ═══════════════════════════════════════════════════════════════
-        // ÉTAPE 1-2 : GET /index.php?p=index?p=my_validations et vérifier 200
+        // ÉTAPE 1-2 : GET /index.php?p=my_validations et vérifier 200
         // ═══════════════════════════════════════════════════════════════
-        t.section('Étape 1 — Chargement de /index.php?p=index?p=my_validations');
+        t.section('Étape 1 — Chargement de /index.php?p=my_validations');
         const page = await context.newPage();
         const { html: valHtml, status: valStatus } = await getPageHtml(
             page,
-            '/index.php?p=index?p=my_validations'
+            '/index.php?p=my_validations'
         );
 
         if (valStatus === 200) {
-            t.ok('GET /index.php?p=index?p=my_validations → HTTP 200');
+            t.ok('GET /index.php?p=my_validations → HTTP 200');
         } else {
-            t.ko('GET /index.php?p=index?p=my_validations → HTTP 200', `status=${valStatus}`);
+            t.ko('GET /index.php?p=my_validations → HTTP 200', `status=${valStatus}`);
         }
 
         // Vérifier que la page contient le titre "Mes validations"
