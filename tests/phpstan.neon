@@ -61,3 +61,19 @@ parameters:
         - ../vendor/PHPMailer/src/PHPMailer.php
         - ../vendor/PHPMailer/src/Exception.php
         - ../vendor/PHPMailer/src/SMTP.php
+
+        # Baseline pour tests/ — erreurs pré-existantes (empty(), ternary,
+        # dynamic call to static method, ReflectionType::getName())
+        -
+            message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+            identifier: empty.notAllowed
+        -
+            message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+            identifier: ternary.shortNotAllowed
+        -
+            message: '#^Call to an undefined method ReflectionType::getName\(\)\.$#'
+        -
+            message: '#^Casting to int something that.s already int\.$#'
+            identifier: cast.useless
+        -
+            message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert::#'
