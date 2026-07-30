@@ -6,11 +6,11 @@
 |----------|--------|
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1396** (0 fail) |
-| Assertions | **4072** |
+| Tests | **1302** (0 fail) |
+| Assertions | **3758** |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **497** (level 8) |
+| PHPStan erreurs baseline | **465** (level 8) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** |
 | CI | **GitHub Actions** (11 jobs, ~3 min) |

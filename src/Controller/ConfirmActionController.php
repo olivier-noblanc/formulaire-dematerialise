@@ -69,14 +69,14 @@ final class ConfirmActionController extends BaseController
         ];
 
         if (!isset($actionsConfig[$action])) {
-            $this->redirect('index.php');
+            $this->redirect(App::html()->buildUrl('index.php'));
         }
 
         $config = $actionsConfig[$action];
 
         foreach ($config['params'] as $param) {
             if (empty($_GET[$param])) {
-                $this->redirect('index.php');
+                $this->redirect(App::html()->buildUrl('index.php'));
             }
         }
 

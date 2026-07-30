@@ -499,24 +499,6 @@ parameters:
 			path: src/Controller/AdminFormCrudHandler.php
 
 		-
-			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
-			identifier: arrayFilter.strict
-			count: 1
-			path: src/Controller/AdminFormsController.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, int given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 4
-			path: src/Controller/AdminFormsController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 2
-			path: src/Controller/AdminFormsController.php
-
-		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
 			count: 1
