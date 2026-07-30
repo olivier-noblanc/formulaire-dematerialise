@@ -233,7 +233,7 @@ final class AuthServiceTest extends TestCase
         if ($formId === false) {
             self::markTestSkipped('No forms in test DB');
         }
-        $result = $this->auth->isFormOwner($formId, 'nobody_owns_this@example.com');
+        $result = $this->auth->isFormOwner((string) $formId, 'nobody_owns_this@example.com');
         self::assertFalse($result);
     }
 
@@ -255,7 +255,7 @@ final class AuthServiceTest extends TestCase
             ->execute([$ownerId, $formId, $testEmail]);
 
         try {
-            $result = $this->auth->isFormOwner($formId, $testEmail);
+            $result = $this->auth->isFormOwner((string) $formId, $testEmail);
             self::assertTrue($result);
         } finally {
             // Clean up
@@ -282,7 +282,7 @@ final class AuthServiceTest extends TestCase
             ->execute([$ownerId, $formId, $currentUser]);
 
         try {
-            $result = $this->auth->isFormOwner($formId);
+            $result = $this->auth->isFormOwner((string) $formId);
             self::assertTrue($result);
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
@@ -307,8 +307,8 @@ final class AuthServiceTest extends TestCase
             ->execute([$ownerId, $formId, $testEmail]);
 
         try {
-            $forms = $this->auth->getOwnedForms($testEmail);
-            self::assertIsArray($forms);
+            $this->auth->getOwnedForms($testEmail);
+            $this->expectNotToPerformAssertions();
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
                 ->execute([$formId, $testEmail]);
@@ -318,15 +318,15 @@ final class AuthServiceTest extends TestCase
     public function testGetOwnedFormsReturnsEmptyForUnknownEmail(): void
     {
         $forms = $this->auth->getOwnedForms('nobody@nowhere.test');
-        self::assertIsArray($forms);
         self::assertEmpty($forms);
     }
 
     public function testGetOwnedFormsContainsOwnedForm(): void
     {
         $pdo = $this->db->getPdo();
-        $form = $pdo->query("SELECT id, label FROM forms LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-        if (!$form) {
+        $formStmt = $pdo->query("SELECT id, label FROM forms LIMIT 1");
+        $form = $formStmt === false ? false : $formStmt->fetch(\PDO::FETCH_ASSOC);
+        if ($form === false) {
             self::markTestSkipped('No forms in test DB');
         }
 
@@ -348,8 +348,9 @@ final class AuthServiceTest extends TestCase
     public function testGetOwnedFormsReturnsCorrectColumns(): void
     {
         $pdo = $this->db->getPdo();
-        $form = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$form) {
+        $formStmt2 = $pdo->query("SELECT id FROM forms LIMIT 1");
+        $form = $formStmt2 === false ? false : $formStmt2->fetchColumn();
+        if ($form === false) {
             self::markTestSkipped('No forms in test DB');
         }
 
@@ -360,7 +361,7 @@ final class AuthServiceTest extends TestCase
 
         try {
             $forms = $this->auth->getOwnedForms($testEmail);
-            if (!empty($forms)) {
+            if ($forms !== []) {
                 self::assertArrayHasKey('id', $forms[0]);
                 self::assertArrayHasKey('label', $forms[0]);
                 self::assertArrayHasKey('slug', $forms[0]);
@@ -387,8 +388,8 @@ final class AuthServiceTest extends TestCase
             ->execute([$ownerId, $formId, $currentUser]);
 
         try {
-            $forms = $this->auth->getOwnedForms();
-            self::assertIsArray($forms);
+            $this->auth->getOwnedForms();
+            $this->expectNotToPerformAssertions();
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
                 ->execute([$formId, $currentUser]);
