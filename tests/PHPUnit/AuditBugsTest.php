@@ -7,7 +7,6 @@ use App\Core\App;
 use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
-use App\Repository\FormRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
 use App\Workflow\WorkflowEngine;
@@ -26,7 +25,6 @@ final class AuditBugsTest extends TestCase
 {
     private Database $db;
     private WorkflowEngine $workflow;
-    private FormRepository $formRepo;
     private SubmissionRepository $subRepo;
     private TokenRepository $tokenRepo;
 
@@ -37,7 +35,6 @@ final class AuditBugsTest extends TestCase
     {
         $this->db = App::getInstance()->get(Database::class);
         $this->workflow = App::getInstance()->get(WorkflowEngine::class);
-        $this->formRepo = App::getInstance()->get(FormRepository::class);
         $this->subRepo = App::getInstance()->get(SubmissionRepository::class);
         $this->tokenRepo = App::getInstance()->get(TokenRepository::class);
     }

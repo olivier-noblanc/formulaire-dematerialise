@@ -25,6 +25,7 @@ parameters:
     tmpDir: /tmp/phpstan
     reportUnmatchedIgnoredErrors: false
     bootstrapFiles:
+        - ../helpers.php
         - ../vendor/PHPMailer/src/PHPMailer.php
         - ../vendor/PHPMailer/src/Exception.php
         - ../vendor/PHPMailer/src/SMTP.php
