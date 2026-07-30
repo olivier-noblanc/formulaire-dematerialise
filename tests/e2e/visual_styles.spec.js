@@ -13,6 +13,8 @@
 // Usage : node tests/e2e/visual_styles.spec.js
 
 const { firefox } = require('playwright');
+const { execSync } = require('child_process');
+const path = require('path');
 const helpers = require('./helpers');
 
 async function main() {
@@ -22,9 +24,17 @@ async function main() {
     const serverHandle = await helpers.startTestServer();
     const stopServer = serverHandle.stop;
     try {
+        // Seed des données requises pour la barre de stats (.stat.en-cours/
+        // valide/refuse) — ne s'affiche que si l'utilisateur a des
+        // soumissions. Base CI fraîche = 0 soumission sans ce seed.
+        execSync('php ' + path.join(__dirname, 'seed_visual_styles_data.php'), {
+            cwd: helpers.PROJECT_ROOT,
+            stdio: 'inherit',
+        });
+
         const browser = await firefox.launch({ headless: true });
-        // Utiliser testeur@dreets.gouv.fr qui a 13 soumissions en DB de test
-        // (l'admin olivier.noblanc n'a qu'1 soumission en_cours).
+        // "testeur" (DREETS\testeur → testeur@{email_domain}) a des
+        // soumissions en_cours/valide/refuse grâce au seed ci-dessus.
         const context = await browser.newContext({
             extraHTTPHeaders: {
                 'AUTH_USER': 'DREETS\\testeur',
