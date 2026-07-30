@@ -350,7 +350,12 @@ final class HtmlServiceTest extends TestCase
     public function testRenderDonutChartConicGradient(): void
     {
         $result = $this->service->renderDonutChart(10, 4, 3, 3);
-        self::assertStringContainsString('conic-gradient', $result);
+        // Le conic-gradient est maintenant dans DynamicCssService, pas dans le HTML.
+        // On vérifie que la classe dynamique est présente.
+        self::assertStringContainsString('donut-', $result);
+        // Vérifier que DynamicCssService a enregistré la règle avec conic-gradient
+        $css = \App\Core\App::css()->render();
+        self::assertStringContainsString('conic-gradient', $css);
     }
 
     public function testRenderDonutChartContainsLegend(): void
