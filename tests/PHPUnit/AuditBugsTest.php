@@ -196,7 +196,7 @@ final class AuditBugsTest extends TestCase
     {
         $tokenId = \generate_uuid();
         $token = \generate_token();
-        $expiresAt = gmdate('Y-m-d H:i:s', (int) strtotime('+30 days'));
+        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days'));
         $pdo = $this->db->getPdo();
         $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
             ->execute([$tokenId, $subId, $stepId, $email, $token, $expiresAt]);

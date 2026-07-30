@@ -200,7 +200,7 @@ final class RequireOnceIntegrityTest extends TestCase
     {
         $controllerDir = self::SRC_DIR . '/Controller';
         if (!is_dir($controllerDir)) {
-            $this->markTestSkipped('src/Controller/ directory not found');
+            self::markTestSkipped('src/Controller/ directory not found');
         }
 
         $iterator = new \RecursiveIteratorIterator(

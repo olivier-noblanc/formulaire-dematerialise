@@ -156,7 +156,7 @@ final class AdminRepositoryTest extends TestCase
             self::assertTrue($this->repo->isAdmin($email));
         } catch (\PDOException $e) {
             if (str_contains($e->getMessage(), 'reviewed_at')) {
-                $this->markTestSkipped('admin_requests table missing reviewed_at column');
+                self::markTestSkipped('admin_requests table missing reviewed_at column');
             }
             throw $e;
         } finally {
@@ -186,7 +186,7 @@ final class AdminRepositoryTest extends TestCase
             self::assertSame('rejected', $check->fetchColumn());
         } catch (\PDOException $e) {
             if (str_contains($e->getMessage(), 'reviewed_at')) {
-                $this->markTestSkipped('admin_requests table missing reviewed_at column');
+                self::markTestSkipped('admin_requests table missing reviewed_at column');
             }
             throw $e;
         } finally {

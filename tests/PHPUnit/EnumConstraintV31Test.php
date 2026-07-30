@@ -36,7 +36,7 @@ final class EnumConstraintV31Test extends TestCase
         $pdo = $this->db->getPdo();
         $sql = $pdo->query("SELECT sql FROM sqlite_master WHERE type='table' AND name='$table'")->fetchColumn();
         if ($sql === false || !str_contains($sql, "$column IN")) {
-            $this->markTestSkipped("CHECK constraint sur $table.$column absente (migration v31 peut avoir échoué)");
+            self::markTestSkipped("CHECK constraint sur $table.$column absente (migration v31 peut avoir échoué)");
         }
     }
 

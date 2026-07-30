@@ -39,7 +39,7 @@ final class EnumConstraintTest extends TestCase
         $pdo = $this->db->getPdo();
         $sql = $pdo->query("SELECT sql FROM sqlite_master WHERE type='table' AND name='$table'")->fetchColumn();
         if ($sql === false || !str_contains($sql, 'CHECK')) {
-            $this->markTestSkipped("CHECK constraints not present on $table (migration v30 may have failed)");
+            self::markTestSkipped("CHECK constraints not present on $table (migration v30 may have failed)");
         }
     }
 
@@ -263,7 +263,7 @@ final class EnumConstraintTest extends TestCase
         // Utiliser la base production (pas le test DB vidé par setUp)
         $prodPath = dirname(__DIR__, 2) . '/db/workflow.db';
         if (!file_exists($prodPath)) {
-            $this->markTestSkipped('workflow.db non trouvée');
+            self::markTestSkipped('workflow.db non trouvée');
         }
 
         // Vérifier que la DB contient les tables attendues (migration v30)
@@ -271,7 +271,7 @@ final class EnumConstraintTest extends TestCase
         $hasSchema = $checkPdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'")->fetchColumn();
         $checkPdo = null;
         if (!$hasSchema) {
-            $this->markTestSkipped('workflow.db ne contient pas la table schema_version (DB de test vide)');
+            self::markTestSkipped('workflow.db ne contient pas la table schema_version (DB de test vide)');
         }
 
         // Copier la base pour ne pas casser l'environnement

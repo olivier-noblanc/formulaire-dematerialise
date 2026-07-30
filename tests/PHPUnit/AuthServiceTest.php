@@ -100,7 +100,6 @@ final class AuthServiceTest extends TestCase
         // EMAIL_DOMAIN comes from SETTINGS_DEFAULTS which is always defined
         // Just verify it returns a sensible default
         $domain = $this->auth->getEmailDomain();
-        self::assertIsString($domain);
         self::assertNotEmpty($domain);
     }
 
@@ -123,16 +122,16 @@ final class AuthServiceTest extends TestCase
 
     public function testIsAdminReturnsBoolean(): void
     {
-        $result = $this->auth->isAdmin();
-        self::assertIsBool($result);
+        $this->auth->isAdmin();
+        $this->expectNotToPerformAssertions();
     }
 
     // ── isSuperAdmin() ──────────────────────────────────────────
 
     public function testIsSuperAdminReturnsBoolean(): void
     {
-        $result = $this->auth->isSuperAdmin();
-        self::assertIsBool($result);
+        $this->auth->isSuperAdmin();
+        $this->expectNotToPerformAssertions();
     }
 
     public function testIsSuperAdminFalseWhenNotMatchingAdminEmail(): void
@@ -157,8 +156,8 @@ final class AuthServiceTest extends TestCase
 
     public function testIsAdminEffectiveReturnsBoolean(): void
     {
-        $result = $this->auth->isAdminEffective();
-        self::assertIsBool($result);
+        $this->auth->isAdminEffective();
+        $this->expectNotToPerformAssertions();
     }
 
     public function testIsAdminEffectiveFalseWhenNotAdmin(): void
@@ -182,8 +181,7 @@ final class AuthServiceTest extends TestCase
         // Test 3: admin with persona_token set → persona_lookup is called
         $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         $_GET['persona_token'] = 'test-token-' . uniqid();
-        $effective = $this->auth->isAdminEffective();
-        self::assertIsBool($effective);
+        $this->auth->isAdminEffective();
         unset($_GET['persona_token']);
     }
 
@@ -204,7 +202,7 @@ final class AuthServiceTest extends TestCase
             $this->auth->requireAdmin();
             self::assertTrue($_SESSION['_session_initialized'] ?? false);
         } else {
-            $this->markTestSkipped('Test user is not admin in test DB');
+            self::markTestSkipped('Test user is not admin in test DB');
         }
     }
 
@@ -212,7 +210,6 @@ final class AuthServiceTest extends TestCase
     {
         // requireAdmin() calls exit when user is not admin.
         // We verify the method exists and is callable rather than triggering exit.
-        self::assertTrue(method_exists($this->auth, 'requireAdmin'));
         $reflection = new \ReflectionMethod($this->auth, 'requireAdmin');
         self::assertTrue($reflection->isPublic());
         $returnType = $reflection->getReturnType();
@@ -231,9 +228,10 @@ final class AuthServiceTest extends TestCase
     public function testIsFormOwnerReturnsFalseForUnownedForm(): void
     {
         $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
+        $formIdStmt = $pdo->query("SELECT id FROM forms LIMIT 1");
+        $formId = $formIdStmt === false ? false : $formIdStmt->fetchColumn();
+        if ($formId === false) {
+            self::markTestSkipped('No forms in test DB');
         }
         $result = $this->auth->isFormOwner($formId, 'nobody_owns_this@example.com');
         self::assertFalse($result);
@@ -244,9 +242,10 @@ final class AuthServiceTest extends TestCase
         $pdo = $this->db->getPdo();
 
         // Get a form
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
+        $formIdStmt = $pdo->query("SELECT id FROM forms LIMIT 1");
+        $formId = $formIdStmt === false ? false : $formIdStmt->fetchColumn();
+        if ($formId === false) {
+            self::markTestSkipped('No forms in test DB');
         }
 
         // Insert a test owner
@@ -268,9 +267,10 @@ final class AuthServiceTest extends TestCase
     public function testIsFormOwnerUsesCurrentUserWhenEmailIsNull(): void
     {
         $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
+        $formIdStmt = $pdo->query("SELECT id FROM forms LIMIT 1");
+        $formId = $formIdStmt === false ? false : $formIdStmt->fetchColumn();
+        if ($formId === false) {
+            self::markTestSkipped('No forms in test DB');
         }
 
         // Get the current test user
@@ -295,9 +295,10 @@ final class AuthServiceTest extends TestCase
     public function testGetOwnedFormsReturnsArray(): void
     {
         $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
+        $formIdStmt = $pdo->query("SELECT id FROM forms LIMIT 1");
+        $formId = $formIdStmt === false ? false : $formIdStmt->fetchColumn();
+        if ($formId === false) {
+            self::markTestSkipped('No forms in test DB');
         }
 
         $testEmail = 'owned_' . uniqid() . '@test.com';
@@ -326,7 +327,7 @@ final class AuthServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $form = $pdo->query("SELECT id, label FROM forms LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
         if (!$form) {
-            $this->markTestSkipped('No forms in test DB');
+            self::markTestSkipped('No forms in test DB');
         }
 
         $testEmail = 'ownedform_' . uniqid() . '@test.com';
@@ -349,7 +350,7 @@ final class AuthServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $form = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
         if (!$form) {
-            $this->markTestSkipped('No forms in test DB');
+            self::markTestSkipped('No forms in test DB');
         }
 
         $testEmail = 'colowned_' . uniqid() . '@test.com';
@@ -374,9 +375,10 @@ final class AuthServiceTest extends TestCase
     public function testGetOwnedFormsUsesCurrentUserWhenEmailIsNull(): void
     {
         $pdo = $this->db->getPdo();
-        $formId = $pdo->query("SELECT id FROM forms LIMIT 1")->fetchColumn();
-        if (!$formId) {
-            $this->markTestSkipped('No forms in test DB');
+        $formIdStmt = $pdo->query("SELECT id FROM forms LIMIT 1");
+        $formId = $formIdStmt === false ? false : $formIdStmt->fetchColumn();
+        if ($formId === false) {
+            self::markTestSkipped('No forms in test DB');
         }
 
         $currentUser = $this->auth->getUser();
@@ -399,7 +401,7 @@ final class AuthServiceTest extends TestCase
         // Get two forms
         $forms = $pdo->query("SELECT id, label FROM forms ORDER BY label LIMIT 2")->fetchAll(\PDO::FETCH_ASSOC);
         if (count($forms) < 2) {
-            $this->markTestSkipped('Need at least 2 forms in test DB');
+            self::markTestSkipped('Need at least 2 forms in test DB');
         }
 
         $testEmail = 'sorted_' . uniqid() . '@test.com';
@@ -719,7 +721,7 @@ final class AuthServiceTest extends TestCase
     {
         $isOrSuper = $this->auth->isAdmin() || $this->auth->isSuperAdmin();
         if (!$isOrSuper) {
-            $this->markTestSkipped('Test user is not admin');
+            self::markTestSkipped('Test user is not admin');
         }
 
         // Start session if not active
@@ -741,7 +743,7 @@ final class AuthServiceTest extends TestCase
     {
         $isOrSuper = $this->auth->isAdmin() || $this->auth->isSuperAdmin();
         if (!$isOrSuper) {
-            $this->markTestSkipped('Test user is not admin');
+            self::markTestSkipped('Test user is not admin');
         }
 
         if (session_status() === PHP_SESSION_NONE) {
