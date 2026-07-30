@@ -71,6 +71,40 @@ final class HtmlService implements HtmlInterface
     }
 
     /**
+     * Formate une date SQL au format français "d/m/Y à H:i".
+     *
+     * Centralise le date(...)/strtotime(...) dupliqué dans plusieurs
+     * renderers pour l'affichage du statut des tokens (sent_at, done_at,
+     * expires_at) — signalé 2026-07-30 (2 occurrences dans
+     * SubmissionViewRenderer seul, formatage à l'identique dans
+     * MonitoringRenderer/MyValidationsRenderer à migrer si l'occasion se
+     * présente).
+     */
+    public function formatDateTimeFr(?string $dateStr): string
+    {
+        if ($dateStr === null || $dateStr === '') {
+            return '';
+        }
+        return date('d/m/Y à H:i', (int) strtotime($dateStr));
+    }
+
+    /**
+     * Formate un fragment " — N rappel(s) envoyé(s)" à ajouter à un texte
+     * de statut de token, ou une chaîne vide si aucune relance.
+     *
+     * Centralise le pluriel dupliqué (2 occurrences dans
+     * SubmissionViewRenderer, une variante dans MyValidationsRenderer)
+     * signalé 2026-07-30.
+     */
+    public function formatRelanceSuffix(int $relanceCount): string
+    {
+        if ($relanceCount <= 0) {
+            return '';
+        }
+        return ' — ' . $relanceCount . ' rappel' . ($relanceCount > 1 ? 's' : '') . ' envoyé' . ($relanceCount > 1 ? 's' : '');
+    }
+
+    /**
      * Affiche un email avec masquage du domaine pour l'utilisateur courant.
      */
     public function displayUser(string $email, ?string $current_user = null, bool $force_email = false): string
