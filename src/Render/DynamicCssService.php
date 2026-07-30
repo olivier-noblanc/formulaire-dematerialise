@@ -47,15 +47,6 @@ final class DynamicCssService
     }
 
     /**
-     * Alias court — l'API suggérée par le CTO.
-     * App::css()->add('span_label', 'font-weight:bold;');
-     */
-    public function add(string $className, string $declarations): void
-    {
-        $this->rule($className, $declarations);
-    }
-
-    /**
      * Génère le CSS pour toutes les règles enregistrées.
      * Appelé par style.php à la fin du <style>.
      */
@@ -71,14 +62,6 @@ final class DynamicCssService
             $css .= ".{$className} { {$safe} }\n";
         }
         return $css;
-    }
-
-    /**
-     * Retourne le nombre de règles enregistrées (pour debug/stats).
-     */
-    public function count(): int
-    {
-        return count($this->rules);
     }
 
     /**

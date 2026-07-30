@@ -69,6 +69,7 @@ $app->set(TokenRepository::class, new TokenRepository($db));
     $app->set(AuthService::class, new AuthService($db));
     $app->set(CacheService::class, new CacheService());
     $app->set(HtmlService::class, new HtmlService());
+    $app->set(\App\Render\DynamicCssService::class, new \App\Render\DynamicCssService());
     $app->set(SecurityService::class, new SecurityService($app->get(HtmlService::class)));
     $app->set(AuditLogService::class, new AuditLogService($app->get(AuditRepository::class)));
     $app->set(MailRepository::class, new MailRepository($db));
