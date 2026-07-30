@@ -158,7 +158,21 @@ Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 - **1 faux positif** : #26 (JargonService) — le service est vivant (81 références via `t_jargon()` → `JargonService::translate()`), le TODO avait tort
 
 
-### Éléments conservés (décision antérieure)
+### CSP — zéro inline (décision 2026-07-30)
+
+Le README annonçait "JavaScript : Aucun (CSP `script-src 'none'`)" — plus vrai
+depuis l'ajout du menu persona (dropdown JS). Décision : viser un vrai zéro
+`unsafe-inline`, pas un filet permanent — cohérent avec les principes déjà
+affichés ailleurs dans le README ("Zéro fichier .css : le CSS passe
+exclusivement par `style.php`").
+
+| Directive | État | Détail |
+|---|---|---|
+| `script-src` | **Fait** | `unsafe-inline` retiré. Seul `<script>` inline du projet (`NavigationRenderer::footer()`, menu persona) désormais noncé par requête (`SecurityService::getScriptNonce()`). README corrigé (n'annonce plus "Aucun JavaScript"). |
+| `style-src` | **Reste à faire** | `unsafe-inline` toujours nécessaire — usage large de `style=""` dynamiques (pourcentages, couleurs calculées) dans les renderers. Un nonce ne fonctionne PAS sur un attribut `style=""` (seulement sur les éléments `<script>`/`<style>`, nuance CSP) — la migration demande de déplacer chaque valeur dynamique vers un `<style nonce="...">#id{...}</style>` ciblé, page par page. Volume mesuré via `tests/e2e/csp_check.spec.js` le 2026-07-30 : admin_alerts (68), admin_settings (53), monitoring (42), admin_forms (21), docs (16), dashboard/form onboarding (8 chacun), admin_access/stats (5 chacun), index (3), changelog (1). |
+| `style-src-attr` résiduel après migration | À décider | Une fois les style="" dynamiques migrés vers `<style nonce>`, il restera peut-être des style="" statiques (mise en page fixe) — à évaluer si ça vaut la peine de les déplacer en classes CSS `style.php` plutôt que de garder `unsafe-inline` pour si peu. |
+
+
 
 | Élément | Décision | Raison |
 |---|---|---|

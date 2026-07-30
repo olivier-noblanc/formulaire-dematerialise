@@ -18,6 +18,16 @@ final class SecurityService implements SecurityInterface
     {
     }
 
+    /**
+     * Nonce CSP de la requête courante — à appliquer sur tout <script> ou
+     * <style> inline pour qu'il soit autorisé sans 'unsafe-inline'.
+     * Vide avant le premier appel à sendSecurityHeaders() (ex. CLI).
+     */
+    public function getScriptNonce(): string
+    {
+        return $this->scriptNonce;
+    }
+
     public function sendSecurityHeaders(): void
     {
         if (php_sapi_name() === 'cli') {
@@ -32,7 +42,17 @@ final class SecurityService implements SecurityInterface
 
         $this->scriptNonce = bin2hex(random_bytes(16));
         $nonceValue = $this->scriptNonce;
-        $csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'nonce-{$nonceValue}'; style-src 'self' 'unsafe-inline' 'nonce-{$nonceValue}'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
+        // script-src : plus de 'unsafe-inline' — le seul <script> inline
+        // (NavigationRenderer::footer(), menu persona) est noncé (2026-07-30,
+        // cf. README "JavaScript : Aucun" — objectif zéro JS non conforme
+        // à ce jour, mais au moins plus de fallback unsafe-inline).
+        // style-src : 'unsafe-inline' encore nécessaire — les attributs
+        // style="" ne peuvent PAS être autorisés par nonce (contrairement
+        // aux éléments <script>/<style> — nuance CSP), et le code utilise
+        // encore largement des style="" dynamiques (pourcentages, couleurs
+        // calculées...). Migration vers des <style nonce> ciblés à faire
+        // page par page, pas en un seul commit.
+        $csp = "default-src 'self'; script-src 'self' 'nonce-{$nonceValue}'; style-src 'self' 'unsafe-inline' 'nonce-{$nonceValue}'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
         header('Content-Security-Policy: ' . $csp);
 
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');

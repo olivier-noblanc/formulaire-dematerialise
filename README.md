@@ -71,7 +71,7 @@ chacun valide ou refuse à son rythme — le système trace, relance et alerte a
 | Base de données | SQLite (embarquée, migration automatique versionnée, mode WAL) |
 | Architecture | Services (DI container) + Repository pattern — 10 repositories, 10+ services |
 | CSS | Pur — stylesheet partagée via `style.php`, design Marianne conforme RGAA |
-| JavaScript | Aucun (CSP `script-src 'none'`) |
+| JavaScript | Minimal (menu persona uniquement) — CSP `script-src` sans `'unsafe-inline'`, script noncé par requête |
 | Authentification | Windows Auth (IIS + Kerberos) via `$_SERVER['AUTH_USER']` |
 | Mail | PHPMailer (seule dépendance, vendored) |
 | Tâches planifiées | **Lazy cron** intégré — `remind.php` et `alert_check.php` au premier accès PDO |
