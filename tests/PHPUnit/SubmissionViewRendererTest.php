@@ -400,4 +400,104 @@ final class SubmissionViewRendererTest extends TestCase
         // Le message d'attente pour l'étape vide
         self::assertStringContainsString('En attente de démarrage', $html);
     }
+
+    // ── Tooltips workflow ────────────────────────────────────────
+
+    public function testRenderWorkflowCheckTooltipShowsValidatorAndDate(): void
+    {
+        $steps = [
+            [
+                'step_status' => 'validated',
+                'step_label'  => 'OK',
+                'ordre'       => 1,
+                'tokens'      => [
+                    [
+                        'email' => 'done@test.com',
+                        'done_at' => '2025-06-15 14:30:00',
+                        'sent_at' => '2025-06-10 09:00:00',
+                        'relance_count' => 0,
+                        'relance_at' => null,
+                        'expires_at' => null,
+                    ],
+                ],
+            ],
+        ];
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
+        self::assertStringContainsString('title="', $html);
+        self::assertStringContainsString('done@test.com', $html);
+        self::assertStringContainsString('15/06/2025', $html);
+    }
+
+    public function testRenderWorkflowCheckTooltipShowsRelanceDetails(): void
+    {
+        $steps = [
+            [
+                'step_status' => 'validated',
+                'step_label'  => 'OK',
+                'ordre'       => 1,
+                'tokens'      => [
+                    [
+                        'email' => 'done@test.com',
+                        'done_at' => '2025-06-15 14:30:00',
+                        'sent_at' => '2025-06-10 09:00:00',
+                        'relance_count' => 2,
+                        'relance_at' => '2025-06-14 10:00:00',
+                        'expires_at' => null,
+                    ],
+                ],
+            ],
+        ];
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'valide');
+        self::assertStringContainsString('2 rappels', $html);
+        self::assertStringContainsString('14/06/2025', $html);
+    }
+
+    public function testRenderWorkflowPendingTooltipShowsEmailDateAndExpiry(): void
+    {
+        $steps = [
+            [
+                'step_status' => 'current',
+                'step_label'  => 'En cours',
+                'ordre'       => 1,
+                'tokens'      => [
+                    [
+                        'email' => 'pending@test.com',
+                        'done_at' => null,
+                        'sent_at' => '2025-06-10 09:00:00',
+                        'relance_count' => 0,
+                        'relance_at' => null,
+                        'expires_at' => '2025-06-24 09:00:00',
+                    ],
+                ],
+            ],
+        ];
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
+        self::assertStringContainsString('title="', $html);
+        self::assertStringContainsString('10/06/2025', $html);
+        self::assertStringContainsString('24/06/2025', $html);
+    }
+
+    public function testRenderWorkflowPendingTooltipShowsRelanceWithLastDate(): void
+    {
+        $steps = [
+            [
+                'step_status' => 'current',
+                'step_label'  => 'En cours',
+                'ordre'       => 1,
+                'tokens'      => [
+                    [
+                        'email' => 'pending@test.com',
+                        'done_at' => null,
+                        'sent_at' => '2025-06-10 09:00:00',
+                        'relance_count' => 1,
+                        'relance_at' => '2025-06-18 11:00:00',
+                        'expires_at' => '2025-06-24 09:00:00',
+                    ],
+                ],
+            ],
+        ];
+        $html = $this->renderer->renderWorkflowDiagram($steps, 'en_cours');
+        self::assertStringContainsString('1 rappel', $html);
+        self::assertStringContainsString('18/06/2025', $html);
+    }
 }
