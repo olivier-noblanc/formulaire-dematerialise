@@ -21,32 +21,32 @@ final class AuditLogServiceTest extends TestCase
     public function testLogDoesNotThrow(): void
     {
         $this->audit->log('test_action', 'test_target', 'test_detail');
-        self::assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     public function testLogWithActor(): void
     {
         $this->audit->log('test_action', 'target', 'detail', 'actor@test.com');
-        self::assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     public function testSecurityLogDoesNotThrow(): void
     {
         $this->audit->securityLog('test_event', 'test_detail');
-        self::assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     public function testSecurityLogWithActor(): void
     {
         $this->audit->securityLog('test_event', 'detail', 'actor@test.com');
-        self::assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
 
     public function testLogMaskEmailsInNonCli(): void
     {
         $this->audit->log('test_action', 'target', 'user@example.com detail');
-        self::assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     public function testLogWritesToDatabase(): void
