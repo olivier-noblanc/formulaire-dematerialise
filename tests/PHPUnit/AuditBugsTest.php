@@ -8,7 +8,6 @@ use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Repository\SubmissionRepository;
-use App\Repository\TokenRepository;
 use App\Workflow\WorkflowEngine;
 use PHPUnit\Framework\TestCase;
 
@@ -26,7 +25,6 @@ final class AuditBugsTest extends TestCase
     private Database $db;
     private WorkflowEngine $workflow;
     private SubmissionRepository $subRepo;
-    private TokenRepository $tokenRepo;
 
     /** @var list<string> IDs créés pour cleanup tearDown */
     private array $createdIds = [];
@@ -36,7 +34,6 @@ final class AuditBugsTest extends TestCase
         $this->db = App::getInstance()->get(Database::class);
         $this->workflow = App::getInstance()->get(WorkflowEngine::class);
         $this->subRepo = App::getInstance()->get(SubmissionRepository::class);
-        $this->tokenRepo = App::getInstance()->get(TokenRepository::class);
     }
 
     protected function tearDown(): void
@@ -115,7 +112,7 @@ final class AuditBugsTest extends TestCase
         self::assertContains(
             $result['status'],
             ['already_done', 'invalid'],
-            "Token invalidé doit être refusé. Reçu : " . ($result['status'] ?? '?')
+            "Token invalidé doit être refusé. Reçu : " . $result['status']
         );
 
         // La soumission doit rester en_cours
@@ -199,7 +196,7 @@ final class AuditBugsTest extends TestCase
     {
         $tokenId = \generate_uuid();
         $token = \generate_token();
-        $expiresAt = gmdate('Y-m-d H:i:s', strtotime('+30 days') ?: time());
+        $expiresAt = gmdate('Y-m-d H:i:s', (int) strtotime('+30 days'));
         $pdo = $this->db->getPdo();
         $pdo->prepare("INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)")
             ->execute([$tokenId, $subId, $stepId, $email, $token, $expiresAt]);
