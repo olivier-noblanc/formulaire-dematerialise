@@ -107,12 +107,14 @@ final class SubmissionViewRenderer
     {
         $fill_cls = $progress_pct === 100 ? 'complete' : ($progress_pct > 0 ? 'in-progress' : 'not-started');
         $width    = max($progress_pct, 8);
+        $width_cls = 'pw-' . (int) $width;
+        \App\Core\App::css()->rule($width_cls, "width:{$width}%;");
 
         return <<<HTML
               <!-- Progression -->
               <div class="progress-section">
                 <div class="progress-bar-container">
-                  <div class="progress-bar-fill {$fill_cls}" style="width:{$width}%;">
+                  <div class="progress-bar-fill {$fill_cls} {$width_cls}">
                     {$progress_pct}%
                   </div>
                 </div>
@@ -707,7 +709,7 @@ final class SubmissionViewRenderer
             $icon = $is_valid ? '✅' : ($is_annule ? '⚠️' : '❌');
             $step_label = \App\Core\App::html()->escape((string) ($v['step_label'] ?? ''));
             $email_display = \App\Core\App::html()->displayUser((string) ($v['email'] ?? ''));
-            $color = $is_valid ? '#1a6b3c' : ($is_annule ? '#b45309' : '#c0392b');
+            $color_cls = $is_valid ? 'text-valide' : ($is_annule ? 'text-annule' : 'text-refuse');
             $action_label = $is_valid ? 'Validé' : ($is_annule ? 'Annulé' : 'Refusé');
             $date = \App\Core\App::html()->escape((string) ($v['date'] ?? ''));
 
@@ -734,7 +736,7 @@ final class SubmissionViewRenderer
                       <div class="val-content">
                         <div class="val-header">
                           {$step_label} — {$email_display}
-                          <span style="color:{$color};">
+                          <span class="{$color_cls}">
                             {$action_label}
                           </span>
                         </div>

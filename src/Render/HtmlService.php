@@ -230,9 +230,11 @@ final class HtmlService implements HtmlInterface
         $g_valide_end = $p_valide;
         $g_en_cours_end = $p_valide + $p_en_cours;
         $gradient = "conic-gradient(#1a6b3c 0% {$g_valide_end}%, #b45309 {$g_valide_end}% {$g_en_cours_end}%, #c0392b {$g_en_cours_end}% 100%)";
+        $donut_cls = 'donut-' . (int) $p_valide . '-' . (int) $p_en_cours . '-' . (int) $p_refuse;
+        \App\Core\App::css()->rule($donut_cls, "background:{$gradient};");
 
         return '<div class="chart-row">'
-             . '<div class="donut-chart" style="background:' . $gradient . ';">'
+             . '<div class="donut-chart ' . $donut_cls . '">'
              . '<div class="donut-center">'
              . '<span class="donut-value">' . $total . '</span>'
              . '<span class="donut-label">Total</span>'

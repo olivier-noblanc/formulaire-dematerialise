@@ -114,6 +114,8 @@ final class MySubmissionsRenderer
                 $prenomNom   = App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
                 $formSlug    = App::html()->escape($submission['form_slug']);
                 $maxPct      = max($pct, 3);
+                $widthCls    = 'ipw-' . (int) $maxPct;
+                \App\Core\App::css()->rule($widthCls, "width:{$maxPct}%;");
 
                 $progressDone = (int) ($submission['progress_done'] ?? 0);
                 $progressTotal = (int) ($submission['progress_total'] ?? 0);
@@ -132,7 +134,7 @@ final class MySubmissionsRenderer
                           <div class="sub-card-body">
                             <div class="inline-progress">
                               <div class="inline-progress-bar">
-                                <div class="inline-progress-fill {$fillCls}" style="width:{$maxPct}%;"></div>
+                                <div class="inline-progress-fill {$fillCls} {$widthCls}"></div>
                               </div>
                               <div class="inline-progress-text">{$progressDone}/{$progressTotal} étapes ({$pct}%)</div>
                             </div>
