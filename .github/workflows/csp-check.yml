@@ -6,8 +6,11 @@
 #   3. Détecte les violations CSP runtime côté navigateur
 #   4. Compte les inline style= et <style> pour le suivi
 #
-# Le CSP autorise 'unsafe-inline' tant que le code utilise du inline.
-# Ce workflow servira de filet de sécurité dès que 'unsafe-inline' sera retiré.
+# script-src n'a plus 'unsafe-inline' depuis le 2026-07-30 (le seul <script>
+# du projet est noncé) — les violations script-src-elem/attr sont donc de
+# vraies erreurs à corriger, pas un filet en transition.
+# style-src garde encore 'unsafe-inline' (migration des style="" dynamiques
+# vers des <style nonce> ciblés en cours, cf. TODO.md § CSP — zéro inline).
 
 name: CSP Check
 

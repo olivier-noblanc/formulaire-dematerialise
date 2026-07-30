@@ -211,7 +211,7 @@ final class NavigationRenderer
     public function footer(): string
     {
         $persona_js = <<<'HTML_WRAP'
-        <script>
+        <script __CSP_NONCE_PLACEHOLDER__>
         (function() {
           var card = document.getElementById('sidebar-user-card');
           if (!card || !card.classList.contains('sidebar-user-card-admin')) return;
@@ -297,6 +297,12 @@ final class NavigationRenderer
         })();
         </script>
         HTML_WRAP;
+
+        $persona_js = str_replace(
+            '__CSP_NONCE_PLACEHOLDER__',
+            'nonce="' . App::security()->getScriptNonce() . '"',
+            $persona_js
+        );
 
         return '</div><!-- /.content -->'
              . '</div><!-- /.main-area -->'

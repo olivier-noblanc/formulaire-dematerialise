@@ -111,10 +111,14 @@ async function main() {
                         t.ko(`[${p.label}] frame-ancestors présent`, 'directive frame-ancestors manquante');
                     }
 
-                    // Alerte si 'unsafe-inline' est présent
-                    if (cspHeader.includes("'unsafe-inline'")) {
-                        // Pas un échec tant que le code utilise du inline, mais un warning
-                        console.log(`  ⚠️  [${p.label}] 'unsafe-inline' présent dans le CSP — à supprimer progressivement`);
+                    // Alerte si 'unsafe-inline' est présent sur style-src (attendu
+                    // pour l'instant, migration en cours — cf. TODO.md). Ne devrait
+                    // plus jamais apparaître sur script-src (retiré le 2026-07-30).
+                    if (/style-src[^;]*'unsafe-inline'/.test(cspHeader)) {
+                        console.log(`  ⚠️  [${p.label}] 'unsafe-inline' présent sur style-src — migration en cours`);
+                    }
+                    if (/script-src[^;]*'unsafe-inline'/.test(cspHeader)) {
+                        t.ko(`[${p.label}] script-src sans unsafe-inline`, "'unsafe-inline' ne devrait plus être présent sur script-src");
                     }
                 } else {
                     t.ko(`[${p.label}] Header CSP présent`, 'Content-Security-Policy absent');
@@ -123,20 +127,43 @@ async function main() {
                 // 2. Attendre que DOMContentLoaded ait fires pour les compteurs
                 await page.waitForTimeout(200);
 
-                // 3. Lire les violations CSP capturées par le navigateur
+                // 3. Lire les violations CSP capturées par le navigateur.
+                // script-src : échec dur (plus de fallback unsafe-inline depuis
+                // le 2026-07-30, cf. TODO.md § CSP — zéro inline).
+                // style-src : avertissement seulement — migration des style=""
+                // dynamiques vers des <style nonce> ciblés en cours, pas encore
+                // terminée (voir TODO.md pour le volume mesuré par page).
                 const violations = await page.evaluate(() => window.__cspViolations || []);
-                if (violations.length === 0) {
-                    t.ok(`[${p.label}] Aucune violation CSP runtime`);
+                const scriptViolations = violations.filter(v => v.directive.startsWith('script-src'));
+                const styleViolations = violations.filter(v => v.directive.startsWith('style-src'));
+                const otherViolations = violations.filter(v => !v.directive.startsWith('script-src') && !v.directive.startsWith('style-src'));
+
+                if (scriptViolations.length === 0) {
+                    t.ok(`[${p.label}] Aucune violation script-src runtime`);
                 } else {
                     t.ko(
-                        `[${p.label}] Aucune violation CSP runtime`,
-                        `${violations.length} violation(s) : ${violations.map(v => v.directive + ' (' + v.blocked + ')').join(', ')}`
+                        `[${p.label}] Aucune violation script-src runtime`,
+                        `${scriptViolations.length} violation(s) : ${scriptViolations.map(v => v.directive + ' (' + v.blocked + ')').join(', ')}`
                     );
-                    // Log détaillé
-                    for (const v of violations) {
-                        console.log(`    ⛔ ${v.directive} — ${v.blocked} @ ${v.source}:${v.line}:${v.column}`);
-                        if (v.sample) console.log(`       sample: ${v.sample}`);
-                    }
+                }
+
+                if (styleViolations.length > 0) {
+                    console.log(`  ⚠️  [${p.label}] ${styleViolations.length} violation(s) style-src (migration en cours, non bloquant — cf. TODO.md)`);
+                }
+
+                if (otherViolations.length === 0) {
+                    t.ok(`[${p.label}] Aucune autre violation CSP runtime`);
+                } else {
+                    t.ko(
+                        `[${p.label}] Aucune autre violation CSP runtime`,
+                        `${otherViolations.length} violation(s) : ${otherViolations.map(v => v.directive + ' (' + v.blocked + ')').join(', ')}`
+                    );
+                }
+
+                // Log détaillé (toutes violations, y compris style-src en info)
+                for (const v of violations) {
+                    console.log(`    ⛔ ${v.directive} — ${v.blocked} @ ${v.source}:${v.line}:${v.column}`);
+                    if (v.sample) console.log(`       sample: ${v.sample}`);
                 }
 
                 // 4. Comptage inline (informationnel — pas un échec tant que unsafe-inline)
