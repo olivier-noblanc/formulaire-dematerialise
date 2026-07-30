@@ -89,10 +89,16 @@ final class StatsRenderer
                 $totalInt   = (int) $periodStatAsc['total'];
                 $html .= '<div class="bar-row">';
                 $html .= '<div class="bar-label">' . $periodStr . '</div>';
-                $html .= '<div class="bar-track"><div class="stacked-bar" style="width:' . $barWidth . '%;">';
-                $html .= '<div class="segment-valide" style="width:' . $validePct . '%;"></div>';
-                $html .= '<div class="segment-en_cours" style="width:' . $enCoursPct . '%;"></div>';
-                $html .= '<div class="segment-refuse" style="width:' . $refusePct . '%;"></div>';
+                // DynamicCssService : les largeurs sont calculées à l'exécution
+                // depuis les données — impossibles en CSS statique.
+                \App\Core\App::css()->rule('bar-w-' . (int) $barWidth, "width:{$barWidth}%;");
+                \App\Core\App::css()->rule('seg-val-' . (int) $validePct, "width:{$validePct}%;");
+                \App\Core\App::css()->rule('seg-enc-' . (int) $enCoursPct, "width:{$enCoursPct}%;");
+                \App\Core\App::css()->rule('seg-ref-' . (int) $refusePct, "width:{$refusePct}%;");
+                $html .= '<div class="bar-track"><div class="stacked-bar bar-w-' . (int) $barWidth . '">';
+                $html .= '<div class="segment-valide seg-val-' . (int) $validePct . '"></div>';
+                $html .= '<div class="segment-en_cours seg-enc-' . (int) $enCoursPct . '"></div>';
+                $html .= '<div class="segment-refuse seg-ref-' . (int) $refusePct . '"></div>';
                 $html .= '</div></div>';
                 $html .= '<div class="bar-value">' . $totalInt . '</div>';
                 $html .= '</div>';
