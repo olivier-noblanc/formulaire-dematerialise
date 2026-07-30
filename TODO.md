@@ -13,7 +13,7 @@
 | PHPStan erreurs baseline | **490** (level 8) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** |
-| CI | **GitHub Actions** (11 jobs, ~3 min) |
+| CI | **GitHub Actions** (12 jobs, ~3 min) |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
 ---
