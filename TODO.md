@@ -4,16 +4,16 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Métrique | Valeur |
-|----------|--------|
 | Tests | **1302** (0 fail) |
 | Assertions | **3758** |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **490** (level 8) |
+| Style "" inline | **0** (zéro — CSP compliant) |
+| Classes CSS sémantiques | **215** (style_utility.css + DynamicCssService) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** |
-| CI | **GitHub Actions** (12 jobs, ~3 min) |
+| CI | **GitHub Actions** (12 jobs, ~3 min) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
 ---
