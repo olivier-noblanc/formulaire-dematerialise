@@ -321,10 +321,9 @@ jobs:
     name: E2E Playwright (Firefox)
     runs-on: ubuntu-latest
     needs: [phpstan]
-    # TODO : Playwright a un souci de path pour chromium_headless_shell.
-    # Le binaire est installé dans ms-playwright/chromium-XXXX mais helpers.js
-    # cherche dans ms-playwright/chromium_headless_shell-XXXX. continue-on-error
-    # le temps de fixer le PLAYWRIGHT_BROWSERS_PATH.
+    # continue-on-error conservé le temps de confirmer que la bascule
+    # chromium→firefox (2026-07-30) résout bien le bug de chemin
+    # chromium_headless_shell — à retirer une fois un run vert confirmé.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -348,12 +347,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install Playwright + Chromium
+      - name: Install Playwright + Firefox
         run: |
           if [ -f package.json ]; then npm install; fi
-          npx playwright install chromium
-          npx playwright install-deps chromium
+          npx playwright install firefox
+          npx playwright install-deps firefox
       - name: Run Playwright tests
-        # Les tests utilisent chromium (pas firefox) — cf tests/e2e/helpers.js
-        # run_all.js est l'orchestrateur custom (pas de playwright.config.js)
-        run: node tests/e2e/run_all.js 2>&1 || true
+        # Bascule chromium → firefox le 2026-07-30 : évite le bug de chemin
+        # chromium_headless_shell (binaire installé dans ms-playwright/
+        # chromium-XXXX, cherché dans ms-playwright/chromium_headless_shell-XXXX)
+        # qui forçait continue-on-error + `|| true` jusqu'ici.
+        run: node tests/e2e/run_all.js

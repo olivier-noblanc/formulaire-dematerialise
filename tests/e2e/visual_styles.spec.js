@@ -12,7 +12,7 @@
 //
 // Usage : node tests/e2e/visual_styles.spec.js
 
-const { chromium } = require('playwright');
+const { firefox } = require('playwright');
 const helpers = require('./helpers');
 
 async function main() {
@@ -22,7 +22,7 @@ async function main() {
     const serverHandle = await helpers.startTestServer();
     const stopServer = serverHandle.stop;
     try {
-        const browser = await chromium.launch({ headless: true });
+        const browser = await firefox.launch({ headless: true });
         // Utiliser testeur@dreets.gouv.fr qui a 13 soumissions en DB de test
         // (l'admin olivier.noblanc n'a qu'1 soumission en_cours).
         const context = await browser.newContext({
