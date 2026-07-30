@@ -98,6 +98,7 @@ require_once __DIR__ . '/src/mail_wrappers.php';
 if (!$_app->has(\App\Render\HtmlService::class)) {
     $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 }
+$_app->set(\App\Render\DynamicCssService::class, new \App\Render\DynamicCssService());
 $_html_svc = $_app->get(\App\Render\HtmlService::class);
 $_app->set(\App\Security\SecurityService::class, new \App\Security\SecurityService($_html_svc));
 
