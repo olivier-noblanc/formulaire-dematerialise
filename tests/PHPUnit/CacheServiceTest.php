@@ -21,7 +21,7 @@ final class CacheServiceTest extends TestCase
     {
         // Clean up test cache directory
         if (is_dir($this->testCacheDir)) {
-            $files = glob($this->testCacheDir . '/*');
+            $files = glob($this->testCacheDir . '/*') ?: [];
             foreach ($files as $file) {
                 if (is_file($file)) {
                     @unlink($file);
@@ -70,7 +70,6 @@ final class CacheServiceTest extends TestCase
     public function testGetLatestVersion(): void
     {
         $version = $this->cache->getLatestVersion();
-        self::assertIsString($version);
         // Should match semver pattern or be 0.0.0
         self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $version);
     }

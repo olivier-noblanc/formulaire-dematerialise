@@ -400,7 +400,9 @@ final class AuthServiceTest extends TestCase
     {
         $pdo = $this->db->getPdo();
         // Get two forms
-        $forms = $pdo->query("SELECT id, label FROM forms ORDER BY label LIMIT 2")->fetchAll(\PDO::FETCH_ASSOC);
+        $stmt = $pdo->query("SELECT id, label FROM forms ORDER BY label LIMIT 2");
+        assert($stmt !== false);
+        $forms = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         if (count($forms) < 2) {
             self::markTestSkipped('Need at least 2 forms in test DB');
         }
@@ -604,17 +606,18 @@ final class AuthServiceTest extends TestCase
     public function testGetUserWithPersonaTokenInGet(): void
     {
         $_GET['persona_token'] = 'test_persona_token';
-        $user = $this->auth->getUser();
+        $this->auth->getUser();
         // Without persona_lookup returning a valid target, it should fall back to real user
-        self::assertIsString($user);
+        // (le type de retour string est déjà garanti statiquement)
+        self::expectNotToPerformAssertions();
         unset($_GET['persona_token']);
     }
 
     public function testGetUserWithPersonaTokenInPost(): void
     {
         $_POST['persona_token'] = 'test_persona_token';
-        $user = $this->auth->getUser();
-        self::assertIsString($user);
+        $this->auth->getUser();
+        self::expectNotToPerformAssertions();
         unset($_POST['persona_token']);
     }
 
@@ -651,8 +654,8 @@ final class AuthServiceTest extends TestCase
 
     public function testGetAdminEmailReturnsString(): void
     {
-        $email = $this->auth->getAdminEmail();
-        self::assertIsString($email);
+        $this->auth->getAdminEmail();
+        self::expectNotToPerformAssertions();
     }
 
     // ── getUser() with REMOTE_USER ──────────────────────────────
@@ -847,25 +850,25 @@ final class AuthServiceTest extends TestCase
 
     public function testApproveAdminRequestNonExistentEmailDoesNotThrow(): void
     {
-        $result = $this->auth->approveAdminRequest('nonexistent_' . uniqid() . '@test.com');
+        $this->auth->approveAdminRequest('nonexistent_' . uniqid() . '@test.com');
         // The method should not throw, just update 0 rows
-        self::assertIsBool($result);
+        self::expectNotToPerformAssertions();
     }
 
     // ── rejectAdminRequest() with non-existent email ─────────────
 
     public function testRejectAdminRequestNonExistentEmailDoesNotThrow(): void
     {
-        $result = $this->auth->rejectAdminRequest('nonexistent_' . uniqid() . '@test.com');
-        self::assertIsBool($result);
+        $this->auth->rejectAdminRequest('nonexistent_' . uniqid() . '@test.com');
+        self::expectNotToPerformAssertions();
     }
 
     // ── removeAdmin() with non-existent admin ────────────────────
 
     public function testRemoveAdminNonExistentEmailDoesNotThrow(): void
     {
-        $result = $this->auth->removeAdmin('nonexistent_admin_' . uniqid() . '@test.com');
+        $this->auth->removeAdmin('nonexistent_admin_' . uniqid() . '@test.com');
         // Should return true (DELETE succeeded, 0 rows affected)
-        self::assertIsBool($result);
+        self::expectNotToPerformAssertions();
     }
 }

@@ -30,6 +30,7 @@ final class ConditionEvaluatorTest extends TestCase
     public function testEqOperatorMatch(): void
     {
         $condition = json_encode(['field' => 'status', 'op' => 'eq', 'value' => 'active']);
+        assert($condition !== false);
         self::assertTrue($this->evaluator->evaluate($condition, ['status' => 'active']));
     }
 
