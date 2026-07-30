@@ -69,6 +69,7 @@ $app->set(AttachmentRepository::class, new AttachmentRepository($db));
 $app->set(AlertRepository::class, new AlertRepository($db));
 $app->set(FieldService::class, new FieldService($db));
 $app->set(HtmlService::class, new HtmlService());
+$app->set(\App\Render\DynamicCssService::class, new \App\Render\DynamicCssService());
 $app->set(SecurityService::class, new SecurityService($app->get(HtmlService::class)));
 $auditRepo = $app->get(AuditRepository::class);
 $app->set(AuditLogService::class, new AuditLogService($auditRepo));
