@@ -193,7 +193,7 @@ final class FormRenderer
         foreach ($hidden_fields as $hname => $hval) {
             $html .= '<input type="hidden" name="' . \App\Core\App::html()->escape($hname) . '" value="' . \App\Core\App::html()->escape($hval) . '">';
         }
-        $html .= '<button type="submit" class="btn btn-secondary s-17ecbb82">Rechercher</button>';
+        $html .= '<button type="submit" class="btn btn-secondary btn-sm-2">Rechercher</button>';
         if ($current_search !== '') {
             $clear_url = $action_url;
             $sep = (str_contains($clear_url, '?')) ? '&' : '?';
@@ -204,7 +204,7 @@ final class FormRenderer
             if ($parts !== []) {
                 $clear_url .= (str_contains($clear_url, '?') ? '&' : '?') . implode('&', $parts);
             }
-            $html .= ' <a href="' . \App\Core\App::html()->escape($clear_url) . '" class="btn btn-secondary s-17ecbb82">&#10005; Effacer</a>';
+            $html .= ' <a href="' . \App\Core\App::html()->escape($clear_url) . '" class="btn btn-secondary btn-sm-2">&#10005; Effacer</a>';
         }
         return $html . '</form>';
     }
@@ -274,7 +274,7 @@ final class FormRenderer
         $html .=   '<div class="form-progress-bar" role="progressbar" '
              . 'aria-valuemin="0" aria-valuemax="' . $total_fields . '" aria-valuenow="0" '
              . 'aria-label="Progression de la saisie du formulaire" id="form-progress-bar">';
-        $html .=     '<div class="form-progress-fill s-2f58115a" id="form-progress-fill"></div>';
+        $html .=     '<div class="form-progress-fill w-0" id="form-progress-fill"></div>';
         $html .=   '</div>';
         $html .=   '<input type="hidden" id="form-progress-total-fields" value="' . $total_fields . '">';
         $html .=   '<input type="hidden" id="form-progress-section-count" value="' . $section_count . '">';

@@ -375,7 +375,7 @@ CSS;
         ?>
     <!-- ── Form selector ──────────────────────────────────────── -->
     <div class="form-selector">
-        <form method="GET" class="s-fefbcc88">
+        <form method="GET" class="u-ali-dis-gap">
             <select name="form_id">
                 <option value="">— Sélectionner un formulaire —</option>
                 <?php foreach ($forms as $f): ?>
@@ -384,15 +384,15 @@ CSS;
                     </option>
                 <?php endforeach; ?>
             </select>
-            <button type="submit" class="btn btn-secondary s-1acc9e58">OK</button>
+            <button type="submit" class="btn btn-secondary btn-sm-3">OK</button>
         </form>
         <a href="index.php?p=admin_forms" class="btn btn-primary">＋ Nouveau formulaire</a>
-        <button type="button" onclick="document.getElementById('import-panel').classList.toggle('hidden')" class="btn btn-secondary s-1acc9e58"><span aria-hidden="true">📥</span> Importer JSON</button>
-        <button type="button" onclick="document.getElementById('ai-prompt-panel').classList.toggle('hidden')" class="btn btn-secondary s-1acc9e58"><span aria-hidden="true">🤖</span> Prompt IA</button>
-        <form method="POST" class="s-5f8f4af2">
+        <button type="button" onclick="document.getElementById('import-panel').classList.toggle('hidden')" class="btn btn-secondary btn-sm-3"><span aria-hidden="true">📥</span> Importer JSON</button>
+        <button type="button" onclick="document.getElementById('ai-prompt-panel').classList.toggle('hidden')" class="btn btn-secondary btn-sm-3"><span aria-hidden="true">🤖</span> Prompt IA</button>
+        <form method="POST" class="u-dis-2">
             <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="populate_samples">
-            <button type="submit" class="btn btn-secondary s-1acc9e58"><span aria-hidden="true">📦</span> Formulaires exemples</button>
+            <button type="submit" class="btn btn-secondary btn-sm-3"><span aria-hidden="true">📦</span> Formulaires exemples</button>
         </form>
     </div>
     <?php
@@ -413,13 +413,13 @@ CSS;
         ob_start();
         ?>
     <!-- ── Import JSON panel ──────────────────────────────────── -->
-    <div id="import-panel" class="<?= !empty($preserved_json) ? '' : 'hidden' ?> s-2da5d661">
+    <div id="import-panel" class="<?= !empty($preserved_json) ? '' : 'hidden' ?> mb-15">
         <div class="section-card">
             <div class="section-card-header">
                 <h2><span aria-hidden="true">📥</span> Importer un formulaire depuis JSON</h2>
             </div>
             <div class="section-card-body">
-                <p class="s-6c3df73a">Collez un JSON décrivant un formulaire <strong>et son circuit de validation</strong> (exporté depuis cette page ou généré par une IA). Le format attendu : <code>{ "form": { "label": "..." }, "fields": [...], "steps": [...] }</code></p>
+                <p class="caption-3">Collez un JSON décrivant un formulaire <strong>et son circuit de validation</strong> (exporté depuis cette page ou généré par une IA). Le format attendu : <code>{ "form": { "label": "..." }, "fields": [...], "steps": [...] }</code></p>
 
                 <?php if (!empty($validation_html)): ?>
                     <?= $validation_html ?>
@@ -429,12 +429,12 @@ CSS;
                     <?= \App\Core\App::security()->csrfField() ?>
                     <div class="field">
                         <label>Données JSON<span class="req">*</span></label>
-                        <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général","filled_by":"demandeur"},{"label":"Décision","field_type":"select","field_name":"decision","options":["Accepté","Refusé"],"required":1,"card_group":"Décision","filled_by":"validator","validator_step":"Validation manager"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>"]}]}' class="s-601d28e1"><?= \App\Core\App::html()->escape($preserved_json) ?></textarea>
+                        <textarea name="json_data" rows="12" placeholder='{"schema_version":"1.0","form":{"label":"Mon formulaire","description":"..."},"fields":[{"label":"Nom","field_type":"text","field_name":"nom","required":1,"card_group":"Général","filled_by":"demandeur"},{"label":"Décision","field_type":"select","field_name":"decision","options":["Accepté","Refusé"],"required":1,"card_group":"Décision","filled_by":"validator","validator_step":"Validation manager"}],"steps":[{"label":"Validation manager","ordre":1,"recipients":["manager@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>"]}]}' class="u-fon-fon"><?= \App\Core\App::html()->escape($preserved_json) ?></textarea>
                     </div>
-                    <div class="s-eba6230b">
+                    <div class="flex-gap5-7">
                         <input type="hidden" name="action" value="validate_json" id="import-action-input">
-                        <button type="submit" class="btn btn-secondary s-41801cb3"><span aria-hidden="true">🔍</span> Valider le JSON</button>
-                        <button type="submit" class="btn btn-primary s-41801cb3" onclick="document.getElementById('import-action-input').value='import_form';return true;"><span aria-hidden="true">📥</span> Importer le formulaire</button>
+                        <button type="submit" class="btn btn-secondary u-fon-2"><span aria-hidden="true">🔍</span> Valider le JSON</button>
+                        <button type="submit" class="btn btn-primary u-fon-2" onclick="document.getElementById('import-action-input').value='import_form';return true;"><span aria-hidden="true">📥</span> Importer le formulaire</button>
                     </div>
                 </form>
             </div>
@@ -456,16 +456,16 @@ CSS;
         ob_start();
         ?>
     <!-- ── Prompt IA panel ────────────────────────────────────── -->
-    <div id="ai-prompt-panel" class="hidden s-2da5d661">
+    <div id="ai-prompt-panel" class="hidden mb-15">
         <div class="section-card">
             <div class="section-card-header">
                 <h2><span aria-hidden="true">🤖</span> Prompt IA — Générer un formulaire + workflow à partir d'un document</h2>
             </div>
             <div class="section-card-body">
-                <p class="s-6c3df73a">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ d'importation ci-dessus. Le JSON généré inclura les champs du formulaire <strong>et</strong> le circuit de validation (workflow).</p>
+                <p class="caption-3">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ d'importation ci-dessus. Le JSON généré inclura les champs du formulaire <strong>et</strong> le circuit de validation (workflow).</p>
                 <div class="field">
-                    <label>Prompt à copier-coller <button type="button" onclick="(function(btn){var txt=document.getElementById('ai-prompt').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)})}catch(e){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}})(this)" class="s-4ac6932d">📋 Copier</button></label>
-                    <pre id="ai-prompt" class="s-018ec203">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>".
+                    <label>Prompt à copier-coller <button type="button" onclick="(function(btn){var txt=document.getElementById('ai-prompt').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)})}catch(e){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}})(this)" class="styled-box-5">📋 Copier</button></label>
+                    <pre id="ai-prompt" class="code-block">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>".
 
 Consignes :
 - Analyse le document administratif fourni ci-dessous.
@@ -695,13 +695,13 @@ Voici le document administratif à analyser :
         ob_start();
         ?>
     <!-- ── Top action bar ──────────────────────────────── -->
-    <div class="s-db023830">
+    <div class="flex-gap75">
         <a href="index.php?p=form_preview&form_id=<?= $form_id ?>" class="btn-preview" target="_blank"><span aria-hidden="true">👁</span> Prévisualiser le formulaire</a>
-        <form method="POST" class="s-5f8f4af2">
+        <form method="POST" class="u-dis-2">
             <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="export_form">
             <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
-            <button type="submit" class="btn btn-secondary s-f54e9c23"><span aria-hidden="true">📤</span> Exporter JSON</button>
+            <button type="submit" class="btn btn-secondary btn-xs-4"><span aria-hidden="true">📤</span> Exporter JSON</button>
         </form>
         <a href="index.php?p=dashboard" class="btn btn-secondary">← Tableau de bord</a>
     </div>
@@ -730,17 +730,17 @@ Voici le document administratif à analyser :
     <div class="section-card">
         <div class="section-card-header">
             <h2><span aria-hidden="true">📋</span> Informations du formulaire</h2>
-            <form method="POST" class="s-5f8f4af2">
+            <form method="POST" class="u-dis-2">
                 <?= \App\Core\App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="duplicate_form">
                 <input type="hidden" name="source_form_id" value="<?= $form['id'] ?>">
-                <button type="submit" class="btn btn-secondary s-f54e9c23"><span aria-hidden="true">📋</span> Dupliquer</button>
+                <button type="submit" class="btn btn-secondary btn-xs-4"><span aria-hidden="true">📋</span> Dupliquer</button>
             </form>
-            <form method="POST" class="s-5f8f4af2">
+            <form method="POST" class="u-dis-2">
                 <?= \App\Core\App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="delete_form">
                 <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
-                <button type="submit" onclick="return confirm('Supprimer ce formulaire et toutes ses données ? Cette action est irréversible.');" class="s-512393af">Supprimer</button>
+                <button type="submit" onclick="return confirm('Supprimer ce formulaire et toutes ses données ? Cette action est irréversible.');" class="styled-box-6">Supprimer</button>
             </form>
         </div>
         <div class="section-card-body">
@@ -795,15 +795,15 @@ Voici le document administratif à analyser :
             <h2>👥 Propriétaires du formulaire</h2>
         </div>
         <div class="section-card-body">
-        <p class="hint s-09cbfd89">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="index.php?p=form_tracking&f=<?= \App\Core\App::html()->escape($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
+        <p class="hint mb-1">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="index.php?p=form_tracking&f=<?= \App\Core\App::html()->escape($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
 
         <?php if (!empty($owners)): ?>
-            <table class="data-table s-09cbfd89">
+            <table class="data-table mb-1">
                 <thead>
                     <tr>
                         <th>Courriel</th>
                         <th>Ajouté le</th>
-                        <th class="s-8935a6a1">Action</th>
+                        <th class="u-wid-2">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -819,21 +819,21 @@ Voici le document administratif à analyser :
                 </tbody>
             </table>
         <?php else: ?>
-            <p class="s-99252a07">Aucun propriétaire défini. Seuls les administrateurs peuvent voir le tableau de suivi.</p>
+            <p class="heading-colored-2">Aucun propriétaire défini. Seuls les administrateurs peuvent voir le tableau de suivi.</p>
         <?php endif; ?>
 
         <form method="POST" action="index.php?p=admin_forms&form_id=<?= $form_id ?>#owners">
             <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="add_owner">
             <input type="hidden" name="form_id" value="<?= $form_id ?>">
-            <div class="s-b83cf351">
-                <input type="email" name="owner_email" placeholder="prenom.nom@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required class="s-d5e8c5f3">
+            <div class="flex-gap5-6">
+                <input type="email" name="owner_email" placeholder="prenom.nom@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" required class="flex-1">
                 <button type="submit" class="btn btn-primary">Ajouter un propriétaire</button>
             </div>
         </form>
 
         <?php if (!empty($owners)): ?>
-            <div class="s-78427c4e">
+            <div class="mt-1">
                 <a href="index.php?p=form_tracking&f=<?= \App\Core\App::html()->escape($form['id'] ?? '') ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Ouvrir le tableau de suivi</a>
             </div>
         <?php endif; ?>
@@ -885,7 +885,7 @@ Voici le document administratif à analyser :
                                     <?php if (!empty($wstep['recipients'])): ?>
                                         <div class="wb-emails"><?= \App\Core\App::html()->escape(implode(', ', array_column($wstep['recipients'], 'email'))) ?></div>
                                     <?php else: ?>
-                                        <div class="wb-emails s-e55f66fb">Aucun destinataire</div>
+                                        <div class="wb-emails u-fon-6">Aucun destinataire</div>
                                     <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
@@ -899,7 +899,7 @@ Voici le document administratif à analyser :
                 <div class="workflow-empty">Aucune étape définie. Ajoutez-en ci-dessous.</div>
             <?php endif; ?>
 
-            <hr class="s-0e40fc9f">
+            <hr class="u-bor-bor-mar">
 
             <!-- ── Add step form ───────────────────────────── -->
             <div class="add-sub-card">
@@ -925,12 +925,12 @@ Voici le document administratif à analyser :
 
             <!-- ── Step list ───────────────────────────────── -->
             <?php if (!empty($steps)): ?>
-                <div class="s-ea349ae2">
+                <div class="mt-125">
                     <?php foreach ($steps as $step): ?>
                         <?php if ($edit_step_id === $step['id']): ?>
                             <!-- ── Edit step inline ──────────────────── -->
                             <div class="step-card editing" id="step-<?= \App\Core\App::html()->escape($step['id']) ?>">
-                                <div class="step-info s-8588e44d">
+                                <div class="step-info w-100">
                                     <form method="POST">
                                         <?= \App\Core\App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="update_step">
@@ -971,9 +971,9 @@ Voici le document administratif à analyser :
                                         ?>
 
                                         <?php if ($can_have_condition): ?>
-                                            <details class="s-1ffddd18">
-                                                <summary class="s-c77c20dc">🔀 Condition d'exécution (optionnel)</summary>
-                                                <div class="form-grid s-4838e7ab">
+                                            <details class="u-bor-mar-pad">
+                                                <summary class="u-cur-fon-fon">🔀 Condition d'exécution (optionnel)</summary>
+                                                <div class="form-grid mt-5">
                                                     <div class="field">
                                                         <label>Champ validateur à tester</label>
                                                         <select name="condition_field">
@@ -1006,17 +1006,17 @@ Voici le document administratif à analyser :
                                                     <div class="field">
                                                         <label>Valeur attendue</label>
                                                         <input type="text" name="condition_value" value="<?= \App\Core\App::html()->escape($existing_condition['value']) ?>" placeholder="ex: Acceptée">
-                                                        <span class="hint s-e42b421d">Utilisé pour « Égal à », « Différent de », « Contient ». Ignoré pour « Non vide » / « Vide ».</span>
+                                                        <span class="hint u-col-fon-13">Utilisé pour « Égal à », « Différent de », « Contient ». Ignoré pour « Non vide » / « Vide ».</span>
                                                     </div>
                                                 </div>
                                             </details>
                                         <?php else: ?>
-                                            <div class="s-c2cdfad7">
+                                            <div class="hint-text-4">
                                                 ℹ️ La condition d'exécution n'est disponible qu'à partir de l'ordre 2 (la première étape s'exécute toujours).
                                             </div>
                                         <?php endif; ?>
 
-                                        <div class="s-8ccd2477">
+                                        <div class="flex-gap5-4">
                                             <button type="submit" class="btn btn-primary">Enregistrer</button>
                                             <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>#step-<?= $step['id'] ?>" class="btn btn-secondary">Annuler</a>
                                         </div>
@@ -1032,7 +1032,7 @@ Voici le document administratif à analyser :
                                         <?php if ($step['actif']): ?>
                                             <span class="badge badge-ok">Actif</span>
                                         <?php else: ?>
-                                            <span class="badge s-df9bddee">Inactif</span>
+                                            <span class="badge u-bac-col">Inactif</span>
                                         <?php endif; ?>
                                     </div>
                                     <?php if (!empty($step['recipients'])): ?>
@@ -1040,7 +1040,7 @@ Voici le document administratif à analyser :
                                             <?php foreach ($step['recipients'] as $rcpt): ?>
                                                 <span class="recipient-chip">
                                                     <?= \App\Core\App::html()->displayUser($rcpt['email']) ?>
-                                                    <form method="POST" class="s-5f8f4af2">
+                                                    <form method="POST" class="u-dis-2">
                                                         <?= \App\Core\App::security()->csrfField() ?>
                                                         <input type="hidden" name="action" value="delete_recipient">
                                                         <input type="hidden" name="recipient_id" value="<?= $rcpt['id'] ?>">
@@ -1050,32 +1050,32 @@ Voici le document administratif à analyser :
                                             <?php endforeach; ?>
                                         </div>
                                     <?php else: ?>
-                                        <div class="s-e8894bc3">Aucun destinataire</div>
+                                        <div class="hint-muted-4">Aucun destinataire</div>
                                     <?php endif; ?>
                                 </div>
                                 <div class="step-actions">
-                                    <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_step=<?= $step['id'] ?>#step-<?= $step['id'] ?>" class="btn btn-secondary s-f55dd871">Modifier</a>
-                                    <form method="POST" class="s-5f8f4af2">
+                                    <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_step=<?= $step['id'] ?>#step-<?= $step['id'] ?>" class="btn btn-secondary btn-compact-4">Modifier</a>
+                                    <form method="POST" class="u-dis-2">
                                         <?= \App\Core\App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="delete_step">
                                         <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
-                                        <button type="submit" class="btn btn-danger s-f55dd871" onclick="return confirm('Supprimer cette étape ? Les validateurs associés perdront leurs accès.');">Supprimer</button>
+                                        <button type="submit" class="btn btn-danger btn-compact-4" onclick="return confirm('Supprimer cette étape ? Les validateurs associés perdront leurs accès.');">Supprimer</button>
                                     </form>
                                     <!-- ── Mini-formulaire inline "＋ Destinataire" ─── -->
-                                    <details class="s-0825fa93">
-                                        <summary class="btn btn-secondary s-d6c9930e">＋ Destinataire</summary>
-                                        <div class="s-eeeb6c14">
+                                    <details class="u-dis-pos">
+                                        <summary class="btn btn-secondary btn-compact-2">＋ Destinataire</summary>
+                                        <div class="styled-box-13">
                                             <form method="POST">
                                                 <?= \App\Core\App::security()->csrfField() ?>
                                                 <input type="hidden" name="action" value="add_recipient">
                                                 <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                                 <input type="hidden" name="form_id" value="<?= $form_id ?>">
-                                                <label class="s-8c0ce2ac">Courriel du destinataire <span class="req">*</span></label>
-                                                <input type="text" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr ou {{nom_du_champ}}" list="ldap-recipient-suggestions" autocomplete="off" class="s-b68d9298">
-                                                <span class="hint s-1ff4a909">Email statique ou référence dynamique <code>{{champ}}</code>.</span>
-                                                <div class="s-739569cb">
-                                                    <button type="button" class="btn btn-secondary s-f55dd871" onclick="this.closest('details').open=false;">Annuler</button>
-                                                    <button type="submit" class="btn btn-primary s-f55dd871">Ajouter</button>
+                                                <label class="u-col-dis-fon-mar-2">Courriel du destinataire <span class="req">*</span></label>
+                                                <input type="text" name="email" required placeholder="ex: prenom.nom@dreets.gouv.fr ou {{nom_du_champ}}" list="ldap-recipient-suggestions" autocomplete="off" class="progress-fill-4">
+                                                <span class="hint u-col-dis-fon-mar">Email statique ou référence dynamique <code>{{champ}}</code>.</span>
+                                                <div class="flex-gap4">
+                                                    <button type="button" class="btn btn-secondary btn-compact-4" onclick="this.closest('details').open=false;">Annuler</button>
+                                                    <button type="submit" class="btn btn-primary btn-compact-4">Ajouter</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -1121,10 +1121,10 @@ Voici le document administratif à analyser :
     <div class="section-card" id="fields">
         <div class="section-card-header">
             <h2><span aria-hidden="true">📝</span> Champs du formulaire</h2>
-            <a href="index.php?p=form_preview&form_id=<?= $form_id ?>" class="btn-preview s-3cfc5dc8" target="_blank"><span aria-hidden="true">👁</span> Prévisualiser</a>
+            <a href="index.php?p=form_preview&form_id=<?= $form_id ?>" class="btn-preview u-fon" target="_blank"><span aria-hidden="true">👁</span> Prévisualiser</a>
         </div>
         <div class="section-card-body">
-            <p class="s-6c3df73a">Ces champs définissent le formulaire que les agents rempliront. <span class="required-star">*</span> = champ obligatoire.</p>
+            <p class="caption-3">Ces champs définissent le formulaire que les agents rempliront. <span class="required-star">*</span> = champ obligatoire.</p>
 
             <?php if (!empty($form_fields)): ?>
                 <table class="fields-table">
@@ -1144,8 +1144,8 @@ Voici le document administratif à analyser :
                             <?php if ($edit_field_id === $ff['id']): ?>
                                 <!-- ── Edit field inline ──────────────── -->
                                 <tr>
-                                    <td colspan="7" class="s-0ae05736">
-                                        <h4 class="s-d5798da6">Modifier le champ</h4>
+                                    <td colspan="7" class="u-bac-pad">
+                                        <h4 class="heading-primary-2">Modifier le champ</h4>
                                         <form method="POST">
                                             <?= \App\Core\App::security()->csrfField() ?>
                                             <input type="hidden" name="action" value="update_field">
@@ -1182,7 +1182,7 @@ Voici le document administratif à analyser :
                                                             <option value="__new__" <?= !in_array($ff['card_group'], $existing_groups) ? 'selected' : '' ?>>— Nouveau groupe —</option>
                                                         </select>
                                                     <?php endif; ?>
-                                                    <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" value="" class="s-de7017b3">
+                                                    <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" value="" class="mt-3">
                                                     <?php if (empty($existing_groups)): ?>
                                                         <input type="hidden" name="ff_card_group" value="">
                                                     <?php endif; ?>
@@ -1221,12 +1221,12 @@ Voici le document administratif à analyser :
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="field s-40b2ccb7">
+                                            <div class="field mt-25">
                                                 <label class="checkbox-label">
                                                     <input type="checkbox" name="ff_required" <?= $ff['required'] ? 'checked' : '' ?>> Champ obligatoire <span class="required-star">*</span>
                                                 </label>
                                             </div>
-                                            <div class="s-68cd7fae">
+                                            <div class="flex-gap5-mt">
                                                 <button type="submit" class="btn btn-primary">Enregistrer</button>
                                                 <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>#field-<?= $ff['id'] ?>" class="btn btn-secondary">Annuler</a>
                                             </div>
@@ -1236,21 +1236,21 @@ Voici le document administratif à analyser :
                             <?php else: ?>
                                 <tr id="field-<?= \App\Core\App::html()->escape($ff['id']) ?>">
                                     <td><?= \App\Core\App::html()->escape((string)$ff['ordre']) ?></td>
-                                    <td><span class="s-e306b86f"><?= \App\Core\App::html()->escape($ff['card_group']) ?></span></td>
+                                    <td><span class="caption-6"><?= \App\Core\App::html()->escape($ff['card_group']) ?></span></td>
                                     <td>
                                         <?= \App\Core\App::html()->escape($ff['label']) ?>
                                         <?php if ($ff['required']): ?>
                                             <span class="required-star" title="Champ obligatoire">*</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><code class="s-38845b10"><?= \App\Core\App::html()->escape($ff['field_name']) ?></code></td>
+                                    <td><code class="styled-box-2"><?= \App\Core\App::html()->escape($ff['field_name']) ?></code></td>
                                     <td>
                                         <span class="field-type-badge">
                                             <?= $this->fieldTypeIcon($ff['field_type']) ?>
                                             <?= $this->fieldTypeLabel($ff['field_type']) ?>
                                         </span>
                                     </td>
-                                    <td title="<?= \App\Core\App::html()->escape($ff['options'] ?? '') ?>" class="s-8841ed99">
+                                    <td title="<?= \App\Core\App::html()->escape($ff['options'] ?? '') ?>" class="preformatted">
                                         <?php
                                         $opts = $ff['options'] ?? '';
                                         if (!empty($opts)) {
@@ -1266,13 +1266,13 @@ Voici le document administratif à analyser :
                                         ?>
                                     </td>
                                     <td class="actions">
-                                        <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#field-<?= $ff['id'] ?>" class="btn btn-secondary s-d8181da6">Modifier</a>
-                                        <form method="POST" class="s-5f8f4af2">
+                                        <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#field-<?= $ff['id'] ?>" class="btn btn-secondary btn-compact-3">Modifier</a>
+                                        <form method="POST" class="u-dis-2">
                                             <?= \App\Core\App::security()->csrfField() ?>
                                             <input type="hidden" name="action" value="delete_field">
                                             <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
-                                            <button type="submit" class="btn btn-danger s-d8181da6" onclick="return confirm('Supprimer ce champ ? Les données associées seront perdues.');">Supprimer</button>
+                                            <button type="submit" class="btn btn-danger btn-compact-3" onclick="return confirm('Supprimer ce champ ? Les données associées seront perdues.');">Supprimer</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -1327,7 +1327,7 @@ Voici le document administratif à analyser :
                             <?php else: ?>
                                 <input type="hidden" name="ff_card_group" value="">
                             <?php endif; ?>
-                            <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" value="" class="s-de7017b3">
+                            <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" value="" class="mt-3">
                         </div>
                         <div class="field full-width">
                             <label>Options <span class="hint">(une par ligne, uniquement pour Sélecteur)</span></label>
@@ -1363,12 +1363,12 @@ Voici le document administratif à analyser :
                             </select>
                         </div>
                     </div>
-                    <div class="field s-40b2ccb7">
+                    <div class="field mt-25">
                         <label class="checkbox-label">
                             <input type="checkbox" name="ff_required"> Champ obligatoire <span class="required-star">*</span>
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-primary s-4838e7ab">Ajouter le champ</button>
+                    <button type="submit" class="btn btn-primary mt-5">Ajouter le champ</button>
                 </form>
             </div>
 </div>

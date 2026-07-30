@@ -93,7 +93,7 @@ final class MyValidationsRenderer
                 }
                 $html .= '<br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($pendingToken['submitted_at'] ?? '')))) . "\n";
                 if ($pendingToken['relance_count'] > 0) {
-                    $html .= '<br><span class="s-e04aeda4">Relance(s) : ' . (int) $pendingToken['relance_count'] . '</span>' . "\n";
+                    $html .= '<br><span class="text-warning">Relance(s) : ' . (int) $pendingToken['relance_count'] . '</span>' . "\n";
                 }
                 $html .= '      </div>' . "\n";
                 $html .= '    </div>' . "\n";
@@ -132,17 +132,17 @@ final class MyValidationsRenderer
                 if (!$expired) {
                     $html .= '    <a href="index.php?p=validate&token=' . urlencode((string) ($pendingToken['token'] ?? '')) . '" class="btn btn-primary"><span aria-hidden="true">✓</span> Valider / Refuser</a>' . "\n";
                 } else {
-                    $html .= '    <span class="s-8c60cb15">Token expiré — contactez un administrateur pour régénérer</span>' . "\n";
+                    $html .= '    <span class="u-col-fon-5">Token expiré — contactez un administrateur pour régénérer</span>' . "\n";
                 }
-                $html .= '    <details class="s-8a59a7ce">' . "\n";
-                $html .= '      <summary class="btn btn-secondary s-a5abb939"><span aria-hidden="true">🔄</span> Déléguer</summary>' . "\n";
-                $html .= '      <form method="POST" class="s-e4b8a93e">' . "\n";
+                $html .= '    <details class="u-mar">' . "\n";
+                $html .= '      <summary class="btn btn-secondary btn-sm-10"><span aria-hidden="true">🔄</span> Déléguer</summary>' . "\n";
+                $html .= '      <form method="POST" class="styled-box-12">' . "\n";
                 $html .= '        ' . App::security()->csrfField() . "\n";
                 $html .= '        <input type="hidden" name="action" value="delegate_token">' . "\n";
                 $html .= '        <input type="hidden" name="token_id" value="' . $htmlService->escape($pendingToken['token_id']) . '">' . "\n";
-                $html .= '        <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required class="s-da87df1a">' . "\n";
-                $html .= '        <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" class="s-6cf5ed0c">' . "\n";
-                $html .= '        <button type="submit" class="s-79148f91">Confirmer</button>' . "\n";
+                $html .= '        <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required class="input-filter-3">' . "\n";
+                $html .= '        <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" class="input-filter-2">' . "\n";
+                $html .= '        <button type="submit" class="styled-box-7">Confirmer</button>' . "\n";
                 $html .= '      </form>' . "\n";
                 $html .= '    </details>' . "\n";
                 $html .= '  </div>' . "\n";
@@ -245,11 +245,11 @@ final class MyValidationsRenderer
             return '';
         }
 
-        $html = '<details class="s-185d793c">' . "\n";
-        $html .= '  <summary class="s-6a2280e7">' . "\n";
+        $html = '<details class="mt-15">' . "\n";
+        $html .= '  <summary class="u-col-cur-fon-fon">' . "\n";
         $html .= '    📝 Champs validateur que j\'ai remplis (' . count($myVdRows) . ')' . "\n";
         $html .= '  </summary>' . "\n";
-        $html .= '  <div class="card s-4838e7ab">' . "\n";
+        $html .= '  <div class="card mt-5">' . "\n";
         $html .= '    <table>' . "\n";
         $html .= '      <thead>' . "\n";
         $html .= '        <tr>' . "\n";

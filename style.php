@@ -15,11 +15,9 @@ declare(strict_types=1);
 // → responsive → features → onboarding) : les media queries et overrides
 // doivent venir après les règles de base.
 //
-// DynamicCssService : les règles CSS dynamiques (anciennement style="" inline,
-// puis s-hash statiques) sont maintenant générées dynamiquement par le service
-// App::css(). Le service charge les règles existantes depuis le fichier
-// style_generated-inline.css (transition en douceur) et permet d'en ajouter
-// de nouvelles via App::css()->rule('nom', 'declarations;').
+// DynamicCssService : les règles CSS dynamiques (styles calculés à l'exécution
+// comme les largeurs de barres de progression) sont générées dynamiquement par
+// le service App::css(). Les styles statiques sont dans lib/style_utility.css.
 
 /**
  * Sections CSS thématiques du design system, dans l'ordre d'inclusion.
@@ -35,6 +33,7 @@ $style_sections = [
     'features',    // U-08 progression, P-02 brouillons, U-04 refus mobile
     'onboarding',  // U-06 field hints + welcome state + legacy bandeau
     'pages',       // CSS spécifique aux pages (validate, admin, etc.)
+    'utility',     // Classes utilitaires sémantiques (fw-bold, ta-right, btn-sm, etc.)
 ];
 
 ?>
@@ -43,11 +42,8 @@ $style_sections = [
 <?php readfile(__DIR__ . '/lib/style_' . $section . '.css'); ?>
 <?php endforeach; ?>
 <?php
-// DynamicCssService : charge les règles existantes (s-hash) + règles dynamiques
-// enregistrées pendant le rendu de la page. Remplace le readfile statique de
-// style_generated-inline.css par une génération dynamique.
-$dynamicCss = \App\Core\App::css();
-$dynamicCss->loadFromFile(__DIR__ . '/lib/style_generated-inline.css');
-echo $dynamicCss->render();
+// DynamicCssService : règles CSS dynamiques enregistrées pendant le rendu
+// de la page (styles calculés comme les largeurs de barres de progression).
+echo \App\Core\App::css()->render();
 ?>
 </style>

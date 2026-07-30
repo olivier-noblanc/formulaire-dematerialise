@@ -52,7 +52,7 @@ final class MySubmissionsRenderer
 
                 HTML;
 
-            $html .= '  <div class="s-2da5d661">' . "\n";
+            $html .= '  <div class="mb-15">' . "\n";
             $html .= '    ' . new FormRenderer()->searchBar('index.php?p=my_submissions', $search, 'Rechercher...', ['statut' => $statusFilter]) . "\n";
             $html .= '  </div>' . "\n";
         }
@@ -62,7 +62,7 @@ final class MySubmissionsRenderer
             $html .= '      <div class="empty-icon" aria-hidden="true">📝</div>' . "\n";
             $html .= '      <p>Vous n\'avez encore soumis aucune demande.</p>' . "\n";
             if ($activeForms !== []) {
-                $html .= '        <p class="s-f9556322">Formulaires disponibles :</p>' . "\n";
+                $html .= '        <p class="caption-8">Formulaires disponibles :</p>' . "\n";
                 foreach ($activeForms as $activeForm) {
                     $slug  = App::html()->escape($activeForm['slug']);
                     $label = App::html()->escape(self::simplifyLabel($activeForm['label']));
@@ -120,7 +120,7 @@ final class MySubmissionsRenderer
 
                 $html .= <<<HTML
                         <div class="sub-card">
-                          <a href="index.php?p=submission_view&id={$subId}" class="s-da7d987f">
+                          <a href="index.php?p=submission_view&id={$subId}" class="u-col-tex-2">
                           <div class="sub-card-header">
                             <div>
                               <div class="sub-card-title">{$formLabel} {$deadlineBadge}</div>
@@ -205,8 +205,8 @@ final class MySubmissionsRenderer
 
                 $html .= <<<HTML
                             <div class="card-actions">
-                              <a href="index.php?p=submission_view&id={$subId}" class="btn btn-primary s-41801cb3"><span aria-hidden="true">👁</span> Voir le détail</a>
-                              <a href="index.php?p=form&f={$formSlug}" class="btn btn-secondary s-41801cb3">Nouvelle demande</a>
+                              <a href="index.php?p=submission_view&id={$subId}" class="btn btn-primary u-fon-2"><span aria-hidden="true">👁</span> Voir le détail</a>
+                              <a href="index.php?p=form&f={$formSlug}" class="btn btn-secondary u-fon-2">Nouvelle demande</a>
                             </div>
                           </div>
                         </div>

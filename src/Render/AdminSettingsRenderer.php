@@ -97,19 +97,19 @@ final class AdminSettingsRenderer
 
             <div class="card" id="section-email-security">
                 <h2><span class="icon">🛡️</span> Sécurité email</h2>
-                <p class="s-270b7dca">
+                <p class="caption-2">
                     Protégez contre l'envoi accidentel d'emails à des adresses non vérifiées.
                     Le mode <strong>Dry-Run</strong> intercepte tous les envois (recommandé en phase de déploiement).
                     La <strong>vérification des destinataires</strong> bloque les envois vers des adresses introuvables.
                 </p>
 
                 <!-- Dry-Run -->
-                <div class="field s-3e30fe12">
-                    <label class="checkbox-label s-6dfa280c">
+                <div class="field styled-box-3">
+                    <label class="checkbox-label u-fon-fon-2">
                         <input type="checkbox" name="mail_dry_run" <?= $mail_dry_run === '1' ? 'checked' : '' ?>>
                         Mode Dry-Run (aucun email réel envoyé)
                     </label>
-                    <p class="s-dda2fdec">
+                    <p class="caption-5">
                         Quand activé, <code>send_mail()</code> journalise chaque envoi dans l'audit log sans contacter le serveur SMTP.
                         Idéal pour valider la configuration avant mise en production.
                         Le workflow continue normalement (les tokens sont créés, les étapes avancent).
@@ -117,9 +117,9 @@ final class AdminSettingsRenderer
                 </div>
 
                 <!-- Mode de vérification -->
-                <div class="field s-c9d9eba7">
+                <div class="field mt-15-2">
                     <label>Vérification des adresses destinataires</label>
-                    <select name="email_verify_mode" id="email_verify_mode" class="s-a833a409">
+                    <select name="email_verify_mode" id="email_verify_mode" class="u-max-4">
                         <option value="none" <?= $email_verify_mode === 'none' ? 'selected' : '' ?>>Aucune vérification</option>
                         <option value="ldap" <?= $email_verify_mode === 'ldap' ? 'selected' : '' ?>>LDAP / Active Directory</option>
                         <option value="smtp" <?= $email_verify_mode === 'smtp' ? 'selected' : '' ?>>SMTP (probe RCPT TO)</option>
@@ -133,16 +133,16 @@ final class AdminSettingsRenderer
 
                 <!-- Configuration LDAP (affichée si mode ldap) -->
                 <div id="ldap-config" style="margin-top:1.5rem;padding:1.5rem;background:#f5f5fe;border-radius:6px;<?= $email_verify_mode !== 'ldap' ? 'display:none;' : '' ?>">
-                    <h3 class="s-0455c388">Configuration LDAP / Active Directory</h3>
+                    <h3 class="heading-primary">Configuration LDAP / Active Directory</h3>
 
                     <?php if (!$ldap_ext_available): ?>
-                        <div class="warning-box s-09cbfd89">
+                        <div class="warning-box mb-1">
                             <strong>Extension LDAP non détectée</strong> — L'extension PHP <code>ldap</code> n'est pas installée ou activée.
                             Contactez l'administrateur système pour l'activer (habituellement <code>extension=ldap</code> dans <code>php.ini</code>).
                             Sur IIS/Windows, l'extension est souvent présente mais désactivée par défaut.
                         </div>
                     <?php else: ?>
-                        <div class="info-box s-09cbfd89">
+                        <div class="info-box mb-1">
                             <strong>Extension LDAP disponible</strong> — La vérification Active Directory est opérationnelle.
                         </div>
                     <?php endif; ?>
@@ -154,7 +154,7 @@ final class AdminSettingsRenderer
 
                     <div class="field">
                         <label>Port LDAP <span class="info-tooltip" title="Port LDAP (389=standard, 636=chiffré)" aria-label="Aide technique : Port LDAP (389=standard, 636=chiffré)" tabindex="0" role="button">ℹ️</span></label>
-                        <input type="number" name="ldap_port" value="<?= \App\Core\App::html()->escape($ldap_port) ?>" min="1" max="65535" class="s-5529fe18">
+                        <input type="number" name="ldap_port" value="<?= \App\Core\App::html()->escape($ldap_port) ?>" min="1" max="65535" class="u-max-2">
                         <span class="hint">389 = standard, 636 = LDAPS (chiffré)</span>
                     </div>
 
@@ -178,20 +178,20 @@ final class AdminSettingsRenderer
                         <input type="text" name="ldap_filter" value="<?= \App\Core\App::html()->escape($ldap_filter) ?>" placeholder="(mail={email})">
                     </div>
 
-                    <hr class="s-b558ad81">
+                    <hr class="u-bor-bor-mar-2">
 
-                    <h3 class="s-0455c388">Suggestions d'emails (autocomplétion)</h3>
-                    <p class="s-dc40da40">
+                    <h3 class="heading-primary">Suggestions d'emails (autocomplétion)</h3>
+                    <p class="caption-4">
                         Active la suggestion d'adresses email issues de l'annuaire LDAP dans les champs courriel des formulaires et lors de l'ajout de destinataires.
                         <strong>Pur HTML5</strong> — utilise l'élément <code>&lt;datalist&gt;</code> natif du navigateur, aucun JavaScript requis.
                         L'agent commence à taper et le navigateur propose les adresses correspondantes.
                     </p>
                     <div class="field">
-                        <label class="checkbox-label s-043cdaec">
+                        <label class="checkbox-label fw-bold">
                             <input type="checkbox" name="ldap_suggest_enabled" <?= $ldap_suggest_enabled === '1' ? 'checked' : '' ?>>
                             Activer les suggestions LDAP sur les champs courriel
                         </label>
-                        <p class="s-dda2fdec">
+                        <p class="caption-5">
                             Quand activé, les champs de type « Courriel » dans les formulaires publics et le champ « Ajouter un destinataire » dans l'administration
                             proposeront automatiquement les adresses de l'annuaire. Les résultats sont mis en cache 30 minutes pour ne pas surcharger le serveur LDAP.
                         </p>
@@ -205,14 +205,14 @@ final class AdminSettingsRenderer
 
                 <!-- Info SMTP verification -->
                 <div id="smtp-info" style="margin-top:1.5rem;padding:1.5rem;background:#f5f5fe;border-radius:6px;<?= $email_verify_mode !== 'smtp' ? 'display:none;' : '' ?>">
-                    <h3 class="s-0455c388">Vérification SMTP (probe RCPT TO)</h3>
-                    <p class="s-fb869414">
+                    <h3 class="heading-primary">Vérification SMTP (probe RCPT TO)</h3>
+                    <p class="caption-9">
                         Le système se connecte au serveur SMTP configuré ci-dessous, envoie les commandes
                         <code>HELO</code>, <code>MAIL FROM</code>, <code>RCPT TO</code> et vérifie si le serveur
                         accepte l'adresse destinataire. La connexion est refermée proprement avant d'envoyer
                         le contenu du mail (<code>QUIT</code> avant <code>DATA</code>).
                     </p>
-                    <div class="warning-box s-78427c4e">
+                    <div class="warning-box mt-1">
                         <strong>Limitation</strong> — Certains serveurs SMTP (notamment Exchange) acceptent
                         toutes les adresses en <code>RCPT TO</code> (mode catch-all) et ne renvoient une erreur
                         qu'au moment du <code>DATA</code>. Dans ce cas, la vérification SMTP ne détectera pas
@@ -220,7 +220,7 @@ final class AdminSettingsRenderer
                     </div>
                 </div>
 
-                <div class="s-c9d9eba7">
+                <div class="mt-15-2">
                     <button type="submit" class="btn btn-primary">Enregistrer la sécurité email</button>
                 </div>
             </div>
@@ -231,7 +231,7 @@ final class AdminSettingsRenderer
         <!-- ═══════════════════════════════════════════════════════════ -->
         <div class="card" id="section-email-test">
             <h2><span class="icon">🧪</span> Test de vérification email</h2>
-            <p class="s-270b7dca">
+            <p class="caption-2">
                 Testez la vérification d'une adresse email avec la configuration actuelle.
                 Cela permet de vérifier que le LDAP ou la probe SMTP fonctionne correctement
                 avant d'activer la vérification en production.
@@ -241,8 +241,8 @@ final class AdminSettingsRenderer
                 <input type="hidden" name="action" value="test_verify_email">
                 <div class="field">
                     <label>Adresse email à tester</label>
-                    <div class="s-7be42cfb">
-                        <input type="email" name="verify_test_email" value="<?= \App\Core\App::html()->escape($_POST['verify_test_email'] ?? '') ?>" placeholder="agent@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" class="s-64bce20d">
+                    <div class="flex-gap5-3">
+                        <input type="email" name="verify_test_email" value="<?= \App\Core\App::html()->escape($_POST['verify_test_email'] ?? '') ?>" placeholder="agent@<?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('email_domain', 'dreets.gouv.fr')) ?>" class="u-max-3">
                         <button type="submit" class="btn btn-test">Vérifier cette adresse</button>
                     </div>
                 </div>
@@ -259,12 +259,12 @@ final class AdminSettingsRenderer
                     <?php endif; ?>
 
                     <?php if (isset($vr['ldap'])): ?>
-                        <div class="detail s-7e40c3d4">Résultat LDAP :</div>
+                        <div class="detail u-fon-mar">Résultat LDAP :</div>
                         <div class="detail">✔/✘ : <?= $vr['ldap']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= \App\Core\App::html()->escape($vr['ldap']['detail']) ?></div>
                     <?php endif; ?>
 
                     <?php if (isset($vr['smtp'])): ?>
-                        <div class="detail s-7e40c3d4">Résultat SMTP :</div>
+                        <div class="detail u-fon-mar">Résultat SMTP :</div>
                         <div class="detail">✔/✘ : <?= $vr['smtp']['ok'] ? 'OK' : 'ÉCHEC' ?> — <?= \App\Core\App::html()->escape($vr['smtp']['detail']) ?></div>
                     <?php endif; ?>
                 </div>
@@ -289,7 +289,7 @@ final class AdminSettingsRenderer
 
                 <div class="field">
                     <label for="app_favicon">Favicon (SVG)</label>
-                    <textarea id="app_favicon" name="app_favicon" rows="3" placeholder="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>...</svg>" class="s-601d28e1"><?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('app_favicon', '')) ?></textarea>
+                    <textarea id="app_favicon" name="app_favicon" rows="3" placeholder="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>...</svg>" class="u-fon-fon"><?= \App\Core\App::html()->escape(\App\Core\App::settings()->get('app_favicon', '')) ?></textarea>
                     <span class="hint">Code SVG du favicon. Laisser vide pour le favicon par défaut (losange bleu avec la première lettre du nom). Le contenu est inséré dans <code>data:image/svg+xml,</code> — ne pas mettre l'en-tête <code>&lt;?xml</code> ni échapper les caractères.</span>
                 </div>
             </div>
@@ -389,11 +389,11 @@ final class AdminSettingsRenderer
         <!-- ═══════════════════════════════════════════════════════════ -->
         <!-- SECTION 4 : Test email                                    -->
         <!-- ═══════════════════════════════════════════════════════════ -->
-        <div class="card s-c9d9eba7" id="section-email-send">
+        <div class="card mt-15-2" id="section-email-send">
             <h2>Test d'envoi d'email</h2>
-            <p class="s-270b7dca">Envoyer un email de test à votre adresse (<?= \App\Core\App::html()->escape(\App\Core\App::auth()->getUser()) ?>) pour vérifier la configuration SMTP.</p>
+            <p class="caption-2">Envoyer un email de test à votre adresse (<?= \App\Core\App::html()->escape(\App\Core\App::auth()->getUser()) ?>) pour vérifier la configuration SMTP.</p>
             <?php if ($mail_dry_run === '1'): ?>
-                <div class="warning-box s-09cbfd89">
+                <div class="warning-box mb-1">
                     <strong>Mode Dry-Run actif</strong> — L'email sera journalisé mais <strong>pas réellement envoyé</strong>.
                     Désactivez le Dry-Run pour effectuer un envoi réel.
                 </div>
@@ -408,45 +408,45 @@ final class AdminSettingsRenderer
         <!-- ═══════════════════════════════════════════════════════════ -->
         <!-- SECTION 5 : Résumé de sécurité email                      -->
         <!-- ═══════════════════════════════════════════════════════════ -->
-        <div class="card s-c9d9eba7" id="section-email-summary">
+        <div class="card mt-15-2" id="section-email-summary">
             <h2><span class="icon">📋</span> Résumé de sécurité email</h2>
-            <table class="s-aca879f1">
-                <tr class="s-5707d7f5">
-                    <td class="s-a5f31564">Mode Dry-Run</td>
-                    <td class="s-e8a518a8"><?= $mail_dry_run === '1' ? '<span class="s-8db71c4a">Activé</span> — Aucun email réel' : '<span class="s-8b9a6e7c">Désactivé</span> — Envois réels actifs' ?></td>
+            <table class="progress-fill-3">
+                <tr class="u-bor-2">
+                    <td class="u-fon-pad">Mode Dry-Run</td>
+                    <td class="p-5"><?= $mail_dry_run === '1' ? '<span class="u-col-fon-6">Activé</span> — Aucun email réel' : '<span class="u-col-fon-4">Désactivé</span> — Envois réels actifs' ?></td>
                 </tr>
-                <tr class="s-5707d7f5">
-                    <td class="s-a5f31564">Vérification destinataires</td>
-                    <td class="s-e8a518a8">
+                <tr class="u-bor-2">
+                    <td class="u-fon-pad">Vérification destinataires</td>
+                    <td class="p-5">
                         <?php if ($email_verify_mode === 'none'): ?>
-                            <span class="s-c76dad73">Désactivée</span>
+                            <span class="text-f44336">Désactivée</span>
                         <?php elseif ($email_verify_mode === 'ldap'): ?>
-                            <span class="s-b0649b1e">LDAP / Active Directory</span>
+                            <span class="text-4caf50">LDAP / Active Directory</span>
                             <?php if ($ldap_host !== '' && $ldap_host !== '0'): ?> (<?= \App\Core\App::html()->escape($ldap_host) ?>)<?php endif; ?>
                         <?php elseif ($email_verify_mode === 'smtp'): ?>
-                            <span class="s-1996e123">SMTP (probe RCPT TO)</span>
+                            <span class="text-info">SMTP (probe RCPT TO)</span>
                         <?php endif; ?>
                     </td>
                 </tr>
-                <tr class="s-5707d7f5">
-                    <td class="s-a5f31564">Extension LDAP PHP</td>
-                    <td class="s-e8a518a8"><?= $ldap_ext_available ? '<span class="s-b0649b1e">Disponible</span>' : '<span class="s-c76dad73">Non disponible</span>' ?></td>
+                <tr class="u-bor-2">
+                    <td class="u-fon-pad">Extension LDAP PHP</td>
+                    <td class="p-5"><?= $ldap_ext_available ? '<span class="text-4caf50">Disponible</span>' : '<span class="text-f44336">Non disponible</span>' ?></td>
                 </tr>
-                <tr class="s-5707d7f5">
-                    <td class="s-a5f31564">PHPMailer</td>
-                    <td class="s-e8a518a8">
+                <tr class="u-bor-2">
+                    <td class="u-fon-pad">PHPMailer</td>
+                    <td class="p-5">
                         <?php
                         /** @phpstan-ignore-next-line */
                         if (method_exists('PHPMailer\PHPMailer\PHPMailer', 'getSMTPInstance')): ?>
-                            <span class="s-b0649b1e">Vraie bibliothèque</span>
+                            <span class="text-4caf50">Vraie bibliothèque</span>
                         <?php else: ?>
-                            <span class="s-ffd8d71a">Stub (aucun envoi réel possible)</span>
+                            <span class="text-ff9800">Stub (aucun envoi réel possible)</span>
                         <?php endif; ?>
                     </td>
                 </tr>
                 <tr>
-                    <td class="s-a5f31564">Blocage CLI</td>
-                    <td class="s-e8a518a8"><span class="s-b0649b1e">Actif</span> — Les scripts CLI ne peuvent pas envoyer d'emails sans <code>CLI_MAIL_ALLOWED</code></td>
+                    <td class="u-fon-pad">Blocage CLI</td>
+                    <td class="p-5"><span class="text-4caf50">Actif</span> — Les scripts CLI ne peuvent pas envoyer d'emails sans <code>CLI_MAIL_ALLOWED</code></td>
                 </tr>
             </table>
 
@@ -471,11 +471,11 @@ final class AdminSettingsRenderer
         ?>
             <div style="margin-top:1rem;padding:1rem;background:<?= $security_score >= 3 ? '#e8f5e9' : '#fff3e0' ?>;border-radius:6px;">
                 <strong>Niveau de sécurité : <?= $security_score ?>/4</strong>
-                <div class="s-58e5e3d3">
+                <div class="hint-muted-3">
                     <?= implode(' · ', array_map(fn($i) => '✔ ' . $i, $security_items)) ?>
                 </div>
                 <?php if ($security_score < 3): ?>
-                    <div class="s-00094ec4">
+                    <div class="hint-warning">
                         ⚠ Activez la vérification des destinataires et/ou le mode Dry-Run pour renforcer la sécurité.
                     </div>
                 <?php endif; ?>

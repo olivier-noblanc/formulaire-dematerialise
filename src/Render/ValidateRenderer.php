@@ -45,7 +45,7 @@ final class ValidateRenderer
         if (isset($success)) {
             $html .= '<h1>Validation effectuée</h1>' . "\n";
             $html .= '<p class="ok">Action effectuée avec succès.</p>' . "\n";
-            $html .= '<div class="s-e032223e">' . "\n";
+            $html .= '<div class="flex-gap5-mt-3">' . "\n";
             $html .= '  <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>' . "\n";
             $html .= '  <a href="index.php" class="btn btn-secondary">Accueil</a>' . "\n";
             $html .= '</div>' . "\n";
@@ -54,7 +54,7 @@ final class ValidateRenderer
         } elseif (isset($error)) {
             $html .= '<h1>Erreur</h1>' . "\n";
             $html .= '<p class="err">' . $htmlService->escape($error) . '</p>' . "\n";
-            $html .= '<div class="s-e032223e">' . "\n";
+            $html .= '<div class="flex-gap5-mt-3">' . "\n";
             $html .= '  <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>' . "\n";
             $html .= '  <a href="index.php" class="btn btn-secondary">Accueil</a>' . "\n";
             $html .= '</div>' . "\n";
@@ -63,7 +63,7 @@ final class ValidateRenderer
         } elseif ($result['status'] === 'invalid') {
             $html .= '<h1>Lien invalide</h1>' . "\n";
             $html .= '<p class="err">Ce lien est introuvable ou expiré.</p>' . "\n";
-            $html .= '<div class="s-e032223e">' . "\n";
+            $html .= '<div class="flex-gap5-mt-3">' . "\n";
             $html .= '  <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>' . "\n";
             $html .= '  <a href="index.php" class="btn btn-secondary">Accueil</a>' . "\n";
             $html .= '</div>' . "\n";
@@ -74,7 +74,7 @@ final class ValidateRenderer
             $html .= '<span class="badge">' . $htmlService->escape($data['step_label'] ?? '') . '</span>' . "\n";
             $html .= '<h1>Déjà validé</h1>' . "\n";
             $html .= '<p class="info">Tâche validée le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($data['done_at'] ?? 'now')))) . '</p>' . "\n";
-            $html .= '<div class="s-e032223e">' . "\n";
+            $html .= '<div class="flex-gap5-mt-3">' . "\n";
             $html .= '  <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>' . "\n";
             $html .= '  <a href="index.php" class="btn btn-secondary">Accueil</a>' . "\n";
             $html .= '</div>' . "\n";
@@ -83,7 +83,7 @@ final class ValidateRenderer
         } elseif ($result['status'] === 'closed') {
             $html .= '<h1>Workflow terminé</h1>' . "\n";
             $html .= '<p class="info">Ce dossier est déjà clôturé.</p>' . "\n";
-            $html .= '<div class="s-e032223e">' . "\n";
+            $html .= '<div class="flex-gap5-mt-3">' . "\n";
             $html .= '  <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>' . "\n";
             $html .= '  <a href="index.php" class="btn btn-secondary">Accueil</a>' . "\n";
             $html .= '</div>' . "\n";
@@ -92,7 +92,7 @@ final class ValidateRenderer
         } elseif ($result['status'] === 'expired') {
             $html .= '<h1>Lien expiré</h1>' . "\n";
             $html .= '<p class="err">Ce lien de validation a expiré. Veuillez contacter l\'expéditeur pour obtenir un nouveau lien.</p>' . "\n";
-            $html .= '<div class="s-e032223e">' . "\n";
+            $html .= '<div class="flex-gap5-mt-3">' . "\n";
             $html .= '  <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>' . "\n";
             $html .= '  <a href="index.php" class="btn btn-secondary">Accueil</a>' . "\n";
             $html .= '</div>' . "\n";
@@ -160,7 +160,7 @@ final class ValidateRenderer
                     $field_labels[$all_validator_field['field_name']] = $all_validator_field['label'];
                 }
 
-                $html .= '<div class="validation-details s-92b57950">' . "\n";
+                $html .= '<div class="validation-details u-bor-3">' . "\n";
                 $html .= '  <h2>📋 Informations saisies par les validateurs précédents</h2>' . "\n";
                 foreach ($previous_vd_rows as $previou_vd_row) {
                     $label = $field_labels[$previou_vd_row['field_name']] ?? ucfirst(str_replace('_', ' ', $previou_vd_row['field_name']));
@@ -168,7 +168,7 @@ final class ValidateRenderer
                     $step_lbl = $htmlService->escape($previou_vd_row['step_label'] ?? '');
                     $html .= '  <p><strong>' . $htmlService->escape(App::html()->tJargon($label)) . ':</strong> ' . $value;
                     if ($step_lbl !== '' && $step_lbl !== '0') {
-                        $html .= '<br><small class="s-b804283a">Étape : ' . $step_lbl . '</small>';
+                        $html .= '<br><small class="text-muted-2">Étape : ' . $step_lbl . '</small>';
                     }
                     $html .= '</p>' . "\n";
                 }
@@ -180,7 +180,7 @@ final class ValidateRenderer
                 $html .= '<div class="validation-details">' . "\n";
                 $html .= '  <h2><span aria-hidden="true">📎</span> Pièces jointes (' . count($visible_attachments) . ')</h2>' . "\n";
                 foreach ($visible_attachments as $visible_attachment) {
-                    $html .= '  <p>' . App::html()->getFileIcon($visible_attachment['mime_type'] ?? '') . ' <a href="index.php?p=download&id=' . urlencode((string) $visible_attachment['id']) . '" class="s-b7cbcc09">' . $htmlService->escape($visible_attachment['original_name'] ?? '') . '</a> <span class="s-9d8d62ff">(' . App::html()->formatFileSize((int) ($visible_attachment['file_size'] ?? 0)) . ')</span></p>' . "\n";
+                    $html .= '  <p>' . App::html()->getFileIcon($visible_attachment['mime_type'] ?? '') . ' <a href="index.php?p=download&id=' . urlencode((string) $visible_attachment['id']) . '" class="u-col-tex">' . $htmlService->escape($visible_attachment['original_name'] ?? '') . '</a> <span class="u-col-fon-9">(' . App::html()->formatFileSize((int) ($visible_attachment['file_size'] ?? 0)) . ')</span></p>' . "\n";
                 }
                 $html .= '</div>' . "\n";
             }
@@ -191,13 +191,13 @@ final class ValidateRenderer
             $html .= '  <input type="hidden" name="token" value="' . $htmlService->escape($token) . '">' . "\n";
 
             if ($validator_fields !== []) {
-                $html .= '  <div class="validation-details s-53509c2c">' . "\n";
+                $html .= '  <div class="validation-details u-bor">' . "\n";
                 $html .= '    <h2>📝 Informations à compléter</h2>' . "\n";
-                $html .= '    <p class="hint s-4986ecf7">Remplissez les champs ci-dessous lors de la validation.</p>' . "\n";
+                $html .= '    <p class="hint mb-1-2">Remplissez les champs ci-dessous lors de la validation.</p>' . "\n";
                 foreach ($validator_fields as $validator_field) {
                     $fname = $validator_field['field_name'] ?? '';
                     $existing_val = $validator_data_index[$fname] ?? '';
-                    $html .= '    <div class="s-4986ecf7">' . "\n";
+                    $html .= '    <div class="mb-1-2">' . "\n";
                     $html .= new FormRenderer()->field($validator_field, $existing_val, [], '', false);
                     $html .= '    </div>' . "\n";
                 }

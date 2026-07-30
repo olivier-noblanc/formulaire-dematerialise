@@ -95,7 +95,7 @@ final class SubmissionViewRenderer
                     {$closed_html}
                   </div>
                 </div>
-                <span class="badge {$status_cls} s-9478b103">{$status_label}</span>
+                <span class="badge {$status_cls} btn-compact">{$status_label}</span>
               </div>
             HTML;
     }
@@ -218,13 +218,13 @@ final class SubmissionViewRenderer
         // Action 1 : Mettre à la corbeille (annuler)
         if ($status === SubmissionStatus::EnCours->value && ($is_admin || $submitted_by === $user)) {
             $cancel_url = \App\Core\App::html()->escape('index.php?p=confirm_action&action=cancel_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
-            $actions[] = '<a href="' . $cancel_url . '" class="btn btn-danger s-8fdce8d5"><span aria-hidden="true">🗑</span> Mettre à la corbeille</a>';
+            $actions[] = '<a href="' . $cancel_url . '" class="btn btn-danger u-tex"><span aria-hidden="true">🗑</span> Mettre à la corbeille</a>';
         }
 
         // Action 2 : Supprimer définitivement (admin only, status=annule ou refuse)
         if (($status === SubmissionStatus::Annule->value || $status === SubmissionStatus::Refuse->value) && $is_admin) {
             $delete_url = \App\Core\App::html()->escape('index.php?p=confirm_action&action=delete_submission&submission_id=' . urlencode($sub_id) . '&from=' . urlencode('index.php?p=submission_view&id=' . $sub_id));
-            $actions[] = '<a href="' . $delete_url . '" class="btn btn-danger s-22bce8e5"><span aria-hidden="true">⚠</span> Supprimer définitivement</a>';
+            $actions[] = '<a href="' . $delete_url . '" class="btn btn-danger u-bac-tex"><span aria-hidden="true">⚠</span> Supprimer définitivement</a>';
         }
 
         if ($actions === []) {
@@ -256,17 +256,17 @@ final class SubmissionViewRenderer
 
         return <<<HTML
               <!-- Commentaire admin -->
-              <div class="card s-e69899e8" id="admin-comment">
+              <div class="card u-bor-4" id="admin-comment">
                 <h2><span aria-hidden="true">💬</span> Commentaire (admin / propriétaire)</h2>
-                <p class="hint s-4986ecf7">Annotation libre post-soumission, indépendante des champs validateur. Visible uniquement par les administrateurs et propriétaires du formulaire.</p>
-                <form method="POST" class="s-e7cc7f46">
+                <p class="hint mb-1-2">Annotation libre post-soumission, indépendante des champs validateur. Visible uniquement par les administrateurs et propriétaires du formulaire.</p>
+                <form method="POST" class="flex-col-gap5">
                   {$csrf}
                   <input type="hidden" name="action" value="update_admin_comment">
                   <input type="hidden" name="sub_id" value="{$sub_id_h}">
                   <label for="admin_comment" class="sr-only">Commentaire</label>
-                  <textarea name="admin_comment" id="admin_comment" rows="4" placeholder="Ajouter une note, un suivi, un contexte de clôture..." class="s-6467e1bd">{$comment_h}</textarea>
+                  <textarea name="admin_comment" id="admin_comment" rows="4" placeholder="Ajouter une note, un suivi, un contexte de clôture..." class="input-filter">{$comment_h}</textarea>
                   <div>
-                    <button type="submit" class="btn btn-secondary s-ec5a39f3"><span aria-hidden="true">💾</span> Enregistrer le commentaire</button>
+                    <button type="submit" class="btn btn-secondary btn-sm-11"><span aria-hidden="true">💾</span> Enregistrer le commentaire</button>
                   </div>
                 </form>
               </div>
@@ -475,17 +475,17 @@ final class SubmissionViewRenderer
             $csrf    = \App\Core\App::security()->csrfField();
 
             $forms_html .= <<<HTML
-                          <form method="POST" class="s-5f8f4af2">
+                          <form method="POST" class="u-dis-2">
                             {$csrf}
                             <input type="hidden" name="action" value="remind_one">
                             <input type="hidden" name="token_id" value="{$tok_id}">
-                            <button type="submit" class="btn btn-secondary s-f54e9c23"><span aria-hidden="true">📧</span> Rappeler {$email}</button>
+                            <button type="submit" class="btn btn-secondary btn-xs-4"><span aria-hidden="true">📧</span> Rappeler {$email}</button>
                           </form>
-                          <form method="POST" class="s-5f8f4af2">
+                          <form method="POST" class="u-dis-2">
                             {$csrf}
                             <input type="hidden" name="action" value="regenerate_token">
                             <input type="hidden" name="token_id" value="{$tok_id}">
-                            <button type="submit" class="btn btn-secondary s-f54e9c23"><span aria-hidden="true">🔄</span> Régénérer {$email}</button>
+                            <button type="submit" class="btn btn-secondary btn-xs-4"><span aria-hidden="true">🔄</span> Régénérer {$email}</button>
                           </form>
                 HTML;
         }
@@ -529,17 +529,17 @@ final class SubmissionViewRenderer
         $csrf = \App\Core\App::security()->csrfField();
 
         return <<<HTML
-                <div class="actions-bar s-6039a3a0">
-                  <strong class="s-fb2a70ad"><span aria-hidden="true">🔄</span> Déléguer ma validation :</strong>
-                  <form method="POST" class="s-71f8aab2">
+                <div class="actions-bar mt-0">
+                  <strong class="u-col-fon-16"><span aria-hidden="true">🔄</span> Déléguer ma validation :</strong>
+                  <form method="POST" class="u-ali-dis-fle-gap">
                     {$csrf}
                     <input type="hidden" name="action" value="delegate_token">
-                    <select name="token_id" class="s-df076cbe">
+                    <select name="token_id" class="input-filter-4">
                       {$options_html}
                     </select>
-                    <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required class="s-da87df1a">
-                    <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" class="s-6cf5ed0c">
-                    <button type="submit" class="btn btn-secondary s-7ab18726"><span aria-hidden="true">🔄</span> Déléguer</button>
+                    <input type="email" name="delegate_to" placeholder="email@dreets.gouv.fr" required class="input-filter-3">
+                    <input type="text" name="delegate_reason" placeholder="Motif (optionnel)" class="input-filter-2">
+                    <button type="submit" class="btn btn-secondary u-bac-col-fon-pad"><span aria-hidden="true">🔄</span> Déléguer</button>
                   </form>
                 </div>
             HTML;
@@ -644,13 +644,13 @@ final class SubmissionViewRenderer
                 $fname_h      = \App\Core\App::html()->escape($field_name);
                 $value_input  = \App\Core\App::html()->escape($value_raw);
                 $value_block = <<<HTML
-                              <form method="POST" class="s-a495be66">
+                              <form method="POST" class="flex-gap5-mt-2">
                                 {$csrf}
                                 <input type="hidden" name="action" value="update_validator_field">
                                 <input type="hidden" name="sub_id" value="{$sub_id_h}">
                                 <input type="hidden" name="field_name" value="{$fname_h}">
-                                <input type="text" name="value" value="{$value_input}" aria-label="Valeur du champ" class="s-1329b83f">
-                                <button type="submit" class="btn btn-secondary s-ed29b015"><span aria-hidden="true">✏️</span> Modifier</button>
+                                <input type="text" name="value" value="{$value_input}" aria-label="Valeur du champ" class="flex">
+                                <button type="submit" class="btn btn-secondary btn-xs-3"><span aria-hidden="true">✏️</span> Modifier</button>
                               </form>
                     HTML;
             } else {
@@ -660,21 +660,21 @@ final class SubmissionViewRenderer
             }
 
             $items_html .= <<<HTML
-                        <div class="data-item s-2f0e118a">
+                        <div class="data-item styled-box">
                           <div class="data-label">{$label_h}</div>
                           {$value_block}
-                          <div class="s-0e91f58e">{$audit_line}</div>
+                          <div class="hint-muted">{$audit_line}</div>
                         </div>
                 HTML;
         }
 
         $edit_hint = $can_edit
-            ? '<p class="hint s-4986ecf7">Informations saisies par les validateurs au cours du circuit. <strong>Vous pouvez modifier ces champs.</strong></p>'
-            : '<p class="hint s-4986ecf7">Informations saisies par les validateurs au cours du circuit.</p>';
+            ? '<p class="hint mb-1-2">Informations saisies par les validateurs au cours du circuit. <strong>Vous pouvez modifier ces champs.</strong></p>'
+            : '<p class="hint mb-1-2">Informations saisies par les validateurs au cours du circuit.</p>';
 
         return <<<HTML
               <!-- Données des validateurs (filled_by='validator') — Option A -->
-              <div class="card s-53509c2c" id="validator-data">
+              <div class="card u-bor" id="validator-data">
                 <h2><span aria-hidden="true">🛡️</span> Données des validateurs</h2>
                 {$edit_hint}
                 <div class="data-grid">
@@ -799,9 +799,9 @@ final class SubmissionViewRenderer
                     }
 
                     $rows .= <<<HTML
-                                  <div class="s-6716e208">
-                                    <span aria-hidden="true" class="s-e061ff02">⏳</span>
-                                    <strong class="s-41801cb3">{$email_display}</strong>
+                                  <div class="flex-gap5-2">
+                                    <span aria-hidden="true" class="u-fon-5">⏳</span>
+                                    <strong class="u-fon-2">{$email_display}</strong>
                                     {$relance_badge}
                                     {$sent_html}
                                     {$last_remind}
@@ -810,7 +810,7 @@ final class SubmissionViewRenderer
                         HTML;
                 }
                 $pending_html = <<<HTML
-                          <div class="s-09cbfd89">
+                          <div class="mb-1">
                             {$rows}
                           </div>
                     HTML;
@@ -835,7 +835,7 @@ final class SubmissionViewRenderer
                     HTML;
             }
             $detail_html = <<<HTML
-                      <h3 class="s-181b1c62">Détail des notifications envoyées</h3>
+                      <h3 class="caption">Détail des notifications envoyées</h3>
                       {$rows}
                 HTML;
         }
@@ -848,7 +848,7 @@ final class SubmissionViewRenderer
                       <form method="POST">
                         {$csrf}
                         <input type="hidden" name="action" value="remind_all">
-                        <button type="submit" class="btn btn-secondary s-41801cb3"><span aria-hidden="true">📧</span> Rappeler tous les validateurs en attente</button>
+                        <button type="submit" class="btn btn-secondary u-fon-2"><span aria-hidden="true">📧</span> Rappeler tous les validateurs en attente</button>
                       </form>
                     </div>
                 HTML;
@@ -888,15 +888,15 @@ final class SubmissionViewRenderer
 
             $rows .= <<<HTML
                         <tr>
-                          <td class="s-9dd3299e">
+                          <td class="u-bor-pad">
                             {$icon}
                             <strong>{$name}</strong>
                           </td>
-                          <td class="s-2e40100a">{$mime}</td>
-                          <td class="s-411020a9">{$size}</td>
-                          <td class="s-411020a9">{$date}</td>
-                          <td class="s-2f8922d1">
-                            <a href="{$dl_url}" class="btn btn-secondary s-30d46cb7"><span aria-hidden="true">📥</span> Télécharger</a>
+                          <td class="btn-sm-5">{$mime}</td>
+                          <td class="btn-sm-7">{$size}</td>
+                          <td class="btn-sm-7">{$date}</td>
+                          <td class="u-bor-pad-tex-2">
+                            <a href="{$dl_url}" class="btn btn-secondary btn-xs"><span aria-hidden="true">📥</span> Télécharger</a>
                           </td>
                         </tr>
                 HTML;
@@ -906,14 +906,14 @@ final class SubmissionViewRenderer
               <!-- Pièces jointes -->
               <div class="card">
                 <h2><span aria-hidden="true">📎</span> Pièces jointes ({$count})</h2>
-                <table class="s-32d39d7a">
+                <table class="progress-fill">
                   <thead>
                     <tr>
-                      <th class="s-2f1dda18">Fichier</th>
-                      <th class="s-2f1dda18">Type</th>
-                      <th class="s-2f1dda18">Taille</th>
-                      <th class="s-2f1dda18">Date</th>
-                      <th class="s-c22e51ed"></th>
+                      <th class="u-bor-pad-tex">Fichier</th>
+                      <th class="u-bor-pad-tex">Type</th>
+                      <th class="u-bor-pad-tex">Taille</th>
+                      <th class="u-bor-pad-tex">Date</th>
+                      <th class="u-bor-pad-tex-3"></th>
                     </tr>
                   </thead>
                   <tbody>
