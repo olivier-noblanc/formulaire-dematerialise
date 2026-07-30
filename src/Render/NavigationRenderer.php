@@ -81,10 +81,10 @@ final class NavigationRenderer
                 $persona_active = '<div class="persona-banner" role="status">'
                     . '<span aria-hidden="true">🎭</span> '
                     . 'Mode persona : <strong>' . \App\Core\App::html()->escape($persona_display) . '</strong>'
-                    . ' <form method="POST" action="index.php?p=persona&action=stop" class="s-5677b988">'
+                    . ' <form method="POST" action="index.php?p=persona&action=stop" class="u-dis">'
                     . \App\Core\App::security()->csrfField()
                     . '<input type="hidden" name="persona_token" value="' . \App\Core\App::html()->escape($persona_current_token) . '">'
-                    . '<button type="submit" class="persona-reset s-5d15e208">✕ Quitter</button>'
+                    . '<button type="submit" class="persona-reset u-bac-bor-col-cur-pad-tex">✕ Quitter</button>'
                     . '</form>'
                     . '</div>';
             }
@@ -260,8 +260,8 @@ final class NavigationRenderer
             var startLink = document.createElement('a');
             startLink.className = 'sidebar-persona-option';
             startLink.href = '#';
-            startLink.innerHTML = '<span class="s-c68d3b3f">👤</span> Vue agent'
-                  + '<div class="s-275330b6">Visualiser l\'interface avec des droits réduits</div>';
+            startLink.innerHTML = '<span class="u-fon-mar-3">👤</span> Vue agent'
+                  + '<div class="hint-muted-2">Visualiser l\'interface avec des droits réduits</div>';
             startLink.addEventListener('click', function(e) {
               e.preventDefault();
               e.stopPropagation();
@@ -272,7 +272,7 @@ final class NavigationRenderer
             dropdown.innerHTML = html;
             dropdown.appendChild(startLink);
           } else {
-            dropdown.innerHTML = html + '<div class="s-086b79b1">Mode admin uniquement</div>';
+            dropdown.innerHTML = html + '<div class="btn-sm">Mode admin uniquement</div>';
           }
           card.appendChild(dropdown);
         

@@ -97,9 +97,9 @@ final class DashboardRenderer
         return <<<HTML
               <div class="stats">
                 <div class="stat"><strong>{$total}</strong>Total</div>
-                <div class="stat"><strong class="s-e04aeda4">{$en_cours}</strong>En cours</div>
-                <div class="stat"><strong class="s-ff2f9dc3">{$valide}</strong>Validés</div>
-                <div class="stat"><strong class="s-cb1de4c7">{$refuse}</strong>Refusés</div>
+                <div class="stat"><strong class="text-warning">{$en_cours}</strong>En cours</div>
+                <div class="stat"><strong class="text-success">{$valide}</strong>Validés</div>
+                <div class="stat"><strong class="text-danger">{$refuse}</strong>Refusés</div>
               </div>
 
             HTML;
@@ -129,14 +129,14 @@ final class DashboardRenderer
         return <<<HTML
               <div class="toolbar">
                 <div class="toolbar-filters">
-                  <form method="GET" class="s-fefbcc88">
+                  <form method="GET" class="u-ali-dis-gap">
                     <input type="hidden" name="statut" value="{$filtre_h}">
                     <label for="filter-form" class="sr-only">Filtrer par formulaire</label>
                     <select name="form" id="filter-form" class="form-filter">
                       <option value="">Tous les formulaires</option>
                       {$options}
                     </select>
-                    <button type="submit" class="btn-admin s-77a2000c">OK</button>
+                    <button type="submit" class="btn-admin btn-sm-9">OK</button>
                   </form>
                   {$search_bar}
                 </div>
@@ -279,26 +279,26 @@ final class DashboardRenderer
         }
 
         if ($status === SubmissionStatus::Refuse->value) {
-            $etat = '<span class="s-ab4ed9b3"><span aria-hidden="true">❌</span> Refusé</span>';
+            $etat = '<span class="u-col-fon-10"><span aria-hidden="true">❌</span> Refusé</span>';
         } elseif ($status === SubmissionStatus::Annule->value) {
-            $etat = '<span class="s-b9608da9"><span aria-hidden="true">🗑</span> Annulé</span>';
+            $etat = '<span class="u-col-fon-11"><span aria-hidden="true">🗑</span> Annulé</span>';
         } elseif ($status === SubmissionStatus::Valide->value) {
-            $etat = '<span class="s-e5d7e9fe"><span aria-hidden="true">✓</span> Validé</span>';
+            $etat = '<span class="u-col-fon-14"><span aria-hidden="true">✓</span> Validé</span>';
         } else {
-            $etat = '<span class="s-e04aeda4"><span aria-hidden="true">⏳</span> En cours</span>';
+            $etat = '<span class="text-warning"><span aria-hidden="true">⏳</span> En cours</span>';
         }
 
         $validator_badge = '';
         if ($vstatus !== null && ($status === SubmissionStatus::EnCours->value || $status === SubmissionStatus::Valide->value)) {
             if ($vstatus['complet']) {
                 $total = (int) $vstatus['total'];
-                $validator_badge = '<div title="Tous les champs validateur sont remplis (' . $total . ' / ' . $total . ')." class="s-2795837d">'
+                $validator_badge = '<div title="Tous les champs validateur sont remplis (' . $total . ' / ' . $total . ')." class="hint-text">'
                     . '<span aria-hidden="true">✓</span> Complet</div>';
             } else {
                 $filled = (int) $vstatus['filled'];
                 $total  = (int) $vstatus['total'];
                 $pending = $total - $filled;
-                $validator_badge = '<div title="Champs validateur non remplis : ' . $pending . ' / ' . $total . '." class="s-854839d3">'
+                $validator_badge = '<div title="Champs validateur non remplis : ' . $pending . ' / ' . $total . '." class="hint-warning-2">'
                     . '<span aria-hidden="true">🔄</span> Reste à traiter (' . $filled . '/' . $total . ')</div>';
             }
         }
@@ -311,7 +311,7 @@ final class DashboardRenderer
                 $tooltip = mb_substr($tooltip, 0, 200) . '…';
             }
             $tooltip_h = \App\Core\App::html()->escape($tooltip);
-            $admin_comment_html = ' <span aria-hidden="true" title="' . $tooltip_h . '" class="s-1c951ffb">💬</span>';
+            $admin_comment_html = ' <span aria-hidden="true" title="' . $tooltip_h . '" class="u-cur-fon">💬</span>';
         }
 
         $detail = self::submissionDetail($d, $status, $tokens, $row);
@@ -320,7 +320,7 @@ final class DashboardRenderer
 
         return <<<HTML
                   <tr>
-                    <td><span class="s-a30f014c">{$form_label}</span></td>
+                    <td><span class="styled-box-9">{$form_label}</span></td>
                     <td><strong>{$nom}</strong></td>
                     <td style="white-space:nowrap;{$deadline_urgency}">{$deadline_val}</td>
                     <td>
@@ -328,9 +328,9 @@ final class DashboardRenderer
                         {$tokens_html}
                       </div>
                     </td>
-                    <td class="s-8b2da0b4">{$submitted}</td>
+                    <td class="u-whi">{$submitted}</td>
                     <td>{$etat}{$admin_comment_html}{$validator_badge}</td>
-                    <td><a href="{$view_url}" class="s-ce2ad447">voir</a></td>
+                    <td><a href="{$view_url}" class="u-col-fon-tex-2">voir</a></td>
                   </tr>
                   <tr>
                     <td colspan="7">

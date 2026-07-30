@@ -135,14 +135,14 @@ final class MonitoringRenderer
         }
 
         $dryrun_html = $mail_dry_run
-            ? '<div class="warning-box s-8f06d08b"><strong>⚠ Mode Dry-Run actif</strong> — Aucun email réel n\'est envoyé. Tous les envois sont journalisés mais ne quittent pas le serveur. Désactivez le Dry-Run dans <a href="index.php?p=admin_settings#section-email-verify">Paramètres → Sécurité email</a> pour activer l\'envoi réel.</div>'
+            ? '<div class="warning-box u-fon-mar-2"><strong>⚠ Mode Dry-Run actif</strong> — Aucun email réel n\'est envoyé. Tous les envois sont journalisés mais ne quittent pas le serveur. Désactivez le Dry-Run dans <a href="index.php?p=admin_settings#section-email-verify">Paramètres → Sécurité email</a> pour activer l\'envoi réel.</div>'
             : '';
 
         $debug_html = '';
         if ($smtp_debug_log !== '') {
-            $debug_html = '<details class="s-a133fd4e">'
-                . '<summary class="s-95b75fc6">📋 Conversation SMTP (debug)</summary>'
-                . '<pre class="s-43de699a">' . \App\Core\App::html()->escape($smtp_debug_log) . '</pre>'
+            $debug_html = '<details class="styled-box-8">'
+                . '<summary class="u-col-cur-fon-fon-2">📋 Conversation SMTP (debug)</summary>'
+                . '<pre class="styled-box-4">' . \App\Core\App::html()->escape($smtp_debug_log) . '</pre>'
                 . '</details>';
         }
 
@@ -151,12 +151,12 @@ final class MonitoringRenderer
                 <div class="card">
                   <h2><span aria-hidden="true">📧</span> Santé SMTP</h2>
                   {$dryrun_html}
-                  <p class="s-09cbfd89">
+                  <p class="mb-1">
                     {$dot}
                     {$badge}
                     {$detail_html}
                   </p>
-                  <p class="s-809a410b">
+                  <p class="u-col-fon-mar-3">
                     Hôte : <strong>{$smtp_host}</strong> |
                     Port : <strong>{$smtp_port}</strong> |
                     Chiffrement : <strong>{$smtp_secure}</strong>
@@ -180,10 +180,10 @@ final class MonitoringRenderer
             $remind_dot_cls = $remind_ok ? 'health-ok' : 'health-warn';
             $remind_date    = \App\Core\App::html()->escape(date('d/m/Y à H:i', $remind_ts !== false ? $remind_ts : 0));
             $remind_badge   = $remind_ok
-                ? '<br><span class="badge badge-ok s-40b2ccb7"><span aria-hidden="true">✓</span> Actif</span>'
-                : '<br><span class="badge badge-warn s-40b2ccb7"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
+                ? '<br><span class="badge badge-ok mt-25"><span aria-hidden="true">✓</span> Actif</span>'
+                : '<br><span class="badge badge-warn mt-25"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
             $remind_html = <<<HTML
-                          <span class="health-dot {$remind_dot_cls} s-4838e7ab"></span>
+                          <span class="health-dot {$remind_dot_cls} mt-5"></span>
                           Dernière exécution : <strong>{$remind_date}</strong>
                           {$remind_badge}
                 HTML;
@@ -199,10 +199,10 @@ final class MonitoringRenderer
             $alert_dot_cls = $alert_ok ? 'health-ok' : 'health-warn';
             $alert_date    = \App\Core\App::html()->escape(date('d/m/Y à H:i', $alert_ts !== false ? $alert_ts : 0));
             $alert_badge   = $alert_ok
-                ? '<br><span class="badge badge-ok s-40b2ccb7"><span aria-hidden="true">✓</span> Actif</span>'
-                : '<br><span class="badge badge-warn s-40b2ccb7"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
+                ? '<br><span class="badge badge-ok mt-25"><span aria-hidden="true">✓</span> Actif</span>'
+                : '<br><span class="badge badge-warn mt-25"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
             $alert_html = <<<HTML
-                          <span class="health-dot {$alert_dot_cls} s-4838e7ab"></span>
+                          <span class="health-dot {$alert_dot_cls} mt-5"></span>
                           Dernière exécution : <strong>{$alert_date}</strong>
                           {$alert_badge}
                 HTML;
@@ -219,15 +219,15 @@ final class MonitoringRenderer
                 <div class="card">
                   <h2><span aria-hidden="true">🤖</span> Scripts automatisés</h2>
                   <!-- Script de relance -->
-                  <div class="s-263e9282">
-                    <strong class="s-7e692f94"><span aria-hidden="true">🔄</span> Script de relance (remind.php)</strong><br>
+                  <div class="u-bor-mar-pad-2">
+                    <strong class="u-fon-4"><span aria-hidden="true">🔄</span> Script de relance (remind.php)</strong><br>
                     {$remind_html}
                   </div>
                   <!-- Script d'alerte -->
                   <div>
-                    <strong class="s-7e692f94"><span aria-hidden="true">🔔</span> Script d'alerte (alert_check.php)</strong><br>
+                    <strong class="u-fon-4"><span aria-hidden="true">🔔</span> Script d'alerte (alert_check.php)</strong><br>
                     {$alert_html}
-                    <p class="s-b6160352">
+                    <p class="hint-text-3">
                       Délai relance : <strong>{$delai_relance}h</strong> |
                       Max relances : <strong>{$relance_max}</strong> |
                       Expiration tokens : <strong>{$token_expire_days}j</strong>
@@ -265,7 +265,7 @@ final class MonitoringRenderer
                           <td><span class="days-remaining {$days_cls}">{$days_text}</span></td>
                           <td><strong>{$form_label}</strong></td>
                           <td>{$nom_agent}</td>
-                          <td class="s-8b2da0b4">{$deadline_fmt}</td>
+                          <td class="u-whi">{$deadline_fmt}</td>
                           <td><span class="days-remaining {$days_cls}">{$days_text}</span></td>
                           <td><span class="badge badge-warn">{$pending_steps} en attente</span></td>
                         </tr>
@@ -276,7 +276,7 @@ final class MonitoringRenderer
               <!-- Alertes actives : soumissions proches de la deadline -->
               <div class="card">
                 <h2><span aria-hidden="true">🔔</span> Alertes actives — Soumissions proches de la date cible</h2>
-                <p class="s-270b7dca">
+                <p class="caption-2">
                   Les soumissions suivantes sont en cours et approchent ou dépassent leur date cible avec des étapes non complétées.
                 </p>
                 <table>
@@ -287,8 +287,8 @@ final class MonitoringRenderer
                   {$rows}
                   </tbody>
                 </table>
-                <p class="s-78427c4e">
-                  <a href="index.php?p=admin_alerts" class="btn btn-secondary s-41801cb3"><span aria-hidden="true">⚙</span> Configurer les règles d'alerte</a>
+                <p class="mt-1">
+                  <a href="index.php?p=admin_alerts" class="btn btn-secondary u-fon-2"><span aria-hidden="true">⚙</span> Configurer les règles d'alerte</a>
                 </p>
               </div>
             HTML;
@@ -314,10 +314,10 @@ final class MonitoringRenderer
 
             $rows .= <<<HTML
                         <tr>
-                          <td class="s-530cd48f">{$date}</td>
+                          <td class="u-fon-whi">{$date}</td>
                           <td><span class="badge badge-info">{$rule_lbl}</span></td>
-                          <td class="s-41801cb3">{$form_lbl}</td>
-                          <td class="s-3cfc5dc8">{$message}</td>
+                          <td class="u-fon-2">{$form_lbl}</td>
+                          <td class="u-fon">{$message}</td>
                         </tr>
                 HTML;
         }
@@ -408,9 +408,9 @@ final class MonitoringRenderer
                 $date = \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $daily_stat['day'])));
                 $rows .= <<<HTML
                               <tr>
-                                <td class="s-8b2da0b4">{$date}</td>
+                                <td class="u-whi">{$date}</td>
                                 <td><strong>{$cnt}</strong></td>
-                                <td class="s-906126e4"><div style="background:#003189;height:20px;border-radius:2px;width:{$pct}%;min-width:4px;"></div></td>
+                                <td class="progress-fill-2"><div style="background:#003189;height:20px;border-radius:2px;width:{$pct}%;min-width:4px;"></div></td>
                               </tr>
                     HTML;
             }
@@ -461,9 +461,9 @@ final class MonitoringRenderer
                                 <td>{$form_label}</td>
                                 <td><span class="badge badge-info">Étape {$ordre} — {$step_label}</span></td>
                                 <td>{$email}</td>
-                                <td class="s-8b2da0b4">{$sent_at}</td>
+                                <td class="u-whi">{$sent_at}</td>
                                 <td>{$relance}</td>
-                                <td class="s-8b2da0b4">{$expires}</td>
+                                <td class="u-whi">{$expires}</td>
                                 <td>{$submitted_by}</td>
                               </tr>
                     HTML;
@@ -532,13 +532,13 @@ final class MonitoringRenderer
             $badge_info = $status_labels[$status] ?? ['label' => $status, 'cls' => 'badge-info'];
             $badge_html = '<span class="badge ' . $badge_info['cls'] . '">' . $badge_info['label'] . '</span>';
 
-            $err_html = $error !== '' ? '<br><span class="s-d8dec3bb">' . $error . '</span>' : '';
+            $err_html = $error !== '' ? '<br><span class="u-col-fon-12">' . $error . '</span>' : '';
 
             $debug_html = '';
             if ($smtp_log !== '') {
-                $debug_html = '<details class="s-e2721af0">'
-                    . '<summary class="s-32fecb94">Voir la conversation SMTP</summary>'
-                    . '<pre class="s-e2a7b5ae">' . \App\Core\App::html()->escape($smtp_log) . '</pre>'
+                $debug_html = '<details class="mt-4">'
+                    . '<summary class="u-col-cur-fon">Voir la conversation SMTP</summary>'
+                    . '<pre class="styled-box-11">' . \App\Core\App::html()->escape($smtp_log) . '</pre>'
                     . '</details>';
             }
 
@@ -548,11 +548,11 @@ final class MonitoringRenderer
 
             $rows .= <<<HTML
                         <tr>
-                          <td class="s-bd4296f9">{$date_fmt}</td>
-                          <td class="s-4ed487b8">{$recipient}</td>
-                          <td class="s-4ed487b8">{$subject}</td>
+                          <td class="u-fon-whi-2">{$date_fmt}</td>
+                          <td class="u-fon-3">{$recipient}</td>
+                          <td class="u-fon-3">{$subject}</td>
                           <td>{$badge_html}{$err_html}{$debug_html}</td>
-                          <td class="s-25d57429">{$actor}<br><span class="s-48d21665">{$ip}</span></td>
+                          <td class="u-col-fon">{$actor}<br><span class="text-muted">{$ip}</span></td>
                         </tr>
                 HTML;
         }
@@ -561,7 +561,7 @@ final class MonitoringRenderer
               <!-- Journal des emails -->
               <div class="card">
                 <h2><span aria-hidden="true">📬</span> Journal des emails (20 derniers)</h2>
-                <p class="s-ffc288cf">
+                <p class="caption-10">
                   Toutes les tentatives d'envoi d'email (succès, échecs, blocages) sont journalisées ici.
                   Cliquez sur « Voir la conversation SMTP » pour diagnostiquer les erreurs.
                 </p>
@@ -693,12 +693,12 @@ final class MonitoringRenderer
                 $ip     = \App\Core\App::html()->escape((string) ($audit_log['ip'] ?? ''));
                 $rows .= <<<HTML
                               <tr>
-                                <td class="s-530cd48f">{$date}</td>
+                                <td class="u-fon-whi">{$date}</td>
                                 <td><span class="badge badge-info">{$action}</span></td>
-                                <td class="s-3cfc5dc8">{$actor}</td>
-                                <td class="s-3cfc5dc8">{$target}</td>
-                                <td class="s-3cfc5dc8">{$detail}</td>
-                                <td class="s-84b64e4f">{$ip}</td>
+                                <td class="u-fon">{$actor}</td>
+                                <td class="u-fon">{$target}</td>
+                                <td class="u-fon">{$detail}</td>
+                                <td class="u-col-fon-3">{$ip}</td>
                               </tr>
                     HTML;
             }
@@ -728,7 +728,7 @@ final class MonitoringRenderer
                 $next_link = "<a href=\"{$next_url}\" class=\"btn btn-secondary\" style=\"font-size:.8rem;padding:.3rem .75rem;\">Suivant →</a>";
             }
             $pagination = <<<HTML
-                        <div class="pagination s-a51ff3aa">
+                        <div class="pagination flex-gap5-5">
                           {$prev_link}
                           {$page_info}
                           {$next_link}
@@ -740,38 +740,38 @@ final class MonitoringRenderer
               <!-- Journal d'audit — S5-B / Action 1 : filtres avancés + pagination + export CSV -->
               <div class="card">
                 <h2><span aria-hidden="true">📝</span> Journal d'audit</h2>
-                <p class="s-ffc288cf">
+                <p class="caption-10">
                   Traçabilité complète des actions du système. Filtrez par date, action, acteur ou cible, puis exportez en CSV pour archivage.
                 </p>
-                <form method="GET" class="audit-filters s-8028d6e7">
+                <form method="GET" class="audit-filters info-box">
                   <div>
-                    <label for="log_date_debut" class="s-4e8468b6">Date de début</label>
-                    <input type="date" id="log_date_debut" name="log_date_debut" value="{$log_date_debut}" class="s-8588e44d">
+                    <label for="log_date_debut" class="u-dis-fon-fon-mar">Date de début</label>
+                    <input type="date" id="log_date_debut" name="log_date_debut" value="{$log_date_debut}" class="w-100">
                   </div>
                   <div>
-                    <label for="log_date_fin" class="s-4e8468b6">Date de fin</label>
-                    <input type="date" id="log_date_fin" name="log_date_fin" value="{$log_date_fin}" class="s-8588e44d">
+                    <label for="log_date_fin" class="u-dis-fon-fon-mar">Date de fin</label>
+                    <input type="date" id="log_date_fin" name="log_date_fin" value="{$log_date_fin}" class="w-100">
                   </div>
                   <div>
-                    <label for="log_action" class="s-4e8468b6">Action</label>
-                    <select id="log_action" name="log_action" class="s-8588e44d">
+                    <label for="log_action" class="u-dis-fon-fon-mar">Action</label>
+                    <select id="log_action" name="log_action" class="w-100">
                       {$action_options}
                     </select>
                   </div>
                   <div>
-                    <label for="log_actor" class="s-4e8468b6">Acteur (email)</label>
-                    <input type="text" id="log_actor" name="log_actor" value="{$log_actor_v}" placeholder="agent@exemple.invalid" class="s-8588e44d">
+                    <label for="log_actor" class="u-dis-fon-fon-mar">Acteur (email)</label>
+                    <input type="text" id="log_actor" name="log_actor" value="{$log_actor_v}" placeholder="agent@exemple.invalid" class="w-100">
                   </div>
                   <div>
-                    <label for="log_target" class="s-4e8468b6">Cible</label>
-                    <input type="text" id="log_target" name="log_target" value="{$log_target_v}" placeholder="token, settings..." class="s-8588e44d">
+                    <label for="log_target" class="u-dis-fon-fon-mar">Cible</label>
+                    <input type="text" id="log_target" name="log_target" value="{$log_target_v}" placeholder="token, settings..." class="w-100">
                   </div>
-                  <div class="s-eba6230b">
-                    <button type="submit" class="btn btn-primary s-35ba6b8d"><span aria-hidden="true">🔍</span> Filtrer</button>
-                    <a href="index.php?p=monitoring" class="btn btn-secondary s-35ba6b8d">Réinitialiser</a>
+                  <div class="flex-gap5-7">
+                    <button type="submit" class="btn btn-primary btn-sm-6"><span aria-hidden="true">🔍</span> Filtrer</button>
+                    <a href="index.php?p=monitoring" class="btn btn-secondary btn-sm-6">Réinitialiser</a>
                   </div>
                 </form>
-                <p class="s-e49667db">
+                <p class="caption-7">
                   <strong>{$audit_total}</strong> entrée{$s_suffix} trouvée{$s_suffix}
                   {$export_link}
                 </p>

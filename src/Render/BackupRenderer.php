@@ -122,7 +122,7 @@ final class BackupRenderer
             <h3>Fichier</h3>
             <div class="info-row">
                 <span class="info-label">Chemin</span>
-                <span class="info-value s-eeef7a42"><?= \App\Core\App::html()->escape($db_path) ?></span>
+                <span class="info-value u-fon-fon-3"><?= \App\Core\App::html()->escape($db_path) ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">Existant</span>
@@ -138,12 +138,12 @@ final class BackupRenderer
             </div>
 
             <!-- Comptage par table -->
-            <h3 class="s-ea349ae2">Nombre d'enregistrements par table</h3>
+            <h3 class="mt-125">Nombre d'enregistrements par table</h3>
             <table class="stat-table">
                 <thead>
                     <tr>
                         <th>Table</th>
-                        <th class="s-08a0ed40">Enregistrements</th>
+                        <th class="ta-right">Enregistrements</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -155,19 +155,19 @@ final class BackupRenderer
                 }
                 ?>
                     <tr>
-                        <td class="s-eeef7a42"><?= \App\Core\App::html()->escape($table_name) ?></td>
-                        <td class="s-08a0ed40"><?= is_int($count) ? number_format($count, 0, '', ' ') : \App\Core\App::html()->escape($count) ?></td>
+                        <td class="u-fon-fon-3"><?= \App\Core\App::html()->escape($table_name) ?></td>
+                        <td class="ta-right"><?= is_int($count) ? number_format($count, 0, '', ' ') : \App\Core\App::html()->escape($count) ?></td>
                     </tr>
                     <?php endforeach; ?>
-                    <tr class="s-6aa65003">
+                    <tr class="u-bor-fon">
                         <td>Total</td>
-                        <td class="s-08a0ed40"><?= number_format($total_rows, 0, '', ' ') ?></td>
+                        <td class="ta-right"><?= number_format($total_rows, 0, '', ' ') ?></td>
                     </tr>
                 </tbody>
             </table>
 
             <!-- Dates soumissions -->
-            <h3 class="s-ea349ae2">Soumissions</h3>
+            <h3 class="mt-125">Soumissions</h3>
             <div class="info-row">
                 <span class="info-label">Plus ancienne</span>
                 <span class="info-value"><?= \App\Core\App::html()->escape($db_stats['oldest_submission'] ?? '') ?></span>
@@ -178,7 +178,7 @@ final class BackupRenderer
             </div>
 
             <!-- Informations SQLite internes -->
-            <h3 class="s-ea349ae2">Informations SQLite</h3>
+            <h3 class="mt-125">Informations SQLite</h3>
             <div class="info-row">
                 <span class="info-label">Taille de page</span>
                 <span class="info-value"><?= number_format($db_stats['page_size'] ?? 0) ?> octets</span>
@@ -200,12 +200,12 @@ final class BackupRenderer
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card">
         <h2><span aria-hidden="true">📥</span> Télécharger une sauvegarde</h2>
-        <p class="s-270b7dca">
+        <p class="caption-2">
             Téléchargez une copie complète de la base de données SQLite au format <code>.db</code>.
             Le fichier sera nommé automatiquement avec la date et l'heure actuelles
             (format : <code>workflow_backup_AAAAMMJJ_HHMMSS.db</code>).
         </p>
-        <p class="s-ffc288cf">
+        <p class="caption-10">
             <span aria-hidden="true">⚠️</span> La sauvegarde reflète l'état de la base au moment du téléchargement. Les connexions actives
             peuvent être en cours de modification.
         </p>
@@ -221,11 +221,11 @@ final class BackupRenderer
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card danger-zone">
         <h2><span aria-hidden="true">🔄</span> Restaurer la base de données</h2>
-        <p class="s-270b7dca">
+        <p class="caption-2">
             Restaurez la base de données à partir d'un fichier de sauvegarde <code>.db</code> précédemment téléchargé.
         </p>
 
-        <div class="warn-box s-09cbfd89">
+        <div class="warn-box mb-1">
             <p><strong><span aria-hidden="true">⚠️</span> Attention — Action irréversible</strong></p>
             <p>La base de données actuelle sera remplacée par le fichier téléchargé. Une copie de sécurité de la base actuelle sera automatiquement créée avant la restauration, mais toute donnée non sauvegardée sera perdue.</p>
         </div>
@@ -246,7 +246,7 @@ final class BackupRenderer
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="card danger-zone">
         <h2><span aria-hidden="true">🗑️</span> Purger les anciennes données</h2>
-        <p class="s-270b7dca">
+        <p class="caption-2">
             Supprimez les soumissions clôturées (validées ou refusées) anciennes, ainsi que leurs tokens, alertes et données validateur associées.
             Les soumissions en cours (<span class="badge badge-en-cours">en_cours</span>) ne seront <strong>jamais</strong> supprimées.
         </p>
@@ -274,10 +274,10 @@ final class BackupRenderer
                     </div>
                 </div>
                 <?php if ($purge_preview['submissions'] > 0): ?>
-                    <p class="s-23e30a46">
+                    <p class="u-col-fon-mar">
                         Ces données seront <strong>définitivement supprimées</strong>. Cette action est irréversible.
                     </p>
-                    <form method="POST" class="s-b83cf351">
+                    <form method="POST" class="flex-gap5-6">
                         <?= \App\Core\App::security()->csrfField() ?>
                         <input type="hidden" name="action" value="purge_confirm">
                         <input type="hidden" name="purge_months" value="<?= (int) $purge_preview['months'] ?>">
@@ -285,7 +285,7 @@ final class BackupRenderer
                         <a href="index.php?p=backup" class="btn btn-secondary">Annuler</a>
                     </form>
                 <?php else: ?>
-                    <p class="s-f24b6423">
+                    <p class="u-col-fon-15">
                         <span aria-hidden="true">✅</span> Aucune donnée à purger pour cette période. Toutes les soumissions clôturées sont récentes.
                     </p>
                 <?php endif; ?>
@@ -297,7 +297,7 @@ final class BackupRenderer
             <input type="hidden" name="action" value="purge_count">
             <div class="field">
                 <label>Purger les données clôturées depuis plus de</label>
-                <select name="purge_months" class="s-2c34c898">
+                <select name="purge_months" class="u-max">
                     <option value="6">6 mois</option>
                     <option value="12" selected>12 mois</option>
                     <option value="18">18 mois</option>

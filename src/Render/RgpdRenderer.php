@@ -56,7 +56,7 @@ final class RgpdRenderer
         if ($oldSubmissions > 0) {
             $s = $oldSubmissions > 1 ? 's' : '';
             $html .= <<<HTML
-                  <div class="warn-box s-2da5d661">
+                  <div class="warn-box mb-15">
                     <strong><span aria-hidden="true">⚠</span> {$oldSubmissions} soumission{$s}</strong> clôturée{$s} depuis plus de {$retentionVal} mois peuvent être purgées.
                   </div>
 
@@ -72,12 +72,12 @@ final class RgpdRenderer
                   <input type="hidden" name="action" value="update_legal">
                   <div class="field">
                     <label for="legal_mentions">Mentions légales affichées aux utilisateurs</label>
-                    <textarea id="legal_mentions" name="legal_mentions" rows="6" class="s-0e15d85f">{$escapedLegal}</textarea>
+                    <textarea id="legal_mentions" name="legal_mentions" rows="6" class="minh-120">{$escapedLegal}</textarea>
                     <span class="hint">Ce texte est affiché lors de la soumission des formulaires et dans la documentation.</span>
                   </div>
                   <div class="field">
                     <label for="retention_months">Durée de conservation (mois)</label>
-                    <input type="number" id="retention_months" name="retention_months" value="{$retentionVal}" min="1" max="120" class="s-51346740">
+                    <input type="number" id="retention_months" name="retention_months" value="{$retentionVal}" min="1" max="120" class="u-wid">
                     <span class="hint">Les soumissions clôturées plus anciennes seront purgées automatiquement.</span>
                   </div>
                   <button type="submit" class="btn btn-primary">Enregistrer</button>
@@ -87,14 +87,14 @@ final class RgpdRenderer
               <!-- Export des données -->
               <div class="card">
                 <h2><span aria-hidden="true">📤</span> Droit d'accès — Export des données</h2>
-                <p class="s-270b7dca">
+                <p class="caption-2">
                   Conformément à l'article 15 du RGPD, toute personne peut demander l'export de ses données personnelles.
                   Saisissez l'adresse email de l'agent pour générer un export JSON complet.
                 </p>
-                <form method="POST" class="s-5e1cdb0a">
+                <form method="POST" class="flex-gap5">
                   {$csrf}
                   <input type="hidden" name="action" value="export_user">
-                  <div class="field s-5bbb2594">
+                  <div class="field flex-3">
                     <label for="export_email">Email de l'agent</label>
                     <input type="email" id="export_email" name="export_email" placeholder="prenom.nom@{$escapedDomain}" required>
                   </div>
@@ -105,7 +105,7 @@ final class RgpdRenderer
               <!-- Suppression des données -->
               <div class="danger-zone">
                 <h3><span aria-hidden="true">🗑</span> Droit à l'effacement — Suppression des données</h3>
-                <p class="s-270b7dca">
+                <p class="caption-2">
                   Conformément à l'article 17 du RGPD, toute personne peut demander la suppression de ses données personnelles.
                   Les soumissions seront anonymisées (le statut et le workflow sont conservés pour traçabilité, mais les données personnelles sont remplacées).
                 </p>
@@ -116,7 +116,7 @@ final class RgpdRenderer
                     <label for="delete_email">Email de l'agent à supprimer</label>
                     <input type="email" id="delete_email" name="delete_email" placeholder="prenom.nom@{$escapedDomain}" required>
                   </div>
-                  <label class="checkbox-item s-09cbfd89">
+                  <label class="checkbox-item mb-1">
                     <input type="checkbox" name="confirmed" value="1" required>
                     Je confirme vouloir anonymiser toutes les données de cet agent. Cette action est irréversible.
                   </label>
@@ -127,7 +127,7 @@ final class RgpdRenderer
               <!-- Purge automatique -->
               <div class="danger-zone">
                 <h3><span aria-hidden="true">🧹</span> Purge automatique des données anciennes</h3>
-                <p class="s-270b7dca">
+                <p class="caption-2">
                   Supprime définitivement les soumissions clôturées de plus de <strong>{$retentionVal} mois</strong>,
                   ainsi que leurs pièces jointes, tokens et alertes associées.
                 </p>
@@ -137,14 +137,14 @@ final class RgpdRenderer
         if ($oldSubmissions > 0) {
             $s = $oldSubmissions > 1 ? 's' : '';
             $html .= <<<HTML
-                      <div class="warn-box s-09cbfd89">
+                      <div class="warn-box mb-1">
                         <strong>{$oldSubmissions} soumission{$s}</strong> éligible{$s} à la purge.
                       </div>
 
                 HTML;
         } else {
             $html .= <<<HTML
-                      <p class="s-5b3a77c1"><span aria-hidden="true">✓</span> Aucune soumission à purger actuellement.</p>
+                      <p class="u-col-fon-mar-2"><span aria-hidden="true">✓</span> Aucune soumission à purger actuellement.</p>
 
                 HTML;
         }
@@ -153,7 +153,7 @@ final class RgpdRenderer
                 <form method="POST">
                   {$csrf}
                   <input type="hidden" name="action" value="auto_purge">
-                  <label class="checkbox-item s-09cbfd89">
+                  <label class="checkbox-item mb-1">
                     <input type="checkbox" name="confirmed" value="1" required>
                     Je confirme vouloir purger définitivement les soumissions anciennes. Cette action est irréversible.
                   </label>
