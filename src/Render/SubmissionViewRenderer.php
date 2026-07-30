@@ -392,7 +392,11 @@ final class SubmissionViewRenderer
                     $is_current   = ($ws['step_status'] ?? '') === 'current';
 
                     if ($done) {
-                        $icon = '<span class="wf-check" aria-hidden="true">✓</span>';
+                        $tooltip = 'Validé par ' . $email . ' le ' . date('d/m/Y à H:i', (int) strtotime((string) ($token['done_at'] ?? '')));
+                        if ($relance > 0) {
+                            $tooltip .= ' — ' . $relance . ' rappel' . ($relance > 1 ? 's' : '') . ' envoyé' . ($relance > 1 ? 's' : '');
+                        }
+                        $icon = '<span class="wf-check" aria-hidden="true" title="' . \App\Core\App::html()->escape($tooltip) . '">✓</span>';
                     } elseif ($is_current) {
                         $tooltip = 'Email envoyé le ' . date('d/m/Y à H:i', (int) strtotime((string) ($token['sent_at'] ?? '')));
                         if (isset($token['expires_at']) && $token['expires_at'] !== '' && $token['expires_at'] !== '0') {
