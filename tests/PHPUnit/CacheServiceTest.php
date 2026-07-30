@@ -21,7 +21,8 @@ final class CacheServiceTest extends TestCase
     {
         // Clean up test cache directory
         if (is_dir($this->testCacheDir)) {
-            $files = glob($this->testCacheDir . '/*') ?: [];
+            $globResult = glob($this->testCacheDir . '/*');
+            $files = $globResult !== false ? $globResult : [];
             foreach ($files as $file) {
                 if (is_file($file)) {
                     @unlink($file);
