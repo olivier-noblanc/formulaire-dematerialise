@@ -14,8 +14,6 @@ final class AdminFormsController extends BaseController
     {
         App::auth()->requireAdminEffective();
 
-        $forms = App::getInstance()->get(\App\Repository\FormRepository::class)->findAll();
-
         $formId = trim($_GET['form_id'] ?? '');
         $editStepId = trim($_GET['edit_step'] ?? '');
         $editFieldId = trim($_GET['edit_field'] ?? '');
@@ -44,8 +42,6 @@ final class AdminFormsController extends BaseController
 
         $errorMsg       = '';
         $successMsg     = '';
-        $validationHtml = '';
-        $preservedJson  = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action !== '') {
             $result = AdminFormsHandlers::dispatch($action, (string) $formId);
@@ -66,12 +62,6 @@ final class AdminFormsController extends BaseController
                 if (isset($result['success'])) {
                     $successMsg     = $result['success'];
                 }
-                if (isset($result['validation_html'])) {
-                    $validationHtml = $result['validation_html'];
-                }
-                if (isset($result['preserved_json'])) {
-                    $preservedJson  = $result['preserved_json'];
-                }
                 if (isset($result['form_id']) && is_string($result['form_id'])) {
                     $formId         = $result['form_id'];
                 }
@@ -79,116 +69,15 @@ final class AdminFormsController extends BaseController
         }
 
         $selectedForm = null;
-        $formFields = [];
-        $workflowSteps = [];
-
         if ($formId !== '' && $formId !== '0') {
-            $formIdStr = (string) $formId;
-            $selectedForm = App::getInstance()->get(\App\Repository\FormRepository::class)->findById($formIdStr);
-
-            if ($selectedForm) {
-                $formFields = App::validatorData()->getFormFields($formIdStr);
-                $workflowSteps = App::workflow()->getWorkflowSteps($formIdStr);
-            }
+            $selectedForm = App::getInstance()->get(\App\Repository\FormRepository::class)->findById((string) $formId);
         }
 
-        $pageCss = '';
-        ob_start();
-        ?>
-  <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
-
-  <?= new \App\Render\ErrorRenderer()->messages(['success' => $successMsg, 'error' => $errorMsg]) ?>
-  <?= $validationHtml ?>
-
-  <!-- Sélecteur de formulaire -->
-  <div class="card">
-    <h2>Sélectionner un formulaire</h2>
-    <form method="GET" style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
-      <input type="hidden" name="p" value="admin_forms">
-      <select name="form_id" onchange="this.form.submit()" style="flex:1;min-width:250px;">
-        <option value="">— Sélectionner un formulaire —</option>
-        <?php foreach ($forms as $form): ?>
-          <option value="<?= \App\Core\App::html()->escape($form['id']) ?>" <?= $formId === $form['id'] ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($form['label']) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </form>
-  </div>
-
-  <?php if ($selectedForm): ?>
-  <!-- Formulaire sélectionné -->
-  <div class="card">
-    <h2><?= \App\Core\App::html()->escape($selectedForm['label']) ?></h2>
-    <div class="form-info">
-      <p><strong>Slug :</strong> <?= \App\Core\App::html()->escape($selectedForm['slug']) ?></p>
-      <p><strong>Description :</strong> <?= \App\Core\App::html()->escape($selectedForm['description'] ?? '') ?></p>
-      <p><strong>Statut :</strong> <?= $selectedForm['actif'] ? 'Actif' : 'Inactif' ?></p>
-    </div>
-
-    <div style="display:flex;gap:.5rem;margin-top:1rem;">
-      <a href="index.php?p=form_preview&form_id=<?= urlencode((string) $formId) ?>" class="btn btn-secondary"><span aria-hidden="true">👁</span> Prévisualiser</a>
-      <a href="index.php?p=form_tracking&f=<?= urlencode((string) $formId) ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Suivi</a>
-    </div>
-  </div>
-
-  <!-- Champs du formulaire -->
-  <div class="card">
-    <h2>Champs du formulaire (<?= count($formFields) ?>)</h2>
-    <?php if ($formFields === []): ?>
-      <p class="empty-state">Aucun champ configuré.</p>
-    <?php else: ?>
-      <table>
-        <thead>
-          <tr><th>Ordre</th><th>Nom</th><th>Label</th><th>Type</th><th>Obligatoire</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($formFields as $formField): ?>
-          <tr>
-            <td><?= (int) $formField['ordre'] ?></td>
-            <td><code><?= \App\Core\App::html()->escape($formField['field_name']) ?></code></td>
-            <td><?= \App\Core\App::html()->escape($formField['label']) ?></td>
-            <td><?= \App\Core\App::html()->escape($formField['field_type']) ?></td>
-            <td><?= $formField['required'] ? 'Oui' : 'Non' ?></td>
-            <td>
-              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_field=<?= urlencode((string) ($formField['id'] ?? '')) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-        </tbody>
-      </table>
-    <?php endif; ?>
-  </div>
-
-  <!-- Étapes du workflow -->
-  <div class="card">
-    <h2>Étapes du circuit de validation (<?= count($workflowSteps) ?>)</h2>
-    <?php if ($workflowSteps === []): ?>
-      <p class="empty-state">Aucune étape configurée.</p>
-    <?php else: ?>
-      <table>
-        <thead>
-          <tr><th>Ordre</th><th>Label</th><th>Destinataires</th><th>Statut</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($workflowSteps as $workflowStep):
-            $emails = array_filter(explode('|', $workflowStep['recipient_emails'] ?? ''));
-            ?>
-          <tr>
-            <td><?= (int) $workflowStep['ordre'] ?></td>
-            <td><?= \App\Core\App::html()->escape($workflowStep['step_label']) ?></td>
-            <td><?= \App\Core\App::html()->escape(implode(', ', $emails)) ?></td>
-            <td><span class="badge <?= $workflowStep['actif'] ? 'badge-ok' : 'badge-err' ?>"><?= $workflowStep['actif'] ? 'Active' : 'Inactive' ?></span></td>
-            <td>
-              <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) $formId) ?>&edit_step=<?= urlencode((string) ($workflowStep['step_id'] ?? '')) ?>" class="btn btn-secondary" style="font-size:.75rem;padding:.2rem .5rem;">Modifier</a>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-        </tbody>
-      </table>
-    <?php endif; ?>
-  </div>
-  <?php endif; ?>
-<?php
-        $content = (string) ob_get_clean();
-        echo $this->renderPage('Gestion des formulaires', 'admin_forms', $pageCss, $content);
+        render_admin_forms_page([
+            'form_id'   => (string) $formId,
+            'form'      => $selectedForm,
+            'error_msg' => $errorMsg,
+            'success_msg' => $successMsg,
+        ]);
     }
 }
