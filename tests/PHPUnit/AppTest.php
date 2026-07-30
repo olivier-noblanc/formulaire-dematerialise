@@ -18,7 +18,7 @@ final class AppTest extends TestCase
     {
         $app1 = App::getInstance();
         $app2 = App::getInstance();
-        $this->assertSame($app1, $app2);
+        self::assertSame($app1, $app2);
     }
 
     public function testSetAndGetService(): void
@@ -27,37 +27,42 @@ final class AppTest extends TestCase
         // Use a unique key to avoid clobbering bootstrap services
         $key = 'App\\Tests\\DummyService_' . uniqid();
         $app->set($key, new \stdClass());
-        $this->assertInstanceOf(\stdClass::class, $app->get($key));
+        // $key n'est pas une vraie classe (clé arbitraire pour tester le
+        // conteneur générique) — PHPStan ne peut pas résoudre class-string<T>.
+        // @phpstan-ignore-next-line
+        self::assertInstanceOf(\stdClass::class, $app->get($key));
     }
 
     public function testGetThrowsForUnregisteredService(): void
     {
         $app = App::getInstance();
         $this->expectException(\RuntimeException::class);
+        // Même raison que ci-dessus : clé volontairement inexistante.
+        // @phpstan-ignore-next-line
         $app->get('App\\NonExistent\\Service_' . uniqid());
     }
 
     public function testStaticDbMethod(): void
     {
         $db = App::db();
-        $this->assertInstanceOf(Database::class, $db);
+        self::assertInstanceOf(Database::class, $db);
     }
 
     public function testStaticHtmlMethod(): void
     {
         $html = App::html();
-        $this->assertInstanceOf(HtmlService::class, $html);
+        self::assertInstanceOf(HtmlService::class, $html);
     }
 
     public function testHasReturnsTrueForRegisteredService(): void
     {
         $app = App::getInstance();
-        $this->assertTrue($app->has(Database::class));
+        self::assertTrue($app->has(Database::class));
     }
 
     public function testHasReturnsFalseForUnregisteredService(): void
     {
         $app = App::getInstance();
-        $this->assertFalse($app->has('App\\NonExistent\\Service_' . uniqid()));
+        self::assertFalse($app->has('App\\NonExistent\\Service_' . uniqid()));
     }
 }
