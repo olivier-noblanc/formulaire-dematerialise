@@ -322,7 +322,7 @@ final class DashboardRenderer
                   <tr>
                     <td><span class="styled-box-9">{$form_label}</span></td>
                     <td><strong>{$nom}</strong></td>
-                    <td style="white-space:nowrap;{$deadline_urgency}">{$deadline_val}</td>
+                    <td class="u-whi {$deadline_urgency}">{$deadline_val}</td>
                     <td>
                       <div class="token-grid">
                         {$tokens_html}

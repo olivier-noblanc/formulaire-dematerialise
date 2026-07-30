@@ -879,7 +879,7 @@ Voici le document administratif à analyser :
                     <?php foreach ($steps_by_ordre as $ordre => $ordre_steps): ?>
                         <div class="workflow-step-group">
                             <?php foreach ($ordre_steps as $idx => $wstep): ?>
-                                <div class="workflow-box <?= $wstep['actif'] ? '' : 'inactive' ?>" style="<?= count($ordre_steps) > 1 && $idx > 0 ? 'margin-top:.5rem;' : '' ?>">
+                                <div class="workflow-box <?= $wstep['actif'] ? '' : 'inactive' ?> <?= count($ordre_steps) > 1 && $idx > 0 ? 'wf-gap' : '' ?>">
                                     <div class="wb-label"><?= \App\Core\App::html()->escape($wstep['label']) ?></div>
                                     <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string)$ordre) ?></div>
                                     <?php if (!empty($wstep['recipients'])): ?>

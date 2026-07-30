@@ -132,7 +132,7 @@ final class AdminSettingsRenderer
                 </div>
 
                 <!-- Configuration LDAP (affichée si mode ldap) -->
-                <div id="ldap-config" style="margin-top:1.5rem;padding:1.5rem;background:#f5f5fe;border-radius:6px;<?= $email_verify_mode !== 'ldap' ? 'display:none;' : '' ?>">
+                <div id="ldap-config" class="config-block <?= $email_verify_mode !== 'ldap' ? 'config-hidden' : '' ?>">
                     <h3 class="heading-primary">Configuration LDAP / Active Directory</h3>
 
                     <?php if (!$ldap_ext_available): ?>
@@ -204,7 +204,7 @@ final class AdminSettingsRenderer
                 </div>
 
                 <!-- Info SMTP verification -->
-                <div id="smtp-info" style="margin-top:1.5rem;padding:1.5rem;background:#f5f5fe;border-radius:6px;<?= $email_verify_mode !== 'smtp' ? 'display:none;' : '' ?>">
+                <div id="smtp-info" class="config-block <?= $email_verify_mode !== 'smtp' ? 'config-hidden' : '' ?>">
                     <h3 class="heading-primary">Vérification SMTP (probe RCPT TO)</h3>
                     <p class="caption-9">
                         Le système se connecte au serveur SMTP configuré ci-dessous, envoie les commandes
@@ -469,7 +469,7 @@ final class AdminSettingsRenderer
         $security_score++;
         $security_items[] = 'Blocage CLI';
         ?>
-            <div style="margin-top:1rem;padding:1rem;background:<?= $security_score >= 3 ? '#e8f5e9' : '#fff3e0' ?>;border-radius:6px;">
+            <div class="<?= $security_score >= 3 ? 'score-ok' : 'score-warn' ?>">
                 <strong>Niveau de sécurité : <?= $security_score ?>/4</strong>
                 <div class="hint-muted-3">
                     <?= implode(' · ', array_map(fn($i) => '✔ ' . $i, $security_items)) ?>

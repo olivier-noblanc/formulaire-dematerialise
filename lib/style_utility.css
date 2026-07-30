@@ -203,3 +203,24 @@
 .text-success { color:#1a6b3c; }
 .caption-10 { margin-bottom:1rem;color:#555;font-size:.85rem; }
 .text-ff9800 { color:#ff9800; }
+
+/* Couleurs d'action de validation (CS-04) */
+.text-valide { color: #1a6b3c; }
+.text-refuse { color: #c0392b; }
+.text-annule { color: #b45309; }
+
+/* Urgence deadline (DashboardRenderer) */
+.deadline-overdue { color: #c0392b; font-weight: bold; }
+.deadline-critical { color: #c0392b; font-weight: bold; }
+.deadline-warning { color: #b45309; font-weight: bold; }
+
+/* Blocs config conditionnels (AdminSettingsRenderer) */
+.config-block { margin-top: 1.5rem; padding: 1.5rem; background: #f5f5fe; border-radius: 6px; }
+.config-hidden { display: none; }
+
+/* Score sécurité (AdminSettingsRenderer) */
+.score-ok { margin-top: 1rem; padding: 1rem; background: #e8f5e9; border-radius: 6px; }
+.score-warn { margin-top: 1rem; padding: 1rem; background: #fff3e0; border-radius: 6px; }
+
+/* Espacement workflow steps (AdminFormsRenderer) */
+.wf-gap { margin-top: .5rem; }
