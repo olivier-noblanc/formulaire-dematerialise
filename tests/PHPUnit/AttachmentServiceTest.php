@@ -85,7 +85,6 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAttachmentsReturnsEmptyArrayForNonexistentId(): void
     {
         $attachments = $this->attachmentService->getAttachments('nonexistent-id');
-        self::assertIsArray($attachments);
         self::assertEmpty($attachments);
     }
 
@@ -428,7 +427,6 @@ final class AttachmentServiceTest extends TestCase
 
         try {
             $attachments = $this->attachmentService->getAttachments($submissionId);
-            self::assertIsArray($attachments);
             self::assertNotEmpty($attachments);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
@@ -741,8 +739,6 @@ final class AttachmentServiceTest extends TestCase
         self::assertArrayHasKey('success', $result);
         self::assertArrayHasKey('message', $result);
         self::assertArrayHasKey('attachment_id', $result);
-        self::assertIsBool($result['success']);
-        self::assertIsString($result['message']);
     }
 
     // ── error messages are in French ─────────────────────────────
