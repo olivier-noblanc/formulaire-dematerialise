@@ -1,5 +1,8 @@
 parameters:
-    level: 7
+    # Niveau volontairement différent de src/ (niveau 8) : les tests n'ont
+    # pas les mêmes enjeux de typage strict que le code de production.
+    # Décision explicite (2026-07-29), pas dans AGENTS.md à ce jour.
+    level: 2
     paths:
         - .
     excludePaths:
@@ -32,6 +35,7 @@ parameters:
             # d'exception" — pas un vrai assertTrue(true) écrit à la main).
     bootstrapFiles:
         - ../helpers.php
+        - phpstan-test-functions.php
         - ../vendor/PHPMailer/src/PHPMailer.php
         - ../vendor/PHPMailer/src/Exception.php
         - ../vendor/PHPMailer/src/SMTP.php
