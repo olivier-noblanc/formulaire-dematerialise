@@ -123,7 +123,7 @@ final class WorkflowEngineMutationTest extends TestCase
             "SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND email IN ('validator@test.com', 'second.mutant@test.com')"
         );
         $count->execute([$subId]);
-        $this->assertSame(
+        self::assertSame(
             2,
             (int) $count->fetchColumn(),
             'Mutant #1 ArrayItemRemoval: chaque recipient doit recevoir son token (dupCheck doit recevoir ses 3 params).'
@@ -168,7 +168,7 @@ final class WorkflowEngineMutationTest extends TestCase
 
         $countG2 = $pdo->prepare('SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ?');
         $countG2->execute([$subId, $step2Id]);
-        $this->assertSame(
+        self::assertSame(
             0,
             (int) $countG2->fetchColumn(),
             'Mutant #2 IfNegation: aucun token ne doit être créé pour le groupe 2 tant que le groupe 1 n\'est pas validé.'
@@ -176,7 +176,7 @@ final class WorkflowEngineMutationTest extends TestCase
 
         $countG1 = $pdo->prepare('SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ?');
         $countG1->execute([$subId, $step1Id]);
-        $this->assertSame(
+        self::assertSame(
             1,
             (int) $countG1->fetchColumn(),
             'Mutant #2 IfNegation: un token doit être créé pour le groupe 1 (return après création).'
@@ -187,7 +187,7 @@ final class WorkflowEngineMutationTest extends TestCase
         // Sur code muté, le fallback "Si aucun token créé" s'exécute et log workflow_stalled.
         $auditStmt = $pdo->prepare("SELECT COUNT(*) FROM audit_log WHERE action = 'workflow_stalled' AND target = ?");
         $auditStmt->execute(['submission:' . $subId]);
-        $this->assertSame(
+        self::assertSame(
             0,
             (int) $auditStmt->fetchColumn(),
             'Mutant #2 IfNegation: aucun audit_log workflow_stalled ne doit être créé quand des tokens ont effectivement été créés pour le groupe 1.'
@@ -217,7 +217,7 @@ final class WorkflowEngineMutationTest extends TestCase
 
         $this->workflow->advanceWorkflow($subId);
 
-        $this->assertFalse(
+        self::assertFalse(
             $pdo->inTransaction(),
             'Mutant #3 MethodCallRemoval: advanceWorkflow doit committer (et fermer la transaction) quand le groupe est incomplet.'
         );
@@ -240,8 +240,8 @@ final class WorkflowEngineMutationTest extends TestCase
         // Token inexistant (64 hex chars valides mais absent de la DB)
         $result = $this->workflow->validateToken(str_repeat('a', 64));
 
-        $this->assertSame('invalid', $result['status']);
-        $this->assertFalse(
+        self::assertSame('invalid', $result['status']);
+        self::assertFalse(
             $pdo->inTransaction(),
             'Mutant #4 MethodCallRemoval: validateToken doit rollback (et fermer la transaction) quand le token est introuvable.'
         );
@@ -265,8 +265,8 @@ final class WorkflowEngineMutationTest extends TestCase
 
         $result = $this->workflow->validateToken($tokenVal);
 
-        $this->assertSame('expired', $result['status']);
-        $this->assertFalse(
+        self::assertSame('expired', $result['status']);
+        self::assertFalse(
             $pdo->inTransaction(),
             'Mutant #5 MethodCallRemoval: validateToken doit rollback quand le token est expiré.'
         );
@@ -293,7 +293,7 @@ final class WorkflowEngineMutationTest extends TestCase
 
         // Aucun mail "Demande refusée" ne doit partir sur une validation
         foreach ($GLOBALS['_test_mails'] ?? [] as $mail) {
-            $this->assertStringNotContainsString(
+            self::assertStringNotContainsString(
                 'Demande refusée',
                 $mail['subject'],
                 'Mutant #6 Identical: aucun mail de refus ne doit partir sur action=valider.'
@@ -303,7 +303,7 @@ final class WorkflowEngineMutationTest extends TestCase
         // Sur une étape unique, valider → clôture à 'valide' (advanceWorkflow appelé)
         $check = $this->db->getPdo()->prepare('SELECT status FROM submissions WHERE id = ?');
         $check->execute([$subId]);
-        $this->assertSame(
+        self::assertSame(
             SubmissionStatus::Valide->value,
             $check->fetchColumn(),
             'Mutant #6 Identical: valider doit faire avancer le workflow jusqu\'à clôture (pas de blocage).'
@@ -341,7 +341,7 @@ final class WorkflowEngineMutationTest extends TestCase
         // Statut doit être 'refuse' (pas 'valide' ni 'en_cours')
         $check = $pdo->prepare('SELECT status FROM submissions WHERE id = ?');
         $check->execute([$subId]);
-        $this->assertSame(
+        self::assertSame(
             SubmissionStatus::Refuse->value,
             $check->fetchColumn(),
             'Mutant #6 Identical: refuser doit marquer la soumission comme refuse, pas valide.'
@@ -350,7 +350,7 @@ final class WorkflowEngineMutationTest extends TestCase
         // Aucun token ne doit être créé pour l'étape 2 (pas d'advanceWorkflow sur refuser)
         $count2 = $pdo->prepare('SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ?');
         $count2->execute([$subId, $step2Id]);
-        $this->assertSame(
+        self::assertSame(
             0,
             (int) $count2->fetchColumn(),
             'Mutant #6 Identical: refuser ne doit pas déclencher advanceWorkflow (pas de token pour étape 2).'
@@ -385,7 +385,7 @@ final class WorkflowEngineMutationTest extends TestCase
                 break;
             }
         }
-        $this->assertTrue(
+        self::assertTrue(
             $found,
             'Mutant #7 MethodCallRemoval: un mail "Demande refusée" avec le motif doit être envoyé à l\'agent.'
         );
@@ -423,7 +423,7 @@ final class WorkflowEngineMutationTest extends TestCase
 
         $resolved = $this->workflow->resolveDynamicRecipient('{{email}}', $formData);
 
-        $this->assertSame(
+        self::assertSame(
             'expected.exact@example.com',
             $resolved,
             'Mutant #8 LogicalNot: le premier if (isset && !empty) doit résoudre via la clé exact-case (email), pas via le fallback case-insensitive (Email).'
@@ -466,11 +466,11 @@ final class WorkflowEngineMutationTest extends TestCase
         $check = $pdo->prepare('SELECT email FROM tokens WHERE submission_id = ? AND step_id = ?');
         $check->execute([$subId, $stepId]);
         $tokenEmail = $check->fetchColumn();
-        $this->assertNotFalse(
+        self::assertNotFalse(
             $tokenEmail,
             'Mutant #8: un token doit être créé pour le recipient dynamique résolu.'
         );
-        $this->assertSame(
+        self::assertSame(
             $resolvedEmail,
             $tokenEmail,
             'Mutant #8: l\'email du token doit être la valeur résolue (pas le placeholder {{manager_email}}).'

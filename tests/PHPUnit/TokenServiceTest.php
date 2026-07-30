@@ -149,8 +149,8 @@ final class TokenServiceTest extends TestCase
     {
         $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
         $result = $this->tokenService->regenerate('nonexistent-token-id');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('Accès refusé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('Accès refusé', $result['message']);
     }
 
     public function testRegenerateReturnsErrorForNonexistentToken(): void
@@ -158,8 +158,8 @@ final class TokenServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->tokenService->regenerate('nonexistent-token-id');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('introuvable', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('introuvable', $result['message']);
     }
 
     public function testRegenerateReturnsErrorForAlreadyDoneToken(): void
@@ -167,8 +167,8 @@ final class TokenServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->tokenService->regenerate($this->testDoneTokenId);
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('déjà été traité', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('déjà été traité', $result['message']);
     }
 
     public function testRegenerateReturnsErrorForClosedSubmission(): void
@@ -176,8 +176,8 @@ final class TokenServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->tokenService->regenerate($this->testClosedTokenId);
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString("n'est plus en cours", $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString("n'est plus en cours", $result['message']);
     }
 
     public function testRegenerateSuccessAsAdmin(): void
@@ -185,19 +185,19 @@ final class TokenServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString($this->testTokenEmail, $result['message']);
 
         // Verify old token is now done
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertNotNull($stmt->fetchColumn());
+        self::assertNotNull($stmt->fetchColumn());
 
         // Verify new token was created
         $newCount = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND id != ?");
         $newCount->execute([$this->testSubmissionId, $this->testDoneTokenId]);
-        $this->assertGreaterThanOrEqual(1, (int)$newCount->fetchColumn());
+        self::assertGreaterThanOrEqual(1, (int)$newCount->fetchColumn());
     }
 
     public function testRegenerateCreatesNewTokenWithCorrectEmail(): void
@@ -205,14 +205,14 @@ final class TokenServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
 
         // Check the new token exists with the same email
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT email FROM tokens WHERE submission_id = ? AND done_at IS NULL AND id != ?");
         $stmt->execute([$this->testSubmissionId, $this->testDoneTokenId]);
         $email = $stmt->fetchColumn();
-        $this->assertSame($this->testTokenEmail, $email);
+        self::assertSame($this->testTokenEmail, $email);
     }
 
     // ── cancel ──────────────────────────────────────────────────
@@ -220,36 +220,36 @@ final class TokenServiceTest extends TestCase
     public function testCancelReturnsErrorForNonexistentSubmission(): void
     {
         $result = $this->tokenService->cancel('nonexistent-submission-id', 'test@test.com');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('introuvable', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('introuvable', $result['message']);
     }
 
     public function testCancelReturnsErrorForNonEnCoursSubmission(): void
     {
         $result = $this->tokenService->cancel($this->testClosedSubmissionId, 'admin@test.com');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('en cours', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('en cours', $result['message']);
     }
 
     public function testCancelReturnsErrorForUnauthorizedNonAdmin(): void
     {
         $_SERVER['HTTP_X_TEST_USER'] = 'unauthorized@test.com';
         $result = $this->tokenService->cancel($this->testSubmissionId, 'unauthorized@test.com');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('autorisé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('autorisé', $result['message']);
     }
 
     public function testCancelSuccessAsOwner(): void
     {
         $result = $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString('annulée', $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString('annulée', $result['message']);
 
         // Verify status changed
         $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT status FROM submissions WHERE id = ?");
         $check->execute([$this->testSubmissionId]);
-        $this->assertSame('annule', $check->fetchColumn());
+        self::assertSame('annule', $check->fetchColumn());
     }
 
     public function testCancelSetsClosedAt(): void
@@ -259,7 +259,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT closed_at FROM submissions WHERE id = ?");
         $check->execute([$this->testSubmissionId]);
-        $this->assertNotNull($check->fetchColumn());
+        self::assertNotNull($check->fetchColumn());
     }
 
     public function testCancelMarksTokensAsInvalidated(): void
@@ -274,8 +274,8 @@ final class TokenServiceTest extends TestCase
         $check = $pdo->prepare("SELECT done_at, invalidated_at FROM tokens WHERE submission_id = ? AND id = ?");
         $check->execute([$this->testSubmissionId, $this->testPendingTokenId]);
         $row = $check->fetch(\PDO::FETCH_ASSOC);
-        $this->assertNull($row['done_at']);
-        $this->assertNotNull($row['invalidated_at']);
+        self::assertNull($row['done_at']);
+        self::assertNotNull($row['invalidated_at']);
     }
 
     public function testCancelAddsValidationToData(): void
@@ -286,12 +286,12 @@ final class TokenServiceTest extends TestCase
         $check = $pdo->prepare("SELECT data FROM submissions WHERE id = ?");
         $check->execute([$this->testSubmissionId]);
         $data = json_decode($check->fetchColumn(), true);
-        $this->assertArrayHasKey('validations', $data);
-        $this->assertNotEmpty($data['validations']);
+        self::assertArrayHasKey('validations', $data);
+        self::assertNotEmpty($data['validations']);
         $lastValidation = end($data['validations']);
-        $this->assertSame('Annulation', $lastValidation['step_label']);
+        self::assertSame('Annulation', $lastValidation['step_label']);
         // CS-04 : 'annule' au lieu de 'refuser' (sémantique distincte)
-        $this->assertSame('annule', $lastValidation['action']);
+        self::assertSame('annule', $lastValidation['action']);
     }
 
     public function testCancelSuccessAsAdmin(): void
@@ -305,7 +305,7 @@ final class TokenServiceTest extends TestCase
             ->execute([$newSubId, $this->testFormId, 'other_owner@test.com']);
 
         $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
@@ -316,29 +316,29 @@ final class TokenServiceTest extends TestCase
     public function testRemindReturnsErrorForNonexistentToken(): void
     {
         $result = $this->tokenService->remind('nonexistent-token-id');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('introuvable', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('introuvable', $result['message']);
     }
 
     public function testRemindReturnsErrorForAlreadyDoneToken(): void
     {
         $result = $this->tokenService->remind($this->testDoneTokenId);
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('déjà été traité', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('déjà été traité', $result['message']);
     }
 
     public function testRemindReturnsErrorForClosedSubmission(): void
     {
         $result = $this->tokenService->remind($this->testClosedTokenId);
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString("n'est plus en cours", $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString("n'est plus en cours", $result['message']);
     }
 
     public function testRemindSuccessOnPendingToken(): void
     {
         $result = $this->tokenService->remind($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString($this->testTokenEmail, $result['message']);
     }
 
     public function testRemindIncrementsRelanceCount(): void
@@ -349,7 +349,7 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
         $count = (int)$stmt->fetchColumn();
-        $this->assertGreaterThanOrEqual(1, $count);
+        self::assertGreaterThanOrEqual(1, $count);
     }
 
     public function testRemindSetsRelanceAt(): void
@@ -359,7 +359,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT relance_at FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertNotNull($stmt->fetchColumn());
+        self::assertNotNull($stmt->fetchColumn());
     }
 
     public function testRemindMultipleTimesIncreasesCount(): void
@@ -371,7 +371,7 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
         $count = (int)$stmt->fetchColumn();
-        $this->assertGreaterThanOrEqual(2, $count);
+        self::assertGreaterThanOrEqual(2, $count);
     }
 
     // ── delegate ────────────────────────────────────────────────
@@ -379,55 +379,55 @@ final class TokenServiceTest extends TestCase
     public function testDelegateReturnsErrorForNonexistentToken(): void
     {
         $result = $this->tokenService->delegate('nonexistent-token-id', 'target@test.com');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('introuvable', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('introuvable', $result['message']);
     }
 
     public function testDelegateReturnsErrorForInvalidEmail(): void
     {
         $result = $this->tokenService->delegate($this->testPendingTokenId, 'not-an-email');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('invalide', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('invalide', $result['message']);
     }
 
     public function testDelegateReturnsErrorForAlreadyDoneToken(): void
     {
         $result = $this->tokenService->delegate($this->testDoneTokenId, 'target@test.com');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('déjà été traité', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('déjà été traité', $result['message']);
     }
 
     public function testDelegateReturnsErrorForSelfDelegation(): void
     {
         $result = $this->tokenService->delegate($this->testPendingTokenId, $this->testTokenEmail);
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('vous-même', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('vous-même', $result['message']);
     }
 
     public function testDelegateReturnsErrorForClosedSubmission(): void
     {
         $result = $this->tokenService->delegate($this->testClosedTokenId, 'target@test.com');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString("n'est plus en cours", $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString("n'est plus en cours", $result['message']);
     }
 
     public function testDelegateSuccess(): void
     {
         $toEmail = 'delegate_target_' . uniqid() . '@test.com';
         $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail, 'Test delegation');
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString($toEmail, $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString($toEmail, $result['message']);
 
         // Verify new token was created
         $pdo = $this->db->getPdo();
         $check = $pdo->prepare("SELECT 1 FROM tokens WHERE submission_id = ? AND email = ? AND done_at IS NULL");
         $check->execute([$this->testSubmissionId, $toEmail]);
-        $this->assertNotEmpty($check->fetch());
+        self::assertNotEmpty($check->fetch());
 
         // Verify delegation record
         $delCheck = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
         $delCheck->execute([$this->testPendingTokenId, $toEmail]);
-        $this->assertNotEmpty($delCheck->fetch());
+        self::assertNotEmpty($delCheck->fetch());
     }
 
     public function testDelegateMarksOldTokenAsDone(): void
@@ -438,7 +438,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertNotNull($stmt->fetchColumn());
+        self::assertNotNull($stmt->fetchColumn());
     }
 
     public function testDelegateStoresReason(): void
@@ -450,7 +450,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT reason FROM delegations WHERE token_id = ? AND to_email = ?");
         $stmt->execute([$this->testPendingTokenId, $toEmail]);
-        $this->assertSame($reason, $stmt->fetchColumn());
+        self::assertSame($reason, $stmt->fetchColumn());
     }
 
     public function testDelegateReturnsErrorForDuplicateActiveToken(): void
@@ -466,8 +466,8 @@ final class TokenServiceTest extends TestCase
 
         // Try to delegate our pending token to the email that already has an active token
         $result = $this->tokenService->delegate($this->testPendingTokenId, $existingEmail, 'Conflict');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('déjà actif', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('déjà actif', $result['message']);
 
         // Cleanup
         $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$existingTokenId]);
@@ -501,7 +501,7 @@ final class TokenServiceTest extends TestCase
         $check = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
         $check->execute([$expiredTokenId]);
         $row = $check->fetch(\PDO::FETCH_ASSOC);
-        $this->assertNotNull($row['invalidated_at'], 'Invalidated token should have invalidated_at set');
+        self::assertNotNull($row['invalidated_at'], 'Invalidated token should have invalidated_at set');
 
         // findDoneByEmail should NOT return the invalidated token
         $tokenRepo = new \App\Repository\TokenRepository($this->db);
@@ -513,7 +513,7 @@ final class TokenServiceTest extends TestCase
                 break;
             }
         }
-        $this->assertFalse($foundInvalidated, 'findDoneByEmail must not return invalidated tokens');
+        self::assertFalse($foundInvalidated, 'findDoneByEmail must not return invalidated tokens');
     }
 
     public function testRegenerateDoesNotBreakAdvanceWorkflowStepUnblocking(): void
@@ -536,7 +536,7 @@ final class TokenServiceTest extends TestCase
         $check = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
         $check->execute([$expiredTokenId]);
         $doneAt = $check->fetchColumn();
-        $this->assertNotEmpty($doneAt, 'Regenerated token must still have done_at set for workflow unblocking');
+        self::assertNotEmpty($doneAt, 'Regenerated token must still have done_at set for workflow unblocking');
     }
 
     // ── Bug 8: delegate() must also set invalidated_at ──────────
@@ -553,13 +553,13 @@ final class TokenServiceTest extends TestCase
 
         // Delegate to another user
         $result = $this->tokenService->delegate($tokenId, 'delegatee@test.com', 'Test delegation');
-        $this->assertTrue($result['success'], 'Delegate should succeed');
+        self::assertTrue($result['success'], 'Delegate should succeed');
 
         // The delegated token should have invalidated_at set
         $check = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
         $check->execute([$tokenId]);
         $row = $check->fetch(\PDO::FETCH_ASSOC);
-        $this->assertNotNull($row['invalidated_at'], 'Delegated token should have invalidated_at set');
+        self::assertNotNull($row['invalidated_at'], 'Delegated token should have invalidated_at set');
 
         // findDoneByEmail should NOT return the delegated token
         $tokenRepo = new \App\Repository\TokenRepository($this->db);
@@ -571,7 +571,7 @@ final class TokenServiceTest extends TestCase
                 break;
             }
         }
-        $this->assertFalse($foundDelegated, 'findDoneByEmail must not return delegated tokens');
+        self::assertFalse($foundDelegated, 'findDoneByEmail must not return delegated tokens');
     }
 
     // ── Mutation-killing tests: coalesce, mail, types, boundaries ──
@@ -581,13 +581,13 @@ final class TokenServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
 
         // Verify audit log was written with correct action
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'token_regenerate' ORDER BY id DESC LIMIT 1");
         $stmt->execute();
-        $this->assertSame('token_regenerate', $stmt->fetchColumn());
+        self::assertSame('token_regenerate', $stmt->fetchColumn());
     }
 
     public function testRegenerateSubjectContainsStepLabel(): void
@@ -600,7 +600,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT step_id FROM tokens WHERE submission_id = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
         $stmt->execute([$this->testSubmissionId]);
-        $this->assertSame($this->testStepId, $stmt->fetchColumn());
+        self::assertSame($this->testStepId, $stmt->fetchColumn());
     }
 
     /**
@@ -635,13 +635,13 @@ final class TokenServiceTest extends TestCase
         $GLOBALS['_test_mails'] = [];
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
 
-        $this->assertNotEmpty($GLOBALS['_test_mails'], 'Un email doit avoir été envoyé (chemin nominal : soumission et étape existent).');
+        self::assertNotEmpty($GLOBALS['_test_mails'], 'Un email doit avoir été envoyé (chemin nominal : soumission et étape existent).');
         $sent = $GLOBALS['_test_mails'][count($GLOBALS['_test_mails']) - 1];
 
-        $this->assertSame($this->testTokenEmail, $sent['to']);
-        $this->assertSame(
+        self::assertSame($this->testTokenEmail, $sent['to']);
+        self::assertSame(
             '[Renvoi] Test Form — Validation test',
             $sent['subject'],
             'Sujet exact attendu : "[Renvoi] {form_label} — {step_label}", séparateur inclus.'
@@ -656,7 +656,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertGreaterThanOrEqual(1, (int) $stmt->fetchColumn());
+        self::assertGreaterThanOrEqual(1, (int) $stmt->fetchColumn());
     }
 
     public function testRemindSubjectShowsCountOnSecondRemind(): void
@@ -668,7 +668,7 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
         $count = (int) $stmt->fetchColumn();
-        $this->assertGreaterThanOrEqual(2, $count, 'Second remind should increment count to 2');
+        self::assertGreaterThanOrEqual(2, $count, 'Second remind should increment count to 2');
     }
 
     public function testRemindMaxReachedReturnsError(): void
@@ -679,8 +679,8 @@ final class TokenServiceTest extends TestCase
         $this->tokenService->remind($this->testPendingTokenId);
 
         $result = $this->tokenService->remind($this->testPendingTokenId);
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('Maximum', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('Maximum', $result['message']);
     }
 
     public function testDelegateSubjectContainsFormLabelAndStepLabel(): void
@@ -692,7 +692,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
         $stmt->execute([$this->testPendingTokenId, $toEmail]);
-        $this->assertNotEmpty($stmt->fetch());
+        self::assertNotEmpty($stmt->fetch());
     }
 
     public function testDelegateConfirmationEmailSentToOriginalValidator(): void
@@ -704,32 +704,32 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'token_delegate' ORDER BY id DESC LIMIT 1");
         $stmt->execute();
-        $this->assertSame('token_delegate', $stmt->fetchColumn());
+        self::assertSame('token_delegate', $stmt->fetchColumn());
     }
 
     public function testDelegateReasonEmptyStringNotDisplayedInEmail(): void
     {
         $toEmail = 'delegate_noreason_' . uniqid() . '@test.com';
         $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail, '');
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
 
         // Verify delegation was created (audit_log proves the code path ran)
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
         $stmt->execute([$this->testPendingTokenId, $toEmail]);
-        $this->assertNotEmpty($stmt->fetch());
+        self::assertNotEmpty($stmt->fetch());
     }
 
     public function testDelegateReasonZeroNotDisplayedInEmail(): void
     {
         $toEmail = 'delegate_zero_' . uniqid() . '@test.com';
         $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail, '0');
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT 1 FROM delegations WHERE token_id = ? AND to_email = ?");
         $stmt->execute([$this->testPendingTokenId, $toEmail]);
-        $this->assertNotEmpty($stmt->fetch());
+        self::assertNotEmpty($stmt->fetch());
     }
 
     public function testDelegateReasonNonEmptyDisplayedInEmail(): void
@@ -741,7 +741,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT reason FROM delegations WHERE token_id = ? AND to_email = ?");
         $stmt->execute([$this->testPendingTokenId, $toEmail]);
-        $this->assertSame('Going on vacation', $stmt->fetchColumn());
+        self::assertSame('Going on vacation', $stmt->fetchColumn());
     }
 
     public function testCancelAgentEmailNotificationSent(): void
@@ -752,7 +752,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'submission_cancel' ORDER BY id DESC LIMIT 1");
         $stmt->execute();
-        $this->assertSame('submission_cancel', $stmt->fetchColumn());
+        self::assertSame('submission_cancel', $stmt->fetchColumn());
     }
 
     public function testCancelNoEmailIfSubmittedByEmpty(): void
@@ -770,7 +770,7 @@ final class TokenServiceTest extends TestCase
         if (!$result['success']) {
             $this->markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
         }
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
 
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
     }
@@ -786,7 +786,7 @@ final class TokenServiceTest extends TestCase
         if (!$result['success']) {
             $this->markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
         }
-        $this->assertTrue($result['success']);
+        self::assertTrue($result['success']);
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
     }
 
@@ -799,7 +799,7 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'submission_cancel' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['submission:' . $this->testSubmissionId]);
         $target = $stmt->fetchColumn();
-        $this->assertStringContainsString($this->testSubmissionId, $target);
+        self::assertStringContainsString($this->testSubmissionId, $target);
     }
 
     public function testRegenerateInvalidatedAtIsSet(): void
@@ -812,7 +812,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertNotNull($stmt->fetchColumn(), 'Regenerated token must have invalidated_at set');
+        self::assertNotNull($stmt->fetchColumn(), 'Regenerated token must have invalidated_at set');
     }
 
     public function testDelegateInvalidatedAtIsSet(): void
@@ -825,7 +825,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertNotNull($stmt->fetchColumn(), 'Delegated token must have invalidated_at set');
+        self::assertNotNull($stmt->fetchColumn(), 'Delegated token must have invalidated_at set');
     }
 
     public function testRegenerateNewTokenHasExpiresAt(): void
@@ -839,8 +839,8 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT expires_at FROM tokens WHERE submission_id = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
         $stmt->execute([$this->testSubmissionId]);
         $expiresAt = $stmt->fetchColumn();
-        $this->assertNotEmpty($expiresAt, 'New token must have expires_at set');
-        $this->assertGreaterThan(time(), strtotime((string) $expiresAt), 'expires_at must be in the future');
+        self::assertNotEmpty($expiresAt, 'New token must have expires_at set');
+        self::assertGreaterThan(time(), strtotime((string) $expiresAt), 'expires_at must be in the future');
     }
 
     public function testDelegateNewTokenHasExpiresAt(): void
@@ -854,7 +854,7 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT expires_at FROM tokens WHERE email = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
         $stmt->execute([$toEmail]);
         $expiresAt = $stmt->fetchColumn();
-        $this->assertNotEmpty($expiresAt, 'New delegated token must have expires_at set');
+        self::assertNotEmpty($expiresAt, 'New delegated token must have expires_at set');
     }
 
     public function testRegenerateEmailBodyContainsNewTokenLink(): void
@@ -868,14 +868,14 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT id FROM tokens WHERE submission_id = ? AND done_at IS NULL ORDER BY id DESC LIMIT 1");
         $stmt->execute([$this->testSubmissionId]);
-        $this->assertNotEmpty($stmt->fetchColumn(), 'New token must exist after regenerate');
+        self::assertNotEmpty($stmt->fetchColumn(), 'New token must exist after regenerate');
     }
 
     public function testDelegateEmptyEmailReturnsError(): void
     {
         $result = $this->tokenService->delegate($this->testPendingTokenId, '');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('invalide', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('invalide', $result['message']);
     }
 
     public function testCancelValidationEntryHasCorrectCommentaire(): void
@@ -887,7 +887,7 @@ final class TokenServiceTest extends TestCase
         $stmt->execute([$this->testSubmissionId]);
         $data = json_decode($stmt->fetchColumn(), true);
         $lastValidation = end($data['validations']);
-        $this->assertSame('Soumission annulée', $lastValidation['commentaire']);
+        self::assertSame('Soumission annulée', $lastValidation['commentaire']);
     }
 
     public function testCancelValidationEntryHasCancelledByEmail(): void
@@ -899,7 +899,7 @@ final class TokenServiceTest extends TestCase
         $stmt->execute([$this->testSubmissionId]);
         $data = json_decode($stmt->fetchColumn(), true);
         $lastValidation = end($data['validations']);
-        $this->assertSame($this->testSubmissionOwner, $lastValidation['email']);
+        self::assertSame($this->testSubmissionOwner, $lastValidation['email']);
     }
 
     public function testRemindSubjectContainsRappel(): void
@@ -912,7 +912,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT relance_count FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertGreaterThanOrEqual(1, (int) $stmt->fetchColumn());
+        self::assertGreaterThanOrEqual(1, (int) $stmt->fetchColumn());
     }
 
     public function testRemindSubjectContainsStepLabel(): void
@@ -923,7 +923,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT relance_at FROM tokens WHERE id = ?");
         $stmt->execute([$this->testPendingTokenId]);
-        $this->assertNotNull($stmt->fetchColumn());
+        self::assertNotNull($stmt->fetchColumn());
     }
 
     public function testRegenerateAuditLogEntryCreated(): void
@@ -936,7 +936,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'token_regenerate' ORDER BY id DESC LIMIT 1");
         $stmt->execute();
-        $this->assertSame('token_regenerate', $stmt->fetchColumn());
+        self::assertSame('token_regenerate', $stmt->fetchColumn());
     }
 
     public function testCancelAuditLogEntryCreated(): void
@@ -946,7 +946,7 @@ final class TokenServiceTest extends TestCase
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT action FROM audit_log WHERE action = 'submission_cancel' ORDER BY id DESC LIMIT 1");
         $stmt->execute();
-        $this->assertSame('submission_cancel', $stmt->fetchColumn());
+        self::assertSame('submission_cancel', $stmt->fetchColumn());
     }
 
     public function testDelegateAuditLogEntryContainsBothEmails(): void
@@ -967,8 +967,8 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['token:' . $tokenId]);
         $detail = $stmt->fetchColumn();
-        $this->assertStringContainsString($fromEmail, $detail);
-        $this->assertStringContainsString($toEmail, $detail);
+        self::assertStringContainsString($fromEmail, $detail);
+        self::assertStringContainsString($toEmail, $detail);
     }
 
     public function testDelegateAuditLogContainsReason(): void
@@ -986,7 +986,7 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['token:' . $tokenId]);
         $detail = $stmt->fetchColumn();
-        $this->assertStringContainsString('Specialist needed', $detail);
+        self::assertStringContainsString('Specialist needed', $detail);
     }
 
     public function testDelegateAuditLogNoReasonWhenEmpty(): void
@@ -1004,7 +1004,7 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['token:' . $tokenId]);
         $detail = $stmt->fetchColumn();
-        $this->assertStringNotContainsString('Motif', $detail, 'Empty reason should not appear in audit log');
+        self::assertStringNotContainsString('Motif', $detail, 'Empty reason should not appear in audit log');
     }
 
     public function testDelegateMailSubjectContainsFormAndStep(): void
@@ -1024,7 +1024,7 @@ final class TokenServiceTest extends TestCase
         // Verify delegation record was created with correct data
         $stmt = $pdo->prepare("SELECT reason FROM delegations WHERE token_id = ? AND to_email = ?");
         $stmt->execute([$tokenId, $toEmail]);
-        $this->assertSame('Review needed', $stmt->fetchColumn());
+        self::assertSame('Review needed', $stmt->fetchColumn());
     }
 
     // ── MSI-killer tests: audit log format, message content, edge cases ──
@@ -1039,7 +1039,7 @@ final class TokenServiceTest extends TestCase
         // Check target contains 'token:' prefix
         $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'access_denied' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['token:' . $fakeId]);
-        $this->assertNotEmpty($stmt->fetchColumn());
+        self::assertNotEmpty($stmt->fetchColumn());
     }
 
     public function testRegenerateSuccessMessageContainsEmail(): void
@@ -1047,8 +1047,8 @@ final class TokenServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString($this->testTokenEmail, $result['message']);
     }
 
     public function testRegenerateAuditLogDetailContainsEmailAndAction(): void
@@ -1061,8 +1061,8 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_regenerate' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['token:' . $this->testPendingTokenId]);
         $detail = $stmt->fetchColumn();
-        $this->assertStringContainsString($this->testTokenEmail, $detail);
-        $this->assertStringContainsString('nouveau token créé', $detail);
+        self::assertStringContainsString($this->testTokenEmail, $detail);
+        self::assertStringContainsString('nouveau token créé', $detail);
     }
 
     public function testRegenerateNewTokenExpiresAtIsValidDate(): void
@@ -1076,8 +1076,8 @@ final class TokenServiceTest extends TestCase
         $stmt->execute([$this->testSubmissionId]);
         $expiresAt = $stmt->fetchColumn();
         // Verify it's a valid date in the future (proves (int) cast worked)
-        $this->assertNotFalse(strtotime((string) $expiresAt));
-        $this->assertGreaterThan(time(), strtotime((string) $expiresAt));
+        self::assertNotFalse(strtotime((string) $expiresAt));
+        self::assertGreaterThan(time(), strtotime((string) $expiresAt));
     }
 
     public function testCancelAccessDeniedAuditLogFormat(): void
@@ -1089,20 +1089,20 @@ final class TokenServiceTest extends TestCase
         // Check target contains submission prefix
         $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'access_denied' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['submission:' . $this->testSubmissionId]);
-        $this->assertNotEmpty($stmt->fetchColumn());
+        self::assertNotEmpty($stmt->fetchColumn());
 
         // Check detail contains the caller email
         $stmt2 = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'access_denied' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt2->execute(['submission:' . $this->testSubmissionId]);
         $detail = $stmt2->fetchColumn();
-        $this->assertStringContainsString('unauthorized@test.com', $detail);
+        self::assertStringContainsString('unauthorized@test.com', $detail);
     }
 
     public function testCancelSuccessMessageContainsAnnulee(): void
     {
         $result = $this->tokenService->cancel($this->testSubmissionId, $this->testSubmissionOwner);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString('annulée', $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString('annulée', $result['message']);
     }
 
     public function testCancelAuditLogDetailContainsSubmissionId(): void
@@ -1113,39 +1113,39 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'submission_cancel' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['submission:' . $this->testSubmissionId]);
         $detail = $stmt->fetchColumn();
-        $this->assertNotEmpty($detail, 'Audit log entry should exist');
-        $this->assertStringContainsString('Soumission annulée', $detail);
+        self::assertNotEmpty($detail, 'Audit log entry should exist');
+        self::assertStringContainsString('Soumission annulée', $detail);
     }
 
     public function testRemindSuccessMessageContainsEmailAndCount(): void
     {
         $result = $this->tokenService->remind($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString($this->testTokenEmail, $result['message']);
-        $this->assertStringContainsString('1/3', $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString($this->testTokenEmail, $result['message']);
+        self::assertStringContainsString('1/3', $result['message']);
     }
 
     public function testRemindAuditLogDetailContainsEmailAndCount(): void
     {
         $result = $this->tokenService->remind($this->testPendingTokenId);
-        $this->assertTrue($result['success'], 'Remind should succeed');
+        self::assertTrue($result['success'], 'Remind should succeed');
 
         $pdo = $this->db->getPdo();
         // Find the entry for THIS specific token
         $stmt = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'manual_remind' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['token:' . $this->testPendingTokenId]);
         $detail = $stmt->fetchColumn();
-        $this->assertNotEmpty($detail, 'Audit log entry should exist');
-        $this->assertStringContainsString($this->testTokenEmail, $detail);
-        $this->assertStringContainsString('relance 1/3', $detail);
+        self::assertNotEmpty($detail, 'Audit log entry should exist');
+        self::assertStringContainsString($this->testTokenEmail, $detail);
+        self::assertStringContainsString('relance 1/3', $detail);
     }
 
     public function testRemindSecondTimeMessageContainsCount2(): void
     {
         $this->tokenService->remind($this->testPendingTokenId);
         $result = $this->tokenService->remind($this->testPendingTokenId);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString('2/3', $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString('2/3', $result['message']);
     }
 
     public function testRemindMaxReachedMessageContainsMaxNumber(): void
@@ -1155,16 +1155,16 @@ final class TokenServiceTest extends TestCase
         $this->tokenService->remind($this->testPendingTokenId);
 
         $result = $this->tokenService->remind($this->testPendingTokenId);
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('3', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('3', $result['message']);
     }
 
     public function testDelegateSuccessMessageContainsToEmail(): void
     {
         $toEmail = 'delegate_msg_' . uniqid() . '@test.com';
         $result = $this->tokenService->delegate($this->testPendingTokenId, $toEmail);
-        $this->assertTrue($result['success']);
-        $this->assertStringContainsString($toEmail, $result['message']);
+        self::assertTrue($result['success']);
+        self::assertStringContainsString($toEmail, $result['message']);
     }
 
     public function testDelegateAuditLogDetailContainsBothEmailsAndToken(): void
@@ -1184,15 +1184,15 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT target FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute(['token:' . $tokenId]);
         $target = $stmt->fetchColumn();
-        $this->assertStringContainsString('token:' . $tokenId, $target);
+        self::assertStringContainsString('token:' . $tokenId, $target);
 
         // Check detail (contains emails and reason)
         $stmt2 = $pdo->prepare("SELECT detail FROM audit_log WHERE action = 'token_delegate' AND target = ? ORDER BY id DESC LIMIT 1");
         $stmt2->execute(['token:' . $tokenId]);
         $detail = $stmt2->fetchColumn();
-        $this->assertStringContainsString($fromEmail, $detail);
-        $this->assertStringContainsString($toEmail, $detail);
-        $this->assertStringContainsString('Vacation', $detail);
+        self::assertStringContainsString($fromEmail, $detail);
+        self::assertStringContainsString($toEmail, $detail);
+        self::assertStringContainsString('Vacation', $detail);
     }
 
     public function testDelegateDelegationRecordHasNewTokenId(): void
@@ -1210,11 +1210,11 @@ final class TokenServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT new_token_id FROM delegations WHERE token_id = ? AND to_email = ?");
         $stmt->execute([$tokenId, $toEmail]);
         $newTokenId = $stmt->fetchColumn();
-        $this->assertNotEmpty($newTokenId, 'Delegation must reference a new token');
+        self::assertNotEmpty($newTokenId, 'Delegation must reference a new token');
         // Verify the new token actually exists
         $check = $pdo->prepare("SELECT 1 FROM tokens WHERE id = ? AND email = ?");
         $check->execute([$newTokenId, $toEmail]);
-        $this->assertNotEmpty($check->fetch());
+        self::assertNotEmpty($check->fetch());
     }
 
     public function testDelegateOldTokenHasInvalidatedAt(): void
@@ -1231,7 +1231,7 @@ final class TokenServiceTest extends TestCase
 
         $stmt = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
         $stmt->execute([$tokenId]);
-        $this->assertNotNull($stmt->fetchColumn());
+        self::assertNotNull($stmt->fetchColumn());
     }
 
     public function testCancelAllTokensMarkedInvalidated(): void
@@ -1252,11 +1252,11 @@ final class TokenServiceTest extends TestCase
         // (les tokens déjà done par un test précédent ne sont pas concernés par cancel)
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL");
         $stmt->execute([$this->testSubmissionId]);
-        $this->assertSame(0, (int) $stmt->fetchColumn(), 'All pending tokens should be marked invalidated after cancel');
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'All pending tokens should be marked invalidated after cancel');
         // Le token extra qu'on vient de créer doit avoir invalidated_at set
         $stmt2 = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
         $stmt2->execute([$extraTokenId]);
-        $this->assertNotNull($stmt2->fetchColumn(), 'Newly created token must be invalidated');
+        self::assertNotNull($stmt2->fetchColumn(), 'Newly created token must be invalidated');
     }
 
     public function testCancelValidationEntryHasDate(): void
@@ -1268,7 +1268,7 @@ final class TokenServiceTest extends TestCase
         $stmt->execute([$this->testSubmissionId]);
         $data = json_decode($stmt->fetchColumn(), true);
         $lastValidation = end($data['validations']);
-        $this->assertNotEmpty($lastValidation['date'], 'Validation entry must have a date');
-        $this->assertNotFalse(strtotime($lastValidation['date']));
+        self::assertNotEmpty($lastValidation['date'], 'Validation entry must have a date');
+        self::assertNotFalse(strtotime($lastValidation['date']));
     }
 }

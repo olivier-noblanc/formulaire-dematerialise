@@ -11,19 +11,19 @@ final class ValidationTest extends TestCase
 
     public function testValidateEmailValid(): void
     {
-        $this->assertSame('test@example.com', validate_email('test@example.com'));
+        self::assertSame('test@example.com', validate_email('test@example.com'));
     }
 
     public function testValidateEmailNormalizes(): void
     {
-        $this->assertSame('test@example.com', validate_email('  TEST@Example.COM  '));
+        self::assertSame('test@example.com', validate_email('  TEST@Example.COM  '));
     }
 
     public function testValidateEmailInvalid(): void
     {
-        $this->assertSame('', validate_email('not-an-email'));
-        $this->assertSame('', validate_email(''));
-        $this->assertSame('', validate_email('@example.com'));
+        self::assertSame('', validate_email('not-an-email'));
+        self::assertSame('', validate_email(''));
+        self::assertSame('', validate_email('@example.com'));
     }
 
     // ── validate_input() — uuid ───────────────────────────────
@@ -31,7 +31,7 @@ final class ValidationTest extends TestCase
     public function testValidateInputUuidValid(): void
     {
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
-        $this->assertSame(strtolower($uuid), validate_input($uuid, 'uuid'));
+        self::assertSame(strtolower($uuid), validate_input($uuid, 'uuid'));
     }
 
     public function testValidateInputUuidInvalid(): void
@@ -43,14 +43,14 @@ final class ValidationTest extends TestCase
     public function testValidateInputUuidUppercaseNormalized(): void
     {
         $uuid = '550E8400-E29B-41D4-A716-446655440000';
-        $this->assertSame(strtolower($uuid), validate_input($uuid, 'uuid'));
+        self::assertSame(strtolower($uuid), validate_input($uuid, 'uuid'));
     }
 
     // ── validate_input() — email ──────────────────────────────
 
     public function testValidateInputEmailValid(): void
     {
-        $this->assertSame('test@example.com', validate_input('TEST@EXAMPLE.COM', 'email'));
+        self::assertSame('test@example.com', validate_input('TEST@EXAMPLE.COM', 'email'));
     }
 
     public function testValidateInputEmailInvalid(): void
@@ -70,16 +70,16 @@ final class ValidationTest extends TestCase
     {
         // A longer max_length should pass
         $result = validate_input('test@example.com', 'email', ['max_length' => 50]);
-        $this->assertSame('test@example.com', $result);
+        self::assertSame('test@example.com', $result);
     }
 
     // ── validate_input() — slug ───────────────────────────────
 
     public function testValidateInputSlugValid(): void
     {
-        $this->assertSame('onboarding', validate_input('onboarding', 'slug'));
-        $this->assertSame('acces-si', validate_input('acces-si', 'slug'));
-        $this->assertSame('test_form', validate_input('test_form', 'slug'));
+        self::assertSame('onboarding', validate_input('onboarding', 'slug'));
+        self::assertSame('acces-si', validate_input('acces-si', 'slug'));
+        self::assertSame('test_form', validate_input('test_form', 'slug'));
     }
 
     public function testValidateInputSlugInvalid(): void
@@ -92,7 +92,7 @@ final class ValidationTest extends TestCase
 
     public function testValidateInputActionValid(): void
     {
-        $this->assertSame('add_form', validate_input('add_form', 'action'));
+        self::assertSame('add_form', validate_input('add_form', 'action'));
     }
 
     public function testValidateInputActionInvalid(): void
@@ -105,8 +105,8 @@ final class ValidationTest extends TestCase
 
     public function testValidateInputStatusValid(): void
     {
-        $this->assertSame('en_cours', validate_input('en_cours', 'status'));
-        $this->assertSame('valide', validate_input('valide', 'status'));
+        self::assertSame('en_cours', validate_input('en_cours', 'status'));
+        self::assertSame('valide', validate_input('valide', 'status'));
     }
 
     public function testValidateInputStatusInvalid(): void
@@ -117,7 +117,7 @@ final class ValidationTest extends TestCase
 
     public function testValidateInputStatusCustomAllowed(): void
     {
-        $this->assertSame('custom', validate_input('custom', 'status', [
+        self::assertSame('custom', validate_input('custom', 'status', [
             'allowed_values' => ['custom', 'other'],
         ]));
     }
@@ -126,12 +126,12 @@ final class ValidationTest extends TestCase
 
     public function testValidateInputAlphaNumValid(): void
     {
-        $this->assertSame('Hello World 123', validate_input('Hello World 123', 'alpha_num'));
+        self::assertSame('Hello World 123', validate_input('Hello World 123', 'alpha_num'));
     }
 
     public function testValidateInputAlphaNumAccents(): void
     {
-        $this->assertSame('café résumé', validate_input('café résumé', 'alpha_num'));
+        self::assertSame('café résumé', validate_input('café résumé', 'alpha_num'));
     }
 
     public function testValidateInputAlphaNumInvalid(): void
@@ -144,7 +144,7 @@ final class ValidationTest extends TestCase
 
     public function testValidateInputIntValid(): void
     {
-        $this->assertSame(42, validate_input('42', 'int'));
+        self::assertSame(42, validate_input('42', 'int'));
     }
 
     public function testValidateInputIntInvalid(): void
@@ -169,7 +169,7 @@ final class ValidationTest extends TestCase
 
     public function testValidateInputDateValid(): void
     {
-        $this->assertSame('2026-01-15', validate_input('2026-01-15', 'date'));
+        self::assertSame('2026-01-15', validate_input('2026-01-15', 'date'));
     }
 
     public function testValidateInputDateInvalidFormat(): void
@@ -189,7 +189,7 @@ final class ValidationTest extends TestCase
     public function testValidateInputTokenValid(): void
     {
         $token = str_repeat('a', 64);
-        $this->assertSame($token, validate_input($token, 'token'));
+        self::assertSame($token, validate_input($token, 'token'));
     }
 
     public function testValidateInputTokenInvalid(): void
@@ -202,6 +202,6 @@ final class ValidationTest extends TestCase
 
     public function testValidateInputUnknownRulePassthrough(): void
     {
-        $this->assertSame('hello', validate_input('hello', 'unknown_rule'));
+        self::assertSame('hello', validate_input('hello', 'unknown_rule'));
     }
 }

@@ -26,15 +26,15 @@ final class MailServiceTest extends TestCase
     public function testSendReturnsTrueInTestMode(): void
     {
         $result = $this->mail->send('test@example.com', 'Test Subject', '<p>Test body</p>');
-        $this->assertTrue($result);
+        self::assertTrue($result);
     }
 
     public function testSendCapturesMailInTestMode(): void
     {
         $GLOBALS['_test_mails'] = [];
         $this->mail->send('test@example.com', 'Subject', '<p>Body</p>');
-        $this->assertNotEmpty($GLOBALS['_test_mails']);
-        $this->assertSame('test@example.com', $GLOBALS['_test_mails'][0]['to']);
+        self::assertNotEmpty($GLOBALS['_test_mails']);
+        self::assertSame('test@example.com', $GLOBALS['_test_mails'][0]['to']);
     }
 
     public function testBuildValidationEmailContainsToken(): void
@@ -44,8 +44,8 @@ final class MailServiceTest extends TestCase
             'submitted_by' => 'test@example.com',
         ];
         $html = $this->mail->buildValidationEmail($submission, 'Step 1', 'test_token_123');
-        $this->assertStringContainsString('test_token_123', $html);
-        $this->assertStringContainsString('Step 1', $html);
+        self::assertStringContainsString('test_token_123', $html);
+        self::assertStringContainsString('Step 1', $html);
     }
 
     public function testBuildValidationEmailContainsStepLabel(): void
@@ -55,23 +55,23 @@ final class MailServiceTest extends TestCase
             'submitted_by' => 'test@example.com',
         ];
         $html = $this->mail->buildValidationEmail($submission, 'Validation', 'token');
-        $this->assertStringContainsString('Validation', $html);
+        self::assertStringContainsString('Validation', $html);
     }
 
     public function testBuildValidationEmailIsHtml(): void
     {
         $submission = ['form_label' => 'Test', 'submitted_by' => 'test@example.com'];
         $html = $this->mail->buildValidationEmail($submission, 'Step', 'token');
-        $this->assertStringContainsString('<!DOCTYPE html>', $html);
-        $this->assertStringContainsString('<html>', $html);
+        self::assertStringContainsString('<!DOCTYPE html>', $html);
+        self::assertStringContainsString('<html>', $html);
     }
 
     public function testRenderEmailTemplateDoesNotThrow(): void
     {
         try {
             $html = $this->mail->renderEmailTemplate('Test Title', '<p>Content</p>');
-            $this->assertIsString($html);
-            $this->assertNotEmpty($html);
+            self::assertIsString($html);
+            self::assertNotEmpty($html);
         } catch (\RuntimeException $e) {
             $this->markTestSkipped('App container services not registered');
         }
@@ -82,12 +82,12 @@ final class MailServiceTest extends TestCase
     public function testConstructorCreatesInstance(): void
     {
         $mail = new MailService(new MailRepository($this->db), $this->settings);
-        $this->assertInstanceOf(MailService::class, $mail);
+        self::assertInstanceOf(MailService::class, $mail);
     }
 
     public function testImplementsMailInterface(): void
     {
-        $this->assertInstanceOf(\App\Contract\MailInterface::class, $this->mail);
+        self::assertInstanceOf(\App\Contract\MailInterface::class, $this->mail);
     }
 
     // ── send() additional cases ─────────────────────────────────
@@ -97,29 +97,29 @@ final class MailServiceTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $body = '<h1>Hello</h1><p>World</p>';
         $this->mail->send('test@example.com', 'HTML Test', $body);
-        $this->assertSame($body, $GLOBALS['_test_mails'][0]['body']);
+        self::assertSame($body, $GLOBALS['_test_mails'][0]['body']);
     }
 
     public function testSendCapturesSubject(): void
     {
         $GLOBALS['_test_mails'] = [];
         $this->mail->send('test@example.com', 'My Subject Line', '<p>Body</p>');
-        $this->assertSame('My Subject Line', $GLOBALS['_test_mails'][0]['subject']);
+        self::assertSame('My Subject Line', $GLOBALS['_test_mails'][0]['subject']);
     }
 
     public function testSendCapturesTimestamp(): void
     {
         $GLOBALS['_test_mails'] = [];
         $this->mail->send('test@example.com', 'Subject', '<p>Body</p>');
-        $this->assertArrayHasKey('time', $GLOBALS['_test_mails'][0]);
-        $this->assertNotEmpty($GLOBALS['_test_mails'][0]['time']);
+        self::assertArrayHasKey('time', $GLOBALS['_test_mails'][0]);
+        self::assertNotEmpty($GLOBALS['_test_mails'][0]['time']);
     }
 
     public function testSendReturnsBoolean(): void
     {
         $result = $this->mail->send('test@example.com', 'Subject', '<p>Body</p>');
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
+        self::assertIsBool($result);
+        self::assertTrue($result);
     }
 
     public function testSendMultipleMailsAccumulatesInGlobal(): void
@@ -127,7 +127,7 @@ final class MailServiceTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $this->mail->send('user1@test.com', 'Subj1', '<p>1</p>');
         $this->mail->send('user2@test.com', 'Subj2', '<p>2</p>');
-        $this->assertCount(2, $GLOBALS['_test_mails']);
+        self::assertCount(2, $GLOBALS['_test_mails']);
     }
 
     // ── buildValidationEmail() additional cases ─────────────────
@@ -136,30 +136,30 @@ final class MailServiceTest extends TestCase
     {
         $submission = ['form_label' => 'Test', 'submitted_by' => 'test@test.com'];
         $html = $this->mail->buildValidationEmail($submission, 'Step', 'token');
-        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+        self::assertStringContainsString('<!DOCTYPE html>', $html);
     }
 
     public function testBuildValidationEmailContainsValidateUrl(): void
     {
         $submission = ['form_label' => 'Test', 'submitted_by' => 'test@test.com'];
         $html = $this->mail->buildValidationEmail($submission, 'Step', 'mytoken42');
-        $this->assertStringContainsString('mytoken42', $html);
-        $this->assertStringContainsString('validate', $html);
+        self::assertStringContainsString('mytoken42', $html);
+        self::assertStringContainsString('validate', $html);
     }
 
     public function testBuildValidationEmailContainsStepLabelInBold(): void
     {
         $submission = ['form_label' => 'Form', 'submitted_by' => 'test@test.com'];
         $html = $this->mail->buildValidationEmail($submission, 'My Step', 'tok');
-        $this->assertStringContainsString('<strong>My Step</strong>', $html);
+        self::assertStringContainsString('<strong>My Step</strong>', $html);
     }
 
     public function testBuildValidationEmailEscapesHtmlInStepLabel(): void
     {
         $submission = ['form_label' => 'Form', 'submitted_by' => 'test@test.com'];
         $html = $this->mail->buildValidationEmail($submission, '<script>alert(1)</script>', 'tok');
-        $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
-        $this->assertStringContainsString('&lt;script&gt;', $html);
+        self::assertStringNotContainsString('<script>alert(1)</script>', $html);
+        self::assertStringContainsString('&lt;script&gt;', $html);
     }
 
     // ── renderEmailTemplate() additional cases ──────────────────
@@ -168,8 +168,8 @@ final class MailServiceTest extends TestCase
     {
         try {
             $html = $this->mail->renderEmailTemplate('Title', '<p>Body</p>');
-            $this->assertIsString($html);
-            $this->assertNotEmpty($html);
+            self::assertIsString($html);
+            self::assertNotEmpty($html);
         } catch (\RuntimeException $e) {
             $this->markTestSkipped('App container services not registered');
         }
@@ -179,7 +179,7 @@ final class MailServiceTest extends TestCase
     {
         try {
             $html = $this->mail->renderEmailTemplate('My Title', '<p>Body</p>');
-            $this->assertStringContainsString('My Title', $html);
+            self::assertStringContainsString('My Title', $html);
         } catch (\RuntimeException $e) {
             $this->markTestSkipped('App container services not registered');
         }
@@ -189,7 +189,7 @@ final class MailServiceTest extends TestCase
     {
         try {
             $html = $this->mail->renderEmailTemplate('Title', '<p>My Content</p>');
-            $this->assertStringContainsString('My Content', $html);
+            self::assertStringContainsString('My Content', $html);
         } catch (\RuntimeException $e) {
             $this->markTestSkipped('App container services not registered');
         }
@@ -200,7 +200,7 @@ final class MailServiceTest extends TestCase
     public function testServiceRegisteredInContainer(): void
     {
         $app = \App\Core\App::getInstance();
-        $this->assertTrue($app->has(MailService::class));
+        self::assertTrue($app->has(MailService::class));
     }
 
     public function testContainerReturnsSameInstance(): void
@@ -208,6 +208,6 @@ final class MailServiceTest extends TestCase
         $app = \App\Core\App::getInstance();
         $mail1 = $app->get(MailService::class);
         $mail2 = $app->get(MailService::class);
-        $this->assertSame($mail1, $mail2);
+        self::assertSame($mail1, $mail2);
     }
 }

@@ -148,7 +148,7 @@ final class GlobalFunctionsTest extends TestCase
             }
         }
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $missing,
             "Fonctions globales manquantes (supprimées de lib_wrappers.php ?) :\n  - "
             . implode("\n  - ", $missing)
@@ -169,7 +169,7 @@ final class GlobalFunctionsTest extends TestCase
             }
         }
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $missing,
             "Fonctions requises par la gate qualité manquantes :\n  - "
             . implode("\n  - ", $missing)
@@ -192,7 +192,7 @@ final class GlobalFunctionsTest extends TestCase
             }
         }
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $notCallable,
             "Fonctions définies mais non appelables :\n  - " . implode("\n  - ", $notCallable)
         );
@@ -204,7 +204,7 @@ final class GlobalFunctionsTest extends TestCase
      */
     public function testBootstrapLoadsHelpers(): void
     {
-        $this->assertTrue(
+        self::assertTrue(
             function_exists('generate_uuid'),
             'Le bootstrap de test ne charge pas helpers.php — generate_uuid() indisponible'
         );
@@ -231,7 +231,7 @@ final class GlobalFunctionsTest extends TestCase
 
         foreach ($requiredServices as $serviceClass) {
             $shortName = basename(str_replace('\\', '/', $serviceClass));
-            $this->assertTrue(
+            self::assertTrue(
                 $app->has($serviceClass),
                 "Service '$shortName' non enregistré dans le container DI. "
                 . "Vérifiez que helpers.php l'instancie correctement."
@@ -338,7 +338,7 @@ final class GlobalFunctionsTest extends TestCase
         // Dédupliquer et trier
         $undefinedFunctions = array_values(array_unique($undefinedFunctions));
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $undefinedFunctions,
             "test_all.php appelle des fonctions non-définies :\n  - "
             . implode("\n  - ", $undefinedFunctions)

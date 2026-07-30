@@ -97,7 +97,7 @@ final class ExportServiceMutationTest extends TestCase
 
         // Vérifie que CHAQUE id inséré est présent dans le CSV
         foreach ($insertedIds as $id) {
-            $this->assertStringContainsString(
+            self::assertStringContainsString(
                 $id,
                 $csv,
                 'Mutants #2/#7/#8/#9: la soumission ' . $id . ' doit être présente dans l\'export.'
@@ -115,14 +115,14 @@ final class ExportServiceMutationTest extends TestCase
                 $firstIdOccurrences++;
             }
         }
-        $this->assertSame(
+        self::assertSame(
             1,
             $firstIdOccurrences,
             'Mutants #7/#8: aucune ligne ne doit être dupliquée (premier id doit apparaître exactement 1 fois).'
         );
 
         // Le compte total de lignes doit être >= 501 données + 1 header
-        $this->assertGreaterThanOrEqual(
+        self::assertGreaterThanOrEqual(
             501,
             count($dataLines),
             'Mutants #2/#9: le CSV doit contenir au moins 501 lignes de données.'
@@ -149,7 +149,7 @@ final class ExportServiceMutationTest extends TestCase
         $service = new ExportService($this->db, $this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
-        $this->assertStringContainsString(
+        self::assertStringContainsString(
             $insertedIds[0],
             $csv,
             'Mutant #4 DoWhile: le corps de la boucle doit s\'exécuter au moins une fois (1 soumission doit être exportée).'
@@ -189,7 +189,7 @@ final class ExportServiceMutationTest extends TestCase
                 $occurrences++;
             }
         }
-        $this->assertSame(
+        self::assertSame(
             1,
             $occurrences,
             'Mutant #3 DecrementInteger: aucune ligne ne doit être dupliquée (offset doit démarrer à 0, pas -1).'
@@ -197,7 +197,7 @@ final class ExportServiceMutationTest extends TestCase
 
         // Vérifie aussi que toutes les 500 soumissions sont présentes
         foreach ($insertedIds as $id) {
-            $this->assertStringContainsString($id, $csv, 'Chaque soumission doit être exportée (exactly batch_size).');
+            self::assertStringContainsString($id, $csv, 'Chaque soumission doit être exportée (exactly batch_size).');
         }
     }
 
@@ -224,7 +224,7 @@ final class ExportServiceMutationTest extends TestCase
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         foreach ($insertedIds as $id) {
-            $this->assertStringContainsString(
+            self::assertStringContainsString(
                 $id,
                 $csv,
                 'Mutant #9 (variante < batch_size): la soumission ' . $id . ' doit être exportée.'
@@ -234,7 +234,7 @@ final class ExportServiceMutationTest extends TestCase
         // Le CSV doit contenir exactement 499 lignes de données + 1 header
         $withoutBom = substr($csv, 3);
         $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
-        $this->assertCount(
+        self::assertCount(
             500,
             $lines,
             'Mutant #9: le CSV doit contenir 499 lignes de données + 1 header (pas de boucle infinie).'
@@ -273,33 +273,33 @@ final class ExportServiceMutationTest extends TestCase
         $withoutBom = substr($csv, 3);
         $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
 
-        $this->assertGreaterThanOrEqual(2, count($lines), 'header + 1 data row attendus');
+        self::assertGreaterThanOrEqual(2, count($lines), 'header + 1 data row attendus');
 
         $header = str_getcsv($lines[0], ';', '"', '\\');
         $dataRow = str_getcsv($lines[1], ';', '"', '\\');
 
         // Le data row doit avoir AU MOINS 6 colonnes fixes (peut avoir +1 pour 'nom')
-        $this->assertGreaterThanOrEqual(
+        self::assertGreaterThanOrEqual(
             7,
             count($dataRow),
             'Mutant #5 ArrayItemRemoval: la ligne de données doit contenir les 6 colonnes fixes + les colonnes dynamiques (nom).'
         );
 
         // Vérifie position par position (les 6 colonnes fixes)
-        $this->assertSame($subId, $dataRow[0], 'Colonne 0 (ID) doit contenir l\'id de la soumission');
-        $this->assertSame('Mutant5 Form', $dataRow[1], 'Colonne 1 (Formulaire) doit contenir le label du form');
-        $this->assertSame('agent.mutant5@test.com', $dataRow[2], 'Colonne 2 (Agent) doit contenir submitted_by');
-        $this->assertSame('en_cours', $dataRow[3], 'Colonne 3 (Statut) doit contenir le status');
-        $this->assertSame('2025-06-15 12:30:00', $dataRow[4], 'Colonne 4 (Soumis le) doit contenir submitted_at');
-        $this->assertSame('', $dataRow[5], 'Colonne 5 (Clôturé le) doit être vide car closed_at IS NULL');
+        self::assertSame($subId, $dataRow[0], 'Colonne 0 (ID) doit contenir l\'id de la soumission');
+        self::assertSame('Mutant5 Form', $dataRow[1], 'Colonne 1 (Formulaire) doit contenir le label du form');
+        self::assertSame('agent.mutant5@test.com', $dataRow[2], 'Colonne 2 (Agent) doit contenir submitted_by');
+        self::assertSame('en_cours', $dataRow[3], 'Colonne 3 (Statut) doit contenir le status');
+        self::assertSame('2025-06-15 12:30:00', $dataRow[4], 'Colonne 4 (Soumis le) doit contenir submitted_at');
+        self::assertSame('', $dataRow[5], 'Colonne 5 (Clôturé le) doit être vide car closed_at IS NULL');
 
         // Le header doit avoir les 6 colonnes fixes + 'nom'
-        $this->assertSame('ID', $header[0]);
-        $this->assertSame('Formulaire', $header[1]);
-        $this->assertSame('Agent', $header[2]);
-        $this->assertSame('Statut', $header[3]);
-        $this->assertSame('Soumis le', $header[4]);
-        $this->assertSame('Clôturé le', $header[5]);
+        self::assertSame('ID', $header[0]);
+        self::assertSame('Formulaire', $header[1]);
+        self::assertSame('Agent', $header[2]);
+        self::assertSame('Statut', $header[3]);
+        self::assertSame('Soumis le', $header[4]);
+        self::assertSame('Clôturé le', $header[5]);
     }
 
     /**
@@ -327,12 +327,12 @@ final class ExportServiceMutationTest extends TestCase
         $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
         $dataRow = str_getcsv($lines[1], ';', '"', '\\');
 
-        $this->assertSame(
+        self::assertSame(
             '2025-06-20 09:00:00',
             $dataRow[5],
             'Mutant #5: closed_at doit être en colonne 5 (pas de shift par retrait d\'item).'
         );
-        $this->assertSame('valide', $dataRow[3], 'Statut en colonne 3.');
+        self::assertSame('valide', $dataRow[3], 'Statut en colonne 3.');
     }
 
     // ── Mutant #6 (Coalesce sur $row['closed_at'] ?? '') ──
@@ -366,7 +366,7 @@ final class ExportServiceMutationTest extends TestCase
         $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
         $dataRow = str_getcsv($lines[1], ';', '"', '\\');
 
-        $this->assertSame(
+        self::assertSame(
             '',
             $dataRow[5],
             'Mutant #6 (non observable): closed_at NULL doit produire une colonne vide — comportement identique avec ou sans mutation (Coalesce → NULL → fputcsv → empty).'
@@ -393,13 +393,13 @@ final class ExportServiceMutationTest extends TestCase
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         // Vérifie qu'au moins les première et dernière lignes sont présentes
-        $this->assertStringContainsString($insertedIds[0], $csv, 'Première soumission présente');
-        $this->assertStringContainsString(end($insertedIds), $csv, 'Dernière soumission présente');
+        self::assertStringContainsString($insertedIds[0], $csv, 'Première soumission présente');
+        self::assertStringContainsString(end($insertedIds), $csv, 'Dernière soumission présente');
 
         // Compte total de lignes de données — doit être >= 1000
         $withoutBom = substr($csv, 3);
         $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
-        $this->assertGreaterThanOrEqual(
+        self::assertGreaterThanOrEqual(
             1000,
             count($lines) - 1, // -1 pour le header
             'Mutant #1 (non observable): le CSV doit contenir les 1000 soumissions quelle que soit la valeur de batch_size.'
@@ -432,14 +432,14 @@ final class ExportServiceMutationTest extends TestCase
                 $occurrences++;
             }
         }
-        $this->assertSame(
+        self::assertSame(
             1,
             $occurrences,
             'Mutants #7/#8: le 501e id doit apparaître exactement 1 fois (pas de boucle infinie avec offset constant ou négatif).'
         );
 
         // Le 750e id (dernier du 2e batch partiel) doit aussi être présent
-        $this->assertStringContainsString(
+        self::assertStringContainsString(
             end($insertedIds),
             $csv,
             'Mutant #7/#8: la 750e soumission doit être présente (pas tronquée par une offset mal avancé).'
@@ -459,12 +459,12 @@ final class ExportServiceMutationTest extends TestCase
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         foreach ($insertedIds as $id) {
-            $this->assertStringContainsString($id, $csv);
+            self::assertStringContainsString($id, $csv);
         }
 
         $withoutBom = substr($csv, 3);
         $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
-        $this->assertCount(
+        self::assertCount(
             3,
             $lines,
             'header + 2 lignes de données attendues (loop body s\'exécute au moins une fois).'

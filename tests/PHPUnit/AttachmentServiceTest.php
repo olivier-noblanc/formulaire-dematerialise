@@ -21,25 +21,23 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedMimeTypesReturnsArray(): void
     {
         $mimeTypes = $this->attachmentService->getAllowedMimeTypes();
-        $this->assertIsArray($mimeTypes);
-        $this->assertNotEmpty($mimeTypes);
-        $this->assertContains('application/pdf', $mimeTypes);
-        $this->assertContains('image/jpeg', $mimeTypes);
+        self::assertNotEmpty($mimeTypes);
+        self::assertContains('application/pdf', $mimeTypes);
+        self::assertContains('image/jpeg', $mimeTypes);
     }
 
     public function testGetAllowedExtensionsReturnsArray(): void
     {
         $extensions = $this->attachmentService->getAllowedExtensions();
-        $this->assertIsArray($extensions);
-        $this->assertNotEmpty($extensions);
-        $this->assertContains('pdf', $extensions);
-        $this->assertContains('jpg', $extensions);
+        self::assertNotEmpty($extensions);
+        self::assertContains('pdf', $extensions);
+        self::assertContains('jpg', $extensions);
     }
 
     public function testGetMaxFileSizeReturnsTenMegaBytes(): void
     {
         $maxSize = $this->attachmentService->getMaxFileSize();
-        $this->assertSame(10 * 1024 * 1024, $maxSize);
+        self::assertSame(10 * 1024 * 1024, $maxSize);
     }
 
     public function testHandleFileUploadReturnsErrorOnUploadError(): void
@@ -52,8 +50,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => '',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'test-submission-id', 'field_name');
-        $this->assertFalse($result['success']);
-        $this->assertNull($result['attachment_id']);
+        self::assertFalse($result['success']);
+        self::assertNull($result['attachment_id']);
     }
 
     public function testHandleFileUploadReturnsErrorOnOversize(): void
@@ -66,8 +64,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'test-submission-id', 'field_name');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('10 Mo', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('10 Mo', $result['message']);
     }
 
     public function testHandleFileUploadReturnsErrorOnDisallowedExtension(): void
@@ -80,21 +78,21 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'test-submission-id', 'field_name');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('non autorisé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('non autorisé', $result['message']);
     }
 
     public function testGetAttachmentsReturnsEmptyArrayForNonexistentId(): void
     {
         $attachments = $this->attachmentService->getAttachments('nonexistent-id');
-        $this->assertIsArray($attachments);
-        $this->assertEmpty($attachments);
+        self::assertIsArray($attachments);
+        self::assertEmpty($attachments);
     }
 
     public function testGetAttachmentByIdReturnsNullForNonexistentId(): void
     {
         $attachment = $this->attachmentService->getAttachmentById('nonexistent-id');
-        $this->assertNull($attachment);
+        self::assertNull($attachment);
     }
 
     // ── handleFileUpload() error paths ──────────────────────────
@@ -109,8 +107,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('taille maximale', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('taille maximale', $result['message']);
     }
 
     public function testHandleFileUploadUploadErrPartial(): void
@@ -123,8 +121,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('partiellement', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('partiellement', $result['message']);
     }
 
     public function testHandleFileUploadUploadErrNoTmpDir(): void
@@ -137,8 +135,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('Dossier temporaire', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('Dossier temporaire', $result['message']);
     }
 
     public function testHandleFileUploadUploadErrCantWrite(): void
@@ -151,8 +149,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('écriture', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('écriture', $result['message']);
     }
 
     public function testHandleFileUploadDangerousDoubleExtension(): void
@@ -165,8 +163,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'image/jpeg',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('doubles extensions', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('doubles extensions', $result['message']);
     }
 
     public function testHandleFileUploadDangerousPhpExtension(): void
@@ -179,7 +177,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     // ── getAllowedMimeTypes() additional checks ──────────────────
@@ -187,17 +185,17 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedMimeTypesContainsImageTypes(): void
     {
         $types = $this->attachmentService->getAllowedMimeTypes();
-        $this->assertContains('image/jpeg', $types);
-        $this->assertContains('image/png', $types);
-        $this->assertContains('image/gif', $types);
+        self::assertContains('image/jpeg', $types);
+        self::assertContains('image/png', $types);
+        self::assertContains('image/gif', $types);
     }
 
     public function testGetAllowedMimeTypesContainsDocumentTypes(): void
     {
         $types = $this->attachmentService->getAllowedMimeTypes();
-        $this->assertContains('application/pdf', $types);
-        $this->assertContains('text/plain', $types);
-        $this->assertContains('text/csv', $types);
+        self::assertContains('application/pdf', $types);
+        self::assertContains('text/plain', $types);
+        self::assertContains('text/csv', $types);
     }
 
     // ── getAllowedExtensions() additional checks ─────────────────
@@ -205,19 +203,19 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedExtensionsContainsImageExts(): void
     {
         $exts = $this->attachmentService->getAllowedExtensions();
-        $this->assertContains('jpg', $exts);
-        $this->assertContains('jpeg', $exts);
-        $this->assertContains('png', $exts);
-        $this->assertContains('gif', $exts);
+        self::assertContains('jpg', $exts);
+        self::assertContains('jpeg', $exts);
+        self::assertContains('png', $exts);
+        self::assertContains('gif', $exts);
     }
 
     public function testGetAllowedExtensionsContainsDocumentExts(): void
     {
         $exts = $this->attachmentService->getAllowedExtensions();
-        $this->assertContains('pdf', $exts);
-        $this->assertContains('txt', $exts);
-        $this->assertContains('doc', $exts);
-        $this->assertContains('docx', $exts);
+        self::assertContains('pdf', $exts);
+        self::assertContains('txt', $exts);
+        self::assertContains('doc', $exts);
+        self::assertContains('docx', $exts);
     }
 
     // ── handleFileUpload() UPLOAD_ERR_FORM_SIZE ────────────────
@@ -232,8 +230,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('formulaire', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('formulaire', $result['message']);
     }
 
     // ── handleFileUpload() unknown error code ───────────────────
@@ -248,8 +246,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('inconnue', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('inconnue', $result['message']);
     }
 
     // ── handleFileUpload() empty filename after sanitization ────
@@ -265,8 +263,8 @@ final class AttachmentServiceTest extends TestCase
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
         // Should not succeed because 'fichier' has no extension
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('non autorisé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('non autorisé', $result['message']);
     }
 
     // ── handleFileUpload() dangerous extension directly ──────────
@@ -282,7 +280,7 @@ final class AttachmentServiceTest extends TestCase
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
         // Dangerous extension .php → blocked at dangerous extension check (line 122)
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     // ── handleFileUpload() disallowed extension (not dangerous) ──
@@ -297,8 +295,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'image/bmp',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('non autorisé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('non autorisé', $result['message']);
     }
 
     // ── handleFileUpload() filename sanitization keeps allowed ext ──
@@ -314,8 +312,8 @@ final class AttachmentServiceTest extends TestCase
         ];
         // .bmp extension is not in allowed list → blocked before finfo
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('non autorisé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('non autorisé', $result['message']);
     }
 
     // ── handleFileUpload() multiple dangerous double extensions ──
@@ -330,8 +328,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'image/jpeg',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('doubles extensions', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('doubles extensions', $result['message']);
     }
 
     // ── handleFileUpload() safe double extension with dangerous last ─
@@ -346,8 +344,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'image/jpeg',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('doubles extensions', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('doubles extensions', $result['message']);
     }
 
     // ── handleFileUpload() disallowed non-dangerous ext ──────────
@@ -362,8 +360,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'text/html',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('non autorisé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('non autorisé', $result['message']);
     }
 
     // ── handleFileUpload() double extension with different dangerous ext ──
@@ -378,8 +376,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'image/jpeg',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('doubles extensions', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('doubles extensions', $result['message']);
     }
 
     // ── getAllowedMimeTypes() contains all expected types ─────────
@@ -397,7 +395,7 @@ final class AttachmentServiceTest extends TestCase
             'application/zip',
         ];
         foreach ($expected as $type) {
-            $this->assertContains($type, $types, "Missing MIME type: $type");
+            self::assertContains($type, $types, "Missing MIME type: $type");
         }
     }
 
@@ -408,7 +406,7 @@ final class AttachmentServiceTest extends TestCase
         $exts = $this->attachmentService->getAllowedExtensions();
         $expected = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv', 'zip'];
         foreach ($expected as $ext) {
-            $this->assertContains($ext, $exts, "Missing extension: $ext");
+            self::assertContains($ext, $exts, "Missing extension: $ext");
         }
     }
 
@@ -430,8 +428,8 @@ final class AttachmentServiceTest extends TestCase
 
         try {
             $attachments = $this->attachmentService->getAttachments($submissionId);
-            $this->assertIsArray($attachments);
-            $this->assertNotEmpty($attachments);
+            self::assertIsArray($attachments);
+            self::assertNotEmpty($attachments);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
             $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
@@ -455,8 +453,8 @@ final class AttachmentServiceTest extends TestCase
 
         try {
             $attachment = $this->attachmentService->getAttachmentById($attId);
-            $this->assertNotNull($attachment);
-            $this->assertSame('lookup.pdf', $attachment['original_name']);
+            self::assertNotNull($attachment);
+            self::assertSame('lookup.pdf', $attachment['original_name']);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
             $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
@@ -486,8 +484,8 @@ final class AttachmentServiceTest extends TestCase
                 'type' => 'application/pdf',
             ];
             $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-            $this->assertFalse($result['success'], "Error code $code should return failure");
-            $this->assertNull($result['attachment_id']);
+            self::assertFalse($result['success'], "Error code $code should return failure");
+            self::assertNull($result['attachment_id']);
         }
     }
 
@@ -496,7 +494,7 @@ final class AttachmentServiceTest extends TestCase
     public function testServiceRegisteredInContainer(): void
     {
         $app = \App\Core\App::getInstance();
-        $this->assertTrue($app->has(AttachmentService::class));
+        self::assertTrue($app->has(AttachmentService::class));
     }
 
     public function testContainerReturnsSameInstance(): void
@@ -504,7 +502,7 @@ final class AttachmentServiceTest extends TestCase
         $app = \App\Core\App::getInstance();
         $s1 = $app->get(AttachmentService::class);
         $s2 = $app->get(AttachmentService::class);
-        $this->assertSame($s1, $s2);
+        self::assertSame($s1, $s2);
     }
 
     // ── filename "0" after sanitization ──────────────────────────
@@ -519,9 +517,9 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
         // safeName becomes 'fichier' (no extension) → blocked at extension check
-        $this->assertStringContainsString('non autorisé', $result['message']);
+        self::assertStringContainsString('non autorisé', $result['message']);
     }
 
     // ── getAllowedMimeTypes exact count ──────────────────────────
@@ -529,7 +527,7 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedMimeTypesExactCount(): void
     {
         $types = $this->attachmentService->getAllowedMimeTypes();
-        $this->assertCount(13, $types);
+        self::assertCount(13, $types);
     }
 
     // ── getAllowedExtensions exact count ─────────────────────────
@@ -537,7 +535,7 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedExtensionsExactCount(): void
     {
         $exts = $this->attachmentService->getAllowedExtensions();
-        $this->assertCount(14, $exts);
+        self::assertCount(14, $exts);
     }
 
     // ── getAllowedExtensions contains all office types ───────────
@@ -545,10 +543,10 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedExtensionsContainsOfficeTypes(): void
     {
         $exts = $this->attachmentService->getAllowedExtensions();
-        $this->assertContains('xls', $exts);
-        $this->assertContains('xlsx', $exts);
-        $this->assertContains('ppt', $exts);
-        $this->assertContains('pptx', $exts);
+        self::assertContains('xls', $exts);
+        self::assertContains('xlsx', $exts);
+        self::assertContains('ppt', $exts);
+        self::assertContains('pptx', $exts);
     }
 
     // ── getAllowedMimeTypes contains Office MIME types ───────────
@@ -556,12 +554,12 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedMimeTypesContainsOfficeMimeTypes(): void
     {
         $types = $this->attachmentService->getAllowedMimeTypes();
-        $this->assertContains('application/msword', $types);
-        $this->assertContains('application/vnd.openxmlformats-officedocument.wordprocessingml.document', $types);
-        $this->assertContains('application/vnd.ms-excel', $types);
-        $this->assertContains('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $types);
-        $this->assertContains('application/vnd.ms-powerpoint', $types);
-        $this->assertContains('application/vnd.openxmlformats-officedocument.presentationml.presentation', $types);
+        self::assertContains('application/msword', $types);
+        self::assertContains('application/vnd.openxmlformats-officedocument.wordprocessingml.document', $types);
+        self::assertContains('application/vnd.ms-excel', $types);
+        self::assertContains('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $types);
+        self::assertContains('application/vnd.ms-powerpoint', $types);
+        self::assertContains('application/vnd.openxmlformats-officedocument.presentationml.presentation', $types);
     }
 
     // ── getAttachments with multiple results ─────────────────────
@@ -585,10 +583,10 @@ final class AttachmentServiceTest extends TestCase
 
         try {
             $attachments = $this->attachmentService->getAttachments($submissionId);
-            $this->assertCount(2, $attachments);
+            self::assertCount(2, $attachments);
             $names = array_column($attachments, 'original_name');
-            $this->assertContains('doc1.pdf', $names);
-            $this->assertContains('doc2.pdf', $names);
+            self::assertContains('doc1.pdf', $names);
+            self::assertContains('doc2.pdf', $names);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id IN (?, ?)")->execute([$attId1, $attId2]);
             $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
@@ -614,13 +612,13 @@ final class AttachmentServiceTest extends TestCase
 
         try {
             $att = $this->attachmentService->getAttachmentById($attId);
-            $this->assertNotNull($att);
-            $this->assertSame($attId, $att['id']);
-            $this->assertSame($submissionId, $att['submission_id']);
-            $this->assertSame('my_field', $att['field_name']);
-            $this->assertSame('report.pdf', $att['original_name']);
-            $this->assertSame('application/pdf', $att['mime_type']);
-            $this->assertSame(1024, $att['file_size']);
+            self::assertNotNull($att);
+            self::assertSame($attId, $att['id']);
+            self::assertSame($submissionId, $att['submission_id']);
+            self::assertSame('my_field', $att['field_name']);
+            self::assertSame('report.pdf', $att['original_name']);
+            self::assertSame('application/pdf', $att['mime_type']);
+            self::assertSame(1024, $att['file_size']);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
             $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$submissionId]);
@@ -649,7 +647,7 @@ final class AttachmentServiceTest extends TestCase
 
         try {
             $atts = $this->attachmentService->getAttachments($sub2);
-            $this->assertEmpty($atts);
+            self::assertEmpty($atts);
         } finally {
             $pdo->prepare("DELETE FROM attachments WHERE id = ?")->execute([$attId]);
             $pdo->prepare("DELETE FROM submissions WHERE id IN (?, ?)")->execute([$sub1, $sub2]);
@@ -669,8 +667,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/x-php',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('doubles extensions', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('doubles extensions', $result['message']);
     }
 
     public function testHandleFileUploadDangerousDoubleExtensionSh(): void
@@ -683,8 +681,8 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'image/jpeg',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('doubles extensions', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('doubles extensions', $result['message']);
     }
 
     // ── dangerous single extensions ──────────────────────────────
@@ -699,7 +697,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'text/html',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     public function testHandleFileUploadDangerousAspExtension(): void
@@ -712,7 +710,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     public function testHandleFileUploadDangerousJspExtension(): void
@@ -725,7 +723,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     // ── handleFileUpload return structure ─────────────────────────
@@ -740,11 +738,11 @@ final class AttachmentServiceTest extends TestCase
             'type' => '',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertArrayHasKey('success', $result);
-        $this->assertArrayHasKey('message', $result);
-        $this->assertArrayHasKey('attachment_id', $result);
-        $this->assertIsBool($result['success']);
-        $this->assertIsString($result['message']);
+        self::assertArrayHasKey('success', $result);
+        self::assertArrayHasKey('message', $result);
+        self::assertArrayHasKey('attachment_id', $result);
+        self::assertIsBool($result['success']);
+        self::assertIsString($result['message']);
     }
 
     // ── error messages are in French ─────────────────────────────
@@ -760,7 +758,7 @@ final class AttachmentServiceTest extends TestCase
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
         // Check it contains French words
-        $this->assertMatchesRegularExpression('/[àâéèêëîïôùûüç]/u', $result['message']);
+        self::assertMatchesRegularExpression('/[àâéèêëîïôùûüç]/u', $result['message']);
     }
 
     // ── getAllowedMimeTypes does not contain dangerous types ──────
@@ -768,11 +766,11 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedMimeTypesDoesNotContainDangerousTypes(): void
     {
         $types = $this->attachmentService->getAllowedMimeTypes();
-        $this->assertNotContains('application/x-php', $types);
-        $this->assertNotContains('text/html', $types);
-        $this->assertNotContains('application/x-sh', $types);
-        $this->assertNotContains('application/x-perl', $types);
-        $this->assertNotContains('application/x-python', $types);
+        self::assertNotContains('application/x-php', $types);
+        self::assertNotContains('text/html', $types);
+        self::assertNotContains('application/x-sh', $types);
+        self::assertNotContains('application/x-perl', $types);
+        self::assertNotContains('application/x-python', $types);
     }
 
     // ── getAllowedExtensions does not contain dangerous exts ──────
@@ -780,20 +778,20 @@ final class AttachmentServiceTest extends TestCase
     public function testGetAllowedExtensionsDoesNotContainDangerousExts(): void
     {
         $exts = $this->attachmentService->getAllowedExtensions();
-        $this->assertNotContains('php', $exts);
-        $this->assertNotContains('phtml', $exts);
-        $this->assertNotContains('asp', $exts);
-        $this->assertNotContains('jsp', $exts);
-        $this->assertNotContains('cgi', $exts);
-        $this->assertNotContains('pl', $exts);
-        $this->assertNotContains('py', $exts);
+        self::assertNotContains('php', $exts);
+        self::assertNotContains('phtml', $exts);
+        self::assertNotContains('asp', $exts);
+        self::assertNotContains('jsp', $exts);
+        self::assertNotContains('cgi', $exts);
+        self::assertNotContains('pl', $exts);
+        self::assertNotContains('py', $exts);
     }
 
     // ── getMaxFileSize constant ──────────────────────────────────
 
     public function testGetMaxFileSizeIsExactlyTenMegaBytes(): void
     {
-        $this->assertSame(10485760, $this->attachmentService->getMaxFileSize());
+        self::assertSame(10485760, $this->attachmentService->getMaxFileSize());
     }
 
     // ── constructor injection ────────────────────────────────────
@@ -802,7 +800,7 @@ final class AttachmentServiceTest extends TestCase
     {
         $repo = \App\Core\App::getInstance()->get(\App\Repository\AttachmentRepository::class);
         $service = new AttachmentService($repo);
-        $this->assertInstanceOf(AttachmentService::class, $service);
+        self::assertInstanceOf(AttachmentService::class, $service);
     }
 
     // ── dangerous extensions: all in the list ────────────────────
@@ -817,7 +815,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     public function testHandleFileUploadDangerousPhp5Extension(): void
@@ -830,7 +828,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     public function testHandleFileUploadDangerousPharExtension(): void
@@ -843,7 +841,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     public function testHandleFileUploadDangerousShtmlExtension(): void
@@ -856,7 +854,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'text/html',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     public function testHandleFileUploadDangerousAspxExtension(): void
@@ -869,7 +867,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/octet-stream',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     public function testHandleFileUploadDangerousRbExtension(): void
@@ -882,7 +880,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/x-ruby',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
+        self::assertFalse($result['success']);
     }
 
     // ── safe double extension (not dangerous) ────────────────────
@@ -898,8 +896,8 @@ final class AttachmentServiceTest extends TestCase
         ];
         // .gz is not in allowed extensions → blocked at extension check
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('non autorisé', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('non autorisé', $result['message']);
     }
 
     // ── handleFileUpload with oversized exact boundary ───────────
@@ -914,7 +912,7 @@ final class AttachmentServiceTest extends TestCase
             'type' => 'application/pdf',
         ];
         $result = $this->attachmentService->handleFileUpload($file, 'sub-id', 'field');
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('10 Mo', $result['message']);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('10 Mo', $result['message']);
     }
 }

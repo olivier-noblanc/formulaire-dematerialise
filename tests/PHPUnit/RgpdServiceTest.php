@@ -59,12 +59,12 @@ final class RgpdServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->service->exportUserData('testeur@dreets.gouv.fr');
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('email', $result);
-        $this->assertArrayHasKey('export_date', $result);
-        $this->assertArrayHasKey('submissions', $result);
-        $this->assertArrayHasKey('validations', $result);
-        $this->assertSame('testeur@dreets.gouv.fr', $result['email']);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('email', $result);
+        self::assertArrayHasKey('export_date', $result);
+        self::assertArrayHasKey('submissions', $result);
+        self::assertArrayHasKey('validations', $result);
+        self::assertSame('testeur@dreets.gouv.fr', $result['email']);
     }
 
     public function testExportUserDataAsAdminReturnsRealSubmissions(): void
@@ -94,13 +94,13 @@ final class RgpdServiceTest extends TestCase
         if (isset($result['error'])) {
             $this->markTestSkipped('Access denied — admin check KO : ' . $result['error']);
         }
-        $this->assertNotEmpty($result['submissions']);
+        self::assertNotEmpty($result['submissions']);
         $sub = $result['submissions'][0];
-        $this->assertArrayHasKey('id', $sub);
-        $this->assertArrayHasKey('form', $sub);
-        $this->assertArrayHasKey('status', $sub);
-        $this->assertArrayHasKey('submitted_at', $sub);
-        $this->assertArrayHasKey('data', $sub);
+        self::assertArrayHasKey('id', $sub);
+        self::assertArrayHasKey('form', $sub);
+        self::assertArrayHasKey('status', $sub);
+        self::assertArrayHasKey('submitted_at', $sub);
+        self::assertArrayHasKey('data', $sub);
     }
 
     public function testExportUserDataAsSelf(): void
@@ -108,9 +108,9 @@ final class RgpdServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'testeur@dreets.gouv.fr';
 
         $result = $this->service->exportUserData('testeur@dreets.gouv.fr');
-        $this->assertIsArray($result);
-        $this->assertSame('testeur@dreets.gouv.fr', $result['email']);
-        $this->assertArrayNotHasKey('error', $result);
+        self::assertIsArray($result);
+        self::assertSame('testeur@dreets.gouv.fr', $result['email']);
+        self::assertArrayNotHasKey('error', $result);
     }
 
     public function testExportUserDataDeniedForNonAdminNonSelf(): void
@@ -118,8 +118,8 @@ final class RgpdServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'other@test.com';
 
         $result = $this->service->exportUserData('testeur@dreets.gouv.fr');
-        $this->assertArrayHasKey('error', $result);
-        $this->assertStringContainsString('Accès refusé', $result['error']);
+        self::assertArrayHasKey('error', $result);
+        self::assertStringContainsString('Accès refusé', $result['error']);
     }
 
     public function testExportUserDataForNonexistentEmailReturnsEmpty(): void
@@ -127,9 +127,9 @@ final class RgpdServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
 
         $result = $this->service->exportUserData('doesnotexist@nowhere.com');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result['submissions']);
-        $this->assertEmpty($result['validations']);
+        self::assertIsArray($result);
+        self::assertEmpty($result['submissions']);
+        self::assertEmpty($result['validations']);
     }
 
     // ── deleteUserData ──────────────────────────────────────────
@@ -154,23 +154,23 @@ final class RgpdServiceTest extends TestCase
             ->execute([$tokenId, $testId, $stepId, $testEmail, $tokenVal, gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s', strtotime('+30 days'))]);
 
         $result = $this->service->deleteUserData($testEmail);
-        $this->assertTrue($result);
+        self::assertTrue($result);
 
         // Verify anonymization
         $row = $pdo->prepare("SELECT submitted_by, data FROM submissions WHERE id = ?");
         $row->execute([$testId]);
         $sub = $row->fetch(\PDO::FETCH_ASSOC);
-        $this->assertSame('[supprimé]', $sub['submitted_by']);
+        self::assertSame('[supprimé]', $sub['submitted_by']);
         $decoded = json_decode($sub['data'], true);
-        $this->assertSame('[supprimé]', $decoded['prenom']);
-        $this->assertSame('[supprimé]', $decoded['nom']);
-        $this->assertSame('[supprimé]', $decoded['email']);
-        $this->assertSame('[supprimé]', $decoded['telephone']);
+        self::assertSame('[supprimé]', $decoded['prenom']);
+        self::assertSame('[supprimé]', $decoded['nom']);
+        self::assertSame('[supprimé]', $decoded['email']);
+        self::assertSame('[supprimé]', $decoded['telephone']);
 
         // Verify token anonymized
         $tokRow = $pdo->prepare("SELECT email FROM tokens WHERE id = ?");
         $tokRow->execute([$tokenId]);
-        $this->assertSame('[supprimé]', $tokRow->fetchColumn());
+        self::assertSame('[supprimé]', $tokRow->fetchColumn());
 
         // Cleanup
         $pdo->prepare("DELETE FROM tokens WHERE id = ?")->execute([$tokenId]);
@@ -189,7 +189,7 @@ final class RgpdServiceTest extends TestCase
             ->execute([$testId, $this->testFormId, $data, $testEmail, gmdate('Y-m-d H:i:s'), 'en_cours']);
 
         $result = $this->service->deleteUserData($testEmail);
-        $this->assertTrue($result);
+        self::assertTrue($result);
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$testId]);
@@ -200,7 +200,7 @@ final class RgpdServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'other@test.com';
 
         $result = $this->service->deleteUserData('testeur@dreets.gouv.fr');
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testDeleteUserDataHandlesDelegations(): void
@@ -232,12 +232,12 @@ final class RgpdServiceTest extends TestCase
             ->execute([$delId, $tokenId, $testEmail, 'target@test.com']);
 
         $result = $this->service->deleteUserData($testEmail);
-        $this->assertTrue($result);
+        self::assertTrue($result);
 
         // Verify delegation anonymized
         $row = $pdo->prepare("SELECT from_email FROM delegations WHERE id = ?");
         $row->execute([$delId]);
-        $this->assertSame('[supprimé]', $row->fetchColumn());
+        self::assertSame('[supprimé]', $row->fetchColumn());
 
         // Cleanup
         $pdo->prepare("DELETE FROM delegations WHERE id = ?")->execute([$delId]);
@@ -252,8 +252,8 @@ final class RgpdServiceTest extends TestCase
     public function testAutoPurgeReturnsInt(): void
     {
         $result = $this->service->autoPurge(24);
-        $this->assertIsInt($result);
-        $this->assertGreaterThanOrEqual(0, $result);
+        self::assertIsInt($result);
+        self::assertGreaterThanOrEqual(0, $result);
     }
 
     public function testAutoPurgeWithZeroMonthsPurgesNothing(): void
@@ -261,14 +261,14 @@ final class RgpdServiceTest extends TestCase
         $result = $this->service->autoPurge(0);
         // With 0 months, cutoff = now, nothing should be older than now
         // But since no submissions have closed_at in the future, should be 0
-        $this->assertIsInt($result);
+        self::assertIsInt($result);
     }
 
     public function testAutoPurgeWithLargeMonthsReturnsZero(): void
     {
         // Very large months should find no old data
         $result = $this->service->autoPurge(9999);
-        $this->assertSame(0, $result);
+        self::assertSame(0, $result);
     }
 
     public function testAutoPurgeCreatesTempDataAndPurges(): void
@@ -289,17 +289,17 @@ final class RgpdServiceTest extends TestCase
             ->execute([$tokId, $testId, $stepId, 'purge@test.com', bin2hex(random_bytes(32)), $oldDate, $oldDate]);
 
         $count = $this->service->autoPurge(24);
-        $this->assertGreaterThanOrEqual(1, $count);
+        self::assertGreaterThanOrEqual(1, $count);
 
         // Verify submission was deleted
         $check = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE id = ?");
         $check->execute([$testId]);
-        $this->assertSame(0, (int) $check->fetchColumn());
+        self::assertSame(0, (int) $check->fetchColumn());
 
         // Verify token was cascaded
         $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE id = ?");
         $check->execute([$tokId]);
-        $this->assertSame(0, (int) $check->fetchColumn());
+        self::assertSame(0, (int) $check->fetchColumn());
     }
 
     public function testAutoPurgeSkipsEnCoursSubmissions(): void
@@ -318,7 +318,7 @@ final class RgpdServiceTest extends TestCase
         // en_cours should NOT be purged
         $check = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE id = ?");
         $check->execute([$testId]);
-        $this->assertSame(1, (int) $check->fetchColumn());
+        self::assertSame(1, (int) $check->fetchColumn());
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$testId]);
@@ -340,7 +340,7 @@ final class RgpdServiceTest extends TestCase
         // Recent should NOT be purged
         $check = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE id = ?");
         $check->execute([$testId]);
-        $this->assertSame(1, (int) $check->fetchColumn());
+        self::assertSame(1, (int) $check->fetchColumn());
 
         // Cleanup
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$testId]);

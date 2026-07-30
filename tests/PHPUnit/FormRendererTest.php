@@ -32,9 +32,9 @@ final class FormRendererTest extends TestCase
             'options' => null,
         ];
         $html = $this->renderer->field($field, null, [], '', false);
-        $this->assertStringContainsString('required', $html);
-        $this->assertStringContainsString('aria-required="true"', $html);
-        $this->assertStringContainsString('class="req"', $html);
+        self::assertStringContainsString('required', $html);
+        self::assertStringContainsString('aria-required="true"', $html);
+        self::assertStringContainsString('class="req"', $html);
     }
 
     public function testOptionalCheckboxHasNoRequiredAttribute(): void
@@ -48,9 +48,9 @@ final class FormRendererTest extends TestCase
             'options' => null,
         ];
         $html = $this->renderer->field($field, null, [], '', false);
-        $this->assertStringNotContainsString('required', $html);
-        $this->assertStringNotContainsString('aria-required', $html);
-        $this->assertStringNotContainsString('class="req"', $html);
+        self::assertStringNotContainsString('required', $html);
+        self::assertStringNotContainsString('aria-required', $html);
+        self::assertStringNotContainsString('class="req"', $html);
     }
 
     public function testDisabledCheckboxHasNoRequiredAttribute(): void
@@ -64,8 +64,8 @@ final class FormRendererTest extends TestCase
             'options' => null,
         ];
         $html = $this->renderer->field($field, null, [], '', true);
-        $this->assertStringNotContainsString('required', $html);
-        $this->assertStringContainsString('disabled', $html);
+        self::assertStringNotContainsString('required', $html);
+        self::assertStringContainsString('disabled', $html);
     }
 
     public function testRequiredSelectHasRequiredAttribute(): void
@@ -79,8 +79,8 @@ final class FormRendererTest extends TestCase
             'options' => '["PC portable","Écran"]',
         ];
         $html = $this->renderer->field($field, null, [], '', false);
-        $this->assertStringContainsString('required', $html);
-        $this->assertStringContainsString('aria-required="true"', $html);
+        self::assertStringContainsString('required', $html);
+        self::assertStringContainsString('aria-required="true"', $html);
     }
 
     public function testRequiredTextHasRequiredAttribute(): void
@@ -94,7 +94,7 @@ final class FormRendererTest extends TestCase
             'options' => null,
         ];
         $html = $this->renderer->field($field, null, [], '', false);
-        $this->assertStringContainsString('required', $html);
-        $this->assertStringContainsString('aria-required="true"', $html);
+        self::assertStringContainsString('required', $html);
+        self::assertStringContainsString('aria-required="true"', $html);
     }
 }

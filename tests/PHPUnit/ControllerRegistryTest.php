@@ -57,7 +57,7 @@ final class ControllerRegistryTest extends TestCase
     public function testControllerCanBeInstantiated(string $controllerClass): void
     {
         $controller = new $controllerClass();
-        $this->assertInstanceOf($controllerClass, $controller);
+        self::assertInstanceOf($controllerClass, $controller);
     }
 
     /**
@@ -85,11 +85,11 @@ final class ControllerRegistryTest extends TestCase
         $helpersOnly = array_diff($helpersServices, $bootstrapServices);
         $bootstrapOnly = array_diff($bootstrapServices, $helpersServices);
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $helpersOnly,
             "Services only in helpers.php (missing from bootstrap.php): " . implode(', ', $helpersOnly)
         );
-        $this->assertEmpty(
+        self::assertEmpty(
             $bootstrapOnly,
             "Services only in bootstrap.php (missing from helpers.php): " . implode(', ', $bootstrapOnly)
         );
@@ -103,9 +103,9 @@ final class ControllerRegistryTest extends TestCase
         $projectRoot = dirname(__DIR__, 2);
 
         // Baseline files
-        $this->assertFileExists($projectRoot . '/helpers.php');
-        $this->assertFileExists($projectRoot . '/src/bootstrap.php');
-        $this->assertFileExists($projectRoot . '/vendor/autoload.php');
+        self::assertFileExists($projectRoot . '/helpers.php');
+        self::assertFileExists($projectRoot . '/src/bootstrap.php');
+        self::assertFileExists($projectRoot . '/vendor/autoload.php');
 
         // Scan all controllers for require_once calls
         $controllerDir = $projectRoot . '/src/Controller';
@@ -133,7 +133,7 @@ final class ControllerRegistryTest extends TestCase
             }
         }
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $missing,
             "Files referenced by require_once in controllers but NOT found on disk:\n"
             . implode("\n", $missing)
@@ -166,7 +166,7 @@ final class ControllerRegistryTest extends TestCase
             }
         }
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $missing,
             "Services used in controllers but NOT registered in helpers.php:\n"
             . implode("\n", array_map(

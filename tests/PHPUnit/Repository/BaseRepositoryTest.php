@@ -19,33 +19,33 @@ final class BaseRepositoryTest extends TestCase
     public function testPdoReturnsPdoInstance(): void
     {
         $pdo = $this->repo->pdo();
-        $this->assertInstanceOf(\PDO::class, $pdo);
+        self::assertInstanceOf(\PDO::class, $pdo);
     }
 
     public function testFetchOneReturnsArray(): void
     {
         $result = $this->repo->fetchOne("SELECT 1 as id");
-        $this->assertIsArray($result);
-        $this->assertSame(1, $result['id']);
+        self::assertIsArray($result);
+        self::assertSame(1, $result['id']);
     }
 
     public function testFetchOneReturnsNullOnNoResult(): void
     {
         $result = $this->repo->fetchOne("SELECT * FROM forms WHERE id = ?", ['nonexistent']);
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testFetchAllReturnsArray(): void
     {
         $result = $this->repo->fetchAll("SELECT 1 as id UNION SELECT 2 as id");
-        $this->assertIsArray($result);
-        $this->assertCount(2, $result);
+        self::assertIsArray($result);
+        self::assertCount(2, $result);
     }
 
     public function testExecuteReturnsBool(): void
     {
         $result = $this->repo->execute("CREATE TEMPORARY TABLE test_repo (id INTEGER)");
-        $this->assertTrue($result);
+        self::assertTrue($result);
     }
 
     // ── fetchAll() with parameters ──────────────────────────────
@@ -56,7 +56,7 @@ final class BaseRepositoryTest extends TestCase
             "SELECT * FROM sqlite_master WHERE type = ? AND name = ?",
             ['table', 'forms']
         );
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testFetchAllReturnsEmptyForNoMatch(): void
@@ -65,8 +65,8 @@ final class BaseRepositoryTest extends TestCase
             "SELECT * FROM sqlite_master WHERE name = ?",
             ['nonexistent_table_' . uniqid()]
         );
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     // ── fetchOne() with parameters ──────────────────────────────
@@ -77,7 +77,7 @@ final class BaseRepositoryTest extends TestCase
             "SELECT * FROM sqlite_master WHERE type = ? AND name = ?",
             ['table', 'forms']
         );
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testFetchOneReturnsNullForNoMatch(): void
@@ -86,7 +86,7 @@ final class BaseRepositoryTest extends TestCase
             "SELECT * FROM sqlite_master WHERE name = ?",
             ['nonexistent_' . uniqid()]
         );
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     // ── execute() with parameters ───────────────────────────────
@@ -99,7 +99,7 @@ final class BaseRepositoryTest extends TestCase
             "INSERT INTO test_exec_params (id, val) VALUES (?, ?)",
             [1, 'test']
         );
-        $this->assertTrue($result);
+        self::assertTrue($result);
         $pdo->exec("DROP TABLE test_exec_params");
     }
 
@@ -109,7 +109,7 @@ final class BaseRepositoryTest extends TestCase
     {
         $pdo1 = $this->repo->pdo();
         $pdo2 = $this->repo->pdo();
-        $this->assertSame($pdo1, $pdo2);
+        self::assertSame($pdo1, $pdo2);
     }
 
     // ── fetchOne() returns assoc array ──────────────────────────
@@ -117,10 +117,10 @@ final class BaseRepositoryTest extends TestCase
     public function testFetchOneReturnsAssocArray(): void
     {
         $result = $this->repo->fetchOne("SELECT 'hello' as greeting, 42 as answer");
-        $this->assertArrayHasKey('greeting', $result);
-        $this->assertArrayHasKey('answer', $result);
-        $this->assertSame('hello', $result['greeting']);
-        $this->assertSame(42, $result['answer']);
+        self::assertArrayHasKey('greeting', $result);
+        self::assertArrayHasKey('answer', $result);
+        self::assertSame('hello', $result['greeting']);
+        self::assertSame(42, $result['answer']);
     }
 
     // ── fetchAll() returns assoc arrays ─────────────────────────
@@ -128,8 +128,8 @@ final class BaseRepositoryTest extends TestCase
     public function testFetchAllReturnsAssocArrays(): void
     {
         $result = $this->repo->fetchAll("SELECT 'a' as val UNION ALL SELECT 'b' as val");
-        $this->assertCount(2, $result);
-        $this->assertSame('a', $result[0]['val']);
-        $this->assertSame('b', $result[1]['val']);
+        self::assertCount(2, $result);
+        self::assertSame('a', $result[0]['val']);
+        self::assertSame('b', $result[1]['val']);
     }
 }

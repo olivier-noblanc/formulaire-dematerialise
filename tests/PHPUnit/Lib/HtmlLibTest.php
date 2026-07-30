@@ -19,19 +19,19 @@ final class HtmlLibTest extends TestCase
 
     public function testHEscapesHtml(): void
     {
-        $this->assertSame('&lt;script&gt;', $this->html->escape('<script>'));
-        $this->assertSame('&amp;', $this->html->escape('&'));
-        $this->assertSame('&quot;', $this->html->escape('"'));
+        self::assertSame('&lt;script&gt;', $this->html->escape('<script>'));
+        self::assertSame('&amp;', $this->html->escape('&'));
+        self::assertSame('&quot;', $this->html->escape('"'));
     }
 
     public function testHNullReturnsEmpty(): void
     {
-        $this->assertSame('', $this->html->escape(null));
+        self::assertSame('', $this->html->escape(null));
     }
 
     public function testHPreservesSafeText(): void
     {
-        $this->assertSame('hello world', $this->html->escape('hello world'));
+        self::assertSame('hello world', $this->html->escape('hello world'));
     }
 
     // ── displayUser() ───────────────────────────────────────────
@@ -39,7 +39,7 @@ final class HtmlLibTest extends TestCase
     public function testDisplayUserSameUser(): void
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
-        $this->assertSame(
+        self::assertSame(
             '<strong>Vous</strong>',
             $this->html->displayUser('olivier.noblanc@dreets.gouv.fr', $currentUser)
         );
@@ -49,73 +49,73 @@ final class HtmlLibTest extends TestCase
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
         $result = $this->html->displayUser('jean.dupont@dreets.gouv.fr', $currentUser);
-        $this->assertStringContainsString('jean.dupont', $result);
-        $this->assertStringNotContainsString('@dreets.gouv.fr', $result);
+        self::assertStringContainsString('jean.dupont', $result);
+        self::assertStringNotContainsString('@dreets.gouv.fr', $result);
     }
 
     public function testDisplayUserDifferentDomain(): void
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
         $result = $this->html->displayUser('jean@externe.fr', $currentUser);
-        $this->assertSame('jean@externe.fr', $result);
+        self::assertSame('jean@externe.fr', $result);
     }
 
     public function testDisplayUserEmpty(): void
     {
-        $this->assertSame('', $this->html->displayUser('', 'test@test.com'));
+        self::assertSame('', $this->html->displayUser('', 'test@test.com'));
     }
 
     public function testDisplayUserForceEmail(): void
     {
         $currentUser = 'olivier.noblanc@dreets.gouv.fr';
         $result = $this->html->displayUser('olivier.noblanc@dreets.gouv.fr', $currentUser, true);
-        $this->assertSame('olivier.noblanc@dreets.gouv.fr', $result);
+        self::assertSame('olivier.noblanc@dreets.gouv.fr', $result);
     }
 
     // ── displayUserShort() ─────────────────────────────────────
 
     public function testDisplayUserShortEmail(): void
     {
-        $this->assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc@dreets.gouv.fr'));
+        self::assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc@dreets.gouv.fr'));
     }
 
     public function testDisplayUserShortNoAt(): void
     {
-        $this->assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc'));
+        self::assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc'));
     }
 
     public function testDisplayUserShortWindows(): void
     {
-        $this->assertSame('olivier.noblanc', $this->html->displayUserShort('DREETS\\olivier.noblanc'));
+        self::assertSame('olivier.noblanc', $this->html->displayUserShort('DREETS\\olivier.noblanc'));
     }
 
     public function testDisplayUserShortEmpty(): void
     {
-        $this->assertSame('', $this->html->displayUserShort(''));
+        self::assertSame('', $this->html->displayUserShort(''));
     }
 
     // ── formatFileSize() ───────────────────────────────────────
 
     public function testFormatFileSizeBytes(): void
     {
-        $this->assertSame('0 o', $this->html->formatFileSize(0));
-        $this->assertSame('500 o', $this->html->formatFileSize(500));
+        self::assertSame('0 o', $this->html->formatFileSize(0));
+        self::assertSame('500 o', $this->html->formatFileSize(500));
     }
 
     public function testFormatFileSizeKo(): void
     {
-        $this->assertSame('1 Ko', $this->html->formatFileSize(1024));
+        self::assertSame('1 Ko', $this->html->formatFileSize(1024));
     }
 
     public function testFormatFileSizeMo(): void
     {
-        $this->assertSame('1 Mo', $this->html->formatFileSize(1024 * 1024));
+        self::assertSame('1 Mo', $this->html->formatFileSize(1024 * 1024));
     }
 
     public function testFormatFileSizeLarge(): void
     {
         $result = $this->html->formatFileSize(1024 * 1024 * 1024);
-        $this->assertStringContainsString('Go', $result);
+        self::assertStringContainsString('Go', $result);
     }
 
     // ── getFileIcon() ──────────────────────────────────────────
@@ -123,31 +123,31 @@ final class HtmlLibTest extends TestCase
     public function testGetFileIconImage(): void
     {
         $icon = $this->html->getFileIcon('image/png');
-        $this->assertNotEmpty($icon);
+        self::assertNotEmpty($icon);
     }
 
     public function testGetFileIconPdf(): void
     {
-        $this->assertSame('📄', $this->html->getFileIcon('application/pdf'));
+        self::assertSame('📄', $this->html->getFileIcon('application/pdf'));
     }
 
     public function testGetFileIconZip(): void
     {
-        $this->assertSame('📦', $this->html->getFileIcon('application/zip'));
+        self::assertSame('📦', $this->html->getFileIcon('application/zip'));
     }
 
     public function testGetFileIconWord(): void
     {
-        $this->assertSame('📝', $this->html->getFileIcon('application/msword'));
+        self::assertSame('📝', $this->html->getFileIcon('application/msword'));
     }
 
     public function testGetFileIconText(): void
     {
-        $this->assertSame('📃', $this->html->getFileIcon('text/plain'));
+        self::assertSame('📃', $this->html->getFileIcon('text/plain'));
     }
 
     public function testGetFileIconDefault(): void
     {
-        $this->assertSame('📎', $this->html->getFileIcon('application/octet-stream'));
+        self::assertSame('📎', $this->html->getFileIcon('application/octet-stream'));
     }
 }

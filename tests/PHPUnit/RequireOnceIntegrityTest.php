@@ -145,10 +145,10 @@ final class RequireOnceIntegrityTest extends TestCase
     public function testAllRequirePathsResolveToExistingFiles(): void
     {
         $files = self::getScannedFiles();
-        $this->assertNotEmpty($files, 'Aucun fichier PHP trouvé à scanner');
+        self::assertNotEmpty($files, 'Aucun fichier PHP trouvé à scanner');
 
         $requires = self::extractRequires($files);
-        $this->assertNotEmpty($requires, 'Aucun require/include trouvé');
+        self::assertNotEmpty($requires, 'Aucun require/include trouvé');
 
         $missing = [];
         $skipped = 0;
@@ -183,7 +183,7 @@ final class RequireOnceIntegrityTest extends TestCase
             }
         }
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $missing,
             count($missing) . ' referenced file(s) by require/include DO NOT EXIST:\n'
             . implode("\n", $missing)
@@ -234,7 +234,7 @@ final class RequireOnceIntegrityTest extends TestCase
             }
         }
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $stale,
             count($stale) . ' stale require_once to lib/ in controllers:\n'
             . implode("\n", $stale)

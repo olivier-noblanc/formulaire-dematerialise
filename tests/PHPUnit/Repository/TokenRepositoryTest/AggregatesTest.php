@@ -19,10 +19,10 @@ final class AggregatesTest extends Base
 
         $result = $this->repo->findStepsBySubmissionIds([$subId]);
 
-        $this->assertArrayHasKey($subId, $result);
-        $this->assertCount(1, $result[$subId]);
-        $this->assertSame('Étape 1', $result[$subId][0]['label']);
-        $this->assertNotNull($result[$subId][0]['dones']);
+        self::assertArrayHasKey($subId, $result);
+        self::assertCount(1, $result[$subId]);
+        self::assertSame('Étape 1', $result[$subId][0]['label']);
+        self::assertNotNull($result[$subId][0]['dones']);
     }
 
     public function testFindStepsBySubmissionIdsHasNullDonesWithoutToken(): void
@@ -32,13 +32,13 @@ final class AggregatesTest extends Base
 
         $result = $this->repo->findStepsBySubmissionIds([$subId]);
 
-        $this->assertArrayHasKey($subId, $result);
-        $this->assertNull($result[$subId][0]['dones']);
+        self::assertArrayHasKey($subId, $result);
+        self::assertNull($result[$subId][0]['dones']);
     }
 
     public function testFindStepsBySubmissionIdsReturnsEmptyArrayForEmptyInput(): void
     {
-        $this->assertSame([], $this->repo->findStepsBySubmissionIds([]));
+        self::assertSame([], $this->repo->findStepsBySubmissionIds([]));
     }
 
     // ── deleteBySubmissionIds() ──────────────────────────────────
@@ -52,13 +52,13 @@ final class AggregatesTest extends Base
 
         $deleted = $this->repo->deleteBySubmissionIds([$subId]);
 
-        $this->assertSame(2, $deleted);
-        $this->assertSame([], $this->repo->findForExport($subId));
+        self::assertSame(2, $deleted);
+        self::assertSame([], $this->repo->findForExport($subId));
     }
 
     public function testDeleteBySubmissionIdsReturnsZeroForEmptyInput(): void
     {
-        $this->assertSame(0, $this->repo->deleteBySubmissionIds([]));
+        self::assertSame(0, $this->repo->deleteBySubmissionIds([]));
     }
 
     // ── countPurgeableByCutoff() ──────────────────────────────────
@@ -71,7 +71,7 @@ final class AggregatesTest extends Base
 
         $count = $this->repo->countPurgeableByCutoff(gmdate('Y-m-d H:i:s', strtotime('-30 days')));
 
-        $this->assertGreaterThanOrEqual(1, $count);
+        self::assertGreaterThanOrEqual(1, $count);
     }
 
     public function testCountPurgeableByCutoffExcludesRecentlyClosedSubmission(): void
@@ -82,7 +82,7 @@ final class AggregatesTest extends Base
 
         $count = $this->repo->countPurgeableByCutoff(gmdate('Y-m-d H:i:s', strtotime('-30 days')));
 
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
     }
 
     public function testCountPurgeableByCutoffExcludesOpenSubmission(): void
@@ -93,7 +93,7 @@ final class AggregatesTest extends Base
 
         $count = $this->repo->countPurgeableByCutoff(gmdate('Y-m-d H:i:s', strtotime('+1 day')));
 
-        $this->assertSame(0, $count);
+        self::assertSame(0, $count);
     }
 
     // ── countPendingBySubmissionIds() ────────────────────────────
@@ -110,8 +110,8 @@ final class AggregatesTest extends Base
 
         $result = $this->repo->countPendingBySubmissionIds([$sub1, $sub2]);
 
-        $this->assertSame(2, $result[$sub1]);
-        $this->assertSame(1, $result[$sub2]);
+        self::assertSame(2, $result[$sub1]);
+        self::assertSame(1, $result[$sub2]);
     }
 
     public function testCountPendingBySubmissionIdsOmitsSubmissionWithoutPendingTokens(): void
@@ -122,11 +122,11 @@ final class AggregatesTest extends Base
 
         $result = $this->repo->countPendingBySubmissionIds([$subId]);
 
-        $this->assertArrayNotHasKey($subId, $result);
+        self::assertArrayNotHasKey($subId, $result);
     }
 
     public function testCountPendingBySubmissionIdsReturnsEmptyArrayForEmptyInput(): void
     {
-        $this->assertSame([], $this->repo->countPendingBySubmissionIds([]));
+        self::assertSame([], $this->repo->countPendingBySubmissionIds([]));
     }
 }

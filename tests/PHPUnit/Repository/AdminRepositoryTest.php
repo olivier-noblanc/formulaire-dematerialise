@@ -21,19 +21,19 @@ final class AdminRepositoryTest extends TestCase
     public function testFindByEmailReturnsNullForNonexistent(): void
     {
         $result = $this->repo->findByEmail('nonexistent@test.com');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testIsAdminReturnsBool(): void
     {
         $result = $this->repo->isAdmin('test@test.com');
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 
     public function testGetAllReturnsArray(): void
     {
         $result = $this->repo->getAll();
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testAddAndReadBackRoundTrip(): void
@@ -47,15 +47,15 @@ final class AdminRepositoryTest extends TestCase
         $stmt->execute([\generate_uuid(), $email]);
 
         $fetched = $this->repo->findByEmail($email);
-        $this->assertNotNull($fetched);
-        $this->assertSame($email, $fetched['email']);
+        self::assertNotNull($fetched);
+        self::assertSame($email, $fetched['email']);
 
-        $this->assertTrue($this->repo->isAdmin($email));
+        self::assertTrue($this->repo->isAdmin($email));
 
         $removed = $this->repo->execute('DELETE FROM admins WHERE email = ?', [$email]);
-        $this->assertTrue($removed);
-        $this->assertNull($this->repo->findByEmail($email));
-        $this->assertFalse($this->repo->isAdmin($email));
+        self::assertTrue($removed);
+        self::assertNull($this->repo->findByEmail($email));
+        self::assertFalse($this->repo->isAdmin($email));
     }
 
     // ── isSuperAdmin() ──────────────────────────────────────────
@@ -63,27 +63,27 @@ final class AdminRepositoryTest extends TestCase
     public function testIsSuperAdminReturnsBool(): void
     {
         $result = $this->repo->isSuperAdmin('anyone@test.com');
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 
     public function testIsSuperAdminReturnsTrueForAdminEmail(): void
     {
         $adminEmail = $this->repo->getSuperAdminEmail();
         if ($adminEmail !== '') {
-            $this->assertTrue($this->repo->isSuperAdmin($adminEmail));
+            self::assertTrue($this->repo->isSuperAdmin($adminEmail));
         }
     }
 
     public function testIsSuperAdminReturnsFalseForRandomEmail(): void
     {
-        $this->assertFalse($this->repo->isSuperAdmin('random_' . uniqid() . '@test.com'));
+        self::assertFalse($this->repo->isSuperAdmin('random_' . uniqid() . '@test.com'));
     }
 
     public function testIsSuperAdminIsCaseInsensitive(): void
     {
         $adminEmail = $this->repo->getSuperAdminEmail();
         if ($adminEmail !== '') {
-            $this->assertTrue($this->repo->isSuperAdmin(strtoupper($adminEmail)));
+            self::assertTrue($this->repo->isSuperAdmin(strtoupper($adminEmail)));
         }
     }
 
@@ -92,7 +92,7 @@ final class AdminRepositoryTest extends TestCase
     public function testGetSuperAdminEmailReturnsString(): void
     {
         $email = $this->repo->getSuperAdminEmail();
-        $this->assertIsString($email);
+        self::assertIsString($email);
     }
 
     // ── getAll() ─────────────────────────────────────────────────
@@ -100,9 +100,9 @@ final class AdminRepositoryTest extends TestCase
     public function testGetAllReturnsArrayOfAdmins(): void
     {
         $admins = $this->repo->getAll();
-        $this->assertIsArray($admins);
+        self::assertIsArray($admins);
         foreach ($admins as $admin) {
-            $this->assertArrayHasKey('email', $admin);
+            self::assertArrayHasKey('email', $admin);
         }
     }
 
@@ -117,17 +117,17 @@ final class AdminRepositoryTest extends TestCase
         $db->getPdo()->prepare("INSERT OR IGNORE INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))")
             ->execute([\generate_uuid(), $email]);
 
-        $this->assertTrue($this->repo->isAdmin($email));
+        self::assertTrue($this->repo->isAdmin($email));
 
         $this->repo->execute('DELETE FROM admins WHERE email = ?', [$email]);
-        $this->assertFalse($this->repo->isAdmin($email));
+        self::assertFalse($this->repo->isAdmin($email));
     }
 
     public function testRemoveNonexistentReturnsTrue(): void
     {
         // DELETE on non-existent row returns true (0 rows affected, but no error)
         $result = $this->repo->execute('DELETE FROM admins WHERE email = ?', ['nonexistent_' . uniqid() . '@test.com']);
-        $this->assertTrue($result);
+        self::assertTrue($result);
     }
 
     // ── approveRequest() ────────────────────────────────────────
@@ -135,7 +135,7 @@ final class AdminRepositoryTest extends TestCase
     public function testApproveRequestReturnsFalseForNonexistent(): void
     {
         $result = $this->repo->approveRequest('nonexistent-id', 'approver@test.com');
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testApproveRequestAddsAdminAndUpdatesStatus(): void
@@ -150,10 +150,10 @@ final class AdminRepositoryTest extends TestCase
 
         try {
             $result = $this->repo->approveRequest($arId, 'reviewer@test.com');
-            $this->assertTrue($result);
+            self::assertTrue($result);
 
             // Verify admin was added
-            $this->assertTrue($this->repo->isAdmin($email));
+            self::assertTrue($this->repo->isAdmin($email));
         } catch (\PDOException $e) {
             if (str_contains($e->getMessage(), 'reviewed_at')) {
                 $this->markTestSkipped('admin_requests table missing reviewed_at column');
@@ -179,11 +179,11 @@ final class AdminRepositoryTest extends TestCase
 
         try {
             $result = $this->repo->rejectRequest($arId, 'reviewer@test.com');
-            $this->assertTrue($result);
+            self::assertTrue($result);
 
             $check = $pdo->prepare("SELECT status FROM admin_requests WHERE id = ?");
             $check->execute([$arId]);
-            $this->assertSame('rejected', $check->fetchColumn());
+            self::assertSame('rejected', $check->fetchColumn());
         } catch (\PDOException $e) {
             if (str_contains($e->getMessage(), 'reviewed_at')) {
                 $this->markTestSkipped('admin_requests table missing reviewed_at column');
@@ -204,8 +204,8 @@ final class AdminRepositoryTest extends TestCase
             ->execute([\generate_uuid(), $email]);
 
         try {
-            $this->assertNotNull($this->repo->findByEmail(strtoupper($email)));
-            $this->assertNotNull($this->repo->findByEmail(strtolower($email)));
+            self::assertNotNull($this->repo->findByEmail(strtoupper($email)));
+            self::assertNotNull($this->repo->findByEmail(strtolower($email)));
         } finally {
             $this->repo->execute('DELETE FROM admins WHERE email = ?', [$email]);
         }

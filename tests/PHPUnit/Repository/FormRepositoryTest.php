@@ -19,20 +19,20 @@ final class FormRepositoryTest extends TestCase
     public function testFindByIdReturnsNullForNonexistent(): void
     {
         $result = $this->repo->findById('nonexistent');
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testFindAllReturnsArray(): void
     {
         $result = $this->repo->findAll();
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testGetFieldsReturnsArray(): void
     {
         $result = $this->repo->getFields('nonexistent');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     // ── findAll() with activeOnly ───────────────────────────────
@@ -40,14 +40,14 @@ final class FormRepositoryTest extends TestCase
     public function testFindAllActiveOnlyReturnsArray(): void
     {
         $result = $this->repo->findAll(true);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testFindAllActiveOnlyReturnsOnlyActiveForms(): void
     {
         $result = $this->repo->findAll(true);
         foreach ($result as $form) {
-            $this->assertSame(1, (int)$form['actif']);
+            self::assertSame(1, (int)$form['actif']);
         }
     }
 
@@ -56,7 +56,7 @@ final class FormRepositoryTest extends TestCase
     public function testGetStepsReturnsArray(): void
     {
         $result = $this->repo->getSteps('nonexistent');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 }

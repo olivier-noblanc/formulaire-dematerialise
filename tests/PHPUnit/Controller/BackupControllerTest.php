@@ -159,20 +159,20 @@ final class BackupControllerTest extends TestCase
     {
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Sauvegarde et restauration', $output);
-        $this->assertStringContainsString('Statistiques de la base de données', $output);
-        $this->assertStringContainsString('Télécharger une sauvegarde', $output);
-        $this->assertStringContainsString('Restaurer la base de données', $output);
-        $this->assertStringContainsString('Purger les anciennes données', $output);
+        self::assertStringContainsString('Sauvegarde et restauration', $output);
+        self::assertStringContainsString('Statistiques de la base de données', $output);
+        self::assertStringContainsString('Télécharger une sauvegarde', $output);
+        self::assertStringContainsString('Restaurer la base de données', $output);
+        self::assertStringContainsString('Purger les anciennes données', $output);
         // Les forms ont les bons inputs hidden pour les actions
-        $this->assertStringContainsString('name="action" value="download_backup"', $output);
-        $this->assertStringContainsString('name="action" value="restore_backup"', $output);
-        $this->assertStringContainsString('name="action" value="purge_count"', $output);
+        self::assertStringContainsString('name="action" value="download_backup"', $output);
+        self::assertStringContainsString('name="action" value="restore_backup"', $output);
+        self::assertStringContainsString('name="action" value="purge_count"', $output);
         // Le select de purge_months propose 6/12/18/24 mois
-        $this->assertStringContainsString('<option value="6">6 mois</option>', $output);
-        $this->assertStringContainsString('<option value="12" selected>12 mois</option>', $output);
-        $this->assertStringContainsString('<option value="18">18 mois</option>', $output);
-        $this->assertStringContainsString('<option value="24">24 mois</option>', $output);
+        self::assertStringContainsString('<option value="6">6 mois</option>', $output);
+        self::assertStringContainsString('<option value="12" selected>12 mois</option>', $output);
+        self::assertStringContainsString('<option value="18">18 mois</option>', $output);
+        self::assertStringContainsString('<option value="24">24 mois</option>', $output);
     }
 
     /**
@@ -186,13 +186,13 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Nombre d\'enregistrements par table', $output);
-        $this->assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">forms</td>', $output);
-        $this->assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">submissions</td>', $output);
-        $this->assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">tokens</td>', $output);
-        $this->assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">audit_log</td>', $output);
+        self::assertStringContainsString('Nombre d\'enregistrements par table', $output);
+        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">forms</td>', $output);
+        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">submissions</td>', $output);
+        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">tokens</td>', $output);
+        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">audit_log</td>', $output);
         // Ligne Total
-        $this->assertStringContainsString('<td>Total</td>', $output);
+        self::assertStringContainsString('<td>Total</td>', $output);
     }
 
     // ── Tests POST access control ─────────────────────────────
@@ -217,9 +217,9 @@ final class BackupControllerTest extends TestCase
             expectJsonCapture: true
         );
 
-        $this->assertNotNull($GLOBALS['_test_captured_json'], 'requireAdmin doit appeler test_json_response');
-        $this->assertSame('Accès refusé', $GLOBALS['_test_captured_json']['error']);
-        $this->assertSame('index.php?p=admin_access', $GLOBALS['_test_captured_json']['redirect']);
+        self::assertNotNull($GLOBALS['_test_captured_json'], 'requireAdmin doit appeler test_json_response');
+        self::assertSame('Accès refusé', $GLOBALS['_test_captured_json']['error']);
+        self::assertSame('index.php?p=admin_access', $GLOBALS['_test_captured_json']['redirect']);
     }
 
     // ── Tests POST restore_backup ─────────────────────────────
@@ -236,9 +236,9 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Sauvegarde et restauration', $output);
+        self::assertStringContainsString('Sauvegarde et restauration', $output);
         // Le message d'erreur est HTML-escaped (apostrophe → &apos;)
-        $this->assertStringContainsString('Aucun fichier n&apos;a été téléchargé', $output);
+        self::assertStringContainsString('Aucun fichier n&apos;a été téléchargé', $output);
     }
 
     /**
@@ -261,8 +261,8 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Seuls les fichiers .db sont acceptés', $output);
-        $this->assertStringContainsString('malicious.exe', $output);
+        self::assertStringContainsString('Seuls les fichiers .db sont acceptés', $output);
+        self::assertStringContainsString('malicious.exe', $output);
     }
 
     /**
@@ -291,7 +291,7 @@ final class BackupControllerTest extends TestCase
         try {
             $output = $this->captureOutput(fn() => (new BackupController())->handle());
             // HTML-escaped : « n'est » → « n&apos;est »
-            $this->assertStringContainsString('n&apos;est pas une base de données SQLite valide', $output);
+            self::assertStringContainsString('n&apos;est pas une base de données SQLite valide', $output);
         } finally {
             @unlink($corruptPath);
         }
@@ -330,7 +330,7 @@ final class BackupControllerTest extends TestCase
             $output = $this->captureOutput(fn() => (new BackupController())->handle());
             // Le controller doit soit dire "Impossible de remplacer" (move_uploaded_file = false en CLI),
             // soit restaurer avec succès si l'environnement simule l'upload. On accepte les deux.
-            $this->assertTrue(
+            self::assertTrue(
                 str_contains($output, 'Impossible de remplacer le fichier de base de données')
                 || str_contains($output, 'a été restaurée avec succès'),
                 'Le controller doit soit signaler un échec de move, soit un succès de restauration. Output: ' . substr($output, 0, 500)
@@ -353,7 +353,7 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Valeur de mois invalide', $output);
+        self::assertStringContainsString('Valeur de mois invalide', $output);
     }
 
     /**
@@ -370,15 +370,15 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Récapitulatif de la purge', $output);
-        $this->assertStringContainsString('données clôturées depuis plus de 12 mois', $output);
+        self::assertStringContainsString('Récapitulatif de la purge', $output);
+        self::assertStringContainsString('données clôturées depuis plus de 12 mois', $output);
         // Le recap doit contenir les 4 compteurs (avec valeurs à 0 si pas de vieilles données)
-        $this->assertStringContainsString('Soumission(s)', $output);
-        $this->assertStringContainsString('Token(s)', $output);
-        $this->assertStringContainsString('Alerte(s)', $output);
-        $this->assertStringContainsString('Donnée(s) validateur', $output);
+        self::assertStringContainsString('Soumission(s)', $output);
+        self::assertStringContainsString('Token(s)', $output);
+        self::assertStringContainsString('Alerte(s)', $output);
+        self::assertStringContainsString('Donnée(s) validateur', $output);
         // Sans données purgeables : message « Aucune donnée à purger » (rendu par BackupRenderer)
-        $this->assertStringContainsString('Aucune donnée à purger pour cette période', $output);
+        self::assertStringContainsString('Aucune donnée à purger pour cette période', $output);
     }
 
     /**
@@ -395,7 +395,7 @@ final class BackupControllerTest extends TestCase
 
         $pdo = $this->db->getPdo();
         $count = (int) $pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'purge_data'")->fetchColumn();
-        $this->assertSame(0, $count, 'purge_count ne doit pas loguer dans audit_log');
+        self::assertSame(0, $count, 'purge_count ne doit pas loguer dans audit_log');
     }
 
     // ── Tests POST purge_confirm ──────────────────────────────
@@ -411,7 +411,7 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Aucune soumission à purger pour la période de 12 mois', $output);
+        self::assertStringContainsString('Aucune soumission à purger pour la période de 12 mois', $output);
     }
 
     /**
@@ -431,24 +431,24 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Purge effectuée avec succès', $output);
+        self::assertStringContainsString('Purge effectuée avec succès', $output);
         // Le successMsg contient <strong>N</strong> pour chaque compteur, mais
         // ErrorRenderer::messages() HTML-escape le texte → on cherche la version escaped.
-        $this->assertStringContainsString('&lt;strong&gt;1&lt;/strong&gt; soumission(s)', $output);
+        self::assertStringContainsString('&lt;strong&gt;1&lt;/strong&gt; soumission(s)', $output);
         // Et le détail des compteurs
-        $this->assertStringContainsString('token(s)', $output);
-        $this->assertStringContainsString('alerte(s)', $output);
-        $this->assertStringContainsString('donnée(s) validateur', $output);
+        self::assertStringContainsString('token(s)', $output);
+        self::assertStringContainsString('alerte(s)', $output);
+        self::assertStringContainsString('donnée(s) validateur', $output);
 
         // Side-effect DB : la soumission est supprimée
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE id = ?");
         $stmt->execute([$oldSubId]);
-        $this->assertSame(0, (int) $stmt->fetchColumn(), 'La soumission purgeable doit être supprimée');
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'La soumission purgeable doit être supprimée');
 
         // audit_log : entrée purge_data créée
         $auditStmt = $pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'purge_data'");
-        $this->assertGreaterThanOrEqual(1, (int) $auditStmt->fetchColumn(), 'Une entrée audit_log purge_data doit être créée');
+        self::assertGreaterThanOrEqual(1, (int) $auditStmt->fetchColumn(), 'Une entrée audit_log purge_data doit être créée');
 
         // Retirer l'ID de la liste de cleanup (déjà supprimé par le controller)
         $this->createdSubmissionIds = array_diff($this->createdSubmissionIds, [$oldSubId]);
@@ -472,7 +472,7 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Le fichier de base de données est introuvable', $output);
+        self::assertStringContainsString('Le fichier de base de données est introuvable', $output);
     }
 
     /**
@@ -486,10 +486,10 @@ final class BackupControllerTest extends TestCase
 
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
-        $this->assertStringContainsString('Sauvegarde et restauration', $output);
+        self::assertStringContainsString('Sauvegarde et restauration', $output);
         // Ni message de succès, ni message d'erreur
-        $this->assertStringNotContainsString('msg-success', $output);
-        $this->assertStringNotContainsString('msg-error', $output);
+        self::assertStringNotContainsString('msg-success', $output);
+        self::assertStringNotContainsString('msg-error', $output);
     }
 
     // ── Helpers ───────────────────────────────────────────────

@@ -19,13 +19,13 @@ final class AuditRepositoryTest extends TestCase
     public function testLogReturnsBool(): void
     {
         $result = $this->repo->log('test_action', 'target', 'detail', 'test@test.com');
-        $this->assertTrue($result);
+        self::assertTrue($result);
     }
 
     public function testGetLogsReturnsArray(): void
     {
         $result = $this->repo->getLogs(10);
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     public function testLogAndReadBackRoundTrip(): void
@@ -36,20 +36,20 @@ final class AuditRepositoryTest extends TestCase
         $actor = 'tester@test.com';
 
         $logged = $this->repo->log($action, $target, $detail, $actor);
-        $this->assertTrue($logged);
+        self::assertTrue($logged);
 
         $logs = $this->repo->getLogs(10, $action);
-        $this->assertNotEmpty($logs);
+        self::assertNotEmpty($logs);
 
         $found = false;
         foreach ($logs as $entry) {
             if ($entry['action'] === $action && $entry['actor'] === $actor) {
-                $this->assertSame($target, $entry['target']);
-                $this->assertSame($detail, $entry['detail']);
+                self::assertSame($target, $entry['target']);
+                self::assertSame($detail, $entry['detail']);
                 $found = true;
                 break;
             }
         }
-        $this->assertTrue($found, 'Logged entry not found in getLogs results');
+        self::assertTrue($found, 'Logged entry not found in getLogs results');
     }
 }

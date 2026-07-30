@@ -49,57 +49,57 @@ final class ValidatorDataServiceTest extends TestCase
     public function testGetSubmissionValidatorDataReturnsEmptyForNonexistent(): void
     {
         $result = $this->service->getSubmissionValidatorData('nonexistent-id');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testGetSubmissionValidatorDataWithStepReturnsEmpty(): void
     {
         $result = $this->service->getSubmissionValidatorData('nonexistent-id', 'nonexistent-step');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testDeleteValidatorDataDoesNotThrow(): void
     {
         $this->service->deleteValidatorData('nonexistent-sub', 'nonexistent-field');
         // No exception = pass
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testGetFormValidatorFieldsReturnsEmptyForNonexistentForm(): void
     {
         $result = $this->service->getFormValidatorFields('nonexistent-form-id');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testGetFormValidatorFieldsWithStepReturnsEmpty(): void
     {
         $result = $this->service->getFormValidatorFields('nonexistent-form-id', 'nonexistent-step');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testGetFormFieldsReturnsEmptyForNonexistentForm(): void
     {
         $result = $this->service->getFormFields('nonexistent-form-id');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testGetFormFieldsWithFilledByReturnsEmpty(): void
     {
         $result = $this->service->getFormFields('nonexistent-form-id', 'validator');
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testGetValidatorStatusBatchReturnsEmptyForEmptyInput(): void
     {
         $result = $this->service->getValidatorStatusBatch([]);
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testGetValidatorStatusBatchReturnsEmptyForInvalidSubmissions(): void
@@ -108,8 +108,8 @@ final class ValidatorDataServiceTest extends TestCase
             ['id' => '', 'form_id' => ''],
             ['form_id' => 'valid-form'],
         ]);
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        self::assertIsArray($result);
+        self::assertEmpty($result);
     }
 
     public function testGetValidatorStatusBatchWithRealData(): void
@@ -137,10 +137,10 @@ final class ValidatorDataServiceTest extends TestCase
             ['id' => $subId, 'form_id' => $formId],
         ]);
 
-        $this->assertArrayHasKey($subId, $result);
-        $this->assertSame(1, $result[$subId]['total']);
-        $this->assertSame(0, $result[$subId]['filled']);
-        $this->assertFalse($result[$subId]['complet']);
+        self::assertArrayHasKey($subId, $result);
+        self::assertSame(1, $result[$subId]['total']);
+        self::assertSame(0, $result[$subId]['filled']);
+        self::assertFalse($result[$subId]['complet']);
     }
 
     public function testSaveAndRetrieveValidatorData(): void
@@ -167,14 +167,14 @@ final class ValidatorDataServiceTest extends TestCase
 
         // Retrieve it
         $result = $this->service->getSubmissionValidatorData($subId);
-        $this->assertNotEmpty($result);
-        $this->assertSame($fieldName, $result[0]['field_name']);
-        $this->assertSame('Approuvé', $result[0]['value']);
+        self::assertNotEmpty($result);
+        self::assertSame($fieldName, $result[0]['field_name']);
+        self::assertSame('Approuvé', $result[0]['value']);
 
         // Delete it
         $this->service->deleteValidatorData($subId, $fieldName);
         $afterDelete = $this->service->getSubmissionValidatorData($subId);
-        $this->assertEmpty($afterDelete);
+        self::assertEmpty($afterDelete);
     }
 
     public function testValidatorStatusBatchWithFilledData(): void
@@ -202,9 +202,9 @@ final class ValidatorDataServiceTest extends TestCase
             ['id' => $subId, 'form_id' => $formId],
         ]);
 
-        $this->assertArrayHasKey($subId, $result);
-        $this->assertSame(1, $result[$subId]['total']);
-        $this->assertSame(1, $result[$subId]['filled']);
-        $this->assertTrue($result[$subId]['complet']);
+        self::assertArrayHasKey($subId, $result);
+        self::assertSame(1, $result[$subId]['total']);
+        self::assertSame(1, $result[$subId]['filled']);
+        self::assertTrue($result[$subId]['complet']);
     }
 }

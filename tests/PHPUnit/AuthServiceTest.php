@@ -33,15 +33,15 @@ final class AuthServiceTest extends TestCase
     public function testGetUserReturnsEmailInTestMode(): void
     {
         $user = $this->auth->getUser();
-        $this->assertNotEmpty($user);
-        $this->assertStringContainsString('@', $user);
+        self::assertNotEmpty($user);
+        self::assertStringContainsString('@', $user);
     }
 
     public function testGetUserFromTestHeader(): void
     {
         $_SERVER['HTTP_X_TEST_USER'] = 'test@example.com';
         $user = $this->auth->getUser();
-        $this->assertSame('test@example.com', $user);
+        self::assertSame('test@example.com', $user);
     }
 
     public function testGetUserFromAuthUser(): void
@@ -49,8 +49,8 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['HTTP_X_TEST_USER']);
         $_SERVER['AUTH_USER'] = 'DREETS\\test.user';
         $user = $this->auth->getUser();
-        $this->assertStringContainsString('test.user', $user);
-        $this->assertStringContainsString('@', $user);
+        self::assertStringContainsString('test.user', $user);
+        self::assertStringContainsString('@', $user);
     }
 
     public function testGetUserFromAuthUserWithoutBackslash(): void
@@ -58,15 +58,15 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['HTTP_X_TEST_USER']);
         $_SERVER['AUTH_USER'] = 'simpleuser';
         $user = $this->auth->getUser();
-        $this->assertStringContainsString('simpleuser', $user);
-        $this->assertStringContainsString('@', $user);
+        self::assertStringContainsString('simpleuser', $user);
+        self::assertStringContainsString('@', $user);
     }
 
     public function testGetUserTrimsAndLowercases(): void
     {
         $_SERVER['HTTP_X_TEST_USER'] = '  Test.User@Example.COM  ';
         $user = $this->auth->getUser();
-        $this->assertSame('test.user@example.com', $user);
+        self::assertSame('test.user@example.com', $user);
     }
 
     public function testGetUserFromAuthUserWithEmailFormat(): void
@@ -74,7 +74,7 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['HTTP_X_TEST_USER']);
         $_SERVER['AUTH_USER'] = 'user@domain.fr';
         $user = $this->auth->getUser();
-        $this->assertSame('user@domain.fr', $user);
+        self::assertSame('user@domain.fr', $user);
     }
 
     public function testGetUserReturnsEmptyWhenNoHeaders(): void
@@ -83,7 +83,7 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
         unset($_SERVER['REMOTE_USER']);
         $user = $this->auth->getUser();
-        $this->assertSame('', $user);
+        self::assertSame('', $user);
     }
 
     // ── getEmailDomain() ────────────────────────────────────────
@@ -91,8 +91,8 @@ final class AuthServiceTest extends TestCase
     public function testGetEmailDomain(): void
     {
         $domain = $this->auth->getEmailDomain();
-        $this->assertNotEmpty($domain);
-        $this->assertStringContainsString('.', $domain);
+        self::assertNotEmpty($domain);
+        self::assertStringContainsString('.', $domain);
     }
 
     public function testGetEmailDomainReturnsDefaultWhenNoConstant(): void
@@ -100,8 +100,8 @@ final class AuthServiceTest extends TestCase
         // EMAIL_DOMAIN comes from SETTINGS_DEFAULTS which is always defined
         // Just verify it returns a sensible default
         $domain = $this->auth->getEmailDomain();
-        $this->assertIsString($domain);
-        $this->assertNotEmpty($domain);
+        self::assertIsString($domain);
+        self::assertNotEmpty($domain);
     }
 
     // ── getAdminEmail() ─────────────────────────────────────────
@@ -109,14 +109,14 @@ final class AuthServiceTest extends TestCase
     public function testGetAdminEmail(): void
     {
         $email = $this->auth->getAdminEmail();
-        $this->assertNotEmpty($email);
-        $this->assertStringContainsString('@', $email);
+        self::assertNotEmpty($email);
+        self::assertStringContainsString('@', $email);
     }
 
     public function testGetAdminEmailReturnsValidEmail(): void
     {
         $email = $this->auth->getAdminEmail();
-        $this->assertNotFalse(filter_var($email, FILTER_VALIDATE_EMAIL));
+        self::assertNotFalse(filter_var($email, FILTER_VALIDATE_EMAIL));
     }
 
     // ── isAdmin() ───────────────────────────────────────────────
@@ -124,7 +124,7 @@ final class AuthServiceTest extends TestCase
     public function testIsAdminReturnsBoolean(): void
     {
         $result = $this->auth->isAdmin();
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 
     // ── isSuperAdmin() ──────────────────────────────────────────
@@ -132,7 +132,7 @@ final class AuthServiceTest extends TestCase
     public function testIsSuperAdminReturnsBoolean(): void
     {
         $result = $this->auth->isSuperAdmin();
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 
     public function testIsSuperAdminFalseWhenNotMatchingAdminEmail(): void
@@ -141,7 +141,7 @@ final class AuthServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'notadmin@example.com';
         unset($_SERVER['AUTH_USER']);
         $result = $this->auth->isSuperAdmin();
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testIsSuperAdminTrueWhenMatchingAdminEmail(): void
@@ -150,7 +150,7 @@ final class AuthServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = $adminEmail;
         unset($_SERVER['AUTH_USER']);
         $result = $this->auth->isSuperAdmin();
-        $this->assertTrue($result);
+        self::assertTrue($result);
     }
 
     // ── isAdminEffective() ──────────────────────────────────────
@@ -158,7 +158,7 @@ final class AuthServiceTest extends TestCase
     public function testIsAdminEffectiveReturnsBoolean(): void
     {
         $result = $this->auth->isAdminEffective();
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 
     public function testIsAdminEffectiveFalseWhenNotAdmin(): void
@@ -166,24 +166,24 @@ final class AuthServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'regularuser@example.com';
         unset($_SERVER['AUTH_USER']);
         $result = $this->auth->isAdminEffective();
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testIsAdminEffectiveFalseWhenPersonaActive(): void
     {
         // Test 1: admin without persona token → effective
         $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
-        $this->assertTrue($this->auth->isAdminEffective(), 'Admin without persona should be effective');
+        self::assertTrue($this->auth->isAdminEffective(), 'Admin without persona should be effective');
 
         // Test 2: non-admin → not effective
         $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
-        $this->assertFalse($this->auth->isAdminEffective(), 'Non-admin should not be effective');
+        self::assertFalse($this->auth->isAdminEffective(), 'Non-admin should not be effective');
 
         // Test 3: admin with persona_token set → persona_lookup is called
         $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         $_GET['persona_token'] = 'test-token-' . uniqid();
         $effective = $this->auth->isAdminEffective();
-        $this->assertIsBool($effective);
+        self::assertIsBool($effective);
         unset($_GET['persona_token']);
     }
 
@@ -202,7 +202,7 @@ final class AuthServiceTest extends TestCase
             }
             $_SESSION['_session_initialized'] = false;
             $this->auth->requireAdmin();
-            $this->assertTrue($_SESSION['_session_initialized'] ?? false);
+            self::assertTrue($_SESSION['_session_initialized'] ?? false);
         } else {
             $this->markTestSkipped('Test user is not admin in test DB');
         }
@@ -212,12 +212,12 @@ final class AuthServiceTest extends TestCase
     {
         // requireAdmin() calls exit when user is not admin.
         // We verify the method exists and is callable rather than triggering exit.
-        $this->assertTrue(method_exists($this->auth, 'requireAdmin'));
+        self::assertTrue(method_exists($this->auth, 'requireAdmin'));
         $reflection = new \ReflectionMethod($this->auth, 'requireAdmin');
-        $this->assertTrue($reflection->isPublic());
+        self::assertTrue($reflection->isPublic());
         $returnType = $reflection->getReturnType();
-        $this->assertNotNull($returnType);
-        $this->assertSame('void', (string) $returnType);
+        self::assertNotNull($returnType);
+        self::assertSame('void', (string) $returnType);
     }
 
     // ── isFormOwner() ───────────────────────────────────────────
@@ -225,7 +225,7 @@ final class AuthServiceTest extends TestCase
     public function testIsFormOwnerReturnsFalseForNonexistentForm(): void
     {
         $result = $this->auth->isFormOwner('nonexistent-form-id', 'test@example.com');
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testIsFormOwnerReturnsFalseForUnownedForm(): void
@@ -236,7 +236,7 @@ final class AuthServiceTest extends TestCase
             $this->markTestSkipped('No forms in test DB');
         }
         $result = $this->auth->isFormOwner($formId, 'nobody_owns_this@example.com');
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testIsFormOwnerReturnsTrueForExistingOwner(): void
@@ -257,7 +257,7 @@ final class AuthServiceTest extends TestCase
 
         try {
             $result = $this->auth->isFormOwner($formId, $testEmail);
-            $this->assertTrue($result);
+            self::assertTrue($result);
         } finally {
             // Clean up
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
@@ -283,7 +283,7 @@ final class AuthServiceTest extends TestCase
 
         try {
             $result = $this->auth->isFormOwner($formId);
-            $this->assertTrue($result);
+            self::assertTrue($result);
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
                 ->execute([$formId, $currentUser]);
@@ -307,7 +307,7 @@ final class AuthServiceTest extends TestCase
 
         try {
             $forms = $this->auth->getOwnedForms($testEmail);
-            $this->assertIsArray($forms);
+            self::assertIsArray($forms);
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
                 ->execute([$formId, $testEmail]);
@@ -317,8 +317,8 @@ final class AuthServiceTest extends TestCase
     public function testGetOwnedFormsReturnsEmptyForUnknownEmail(): void
     {
         $forms = $this->auth->getOwnedForms('nobody@nowhere.test');
-        $this->assertIsArray($forms);
-        $this->assertEmpty($forms);
+        self::assertIsArray($forms);
+        self::assertEmpty($forms);
     }
 
     public function testGetOwnedFormsContainsOwnedForm(): void
@@ -337,7 +337,7 @@ final class AuthServiceTest extends TestCase
         try {
             $forms = $this->auth->getOwnedForms($testEmail);
             $ids = array_column($forms, 'id');
-            $this->assertContains($form['id'], $ids);
+            self::assertContains($form['id'], $ids);
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
                 ->execute([$form['id'], $testEmail]);
@@ -360,10 +360,10 @@ final class AuthServiceTest extends TestCase
         try {
             $forms = $this->auth->getOwnedForms($testEmail);
             if (!empty($forms)) {
-                $this->assertArrayHasKey('id', $forms[0]);
-                $this->assertArrayHasKey('label', $forms[0]);
-                $this->assertArrayHasKey('slug', $forms[0]);
-                $this->assertArrayHasKey('actif', $forms[0]);
+                self::assertArrayHasKey('id', $forms[0]);
+                self::assertArrayHasKey('label', $forms[0]);
+                self::assertArrayHasKey('slug', $forms[0]);
+                self::assertArrayHasKey('actif', $forms[0]);
             }
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
@@ -386,7 +386,7 @@ final class AuthServiceTest extends TestCase
 
         try {
             $forms = $this->auth->getOwnedForms();
-            $this->assertIsArray($forms);
+            self::assertIsArray($forms);
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE form_id = ? AND email = ?")
                 ->execute([$formId, $currentUser]);
@@ -415,7 +415,7 @@ final class AuthServiceTest extends TestCase
             $labels = array_column($owned, 'label');
             $sortedLabels = $labels;
             sort($sortedLabels);
-            $this->assertSame($sortedLabels, $labels);
+            self::assertSame($sortedLabels, $labels);
         } finally {
             $pdo->prepare("DELETE FROM form_owners WHERE email = ?")->execute([$testEmail]);
         }
@@ -428,7 +428,7 @@ final class AuthServiceTest extends TestCase
         // Default state - no persona token in URL
         unset($_GET['persona_token'], $_POST['persona_token']);
         $user = $this->auth->getUser();
-        $this->assertNotEmpty($user);
+        self::assertNotEmpty($user);
     }
 
     // ── Edge cases ──────────────────────────────────────────────
@@ -440,20 +440,20 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['REMOTE_USER']);
         $user = $this->auth->getUser();
         // Empty test header + no AUTH_USER → empty string
-        $this->assertSame('', $user);
+        self::assertSame('', $user);
     }
 
     public function testGetUserWithWhitespaceTestHeader(): void
     {
         $_SERVER['HTTP_X_TEST_USER'] = '  spaced@user.com  ';
         $user = $this->auth->getUser();
-        $this->assertSame('spaced@user.com', $user);
+        self::assertSame('spaced@user.com', $user);
     }
 
     public function testIsFormOwnerWithEmptyEmail(): void
     {
         $result = $this->auth->isFormOwner('any-form', '');
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     // ── processAdminRequest() ───────────────────────────────────
@@ -466,8 +466,8 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
 
         $result = $this->auth->processAdminRequest($adminEmail);
-        $this->assertTrue($result['success']);
-        $this->assertSame('already_admin', $result['reason']);
+        self::assertTrue($result['success']);
+        self::assertSame('already_admin', $result['reason']);
     }
 
     public function testProcessAdminRequestReturnsPendingForDuplicateRequest(): void
@@ -487,8 +487,8 @@ final class AuthServiceTest extends TestCase
 
         try {
             $result = $this->auth->processAdminRequest($email);
-            $this->assertFalse($result['success']);
-            $this->assertSame('pending', $result['reason']);
+            self::assertFalse($result['success']);
+            self::assertSame('pending', $result['reason']);
         } finally {
             $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
         }
@@ -505,8 +505,8 @@ final class AuthServiceTest extends TestCase
 
         $result = $this->auth->processAdminRequest($email);
         // In test mode, mail is intercepted, so it should return 'sent' or 'dry_run'
-        $this->assertContains($result['reason'], ['sent', 'dry_run']);
-        $this->assertTrue($result['success']);
+        self::assertContains($result['reason'], ['sent', 'dry_run']);
+        self::assertTrue($result['success']);
 
         // Cleanup
         $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
@@ -527,12 +527,12 @@ final class AuthServiceTest extends TestCase
 
         try {
             $result = $this->auth->approveAdminRequest($email);
-            $this->assertTrue($result);
+            self::assertTrue($result);
 
             // Verify admin was added
             $check = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
             $check->execute([$email]);
-            $this->assertNotFalse($check->fetch());
+            self::assertNotFalse($check->fetch());
         } finally {
             $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
             $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
@@ -554,12 +554,12 @@ final class AuthServiceTest extends TestCase
 
         try {
             $result = $this->auth->rejectAdminRequest($email);
-            $this->assertTrue($result);
+            self::assertTrue($result);
 
             // Verify status updated
             $check = $pdo->prepare("SELECT status FROM admin_requests WHERE email = ?");
             $check->execute([$email]);
-            $this->assertSame('rejected', $check->fetchColumn());
+            self::assertSame('rejected', $check->fetchColumn());
         } finally {
             $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
         }
@@ -571,7 +571,7 @@ final class AuthServiceTest extends TestCase
     {
         $adminEmail = $this->auth->getAdminEmail();
         $result = $this->auth->removeAdmin($adminEmail);
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testRemoveAdminRemovesExistingAdmin(): void
@@ -585,12 +585,12 @@ final class AuthServiceTest extends TestCase
 
         try {
             $result = $this->auth->removeAdmin($email);
-            $this->assertTrue($result);
+            self::assertTrue($result);
 
             // Verify admin removed
             $check = $pdo->prepare("SELECT 1 FROM admins WHERE email = ?");
             $check->execute([$email]);
-            $this->assertFalse($check->fetch());
+            self::assertFalse($check->fetch());
         } finally {
             $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
         }
@@ -603,7 +603,7 @@ final class AuthServiceTest extends TestCase
         $_GET['persona_token'] = 'test_persona_token';
         $user = $this->auth->getUser();
         // Without persona_lookup returning a valid target, it should fall back to real user
-        $this->assertIsString($user);
+        self::assertIsString($user);
         unset($_GET['persona_token']);
     }
 
@@ -611,7 +611,7 @@ final class AuthServiceTest extends TestCase
     {
         $_POST['persona_token'] = 'test_persona_token';
         $user = $this->auth->getUser();
-        $this->assertIsString($user);
+        self::assertIsString($user);
         unset($_POST['persona_token']);
     }
 
@@ -629,7 +629,7 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
 
         try {
-            $this->assertTrue($this->auth->isAdmin());
+            self::assertTrue($this->auth->isAdmin());
         } finally {
             $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$email]);
         }
@@ -641,7 +641,7 @@ final class AuthServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = $email;
         unset($_SERVER['AUTH_USER']);
 
-        $this->assertFalse($this->auth->isAdmin());
+        self::assertFalse($this->auth->isAdmin());
     }
 
     // ── getAdminEmail() edge cases ──────────────────────────────
@@ -649,7 +649,7 @@ final class AuthServiceTest extends TestCase
     public function testGetAdminEmailReturnsString(): void
     {
         $email = $this->auth->getAdminEmail();
-        $this->assertIsString($email);
+        self::assertIsString($email);
     }
 
     // ── getUser() with REMOTE_USER ──────────────────────────────
@@ -660,7 +660,7 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
         $_SERVER['REMOTE_USER'] = 'remoteuser@domain.com';
         $user = $this->auth->getUser();
-        $this->assertSame('remoteuser@domain.com', $user);
+        self::assertSame('remoteuser@domain.com', $user);
         unset($_SERVER['REMOTE_USER']);
     }
 
@@ -670,8 +670,8 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
         $_SERVER['REMOTE_USER'] = 'DOMAIN\\remote.user';
         $user = $this->auth->getUser();
-        $this->assertStringContainsString('remote.user', $user);
-        $this->assertStringContainsString('@', $user);
+        self::assertStringContainsString('remote.user', $user);
+        self::assertStringContainsString('@', $user);
         unset($_SERVER['REMOTE_USER']);
     }
 
@@ -689,7 +689,7 @@ final class AuthServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'regular_' . uniqid() . '@test.com';
         unset($_SERVER['AUTH_USER']);
         $result = $this->auth->processAdminRequest('test_' . uniqid() . '@test.com');
-        $this->assertArrayHasKey('success', $result);
+        self::assertArrayHasKey('success', $result);
         // Cleanup
         $pdo = $this->db->getPdo();
         $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute(['test_' . uniqid() . '@test.com']);
@@ -710,7 +710,7 @@ final class AuthServiceTest extends TestCase
         $this->auth->setMailer($mailer1);
         $this->auth->setMailer($mailer2);
         // Second mailer should be used
-        $this->assertTrue(true); // No error = success
+        self::assertTrue(true); // No error = success
     }
 
     // ── requireAdmin() session regeneration ─────────────────────
@@ -734,7 +734,7 @@ final class AuthServiceTest extends TestCase
         // Call requireAdmin — should regenerate session ID
         $this->auth->requireAdmin();
 
-        $this->assertTrue($_SESSION['_session_initialized'] ?? false);
+        self::assertTrue($_SESSION['_session_initialized'] ?? false);
     }
 
     public function testRequireAdminSkipsRegenerationWhenAlreadyInitialized(): void
@@ -756,7 +756,7 @@ final class AuthServiceTest extends TestCase
         $this->auth->requireAdmin();
 
         // Session should NOT be regenerated since already initialized
-        $this->assertSame($oldId, session_id());
+        self::assertSame($oldId, session_id());
     }
 
     // ── getUser() edge cases ────────────────────────────────────
@@ -766,7 +766,7 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['HTTP_X_TEST_USER']);
         $_SERVER['AUTH_USER'] = 'DREETS\\Test.User';
         $user = $this->auth->getUser();
-        $this->assertStringContainsString('test.user', $user);
+        self::assertStringContainsString('test.user', $user);
         unset($_SERVER['AUTH_USER']);
     }
 
@@ -775,8 +775,8 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['HTTP_X_TEST_USER']);
         $_SERVER['AUTH_USER'] = 'plainuser';
         $user = $this->auth->getUser();
-        $this->assertStringContainsString('plainuser', $user);
-        $this->assertStringContainsString('@', $user);
+        self::assertStringContainsString('plainuser', $user);
+        self::assertStringContainsString('@', $user);
         unset($_SERVER['AUTH_USER']);
     }
 
@@ -785,7 +785,7 @@ final class AuthServiceTest extends TestCase
         $_SERVER['HTTP_X_TEST_USER'] = 'preferred@example.com';
         $_SERVER['AUTH_USER'] = 'other@domain.com';
         $user = $this->auth->getUser();
-        $this->assertSame('preferred@example.com', $user);
+        self::assertSame('preferred@example.com', $user);
         unset($_SERVER['AUTH_USER']);
     }
 
@@ -797,7 +797,7 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
         unset($_SERVER['REMOTE_USER']);
         $result = $this->auth->isAdmin();
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     // ── isSuperAdmin() edge cases ───────────────────────────────
@@ -808,7 +808,7 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
         unset($_SERVER['REMOTE_USER']);
         $result = $this->auth->isSuperAdmin();
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     // ── getAdminEmail() edge cases ──────────────────────────────
@@ -816,7 +816,7 @@ final class AuthServiceTest extends TestCase
     public function testGetAdminEmailReturnsNonEmptyString(): void
     {
         $email = $this->auth->getAdminEmail();
-        $this->assertNotEmpty($email);
+        self::assertNotEmpty($email);
     }
 
     // ── processAdminRequest() with non-admin ─────────────────────
@@ -829,13 +829,13 @@ final class AuthServiceTest extends TestCase
         unset($_SERVER['AUTH_USER']);
 
         $result = $this->auth->processAdminRequest($email);
-        $this->assertTrue($result['success']);
-        $this->assertContains($result['reason'], ['sent', 'dry_run']);
+        self::assertTrue($result['success']);
+        self::assertContains($result['reason'], ['sent', 'dry_run']);
 
         // Verify the request was created
         $check = $pdo->prepare("SELECT 1 FROM admin_requests WHERE email = ?");
         $check->execute([$email]);
-        $this->assertNotFalse($check->fetch());
+        self::assertNotFalse($check->fetch());
 
         $pdo->prepare("DELETE FROM admin_requests WHERE email = ?")->execute([$email]);
     }
@@ -846,7 +846,7 @@ final class AuthServiceTest extends TestCase
     {
         $result = $this->auth->approveAdminRequest('nonexistent_' . uniqid() . '@test.com');
         // The method should not throw, just update 0 rows
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 
     // ── rejectAdminRequest() with non-existent email ─────────────
@@ -854,7 +854,7 @@ final class AuthServiceTest extends TestCase
     public function testRejectAdminRequestNonExistentEmailDoesNotThrow(): void
     {
         $result = $this->auth->rejectAdminRequest('nonexistent_' . uniqid() . '@test.com');
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 
     // ── removeAdmin() with non-existent admin ────────────────────
@@ -863,6 +863,6 @@ final class AuthServiceTest extends TestCase
     {
         $result = $this->auth->removeAdmin('nonexistent_admin_' . uniqid() . '@test.com');
         // Should return true (DELETE succeeded, 0 rows affected)
-        $this->assertIsBool($result);
+        self::assertIsBool($result);
     }
 }
