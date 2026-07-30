@@ -73,7 +73,7 @@ final class MailServiceTest extends TestCase
             self::assertIsString($html);
             self::assertNotEmpty($html);
         } catch (\RuntimeException $e) {
-            $this->markTestSkipped('App container services not registered');
+            self::markTestSkipped('App container services not registered');
         }
     }
 
@@ -171,7 +171,7 @@ final class MailServiceTest extends TestCase
             self::assertIsString($html);
             self::assertNotEmpty($html);
         } catch (\RuntimeException $e) {
-            $this->markTestSkipped('App container services not registered');
+            self::markTestSkipped('App container services not registered');
         }
     }
 
@@ -181,7 +181,7 @@ final class MailServiceTest extends TestCase
             $html = $this->mail->renderEmailTemplate('My Title', '<p>Body</p>');
             self::assertStringContainsString('My Title', $html);
         } catch (\RuntimeException $e) {
-            $this->markTestSkipped('App container services not registered');
+            self::markTestSkipped('App container services not registered');
         }
     }
 
@@ -191,7 +191,7 @@ final class MailServiceTest extends TestCase
             $html = $this->mail->renderEmailTemplate('Title', '<p>My Content</p>');
             self::assertStringContainsString('My Content', $html);
         } catch (\RuntimeException $e) {
-            $this->markTestSkipped('App container services not registered');
+            self::markTestSkipped('App container services not registered');
         }
     }
 

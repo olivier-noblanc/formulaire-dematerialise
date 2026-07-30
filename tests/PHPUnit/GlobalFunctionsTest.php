@@ -247,7 +247,7 @@ final class GlobalFunctionsTest extends TestCase
     {
         $testFile = dirname(__DIR__, 2) . '/tests/test_all.php';
         if (!file_exists($testFile)) {
-            $this->markTestSkipped('test_all.php non trouvé');
+            self::markTestSkipped('test_all.php non trouvé');
             return;
         }
 

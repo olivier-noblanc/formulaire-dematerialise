@@ -79,7 +79,7 @@ final class RgpdServiceTest extends TestCase
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM admins WHERE email = ?");
         $stmt->execute(['testeur@e2e.test']);
         if ((int) $stmt->fetchColumn() === 0) {
-            $this->markTestSkipped('testeur@e2e.test pas en DB (seed v28 manquant ou DB nettoyée)');
+            self::markTestSkipped('testeur@e2e.test pas en DB (seed v28 manquant ou DB nettoyée)');
         }
 
         // Use testeur@e2e.test which is seeded as admin in migration v28
@@ -92,7 +92,7 @@ final class RgpdServiceTest extends TestCase
 
         $result = $this->service->exportUserData('other-agent@test.com');
         if (isset($result['error'])) {
-            $this->markTestSkipped('Access denied — admin check KO : ' . $result['error']);
+            self::markTestSkipped('Access denied — admin check KO : ' . $result['error']);
         }
         self::assertNotEmpty($result['submissions']);
         $sub = $result['submissions'][0];

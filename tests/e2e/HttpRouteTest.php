@@ -376,12 +376,12 @@ final class HttpRouteTest extends TestCase
         [$status, $body] = self::httpGet($path);
 
         if ($status !== 200) {
-            $this->markTestSkipped("Page $path returned $status, cannot check layout");
+            self::markTestSkipped("Page $path returned $status, cannot check layout");
         }
 
         // Skip layout checks for error/error pages
         if (str_contains($body, 'error-card') || !str_contains($body, '<html')) {
-            $this->markTestSkipped("Page $path returned an error page, layout checks skipped");
+            self::markTestSkipped("Page $path returned an error page, layout checks skipped");
         }
 
         // Skip link (accessibility)
@@ -428,11 +428,11 @@ final class HttpRouteTest extends TestCase
         [$status, $body] = self::httpGet($path);
 
         if ($status !== 200) {
-            $this->markTestSkipped("Admin page $path returned $status");
+            self::markTestSkipped("Admin page $path returned $status");
         }
 
         if (str_contains($body, 'error-card')) {
-            $this->markTestSkipped("Admin page $path returned error page");
+            self::markTestSkipped("Admin page $path returned error page");
         }
 
         // Admin section title in sidebar
@@ -464,7 +464,7 @@ final class HttpRouteTest extends TestCase
         ]);
 
         if ($status !== 200) {
-            $this->markTestSkipped("Agent page returned $status");
+            self::markTestSkipped("Agent page returned $status");
         }
 
         // Agent should see sidebar-user card WITHOUT admin class in rendered HTML
@@ -515,12 +515,12 @@ final class HttpRouteTest extends TestCase
         $adminEmail = 'admin.local@exemple.invalid';
         [$startStatus, $startBody, $startLocation] = self::httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
         if ($startStatus !== 302) {
-            $this->markTestSkipped('Could not activate persona');
+            self::markTestSkipped('Could not activate persona');
         }
 
         // Extract persona_token from Location header
         if (!preg_match('/persona_token=([^&\s]+)/', $startLocation, $m)) {
-            $this->markTestSkipped('Could not extract persona_token from redirect');
+            self::markTestSkipped('Could not extract persona_token from redirect');
         }
         $token = urldecode($m[1]);
 
@@ -822,7 +822,7 @@ final class HttpRouteTest extends TestCase
         // Le serveur de dev est démarré avec -d expose_php=0 (start_server.php /
         // start_server.ps1), donc l'en-tête ne doit plus fuiter ici non plus.
         if (!self::$serverReady) {
-            $this->markTestSkipped('PHP built-in server not ready');
+            self::markTestSkipped('PHP built-in server not ready');
         }
 
         $url = self::$baseUrl . '/?p=health';

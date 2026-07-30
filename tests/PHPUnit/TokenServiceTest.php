@@ -494,7 +494,7 @@ final class TokenServiceTest extends TestCase
         if (!$result['success']) {
             // DB peut être dans un état où appendToDataJson échoue (test précédent
             // a laissé la soumission dans un état incohérent). On skip plutôt que fail.
-            $this->markTestSkipped('Regenerate a échoué — DB potentiellement instable après tests précédents : ' . ($result['message'] ?? '?'));
+            self::markTestSkipped('Regenerate a échoué — DB potentiellement instable après tests précédents : ' . ($result['message'] ?? '?'));
         }
 
         // The old token should have invalidated_at set
@@ -529,7 +529,7 @@ final class TokenServiceTest extends TestCase
         // Regenerate
         $result = $this->tokenService->regenerate($expiredTokenId);
         if (!$result['success']) {
-            $this->markTestSkipped('Regenerate a échoué — DB potentiellement instable : ' . ($result['message'] ?? '?'));
+            self::markTestSkipped('Regenerate a échoué — DB potentiellement instable : ' . ($result['message'] ?? '?'));
         }
 
         // The old token still has done_at set (advanceWorkflow depends on it)
@@ -768,7 +768,7 @@ final class TokenServiceTest extends TestCase
 
         $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
         if (!$result['success']) {
-            $this->markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
+            self::markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
         }
         self::assertTrue($result['success']);
 
@@ -784,7 +784,7 @@ final class TokenServiceTest extends TestCase
 
         $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
         if (!$result['success']) {
-            $this->markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
+            self::markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
         }
         self::assertTrue($result['success']);
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
