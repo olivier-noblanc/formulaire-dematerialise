@@ -394,6 +394,9 @@ final class SubmissionViewRenderer
                     if ($done) {
                         $tooltip = 'Validé par ' . $email . ' le ' . \App\Core\App::html()->formatDateTimeFr((string) ($token['done_at'] ?? ''));
                         $tooltip .= \App\Core\App::html()->formatRelanceSuffix($relance);
+                        if ($relance > 0 && isset($token['relance_at']) && $token['relance_at'] !== '' && $token['relance_at'] !== '0') {
+                            $tooltip .= ' (dernier le ' . \App\Core\App::html()->formatDateTimeFr((string) $token['relance_at']) . ')';
+                        }
                         $icon = '<span class="wf-check" aria-hidden="true" title="' . \App\Core\App::html()->escape($tooltip) . '">✓</span>';
                     } elseif ($is_current) {
                         $tooltip = 'Email envoyé le ' . \App\Core\App::html()->formatDateTimeFr((string) ($token['sent_at'] ?? ''));
@@ -401,6 +404,9 @@ final class SubmissionViewRenderer
                             $tooltip .= ' — expire le ' . \App\Core\App::html()->formatDateTimeFr((string) $token['expires_at']);
                         }
                         $tooltip .= \App\Core\App::html()->formatRelanceSuffix($relance);
+                        if ($relance > 0 && isset($token['relance_at']) && $token['relance_at'] !== '' && $token['relance_at'] !== '0') {
+                            $tooltip .= ' (dernier le ' . \App\Core\App::html()->formatDateTimeFr((string) $token['relance_at']) . ')';
+                        }
                         $icon = '<span class="wf-pending" aria-hidden="true" title="' . \App\Core\App::html()->escape($tooltip) . '">⏳</span>';
                     } else {
                         $icon = '<span class="wf-waiting" aria-hidden="true">○</span>';
