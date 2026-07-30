@@ -187,10 +187,10 @@ final class BackupControllerTest extends TestCase
         $output = $this->captureOutput(fn() => (new BackupController())->handle());
 
         self::assertStringContainsString('Nombre d\'enregistrements par table', $output);
-        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">forms</td>', $output);
-        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">submissions</td>', $output);
-        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">tokens</td>', $output);
-        self::assertStringContainsString('<td style="font-family:monospace;font-size:.82rem;">audit_log</td>', $output);
+        self::assertStringContainsString('class="s-eeef7a42">forms', $output);
+        self::assertStringContainsString('class="s-eeef7a42">submissions', $output);
+        self::assertStringContainsString('class="s-eeef7a42">tokens', $output);
+        self::assertStringContainsString('class="s-eeef7a42">audit_log', $output);
         // Ligne Total
         self::assertStringContainsString('<td>Total</td>', $output);
     }

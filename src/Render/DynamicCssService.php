@@ -86,7 +86,7 @@ final class DynamicCssService
             $className = $m[1];
             $declarations = trim($m[2]);
             if (!isset($this->rules[$className])) {
-                $this->rules[$className] = $declarations;
+                $this->rule($className, $declarations);
             }
         }
     }
