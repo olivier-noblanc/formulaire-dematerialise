@@ -62,6 +62,9 @@ class NoInlineHtmlRule implements Rule
         return Node::class;
     }
 
+    /**
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
+     */
     public function processNode(Node $node, Scope $scope): array
     {
         if ($node instanceof String_) {
@@ -82,7 +85,7 @@ class NoInlineHtmlRule implements Rule
     }
 
     /**
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
     private function checkText(string $text, Node $node, Scope $scope): array
     {
