@@ -1,5 +1,45 @@
 # Changelog — CircuitDémat
 
+## [10.32.0] — 2026-07-31
+_Résumé : DynamicCssService — CSS dynamique par objet, zéro style="" inline, classes sémantiques (fin des hash md5)._
+
+### ✨ Features
+- **DynamicCssService** (`src/Render/DynamicCssService.php`) : service DI pour générer du CSS dynamique à l'exécution. API : `App::css()->rule('nom', 'declarations;')`. Le CSS est injecté dans `<style>` par `style.php` via `render()`. Remplace les `style=""` inline pour les valeurs calculées runtime (largeurs de barres %, conic-gradient donut chart).
+- **Classes utilitaires sémantiques** (`lib/style_utility.css`) : 200 classes générées depuis les `style=""` statiques extraits du HTML. Nommage sémantique (`fw-bold`, `ta-right`, `btn-sm`, `heading-primary`, `code-block`, `hint-warning`, `caption`, `text-valide`, `deadline-overdue`, etc.) — remplace les classes hash `s-md5` illisibles de Claude.ai.
+- **Script Python** (`scripts/replace_css_hashes.py`) : parse les règles hash, génère un nom sémantique basé sur les propriétés CSS, remplace les 359 occurrences dans 18 fichiers PHP.
+
+### 🐛 Bug fixes
+- **11 bugs fonctionnels** (audit batch 1+2) :
+  - B-02-1 (HIGH) : `ConfirmActionController` requireCsrf() sur GET cassait toutes les actions destructives en prod.
+  - B-01-1 (HIGH) : `handleDuplicateForm` sans check isFormOwner — exfiltration d'emails destinataires.
+  - B-02-2 (HIGH) : `BackupController` copy() non vérifié — perte de données silencieuse si disque plein.
+  - B-02-3 (MED) : copy() de secours non véréré — message trompeur.
+  - B-01-2 (MED) : days_before=0 accepté PHP mais rejeté SQL CHECK — message générique.
+  - B-02-5 (MED) : PersonaController start/stop en GET sans CSRF.
+  - B-02-9 (LOW) : audit_log avant génération CSV.
+  - B-02-6 (LOW) : `\n` littéral dans single-quoted string.
+  - B-02-7 (LOW) : filesize() avant file_exists() → warning PHP.
+  - B-02-10 (LOW) : strtotime() sans UTC sur date UTC.
+  - B-01-5 (LOW) : JSON null légitime traité comme invalide.
+- **Zéro style="" dynamique** : migration des 14 derniers `style=""` avec interpolation PHP vers DynamicCssService ou classes statiques. `grep 'style="[^"]*\$' src/` → 0 occurrence.
+
+### 🔧 Refactoring
+- **Fin des hash md5** : `lib/style_generated-inline.css` (200 règles `s-md5`) supprimé, remplacé par `lib/style_utility.css` (200 règles sémantiques).
+- **DynamicCssService nettoyé** : retrait de `loadFromFile()` et méthodes mortes. API finale : `rule()` + `render()`.
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| style="" inline statiques | 359 | **0** |
+| style="" inline dynamiques | 14 | **0** |
+| Classes hash s-md5 | 200 | **0** |
+| Classes sémantiques | 0 | **200+15** |
+| DynamicCssService utilisé | 0 renderers | **5 renderers** |
+| CSP violations | inline styles | **zéro** |
+
+---
+
 ## [10.31.0] — 2026-07-30
 _Résumé : Workflow CI CSP check via Playwright + restoration du nonce dans SecurityService._
 
