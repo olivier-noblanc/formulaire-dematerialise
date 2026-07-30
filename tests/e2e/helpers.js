@@ -1,7 +1,11 @@
 // helpers.js — Module réutilisable par tous les tests e2e Playwright.
 //
 // Fournit :
-//  - TestRun            : compteur ok/ko + résumé final + exit code
+//  - TestRun            : compteur ok/ko + résumé final + exit code.
+//                         ko() émet aussi une annotation GitHub Actions
+//                         (::error::), visible dans l'onglet Checks — pas
+//                         seulement dans le log brut (signalé 2026-07-30,
+//                         csp_check.spec.js).
 //  - startTestServer()  : démarre un serveur PHP -S avec router_test_auth.php
 //                         (qui simule AUTH_USER IIS via un header HTTP) et
 //                         retourne une fonction stop() asynchrone
@@ -30,6 +34,21 @@ const PORT = 8900;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const ROUTER_PATH = path.resolve(__dirname, '..', 'router_test_auth.php');
 
+// ─── Échappement pour les workflow commands GitHub Actions (::error::) ───
+// Règles officielles : data et propriétés n'échappent pas les mêmes
+// caractères. https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions
+function ghActionsEscapeData(s) {
+    return String(s ?? '').replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+}
+function ghActionsEscapeProperty(s) {
+    return String(s ?? '')
+        .replace(/%/g, '%25')
+        .replace(/\r/g, '%0D')
+        .replace(/\n/g, '%0A')
+        .replace(/:/g, '%3A')
+        .replace(/,/g, '%2C');
+}
+
 // ─── TestRun : compteur de résultats ──────────────────────────────
 class TestRun {
     constructor() {
@@ -46,6 +65,13 @@ class TestRun {
         console.log(line);
         this.failures.push({ name, msg });
         this.failed++;
+        // Annotation GitHub Actions — sans ça, un échec n'apparaît que dans
+        // le log brut (invisible dans l'onglet Checks/résumé du run), il
+        // faut ouvrir tout le log pour le trouver. Pas de file/line : ce
+        // sont des vérifications runtime contre un serveur démarré à la
+        // volée, pas de l'analyse statique avec une ligne de code précise
+        // à pointer dans le diff.
+        console.log(`::error title=${ghActionsEscapeProperty(name)}::${ghActionsEscapeData(msg ? `${name} — ${msg}` : name)}`);
     }
     section(title) {
         console.log(`\n── ${title} ──`);
