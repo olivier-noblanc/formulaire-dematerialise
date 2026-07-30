@@ -391,7 +391,7 @@ body.page-mes_demandes .stats { display: flex; gap: var(--sp-md); margin-bottom:
   position: relative;
   overflow: hidden;
 }
-body.page-mes_demandes .stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient-primary); }
+body.page-mes_demandes .stat::before { height: 3px; }
 .stat strong { display: block; font-size: var(--text-3xl); color: var(--c-primary); font-weight: 800; letter-spacing: -.03em; }
 body.page-mes_demandes .stat.en-cours strong { color: var(--c-warning-dark); }
 .stat.en-cours::before { background: var(--c-warning); }
