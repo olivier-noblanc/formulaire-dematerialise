@@ -9,6 +9,7 @@ _Résumé : Fix hints "1" + admin_forms UI restaurée + test e2e non-régression
   - `AdminImportExportHandler` : nettoyage automatique des hints chiffres lors de l'import.
   - Migration v35 : purge les hints contenant uniquement un chiffre en base.
 - **admin_forms incomplet** : le contrôleur utilisait du HTML inline simplifié qui omettait le panneau "Créer un formulaire", l'import JSON, le prompt IA, et l'édition complète des champs/workflow. Remplacement par `render_admin_forms_page()` qui délègue à `AdminFormsRenderer::renderPage()`.
+- **wf-pending tooltip** : le sablier ⏳ dans le diagramme workflow affiche désormais un tooltip avec la date d'envoi de l'email, la date d'expiration, et le nombre de rappels envoyés.
 
 ### 🧪 Tests
 - **testAdminFormsRendersFormSelector** : 4 assertions ajoutées (panneau création, import JSON, prompt IA, action add_form).
