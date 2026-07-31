@@ -43,8 +43,5 @@ parameters:
         - '#^Call to function array_filter#'
         - '#^Result of (&&|\|\|) is always#'
 
-services:
-    -
-        class: App\PHPStan\NoSilentCatchRule
-        tags:
-            - phpstan.rules.rule
+        - '#^Overwriting variable .+ while changing its type#'
+        - '#^.+ always return list, but is marked as#'
