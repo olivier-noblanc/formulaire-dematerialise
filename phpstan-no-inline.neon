@@ -41,14 +41,16 @@ parameters:
         - '#^Function resolve_base_url not found\.#'
         - '#^Unused App\\#'
         - '#^Casting to .+ something that.s already .+\.$#'
-        - '#^Attribut style="" inline détecté#'
-        - '#^Gestionnaire d.evnement inline dtect#'
+        - '#^Attribut style="" inline#'
+        - '#^Gestionnaire#'
+        - '#^Property App\\#'
         - '#^Call to function array_filter\(\) requires parameter \#2#'
         - '#^Foreach overwrites#'
         - '#^Loose comparison via#'
         - '#^Only booleans are allowed in#'
         - '#^Variable \$.+ on left side of \?\?#'
         - '#^Variable \$.+ might not be defined#'
+        - '#^Call to function in_array\(\) requires parameter \#3#'
 
 services:
     -

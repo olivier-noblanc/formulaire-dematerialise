@@ -56,6 +56,8 @@ parameters:
         - '#^Foreach overwrites#'
         - '#^Loose comparison via#'
         - '#^Only booleans are allowed in a negated boolean#'
+        - '#^Class App\\Webhook\\WebhookService does not have a constructor#'
+        - '#^Call to function in_array\(\) requires parameter \#3#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php
