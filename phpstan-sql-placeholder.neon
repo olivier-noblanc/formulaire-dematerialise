@@ -25,3 +25,4 @@ services:
         class: App\PHPStan\SqlPlaceholderCountRule
         tags:
             - phpstan.rules.rule
+        - '#^Casting to .+ something that.s already .+\.$#'
