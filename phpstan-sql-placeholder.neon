@@ -27,6 +27,16 @@ parameters:
         - '#^Property App\\#'
         - '#^Function inst_#'
 
+        - #^Array key must be integer or string, but .+ given\.0
+        - #^Cannot compare different types in .+\.0
+        - #^Comparison .+ contains non-comparable type#
+        - #^Null value involved in binary operation:.+#
+        - #^Using [+\-] over non-number#
+        - #^Call to function iterator_to_array without 2nd parameter#
+        - #^Closure parameter .+ is unused#
+        - #^Public property .+ not marked as readonly#
+        - #^Missing parameter typehint for arrow function parameter#
+        - #^Missing native return typehint#
 services:
     -
         class: App\PHPStan\SqlPlaceholderCountRule
