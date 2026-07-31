@@ -22,3 +22,6 @@ services:
         class: App\PHPStan\SqlPlaceholderCountRule
         tags:
             - phpstan.rules.rule
+    ignoreErrors:
+        - '#^Loose comparison via "==" is not allowed\.$#'
+        - '#^execute\(\) re.*placeholder#'

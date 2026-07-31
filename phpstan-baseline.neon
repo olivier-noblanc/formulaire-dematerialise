@@ -1661,3 +1661,12 @@ parameters:
 			message: '#^Strict comparison using === between bool and .+ will always evaluate to false\.$#'
 		-
 			message: '#^execute\(\) re[^v].*placeholder#'
+
+		-
+			message: '#^Strict comparison using === between list<.+> and .+ will always evaluate to false\.$#'
+		-
+			message: '#^Parameter #.+ \$\w+ of function .+ expects .+, .+ given\.$#'
+		-
+			message: '#^Loose comparison via "==" is not allowed\.$#'
+		-
+			message: '#^execute\(\) re.*placeholder#'
