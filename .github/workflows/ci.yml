@@ -122,6 +122,33 @@ jobs:
       - run: composer update --no-interaction --prefer-dist --no-scripts
       - run: php vendor/bin/phpstan analyse -c phpstan-no-inline.neon --memory-limit=512M --no-progress
 
+  # ── PHPStan : décalages placeholders '?' / arguments execute() ──
+  # Règle custom (phpstan-rules/SqlPlaceholderCountRule.php) — détecte les
+  # échecs SQL silencieux type TokenService::regenerate() (session
+  # 2026-07-30) : un execute([...]) avec moins d'éléments que de '?' dans
+  # la requête préparée n'échoue pas en PDO/SQLite, il matche NULL au lieu
+  # de planter. continue-on-error pour ce premier run — volume réel
+  # inconnu tant que ça n'a pas tourné une fois en CI (même précaution que
+  # phpstan-no-inline ci-dessus).
+  phpstan-sql-placeholder:
+    name: PHPStan (SQL placeholder mismatch)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+      - run: composer update --no-interaction --prefer-dist --no-scripts
+      - run: php vendor/bin/phpstan analyse -c phpstan-sql-placeholder.neon --memory-limit=512M --no-progress
+
   # ── Tests unitaires + e2e + couverture ─────────────────────────
   phpunit:
     name: PHPUnit (unit + e2e + coverage)
