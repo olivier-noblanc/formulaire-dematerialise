@@ -36,7 +36,7 @@ parameters:
         -
             message: '#^Short ternary operator is not allowed\.#'
         -
-            message: '#^Call to function in_array\(\) requires parameter #3 to be set\.#'
+            message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
         -
             message: '#^Function resolve_base_url not found\.#'
         -
