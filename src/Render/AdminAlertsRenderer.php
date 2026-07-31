@@ -70,7 +70,8 @@ final class AdminAlertsRenderer
             $html .= '      </div>' . "\n";
             $html .= '      <p class="u-col-fon-2">' . "\n";
             $html .= '        Planifiez-le via Windows Task Scheduler (ex: toutes les 6h) :<br>' . "\n";
-            $html .= '        <code class="styled-box-10">php ' . $h(realpath(dirname(__DIR__, 2) . '/alert_check.php') ?: '') . '</code>' . "\n";
+            $rp = realpath(dirname(__DIR__, 2) . '/alert_check.php');
+            $html .= '        <code class="styled-box-10">php ' . $h($rp !== false ? $rp : '') . '</code>' . "\n";
             $html .= '      </p>' . "\n";
         }
 

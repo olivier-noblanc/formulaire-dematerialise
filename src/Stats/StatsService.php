@@ -103,7 +103,8 @@ final readonly class StatsService
             FROM submissions
         ");
         assert($rowStmt !== false);
-        $row = $rowStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $row = $rowStmt->fetch(PDO::FETCH_ASSOC);
+        $row = is_array($row) ? $row : [];
 
         $tokensStmt = $pdo->query('SELECT COUNT(*) FROM tokens WHERE done_at IS NULL');
         assert($tokensStmt !== false);
@@ -130,7 +131,8 @@ final readonly class StatsService
             FROM submissions WHERE status = '" . SubmissionStatus::Valide->value . "' AND closed_at IS NOT NULL
         ");
         assert($avgStmt !== false);
-        $stats['avg_days'] = round((float) ($avgStmt->fetchColumn() ?: 0) / 86400, 1);
+        $avg_raw = $avgStmt->fetchColumn();
+        $stats['avg_days'] = round((float) ($avg_raw !== false ? $avg_raw : 0) / 86400, 1);
 
         $stats['taux_validation'] = $stats['total'] > 0
             ? round(($stats[SubmissionStatus::Valide->value] / $stats['total']) * 100, 1)

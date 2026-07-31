@@ -24,7 +24,7 @@ declare(strict_types=1);
  */
 function seed_default_forms(PDO $pdo): void {
     $ob_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'outboarding'")->fetchColumn();
-    if ($ob_count == 0) {
+    if ((int) $ob_count === 0) {
         $outboarding_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$outboarding_id, 'outboarding', 'Départ agent', 'Formulaire de départ d\'un agent — restitution du matériel, cloture des accès et formalités de fin de contrat']);
@@ -86,7 +86,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Insertion des paramètres par défaut si la table settings est vide
     $settings_count = _dbm_q($pdo, "SELECT COUNT(*) FROM settings")->fetchColumn();
-    if ($settings_count == 0) {
+    if ((int) $settings_count === 0) {
         $defaults = [
             ['smtp_host', 'smtp.social.gouv.fr'],
             ['smtp_port', '25'],
@@ -119,7 +119,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Seed formulaire onboarding s'il n'existe pas
     $onb_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'onboarding'")->fetchColumn();
-    if ($onb_count == 0) {
+    if ((int) $onb_count === 0) {
         $onboarding_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$onboarding_id, 'onboarding', 'Accueil agent', 'Formulaire d\'accueil d\'un nouvel agent — prise de poste, création des accès et formalités d\'entrée']);
@@ -181,7 +181,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Seed formulaire "Demande de sortie hors plages" s'il n'existe pas
     $sortie_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'sortie_hors_plages'")->fetchColumn();
-    if ($sortie_count == 0) {
+    if ((int) $sortie_count === 0) {
         $sortie_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$sortie_id, 'sortie_hors_plages', 'Demande de sortie hors plages fixes', 'Demande d\'autorisation de sortie en dehors des plages horaires fixes — arrivée tardive, départ anticipé, pause prolongée']);
@@ -222,7 +222,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Seed formulaire "Remboursement d'avance de frais" s'il n'existe pas
     $remboursement_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'remboursement_avance_frais'")->fetchColumn();
-    if ($remboursement_count == 0) {
+    if ((int) $remboursement_count === 0) {
         $remboursement_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$remboursement_id, 'remboursement_avance_frais', 'Remboursement d\'avance de frais', 'Demande de remboursement d\'une avance de frais engagée dans le cadre professionnel — déplacement, fourniture, représentation']);
@@ -266,7 +266,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Seed formulaire "Demande de matériel suite prescription médicale" s'il n'existe pas
     $materiel_med_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'materiel_prescription'")->fetchColumn();
-    if ($materiel_med_count == 0) {
+    if ((int) $materiel_med_count === 0) {
         $materiel_med_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$materiel_med_id, 'materiel_prescription', 'Demande de matériel (prescription médicale)', 'Demande de matériel suite à une prescription médicale — aménagement de poste, équipement ergonomique, matériel spécifique']);
@@ -320,7 +320,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Seed formulaire "Demande de mutation" s'il n'existe pas
     $mutation_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'mutation'")->fetchColumn();
-    if ($mutation_count == 0) {
+    if ((int) $mutation_count === 0) {
         $mutation_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$mutation_id, 'mutation', 'Demande de mutation', 'Formulaire de demande de mutation interne — mobilité entre services ou directions au sein de la DREETS']);
@@ -360,7 +360,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Seed formulaire "Demande de formation" s'il n'existe pas
     $formation_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'formation'")->fetchColumn();
-    if ($formation_count == 0) {
+    if ((int) $formation_count === 0) {
         $formation_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$formation_id, 'formation', 'Demande de formation', 'Formulaire de demande de formation continue — plan de formation, DIF/CPF, stage inter ou intra']);
@@ -405,7 +405,7 @@ function seed_default_forms(PDO $pdo): void {
 
     // Seed formulaire "Demande d'accès SI" s'il n'existe pas
     $acces_si_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'acces_si'")->fetchColumn();
-    if ($acces_si_count == 0) {
+    if ((int) $acces_si_count === 0) {
         $acces_si_id = generate_uuid();
         $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))")
             ->execute([$acces_si_id, 'acces_si', 'Demande d\'accès SI', 'Formulaire de demande d\'accès aux systèmes d\'information — création, modification ou suppression de comptes et droits']);

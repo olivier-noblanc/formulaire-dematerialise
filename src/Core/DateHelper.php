@@ -19,10 +19,12 @@ final class DateHelper
     {
         $dateStr = trim($dateStr);
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
-            return strtotime($dateStr) ?: null;
+            $ts = strtotime($dateStr);
+            return $ts !== false ? $ts : null;
         }
         if (preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', $dateStr, $m)) {
-            return strtotime("{$m[3]}-{$m[2]}-{$m[1]}") ?: null;
+            $ts = strtotime("{$m[3]}-{$m[2]}-{$m[1]}");
+            return $ts !== false ? $ts : null;
         }
         return null;
     }

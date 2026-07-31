@@ -76,7 +76,7 @@ final class MyValidationsRenderer
             $html .= '  </div>' . "\n";
         } else {
             foreach ($pendingTokens as $pendingToken) {
-                $data = json_decode((string) ($pendingToken['data'] ?? '{}'), true) ?: [];
+                $data = json_decode((string) ($pendingToken['data'] ?? '{}'), true) ?? [];
                 $expired = !empty($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
                 $nomAgent = $htmlService->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
                 $allSteps = $allStepsBySub[$pendingToken['submission_id']] ?? [];
@@ -167,7 +167,7 @@ final class MyValidationsRenderer
             $html .= '  </div>' . "\n";
         } else {
             foreach ($doneTokens as $doneToken) {
-                $data = json_decode((string) ($doneToken['data'] ?? '{}'), true) ?: [];
+                $data = json_decode((string) ($doneToken['data'] ?? '{}'), true) ?? [];
                 $nomAgent = $htmlService->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
 
                 $actionLabel = 'Validé';

@@ -86,7 +86,7 @@ final class FormPreviewController extends BaseController
         <?php elseif ($field['field_type'] === FieldType::Select->value && !empty($field['options'])): ?>
           <select id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" <?= $required ?>>
             <option value="">— Sélectionner —</option>
-            <?php foreach (is_array($field['options']) ? $field['options'] : (json_decode((string) $field['options'], true) ?: []) as $opt): ?>
+            <?php foreach (is_array($field['options']) ? $field['options'] : (json_decode((string) $field['options'], true) ?? []) as $opt): ?>
               <option value="<?= \App\Core\App::html()->escape((string) $opt) ?>"><?= \App\Core\App::html()->escape((string) $opt) ?></option>
             <?php endforeach; ?>
           </select>

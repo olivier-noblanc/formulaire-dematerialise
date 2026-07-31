@@ -117,7 +117,8 @@ final class MonitoringRenderer
     {
         $smtp_host    = \App\Core\App::html()->escape(App::settings()->get('smtp_host'));
         $smtp_port    = \App\Core\App::html()->escape(App::settings()->get('smtp_port'));
-        $smtp_secure  = \App\Core\App::html()->escape(App::settings()->get('smtp_secure', '') ?: 'Aucun');
+        $smtp_secure_val = App::settings()->get('smtp_secure', '');
+        $smtp_secure  = \App\Core\App::html()->escape($smtp_secure_val !== '' ? $smtp_secure_val : 'Aucun');
         $mail_dry_run = App::settings()->get('mail_dry_run', '0') === '1';
 
         if ($smtp_status === 'ok') {

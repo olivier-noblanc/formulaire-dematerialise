@@ -64,7 +64,8 @@ final readonly class TokenService
         // Marquer l'ancien token comme traité (invalidé) + créer le nouveau — transactionnellement
         $newToken = generate_token();
         $expireDays = (int) $this->settingsService->get('token_expire_days', '30');
-        $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
+        $expiresAt_ts = strtotime("+{$expireDays} days");
+        $expiresAt = gmdate('Y-m-d H:i:s', $expiresAt_ts !== false ? $expiresAt_ts : time());
         $now = gmdate('Y-m-d H:i:s');
         $newTokenRowId = generate_uuid();
 
@@ -282,7 +283,8 @@ final readonly class TokenService
 
         $newToken = generate_token();
         $expireDays = (int) $this->settingsService->get('token_expire_days', '30');
-        $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
+        $expiresAt_ts = strtotime("+{$expireDays} days");
+        $expiresAt = gmdate('Y-m-d H:i:s', $expiresAt_ts !== false ? $expiresAt_ts : time());
         $now = gmdate('Y-m-d H:i:s');
         $newTokenRowId = generate_uuid();
         $delegationId = generate_uuid();

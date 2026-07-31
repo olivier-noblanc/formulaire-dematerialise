@@ -118,7 +118,7 @@ final readonly class ExportService
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($rows as $row) {
-                $data = json_decode($row['data'], true) ?: [];
+                $data = json_decode($row['data'], true) ?? [];
                 $line = [
                     $row['id'],
                     $row['form_label'],

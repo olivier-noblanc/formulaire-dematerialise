@@ -55,7 +55,7 @@ foreach ($rules as $rule) {
     $submissions = $subs->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($submissions as $sub) {
-        $data = json_decode($sub['data'], true) ?: [];
+        $data = json_decode($sub['data'], true) ?? [];
         $deadline_str = $data[$deadline_field] ?? '';
 
         if ($deadline_str === '' || $deadline_str === '0') {

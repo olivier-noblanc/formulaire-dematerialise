@@ -128,7 +128,7 @@ final class FormTrackingController extends BaseController
         </thead>
         <tbody>
         <?php foreach ($submissions as $submission):
-            $data = json_decode($submission['data'], true) ?: [];
+            $data = json_decode($submission['data'], true) ?? [];
             $status = $submission['status'];
             $badgeCls = $status === SubmissionStatus::Valide->value ? 'badge-ok' : ($status === SubmissionStatus::Refuse->value ? 'badge-err' : ($status === SubmissionStatus::Annule->value ? 'badge-annule' : 'badge-warn'));
             $statusLabel = $status === SubmissionStatus::Valide->value ? 'Validée' : ($status === SubmissionStatus::Refuse->value ? 'Refusée' : ($status === SubmissionStatus::Annule->value ? 'Annulée' : 'En cours'));

@@ -31,9 +31,9 @@ final class AuditRepository extends BaseRepository
         }
 
         // Vérifier si REMOTE_ADDR est un proxy de confiance
-        $trustedProxiesCsv = getenv('TRUSTED_PROXIES') ?: '';
-        if ($trustedProxiesCsv !== '') {
-            $trustedProxies = array_map(trim(...), explode(',', $trustedProxiesCsv));
+        $trustedProxiesRaw = getenv('TRUSTED_PROXIES');
+        if ($trustedProxiesRaw !== false && $trustedProxiesRaw !== '') {
+            $trustedProxies = array_map(trim(...), explode(',', $trustedProxiesRaw));
             if (in_array($remoteAddr, $trustedProxies, true)) {
                 // Trust X-Forwarded-For — prendre la PREMIÈRE IP (la plus éloignée du serveur)
                 // qui est l'IP client originale
@@ -54,7 +54,7 @@ final class AuditRepository extends BaseRepository
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): bool
     {
         if ($actor === '') {
-            $actor = App::auth()->getUser() ?: '';
+            $actor = App::auth()->getUser() !== false ? App::auth()->getUser() : '';
         }
         $ip = $this->getClientIp();
         return $this->execute(
