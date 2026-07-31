@@ -129,7 +129,7 @@ final class SubmissionViewController extends BaseController
       <thead><tr><th>Champ</th><th>Valeur</th></tr></thead>
       <tbody>
       <?php foreach ($data as $key => $value):
-        if (in_array($key, ['validations', 'submitted_at', 'closed_at'])) continue;
+        if (in_array($key, ['validations', 'submitted_at', 'closed_at'], true)) continue;
         $valStr = is_array($value) ? implode(', ', $value) : (string)$value;
       ?>
         <tr>

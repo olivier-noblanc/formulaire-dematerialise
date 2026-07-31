@@ -102,7 +102,7 @@ final readonly class AttachmentService
         $nameParts = explode('.', $safeName);
         if (count($nameParts) > 2) {
             foreach ($nameParts as $namePart) {
-                if (in_array(strtolower($namePart), $dangerousExts, true)) {
+                if (in_array(strtolower($namePart, true), $dangerousExts, true)) {
                     App::audit()->log('file_upload_blocked', 'submission:' . $submissionId, 'Upload bloqué — double extension dangereuse : ' . $safeName, '');
                     return ['success' => false, 'message' => 'Nom de fichier non autorisé. Les doubles extensions contenant des scripts ne sont pas acceptées.', 'attachment_id' => null];
                 }
@@ -111,7 +111,7 @@ final readonly class AttachmentService
 
         // Vérifier l'extension (dernière partie)
         $ext = strtolower(array_last($nameParts));
-        if (!in_array($ext, $this->getAllowedExtensions(, true))) {
+        if (!in_array($ext, $this->getAllowedExtensions(, true), true)) {
             return ['success' => false, 'message' => 'Type de fichier non autorisé. Extensions acceptées : ' . implode(', ', $this->getAllowedExtensions()) . '.', 'attachment_id' => null];
         }
 
@@ -130,7 +130,7 @@ final readonly class AttachmentService
             return ['success' => false, 'message' => 'Impossible d\'analyser le type de fichier.', 'attachment_id' => null];
         }
         $mimeType = finfo_file($finfo, $file['tmp_name']);
-        if (!in_array($mimeType, $this->getAllowedMimeTypes(, true))) {
+        if (!in_array($mimeType, $this->getAllowedMimeTypes(, true), true)) {
             return ['success' => false, 'message' => 'Type MIME non autorisé : ' . \App\Core\App::html()->escape($mimeType === false ? '' : $mimeType) . '.', 'attachment_id' => null];
         }
 

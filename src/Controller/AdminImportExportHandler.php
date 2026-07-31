@@ -170,7 +170,7 @@ final class AdminImportExportHandler
                     }
                     $field_name = empty($f['field_name']) ? \generate_field_name($f['label']) : $f['field_name'];
                     $filled_by = empty($f['filled_by']) ? FilledBy::Demandeur->value : $f['filled_by'];
-                    if (!in_array($filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value])) {
+                    if (!in_array($filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value], true)) {
                         $filled_by = FilledBy::Demandeur->value;
                     }
                     $visibility = $f['visibility'] ?? 'all';
