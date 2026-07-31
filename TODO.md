@@ -156,22 +156,17 @@ Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules`
 | `elseIf.condNotBoolean` | 2 | **LOW** | Conditions non-booléennes dans `elseif` |
 | Autres | ~273 | **LOW** | Divers (plus.leftNonNumeric, foreach.valueOverwrite, argument.type, ternary.condNotBoolean, etc.) |
 
-### DTOs Renderer — migration array $ctx → DTOs typés (en cours)
+### DTOs Renderer — migration array $ctx → DTOs typés
 
-Objectif : remplacer les `array<string, mixed>` catch-all par des `readonly class` DTOs typés.
-Cible : `noUntypedArray` → 0.
+Migration terminée pour les catch-all `array<string, mixed> $ctx`/`$state`.
+Reste : paramètres individuels déjà documentés en array shapes PHPDoc — bénéfice marginal (DTO seulement si on touche au fichier par ailleurs).
 
 | DTO | Renderer | Propriétés | Statut |
 |-----|----------|-----------|--------|
-| `AdminFormsContext` | `AdminFormsRenderer` | 14 | **Fait** (v10.32.0) |
+| `AdminFormsContext` | `AdminFormsRenderer` | 14 | **Fait** |
 | `SubmissionViewContext` | `SubmissionViewRenderer` | 27 | **Fait** |
 | `MonitoringContext` | `MonitoringRenderer` | 27 | **Fait** |
 | `AdminSettingsContext` | `AdminSettingsRenderer` | 4 | **Fait** |
-
-Reste :
-- `DashboardRenderer` (18 erreurs, params déjà en array shapes PHPDoc)
-- `MyValidationsRenderer` (8 erreurs, params individuels)
-- Autres renderers/controllers/repositories avec `array` params individuels
 
 ### Bug backlog audit — 29/29 vérifiés, 29 fixés
 

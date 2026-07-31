@@ -363,13 +363,11 @@ CSS;
 
     /**
      * Panneau « Sélecteur de formulaire » + actions globales.
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderSelectorPanel(array $ctx): string
+    public function renderSelectorPanel(AdminFormsContext $ctx): string
     {
-        $forms   = $ctx['forms']   ?? [];
-        $form_id = $ctx['form_id'] ?? '';
+        $forms   = $ctx->forms;
+        $form_id = $ctx->form_id;
 
         ob_start();
         ?>
@@ -402,13 +400,11 @@ CSS;
 
     /**
      * Panneau « Importer un formulaire depuis JSON ».
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderImportJsonPanel(array $ctx): string
+    public function renderImportJsonPanel(AdminFormsContext $ctx): string
     {
-        $preserved_json  = $ctx['preserved_json']  ?? '';
-        $validation_html = $ctx['validation_html'] ?? '';
+        $preserved_json  = $ctx->preserved_json;
+        $validation_html = $ctx->validation_html;
 
         ob_start();
         ?>
@@ -448,10 +444,8 @@ CSS;
 
     /**
      * Panneau « Prompt IA » : prompt pré-rempli à copier-coller.
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderPromptIaPanel(array $ctx): string
+    public function renderPromptIaPanel(AdminFormsContext $ctx): string
     {
         ob_start();
         ?>
@@ -641,10 +635,8 @@ Voici le document administratif à analyser :
 
     /**
      * Panneau « Créer un nouveau formulaire ».
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderNewFormPanel(array $ctx): string
+    public function renderNewFormPanel(AdminFormsContext $ctx): string
     {
         ob_start();
         ?>
@@ -681,13 +673,11 @@ Voici le document administratif à analyser :
 
     /**
      * Barre d'actions supérieure : prévisualisation, export JSON, retour.
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderTopActionBar(array $ctx): string
+    public function renderTopActionBar(AdminFormsContext $ctx): string
     {
-        $form_id = $ctx['form_id'] ?? '';
-        $form    = $ctx['form']    ?? null;
+        $form_id = $ctx->form_id;
+        $form    = $ctx->form;
         if (!$form) {
             return '';
         }
@@ -712,12 +702,10 @@ Voici le document administratif à analyser :
 
     /**
      * SECTION A : Informations du formulaire + actions dupliquer/supprimer.
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderFormInfoSection(array $ctx): string
+    public function renderFormInfoSection(AdminFormsContext $ctx): string
     {
-        $form = $ctx['form'] ?? null;
+        $form = $ctx->form;
         if (!$form) {
             return '';
         }
@@ -775,14 +763,12 @@ Voici le document administratif à analyser :
 
     /**
      * Section « Propriétaires du formulaire ».
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderOwnersSection(array $ctx): string
+    public function renderOwnersSection(AdminFormsContext $ctx): string
     {
-        $form    = $ctx['form']    ?? null;
-        $form_id = $ctx['form_id'] ?? '';
-        $owners  = $ctx['owners']  ?? [];
+        $form    = $ctx->form;
+        $form_id = $ctx->form_id;
+        $owners  = $ctx->owners;
         if (!$form) {
             return '';
         }
@@ -848,15 +834,13 @@ Voici le document administratif à analyser :
 
     /**
      * SECTION B : Circuit de validation (diagramme visuel + liste des étapes).
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderWorkflowDiagramSection(array $ctx): string
+    public function renderWorkflowDiagramSection(AdminFormsContext $ctx): string
     {
-        $form_id        = $ctx['form_id']        ?? '';
-        $steps          = $ctx['steps']          ?? [];
-        $steps_by_ordre = $ctx['steps_by_ordre'] ?? [];
-        $edit_step_id   = $ctx['edit_step_id']   ?? '';
+        $form_id        = $ctx->form_id;
+        $steps          = $ctx->steps;
+        $steps_by_ordre = $ctx->steps_by_ordre;
+        $edit_step_id   = $ctx->edit_step_id;
 
         ob_start();
         ?>
@@ -1101,16 +1085,14 @@ Voici le document administratif à analyser :
 
     /**
      * SECTION D : Champs du formulaire.
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderFormFieldsSection(array $ctx): string
+    public function renderFormFieldsSection(AdminFormsContext $ctx): string
     {
-        $form_id         = $ctx['form_id']         ?? '';
-        $form_fields     = $ctx['form_fields']     ?? [];
-        $edit_field_id   = $ctx['edit_field_id']   ?? '';
-        $existing_groups = $ctx['existing_groups'] ?? [];
-        $steps           = $ctx['steps']           ?? [];
+        $form_id         = $ctx->form_id;
+        $form_fields     = $ctx->form_fields;
+        $edit_field_id   = $ctx->edit_field_id;
+        $existing_groups = $ctx->existing_groups;
+        $steps           = $ctx->steps;
         $field_types     = $this->getFormFieldTypes();
 
         ob_start();
@@ -1382,15 +1364,13 @@ Voici le document administratif à analyser :
 
     /**
      * Rend la page complète "Gestion des formulaires".
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderPage(array $ctx): void
+    public function renderPage(AdminFormsContext $ctx): void
     {
-        $form_id      = $ctx['form_id']      ?? '';
-        $form         = $ctx['form']         ?? null;
-        $error_msg    = $ctx['error_msg']    ?? '';
-        $success_msg  = $ctx['success_msg']  ?? '';
+        $form_id      = $ctx->form_id;
+        $form         = $ctx->form;
+        $error_msg    = $ctx->error_msg;
+        $success_msg  = $ctx->success_msg;
 
         $page_css = $this->getPageCss();
 

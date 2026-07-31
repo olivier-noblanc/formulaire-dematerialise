@@ -28,7 +28,7 @@ final class FormRenderer
         $label         = \App\Core\App::html()->escape(t_jargon($field['label']));
         $req_span      = $field['required'] ? ' <span class="req">*</span>' : '';
         $required_attr = (!$disabled && $field['required']) ? ' required aria-required="true"' : '';
-        $error_class   = isset($field_errors[$field['field_name']]) ? ' field-error' : '';
+        $error_class   = isset($field_errors[(string) $field['field_name']]) ? ' field-error' : '';
         $disabled_attr = $disabled ? ' disabled' : '';
 
         $auto_hint_id      = 'hint-' . $name;
@@ -104,20 +104,20 @@ final class FormRenderer
         if (!$disabled && $auto_hint_text !== '') {
             $described_ids[] = $auto_hint_id;
         }
-        if (!$disabled && isset($field_errors[$field['field_name']])) {
+        if (!$disabled && isset($field_errors[(string) $field['field_name']])) {
             $described_ids[] = 'err-' . $name;
         }
         $aria_attr = '';
         if (!$disabled && $described_ids !== []) {
             $aria_attr = ' aria-describedby="' . implode(' ', $described_ids) . '"';
         }
-        if (!$disabled && isset($field_errors[$field['field_name']])) {
+        if (!$disabled && isset($field_errors[(string) $field['field_name']])) {
             $aria_attr .= ' aria-invalid="true"';
         }
 
         $error_html = '';
-        if (!$disabled && isset($field_errors[$field['field_name']])) {
-            $error_html = '<span id="err-' . $name . '" class="error-hint">' . \App\Core\App::html()->escape($field_errors[$field['field_name']]) . '</span>';
+        if (!$disabled && isset($field_errors[(string) $field['field_name']])) {
+            $error_html = '<span id="err-' . $name . '" class="error-hint">' . \App\Core\App::html()->escape($field_errors[(string) $field['field_name']]) . '</span>';
         }
 
         $placeholder_attr = $placeholder !== '' ? ' placeholder="' . \App\Core\App::html()->escape($placeholder) . '"' : '';
@@ -163,7 +163,7 @@ final class FormRenderer
                     HTML;
 
             case FieldType::File->value:
-                $accept = implode(',', array_map(fn($ext) => '.' . $ext, App::attachment()->getAllowedExtensions()));
+                $accept = implode(',', array_map(fn(string $ext) => '.' . $ext, App::attachment()->getAllowedExtensions()));
                 return <<<HTML
                     <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="file" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" accept="{$accept}"{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
                     HTML;

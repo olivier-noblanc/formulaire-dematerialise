@@ -87,7 +87,7 @@ final class FormController extends BaseController
         // Charger les champs dynamiques du formulaire, ordonnés par ordre.
         // Exclure les champs réservés aux validateurs (filled_by='validator').
         $all_form_fields = App::validatorData()->getFormFields($form['id']);
-        $form_fields = array_filter($all_form_fields, fn($f): bool => empty($f['filled_by']) || $f['filled_by'] === FilledBy::Demandeur->value);
+        $form_fields = array_filter($all_form_fields, fn(array $f): bool => empty($f['filled_by']) || $f['filled_by'] === FilledBy::Demandeur->value);
 
         // Pour les champs avec condition : préparer les données pour le JS
         // Les champs conditionnels sont affichés mais masqués par le JS
@@ -447,7 +447,7 @@ final class FormController extends BaseController
                   <div<?php if ($cond !== '' && $cond !== '0') {
                       echo $cond;
                   } ?>>
-                  <?= new \App\Render\FormRenderer()->field($non_checkbox, $field_values[$non_checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  <?= new \App\Render\FormRenderer()->field($non_checkbox, $field_values[(string) $non_checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>
@@ -461,7 +461,7 @@ final class FormController extends BaseController
                   <div<?php if ($cond !== '' && $cond !== '0') {
                       echo $cond;
                   } ?>>
-                  <?= new \App\Render\FormRenderer()->field($checkbox, $field_values[$checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
+                  <?= new \App\Render\FormRenderer()->field($checkbox, $field_values[(string) $checkbox['field_name']] ?? null, $field_errors + $file_errors, $ldap_datalist_id) ?>
                   </div>
                 <?php endforeach; ?>
               </div>

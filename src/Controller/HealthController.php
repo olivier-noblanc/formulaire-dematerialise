@@ -90,7 +90,7 @@ final class HealthController extends BaseController
 
         // 6. Extensions PHP requises
         $requiredExt = ['mbstring', 'pdo_sqlite', 'json', 'session', 'pcre'];
-        $missingExt = array_filter($requiredExt, fn($ext) => !extension_loaded($ext));
+        $missingExt = array_filter($requiredExt, fn(string $ext) => !extension_loaded($ext));
         $extOk = $missingExt === [];
         $extDetail = $extOk
             ? 'Toutes les extensions requises sont présentes (' . count($requiredExt) . ')'
@@ -111,7 +111,7 @@ final class HealthController extends BaseController
                 'status' => $allHealthy ? 'healthy' : 'unhealthy',
                 'version' => App::cache()->getLatestVersion(),
                 'timestamp' => date('c'),
-                'checks' => array_map(fn($c) => ['label' => $c['label'], 'status' => $c['ok'] ? 'ok' : 'error', 'detail' => $c['detail']], $checks),
+                'checks' => array_map(fn(array $c) => ['label' => $c['label'], 'status' => $c['ok'] ? 'ok' : 'error', 'detail' => $c['detail']], $checks),
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             exit;
         }
