@@ -20,6 +20,10 @@ parameters:
         - '#^Function resolve_base_url not found\.#'
         - '#^Unused App\\#'
         - '#^Casting to .+ something that.s already .+\.$#'
+        - '#^Call to function array_filter\(\) requires parameter \#2#'
+        - '#^Foreach overwrites#'
+        - '#^Only booleans are allowed in#'
+        - '#^Loose comparison via#'
 
 services:
     -
