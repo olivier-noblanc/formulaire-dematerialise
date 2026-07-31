@@ -32,6 +32,7 @@ parameters:
         - src/Controller/FormTrackingController.php
         - src/Controller/MyFormsController.php
         - src/Render/MySubmissionsRenderer.php
+        - src/Render/InstallRenderer.php
     tmpDir: /tmp/phpstan-no-inline
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
