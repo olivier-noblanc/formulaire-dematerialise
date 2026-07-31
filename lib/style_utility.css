@@ -234,3 +234,6 @@
 .email-body { font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222; }
 .email-h2 { color:#003189; }
 .email-footer { font-size:12px;color:#999;margin-top:24px; }
+
+/* Bouton "Copier" compact (FormJsonValidator — validation feedback) */
+.btn-copy-sm { font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px; }

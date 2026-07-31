@@ -387,8 +387,8 @@ CSS;
             <button type="submit" class="btn btn-secondary btn-sm-3">OK</button>
         </form>
         <a href="index.php?p=admin_forms" class="btn btn-primary">＋ Nouveau formulaire</a>
-        <button type="button" onclick="document.getElementById('import-panel').classList.toggle('hidden')" class="btn btn-secondary btn-sm-3"><span aria-hidden="true">📥</span> Importer JSON</button>
-        <button type="button" onclick="document.getElementById('ai-prompt-panel').classList.toggle('hidden')" class="btn btn-secondary btn-sm-3"><span aria-hidden="true">🤖</span> Prompt IA</button>
+        <button type="button" data-toggle="#import-panel" class="btn btn-secondary btn-sm-3"><span aria-hidden="true">📥</span> Importer JSON</button>
+        <button type="button" data-toggle="#ai-prompt-panel" class="btn btn-secondary btn-sm-3"><span aria-hidden="true">🤖</span> Prompt IA</button>
         <form method="POST" class="u-dis-2">
             <?= \App\Core\App::security()->csrfField() ?>
             <input type="hidden" name="action" value="populate_samples">
@@ -434,7 +434,7 @@ CSS;
                     <div class="flex-gap5-7">
                         <input type="hidden" name="action" value="validate_json" id="import-action-input">
                         <button type="submit" class="btn btn-secondary u-fon-2"><span aria-hidden="true">🔍</span> Valider le JSON</button>
-                        <button type="submit" class="btn btn-primary u-fon-2" onclick="document.getElementById('import-action-input').value='import_form';return true;"><span aria-hidden="true">📥</span> Importer le formulaire</button>
+                        <button type="submit" class="btn btn-primary u-fon-2" data-set-input="#import-action-input=import_form"><span aria-hidden="true">📥</span> Importer le formulaire</button>
                     </div>
                 </form>
             </div>
@@ -464,7 +464,7 @@ CSS;
             <div class="section-card-body">
                 <p class="caption-3">Copiez le prompt ci-dessous, ajoutez votre document administratif, et collez le JSON retourné par l'IA dans le champ d'importation ci-dessus. Le JSON généré inclura les champs du formulaire <strong>et</strong> le circuit de validation (workflow).</p>
                 <div class="field">
-                    <label>Prompt à copier-coller <button type="button" onclick="(function(btn){var txt=document.getElementById('ai-prompt').innerText;try{navigator.clipboard.writeText(txt).then(function(){btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)})}catch(e){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✓ Copié !';setTimeout(function(){btn.textContent='📋 Copier'},2000)}})(this)" class="styled-box-5">📋 Copier</button></label>
+                    <label>Prompt à copier-coller <button type="button" data-copy-target="#ai-prompt" class="styled-box-5">📋 Copier</button></label>
                     <pre id="ai-prompt" class="code-block">Tu es un assistant qui génère des formulaires administratifs ET leur circuit de validation (workflow) au format JSON pour l'application "<?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?>".
 
 Consignes :
@@ -740,7 +740,7 @@ Voici le document administratif à analyser :
                 <?= \App\Core\App::security()->csrfField() ?>
                 <input type="hidden" name="action" value="delete_form">
                 <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
-                <button type="submit" onclick="return confirm('Supprimer ce formulaire et toutes ses données ? Cette action est irréversible.');" class="styled-box-6">Supprimer</button>
+                <button type="submit" data-confirm="Supprimer ce formulaire et toutes ses données ? Cette action est irréversible." class="styled-box-6">Supprimer</button>
             </form>
         </div>
         <div class="section-card-body">
@@ -1059,7 +1059,7 @@ Voici le document administratif à analyser :
                                         <?= \App\Core\App::security()->csrfField() ?>
                                         <input type="hidden" name="action" value="delete_step">
                                         <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
-                                        <button type="submit" class="btn btn-danger btn-compact-4" onclick="return confirm('Supprimer cette étape ? Les validateurs associés perdront leurs accès.');">Supprimer</button>
+                                        <button type="submit" class="btn btn-danger btn-compact-4" data-confirm="Supprimer cette étape ? Les validateurs associés perdront leurs accès.">Supprimer</button>
                                     </form>
                                     <!-- ── Mini-formulaire inline "＋ Destinataire" ─── -->
                                     <details class="u-dis-pos">
@@ -1074,7 +1074,7 @@ Voici le document administratif à analyser :
                                                 <input type="text" name="email" required placeholder="ex: prenom.nom@exemple.invalid ou {{nom_du_champ}}" list="ldap-recipient-suggestions" autocomplete="off" class="progress-fill-4">
                                                 <span class="hint u-col-dis-fon-mar">Email statique ou référence dynamique <code>{{champ}}</code>.</span>
                                                 <div class="flex-gap4">
-                                                    <button type="button" class="btn btn-secondary btn-compact-4" onclick="this.closest('details').open=false;">Annuler</button>
+                                                    <button type="button" class="btn btn-secondary btn-compact-4" data-close-details="details">Annuler</button>
                                                     <button type="submit" class="btn btn-primary btn-compact-4">Ajouter</button>
                                                 </div>
                                             </form>
@@ -1272,7 +1272,7 @@ Voici le document administratif à analyser :
                                             <input type="hidden" name="action" value="delete_field">
                                             <input type="hidden" name="field_id" value="<?= $ff['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
-                                            <button type="submit" class="btn btn-danger btn-compact-3" onclick="return confirm('Supprimer ce champ ? Les données associées seront perdues.');">Supprimer</button>
+                                            <button type="submit" class="btn btn-danger btn-compact-3" data-confirm="Supprimer ce champ ? Les données associées seront perdues.">Supprimer</button>
                                         </form>
                                     </td>
                                 </tr>
