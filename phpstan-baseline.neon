@@ -1,1679 +1,1679 @@
 parameters:
-	ignoreErrors:
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 4
-			path: alert_check.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, DateTimeImmutable\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: alert_check.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: alert_check.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: alert_check.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: assets.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: assets.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: classes/migrations/post_migration.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|string\|false\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 2
-			path: classes/migrations/post_migration.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: classes/migrations/schema_initial.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 9
-			path: classes/migrations/seed_default_forms.php
-
-		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 1
-			path: classes/migrations/v16.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: classes/migrations/v30.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|string\|false\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 2
-			path: classes/migrations/v30.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|string\|false\|null given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 4
-			path: classes/migrations/v30.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|string\|false\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 2
-			path: classes/migrations/v30.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 6
-			path: helpers.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: helpers.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 3
-			path: index.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 8
-			path: lib/core_bootstrap.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: lib/core_bootstrap.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 2
-			path: src/Attachment/AttachmentService.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Audit/AuditLogService.php
-
-		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 2
-			path: src/Auth/AuthService.php
-
-		-
-			message: '#^Only booleans are allowed in &&, resource\|false given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Only numeric types are allowed in \+, int\<0, max\>\|false given on the left side\.$#'
-			identifier: plus.leftNonNumeric
-			count: 1
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Only numeric types are allowed in \+, int\<0, max\>\|false given on the right side\.$#'
-			identifier: plus.rightNonNumeric
-			count: 1
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Only numeric types are allowed in \-, int\<0, max\>\|false given on the right side\.$#'
-			identifier: minus.rightNonNumeric
-			count: 3
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Unused App\\Contract\\AuditInterface\:\:log$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuditInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuditInterface\:\:securityLog$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuditInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:approveAdminRequest$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:getAdminEmail$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:getEmailDomain$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:getOwnedForms$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:getUser$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:isAdmin$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:isAdminEffective$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:isFormOwner$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:isSuperAdmin$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:processAdminRequest$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:rejectAdminRequest$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:removeAdmin$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\AuthInterface\:\:requireAdmin$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/AuthInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\CacheInterface\:\:get$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/CacheInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\CacheInterface\:\:getLatestVersion$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/CacheInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\CacheInterface\:\:set$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/CacheInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\ConditionInterface\:\:evaluate$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/ConditionInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\DatabaseInterface\:\:getPdo$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/DatabaseInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\DatabaseInterface\:\:release$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/DatabaseInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\FieldInterface\:\:deleteValidatorData$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/FieldInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\FieldInterface\:\:getFields$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/FieldInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\FieldInterface\:\:getValidatorData$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/FieldInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\FieldInterface\:\:getValidatorFields$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/FieldInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\FieldInterface\:\:saveValidatorData$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/FieldInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:buildUrl$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:displayUser$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:displayUserShort$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:escape$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:formatFileSize$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:getFileIcon$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:h$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:renderDonutChart$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:renderPagination$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\HtmlInterface\:\:tJargon$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/HtmlInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\MailInterface\:\:buildValidationEmail$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/MailInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\MailInterface\:\:renderEmailTemplate$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/MailInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SecurityInterface\:\:csrfField$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SecurityInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SecurityInterface\:\:generateCsrfToken$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SecurityInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SecurityInterface\:\:requireCsrf$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SecurityInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SecurityInterface\:\:sendSecurityHeaders$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SecurityInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SecurityInterface\:\:verifyCsrf$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SecurityInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SettingsInterface\:\:decrypt$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SettingsInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SettingsInterface\:\:encrypt$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SettingsInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SettingsInterface\:\:get$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SettingsInterface.php
-
-		-
-			message: '#^Unused App\\Contract\\SettingsInterface\:\:set$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Contract/SettingsInterface.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/AdminAccessController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, string\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/AdminAccessController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, array\<string, string\>\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 3
-			path: src/Controller/AdminAccessController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 2
-			path: src/Controller/AdminAlertsController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Controller/AdminAlertsController.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/AdminFormCrudHandler.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/AdminFormCrudHandler.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 8
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 2
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/AdminRecipientHandler.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/AdminRecipientHandler.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 2
-			path: src/Controller/AdminRecipientHandler.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, int\|false given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Controller/AdminRecipientHandler.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/AdminSettingsHandlers.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 3
-			path: src/Controller/AdminSettingsHandlers.php
-
-		-
-			message: '#^Only booleans are allowed in &&, string\|false given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 1
-			path: src/Controller/AdminSettingsHandlers.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/AdminSettingsHandlers.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Controller/AdminStepCrudHandler.php
-
-		-
-			message: '#^Casting to int something that''s already int\<0, max\>\.$#'
-			identifier: cast.useless
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Controller/ChangelogController.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 3
-			path: src/Controller/ChangelogController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 2
-			path: src/Controller/ChangelogController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 2
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, array\<string, string\>\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 2
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/DashboardController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|string given\.$#'
-			identifier: if.condNotBoolean
-			count: 3
-			path: src/Controller/DashboardController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 2
-			path: src/Controller/DashboardController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Controller/DownloadController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 11
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Only booleans are allowed in &&, array\<string, string\|null\>\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 2
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
-			identifier: arrayFilter.strict
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 5
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Foreach overwrites \$field with its value variable\.$#'
-			identifier: foreach.valueOverwrite
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Offset ''description'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Offset ''id'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 2
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Offset ''label'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Offset ''id'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Offset ''label'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 2
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 1
-			path: src/Controller/HealthController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/IndexController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/MyFormsController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/MySubmissionsController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/MyValidationsController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 6
-			path: src/Controller/RgpdController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Controller/ScreenshotController.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/StatsController.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 5
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Offset ''closed_at'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Offset ''data'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Offset ''form_id'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 2
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Offset ''form_label'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Offset ''submitted_by'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
-			identifier: offsetAccess.notFound
-			count: 3
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 5
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Only booleans are allowed in &&, array\<string, int\|string\|null\>\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|string given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Only booleans are allowed in an elseif condition, string\|null given\.$#'
-			identifier: elseif.condNotBoolean
-			count: 2
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 4
-			path: src/Core/DateHelper.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Core/DateHelper.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Core/SlugHelper.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, LDAP\\Connection\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 2
-			path: src/Email/EmailVerificationService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, bool\|int given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Email/EmailVerificationService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, resource\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Email/EmailVerificationService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 2
-			path: src/Email/EmailVerificationService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Export/ExportService.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 1
-			path: src/Export/ExportService.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Export/ExportService.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 3
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 17
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 2
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Only booleans are allowed in an elseif condition, int\|false given\.$#'
-			identifier: elseif.condNotBoolean
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Casting to int something that''s already int\.$#'
-			identifier: cast.useless
-			count: 1
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Offset ''recipients'' might not exist on array\{label\: ''Application / SI…'', field_type\: ''text'', field_name\: ''application_si'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Badge accès'', field_type\: ''checkbox'', field_name\: ''badge_acces'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Bilan de départ'', field_type\: ''textarea'', field_name\: ''bilan_depart'', required\: 0, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Bureau / Poste'', field_type\: ''text'', field_name\: ''bureau_poste'', required\: 0, card_group\: ''Affectation''\}\|array\{label\: ''Clôture compte SI'', field_type\: ''checkbox'', field_name\: ''cloture_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Clôture messagerie'', field_type\: ''checkbox'', field_name\: ''cloture_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Coût estimé \(€\)'', field_type\: ''text'', field_name\: ''cout_estime'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Création compte SI'', field_type\: ''checkbox'', field_name\: ''creation_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Création messagerie'', field_type\: ''checkbox'', field_name\: ''creation_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Date d\\''arrivée'', field_type\: ''date'', field_name\: ''date_arrivee'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date de départ'', field_type\: ''date'', field_name\: ''date_depart'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date début'', field_type\: ''date'', field_name\: ''date_debut'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Date fin'', field_type\: ''date'', field_name\: ''date_fin'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Date souhaitée'', field_type\: ''date'', field_name\: ''date_souhaitee'', required\: 0, card_group\: ''Demande''\|''Mutation''\}\|array\{label\: ''Date'', field_type\: ''date'', field_name\: ''date_sortie'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Direction / Service'', field_type\: ''text'', field_name\: ''direction_service'', required\: 1, card_group\: ''Affectation''\}\|array\{label\: ''Direction actuelle'', field_type\: ''text'', field_name\: ''direction_actuelle'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Direction demandée'', field_type\: ''text'', field_name\: ''direction_demandee'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Décision de…'', field_type\: ''select'', field_name\: ''decision_validation'', options\: array\{''Accepté'', ''Accepté avec…'', ''Refusé''\}, required\: 1, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Heure départ'', field_type\: ''text'', field_name\: ''heure_depart'', required\: 1, card_group\: ''Demande'', hint\: ''ex \: 16h30''\}\|array\{label\: ''Intitulé de la…'', field_type\: ''text'', field_name\: ''intitule_formation'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Justificatif'', field_type\: ''file'', field_name\: ''justificatif'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 0, card_group\: ''Demande''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Matériel…'', field_type\: ''select'', field_name\: ''materiel_info'', options\: array\{''PC portable'', ''PC fixe'', ''Tablette'', ''Aucun''\}, required\: 0, card_group\: ''IT''\}\|array\{label\: ''Montant \(€\)'', field_type\: ''text'', field_name\: ''montant'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Motif de départ'', field_type\: ''select'', field_name\: ''motif_depart'', options\: array\{''Démission'', ''Retraite'', ''Mutation sortante'', ''Fin de contrat'', ''Licenciement''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Motif'', field_type\: ''textarea'', field_name\: ''motif'', required\: 1, card_group\: ''Demande''\|''Finance''\|''Matériel''\|''Mutation''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Agent''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Identité'', hint\?\: ''Nom Prénom''\}\|array\{label\: ''Organisme'', field_type\: ''text'', field_name\: ''organisme'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Remarques'', field_type\: ''textarea'', field_name\: ''remarques'', required\: 0, card_group\: ''Divers''\}\|array\{label\: ''Restitution matériel'', field_type\: ''checkbox'', field_name\: ''restitution_materiel'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Type d\\''arrivée'', field_type\: ''select'', field_name\: ''type_arrivee'', options\: array\{''Nouveau recruté'', ''Mutation entrante'', ''Contrat temporaire'', ''Stage''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Création'', ''Modification'', ''Suppression''\}, required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Remboursement'', ''Avance''\}, required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Type de matériel'', field_type\: ''select'', field_name\: ''type_materiel'', options\: array\{''PC portable'', ''PC fixe'', ''Écran'', ''Imprimante'', ''Clavier/Souris'', ''Autre''\}, required\: 1, card_group\: ''Matériel''\}\|array\{label\: ''Validation DRH''\|''Validation DSI''\|''Validation…''\|''Validation manager''\|''Validation manager…''\|''Validation RH'', ordre\: 1\|2\|3\|4, recipients\: array\{''drh@exemple\.invalid''\}\|array\{''dsi@exemple\.invalid''\}\|array\{''logistique@dreets…''\}\|array\{''manager\-accueil…''\}\|array\{''manager@dreets\.gouv…''\}\|array\{''rh@exemple\.invalid''\}\}\|array\{label\: ''Validation…'', ordre\: 2, recipients\: array\{''compta@dreets\.gouv…''\}\}\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Forms/SampleFormsService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Mail/MailService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Mail/MailService.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Mail/MailService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Persona/PersonaService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|string\|false\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Persona/PersonaService.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 3
-			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 2
-			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, int given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string\|false given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 18
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 3
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 4
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
-			identifier: if.condNotBoolean
-			count: 4
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 5
-			path: src/Render/AdminSettingsRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Render/BackupRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 4
-			path: src/Render/ConfirmActionRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 4
-			path: src/Render/DashboardRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Render/DashboardRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Render/DashboardRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Render/ErrorRenderer.php
-
-		-
-			message: '#^Property App\\Render\\ErrorResponseException\:\:\$backUrl is never read$#'
-			identifier: shipmonk.deadProperty.neverRead
-			count: 1
-			path: src/Render/ErrorRenderer.php
-
-		-
-			message: '#^Property App\\Render\\ErrorResponseException\:\:\$hint is never read$#'
-			identifier: shipmonk.deadProperty.neverRead
-			count: 1
-			path: src/Render/ErrorRenderer.php
-
-		-
-			message: '#^Property App\\Render\\ErrorResponseException\:\:\$title is never read$#'
-			identifier: shipmonk.deadProperty.neverRead
-			count: 1
-			path: src/Render/ErrorRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 3
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in &&, mixed given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Render/HtmlService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Render/IndexRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Render/InstallRenderer.php
-
-		-
-			message: '#^Unused App\\Render\\InstallRenderer\:\:renderPage$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Render/InstallRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 3
-			path: src/Render/MonitoringRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Render/MonitoringRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 4
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
-			identifier: arrayFilter.strict
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 2
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 3
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Render/StatsRenderer.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: src/Render/StatsRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Render/StatsRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 14
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Unused App\\Render\\SubmissionViewRenderer\:\:renderContent$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
-			identifier: arrayFilter.strict
-			count: 2
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Repository/AuditRepository.php
-
-		-
-			message: '#^Unused App\\Repository\\AuditRepository\:\:getLogs$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Repository/AuditRepository.php
-
-		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Casting to int something that''s already int\.$#'
-			identifier: cast.useless
-			count: 1
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Rgpd/RgpdService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 4
-			path: src/Security/SecurityService.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Settings/SettingsService.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: src/Stats/StatsService.php
-
-		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Only booleans are allowed in &&, string\|false given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 4
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 6
-			path: src/Validation/ValidationService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Validation/ValidationService.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string\|false given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Validation/ValidationService.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Workflow/ConditionEvaluator.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 7
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Only booleans are allowed in &&, string\|false given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 5
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 4
-			path: src/Workflow/WorkflowEngine.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 3
-			path: src/lib_wrappers.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 1
-			path: src/lib_wrappers.php
-
-		-
-			message: '#^Parameter \#1 \$formRepository of class App\\Forms\\SampleFormsService constructor expects App\\Repository\\FormRepository, App\\Core\\Database given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/lib_wrappers.php
-
-		-
-			message: '#^Unused App\\Render\\DynamicCssService::rule$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: src/Render/DynamicCssService.php
-
-		-
-			message: '#^Strict comparison using === between .+ and null will always evaluate to false\.$#'
-		-
-			message: '#^Strict comparison using !== between .+ and null will always evaluate to true\.$#'
-		-
-			message: '#^Variable \$.+ on left side of \?\? always exists#'
-		-
-			message: '#^Offset .+ on .+ on left side of \?\? always exists#'
-		-
-			message: '#^Loose comparison via "==" is not allowed\.$#'
-		-
-			message: '#^execute\(\) reçoit#'
-
-		-
-			message: '#^Casting to .+ something that.s already .+\.$#'
-		-
-			message: '#^Function strtolower invoked with 2 parameters#'
-		-
-			message: '#^Strict comparison using === between .+ and 0 will always evaluate to false\.$#'
-		-
-			message: '#^Result of (&&|\|\|) is always (false|true)\.$#'
-		-
-			message: '#^Strict comparison using !== between .+ and .+ will always evaluate to (false|true)\.$#'
-		-
-			message: '#^Only booleans are allowed in a negated boolean#'
-		-
-			message: '#^Strict comparison using === between bool and .+ will always evaluate to false\.$#'
-		-
-			message: '#^execute\(\) re[^v].*placeholder#'
-
-		-
-			message: '#^Strict comparison using === between list<.+> and .+ will always evaluate to false\.$#'
-		-
-			message: '#^Parameter \#\.\+ \$\w+ of function .+ expects .+, .+ given\.$#'
-		-
-			message: '#^Loose comparison via "==" is not allowed\.$#'
-		-
-			message: '#^execute\(\) re.*placeholder#'
-
-		-
-			message: '#^Parameter #1 \$string of function strlen expects string, string\|false given\.$#'
-		-
-			message: '#^Parameter #3 \$passphrase of function openssl_encrypt expects string, string\|false given\.$#'
-		-
-			message: '#^Parameter #3 \$passphrase of function openssl_decrypt expects string, string\|false given\.$#'
+        ignoreErrors:
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 4
+                        path: alert_check.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, DateTimeImmutable\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: alert_check.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: alert_check.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: alert_check.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: assets.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: assets.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 1
+                        path: classes/migrations/post_migration.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|string\|false\|null given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 2
+                        path: classes/migrations/post_migration.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 1
+                        path: classes/migrations/schema_initial.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 9
+                        path: classes/migrations/seed_default_forms.php
+
+                -
+                        message: '#^Casting to string something that''s already string\.$#'
+                        identifier: cast.useless
+                        count: 1
+                        path: classes/migrations/v16.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: classes/migrations/v30.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, int\|string\|false\|null given on the left side\.$#'
+                        identifier: booleanAnd.leftNotBoolean
+                        count: 2
+                        path: classes/migrations/v30.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, int\|string\|false\|null given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 4
+                        path: classes/migrations/v30.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|string\|false\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 2
+                        path: classes/migrations/v30.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 6
+                        path: helpers.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: helpers.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 3
+                        path: index.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 8
+                        path: lib/core_bootstrap.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: lib/core_bootstrap.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 2
+                        path: src/Attachment/AttachmentService.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Audit/AuditLogService.php
+
+                -
+                        message: '#^Casting to string something that''s already string\.$#'
+                        identifier: cast.useless
+                        count: 2
+                        path: src/Auth/AuthService.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, resource\|false given on the left side\.$#'
+                        identifier: booleanAnd.leftNotBoolean
+                        count: 1
+                        path: src/Cache/CacheService.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Cache/CacheService.php
+
+                -
+                        message: '#^Only numeric types are allowed in \+, int\<0, max\>\|false given on the left side\.$#'
+                        identifier: plus.leftNonNumeric
+                        count: 1
+                        path: src/Cache/CacheService.php
+
+                -
+                        message: '#^Only numeric types are allowed in \+, int\<0, max\>\|false given on the right side\.$#'
+                        identifier: plus.rightNonNumeric
+                        count: 1
+                        path: src/Cache/CacheService.php
+
+                -
+                        message: '#^Only numeric types are allowed in \-, int\<0, max\>\|false given on the right side\.$#'
+                        identifier: minus.rightNonNumeric
+                        count: 3
+                        path: src/Cache/CacheService.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuditInterface\:\:log$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuditInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuditInterface\:\:securityLog$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuditInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:approveAdminRequest$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:getAdminEmail$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:getEmailDomain$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:getOwnedForms$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:getUser$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:isAdmin$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:isAdminEffective$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:isFormOwner$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:isSuperAdmin$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:processAdminRequest$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:rejectAdminRequest$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:removeAdmin$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\AuthInterface\:\:requireAdmin$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/AuthInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\CacheInterface\:\:get$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/CacheInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\CacheInterface\:\:getLatestVersion$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/CacheInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\CacheInterface\:\:set$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/CacheInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\ConditionInterface\:\:evaluate$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/ConditionInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\DatabaseInterface\:\:getPdo$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/DatabaseInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\DatabaseInterface\:\:release$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/DatabaseInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\FieldInterface\:\:deleteValidatorData$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/FieldInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\FieldInterface\:\:getFields$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/FieldInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\FieldInterface\:\:getValidatorData$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/FieldInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\FieldInterface\:\:getValidatorFields$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/FieldInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\FieldInterface\:\:saveValidatorData$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/FieldInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:buildUrl$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:displayUser$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:displayUserShort$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:escape$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:formatFileSize$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:getFileIcon$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:h$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:renderDonutChart$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:renderPagination$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\HtmlInterface\:\:tJargon$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/HtmlInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\MailInterface\:\:buildValidationEmail$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/MailInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\MailInterface\:\:renderEmailTemplate$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/MailInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SecurityInterface\:\:csrfField$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SecurityInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SecurityInterface\:\:generateCsrfToken$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SecurityInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SecurityInterface\:\:requireCsrf$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SecurityInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SecurityInterface\:\:sendSecurityHeaders$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SecurityInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SecurityInterface\:\:verifyCsrf$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SecurityInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SettingsInterface\:\:decrypt$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SettingsInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SettingsInterface\:\:encrypt$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SettingsInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SettingsInterface\:\:get$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SettingsInterface.php
+
+                -
+                        message: '#^Unused App\\Contract\\SettingsInterface\:\:set$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Contract/SettingsInterface.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/AdminAccessController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, string\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/AdminAccessController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, array\<string, string\>\|null given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 3
+                        path: src/Controller/AdminAccessController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 2
+                        path: src/Controller/AdminAlertsController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Controller/AdminAlertsController.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Controller/AdminFieldCrudHandler.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/AdminFormCrudHandler.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/AdminFormCrudHandler.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Controller/AdminImportExportHandler.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 8
+                        path: src/Controller/AdminImportExportHandler.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/AdminImportExportHandler.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 2
+                        path: src/Controller/AdminImportExportHandler.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/AdminRecipientHandler.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/AdminRecipientHandler.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 2
+                        path: src/Controller/AdminRecipientHandler.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, int\|false given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Controller/AdminRecipientHandler.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Controller/AdminSettingsHandlers.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 3
+                        path: src/Controller/AdminSettingsHandlers.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, string\|false given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 1
+                        path: src/Controller/AdminSettingsHandlers.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/AdminSettingsHandlers.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Controller/AdminStepCrudHandler.php
+
+                -
+                        message: '#^Casting to int something that''s already int\<0, max\>\.$#'
+                        identifier: cast.useless
+                        count: 1
+                        path: src/Controller/BackupController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/BackupController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Controller/BackupController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Controller/ChangelogController.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 3
+                        path: src/Controller/ChangelogController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 2
+                        path: src/Controller/ChangelogController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/ConfirmActionController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/ConfirmActionController.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 2
+                        path: src/Controller/ConfirmActionController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, array\<string, string\>\|null given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Controller/ConfirmActionController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 2
+                        path: src/Controller/ConfirmActionController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Controller/ConfirmActionController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/DashboardController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|string given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 3
+                        path: src/Controller/DashboardController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 2
+                        path: src/Controller/DashboardController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Controller/DownloadController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 11
+                        path: src/Controller/FormController.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, array\<string, string\|null\>\|null given on the left side\.$#'
+                        identifier: booleanAnd.leftNotBoolean
+                        count: 1
+                        path: src/Controller/FormController.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, int given on the left side\.$#'
+                        identifier: booleanAnd.leftNotBoolean
+                        count: 2
+                        path: src/Controller/FormController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/FormController.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Controller/FormController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Controller/FormController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Controller/FormController.php
+
+                -
+                        message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
+                        identifier: arrayFilter.strict
+                        count: 1
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 5
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Foreach overwrites \$field with its value variable\.$#'
+                        identifier: foreach.valueOverwrite
+                        count: 1
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Offset ''description'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 1
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Offset ''id'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 2
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Offset ''label'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 1
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Controller/FormPreviewController.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Controller/FormTrackingController.php
+
+                -
+                        message: '#^Offset ''id'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 1
+                        path: src/Controller/FormTrackingController.php
+
+                -
+                        message: '#^Offset ''label'' might not exist on array\{id\: string, slug\: string, label\: string, description\: string\|null, actif\: int, created_at\: string, deadline_field\: string\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 2
+                        path: src/Controller/FormTrackingController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/FormTrackingController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Controller/FormTrackingController.php
+
+                -
+                        message: '#^Casting to string something that''s already string\.$#'
+                        identifier: cast.useless
+                        count: 1
+                        path: src/Controller/HealthController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/IndexController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/MonitoringController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/MonitoringController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/MonitoringController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Controller/MonitoringController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/MyFormsController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/MySubmissionsController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/MyValidationsController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 6
+                        path: src/Controller/RgpdController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Controller/ScreenshotController.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Controller/StatsController.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 5
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Offset ''closed_at'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 1
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Offset ''data'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 1
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Offset ''form_id'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 2
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Offset ''form_label'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 1
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Offset ''submitted_by'' might not exist on array\{id\: string, form_id\: string, data\: string, submitted_by\: string, submitted_at\: string\|null, closed_at\: string\|null, status\: string, admin_comment\: string, \.\.\.\}\|null\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 3
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Controller/SubmissionViewController.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Controller/ValidateController.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 5
+                        path: src/Controller/ValidateController.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, array\<string, int\|string\|null\>\|null given on the left side\.$#'
+                        identifier: booleanAnd.leftNotBoolean
+                        count: 1
+                        path: src/Controller/ValidateController.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, int\|string given on the left side\.$#'
+                        identifier: booleanAnd.leftNotBoolean
+                        count: 1
+                        path: src/Controller/ValidateController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/ValidateController.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Controller/ValidateController.php
+
+                -
+                        message: '#^Only booleans are allowed in an elseif condition, string\|null given\.$#'
+                        identifier: elseif.condNotBoolean
+                        count: 2
+                        path: src/Controller/ValidateController.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 4
+                        path: src/Core/DateHelper.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Core/DateHelper.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Core/SlugHelper.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, LDAP\\Connection\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 2
+                        path: src/Email/EmailVerificationService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, bool\|int given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Email/EmailVerificationService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, resource\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Email/EmailVerificationService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 2
+                        path: src/Email/EmailVerificationService.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Export/ExportService.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 1
+                        path: src/Export/ExportService.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Export/ExportService.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 3
+                        path: src/Forms/FormJsonValidator.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 17
+                        path: src/Forms/FormJsonValidator.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 2
+                        path: src/Forms/FormJsonValidator.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Forms/FormJsonValidator.php
+
+                -
+                        message: '#^Only booleans are allowed in an elseif condition, int\|false given\.$#'
+                        identifier: elseif.condNotBoolean
+                        count: 1
+                        path: src/Forms/FormJsonValidator.php
+
+                -
+                        message: '#^Casting to int something that''s already int\.$#'
+                        identifier: cast.useless
+                        count: 1
+                        path: src/Forms/SampleFormsService.php
+
+                -
+                        message: '#^Offset ''recipients'' might not exist on array\{label\: ''Application / SI…'', field_type\: ''text'', field_name\: ''application_si'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Badge accès'', field_type\: ''checkbox'', field_name\: ''badge_acces'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Bilan de départ'', field_type\: ''textarea'', field_name\: ''bilan_depart'', required\: 0, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Bureau / Poste'', field_type\: ''text'', field_name\: ''bureau_poste'', required\: 0, card_group\: ''Affectation''\}\|array\{label\: ''Clôture compte SI'', field_type\: ''checkbox'', field_name\: ''cloture_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Clôture messagerie'', field_type\: ''checkbox'', field_name\: ''cloture_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Coût estimé \(€\)'', field_type\: ''text'', field_name\: ''cout_estime'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Création compte SI'', field_type\: ''checkbox'', field_name\: ''creation_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Création messagerie'', field_type\: ''checkbox'', field_name\: ''creation_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Date d\\''arrivée'', field_type\: ''date'', field_name\: ''date_arrivee'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date de départ'', field_type\: ''date'', field_name\: ''date_depart'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date début'', field_type\: ''date'', field_name\: ''date_debut'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Date fin'', field_type\: ''date'', field_name\: ''date_fin'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Date souhaitée'', field_type\: ''date'', field_name\: ''date_souhaitee'', required\: 0, card_group\: ''Demande''\|''Mutation''\}\|array\{label\: ''Date'', field_type\: ''date'', field_name\: ''date_sortie'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Direction / Service'', field_type\: ''text'', field_name\: ''direction_service'', required\: 1, card_group\: ''Affectation''\}\|array\{label\: ''Direction actuelle'', field_type\: ''text'', field_name\: ''direction_actuelle'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Direction demandée'', field_type\: ''text'', field_name\: ''direction_demandee'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Décision de…'', field_type\: ''select'', field_name\: ''decision_validation'', options\: array\{''Accepté'', ''Accepté avec…'', ''Refusé''\}, required\: 1, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Heure départ'', field_type\: ''text'', field_name\: ''heure_depart'', required\: 1, card_group\: ''Demande'', hint\: ''ex \: 16h30''\}\|array\{label\: ''Intitulé de la…'', field_type\: ''text'', field_name\: ''intitule_formation'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Justificatif'', field_type\: ''file'', field_name\: ''justificatif'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 0, card_group\: ''Demande''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Matériel…'', field_type\: ''select'', field_name\: ''materiel_info'', options\: array\{''PC portable'', ''PC fixe'', ''Tablette'', ''Aucun''\}, required\: 0, card_group\: ''IT''\}\|array\{label\: ''Montant \(€\)'', field_type\: ''text'', field_name\: ''montant'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Motif de départ'', field_type\: ''select'', field_name\: ''motif_depart'', options\: array\{''Démission'', ''Retraite'', ''Mutation sortante'', ''Fin de contrat'', ''Licenciement''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Motif'', field_type\: ''textarea'', field_name\: ''motif'', required\: 1, card_group\: ''Demande''\|''Finance''\|''Matériel''\|''Mutation''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Agent''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Identité'', hint\?\: ''Nom Prénom''\}\|array\{label\: ''Organisme'', field_type\: ''text'', field_name\: ''organisme'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Remarques'', field_type\: ''textarea'', field_name\: ''remarques'', required\: 0, card_group\: ''Divers''\}\|array\{label\: ''Restitution matériel'', field_type\: ''checkbox'', field_name\: ''restitution_materiel'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Type d\\''arrivée'', field_type\: ''select'', field_name\: ''type_arrivee'', options\: array\{''Nouveau recruté'', ''Mutation entrante'', ''Contrat temporaire'', ''Stage''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Création'', ''Modification'', ''Suppression''\}, required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Remboursement'', ''Avance''\}, required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Type de matériel'', field_type\: ''select'', field_name\: ''type_materiel'', options\: array\{''PC portable'', ''PC fixe'', ''Écran'', ''Imprimante'', ''Clavier/Souris'', ''Autre''\}, required\: 1, card_group\: ''Matériel''\}\|array\{label\: ''Validation DRH''\|''Validation DSI''\|''Validation…''\|''Validation manager''\|''Validation manager…''\|''Validation RH'', ordre\: 1\|2\|3\|4, recipients\: array\{''drh@exemple\.invalid''\}\|array\{''dsi@exemple\.invalid''\}\|array\{''logistique@dreets…''\}\|array\{''manager\-accueil…''\}\|array\{''manager@dreets\.gouv…''\}\|array\{''rh@exemple\.invalid''\}\}\|array\{label\: ''Validation…'', ordre\: 2, recipients\: array\{''compta@dreets\.gouv…''\}\}\.$#'
+                        identifier: offsetAccess.notFound
+                        count: 1
+                        path: src/Forms/SampleFormsService.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Mail/MailService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Mail/MailService.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Mail/MailService.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Persona/PersonaService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|string\|false\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Persona/PersonaService.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Render/AdminAlertsRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 3
+                        path: src/Render/AdminAlertsRenderer.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 2
+                        path: src/Render/AdminAlertsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, int given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Render/AdminAlertsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, string\|false given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Render/AdminAlertsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Render/AdminAlertsRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Render/AdminAlertsRenderer.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Render/AdminFormsRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 18
+                        path: src/Render/AdminFormsRenderer.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 1
+                        path: src/Render/AdminFormsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 3
+                        path: src/Render/AdminFormsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 4
+                        path: src/Render/AdminFormsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 4
+                        path: src/Render/AdminFormsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 5
+                        path: src/Render/AdminSettingsRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Render/BackupRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 4
+                        path: src/Render/ConfirmActionRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 4
+                        path: src/Render/DashboardRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Render/DashboardRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Render/DashboardRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Render/ErrorRenderer.php
+
+                -
+                        message: '#^Property App\\Render\\ErrorResponseException\:\:\$backUrl is never read$#'
+                        identifier: shipmonk.deadProperty.neverRead
+                        count: 1
+                        path: src/Render/ErrorRenderer.php
+
+                -
+                        message: '#^Property App\\Render\\ErrorResponseException\:\:\$hint is never read$#'
+                        identifier: shipmonk.deadProperty.neverRead
+                        count: 1
+                        path: src/Render/ErrorRenderer.php
+
+                -
+                        message: '#^Property App\\Render\\ErrorResponseException\:\:\$title is never read$#'
+                        identifier: shipmonk.deadProperty.neverRead
+                        count: 1
+                        path: src/Render/ErrorRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 3
+                        path: src/Render/FormRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, mixed given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 1
+                        path: src/Render/FormRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Render/FormRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Render/FormRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Render/HtmlService.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Render/IndexRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Render/InstallRenderer.php
+
+                -
+                        message: '#^Unused App\\Render\\InstallRenderer\:\:renderPage$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Render/InstallRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 3
+                        path: src/Render/MonitoringRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Render/MonitoringRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 4
+                        path: src/Render/MySubmissionsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Render/MySubmissionsRenderer.php
+
+                -
+                        message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
+                        identifier: arrayFilter.strict
+                        count: 1
+                        path: src/Render/MyValidationsRenderer.php
+
+                -
+                        message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+                        identifier: function.strict
+                        count: 1
+                        path: src/Render/MyValidationsRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Render/MyValidationsRenderer.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 1
+                        path: src/Render/MyValidationsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 2
+                        path: src/Render/MyValidationsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Render/MyValidationsRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 3
+                        path: src/Render/MyValidationsRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Render/NavigationRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Render/NavigationRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Render/NavigationRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Render/NavigationRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Render/StatsRenderer.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 1
+                        path: src/Render/StatsRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 1
+                        path: src/Render/StatsRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 14
+                        path: src/Render/SubmissionViewRenderer.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Render/SubmissionViewRenderer.php
+
+                -
+                        message: '#^Unused App\\Render\\SubmissionViewRenderer\:\:renderContent$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Render/SubmissionViewRenderer.php
+
+                -
+                        message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
+                        identifier: arrayFilter.strict
+                        count: 2
+                        path: src/Render/ValidateRenderer.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Render/ValidateRenderer.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 1
+                        path: src/Render/ValidateRenderer.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Repository/AuditRepository.php
+
+                -
+                        message: '#^Unused App\\Repository\\AuditRepository\:\:getLogs$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Repository/AuditRepository.php
+
+                -
+                        message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+                        identifier: equal.notAllowed
+                        count: 1
+                        path: src/Repository/BaseRepository.php
+
+                -
+                        message: '#^Casting to int something that''s already int\.$#'
+                        identifier: cast.useless
+                        count: 1
+                        path: src/Repository/FormRepository.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 2
+                        path: src/Repository/FormRepository.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Rgpd/RgpdService.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 4
+                        path: src/Security/SecurityService.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Settings/SettingsService.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 2
+                        path: src/Stats/StatsService.php
+
+                -
+                        message: '#^Casting to string something that''s already string\.$#'
+                        identifier: cast.useless
+                        count: 1
+                        path: src/Token/TokenService.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Token/TokenService.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, string\|false given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 1
+                        path: src/Token/TokenService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Token/TokenService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Token/TokenService.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Token/TokenService.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 4
+                        path: src/Token/TokenService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 6
+                        path: src/Validation/ValidationService.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Validation/ValidationService.php
+
+                -
+                        message: '#^Only booleans are allowed in a ternary operator condition, string\|false given\.$#'
+                        identifier: ternary.condNotBoolean
+                        count: 1
+                        path: src/Validation/ValidationService.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 1
+                        path: src/Workflow/ConditionEvaluator.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 7
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, string\|false given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 1
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\|null\>\|null given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+                        identifier: booleanNot.exprNotBoolean
+                        count: 1
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 1
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
+                        identifier: if.condNotBoolean
+                        count: 5
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+                        identifier: ternary.shortNotAllowed
+                        count: 4
+                        path: src/Workflow/WorkflowEngine.php
+
+                -
+                        message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+                        identifier: empty.notAllowed
+                        count: 3
+                        path: src/lib_wrappers.php
+
+                -
+                        message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
+                        identifier: booleanAnd.rightNotBoolean
+                        count: 1
+                        path: src/lib_wrappers.php
+
+                -
+                        message: '#^Parameter \#1 \$formRepository of class App\\Forms\\SampleFormsService constructor expects App\\Repository\\FormRepository, App\\Core\\Database given\.$#'
+                        identifier: argument.type
+                        count: 1
+                        path: src/lib_wrappers.php
+
+                -
+                        message: '#^Unused App\\Render\\DynamicCssService::rule$#'
+                        identifier: shipmonk.deadMethod
+                        count: 1
+                        path: src/Render/DynamicCssService.php
+
+                -
+                        message: '#^Strict comparison using === between .+ and null will always evaluate to false\.$#'
+                -
+                        message: '#^Strict comparison using !== between .+ and null will always evaluate to true\.$#'
+                -
+                        message: '#^Variable \$.+ on left side of \?\? always exists#'
+                -
+                        message: '#^Offset .+ on .+ on left side of \?\? always exists#'
+                -
+                        message: '#^Loose comparison via "==" is not allowed\.$#'
+                -
+                        message: '#^execute\(\) reçoit#'
+
+                -
+                        message: '#^Casting to .+ something that.s already .+\.$#'
+                -
+                        message: '#^Function strtolower invoked with 2 parameters#'
+                -
+                        message: '#^Strict comparison using === between .+ and 0 will always evaluate to false\.$#'
+                -
+                        message: '#^Result of (&&|\|\|) is always (false|true)\.$#'
+                -
+                        message: '#^Strict comparison using !== between .+ and .+ will always evaluate to (false|true)\.$#'
+                -
+                        message: '#^Only booleans are allowed in a negated boolean#'
+                -
+                        message: '#^Strict comparison using === between bool and .+ will always evaluate to false\.$#'
+                -
+                        message: '#^execute\(\) re[^v].*placeholder#'
+
+                -
+                        message: '#^Strict comparison using === between list<.+> and .+ will always evaluate to false\.$#'
+                -
+                        message: '#^Parameter \#\.\+ \$\w+ of function .+ expects .+, .+ given\.$#'
+                -
+                        message: '#^Loose comparison via "==" is not allowed\.$#'
+                -
+                        message: '#^execute\(\) re.*placeholder#'
+
+                -
+                        message: '#^Parameter \#1 \$string of function strlen expects string, string\|false given\.$#'
+                -
+                        message: '#^Parameter \#3 \$passphrase of function openssl_encrypt expects string, string\|false given\.$#'
+                -
+                        message: '#^Parameter \#3 \$passphrase of function openssl_decrypt expects string, string\|false given\.$#'
