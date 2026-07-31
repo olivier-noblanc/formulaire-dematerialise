@@ -149,6 +149,31 @@ jobs:
       - run: composer update --no-interaction --prefer-dist --no-scripts
       - run: php vendor/bin/phpstan analyse -c phpstan-sql-placeholder.neon --memory-limit=512M --no-progress
 
+  # ── PHPStan : catch qui avale une exception silencieusement ─────
+  # Règle custom (phpstan-rules/NoSilentCatchRule.php) — opérationnalise
+  # AGENTS.md règle 9 ("Ne jamais avaler une exception sur un chemin
+  # critique"). continue-on-error pour ce premier run — volume réel
+  # inconnu tant que ça n'a pas tourné une fois en CI sur le vrai code
+  # (même précaution que les 3 règles précédentes de la session).
+  phpstan-no-silent-catch:
+    name: PHPStan (no silent catch)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+      - run: composer update --no-interaction --prefer-dist --no-scripts
+      - run: php vendor/bin/phpstan analyse -c phpstan-no-silent-catch.neon --memory-limit=512M --no-progress
+
   # ── Tests unitaires + e2e + couverture ─────────────────────────
   phpunit:
     name: PHPUnit (unit + e2e + coverage)
