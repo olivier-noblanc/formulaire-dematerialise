@@ -1,0 +1,24 @@
+# phpstan-no-silent-catch.neon — Détection des catch qui avalent une
+# exception silencieusement (NoSilentCatchRule), opérationnalise AGENTS.md
+# règle 9. Config et job séparés du job principal PHPStan (level 8), même
+# précaution que les 3 règles précédentes de la session (2026-07-30) :
+# volume réel de violations inconnu tant que ça n'a pas tourné une fois en
+# CI sur le vrai code, ne pas risquer de casser un job déjà vert.
+parameters:
+    customRulesetUsed: true
+    level: 0
+    paths:
+        - src/
+        - lib/
+        - classes/
+    excludePaths:
+        - tests/*
+        - vendor/*
+    tmpDir: /tmp/phpstan-no-silent-catch
+    reportUnmatchedIgnoredErrors: false
+
+services:
+    -
+        class: App\PHPStan\NoSilentCatchRule
+        tags:
+            - phpstan.rules.rule
