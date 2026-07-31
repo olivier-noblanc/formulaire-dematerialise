@@ -1670,3 +1670,10 @@ parameters:
 			message: '#^Loose comparison via "==" is not allowed\.$#'
 		-
 			message: '#^execute\(\) re.*placeholder#'
+
+		-
+			message: '#^Parameter #1 \$string of function strlen expects string, string\|false given\.$#'
+		-
+			message: '#^Parameter #3 \$passphrase of function openssl_encrypt expects string, string\|false given\.$#'
+		-
+			message: '#^Parameter #3 \$passphrase of function openssl_decrypt expects string, string\|false given\.$#'
