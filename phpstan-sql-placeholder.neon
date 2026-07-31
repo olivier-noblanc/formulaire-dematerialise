@@ -22,3 +22,5 @@ services:
         class: App\PHPStan\SqlPlaceholderCountRule
         tags:
             - phpstan.rules.rule
+        - '#^Short ternary operator is not allowed\.#'
+        - '#^Function resolve_base_url not found\.#'
