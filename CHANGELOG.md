@@ -1,5 +1,28 @@
 # Changelog — CircuitDémat
 
+## [10.33.0] — 2026-07-31
+_Résumé : Baseline PHPStan nettoyée (491→371, −24%) — empty(), deadMethod exclusions, type fixes._
+
+### 🔧 PHPStan baseline cleanup
+- **empty.notAllowed** : 51 occurrences remplacées par des comparaisons strictes (`=== ''`, `=== null`, `=== []`) dans 30+ fichiers
+- **SettingsService** : cast `(string)` sur les defaults de `SETTINGS_DEFAULTS` (qui contient des ints : `smtp_port`, `delai_relance_h`). Corrige 2 erreurs de type (`assign.propertyType` + `return.type`)
+- **AuditRepository::getClientIp()** : `explode()` recevait `string|false` de `getenv()` — guard explicite ajouté
+- **Entrées stale nettoyées** : ternary.shortNotAllowed (29), cast.useless (6), function.strict (10), equal.notAllowed (4) — le code avait déjà été corrigé mais la baseline n'était pas régénérée
+- **deadMethod exclusions** dans `phpstan.neon` :
+  - `src/Contract/*` (51 faux positifs — méthodes d'interfaces utilisées via implémentations)
+  - `src/Controller/*` (27 faux positifs — dispatch dynamique `new $class()` que shipmonk ne suit pas)
+  - `src/Render/DynamicCssService.php` (1 faux positif — `render()` appelé via `style.php`)
+
+### 📊 Résultat
+
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| PHPStan baseline | **491** | **371** (−120, −24%) |
+| Tests | 1411 | 1411 (0 fail) |
+| Assertions | 4082 | 4082 |
+
+---
+
 ## [10.32.0] — 2026-07-31
 _Résumé : DynamicCssService — CSS dynamique par objet, zéro style="" inline, classes sémantiques (fin des hash md5)._
 
