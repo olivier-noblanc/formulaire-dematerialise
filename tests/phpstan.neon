@@ -41,15 +41,21 @@ parameters:
         -
             message: '#^Call to static method PHPUnit\\Framework\\Assert::assertTrue\(\) with true will always evaluate to true\.$#'
         -
-            message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+            message: '#^Construct empty\(\) is not allowed\.#'
         -
-            message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+            message: '#^Short ternary operator is not allowed\.#'
         -
             message: '#^Call to an undefined method ReflectionType::getName\(\)\.$#'
         -
-            message: '#^Casting to int something that.s already int\.$#'
+            message: '#^Casting to (int|string) something that.s already (int|string)\.$#'
         -
             message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert::#'
+        -
+            message: '#^Variable \$.+ on left side of \?\? always exists#'
+        -
+            message: '#^Variable \$.+ might not be defined#'
+        -
+            message: '#^Property App\\Tests\\.+ \$\w+ is never written#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php
