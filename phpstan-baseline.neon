@@ -1146,13 +1146,13 @@ parameters:
 			count: 1
 			path: src/lib_wrappers.php
 		-
-			message: '#^Array key must be integer or string, but .+ given\.0'
+			message: '#^Array key must be integer or string, but .+ given.$#'
 
 		-
-			message: '#^Cannot cast .+ to string\.0'
+			message: '#^Cannot cast .+ to string\.$#'
 
 		-
-			message: '#^Cannot compare different types in .+\.0'
+			message: '#^Cannot compare different types in .+\.$#'
 
 		-
 			message: '#^Comparison .+ contains non-comparable type#'
@@ -1170,13 +1170,13 @@ parameters:
 			message: '#^Param.tre .+ typ. \?array .bare..+#'
 
 		-
-			message: '#^Public property .+ not marked as readonly\.0'
+			message: '#^Public property .+ not marked as readonly\.$#'
 
 		-
-			message: '#^Result of \|\| is always (false|true)\.0'
+			message: '#^Result of \|\| is always (false|true)\.$#'
 
 		-
-			message: '#^Strict comparison using === between array and .+ will always evaluate to false\.0'
+			message: '#^Strict comparison using === between array and .+ will always evaluate to false\.$#'
 
 		-
 			message: '#^Function .+ always return list, but is marked as .+0'
