@@ -369,6 +369,7 @@ final class NavigationRenderer
 </main>
 <?= $after_main ?>
 <?= $this->footer() ?>
+<script src="assets.php?type=js&file=app" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
 </body>
 </html>
         <?php

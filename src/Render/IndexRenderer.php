@@ -78,7 +78,7 @@ final class IndexRenderer
                     <div class="tutorial-footer">
                       <a href="index.php?p=my_submissions" class="tutorial-cta"><span aria-hidden="true">📂</span> Voir mes demandes →</a>
                       <button type="button" class="tutorial-dismiss"
-                              onclick="this.closest('.tutorial').style.display='none';"
+                              data-dismiss=".tutorial"
                               aria-label="Fermer le tutoriel de prise en main">J'ai compris ✓</button>
                     </div>
                   </section>

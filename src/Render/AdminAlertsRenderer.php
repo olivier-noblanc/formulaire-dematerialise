@@ -147,7 +147,7 @@ final class AdminAlertsRenderer
                 $html .= '                ' . App::security()->csrfField() . "\n";
                 $html .= '                <input type="hidden" name="action" value="delete_rule">' . "\n";
                 $html .= '                <input type="hidden" name="rule_id" value="' . $h($rule['id']) . '">' . "\n";
-                $html .= '                <button type="submit" class="btn btn-danger btn-xs-4" onclick="return confirm(\'Supprimer cette règle d\\\\\'alerte ?\');">Supprimer</button>' . "\n";
+                $html .= '                <button type="submit" class="btn btn-danger btn-xs-4" data-confirm="Supprimer cette règle d\'alerte ?">Supprimer</button>' . "\n";
                 $html .= '              </form>' . "\n";
                 $html .= '            </div>' . "\n";
                 $html .= '          </div>' . "\n";
@@ -284,7 +284,7 @@ final class AdminAlertsRenderer
         $html .= '      <form method="POST">' . "\n";
         $html .= '        ' . App::security()->csrfField() . "\n";
         $html .= '        <input type="hidden" name="action" value="delete_alert_log">' . "\n";
-        $html .= '        <button type="submit" class="btn btn-secondary btn-sm-8" onclick="return confirm(\'Purger les logs d\\\\\'alerte de plus de ' . $purgeDays . ' jours ?\');"><span aria-hidden="true">🗑</span> Purger &gt; ' . $purgeDays . 'j</button>' . "\n";
+        $html .= '        <button type="submit" class="btn btn-secondary btn-sm-8" data-confirm="Purger les logs d\'alerte de plus de ' . $purgeDays . ' jours ?"><span aria-hidden="true">🗑</span> Purger &gt; ' . $purgeDays . 'j</button>' . "\n";
         $html .= '      </form>' . "\n";
         $html .= '    </div>' . "\n";
         $html .= "\n";
