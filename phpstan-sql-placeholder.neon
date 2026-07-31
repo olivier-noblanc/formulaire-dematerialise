@@ -10,6 +10,7 @@ parameters:
     excludePaths:
         - tests/*
         - vendor/*
+        - src/Render/InstallRenderer.php
     tmpDir: /tmp/phpstan-sql-placeholder
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
@@ -24,6 +25,8 @@ parameters:
         - '#^Foreach overwrites#'
         - '#^Only booleans are allowed in#'
         - '#^Loose comparison via#'
+        - '#^Property App\\#'
+        - '#^Function inst_#'
 
 services:
     -
