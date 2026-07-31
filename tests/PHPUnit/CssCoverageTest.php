@@ -407,26 +407,47 @@ final class CssCoverageTest extends TestCase
         $renderer = AdminFormsRenderer::getInstance();
 
         // renderWorkflowDiagramSection
-        $html1 = $renderer->renderWorkflowDiagramSection([
-            'form_id' => 'f1',
-            'steps' => [['id' => 's1', 'label' => 'RH', 'ordre' => 1, 'actif' => true, 'recipients' => [['id' => 'r1', 'email' => 'rh@test.fr']], 'condition' => '']],
-            'steps_by_ordre' => [1 => [['id' => 's1', 'label' => 'RH', 'ordre' => 1, 'actif' => true, 'recipients' => [['id' => 'r1', 'email' => 'rh@test.fr']], 'condition' => '']]],
-            'edit_step_id' => '',
-        ]);
+        $ctx1 = new \App\Render\AdminFormsContext(
+            form_id: 'f1',
+            form: null,
+            forms: [],
+            error_msg: '',
+            success_msg: '',
+            preserved_json: '',
+            validation_html: '',
+            owners: [],
+            steps: [['id' => 's1', 'label' => 'RH', 'ordre' => 1, 'actif' => true, 'recipients' => [['id' => 'r1', 'email' => 'rh@test.fr']], 'condition' => '']],
+            steps_by_ordre: [1 => [['id' => 's1', 'label' => 'RH', 'ordre' => 1, 'actif' => true, 'recipients' => [['id' => 'r1', 'email' => 'rh@test.fr']], 'condition' => '']]],
+            edit_step_id: '',
+            form_fields: [],
+            edit_field_id: '',
+            existing_groups: [],
+        );
+        $html1 = $renderer->renderWorkflowDiagramSection($ctx1);
         $classes1 = $this->extractHtmlClasses($html1);
         self::assertCssClassesInFile($classes1, $cssClasses, ['section-', 'workflow-', 'add-sub-', 'step-', 'recipient-', 'chip-', 'form-grid', 'field-type-', 'required-star', 'ff-', 'fields-table', 'actions', 'empty-'], 'AdminFormsRenderer::renderWorkflowDiagramSection');
 
         // renderFormFieldsSection
-        $html2 = $renderer->renderFormFieldsSection([
-            'form_id' => 'f1',
-            'form_fields' => [['id' => 'ff1', 'label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom',
+        $ctx2 = new \App\Render\AdminFormsContext(
+            form_id: 'f1',
+            form: null,
+            forms: [],
+            error_msg: '',
+            success_msg: '',
+            preserved_json: '',
+            validation_html: '',
+            owners: [],
+            steps: [['id' => 's1', 'label' => 'RH', 'ordre' => 1]],
+            steps_by_ordre: [],
+            edit_step_id: '',
+            form_fields: [['id' => 'ff1', 'label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom',
                 'options' => null, 'hint' => '', 'required' => 1, 'ordre' => 1,
                 'card_group' => 'Général', 'filled_by' => 'demandeur', 'validator_step' => '',
                 'visibility' => 'all']],
-            'edit_field_id' => '',
-            'existing_groups' => ['Général'],
-            'steps' => [['id' => 's1', 'label' => 'RH', 'ordre' => 1]],
-        ]);
+            edit_field_id: '',
+            existing_groups: ['Général'],
+        );
+        $html2 = $renderer->renderFormFieldsSection($ctx2);
         $classes2 = $this->extractHtmlClasses($html2);
         self::assertCssClassesInFile($classes2, $cssClasses, ['section-', 'fields-table', 'field-type-', 'required-star', 'add-sub-', 'form-grid', 'ff-', 'actions', 'empty-'], 'AdminFormsRenderer::renderFormFieldsSection');
     }

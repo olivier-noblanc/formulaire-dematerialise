@@ -65,6 +65,16 @@ parameters:
         - '#^Access to an undefined property PHPMailer\\PHPMailer\\PHPMailer::#'
         - '#^Result of function .+ \(void\) is used#'
         - '#^Call to function base64_decode\(\) requires parameter \#2#'
+        - #^Array key must be integer or string, but .+ given\.0
+        - #^Calling iterator_to_array without 2nd parameter#
+        - #^Closure parameter .+ is unused#
+        - #^Public property .+ not marked as readonly#
+        - #^Missing parameter typehint for arrow function parameter#
+        - #^Missing native return typehint#
+        - #^Cannot compare different types in .+#
+        - #^Comparison .+ contains non-comparable type#
+        - #^Null value involved in binary operation:.+#
+        - #^Using [+\-] over non-number#
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php

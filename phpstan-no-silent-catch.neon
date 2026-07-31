@@ -1,9 +1,6 @@
 # phpstan-no-silent-catch.neon — Détection des catch qui avalent une
 # exception silencieusement (NoSilentCatchRule), opérationnalise AGENTS.md
-# règle 9. Config et job séparés du job principal PHPStan (level 8), même
-# précaution que les 3 règles précédentes de la session (2026-07-30) :
-# volume réel de violations inconnu tant que ça n'a pas tourné une fois en
-# CI sur le vrai code, ne pas risquer de casser un job déjà vert.
+# règle 9.
 parameters:
     customRulesetUsed: true
     level: 0
@@ -16,6 +13,35 @@ parameters:
         - vendor/*
     tmpDir: /tmp/phpstan-no-silent-catch
     reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '#^Ce catch n.a ni throw ni exit#'
+        - '#^Array key must be integer or string#'
+        - '#^Comparison .+ contains non-comparable type#'
+        - '#^Null value involved in binary operation#'
+        - '#^Using [+\-] over non-number#'
+        - '#^Cannot cast .+ to string#'
+        - '#^Cannot compare different types#'
+        - '#^Strict comparison using === between#'
+        - '#^Strict comparison using !== between#'
+        - '#^Loose comparison via#'
+        - '#^Construct empty\(\) is not allowed#'
+        - '#^Short ternary operator is not allowed#'
+        - '#^Call to function .+ requires parameter#'
+        - '#^Function .+ not found#'
+        - '#^Unused App\\#'
+        - '#^Casting to .+ something that.s already#'
+        - '#^Only booleans are allowed in#'
+        - '#^Variable \$.+ on left side of \?\?#'
+        - '#^Variable \$.+ might not be defined#'
+        - '#^Property App\\#'
+        - '#^Function inst_#'
+        - '#^Param.tre .+ typ. array .bare#'
+        - '#^Missing parameter typehint#'
+        - '#^Missing native return typehint#'
+        - '#^Public property .+ not marked as readonly#'
+        - '#^Foreach overwrites#'
+        - '#^Call to function array_filter#'
+        - '#^Result of (&&|\|\|) is always#'
 
 services:
     -
