@@ -133,7 +133,7 @@ jobs:
   phpstan-sql-placeholder:
     name: PHPStan (SQL placeholder mismatch)
     runs-on: ubuntu-latest
-    continue-on-error: true
+
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
