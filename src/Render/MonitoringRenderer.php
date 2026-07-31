@@ -44,19 +44,17 @@ final class MonitoringRenderer
     }
 
     /**
-     * Bandeau de 6 cartes stats.
-     *
-     * @param array<string, mixed> $ctx
+     * Encart statistiques (en-tête).
      */
-    public static function stats(array $ctx): string
+    public static function stats(MonitoringContext $ctx): string
     {
-        $total_sub       = (int) ($ctx['total_sub'] ?? 0);
-        $taux_validation = $ctx['taux_validation'] ?? 0;
-        $avg_days        = (float) ($ctx['avg_days'] ?? 0);
-        $avg_hours       = (float) ($ctx['avg_hours'] ?? 0);
-        $en_cours_sub    = (int) ($ctx['en_cours_sub'] ?? 0);
-        $tokens_bloques  = $ctx['tokens_bloques'] ?? [];
-        $active_alerts   = $ctx['active_alerts'] ?? [];
+        $total_sub       = $ctx->total_sub;
+        $taux_validation = $ctx->taux_validation;
+        $avg_days        = $ctx->avg_days;
+        $avg_hours       = $ctx->avg_hours;
+        $en_cours_sub    = $ctx->en_cours_sub;
+        $tokens_bloques  = $ctx->tokens_bloques;
+        $active_alerts   = $ctx->active_alerts;
 
         $avg_label = $avg_days > 0 ? $avg_days . ' j' : $avg_hours . ' h';
         $alert_cls = $active_alerts === '' || $active_alerts === null || $active_alerts === '0' ? 'success' : 'danger';
@@ -582,38 +580,19 @@ final class MonitoringRenderer
 
     /**
      * Compose l'ensemble du contenu HTML de la page Surveillance.
-     *
-     * @param array<string, mixed> $ctx
      */
-    public static function content(array $ctx): string
+    public static function content(MonitoringContext $ctx): string
     {
-        $total_sub       = (int) ($ctx['total_sub'] ?? 0);
-        $valide_sub      = (int) ($ctx['valide_sub'] ?? 0);
-        $en_cours_sub    = (int) ($ctx['en_cours_sub'] ?? 0);
-        $refuse_sub      = (int) ($ctx['refuse_sub'] ?? 0);
-        $bloque_hours    = (int) ($ctx['bloque_hours'] ?? 0);
-        $tokens_bloques  = $ctx['tokens_bloques'] ?? [];
-        $active_alerts   = $ctx['active_alerts'] ?? [];
-        $recent_alerts   = $ctx['recent_alerts'] ?? [];
-        $by_form_stats   = $ctx['by_form_stats'] ?? [];
-        $daily_stats     = $ctx['daily_stats'] ?? [];
-        $smtp_status     = (string) ($ctx['smtp_status'] ?? 'inconnu');
-        $smtp_detail     = (string) ($ctx['smtp_detail'] ?? '');
-        $smtp_debug_log  = (string) ($ctx['smtp_debug_log'] ?? '');
-        $mail_logs       = $ctx['mail_logs'] ?? [];
-        $last_remind     = (string) ($ctx['last_remind'] ?? '');
-        $last_alert_check = (string) ($ctx['last_alert_check'] ?? '');
-
         $stats_html         = self::stats($ctx);
-        $repartition_html   = self::repartition($total_sub, $valide_sub, $en_cours_sub, $refuse_sub);
-        $smtp_html          = self::smtpCard($smtp_status, $smtp_detail, $smtp_debug_log);
-        $scripts_html       = self::scriptsCard($last_remind, $last_alert_check);
-        $active_alerts_html = self::activeAlerts($active_alerts);
-        $recent_alerts_html = self::recentAlerts($recent_alerts);
-        $by_form_html       = self::byForm($by_form_stats);
-        $daily_html         = self::dailyActivity($daily_stats);
-        $blocked_html       = self::blockedTokens($tokens_bloques, $bloque_hours);
-        $mail_logs_html     = self::mailLogs($mail_logs);
+        $repartition_html   = self::repartition($ctx->total_sub, $ctx->valide_sub, $ctx->en_cours_sub, $ctx->refuse_sub);
+        $smtp_html          = self::smtpCard($ctx->smtp_status, $ctx->smtp_detail, $ctx->smtp_debug_log);
+        $scripts_html       = self::scriptsCard($ctx->last_remind, $ctx->last_alert_check);
+        $active_alerts_html = self::activeAlerts($ctx->active_alerts);
+        $recent_alerts_html = self::recentAlerts($ctx->recent_alerts);
+        $by_form_html       = self::byForm($ctx->by_form_stats);
+        $daily_html         = self::dailyActivity($ctx->daily_stats);
+        $blocked_html       = self::blockedTokens($ctx->tokens_bloques, $ctx->bloque_hours);
+        $mail_logs_html     = self::mailLogs($ctx->mail_logs);
         $audit_html         = self::auditLog($ctx);
 
         return <<<HTML
@@ -648,19 +627,17 @@ final class MonitoringRenderer
 
     /**
      * Carte journal d'audit (S5-B / Action 1).
-     *
-     * @param array<string, mixed> $ctx
      */
-    public static function auditLog(array $ctx): string
+    public static function auditLog(MonitoringContext $ctx): string
     {
-        $audit_filters     = $ctx['audit_filters'] ?? [];
-        $audit_total       = (int) ($ctx['audit_total'] ?? 0);
-        $audit_total_pages = (int) ($ctx['audit_total_pages'] ?? 1);
-        $audit_page        = (int) ($ctx['audit_page'] ?? 1);
-        $audit_logs        = $ctx['audit_logs'] ?? [];
-        $action_types      = $ctx['action_types'] ?? [];
-        $audit_base_url    = (string) ($ctx['audit_base_url'] ?? 'index.php?p=monitoring');
-        $audit_base_qs     = (string) ($ctx['audit_base_qs'] ?? '');
+        $audit_filters     = $ctx->audit_filters;
+        $audit_total       = $ctx->audit_total;
+        $audit_total_pages = $ctx->audit_total_pages;
+        $audit_page        = $ctx->audit_page;
+        $audit_logs        = $ctx->audit_logs;
+        $action_types      = $ctx->action_types;
+        $audit_base_url    = $ctx->audit_base_url;
+        $audit_base_qs     = $ctx->audit_base_qs;
 
         $action_options = '<option value="">Toutes les actions</option>';
         foreach ($action_types as $action_type) {

@@ -4,8 +4,9 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1411** (0 fail) |
-| Assertions | **4082** |
+| Tests | **1425** (0 fail) |
+| Assertions | **4094** |
+| `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **371** (level 8) |
@@ -154,6 +155,23 @@ Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules`
 | `deadProperty.neverRead` | 3 | **LOW** | Propriétés jamais lues |
 | `elseIf.condNotBoolean` | 2 | **LOW** | Conditions non-booléennes dans `elseif` |
 | Autres | ~273 | **LOW** | Divers (plus.leftNonNumeric, foreach.valueOverwrite, argument.type, ternary.condNotBoolean, etc.) |
+
+### DTOs Renderer — migration array $ctx → DTOs typés (en cours)
+
+Objectif : remplacer les `array<string, mixed>` catch-all par des `readonly class` DTOs typés.
+Cible : `noUntypedArray` → 0.
+
+| DTO | Renderer | Propriétés | Statut |
+|-----|----------|-----------|--------|
+| `AdminFormsContext` | `AdminFormsRenderer` | 14 | **Fait** (v10.32.0) |
+| `SubmissionViewContext` | `SubmissionViewRenderer` | 27 | **Fait** |
+| `MonitoringContext` | `MonitoringRenderer` | 27 | **Fait** |
+| `AdminSettingsContext` | `AdminSettingsRenderer` | 4 | **Fait** |
+
+Reste :
+- `DashboardRenderer` (18 erreurs, params déjà en array shapes PHPDoc)
+- `MyValidationsRenderer` (8 erreurs, params individuels)
+- Autres renderers/controllers/repositories avec `array` params individuels
 
 ### Bug backlog audit — 29/29 vérifiés, 29 fixés
 

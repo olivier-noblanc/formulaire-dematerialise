@@ -32,13 +32,12 @@ final class AdminSettingsRenderer
     /**
      * Compose le contenu HTML de la page admin_settings.php.
      */
-    /** @param array<string, mixed> $state */
-    public function renderContent(array $state): string
+    public function renderContent(AdminSettingsContext $state): string
     {
-        $success_msg   = (string) ($state['success'] ?? '');
-        $error_msg     = (string) ($state['error'] ?? '');
-        $test_msg      = (string) ($state['test'] ?? '');
-        $verify_result = $state['verify_result'] ?? null;
+        $success_msg   = $state->success;
+        $error_msg     = $state->error;
+        $test_msg      = $state->test;
+        $verify_result = $state->verify_result;
 
         // Lecture des paramètres actuels
         $smtp_host             = \App\Core\App::settings()->get('smtp_host');
@@ -472,7 +471,7 @@ final class AdminSettingsRenderer
             <div class="<?= $security_score >= 3 ? 'score-ok' : 'score-warn' ?>">
                 <strong>Niveau de sécurité : <?= $security_score ?>/4</strong>
                 <div class="hint-muted-3">
-                    <?= implode(' · ', array_map(fn($i) => '✔ ' . $i, $security_items)) ?>
+                    <?= implode(' · ', array_map(fn(string $i) => '✔ ' . $i, $security_items)) ?>
                 </div>
                 <?php if ($security_score < 3): ?>
                     <div class="hint-warning">
