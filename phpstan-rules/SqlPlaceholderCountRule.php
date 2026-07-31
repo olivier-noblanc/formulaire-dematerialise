@@ -67,62 +67,18 @@ class SqlPlaceholderCountRule implements Rule
             return [];
         }
 
-        $finder = new NodeFinder();
+        $visitor = new SqlPlaceholderVisitor($this);
+        $traverser = new \PhpParser\NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($stmts);
 
-        /** @var array<string, int> nom de variable => nombre de '?' dans son SQL préparé */
-        $preparedCounts = [];
-        $assigns = $finder->find($stmts, static fn (Node $n): bool => $n instanceof Assign);
-        foreach ($assigns as $assign) {
-            if (!$assign instanceof Assign) {
-                continue;
-            }
-            if (!$assign->var instanceof Variable || !is_string($assign->var->name)) {
-                continue;
-            }
-            $count = $this->prepareCallPlaceholderCount($assign->expr);
-            if ($count !== null) {
-                $preparedCounts[$assign->var->name] = $count;
-            }
-        }
-
-        $errors = [];
-        $executeCalls = $finder->find(
-            $stmts,
-            static fn (Node $n): bool => $n instanceof MethodCall
-                && $n->name instanceof Identifier
-                && $n->name->toString() === 'execute'
-        );
-
-        foreach ($executeCalls as $call) {
-            if (!$call instanceof MethodCall) {
-                continue;
-            }
-            $argCount = $this->literalArrayArgCount($call);
-            if ($argCount === null) {
-                continue;
-            }
-
-            $placeholderCount = $this->prepareCallPlaceholderCount($call->var);
-            if ($placeholderCount === null && $call->var instanceof Variable && is_string($call->var->name)) {
-                $placeholderCount = $preparedCounts[$call->var->name] ?? null;
-            }
-            if ($placeholderCount === null) {
-                continue;
-            }
-
-            if ($placeholderCount !== $argCount) {
-                $errors[] = RuleErrorBuilder::message(
-                    "execute() reçoit {$argCount} élément(s) mais la requête préparée attend {$placeholderCount} placeholder(s) '?'. " .
-                    "Sur PDO/SQLite un décalage ne lève PAS d'exception : le(s) paramètre(s) manquant(s) valent NULL, la requête " .
-                    "s'exécute quand même et peut silencieusement ne rien matcher (ex. WHERE id = NULL) au lieu de planter."
-                )->identifier('sqlPlaceholder.mismatch')->build();
-            }
-        }
-
-        return $errors;
+        return $visitor->errors;
     }
 
-    private function prepareCallPlaceholderCount(Node $node): ?int
+    /**
+     * @internal utilisé par SqlPlaceholderVisitor
+     */
+    public function prepareCallPlaceholderCount(Node $node): ?int
     {
         if (!$node instanceof MethodCall) {
             return null;
@@ -160,7 +116,10 @@ class SqlPlaceholderCountRule implements Rule
         return null;
     }
 
-    private function literalArrayArgCount(MethodCall $call): ?int
+    /**
+     * @internal utilisé par SqlPlaceholderVisitor
+     */
+    public function literalArrayArgCount(MethodCall $call): ?int
     {
         if (count($call->args) < 1) {
             return 0;
@@ -178,5 +137,70 @@ class SqlPlaceholderCountRule implements Rule
             }
         }
         return count($value->items);
+    }
+}
+
+/**
+ * Parcours séquentiel du corps d'une fonction/méthode, dans l'ordre réel
+ * des instructions — contrairement à une recherche NodeFinder globale
+ * (non ordonnée), ceci gère correctement une variable réaffectée à
+ * plusieurs prepare() différents dans la même fonction : chaque
+ * execute() est comparé au prepare() qui le précède réellement dans le
+ * flux, pas au dernier prepare() trouvé n'importe où dans la fonction.
+ *
+ * @internal
+ */
+final class SqlPlaceholderVisitor extends \PhpParser\NodeVisitorAbstract
+{
+    /** @var array<string, int> nom de variable => nombre de '?' actuellement connu à ce point du parcours */
+    private array $preparedCounts = [];
+
+    /** @var list<\PHPStan\Rules\IdentifierRuleError> */
+    public array $errors = [];
+
+    public function __construct(private readonly SqlPlaceholderCountRule $rule)
+    {
+    }
+
+    public function enterNode(Node $node): ?Node
+    {
+        if ($node instanceof Assign
+            && $node->var instanceof Variable
+            && is_string($node->var->name)
+        ) {
+            $count = $this->rule->prepareCallPlaceholderCount($node->expr);
+            if ($count !== null) {
+                $this->preparedCounts[$node->var->name] = $count;
+            }
+            return null;
+        }
+
+        if ($node instanceof MethodCall
+            && $node->name instanceof Identifier
+            && $node->name->toString() === 'execute'
+        ) {
+            $argCount = $this->rule->literalArrayArgCount($node);
+            if ($argCount === null) {
+                return null;
+            }
+
+            $placeholderCount = $this->rule->prepareCallPlaceholderCount($node->var);
+            if ($placeholderCount === null && $node->var instanceof Variable && is_string($node->var->name)) {
+                $placeholderCount = $this->preparedCounts[$node->var->name] ?? null;
+            }
+            if ($placeholderCount === null) {
+                return null;
+            }
+
+            if ($placeholderCount !== $argCount) {
+                $this->errors[] = RuleErrorBuilder::message(
+                    "execute() reçoit {$argCount} élément(s) mais la requête préparée attend {$placeholderCount} placeholder(s) '?'. " .
+                    "Sur PDO/SQLite un décalage ne lève PAS d'exception : le(s) paramètre(s) manquant(s) valent NULL, la requête " .
+                    "s'exécute quand même et peut silencieusement ne rien matcher (ex. WHERE id = NULL) au lieu de planter."
+                )->identifier('sqlPlaceholder.mismatch')->build();
+            }
+        }
+
+        return null;
     }
 }
