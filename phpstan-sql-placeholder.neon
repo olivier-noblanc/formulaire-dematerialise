@@ -1,0 +1,24 @@
+# phpstan-sql-placeholder.neon — Détection des décalages entre placeholders
+# '?' et arguments execute() (SqlPlaceholderCountRule) — config et job
+# séparés du job principal PHPStan (level 8), même précaution que
+# phpstan-no-inline.neon (2026-07-30) : volume réel de violations inconnu
+# tant que ça n'a pas tourné une fois en CI, ne pas risquer de casser un
+# job déjà vert.
+parameters:
+    customRulesetUsed: true
+    level: 0
+    paths:
+        - src/
+        - lib/
+        - classes/
+    excludePaths:
+        - tests/*
+        - vendor/*
+    tmpDir: /tmp/phpstan-sql-placeholder
+    reportUnmatchedIgnoredErrors: false
+
+services:
+    -
+        class: App\PHPStan\SqlPlaceholderCountRule
+        tags:
+            - phpstan.rules.rule
