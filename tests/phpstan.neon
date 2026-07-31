@@ -9,21 +9,10 @@
 # extensions auto-chargées pour CE fichier uniquement — la configuration
 # racine (phpstan.neon, src/) n'est pas touchée, shipmonk continue d'y
 # tourner normalement.
-#
-# Tentative avortée : réinclure explicitement phpstan-strict-rules/rules.neon
-# pour garder ses vérifications ici aussi (appel statique, empty(),
-# ternaire court...) — a fait planter le job sans détail exploitable
-# (probablement %featureToggles.bleedingEdge%, une conditionalTag de la
-# v2.x de ce paquet, normalement fournie par le chargement standard de
-# extension-installer et absente ici). Retiré : plus risqué que la
-# perte de ces vérifications pour tests/ ne le justifie.
 
 parameters:
     customRulesetUsed: true
 
-    # Niveau volontairement différent de src/ (niveau 8) : les tests n'ont
-    # pas les mêmes enjeux de typage strict que le code de production.
-    # Décision explicite (2026-07-29), pas dans AGENTS.md à ce jour.
     level: 2
     paths:
         - .
@@ -37,7 +26,6 @@ parameters:
         - download/*
         - .git/*
         - *.bak
-        # Fichiers de test exclus (polyfills mbstring, tests CLI)
         - test_refactor.php
         - test_v4.php
         - test_bootstrap.php
@@ -52,28 +40,19 @@ parameters:
     ignoreErrors:
         -
             message: '#^Call to static method PHPUnit\\Framework\\Assert::assertTrue\(\) with true will always evaluate to true\.$#'
-            # Faux positif de phpstan-phpunit sur expectNotToPerformAssertions()
-            # (idiome PHPUnit légitime pour "vérifie juste l'absence
-            # d'exception" — pas un vrai assertTrue(true) écrit à la main).
+        -
+            message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+        -
+            message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+        -
+            message: '#^Call to an undefined method ReflectionType::getName\(\)\.$#'
+        -
+            message: '#^Casting to int something that.s already int\.$#'
+        -
+            message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert::#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php
         - ../vendor/PHPMailer/src/PHPMailer.php
         - ../vendor/PHPMailer/src/Exception.php
         - ../vendor/PHPMailer/src/SMTP.php
-
-        # Baseline pour tests/ — erreurs pré-existantes (empty(), ternary,
-        # dynamic call to static method, ReflectionType::getName())
-        -
-            message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-            identifier: empty.notAllowed
-        -
-            message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-            identifier: ternary.shortNotAllowed
-        -
-            message: '#^Call to an undefined method ReflectionType::getName\(\)\.$#'
-        -
-            message: '#^Casting to int something that.s already int\.$#'
-            identifier: cast.useless
-        -
-            message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert::#'
