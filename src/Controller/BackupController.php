@@ -162,7 +162,7 @@ final class BackupController extends BaseController
 
                             $ids = $this->submissionRepo->findPurgeableIds($cutoff);
 
-                            if ($ids !== [] && $ids !== null) {
+                            if ($ids !== []) {
                                 $validatorDataDeleted = $this->submissionRepo->deleteValidatorDataBySubmissionIds($ids);
                                 $alertLogsDeleted = $this->alertRepo->deleteLogBySubmissionIds($ids);
                                 $tokensDeleted = $this->tokenRepo->deleteBySubmissionIds($ids);
@@ -202,7 +202,7 @@ final class BackupController extends BaseController
         // → warning PHP si le fichier n'existe pas. On inverse l'ordre.
         $dbStats['file_exists'] = file_exists($dbPath);
         $dbStats['file_size'] = $dbStats['file_exists'] ? filesize($dbPath) : false;
-        $dbStats['file_size_readable'] = $this->formatBytes((int) ($dbStats['file_size'] ?? 0));
+        $dbStats['file_size_readable'] = $this->formatBytes((int) $dbStats['file_size']);
         $dbStats['file_modified'] = '—';
         if ($dbStats['file_exists']) {
             $mtime = filemtime($dbPath);

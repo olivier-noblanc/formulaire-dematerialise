@@ -48,7 +48,7 @@ final class AdminStepCrudHandler
         $label = trim($_POST['label'] ?? '');
         $ordre = (int) ($_POST['ordre'] ?? 0);
         $actif = isset($_POST['actif']) ? 1 : 0;
-        if ($step_id === '' || $step_id === null || $step_id === '0' || ($label === '' || $label === '0') || $ordre <= 0) {
+        if ($step_id === '' || $step_id === '0' || ($label === '' || $label === '0') || $ordre <= 0) {
             return ['error' => 'Les champs obligatoires ne sont pas remplis.'];
         }
 
@@ -95,7 +95,7 @@ final class AdminStepCrudHandler
         if ($err !== null) {
             return ['error' => $err];
         }
-        if ($step_id === '' || $step_id === null || $step_id === '0') {
+        if ($step_id === '' || $step_id === '0') {
             return null;
         }
         $active_count = App::workflow()->hasActiveStepSubmissions($step_id);
