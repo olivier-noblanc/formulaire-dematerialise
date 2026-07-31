@@ -1644,3 +1644,20 @@ parameters:
 			message: '#^Loose comparison via "==" is not allowed\.$#'
 		-
 			message: '#^execute\(\) reçoit#'
+
+		-
+			message: '#^Casting to .+ something that.s already .+\.$#'
+		-
+			message: '#^Function strtolower invoked with 2 parameters#'
+		-
+			message: '#^Strict comparison using === between .+ and 0 will always evaluate to false\.$#'
+		-
+			message: '#^Result of (&&|\|\|) is always (false|true)\.$#'
+		-
+			message: '#^Strict comparison using !== between .+ and .+ will always evaluate to (false|true)\.$#'
+		-
+			message: '#^Only booleans are allowed in a negated boolean#'
+		-
+			message: '#^Strict comparison using === between bool and .+ will always evaluate to false\.$#'
+		-
+			message: '#^execute\(\) re[^v].*placeholder#'

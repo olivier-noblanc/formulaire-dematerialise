@@ -85,7 +85,7 @@ final class FormJsonValidator
                     } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $f['field_name'])) {
                         $warnings[] = "$prefix.field_name = \"{$f['field_name']}\" n'est pas en snake_case valide. Format attendu : minuscules, chiffres et underscores uniquement, commençant par une lettre. Exemple : \"date_arrivee\", \"type_demande\".";
                     }
-                    if (in_array(strtolower($f['field_name'], true), $seen_field_names, true)) {
+                    if (in_array(strtolower($f['field_name']), $seen_field_names, true)) {
                         $errors[] = "$prefix.field_name = \"{$f['field_name']}\" est en doublon. Chaque champ doit avoir un field_name unique.";
                     }
                     $seen_field_names[] = strtolower($f['field_name']);
@@ -240,7 +240,7 @@ final class FormJsonValidator
                             $errors[] = "$prefix.condition.field est requis et doit être une chaîne (nom technique du champ validateur).";
                         } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $raw_cond['field'])) {
                             $warnings[] = "$prefix.condition.field = \"{$raw_cond['field']}\" n'est pas en snake_case valide. Format attendu : minuscules, chiffres et underscores, commençant par une lettre.";
-                        } elseif (!in_array(strtolower($raw_cond['field'], true), $seen_validator_field_names, true)) {
+                        } elseif (!in_array(strtolower($raw_cond['field']), $seen_validator_field_names, true)) {
                             $errors[] = "$prefix.condition.field = \"{$raw_cond['field']}\" ne correspond à aucun champ validateur (filled_by=\"validator\") de ce formulaire. Les conditions ne peuvent porter que sur des champs remplis par un validateur, pas sur un champ demandeur. Le champ référencé serait ignoré silencieusement par le moteur de workflow.";
                         }
                         $cond_op = $raw_cond['op'] ?? '';
