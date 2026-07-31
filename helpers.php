@@ -66,7 +66,7 @@ if (!function_exists('resolve_base_url')) {
                 $stmt = $pdo->prepare("SELECT value FROM settings WHERE key = ?");
                 $stmt->execute(['base_url']);
                 $val = $stmt->fetchColumn();
-                $cached = $val ?: (defined('BASE_URL') ? BASE_URL : 'http://localhost');
+                $cached = $val ?? (defined('BASE_URL') ? BASE_URL : 'http://localhost');
             } catch (\Throwable $e) {
                 $cached = defined('BASE_URL') ? BASE_URL : 'http://localhost';
             }

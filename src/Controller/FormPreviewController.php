@@ -33,7 +33,7 @@ final class FormPreviewController extends BaseController
 
         $grouped = [];
         foreach ($formFields as $field) {
-            $group = $field['card_group'] ?: 'Général';
+            $group = $field['card_group'] ?? 'Général';
             $grouped[$group][] = $field;
         }
 

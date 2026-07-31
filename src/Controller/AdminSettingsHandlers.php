@@ -130,7 +130,7 @@ final class AdminSettingsHandlers
         }
 
         $valid_modes = ['none', 'ldap', 'smtp'];
-        if (!in_array($ev_settings['email_verify_mode'], $valid_modes)) {
+        if (!in_array($ev_settings['email_verify_mode'], $valid_modes, true)) {
             $ev_settings['email_verify_mode'] = 'none';
         }
 

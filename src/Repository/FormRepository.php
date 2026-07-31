@@ -270,7 +270,7 @@ final class FormRepository extends BaseRepository
                 $params[] = $value;
             }
         }
-        if (empty($fields)) {
+        if ($fields === '' || $fields === null || $fields === '0') {
             return false;
         }
         $params[] = $fieldId;
@@ -311,7 +311,7 @@ final class FormRepository extends BaseRepository
                 $params[] = $value;
             }
         }
-        if (empty($fields)) {
+        if ($fields === '' || $fields === null || $fields === '0') {
             return false;
         }
         $params[] = $stepId;

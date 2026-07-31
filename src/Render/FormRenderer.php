@@ -150,7 +150,7 @@ final class FormRenderer
                     HTML;
 
             case FieldType::Checkbox->value:
-                $checked = empty($posted_val) ? '' : ' checked';
+                $checked = $posted_val === '' || $posted_val === null || $posted_val === '0' ? '' : ' checked';
                 return <<<HTML
                     <label class="checkbox-item"><input type="checkbox" name="{$name}" value="1"{$checked}{$required_attr}{$disabled_attr}> {$label}{$req_span}</label>
                     HTML;
@@ -221,7 +221,7 @@ final class FormRenderer
     {
         $html = '';
         foreach ($data as $k => $v) {
-            if (empty($v)) {
+            if ($v === '' || $v === null || $v === '0') {
                 continue;
             }
             if (in_array($k, $exclude, true)) {

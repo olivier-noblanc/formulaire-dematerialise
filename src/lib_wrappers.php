@@ -121,7 +121,7 @@ function encrypt_setting(string $value): string
     }
 
     $key = getenv('APP_ENCRYPTION_KEY');
-    if (empty($key) || strlen($key) < 32) {
+    if ($key === '' || $key === null || $key === '0' || strlen($key) < 32) {
         throw new \RuntimeException('APP_ENCRYPTION_KEY manquante ou trop courte (< 32 chars) — impossible de chiffrer les secrets');
     }
     $iv_length = openssl_cipher_iv_length('aes-256-cbc');
@@ -142,7 +142,7 @@ function decrypt_setting(string $value): string
         return $value;
     }
     $key = getenv('APP_ENCRYPTION_KEY');
-    if (empty($key)) {
+    if ($key === '' || $key === null || $key === '0') {
         error_log('[SECURITY] APP_ENCRYPTION_KEY non définie — impossible de déchiffrer');
         return '[chiffré]';
     }
@@ -304,7 +304,7 @@ function evaluate_condition(?string $condition_json, array $data): bool
 function evaluate_step_condition(array $step, string $submission_id): bool
 {
     $condition_json = $step['condition'] ?? '';
-    if (empty($condition_json)) {
+    if ($condition_json === '' || $condition_json === null || $condition_json === '0') {
         return true;
     }
 

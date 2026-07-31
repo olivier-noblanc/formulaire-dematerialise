@@ -129,8 +129,8 @@ final class ConfirmActionController extends BaseController
                 break;
         }
 
-        $cancelUrl = $from ?: 'index.php';
-        $postUrl = $from ?: 'index.php';
+        $cancelUrl = $from ?? 'index.php';
+        $postUrl = $from ?? 'index.php';
         if ($action === 'remove_owner' && isset($_GET['form_id'])) {
             $postUrl = 'index.php?p=admin_forms&form_id=' . urlencode((string) ($_GET['form_id'] ?? '')) . '#owners';
             $cancelUrl = $postUrl;

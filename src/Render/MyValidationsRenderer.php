@@ -87,7 +87,7 @@ final class MyValidationsRenderer
                 $html .= '    <div>' . "\n";
                 $html .= '      <div class="vc-title">' . $htmlService->escape($pendingToken['form_label']) . ' — Étape ' . (int) $pendingToken['ordre'] . ' : ' . $htmlService->escape($pendingToken['step_label']) . '</div>' . "\n";
                 $html .= '      <div class="vc-meta">' . "\n";
-                $html .= '        Agent : <strong>' . ($nomAgent ?: $htmlService->escape($pendingToken['data'] ? 'Inconnu' : '')) . '</strong>' . "\n";
+                $html .= '        Agent : <strong>' . ($nomAgent ?? $htmlService->escape($pendingToken['data'] ? 'Inconnu' : '')) . '</strong>' . "\n";
                 if (!empty($data['affectation'])) {
                     $html .= ' — ' . $htmlService->escape($data['affectation']);
                 }
@@ -109,11 +109,11 @@ final class MyValidationsRenderer
                 $html .= '    <div class="workflow-mini">' . "\n";
                 foreach ($allSteps as $i => $as) {
                     $dones = array_filter(explode('|', $as['dones'] ?? ''));
-                    $allDone = $dones !== [] && !in_array('', $dones) && !in_array(null, $dones, true);
+                    $allDone = $dones !== [] && !in_array('', $dones, true) && !in_array(null, $dones, true);
                     if ($allDone) {
                         $cls = 'wf-step-done';
                         $icon = '✓';
-                    } elseif ($as['ordre'] == $pendingToken['ordre']) {
+                    } elseif ($as['ordre'] === $pendingToken['ordre']) {
                         $cls = 'wf-step-current';
                         $icon = '⏳';
                     } else {

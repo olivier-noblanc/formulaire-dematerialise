@@ -164,7 +164,7 @@ final class AdminAccessController extends BaseController
   </div>
   <?php else: ?>
 
-  <?php if (!empty($pendingRequests)): ?>
+  <?php if ($pendingRequests !== [] && $pendingRequests !== null): ?>
   <div class="card">
     <h2>Demandes en attente (<?= count($pendingRequests) ?>)</h2>
     <?php foreach ($pendingRequests as $pendingRequest): ?>

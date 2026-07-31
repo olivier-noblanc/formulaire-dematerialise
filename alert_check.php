@@ -39,7 +39,7 @@ if ($rules === []) {
 
 foreach ($rules as $rule) {
     $deadline_field = $rule['deadline_field'] ?? '';
-    if (empty($deadline_field)) {
+    if ($deadline_field === '' || $deadline_field === null || $deadline_field === '0') {
         echo "[{$now->format('Y-m-d H:i:s')}] Formulaire '{$rule['form_label']}' : aucun champ deadline defini (deadline_field vide). Ignore.\n";
         continue;
     }
@@ -58,7 +58,7 @@ foreach ($rules as $rule) {
         $data = json_decode($sub['data'], true) ?: [];
         $deadline_str = $data[$deadline_field] ?? '';
 
-        if (empty($deadline_str)) {
+        if ($deadline_str === '' || $deadline_str === null || $deadline_str === '0') {
             // Pas de date limite dans les donnees du formulaire
             continue;
         }

@@ -114,7 +114,7 @@ final class StatsRenderer
 
         // Form stats table
         $html .= '<div class="card"><h2>Performance par formulaire</h2>';
-        if ($formStats === [] || (count($formStats) === 1 && ($formStats[0]['total'] ?? 0) == 0)) {
+        if ($formStats === [] || (count($formStats) === 1 && ($formStats[0]['total'] ?? 0) === 0)) {
             $html .= '<p class="empty-state">Aucune soumission enregistrée.</p>';
         } else {
             $html .= '<table><thead><tr><th>Formulaire</th><th>Total</th><th>En cours</th><th>Validées</th><th>Refusées</th><th>Taux</th><th>Temps moyen</th></tr></thead><tbody>';

@@ -100,7 +100,7 @@ final class SecurityService implements SecurityInterface
         $token = $_POST['csrf_token'] ?? '';
         $sessionToken = $_SESSION['csrf_token'] ?? '';
 
-        if (empty($token) || empty($sessionToken)) {
+        if ($token === '' || $token === null || $token === '0' || $sessionToken === '' || $sessionToken === null || $sessionToken === '0') {
             return false;
         }
         if (!hash_equals($sessionToken, $token)) {

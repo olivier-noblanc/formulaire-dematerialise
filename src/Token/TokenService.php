@@ -108,7 +108,7 @@ final readonly class TokenService
     /** @return array{success: bool, message: string} */
     public function cancel(string $submissionId, string $cancelledBy = ''): array
     {
-        $caller = $cancelledBy ?: $this->authService->getUser();
+        $caller = $cancelledBy ?? $this->authService->getUser();
         $callerIsAdmin = $this->authService->isAdmin();
 
         $submission = App::workflow()->getSubmissionWithFormLabel($submissionId);
@@ -142,7 +142,7 @@ final readonly class TokenService
                 }
                 $data['validations'][] = [
                     'step_label' => 'Annulation',
-                    'email' => $cancelledBy ?: 'system',
+                    'email' => $cancelledBy ?? 'system',
                     'action' => ValidationAction::Annule->value,
                     'commentaire' => 'Soumission annulée',
                     'date' => $now,
@@ -171,7 +171,7 @@ final readonly class TokenService
 
         // Notifier l'agent
         $agentEmail = $submission['submitted_by'] ?? '';
-        if (!empty($agentEmail) && filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
+        if ($agentEmail !== '' && $agentEmail !== null && $agentEmail !== '0' && filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
             $subject = 'Demande annulée — ' . ($submission['form_label'] ?? \App\Render\NavigationRenderer::getAppName());
             $bodyHtml = '<h2 style="color:#b45309;">Demande annulée</h2>'
                 . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($submission['form_label'] ?? '') . '</strong> a été annulée.</p>';

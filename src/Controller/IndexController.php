@@ -52,7 +52,7 @@ final class IndexController extends BaseController
         }
         // Le welcome state n'est affiché que si l'agent a 0 demande ET qu'au moins
         // un formulaire actif existe.
-        $show_welcome_state = (!$is_admin && $my_total === 0 && !empty($welcome_forms));
+        $show_welcome_state = (!$is_admin && $my_total === 0 && $welcome_forms !== [] && $welcome_forms !== null);
 
         // S4-TUTORIAL (Action 6) : mini-tutoriel de 1ère utilisation.
         // Affiché au-dessus du welcome-state UNIQUEMENT si l'agent a 0 soumission.

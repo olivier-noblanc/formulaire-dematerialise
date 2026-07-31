@@ -130,7 +130,7 @@ final class ErrorRenderer
     {
         $html = '';
         foreach ($messages as $type => $text) {
-            if (empty($text)) {
+            if ($text === '' || $text === null || $text === '0') {
                 continue;
             }
             $class = match ($type) {
