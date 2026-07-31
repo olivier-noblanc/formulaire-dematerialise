@@ -1145,51 +1145,51 @@ parameters:
 			identifier: identical.alwaysFalse
 			count: 1
 			path: src/lib_wrappers.php
-                -
-                        message: '#^Array key must be integer or string, but .+ given\.0'
+		-
+			message: '#^Array key must be integer or string, but .+ given\.0'
 
-                -
-                        message: '#^Cannot cast .+ to string\.0'
+		-
+			message: '#^Cannot cast .+ to string\.0'
 
-                -
-                        message: '#^Cannot compare different types in .+\.0'
+		-
+			message: '#^Cannot compare different types in .+\.0'
 
-                -
-                        message: '#^Comparison .+ contains non-comparable type#'
+		-
+			message: '#^Comparison .+ contains non-comparable type#'
 
-                -
-                        message: '#^Null value involved in binary operation:.+#'
+		-
+			message: '#^Null value involved in binary operation:.+#'
 
-                -
-                        message: '#^Using [+\-] over non-number#'
+		-
+			message: '#^Using [+\-] over non-number#'
 
-                -
-                        message: '#^Param.tre .+ typ. array .bare..+#'
+		-
+			message: '#^Param.tre .+ typ. array .bare..+#'
 
-                -
-                        message: '#^Param.tre .+ typ. \?array .bare..+#'
+		-
+			message: '#^Param.tre .+ typ. \?array .bare..+#'
 
-                -
-                        message: '#^Public property .+ not marked as readonly\.0'
+		-
+			message: '#^Public property .+ not marked as readonly\.0'
 
-                -
-                        message: '#^Result of \|\| is always (false|true)\.0'
+		-
+			message: '#^Result of \|\| is always (false|true)\.0'
 
-                -
-                        message: '#^Strict comparison using === between array and .+ will always evaluate to false\.0'
+		-
+			message: '#^Strict comparison using === between array and .+ will always evaluate to false\.0'
 
-                -
-                        message: '#^Function .+ always return list, but is marked as .+0'
+		-
+			message: '#^Function .+ always return list, but is marked as .+0'
 
-                -
-                        message: '#^Function .+ has parameter .+ with no value type specified#'
+		-
+			message: '#^Function .+ has parameter .+ with no value type specified#'
 
-                -
-                        message: '#^Method .+ has parameter .+ with no value type specified#'
+		-
+			message: '#^Method .+ has parameter .+ with no value type specified#'
 
-                -
-                        message: '#^Missing parameter typehint for arrow function parameter#'
+		-
+			message: '#^Missing parameter typehint for arrow function parameter#'
 
-                -
-                        message: '#^Missing native return typehint#'
+		-
+			message: '#^Missing native return typehint#'
 

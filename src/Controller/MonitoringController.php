@@ -79,7 +79,7 @@ final class MonitoringController extends BaseController
                     ];
                 }
             }
-            usort($activeAlerts, fn(array $a, array $b) => $a['days_remaining'] - $b['days_remaining']);
+            usort($activeAlerts, fn($a, $b) => $a['days_remaining'] - $b['days_remaining']);
         } catch (\Exception) {
             $activeAlerts = [];
         }
@@ -192,7 +192,7 @@ final class MonitoringController extends BaseController
             'log_target'     => $auditFilters['log_target'],
             'log_date_debut' => $auditFilters['log_date_debut'],
             'log_date_fin'   => $auditFilters['log_date_fin'],
-        ], fn(string $v) => $v !== ''));
+        ], fn($v) => $v !== ''));
         $auditBaseUrl = 'index.php?p=monitoring' . ($auditBaseQs !== '' && $auditBaseQs !== '0' ? '?' . $auditBaseQs : '');
 
         $ctx = new \App\Render\MonitoringContext(
