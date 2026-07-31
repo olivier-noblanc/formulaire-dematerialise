@@ -79,7 +79,7 @@ final class MonitoringController extends BaseController
                     ];
                 }
             }
-            usort($activeAlerts, fn($a, $b) => $a['days_remaining'] - $b['days_remaining']);
+            usort($activeAlerts, fn(array $a, array $b) => $a['days_remaining'] - $b['days_remaining']);
         } catch (\Exception) {
             $activeAlerts = [];
         }
@@ -192,38 +192,38 @@ final class MonitoringController extends BaseController
             'log_target'     => $auditFilters['log_target'],
             'log_date_debut' => $auditFilters['log_date_debut'],
             'log_date_fin'   => $auditFilters['log_date_fin'],
-        ], fn($v) => $v !== ''));
+        ], fn(string $v) => $v !== ''));
         $auditBaseUrl = 'index.php?p=monitoring' . ($auditBaseQs !== '' && $auditBaseQs !== '0' ? '?' . $auditBaseQs : '');
 
-        $ctx = [
-            'total_sub'         => $totalSub,
-            'valide_sub'        => $valideSub,
-            'en_cours_sub'      => $enCoursSub,
-            'refuse_sub'        => $refuseSub,
-            'taux_validation'   => $tauxValidation,
-            'avg_days'          => $avgDays,
-            'avg_hours'         => $avgHours,
-            'tokens_bloques'    => $tokensBloques,
-            'bloque_hours'      => $bloqueHours,
-            'active_alerts'     => $activeAlerts,
-            'recent_alerts'     => $recentAlerts,
-            'by_form_stats'     => $byFormStats,
-            'daily_stats'       => $dailyStats,
-            'smtp_status'       => $smtpStatus,
-            'smtp_detail'       => $smtpDetail,
-            'smtp_debug_log'    => $smtpDebugLog,
-            'mail_logs'         => $mailLogs,
-            'last_remind'       => $lastRemind,
-            'last_alert_check'  => $lastAlertCheck,
-            'audit_filters'     => $auditFilters,
-            'audit_total'       => $auditTotal,
-            'audit_total_pages' => $auditTotalPages,
-            'audit_page'        => $auditPage,
-            'audit_logs'        => $auditLogs,
-            'action_types'      => $actionTypes,
-            'audit_base_url'    => $auditBaseUrl,
-            'audit_base_qs'     => $auditBaseQs,
-        ];
+        $ctx = new \App\Render\MonitoringContext(
+            total_sub: $totalSub,
+            valide_sub: $valideSub,
+            en_cours_sub: $enCoursSub,
+            refuse_sub: $refuseSub,
+            taux_validation: $tauxValidation,
+            avg_days: $avgDays,
+            avg_hours: $avgHours,
+            tokens_bloques: $tokensBloques,
+            bloque_hours: $bloqueHours,
+            active_alerts: $activeAlerts,
+            recent_alerts: $recentAlerts,
+            by_form_stats: $byFormStats,
+            daily_stats: $dailyStats,
+            smtp_status: $smtpStatus,
+            smtp_detail: $smtpDetail,
+            smtp_debug_log: $smtpDebugLog,
+            mail_logs: $mailLogs,
+            last_remind: $lastRemind,
+            last_alert_check: $lastAlertCheck,
+            audit_filters: $auditFilters,
+            audit_total: $auditTotal,
+            audit_total_pages: $auditTotalPages,
+            audit_page: $auditPage,
+            audit_logs: $auditLogs,
+            action_types: $actionTypes,
+            audit_base_url: $auditBaseUrl,
+            audit_base_qs: $auditBaseQs,
+        );
 
         $pageCss    = \App\Render\MonitoringRenderer::pageCss();
         $navExtra   = \App\Render\MonitoringRenderer::navExtra();

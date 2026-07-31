@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
+class ComposerStaticInit438ff951fc5fcd5f85f17d42a6a4394d
 {
     public static $files = array (
         '88254829cb0eed057c30eaabb6d8edc4' => __DIR__ . '/..' . '/amphp/amp/src/functions.php',
@@ -17,9 +17,9 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '6c2681bc13923b80242cc286856cab22' => __DIR__ . '/..' . '/amphp/byte-stream/src/functions.php',
         '4ee21bf8253a2272056aefb41f7f0116' => __DIR__ . '/..' . '/amphp/byte-stream/src/Internal/functions.php',
+        '9b38cf48e83f5d8f60375221cd213eee' => __DIR__ . '/..' . '/phpstan/phpstan/bootstrap.php',
         'deecf9d6b2672fb73429f9b28fdee35f' => __DIR__ . '/..' . '/symfony/polyfill-deepclone/bootstrap.php',
         '107d0b55c0ad2d07d8643394552ac029' => __DIR__ . '/..' . '/amphp/process/src/functions.php',
-        '9b38cf48e83f5d8f60375221cd213eee' => __DIR__ . '/..' . '/phpstan/phpstan/bootstrap.php',
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '606a39d89246991a373564698c2d8383' => __DIR__ . '/..' . '/symfony/polyfill-php85/bootstrap.php',
@@ -162,6 +162,7 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
             'Symfony\\Component\\Cache\\' => 24,
             'Spaze\\PHPStan\\Rules\\Disallowed\\' => 31,
             'ShipMonk\\PHPStan\\DeadCode\\' => 26,
+            'ShipMonk\\PHPStan\\' => 17,
             'Seld\\JsonLint\\' => 14,
         ),
         'R' =>
@@ -181,6 +182,7 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
             'PHPStan\\PhpDocParser\\' => 21,
             'PHPStan\\ExtensionInstaller\\' => 27,
             'PHPStan\\' => 8,
+            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'O' =>
         array (
@@ -380,6 +382,10 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
         array (
             0 => __DIR__ . '/..' . '/shipmonk/dead-code-detector/src',
         ),
+        'ShipMonk\\PHPStan\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/shipmonk/phpstan-rules/src',
+        ),
         'Seld\\JsonLint\\' =>
         array (
             0 => __DIR__ . '/..' . '/seld/jsonlint/src/Seld/JsonLint',
@@ -432,6 +438,10 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
         'PHPStan\\' =>
         array (
             0 => __DIR__ . '/..' . '/phpstan/phpstan-strict-rules/src',
+        ),
+        'PHPMailer\\PHPMailer\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
         'OndraM\\CiDetector\\' =>
         array (
@@ -2114,9 +2124,9 @@ class ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit34780ac889bd3d053ee87c5d7a5b2cd3::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit438ff951fc5fcd5f85f17d42a6a4394d::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit438ff951fc5fcd5f85f17d42a6a4394d::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit438ff951fc5fcd5f85f17d42a6a4394d::$classMap;
 
         }, null, ClassLoader::class);
     }

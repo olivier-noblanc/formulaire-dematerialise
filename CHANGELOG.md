@@ -1,5 +1,20 @@
 # Changelog — CircuitDémat
 
+## [10.34.0] — 2026-07-31
+_Résumé : DTOs typés pour 3 renderers — SubmissionViewContext, MonitoringContext, AdminSettingsContext._
+
+### ♻️ Migration array $ctx → DTO typé (TDD)
+- **SubmissionViewContext** : 27 propriétés, remplace `array $ctx` dans `SubmissionViewRenderer::renderContent()`
+- **MonitoringContext** : 27 propriétés, remplace `array $ctx` dans `MonitoringRenderer::content()`, `stats()`, `auditLog()`
+- **MonitoringController** : `$ctx = [...]` → `new MonitoringContext(...)`
+- **AdminSettingsContext** : 4 propriétés, remplace `array $state` dans `AdminSettingsRenderer::renderContent()`
+- **lib_wrappers** : helpers `_build_submission_view_context()`, `_build_monitoring_context()`, `_build_admin_settings_context()`
+- **NoUntypedArrayParameterRule** : exclusions DTOs ajoutées
+- **Tests** : 3 fichiers, 13 tests, 44 assertions (TDD — RED → GREEN → Refactor)
+- **PHPStan noUntypedArray** : 162 → 157 (−5)
+
+---
+
 ## [10.33.0] — 2026-07-31
 _Résumé : Baseline PHPStan nettoyée (491→371, −24%) — empty(), deadMethod exclusions, type fixes._
 

@@ -7,3 +7,7 @@ services:
         class: App\PHPStan\RequireBuildUrlForRedirectRule
         tags:
             - phpstan.rules.rule
+    -
+        class: App\PHPStan\NoUntypedArrayParameterRule
+        tags:
+            - phpstan.rules.rule

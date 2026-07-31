@@ -277,38 +277,36 @@ final class SubmissionViewRenderer
 
     /**
      * Compose l'ensemble du contenu HTML de la page Détail soumission.
-     *
-     * @param array<string, mixed> $ctx
      */
-    public function renderContent(array $ctx): string
+    public function renderContent(SubmissionViewContext $ctx): string
     {
-        $sub_id         = (string) ($ctx['sub_id'] ?? '');
-        $sub            = $ctx['sub'] ?? [];
-        $data           = $ctx['data'] ?? [];
-        $status         = (string) ($ctx['status'] ?? SubmissionStatus::EnCours->value);
-        $status_label   = (string) ($ctx['status_label'] ?? '');
-        $status_cls     = (string) ($ctx['status_cls'] ?? '');
-        $user           = (string) ($ctx['user'] ?? '');
-        $is_admin       = (bool) ($ctx['is_admin'] ?? false);
-        $is_form_owner  = (bool) ($ctx['is_form_owner'] ?? false);
-        $nom_agent      = (string) ($ctx['nom_agent'] ?? '');
-        $workflow_steps = $ctx['workflow_steps'] ?? [];
-        $all_tokens     = $ctx['all_tokens'] ?? [];
-        $total_steps    = (int) ($ctx['total_steps'] ?? 0);
-        $done_steps     = (int) ($ctx['done_steps'] ?? 0);
-        $progress_pct   = (int) ($ctx['progress_pct'] ?? 0);
-        $dl_info        = $ctx['dl_info'] ?? [];
-        $deadline_ts    = $ctx['deadline_ts'] ?? null;
-        $days_remaining = (int) ($ctx['days_remaining'] ?? 0);
-        $action_msg     = (string) ($ctx['action_msg'] ?? '');
-        $field_info     = $ctx['field_info'] ?? [];
-        $validator_rows = $ctx['validator_data_rows'] ?? [];
-        $submission_reminds = $ctx['submission_reminds'] ?? [];
-        $total_relances     = (int) ($ctx['total_relances'] ?? 0);
-        $pending_with_relance = $ctx['pending_with_relance'] ?? [];
-        $attachments    = $ctx['attachments'] ?? [];
-        $delegations    = $ctx['delegations'] ?? [];
-        $admin_comment  = (string) ($ctx['admin_comment'] ?? '');
+        $sub_id         = $ctx->sub_id;
+        $sub            = $ctx->sub;
+        $data           = $ctx->data;
+        $status         = $ctx->status;
+        $status_label   = $ctx->status_label;
+        $status_cls     = $ctx->status_cls;
+        $user           = $ctx->user;
+        $is_admin       = $ctx->is_admin;
+        $is_form_owner  = $ctx->is_form_owner;
+        $nom_agent      = $ctx->nom_agent;
+        $workflow_steps = $ctx->workflow_steps;
+        $all_tokens     = $ctx->all_tokens;
+        $total_steps    = $ctx->total_steps;
+        $done_steps     = $ctx->done_steps;
+        $progress_pct   = $ctx->progress_pct;
+        $dl_info        = $ctx->dl_info;
+        $deadline_ts    = $ctx->deadline_ts;
+        $days_remaining = $ctx->days_remaining;
+        $action_msg     = $ctx->action_msg;
+        $field_info     = $ctx->field_info;
+        $validator_rows = $ctx->validator_data_rows;
+        $submission_reminds = $ctx->submission_reminds;
+        $total_relances     = $ctx->total_relances;
+        $pending_with_relance = $ctx->pending_with_relance;
+        $attachments    = $ctx->attachments;
+        $delegations    = $ctx->delegations;
+        $admin_comment  = $ctx->admin_comment;
 
         $can_edit_validator = $is_admin || $is_form_owner;
 
@@ -514,7 +512,7 @@ final class SubmissionViewRenderer
             return '';
         }
 
-        $my_pending = array_filter($all_tokens, fn($tok) => empty($tok['done_at']) && ($is_admin || $tok['email'] === $user));
+        $my_pending = array_filter($all_tokens, fn(array $tok) => empty($tok['done_at']) && ($is_admin || $tok['email'] === $user));
 
         if ($my_pending === []) {
             return '';
@@ -768,7 +766,7 @@ final class SubmissionViewRenderer
     {
         $pending_html = '';
         if ($pending_with_relance !== [] || ($status === SubmissionStatus::EnCours->value && $all_tokens !== [])) {
-            $pending_tokens = array_filter($all_tokens, fn($t) => empty($t['done_at']));
+            $pending_tokens = array_filter($all_tokens, fn(array $t) => empty($t['done_at']));
 
             if ($pending_tokens !== []) {
                 $rows = '';
