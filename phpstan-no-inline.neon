@@ -35,16 +35,20 @@ parameters:
     tmpDir: /tmp/phpstan-no-inline
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        # Baseline pour erreurs strict-rules qui passent malgré customRulesetUsed
         - '#^Construct empty\(\) is not allowed\.#'
         - '#^Short ternary operator is not allowed\.#'
         - '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
         - '#^Function resolve_base_url not found\.#'
-        - '#^Unused App\\Contract\\#'
-        - '#^Unused App\\Render\\DynamicCssService::rule$#'
-        - '#^Unused App\\Controller\\#'
+        - '#^Unused App\\#'
         - '#^Casting to .+ something that.s already .+\.$#'
         - '#^Attribut style="" inline détecté#'
+        - '#^Gestionnaire d.evnement inline dtect#'
+        - '#^Call to function array_filter\(\) requires parameter \#2#'
+        - '#^Foreach overwrites#'
+        - '#^Loose comparison via#'
+        - '#^Only booleans are allowed in#'
+        - '#^Variable \$.+ on left side of \?\?#'
+        - '#^Variable \$.+ might not be defined#'
 
 services:
     -

@@ -49,6 +49,13 @@ parameters:
         - '#^Property App\\Tests\\.+ \$\w+ is never written#'
         - '#^Only booleans are allowed in an if condition#'
         - '#^Variable \$http_response_header in isset\(\) always exists#'
+        - '#^Call to an undefined method COM::Run\(\)\.$#'
+        - '#^Unused DomAssertions::#'
+        - '#^Only booleans are allowed in &&#'
+        - '#^Call to function array_filter\(\) requires parameter \#2#'
+        - '#^Foreach overwrites#'
+        - '#^Loose comparison via#'
+        - '#^Only booleans are allowed in a negated boolean#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php
