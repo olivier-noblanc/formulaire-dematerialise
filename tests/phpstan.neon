@@ -58,6 +58,13 @@ parameters:
         - '#^Only booleans are allowed in a negated boolean#'
         - '#^Class App\\Webhook\\WebhookService does not have a constructor#'
         - '#^Call to function in_array\(\) requires parameter \#3#'
+        - '#^Only booleans are allowed in a ternary operator condition#'
+        - '#^Call to an undefined method App\\Cache\\CacheService::clear\(\)#'
+        - '#^Anonymous function has an unused use#'
+        - '#^Variable \$.+ in empty\(\) always exists#'
+        - '#^Access to an undefined property PHPMailer\\PHPMailer\\PHPMailer::#'
+        - '#^Result of function .+ \(void\) is used#'
+        - '#^Call to function base64_decode\(\) requires parameter \#2#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php

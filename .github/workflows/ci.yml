@@ -79,7 +79,6 @@ jobs:
   phpstan-tests:
     name: PHPStan (tests/)
     runs-on: ubuntu-latest
-    continue-on-error: true # baseline incomplet — TODO générer --generate-baseline
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -108,7 +107,6 @@ jobs:
   phpstan-no-inline:
     name: PHPStan (no inline HTML)
     runs-on: ubuntu-latest
-    continue-on-error: true # baseline incomplet — TODO générer --generate-baseline
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -165,7 +163,7 @@ jobs:
     name: Infection (mutation testing)
     runs-on: ubuntu-latest
     needs: phpunit # réutilise le vendor mis en cache
-    continue-on-error: true # non-blocking pour l'instant — on observe les métriques avant de bloquer
+
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -242,7 +240,6 @@ jobs:
   security:
     name: Composer audit
     runs-on: ubuntu-latest
-    continue-on-error: true # composer update casse l'autoload (amphp/amp missing) — TODO fix lock
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -351,7 +348,7 @@ jobs:
     # continue-on-error conservé le temps de confirmer que la bascule
     # chromium→firefox (2026-07-30) résout bien le bug de chemin
     # chromium_headless_shell — à retirer une fois un run vert confirmé.
-    continue-on-error: true
+
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
