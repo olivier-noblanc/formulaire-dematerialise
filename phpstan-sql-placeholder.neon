@@ -19,10 +19,10 @@ parameters:
         - '#^Short ternary operator is not allowed\.#'
         - '#^Function resolve_base_url not found\.#'
         - '#^Unused App\\#'
+        - '#^Casting to .+ something that.s already .+\.$#'
 
 services:
     -
         class: App\PHPStan\SqlPlaceholderCountRule
         tags:
             - phpstan.rules.rule
-        - '#^Casting to .+ something that.s already .+\.$#'
