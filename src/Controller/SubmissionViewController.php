@@ -15,7 +15,7 @@ final class SubmissionViewController extends BaseController
     {
         $subId = trim($_GET['id'] ?? '');
 
-        if ($subId === '' || $subId === null || $subId === '0') {
+        if ($subId === '' || $subId === '0') {
             // B-EXIT : utiliser redirect() pour mode 'no-exit' (tests PHPUnit)
             $this->redirect(App::html()->buildUrl('index.php?p=dashboard'));
         }
@@ -82,7 +82,7 @@ final class SubmissionViewController extends BaseController
         foreach ($workflowSteps as $step) {
             $stepTokens = $tokensByStep[$step['step_id']] ?? [];
             $allDone = true;
-            $hasTokens = $stepTokens !== [] && $stepTokens !== null;
+            $hasTokens = $stepTokens !== [];
             foreach ($stepTokens as $tk) {
                 if (empty($tk['done_at'])) { $allDone = false; break; }
             }
@@ -145,7 +145,7 @@ final class SubmissionViewController extends BaseController
   <?= $workflowHtml ?>
 
   <!-- Pièces jointes -->
-  <?php if ($attachments !== [] && $attachments !== null): ?>
+  <?php if ($attachments !== []): ?>
   <div class="card">
     <h2>Pièces jointes (<?= count($attachments) ?>)</h2>
     <table>
@@ -167,7 +167,7 @@ final class SubmissionViewController extends BaseController
   <?php endif; ?>
 
   <!-- Données validateur -->
-  <?php if ($validatorData !== [] && $validatorData !== null && $canEditValidator): ?>
+  <?php if ($validatorData !== [] && $canEditValidator): ?>
   <div class="card">
     <h2>Données validateur</h2>
     <table>

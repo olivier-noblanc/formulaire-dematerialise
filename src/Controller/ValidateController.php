@@ -97,7 +97,7 @@ final class ValidateController extends BaseController
 
                     if (!isset($error)) {
                         $done_by = $this->auth->getUser();
-                        $result = App::workflow()->validateToken((string) $token, (string) $action, $comment, $done_by);
+                        $result = App::workflow()->validateToken((string) $token, $action, $comment, $done_by);
 
                         /** @phpstan-ignore-next-line if.alwaysTrue */
                         if (TEST_MODE) {

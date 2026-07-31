@@ -15,7 +15,6 @@ parameters:
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         - '#^Loose comparison via "==" is not allowed\.$#'
-        - '#^execute\(\) re.*placeholder#'
         - '#^Construct empty\(\) is not allowed\.#'
         - '#^Short ternary operator is not allowed\.#'
         - '#^Function resolve_base_url not found\.#'

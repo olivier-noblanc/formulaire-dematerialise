@@ -25,7 +25,7 @@ final class ScreenshotController extends BaseController
         $file = $_GET['f'] ?? '';
 
         // Sécurité : uniquement un nom de fichier simple (pas de traversal)
-        if ($file === '' || $file === null || $file === '0' || basename((string) $file) !== $file) {
+        if ($file === '' || $file === '0' || basename((string) $file) !== $file) {
             http_response_code(400);
             exit('Fichier invalide.');
         }
