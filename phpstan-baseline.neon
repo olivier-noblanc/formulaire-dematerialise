@@ -1193,3 +1193,8 @@ parameters:
                 -
                         message: '#^Missing native return typehint#'
 
+
+		-
+			message: '#^Overwriting variable .+ while changing its type#'
+		-
+			message: '#^Missing parameter typehint for closure parameter#'

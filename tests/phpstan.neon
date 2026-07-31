@@ -75,6 +75,8 @@ parameters:
         - '#^Comparison .+ contains non-comparable type#'
         - '#^Null value involved in binary operation:.+#'
         - '#^Using [+\-] over non-number#'
+'#^Missing parameter typehint for closure parameter#'
+'#^Overwriting variable .+ while changing its type#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php

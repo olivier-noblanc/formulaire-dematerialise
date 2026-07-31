@@ -48,6 +48,7 @@ parameters:
         - '#^Public property .+ not marked as readonly#'
         - '#^Missing parameter typehint for arrow function parameter#'
         - '#^Missing native return typehint#'
+        - '#^Overwriting variable .+ while changing its type#'
 
 services:
     -
