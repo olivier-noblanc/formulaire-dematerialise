@@ -111,7 +111,7 @@ final readonly class AttachmentService
 
         // Vérifier l'extension (dernière partie)
         $ext = strtolower(array_last($nameParts));
-        if (!in_array($ext, $this->getAllowedExtensions())) {
+        if (!in_array($ext, $this->getAllowedExtensions(, true))) {
             return ['success' => false, 'message' => 'Type de fichier non autorisé. Extensions acceptées : ' . implode(', ', $this->getAllowedExtensions()) . '.', 'attachment_id' => null];
         }
 
@@ -130,7 +130,7 @@ final readonly class AttachmentService
             return ['success' => false, 'message' => 'Impossible d\'analyser le type de fichier.', 'attachment_id' => null];
         }
         $mimeType = finfo_file($finfo, $file['tmp_name']);
-        if (!in_array($mimeType, $this->getAllowedMimeTypes())) {
+        if (!in_array($mimeType, $this->getAllowedMimeTypes(, true))) {
             return ['success' => false, 'message' => 'Type MIME non autorisé : ' . \App\Core\App::html()->escape($mimeType === false ? '' : $mimeType) . '.', 'attachment_id' => null];
         }
 

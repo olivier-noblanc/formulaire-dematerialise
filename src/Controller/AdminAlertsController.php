@@ -127,7 +127,7 @@ final class AdminAlertsController extends BaseController
                 if ($formId !== '' && $formId !== '0') {
                     try {
                         $this->formRepo->setDeadlineField($formId, $deadlineField);
-                        App::audit()->log('deadline_field_update', 'form:' . $formId, 'Champ deadline mis à jour : ' . ($deadlineField ?: '(aucun)'));
+                        App::audit()->log('deadline_field_update', 'form:' . $formId, 'Champ deadline mis à jour : ' . ($deadlineField ?? '(aucun)'));
                         $successMsg = 'Champ date limite mis à jour pour le formulaire.';
                     } catch (\Exception $e) {
                         error_log('deadline_field_update error: ' . $e->getMessage());

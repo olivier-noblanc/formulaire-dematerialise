@@ -133,7 +133,7 @@ final class AdminAlertsRenderer
         } else {
             foreach ($rules as $rule) {
                 $isInactive = empty($rule['actif']);
-                $daysCls = $rule['days_before'] <= 2 ? 'urgent' : ($rule['days_before'] == 0 ? 'passed' : '');
+                $daysCls = $rule['days_before'] <= 2 ? 'urgent' : ($rule['days_before'] === 0 ? 'passed' : '');
 
                 $html .= '        <div class="rule-card ' . ($isInactive ? 'inactive' : '') . '">' . "\n";
                 $html .= '          <div class="rule-header">' . "\n";
@@ -152,7 +152,7 @@ final class AdminAlertsRenderer
                 $html .= '            </div>' . "\n";
                 $html .= '          </div>' . "\n";
                 $html .= '          <div class="rule-meta">' . "\n";
-                $html .= '            <span class="days-badge ' . $daysCls . '">' . ($rule['days_before'] == 0 ? 'Jour J' : 'J-' . (int) $rule['days_before']) . '</span>' . "\n";
+                $html .= '            <span class="days-badge ' . $daysCls . '">' . ($rule['days_before'] === 0 ? 'Jour J' : 'J-' . (int) $rule['days_before']) . '</span>' . "\n";
                 $html .= '            <span class="cond-badge">' . ($rule['condition_type'] === 'steps_incomplete' ? 'Étapes incomplètes' : $h($rule['condition_type'])) . '</span>' . "\n";
                 $html .= '            <span class="notify-badge"><span aria-hidden="true">📧</span> ' . $h(self::notifyWhoLabel($rule['notify_who'])) . '</span>' . "\n";
                 if ($isInactive) {

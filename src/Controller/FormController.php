@@ -286,7 +286,7 @@ final class FormController extends BaseController
         $grouped       = [];
         $field_labels  = [];
         foreach ($form_fields as $form_field) {
-            $group = $form_field['card_group'] ?: 'Général';
+            $group = $form_field['card_group'] ?? 'Général';
             $grouped[$group][] = $form_field;
             $field_labels[$form_field['field_name']] = $form_field['label'];
         }

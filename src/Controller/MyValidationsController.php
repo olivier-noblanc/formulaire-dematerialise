@@ -35,7 +35,7 @@ final class MyValidationsController extends BaseController
         $activeTab = $_GET['tab'] ?? 'pending';
 
         $allStepsBySub = [];
-        if (!empty($pendingTokens)) {
+        if ($pendingTokens !== [] && $pendingTokens !== null) {
             $pendingSubIds = array_values(array_unique(array_column($pendingTokens, 'submission_id')));
             $allStepsBySub = $tokenRepository->findStepsBySubmissionIds($pendingSubIds);
         }

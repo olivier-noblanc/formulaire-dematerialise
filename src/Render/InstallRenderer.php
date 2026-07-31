@@ -313,8 +313,8 @@ final class InstallRenderer
             <input type="hidden" name="smtp_from_name" value="<?= inst_h($default_smtp_from_name) ?>">
             <input type="hidden" name="admin_email" value="<?= inst_h($default_admin_email) ?>">
             <input type="hidden" name="delai_relance_h" value="<?= inst_h((string) $default_delai_relance_h) ?>">
-            <button type="submit" class="btn btn-test" <?= empty($default_admin_email) ? 'disabled' : '' ?>><span aria-hidden="true">📧</span> Envoyer un email de test</button>
-            <?php if (empty($default_admin_email)): ?>
+            <button type="submit" class="btn btn-test" <?= $default_admin_email === '' || $default_admin_email === null || $default_admin_email === '0' ? 'disabled' : '' ?>><span aria-hidden="true">📧</span> Envoyer un email de test</button>
+            <?php if ($default_admin_email === '' || $default_admin_email === null || $default_admin_email === '0'): ?>
                 <span class="hint u-mar">Renseignez l'email administrateur ci-dessus d'abord.</span>
             <?php endif; ?>
         </form>

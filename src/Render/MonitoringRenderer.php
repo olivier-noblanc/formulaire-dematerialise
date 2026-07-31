@@ -59,7 +59,7 @@ final class MonitoringRenderer
         $active_alerts   = $ctx['active_alerts'] ?? [];
 
         $avg_label = $avg_days > 0 ? $avg_days . ' j' : $avg_hours . ' h';
-        $alert_cls = empty($active_alerts) ? 'success' : 'danger';
+        $alert_cls = $active_alerts === '' || $active_alerts === null || $active_alerts === '0' ? 'success' : 'danger';
 
         $nb_tokens_bloques = count($tokens_bloques);
         $nb_active_alerts  = count($active_alerts);
@@ -682,7 +682,7 @@ final class MonitoringRenderer
             $export_link = "· <a href=\"{$export_url}\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;text-decoration:none;\"><span aria-hidden=\"true\">📥</span> Export CSV</a>";
         }
 
-        if (empty($audit_logs)) {
+        if ($audit_logs === '' || $audit_logs === null || $audit_logs === '0') {
             $table_html = '<p class="empty-state">Aucune entrée dans le journal d\'audit pour ces filtres.</p>';
         } else {
             $rows = '';

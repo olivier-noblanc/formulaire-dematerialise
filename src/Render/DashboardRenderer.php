@@ -251,7 +251,7 @@ final class DashboardRenderer
         $deadline_val   = $deadline_field !== '' && $deadline_field !== '0'
             ? ((string) ($d[$deadline_field] ?? ''))
             : ((string) ($d['date_prise_poste'] ?? $d['date_depart'] ?? ''));
-        $dl = calculate_deadline_urgency($deadline_val ?: '', $status);
+        $dl = calculate_deadline_urgency($deadline_val ?? '', $status);
         $deadline_urgency = (string) ($dl['style'] ?? '');
 
         $form_label = \App\Core\App::html()->escape(t_jargon((string) ($row['form_label'] ?? '')));

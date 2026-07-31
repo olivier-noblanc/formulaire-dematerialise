@@ -91,7 +91,7 @@ final class MySubmissionsRenderer
                 $deadlineField = $submission['deadline_field'] ?? '';
                 $deadlineVal   = $deadlineField ? ($data[$deadlineField] ?? '') : '';
                 $deadlineBadge = '';
-                if (!empty($deadlineVal) && $status === SubmissionStatus::EnCours->value) {
+                if ($deadlineVal !== '' && $deadlineVal !== null && $deadlineVal !== '0' && $status === SubmissionStatus::EnCours->value) {
                     $dl     = calculate_deadline_urgency($deadlineVal, $status);
                     $dlDays = $dl['days_left'];
                     if ($dlDays !== null) {

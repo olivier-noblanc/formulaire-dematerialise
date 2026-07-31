@@ -386,7 +386,7 @@ final class SubmissionViewRenderer
             $tokens     = $ws['tokens'] ?? [];
 
             $validators_html = '';
-            if (!empty($tokens)) {
+            if ($tokens !== [] && $tokens !== null) {
                 foreach ($tokens as $token) {
                     $email        = \App\Core\App::html()->displayUser((string) ($token['email'] ?? ''));
                     $relance      = (int) ($token['relance_count'] ?? 0);
@@ -561,7 +561,7 @@ final class SubmissionViewRenderer
             if ($k === 'validations') {
                 continue;
             }
-            if (empty($v) && $v !== '0') {
+            if ($v === '' || $v === null || $v === '0' && $v !== '0') {
                 continue;
             }
 
@@ -571,7 +571,7 @@ final class SubmissionViewRenderer
                 : ucfirst(is_string($k) ? str_replace('_', ' ', preg_replace('/^[a-z]+_/', '', $k) ?? $k) : '');
             $display_val = $v === '1' ? '✓ Oui' : ($v === '0' ? 'Non' : \App\Core\App::html()->escape((string) $v));
 
-            if ($group !== $current_group && !empty($group)) {
+            if ($group !== $current_group && !$group === '' || $group === null || $group === '0') {
                 $current_group = $group;
                 $group_h = \App\Core\App::html()->escape($group);
                 $items_html .= <<<HTML

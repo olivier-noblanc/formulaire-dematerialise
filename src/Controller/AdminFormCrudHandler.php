@@ -70,7 +70,7 @@ final class AdminFormCrudHandler
         if ($err !== null) {
             return ['error' => $err, 'form_id' => ''];
         }
-        if (empty($form_id)) {
+        if ($form_id === '' || $form_id === null || $form_id === '0') {
             return ['form_id' => ''];
         }
         if (!App::auth()->isFormOwner($form_id) && !App::auth()->isSuperAdmin()) {

@@ -126,7 +126,7 @@ final readonly class WorkflowEngine
         $stmt->execute($params);
         /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result ?: null;
+        return $result ?? null;
     }
 
     /**
@@ -189,7 +189,7 @@ final readonly class WorkflowEngine
         // accès à des clés inexistantes. Shape maintenant complète.
         /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string}|false $result */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result ?: null;
+        return $result ?? null;
     }
 
     /** @param array<string, mixed> $formData */
@@ -226,7 +226,7 @@ final readonly class WorkflowEngine
                 }
             }
             foreach ($formData as $key => $val) {
-                if (strtolower((string) $key) === $fieldName && !empty($val)) {
+                if (strtolower((string) $key) === $fieldName && $val !== '' && $val !== null && $val !== '0') {
                     $resolved = trim((string) $val);
                     if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
                         return $resolved;
