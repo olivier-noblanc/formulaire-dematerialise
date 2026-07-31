@@ -21,7 +21,7 @@ final class AdminRecipientHandler
             return ['error' => $err];
         }
         $email = trim($_POST['email'] ?? '');
-        if ($step_id === '' || $step_id === null || $step_id === '0' || ($email === '' || $email === '0')) {
+        if ($step_id === '' || $step_id === '0' || ($email === '' || $email === '0')) {
             return ['error' => 'L\'étape et le courriel sont requis.'];
         }
         $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email);
