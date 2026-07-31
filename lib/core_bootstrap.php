@@ -128,7 +128,7 @@ if (TEST_MODE) {
 // pour le fonctionnement de l'application. L'extension sqlite3 n'est utilisée nulle part
 // dans le code métier (tout passe par PDO).
 $required_extensions = ['mbstring', 'pdo_sqlite', 'json', 'session', 'pcre'];
-$missing_extensions = array_filter($required_extensions, fn($ext) => !extension_loaded($ext));
+$missing_extensions = array_filter($required_extensions, fn(string $ext) => !extension_loaded($ext));
 if (!empty($missing_extensions)) {
     // health.php peut quand même tourner pour signaler le problème
     $script = basename($_SERVER['SCRIPT_NAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? '');

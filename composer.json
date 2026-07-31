@@ -38,6 +38,7 @@
         "spaze/phpstan-disallowed-calls": "^4.13",
         "deptrac/deptrac": "^4.7",
         "infection/infection": "*",
-        "phpro/grumphp": "^2.23"
+        "phpro/grumphp": "^2.23",
+        "shipmonk/phpstan-rules": "^4.4"
     }
 }

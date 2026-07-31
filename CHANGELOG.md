@@ -13,6 +13,12 @@ _Résumé : DTOs typés pour 3 renderers — SubmissionViewContext, MonitoringCo
 - **Tests** : 3 fichiers, 13 tests, 44 assertions (TDD — RED → GREEN → Refactor)
 - **PHPStan noUntypedArray** : 162 → 157 (−5)
 
+### 🧹 Compléments sessions précédentes
+- **AdminFormsContext** : DTO + wrapper + test (14 propriétés, `AdminFormsRenderer` 10 méthodes migrées)
+- **NoUntypedArrayParameterRule** : règle custom PHPStan créée, 172 erreurs initiales
+- **shipmonk/phpstan-rules** : installé v4.4.0 (+94 erreurs)
+- **Tests DTO** : `AdminFormsContextTest` (5 tests), `AdminFormsRenderer` migration
+
 ---
 
 ## [10.33.0] — 2026-07-31

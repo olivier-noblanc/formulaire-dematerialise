@@ -260,7 +260,7 @@ final class DashboardRenderer
         $view_url     = 'index.php?p=submission_view&id=' . urlencode((string) ($row['id'] ?? ''));
 
         $tokens_html = '';
-        $pending_ordres = array_column(array_filter($tokens, fn($x) => !$x['done_at']), 'ordre');
+        $pending_ordres = array_column(array_filter($tokens, fn(array $x) => !$x['done_at']), 'ordre');
         $min_pending = $pending_ordres !== [] ? min($pending_ordres) : 0;
         foreach ($tokens as $token) {
             if (!empty($token['done_at'])) {

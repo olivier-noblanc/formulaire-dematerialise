@@ -83,7 +83,7 @@ final class MySubmissionsController extends BaseController
             unset($ws);
 
             $total = count($sub['workflow_steps']);
-            $done = count(array_filter($sub['workflow_steps'], fn($s) => $s['step_status'] === 'validated'));
+            $done = count(array_filter($sub['workflow_steps'], fn(array $s) => $s['step_status'] === 'validated'));
             $sub['progress_pct'] = $total > 0 ? round(($done / $total) * 100) : 0;
             $sub['progress_done'] = $done;
             $sub['progress_total'] = $total;

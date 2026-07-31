@@ -396,7 +396,7 @@ final class NavigationRenderer
 
         return preg_replace_callback(
             '/href=(["\'])(index\.php[^"\']*?)\1/',
-            function ($m) use ($token) {
+            function (array $m) use ($token) {
                 $quote = $m[1];
                 $url = $m[2];
                 if (str_contains($url, '<?')) {

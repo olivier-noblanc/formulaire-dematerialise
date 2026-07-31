@@ -73,9 +73,9 @@ final class FormJsonValidator
 
                 // field_type
                 if (empty($f['field_type'])) {
-                    $errors[] = "$prefix.field_type est requis. Valeurs possibles : " . implode(', ', array_map(fn($t) => '"' . $t . '"', $valid_field_types));
+                    $errors[] = "$prefix.field_type est requis. Valeurs possibles : " . implode(', ', array_map(fn(string $t) => '"' . $t . '"', $valid_field_types));
                 } elseif (!in_array($f['field_type'], $valid_field_types, true)) {
-                    $errors[] = "$prefix.field_type = \"{$f['field_type']}\" n'est pas valide. Valeurs possibles : " . implode(', ', array_map(fn($t) => '"' . $t . '"', $valid_field_types));
+                    $errors[] = "$prefix.field_type = \"{$f['field_type']}\" n'est pas valide. Valeurs possibles : " . implode(', ', array_map(fn(string $t) => '"' . $t . '"', $valid_field_types));
                 }
 
                 // field_name
@@ -245,7 +245,7 @@ final class FormJsonValidator
                         }
                         $cond_op = $raw_cond['op'] ?? '';
                         if (!is_string($cond_op) || !in_array($cond_op, $valid_ops_json, true)) {
-                            $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn($o) => "\"$o\"", $valid_ops_json)) . '. Trouvé : ' . json_encode($cond_op);
+                            $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn(string $o) => "\"$o\"", $valid_ops_json)) . '. Trouvé : ' . json_encode($cond_op);
                         }
                         if (isset($raw_cond['value']) && !is_string($raw_cond['value'])) {
                             $warnings[] = "$prefix.condition.value devrait être une chaîne. Trouvé : " . gettype($raw_cond['value']);

@@ -289,7 +289,7 @@ final readonly class WorkflowEngine
             $tokenStmt->execute([$submissionId]);
             $tokensByStep = [];
             foreach ($tokenStmt->fetchAll(\PDO::FETCH_ASSOC) as $t) {
-                $tokensByStep[$t['step_id']][] = $t['done_at'];
+                $tokensByStep[(string) $t['step_id']][] = $t['done_at'];
             }
 
             // B-W1 fix (audit fonctionnel 2026-07-26) : si toutes les étapes de TOUS les
@@ -482,7 +482,7 @@ final readonly class WorkflowEngine
                 continue;
             }
             $dones = $tokensByStep[$step['step_id']];
-            if (!array_all($dones, fn($d) => $d !== null)) {
+            if (!array_all($dones, fn(mixed $d) => $d !== null)) {
                 return false;
             }
         }
