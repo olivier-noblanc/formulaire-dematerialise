@@ -130,7 +130,7 @@ final class ErrorRenderer
     {
         $html = '';
         foreach ($messages as $type => $text) {
-            if ($text === '' || $text === null || $text === '0') {
+            if (empty($text)) {
                 continue;
             }
             $class = match ($type) {
@@ -173,7 +173,7 @@ final class ErrorRenderer
             require $style_file;
             $css = ob_get_clean();
         }
-        if (in_array(trim(strip_tags((string, true) $css)), ['', '0'], true)) {
+        if (in_array(trim(strip_tags((string) $css)), ['', '0'], true)) {
             $css = '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:"Marianne",Arial,sans-serif;background:#f5f5fe;color:#1e1e1e}.bandeau{background:#003189;color:#fff;padding:.75rem 2rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.bandeau a{color:#b3c8f0;font-size:.8rem;text-decoration:none}.btn{padding:.5rem 1rem;border:none;border-radius:3px;font-size:.85rem;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-block}.btn-primary{background:#003189;color:#fff}.btn-primary:hover{background:#002270}.skip-link{position:absolute;left:-9999px;top:0;background:#003189;color:#fff;padding:.5rem 1rem;z-index:9999}.skip-link:focus{left:0}.error-page{display:flex;min-height:calc(100vh - 120px);align-items:center;justify-content:center;padding:2rem 1rem}.error-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:3rem 2.5rem;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}.error-card .error-code{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.25rem;letter-spacing:-2px}.error-card .error-code.code-403{color:#c0392b}.error-card .error-code.code-404{color:#003189}.error-card .error-code.code-400{color:#b45309}.error-card .error-code.code-401{color:#003189}.error-card .error-code.code-500{color:#c0392b}.error-card .error-illustration{margin-bottom:1.25rem}.error-card .error-illustration svg{width:100px;height:100px}.error-card h1{font-size:1.35rem;color:#1e1e1e;margin-bottom:.75rem;border:none;padding:0}.error-card .error-message{color:#555;font-size:.95rem;line-height:1.6;margin-bottom:1.25rem}.error-card .error-hint{font-size:.85rem;color:#666;background:#f5f5fe;border:1px solid #e0e0f0;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;text-align:left;line-height:1.55}.error-card .error-hint strong{color:#333;display:block;margin-bottom:.35rem}.error-card .error-actions{display:flex;gap:.75rem;justify-content:center;margin-bottom:1.5rem}.error-card .error-stamp{font-size:.7rem;color:#aaa;margin-top:.5rem}footer{padding:1.5rem 2rem;text-align:center;font-size:.75rem;color:#888;border-top:1px solid #eee}</style>';
         }
         return (string) $css;

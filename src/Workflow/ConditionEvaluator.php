@@ -48,7 +48,7 @@ final class ConditionEvaluator implements ConditionInterface
             'contains' => str_contains($actual, (string) $expected),
             'in' => is_array($expected)
                 ? in_array($actual, $expected, true)
-                : in_array($actual, array_map(trim(..., true), explode(',', (string) $expected)), true),
+                : in_array($actual, array_map(trim(...), explode(',', (string) $expected)), true),
             'not_empty' => $actual !== '',
             'empty' => $actual === '',
             default => false,

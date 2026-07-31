@@ -29,7 +29,7 @@ final class SettingsService implements SettingsInterface
             $val = $this->settingsRepository->get($key);
 
             if ($val !== null) {
-                $result = in_array($key, $this->getSensitiveKeys(, true), true) ? $this->decrypt($val) : $val;
+                $result = in_array($key, $this->getSensitiveKeys(), true) ? $this->decrypt($val) : $val;
                 self::$cache[$key] = $result;
                 return $result;
             }
@@ -52,7 +52,7 @@ final class SettingsService implements SettingsInterface
 
     public function set(string $key, string $value, string $updatedBy = ''): void
     {
-        if (in_array($key, $this->getSensitiveKeys(, true), true) && $value !== '') {
+        if (in_array($key, $this->getSensitiveKeys(), true) && $value !== '') {
             $value = $this->encrypt($value);
         }
 
