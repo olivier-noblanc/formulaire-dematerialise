@@ -133,7 +133,7 @@ final readonly class RgpdService
         $pdo = $this->database->getPdo();
         $cutoff = gmdate('Y-m-d H:i:s', strtotime("-{$months} months") ?: time());
 
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE status !== '" . SubmissionStatus::EnCours->value . "' AND closed_at < ?");
+        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE status != '" . SubmissionStatus::EnCours->value . "' AND closed_at < ?");
         $stmt->execute([$cutoff]);
         $oldIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
