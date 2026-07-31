@@ -64,7 +64,6 @@ parameters:
         - #^Missing parameter typehint for arrow function parameter#
         - #^Missing native return typehint#
 services:
-    -
         class: App\PHPStan\NoInlineHtmlRule
         tags:
             - phpstan.rules.rule

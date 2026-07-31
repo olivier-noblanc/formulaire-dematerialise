@@ -38,7 +38,6 @@ parameters:
         - #^Missing parameter typehint for arrow function parameter#
         - #^Missing native return typehint#
 services:
-    -
         class: App\PHPStan\SqlPlaceholderCountRule
         tags:
             - phpstan.rules.rule
