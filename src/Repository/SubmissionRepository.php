@@ -355,7 +355,7 @@ final class SubmissionRepository extends BaseRepository
     public function countOldByRetention(int $retentionMonths): int
     {
         $result = $this->fetchOne(
-            "SELECT COUNT(*) as cnt FROM submissions WHERE status !== '" . SubmissionStatus::EnCours->value . "' AND closed_at < datetime('now', '-' || ? || ' months')",
+            "SELECT COUNT(*) as cnt FROM submissions WHERE status != '" . SubmissionStatus::EnCours->value . "' AND closed_at < datetime('now', '-' || ? || ' months')",
             [$retentionMonths]
         );
         return (int) ($result['cnt'] ?? 0);
