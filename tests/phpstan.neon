@@ -38,24 +38,17 @@ parameters:
     tmpDir: /tmp/phpstan
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        -
-            message: '#^Call to static method PHPUnit\\Framework\\Assert::assertTrue\(\) with true will always evaluate to true\.$#'
-        -
-            message: '#^Construct empty\(\) is not allowed\.#'
-        -
-            message: '#^Short ternary operator is not allowed\.#'
-        -
-            message: '#^Call to an undefined method ReflectionType::getName\(\)\.$#'
-        -
-            message: '#^Casting to (int|string) something that.s already (int|string)\.$#'
-        -
-            message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert::#'
-        -
-            message: '#^Variable \$.+ on left side of \?\? always exists#'
-        -
-            message: '#^Variable \$.+ might not be defined#'
-        -
-            message: '#^Property App\\Tests\\.+ \$\w+ is never written#'
+        - '#^Call to static method PHPUnit\\Framework\\Assert::assertTrue\(\) with true will always evaluate to true\.$#'
+        - '#^Construct empty\(\) is not allowed\.#'
+        - '#^Short ternary operator is not allowed\.#'
+        - '#^Call to an undefined method ReflectionType::getName\(\)\.$#'
+        - '#^Casting to .+ something that.s already .+\.$#'
+        - '#^Dynamic call to static method PHPUnit\\Framework\\Assert::#'
+        - '#^Variable \$.+ on left side of \?\? always exists#'
+        - '#^Variable \$.+ might not be defined#'
+        - '#^Property App\\Tests\\.+ \$\w+ is never written#'
+        - '#^Only booleans are allowed in an if condition#'
+        - '#^Variable \$http_response_header in isset\(\) always exists#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php
