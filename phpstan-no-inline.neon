@@ -1,14 +1,4 @@
 # phpstan-no-inline.neon — Détection des style=/onXxx=/<script> inline
-# (NoInlineHtmlRule), séparée du job principal PHPStan (level 8) — celui-ci
-# tourne depuis longtemps et reste vert avec sa baseline curée ; le volume
-# réel de violations de cette nouvelle règle est inconnu tant qu'elle n'a
-# pas tourné une fois en CI (cf. tests/phpstan.neon, même précaution prise
-# le 2026-07-30 pour la même raison). Job dédié en continue-on-error au
-# départ.
-#
-# customRulesetUsed: true — pas d'extensions auto-chargées (shipmonk,
-# strict-rules...) : seule NoInlineHtmlRule doit remonter ici, pas de bruit
-# d'un autre outil qui rendrait ce rapport illisible.
 parameters:
     customRulesetUsed: true
     level: 0
@@ -18,15 +8,11 @@ parameters:
     excludePaths:
         - tests/*
         - vendor/*
-        # Fichiers avec style="" inline dans templates d'emails HTML
-        # (CSS inline requis par clients mail — Outlook, Gmail, etc.)
         - src/Mail/MailService.php
         - src/Auth/AuthService.php
         - src/Controller/AdminSettingsHandlers.php
         - src/Token/TokenService.php
-        # Page d'erreur brute (core_bootstrap — avant que les services DI soient prêts)
         - lib/core_bootstrap.php
-        # Fichiers avec style="" inline résiduels — TODO migrer vers classes CSS
         - src/Docs/DocumentationService.php
         - src/Forms/FormJsonValidator.php
         - src/Controller/FormTrackingController.php
@@ -52,7 +38,6 @@ parameters:
         - '#^Variable \$.+ on left side of \?\?#'
         - '#^Variable \$.+ might not be defined#'
         - '#^Call to function in_array\(\) requires parameter \#3#'
-
         - '#^Array key must be integer or string, but .+ given\.$#'
         - '#^Cannot compare different types in .+\.$#'
         - '#^Comparison .+ contains non-comparable type#'
@@ -63,7 +48,9 @@ parameters:
         - '#^Public property .+ not marked as readonly#'
         - '#^Missing parameter typehint for arrow function parameter#'
         - '#^Missing native return typehint#'
+
 services:
+    -
         class: App\PHPStan\NoInlineHtmlRule
         tags:
             - phpstan.rules.rule

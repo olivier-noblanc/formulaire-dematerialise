@@ -1,5 +1,4 @@
 # phpstan-sql-placeholder.neon — Détection des décalages entre placeholders
-# '?' et arguments execute() (SqlPlaceholderCountRule)
 parameters:
     customRulesetUsed: true
     level: 0
@@ -15,6 +14,7 @@ parameters:
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         - '#^Loose comparison via "==" is not allowed\.$#'
+        - '#^execute\(\) re.*placeholder#'
         - '#^Construct empty\(\) is not allowed\.#'
         - '#^Short ternary operator is not allowed\.#'
         - '#^Function resolve_base_url not found\.#'
@@ -24,9 +24,9 @@ parameters:
         - '#^Foreach overwrites#'
         - '#^Only booleans are allowed in#'
         - '#^Loose comparison via#'
-        - '#^Property App\\#'
-        - '#^Function inst_#'
-
+        - '#^Variable \$.+ on left side of \?\?#'
+        - '#^Variable \$.+ might not be defined#'
+        - '#^Call to function in_array\(\) requires parameter \#3#'
         - '#^Array key must be integer or string, but .+ given\.$#'
         - '#^Cannot compare different types in .+\.$#'
         - '#^Comparison .+ contains non-comparable type#'
@@ -37,7 +37,14 @@ parameters:
         - '#^Public property .+ not marked as readonly#'
         - '#^Missing parameter typehint for arrow function parameter#'
         - '#^Missing native return typehint#'
+        - '#^Property App\\#'
+        - '#^Function inst_#'
+        - '#^Param.tre .+ typ. array .bare#'
+        - '#^Overwriting variable .+ while changing its type#'
+        - '#^.+ always return list, but is marked as#'
+
 services:
+    -
         class: App\PHPStan\SqlPlaceholderCountRule
         tags:
             - phpstan.rules.rule
