@@ -117,7 +117,8 @@ final class HtmlService implements HtmlInterface
         }
 
         if ($current_user === null) {
-            $current_user = App::auth()->getUser() ?: '';
+            $user = App::auth()->getUser();
+            $current_user = $user !== false ? $user : '';
         }
 
         // Cas 1 : email = user courant → "Vous"

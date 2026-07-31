@@ -95,7 +95,7 @@ set_exception_handler(function (\Throwable $e): never {
 // Si APP_TEST_SECRET n'est pas défini, le header HTTP est ignoré en contexte web.
 $_test_header = $_SERVER['HTTP_X_TEST_MODE'] ?? '';
 $_test_env = !empty(getenv('APP_TEST_MODE'));
-$_test_secret = getenv('APP_TEST_SECRET') ?: '';
+$_test_secret = getenv('APP_TEST_SECRET') !== false ? getenv('APP_TEST_SECRET') : '';
 $_is_cli = php_sapi_name() === 'cli';
 if ($_is_cli && !empty($_test_header)) {
     // CLI : activation par header (scripts de test via php -S)

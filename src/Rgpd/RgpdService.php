@@ -93,7 +93,7 @@ final readonly class RgpdService
             $stmt = $pdo->prepare('SELECT id, data FROM submissions WHERE submitted_by = ?');
             $stmt->execute([$email]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                $submissionData = json_decode($row['data'], true) ?: [];
+                $submissionData = json_decode($row['data'], true) ?? [];
                 foreach (['prenom', 'nom', 'email', 'telephone', 'mobile', 'adresse'] as $field) {
                     if (isset($submissionData[$field])) {
                         $submissionData[$field] = '[supprimé]';
@@ -131,7 +131,8 @@ final readonly class RgpdService
     public function autoPurge(int $months = 24): int
     {
         $pdo = $this->database->getPdo();
-        $cutoff = gmdate('Y-m-d H:i:s', strtotime("-{$months} months") ?: time());
+        $cutoff_ts = strtotime("-{$months} months");
+        $cutoff = gmdate('Y-m-d H:i:s', $cutoff_ts !== false ? $cutoff_ts : time());
 
         $stmt = $pdo->prepare("SELECT id FROM submissions WHERE status != '" . SubmissionStatus::EnCours->value . "' AND closed_at < ?");
         $stmt->execute([$cutoff]);

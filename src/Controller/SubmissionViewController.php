@@ -28,7 +28,7 @@ final class SubmissionViewController extends BaseController
                 'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.');
         }
 
-        $data = json_decode($sub['data'], true) ?: [];
+        $data = json_decode($sub['data'], true) ?? [];
         $status = $sub['status'] ?? SubmissionStatus::EnCours->value;
         $user = App::auth()->getUser();
         $isAdmin = App::auth()->isAdminEffective();

@@ -44,7 +44,7 @@ final class HealthController extends BaseController
 
         // 3. Répertoire db/ accessible en écriture
         $dbPath = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
-        $dbDir = dirname((string) $dbPath);
+        $dbDir = dirname($dbPath);
         $dirWritable = is_writable($dbDir);
         $dirDetail = $dirWritable ? 'Répertoire ' . basename($dbDir) . '/ accessible en écriture' : 'Répertoire ' . basename($dbDir) . '/ non accessible en écriture';
         if (!$dirWritable) {

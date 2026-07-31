@@ -139,7 +139,7 @@ final class FormRenderer
 
             case FieldType::Select->value:
                 $opts_raw    = $field['options'] ?? '[]';
-                $opts        = json_decode($opts_raw, true) ?: [];
+                $opts        = json_decode($opts_raw, true) ?? [];
                 $options_html = '<option value="">— Sélectionner —</option>';
                 foreach ($opts as $opt) {
                     $sel = ($posted_val === $opt) ? ' selected' : '';

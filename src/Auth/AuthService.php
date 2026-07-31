@@ -72,7 +72,7 @@ final class AuthService implements AuthInterface
         if (defined('TEST_MODE') && TEST_MODE) {
             $testUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
             if ($testUser !== '') {
-                if (str_contains((string) $testUser, '@')) {
+                if (str_contains($testUser, '@')) {
                     return $testUser |> trim(...) |> strtolower(...);
                 }
                 $domain = $this->getEmailDomain();
@@ -85,7 +85,7 @@ final class AuthService implements AuthInterface
             return '';
         }
 
-        $authUser = trim((string) $authUser);
+        $authUser = trim($authUser);
         if (str_contains($authUser, '@')) {
             return strtolower($authUser);
         }
@@ -266,14 +266,14 @@ final class AuthService implements AuthInterface
         }
 
         return defined('SETTINGS_DEFAULTS')
-            ? (string) SETTINGS_DEFAULTS['admin_email']
+            ? SETTINGS_DEFAULTS['admin_email']
             : '';
     }
 
     public function getEmailDomain(): string
     {
         return defined('SETTINGS_DEFAULTS')
-            ? (string) SETTINGS_DEFAULTS['email_domain']
+            ? SETTINGS_DEFAULTS['email_domain']
             : 'exemple.invalid';
     }
 

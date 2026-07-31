@@ -29,7 +29,7 @@ function apply_post_migration_fixes(PDO $pdo, bool $seed_needed = false): void {
     // ─────────────────────────────────────────────────────────────────
     try {
         $alert_count = _dbm_q($pdo, "SELECT COUNT(*) FROM alert_rules")->fetchColumn();
-        if ($alert_count == 0) {
+        if ((int) $alert_count === 0) {
             // Onboarding : alerter 5 jours et 2 jours avant la prise de poste
             $onb = _dbm_q($pdo, "SELECT id FROM forms WHERE slug = 'onboarding' LIMIT 1")->fetchColumn();
             if ($onb) {

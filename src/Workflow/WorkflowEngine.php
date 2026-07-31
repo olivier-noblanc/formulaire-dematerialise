@@ -276,7 +276,8 @@ final readonly class WorkflowEngine
 
         $now = gmdate('Y-m-d H:i:s');
         $expireDays = (int) $this->settingsService->get('token_expire_days', '30');
-        $expiresAt = gmdate('Y-m-d H:i:s', strtotime("+{$expireDays} days") ?: time());
+        $expiresAt_ts = strtotime("+{$expireDays} days");
+        $expiresAt = gmdate('Y-m-d H:i:s', $expiresAt_ts !== false ? $expiresAt_ts : time());
 
         // Transaction pour séquencer les lectures/écritures de tokens
         // et empêcher les doublons entre requêtes concurrentes
@@ -394,7 +395,7 @@ final readonly class WorkflowEngine
         string $expiresAt,
         \PDO $pdo
     ): bool {
-        $formData = json_decode($submission['data'] ?? '{}', true) ?: [];
+        $formData = json_decode($submission['data'] ?? '{}', true) ?? [];
         $validatorData = $this->getValidatorDataForEvaluation($submissionId);
         $tokenCreated = false;
 

@@ -50,7 +50,7 @@ final class MonitoringController extends BaseController
                 : [];
 
             foreach ($alertSubmissions as $alertSubmission) {
-                $data = json_decode($alertSubmission['data'], true) ?: [];
+                $data = json_decode($alertSubmission['data'], true) ?? [];
                 $deadlineField = $alertSubmission['deadline_field'];
                 $deadlineStr = $data[$deadlineField] ?? '';
                 if ($deadlineStr === '' || $deadlineStr === '0') {

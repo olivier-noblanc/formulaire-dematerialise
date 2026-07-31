@@ -76,7 +76,8 @@ final class StatsRenderer
             $html .= '<p class="empty-state">Aucune donnée pour cette période.</p>';
         } else {
             $column = array_column($periodStats, 'total');
-            $maxTotal = $column !== [] ? (max($column) ?: 1) : 1;
+            $maxTotal = $column !== [] ? max($column) : 1;
+            $maxTotal = $maxTotal >= 1 ? $maxTotal : 1;
             $periodStatsAsc = array_reverse($periodStats);
             $html .= '<div class="bar-chart">';
             foreach ($periodStatsAsc as $periodStatAsc) {

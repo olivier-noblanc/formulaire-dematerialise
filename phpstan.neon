@@ -23,6 +23,16 @@ parameters:
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        -
+            identifier: shipmonk.deadMethod
+            path: src/Contract/*
+        -
+            identifier: shipmonk.deadMethod
+            path: src/Controller/*
+        -
+            identifier: shipmonk.deadMethod
+            path: src/Render/DynamicCssService.php
     bootstrapFiles:
         - helpers.php
         - phpstan_inst_stubs.php
