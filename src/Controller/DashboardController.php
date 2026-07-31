@@ -172,7 +172,7 @@ final class DashboardController extends BaseController
             $params[] = SubmissionStatus::Refuse->value;
         }
         if ($filtre === 'complet') {
-            $where[]  = 's.status !== ?';
+            $where[]  = 's.status != ?';
             $params[] = SubmissionStatus::EnCours->value;
         }
         if ($form_f !== '' && $form_f !== '0') {
