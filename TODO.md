@@ -4,11 +4,11 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1302** (0 fail) |
-| Assertions | **3758** |
+| Tests | **1411** (0 fail) |
+| Assertions | **4082** |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **490** (level 8) |
+| PHPStan erreurs baseline | **371** (level 8) |
 | Style "" inline | **0** (zéro — CSP compliant) |
 | Classes CSS sémantiques | **215** (style_utility.css + DynamicCssService) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
@@ -132,23 +132,28 @@
 
 ## 🎯 Ce qui reste
 
-### Baseline PHPStan (497 erreurs — toutes LOW)
+### Baseline PHPStan (371 erreurs — toutes LOW)
 
-Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs). Aucune n'est bloquante.
+Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs) ou des faux positifs shipmonk. Aucune n'est bloquante.
 
 | Catégorie | Count | Priorité | Détail |
 |-----------|-------|----------|--------|
-| `empty.notAllowed` | 52 | **LOW** | `empty()` interdit par phpstan-strict-rules → remplacer par `=== ''` / `=== null` / `=== []` |
-| `noMagicString` | **0** | ~~HIGH~~ | **Migration terminée** — toutes les strings métier sont en enums. Les strings restantes (email, text, pending…) sont des usages légitimes (alias SQL, CSS, types HTML5) |
-| `ternary.shortNotAllowed` | 28 | **LOW** | Ternaires courts (`?:`) interdits → `??` ou `if/else` |
-| `booleanNot.exprNotBoolean` | 27 | **LOW** | Expressions non-booléennes dans des `!` → caster en bool |
-| `if.condNotBoolean` | 25 | **LOW** | Conditions non-booléennes dans les `if` |
-| `in_array strict` | 13 | **LOW** | `in_array()` sans 3ème paramètre `true` |
-| `function.strict` | 13 | **LOW** | Appels non stricts |
-| `equal.notAllowed` | 9 | **LOW** | Comparaisons `==` au lieu de `===` |
-| `cast.useless` | 5 | **LOW** | Casts inutiles |
-| `booleanAnd/rightNotBoolean` | 4 | **LOW** | Opérandes non-booléennes dans `&&` |
-| Autres | ~321 | **LOW** | Divers (arrayFilter.strict, deadProperty, deadEnumCase, etc.) |
+| `empty.notAllowed` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
+| `noMagicString` | **0** | ~~HIGH~~ | **Migration terminée** — toutes les strings métier sont en enums |
+| `ternary.shortNotAllowed` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
+| `booleanNot.exprNotBoolean` | 38 | **LOW** | Expressions non-booléennes dans des `!` → caster en bool |
+| `if.condNotBoolean` | 22 | **LOW** | Conditions non-booléennes dans les `if` |
+| `function.strict` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
+| `equal.notAllowed` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
+| `cast.useless` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
+| `shipmonk.deadMethod` | 5 | **LOW** | Faux positifs restants (InstallRenderer, SubmissionViewRenderer, AuditRepository, DynamicCssService) — méthodes utilisées via paths non tracés |
+| `offsetAccess.notFound` | 11 | **LOW** | Accès à des clés potentiellement inexistantes sur tableaux |
+| `booleanAnd/rightNotBoolean` | 8 | **LOW** | Opérandes non-booléennes dans `&&` |
+| `booleanAnd/leftNotBoolean` | 6 | **LOW** | Idem (côté gauche) |
+| `arrayFilter.strict` | 3 | **LOW** | `array_filter()` sans callback |
+| `deadProperty.neverRead` | 3 | **LOW** | Propriétés jamais lues |
+| `elseIf.condNotBoolean` | 2 | **LOW** | Conditions non-booléennes dans `elseif` |
+| Autres | ~273 | **LOW** | Divers (plus.leftNonNumeric, foreach.valueOverwrite, argument.type, ternary.condNotBoolean, etc.) |
 
 ### Bug backlog audit — 29/29 vérifiés, 29 fixés
 
@@ -213,4 +218,4 @@ exclusivement par `style.php`").
 
 ---
 
-_Dernière mise à jour : 2026-07-30 (v10.30.0)_
+_Dernière mise à jour : 2026-07-31 (v10.33.0)_
