@@ -1179,7 +1179,7 @@ Voici le document administratif à analyser :
                                                             <?php foreach ($existing_groups as $g): ?>
                                                                 <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $ff['card_group'] === $g ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>
                                                             <?php endforeach; ?>
-                                                            <option value="__new__" <?= !in_array($ff['card_group'], $existing_groups) ? 'selected' : '' ?>>— Nouveau groupe —</option>
+                                                            <option value="__new__" <?= !in_array($ff['card_group'], $existing_groups, true) ? 'selected' : '' ?>>— Nouveau groupe —</option>
                                                         </select>
                                                     <?php endif; ?>
                                                     <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" value="" class="mt-3">

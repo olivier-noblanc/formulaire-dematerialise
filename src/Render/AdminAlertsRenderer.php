@@ -193,7 +193,7 @@ final class AdminAlertsRenderer
                     $html .= '                    <option value="validators"' . ($rule['notify_who'] === 'validators' ? ' selected' : '') . '>Validateurs en cours</option>' . "\n";
                     $html .= '                    <option value="admin+submitter"' . ($rule['notify_who'] === 'admin+submitter' ? ' selected' : '') . '>Admins + Agent</option>' . "\n";
                     $html .= '                    <option value="admin+validators"' . ($rule['notify_who'] === 'admin+validators' ? ' selected' : '') . '>Admins + Validateurs</option>' . "\n";
-                    $html .= '                    <option value="custom"' . (in_array($rule['notify_who'], ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators']) ? '' : ' selected') . '>Courriel personnalisé</option>' . "\n";
+                    $html .= '                    <option value="custom"' . (in_array($rule['notify_who'], ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators'], true) ? '' : ' selected') . '>Courriel personnalisé</option>' . "\n";
                     $html .= '                  </select>' . "\n";
                     $html .= '                </div>' . "\n";
                     $html .= '                <div class="field custom-email-field">' . "\n";

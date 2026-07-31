@@ -28,7 +28,7 @@ final class AdminFieldCrudHandler
         $ff_ordre = (int) ($_POST['ff_ordre'] ?? 0);
         $ff_card_group = AdminFormsHandlers::resolveCardGroup();
         $ff_filled_by = trim($_POST['ff_filled_by'] ?? '');
-        if (!in_array($ff_filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value])) {
+        if (!in_array($ff_filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value], true)) {
             $ff_filled_by = FilledBy::Demandeur->value;
         }
         $ff_validator_step = trim($_POST['ff_validator_step'] ?? '');

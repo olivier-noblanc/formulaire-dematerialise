@@ -54,7 +54,7 @@ final class FormTrackingController extends BaseController
             $fn = $field['field_name'];
             if (in_array($fn, ['nom', 'prenom', 'email', 'service', 'type_sortie', 'nature_depense',
                 'montant', 'date_depense', 'type_materiel', 'nature_besoin', 'date_prescription',
-                'urgence', 'date_sortie', 'heure_debut', 'heure_fin'])) {
+                'urgence', 'date_sortie', 'heure_debut', 'heure_fin'], true)) {
                 $keyFields[] = $field;
             }
         }

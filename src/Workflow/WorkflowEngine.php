@@ -458,7 +458,7 @@ final readonly class WorkflowEngine
             }
 
             // Étape sans recipients valides — logger et ignorer (misconfiguration)
-            if (!$hasRecipient && !in_array(trim($step['recipient_emails'] ?? ''), ['', '0'], true)) {
+            if (!$hasRecipient && !in_array(trim($step['recipient_emails'] ?? '', true), ['', '0'], true)) {
                 error_log("Workflow: step {$step['step_id']} has condition true but no valid recipients — skipping");
             }
         }

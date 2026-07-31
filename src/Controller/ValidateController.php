@@ -55,9 +55,9 @@ final class ValidateController extends BaseController
             }
 
             if (!isset($error)) {
-                if ($action === ValidationAction::Refuser->value && in_array(trim($comment), ['', '0'], true)) {
+                if ($action === ValidationAction::Refuser->value && in_array(trim($comment, true), ['', '0'], true)) {
                     // Ne pas traiter — on affiche la page avec un message d'erreur
-                } elseif ($token && in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value])) {
+                } elseif ($token && in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value], true)) {
                     $pre_ctx = App::workflow()->getTokenWithContext((string) $token);
                     $pre_validator_fields = [];
                     if ($pre_ctx && !empty($pre_ctx['form_id'])) {
