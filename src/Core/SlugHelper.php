@@ -30,7 +30,7 @@ final class SlugHelper
         $name = preg_replace('/[^a-z0-9]+/', '_', $name) ?? $name;
         $name = trim($name, '_');
         $name = preg_replace('/_+/', '_', $name) ?? $name;
-        return $name ?? 'champ';
+        return $name !== '' && $name !== '0' ? $name : 'champ';
     }
 
     /**
@@ -53,7 +53,7 @@ final class SlugHelper
             $sql = 'SELECT COUNT(*) FROM forms WHERE slug = ?';
             $params = [$slug];
             if ($excludeFormId !== null) {
-                $sql .= ' AND id !== ?';
+                $sql .= ' AND id != ?';
                 $params[] = $excludeFormId;
             }
             $stmt = $pdo->prepare($sql);

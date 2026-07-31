@@ -59,7 +59,7 @@ abstract class BaseRepository
     {
         $stmt = $this->pdo()->prepare('SELECT 1');
         $stmt->execute();
-        return $stmt->fetchColumn() === '1';
+        return $stmt->fetchColumn() == 1;
     }
 
     /**
