@@ -15,10 +15,10 @@ parameters:
     ignoreErrors:
         - '#^Loose comparison via "==" is not allowed\.$#'
         - '#^execute\(\) re.*placeholder#'
+        - '#^Construct empty\(\) is not allowed\.#'
 
 services:
     -
         class: App\PHPStan\SqlPlaceholderCountRule
         tags:
             - phpstan.rules.rule
-        - '#^Construct empty\(\) is not allowed\.#'
