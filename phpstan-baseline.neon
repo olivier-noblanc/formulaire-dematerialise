@@ -1237,3 +1237,7 @@ parameters:
                         message: '#^Property App\\.+::\$database is never read#'
                 -
                         message: '#^Property App\\.+::\$database is never read, only written#'
+                -
+                        message: '#^Unused App\\Repository\\.+#'
+                -
+                        message: '#^Variable \$.+ in PHPDoc tag .+ does not match assigned variable#'
