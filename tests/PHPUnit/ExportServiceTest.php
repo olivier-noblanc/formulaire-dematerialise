@@ -54,9 +54,10 @@ final class ExportServiceTest extends TestCase
         $constructor = $reflection->getConstructor();
         self::assertNotNull($constructor);
         $params = $constructor->getParameters();
-        self::assertCount(2, $params);
+        self::assertCount(3, $params);
         self::assertSame('database', $params[0]->getName());
         self::assertSame('authService', $params[1]->getName());
+        self::assertSame('submissionRepository', $params[2]->getName());
     }
 
     public function testConstructorParamTypes(): void
