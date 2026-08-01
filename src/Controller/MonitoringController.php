@@ -26,11 +26,7 @@ final class MonitoringController extends BaseController
         $valideSub = $gstats[SubmissionStatus::Valide->value];
         $refuseSub = $gstats[SubmissionStatus::Refuse->value];
         $enCoursSub = $gstats[SubmissionStatus::EnCours->value];
-        // StatsService retourne taux_validation comme float (round(..., 1)).
-        // MonitoringContext exige string (DTO typé pour le renderer).
-        // Cast explicite pour éviter un TypeError sous strict_types=1 —
-        // bug découvert le 2026-08-01 (monitoring retournait 500 en CI).
-        $tauxValidation = (string) $gstats['taux_validation'];
+        $tauxValidation = $gstats['taux_validation']; // float, matches MonitoringContext::$taux_validation
 
         // Query #2: Blocked tokens
         $delaiRelance = (int) App::settings()->get('delai_relance_h', '48');

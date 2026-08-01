@@ -494,7 +494,7 @@ function _build_monitoring_context(array $ctx): \App\Render\MonitoringContext
         valide_sub: (int) ($ctx['valide_sub'] ?? 0),
         en_cours_sub: (int) ($ctx['en_cours_sub'] ?? 0),
         refuse_sub: (int) ($ctx['refuse_sub'] ?? 0),
-        taux_validation: (string) ($ctx['taux_validation'] ?? '0'),
+        taux_validation: (float) ($ctx['taux_validation'] ?? 0.0),
         avg_days: (float) ($ctx['avg_days'] ?? 0),
         avg_hours: (float) ($ctx['avg_hours'] ?? 0),
         bloque_hours: (int) ($ctx['bloque_hours'] ?? 0),

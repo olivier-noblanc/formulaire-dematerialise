@@ -20,7 +20,7 @@ final class MonitoringContextTest extends TestCase
             valide_sub: 0,
             en_cours_sub: 0,
             refuse_sub: 0,
-            taux_validation: '0',
+            taux_validation: 0.0,
             avg_days: 0.0,
             avg_hours: 0.0,
             bloque_hours: 0,
@@ -49,6 +49,7 @@ final class MonitoringContextTest extends TestCase
         self::assertSame('inconnu', $ctx->smtp_status);
         self::assertSame(1, $ctx->audit_total_pages);
         self::assertSame([], $ctx->tokens_bloques);
+        self::assertSame(0.0, $ctx->taux_validation);
     }
 
     public function testWithRealisticData(): void
@@ -58,7 +59,7 @@ final class MonitoringContextTest extends TestCase
             valide_sub: 100,
             en_cours_sub: 40,
             refuse_sub: 10,
-            taux_validation: '67',
+            taux_validation: 66.7,
             avg_days: 3.5,
             avg_hours: 0.0,
             bloque_hours: 48,
@@ -107,7 +108,7 @@ final class MonitoringContextTest extends TestCase
             valide_sub: 0,
             en_cours_sub: 0,
             refuse_sub: 0,
-            taux_validation: '',
+            taux_validation: 0.0,
             avg_days: 0.0,
             avg_hours: 0.0,
             bloque_hours: 0,
