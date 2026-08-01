@@ -493,20 +493,25 @@ final class AdminSettingsRenderer
      * Depuis le 2026-08-01, script-src n'a plus 'unsafe-inline' — chaque <script>
      * inline doit avoir un nonce CSP. On injecte le nonce dynamiquement via
      * str_replace (même pattern que NavigationRenderer::footer() pour le persona).
+     *
+     * IMPORTANT : on ne cache que le contenu BRUT (sans nonce), pas le résultat
+     * avec nonce. Le serveur PHP -S est un process unique qui gère plusieurs
+     * requêtes — chaque requête a un nonce différent (généré par requête dans
+     * SecurityService). Si on cache le résultat avec nonce, la 2e requête
+     * réutilise un nonce périmé → violation CSP.
      */
     public function renderAfterMain(): string
     {
-        static $after_main = null;
-        if ($after_main === null) {
-            $raw = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
-            // Injecter le nonce CSP sur chaque <script> inline.
-            // str_replace remplace TOUTES les occurrences (2 blocs <script>).
-            $after_main = str_replace(
-                '<script>',
-                '<script nonce="' . \App\Core\App::security()->getScriptNonce() . '">',
-                $raw
-            );
+        static $raw_scripts = null;
+        if ($raw_scripts === null) {
+            $raw_scripts = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
         }
-        return $after_main;
+        // Injecter le nonce CSP sur chaque <script> inline À CHAQUE APPEL
+        // (le nonce change à chaque requête — ne pas le cacher).
+        return str_replace(
+            '<script>',
+            '<script nonce="' . \App\Core\App::security()->getScriptNonce() . '">',
+            $raw_scripts
+        );
     }
 }
