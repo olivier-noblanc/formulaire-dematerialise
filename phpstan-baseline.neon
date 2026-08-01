@@ -1234,6 +1234,6 @@ parameters:
                 -
                         message: '#^Parameter .+ expects .+, .+ given#'
                 -
-                        message: '#^Property App\\.+ \$database is never read#'
+                        message: '#^Property App\\.+::\$database is never read#'
                 -
-                        message: '#^Property App\\.+ \$database is never read, only written#'
+                        message: '#^Property App\\.+::\$database is never read, only written#'
