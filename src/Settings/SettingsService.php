@@ -70,9 +70,9 @@ final class SettingsService implements SettingsInterface
                 . 'Définissez APP_ENCRYPTION_KEY (32+ octets) dans l\'environnement.'
             );
         }
-        if (strlen($key) < 32) {
+        if (strlen((string) $key) < 32) {
             throw new \RuntimeException(
-                'APP_ENCRYPTION_KEY trop courte (' . strlen($key) . ' octets, minimum 32 requis) — '
+                'APP_ENCRYPTION_KEY trop courte (' . strlen((string) $key) . ' octets, minimum 32 requis) — '
                 . 'refus de stocker une valeur sensible en clair.'
             );
         }
