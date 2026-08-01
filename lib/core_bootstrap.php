@@ -127,15 +127,19 @@ if ($_is_cli && !empty($_test_header)) {
     define('TEST_MODE', false);
 }
 
-// ── AFFICHAGE DES ERREURS — TOUJOURS ACTIF ──────────────────────
-// L'utilisateur veut voir toutes les erreurs à l'écran, même en prod.
+// ── AFFICHAGE DES ERREURS — SÉCURITÉ PAR DÉFAUT ──────────────────
+// Fail-fast : display_errors=0 en production (sécurité — ne pas exposer
+// stack traces, chemins absolus, credentials aux utilisateurs finaux).
+// display_errors=1 UNIQUEMENT si APP_DEBUG=1 ou TEST_MODE actif.
+// Les erreurs sont toujours loggées via error_log (log_errors=1).
+$_is_debug = getenv('APP_DEBUG') !== false && getenv('APP_DEBUG') === '1';
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', $_is_debug ? '1' : '0');
+ini_set('display_startup_errors', $_is_debug ? '1' : '0');
 ini_set('log_errors', '1');
 
-// En mode test (JSON), on garde display_errors à 0 pour ne pas corrompre le JSON
-if (TEST_MODE) {
+// En mode test (JSON), display_errors reste à 0 pour ne pas corrompre le JSON
+if (TEST_MODE && !$_is_debug) {
     ini_set('display_errors', '0');
 }
 

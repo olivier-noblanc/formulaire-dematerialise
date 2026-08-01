@@ -132,11 +132,11 @@ async function main() {
         proxy: _savedProxy ? { server: 'per-proxy', bypass: '127.0.0.1,localhost' } : undefined,
     });
     // Utiliser AUTH_USER pour simuler l'authentification IIS/Kerberos
-    // sans activer TEST_MODE. L'admin "olivier.noblanc@dreets.gouv.fr"
+    // sans activer TEST_MODE. L'admin "admin@ci.test"
     // est présent dans la table admins de la DB de test.
     const context = await browser.newContext({
         extraHTTPHeaders: {
-            'AUTH_USER': 'DREETS\\olivier.noblanc',
+            'AUTH_USER': 'DREETS\\admin',
         },
     });
 

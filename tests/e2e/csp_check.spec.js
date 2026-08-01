@@ -76,11 +76,11 @@ async function main() {
     let stop, browser;
     try {
         console.log('── Démarrage du serveur PHP (port 8900) ──');
-        ({ stop } = await startTestServer('DREETS\\olivier.noblanc'));
+        ({ stop } = await startTestServer('DREETS\\admin'));
         console.log('  Serveur prêt.\n');
 
         browser = await launchBrowser();
-        const context = await newContext(browser, 'DREETS\\olivier.noblanc');
+        const context = await newContext(browser, 'DREETS\\admin');
 
         t.section('CSP — Vérification du header Content-Security-Policy');
 

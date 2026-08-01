@@ -157,7 +157,7 @@ final class HttpRouteTest extends TestCase
         $url = self::$baseUrl . $path;
 
         // Default test user is admin; override via $headers['X-Test-User']
-        $testUser = $headers['X-Test-User'] ?? 'olivier.noblanc@dreets.gouv.fr';
+        $testUser = $headers['X-Test-User'] ?? 'admin@ci.test';
         unset($headers['X-Test-User']);
 
         $httpHeaders = [
@@ -501,7 +501,7 @@ final class HttpRouteTest extends TestCase
     public function testPersonaGetDoesNotRedirectToConfirmation(): void
     {
         // Persona start with admin's own email → self-agent mode, direct activation
-        $adminEmail = 'olivier.noblanc@dreets.gouv.fr';
+        $adminEmail = 'admin@ci.test';
         [$status, $body, $location] = self::httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
 
         // Should redirect to index with persona_token (302) — NOT to confirm_action
@@ -516,7 +516,7 @@ final class HttpRouteTest extends TestCase
     public function testPersonaStopDoesNotRedirectToConfirmation(): void
     {
         // First activate a persona, then stop it
-        $adminEmail = 'olivier.noblanc@dreets.gouv.fr';
+        $adminEmail = 'admin@ci.test';
         [$startStatus, $startBody, $startLocation] = self::httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
         if ($startStatus !== 302) {
             self::markTestSkipped('Could not activate persona');
@@ -676,7 +676,7 @@ final class HttpRouteTest extends TestCase
         $url = self::$baseUrl . '/?p=health';
         $ctx = stream_context_create([
             'http' => [
-                'header' => "X-Test-Mode: 1\r\nX-Test-User: olivier.noblanc@dreets.gouv.fr",
+                'header' => "X-Test-Mode: 1\r\nX-Test-User: admin@ci.test",
                 'timeout' => 10,
                 'ignore_errors' => true,
             ],
@@ -723,7 +723,7 @@ final class HttpRouteTest extends TestCase
         $ctx = stream_context_create([
             'http' => [
                 'method' => 'POST',
-                'header' => "X-Test-Mode: 1\r\nX-Test-User: olivier.noblanc@dreets.gouv.fr\r\nContent-Type: application/x-www-form-urlencoded",
+                'header' => "X-Test-Mode: 1\r\nX-Test-User: admin@ci.test\r\nContent-Type: application/x-www-form-urlencoded",
                 'content' => 'foo=bar',
                 'timeout' => 10,
                 'ignore_errors' => true,
@@ -835,7 +835,7 @@ final class HttpRouteTest extends TestCase
         $url = self::$baseUrl . '/?p=health';
         $ctx = stream_context_create([
             'http' => [
-                'header' => "X-Test-Mode: 1\r\nX-Test-User: olivier.noblanc@dreets.gouv.fr",
+                'header' => "X-Test-Mode: 1\r\nX-Test-User: admin@ci.test",
                 'timeout' => 10,
                 'ignore_errors' => true,
             ],
@@ -979,7 +979,7 @@ final class HttpRouteTest extends TestCase
         self::assertStringContainsString('Sécurité email', $body, 'Section: security');
         self::assertStringContainsString('SMTP', $body, 'Section: SMTP');
         self::assertStringContainsString('Workflow', $body, 'Section: workflow');
-        self::assertStringContainsString('olivier.noblanc@dreets.gouv.fr', $body, 'Admin email from DB');
+        self::assertStringContainsString('admin@ci.test', $body, 'Admin email from DB');
         self::assertStringContainsString('smtp.social.gouv.fr', $body, 'SMTP host from DB');
         self::assertStringContainsString('Enregistrer', $body, 'Save buttons present');
         // CSRF tokens

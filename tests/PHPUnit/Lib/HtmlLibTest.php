@@ -38,16 +38,16 @@ final class HtmlLibTest extends TestCase
 
     public function testDisplayUserSameUser(): void
     {
-        $currentUser = 'olivier.noblanc@dreets.gouv.fr';
+        $currentUser = 'admin@ci.test';
         self::assertSame(
             '<strong>Vous</strong>',
-            $this->html->displayUser('olivier.noblanc@dreets.gouv.fr', $currentUser)
+            $this->html->displayUser('admin@ci.test', $currentUser)
         );
     }
 
     public function testDisplayUserSameDomain(): void
     {
-        $currentUser = 'olivier.noblanc@dreets.gouv.fr';
+        $currentUser = 'admin@ci.test';
         $result = $this->html->displayUser('jean.dupont@dreets.gouv.fr', $currentUser);
         self::assertStringContainsString('jean.dupont', $result);
         self::assertStringNotContainsString('@dreets.gouv.fr', $result);
@@ -55,7 +55,7 @@ final class HtmlLibTest extends TestCase
 
     public function testDisplayUserDifferentDomain(): void
     {
-        $currentUser = 'olivier.noblanc@dreets.gouv.fr';
+        $currentUser = 'admin@ci.test';
         $result = $this->html->displayUser('jean@externe.fr', $currentUser);
         self::assertSame('jean@externe.fr', $result);
     }
@@ -67,26 +67,26 @@ final class HtmlLibTest extends TestCase
 
     public function testDisplayUserForceEmail(): void
     {
-        $currentUser = 'olivier.noblanc@dreets.gouv.fr';
-        $result = $this->html->displayUser('olivier.noblanc@dreets.gouv.fr', $currentUser, true);
-        self::assertSame('olivier.noblanc@dreets.gouv.fr', $result);
+        $currentUser = 'admin@ci.test';
+        $result = $this->html->displayUser('admin@ci.test', $currentUser, true);
+        self::assertSame('admin@ci.test', $result);
     }
 
     // ── displayUserShort() ─────────────────────────────────────
 
     public function testDisplayUserShortEmail(): void
     {
-        self::assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc@dreets.gouv.fr'));
+        self::assertSame('admin', $this->html->displayUserShort('admin@ci.test'));
     }
 
     public function testDisplayUserShortNoAt(): void
     {
-        self::assertSame('olivier.noblanc', $this->html->displayUserShort('olivier.noblanc'));
+        self::assertSame('admin', $this->html->displayUserShort('admin@ci.test'));
     }
 
     public function testDisplayUserShortWindows(): void
     {
-        self::assertSame('olivier.noblanc', $this->html->displayUserShort('DREETS\\olivier.noblanc'));
+        self::assertSame('admin', $this->html->displayUserShort('DREETS\\admin'));
     }
 
     public function testDisplayUserShortEmpty(): void

@@ -48,10 +48,10 @@ check_gap('Toutes les pages dans whitelist router', empty($pagesNotInWhitelist),
 // ═══ SECTION 2 : display_user() + display_user_short() ═══
 echo "\n── Section 2 : Fonctions display_user() + display_user_short() ──\n";
 
-$_test_user = 'olivier.noblanc@dreets.gouv.fr';
+$_test_user = 'admin@ci.test';
 
 check_gap('display_user: = user → "Vous"',
-    \App\Core\App::html()->displayUser('olivier.noblanc@dreets.gouv.fr', $_test_user) === '<strong>Vous</strong>');
+    \App\Core\App::html()->displayUser('admin@ci.test', $_test_user) === '<strong>Vous</strong>');
 
 check_gap('display_user: même domaine → masque',
     \App\Core\App::html()->displayUser('jean.dupont@dreets.gouv.fr', $_test_user) === 'jean.dupont@');
@@ -63,16 +63,16 @@ check_gap('display_user: vide → vide',
     \App\Core\App::html()->displayUser('', $_test_user) === '');
 
 check_gap('display_user: force_email → complet',
-    \App\Core\App::html()->displayUser('olivier.noblanc@dreets.gouv.fr', $_test_user, true) === 'olivier.noblanc@dreets.gouv.fr');
+    \App\Core\App::html()->displayUser('admin@ci.test', $_test_user, true) === 'admin@ci.test');
 
 check_gap('display_user_short: email → local',
-    \App\Core\App::html()->displayUserShort('olivier.noblanc@dreets.gouv.fr') === 'olivier.noblanc');
+    \App\Core\App::html()->displayUserShort('admin@ci.test') === 'admin');
 
 check_gap('display_user_short: sans @ → inchangé',
-    \App\Core\App::html()->displayUserShort('olivier.noblanc') === 'olivier.noblanc');
+    \App\Core\App::html()->displayUserShort('admin@ci.test') === 'admin');
 
 check_gap('display_user_short: Windows format',
-    \App\Core\App::html()->displayUserShort('DREETS\olivier.noblanc') === 'olivier.noblanc');
+    \App\Core\App::html()->displayUserShort('DREETS\admin') === 'admin');
 
 check_gap('display_user_short: vide → vide',
     \App\Core\App::html()->displayUserShort('') === '');

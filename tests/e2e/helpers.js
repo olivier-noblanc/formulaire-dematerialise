@@ -161,11 +161,11 @@ function waitForServer(maxAttempts = 50) {
  * le header HTTP AUTH_USER en variable serveur AUTH_USER (simule IIS/Kerberos
  * sans TEST_MODE). Retourne une fonction stop() asynchrone.
  *
- * @param {string} userHeader  Valeur du header AUTH_USER (ex. 'DREETS\\olivier.noblanc')
+ * @param {string} userHeader  Valeur du header AUTH_USER (ex. 'DREETS\\admin')
  *                             Le header sera injecté dans le context Playwright via newContext()
  * @returns {Promise<{stop: () => Promise<void>}>}
  */
-async function startTestServer(userHeader = 'DREETS\\olivier.noblanc') {
+async function startTestServer(userHeader = 'DREETS\\admin') {
     if (phpServer !== null) {
         throw new Error('Un serveur PHP tourne déjà dans ce processus — appeler stop() d\'abord');
     }
@@ -283,7 +283,7 @@ async function launchBrowser() {
  * @param {string} userHeader  Valeur du header AUTH_USER
  * @returns {Promise<import('playwright').BrowserContext>}
  */
-async function newContext(browser, userHeader = 'DREETS\\olivier.noblanc') {
+async function newContext(browser, userHeader = 'DREETS\\admin') {
     return browser.newContext({
         extraHTTPHeaders: {
             AUTH_USER: userHeader,

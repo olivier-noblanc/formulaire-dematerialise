@@ -29,9 +29,9 @@ require_once __DIR__ . '/_subprocess_helper.php';
  * @return bool True si succès, false si échec.
  */
 function run_bug03_test(): bool {
-    // Admin principal en DB : olivier.noblanc@dreets.gouv.fr
+    // Admin principal en DB : admin@ci.test
     // (doit être admin pour passer require_admin() dans admin_settings.php)
-    $admin_email = 'olivier.noblanc@dreets.gouv.fr';
+    $admin_email = 'admin@ci.test';
 
     // Corps du sous-processus : on inclut admin_settings.php comme le
     // ferait un require en tête de page, en capturant le HTML rendu.
