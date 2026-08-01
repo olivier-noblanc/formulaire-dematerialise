@@ -63,6 +63,32 @@ abstract class BaseRepository
     }
 
     /**
+     * Démarre une transaction. Les repositories partagent la même connexion PDO
+     * (Database singleton), donc une transaction ouverte sur un repo est visible
+     * par tous les autres repos — permet à un service d'orchestrer une transaction
+     * multi-tables en appelant beginTransaction/commit/rollBack sur un seul repo.
+     */
+    public function beginTransaction(): void
+    {
+        $this->pdo()->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->pdo()->commit();
+    }
+
+    public function rollBack(): void
+    {
+        $this->pdo()->rollBack();
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->pdo()->inTransaction();
+    }
+
+    /**
      * @return array<int, string>
      */
     public function getTableNames(): array

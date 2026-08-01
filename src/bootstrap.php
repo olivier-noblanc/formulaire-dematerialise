@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Usage:
  *   require_once 'src/bootstrap.php';
  *   $auth = \App\Core\App::auth();
- *   $pdo = \App\Core\App::db()->getPdo();
+ *   $repo = \App\Core\App::getInstance()->get(\App\Repository\FormRepository::class);
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -32,8 +32,11 @@ use App\Repository\AdminRepository;
 use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;
 use App\Repository\AuditRepository;
+use App\Repository\DelegationRepository;
 use App\Repository\FormRepository;
+use App\Repository\LazyCronRepository;
 use App\Repository\MailRepository;
+use App\Repository\PersonaTokenRepository;
 use App\Repository\SettingsRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
@@ -67,6 +70,9 @@ $app->set(SubmissionRepository::class, new SubmissionRepository($db));
 $app->set(TokenRepository::class, new TokenRepository($db));
 $app->set(AttachmentRepository::class, new AttachmentRepository($db));
 $app->set(AlertRepository::class, new AlertRepository($db));
+$app->set(DelegationRepository::class, new DelegationRepository($db));
+$app->set(PersonaTokenRepository::class, new PersonaTokenRepository($db));
+$app->set(LazyCronRepository::class, new LazyCronRepository($db));
 $app->set(FieldService::class, new FieldService($db));
 $app->set(HtmlService::class, new HtmlService());
 $app->set(\App\Render\DynamicCssService::class, new \App\Render\DynamicCssService());
@@ -88,11 +94,11 @@ $app->get(AuthService::class)->setMailer($mail);
 
 $fields = $app->get(FieldService::class);
 $conditions = $app->get(ConditionEvaluator::class);
-$workflow = new WorkflowEngine($db, $settings, $mail, $fields, $conditions, $app->get(SubmissionRepository::class));
+$workflow = new WorkflowEngine($db, $settings, $mail, $fields, $conditions, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(FormRepository::class));
 $app->set(WorkflowEngine::class, $workflow);
 
 // Token lifecycle service
-$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $app->get(SubmissionRepository::class));
+$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(DelegationRepository::class));
 $app->set(TokenService::class, $tokenService);
 
 // Attachment service
@@ -103,13 +109,13 @@ $app->set(AttachmentService::class, new AttachmentService($attachmentRepo));
 $app->set(ValidatorDataService::class, new ValidatorDataService($app->get(SubmissionRepository::class), $app->get(FormRepository::class), $fields));
 
 // Cron service
-$app->set(CronService::class, new CronService($db));
+$app->set(CronService::class, new CronService($db, $app->get(LazyCronRepository::class)));
 
 // Validation service
 $app->set(ValidationService::class, new ValidationService());
 
 // Export service
-$app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class)));
+$app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class), $app->get(SubmissionRepository::class)));
 
 // Email verification service
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
@@ -118,7 +124,7 @@ $app->set(EmailVerificationService::class, new EmailVerificationService($app->ge
 $app->set(DocumentationService::class, new DocumentationService());
 
 // RGPD service
-$app->set(RgpdService::class, new RgpdService($db));
+$app->set(RgpdService::class, new RgpdService($db, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(AttachmentRepository::class), $app->get(AlertRepository::class), $app->get(AdminRepository::class), $app->get(DelegationRepository::class)));
 
 // Note : les méthodes statiques App::db(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`

@@ -6,6 +6,8 @@ namespace App\Persona;
 
 use App\Core\App;
 use App\Core\Database;
+use App\Repository\AdminRepository;
+use App\Repository\PersonaTokenRepository;
 
 /**
  * Service de gestion des tokens persona (refonte v10.0.0).
@@ -22,12 +24,27 @@ use App\Core\Database;
  *   - Downgrade uniquement (admin → user simple), jamais upgrade
  *   - Même si le token fuite, l'attaquant ne fait que visualiser en user
  *   - Un token ne peut être créé que par un admin (vérifié par l'appelant)
+ *
+ * Le paramètre $database est conservé pour la compatibilité ascendante
+ * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
+ * passe par les repositories injectés.
  */
 final readonly class PersonaService
 {
     public const int TOKEN_TTL = 28800;
 
-    public function __construct(private Database $database) {}
+    public PersonaTokenRepository $personaTokenRepository;
+    public AdminRepository $adminRepository;
+
+    public function __construct(
+        private Database $database,
+        ?PersonaTokenRepository $personaTokenRepository = null,
+        ?AdminRepository $adminRepository = null
+    ) {
+        $app = App::getInstance();
+        $this->personaTokenRepository = $personaTokenRepository ?? ($app->has(PersonaTokenRepository::class) ? $app->get(PersonaTokenRepository::class) : new PersonaTokenRepository($database));
+        $this->adminRepository = $adminRepository ?? ($app->has(AdminRepository::class) ? $app->get(AdminRepository::class) : new AdminRepository($database, new \App\Repository\SettingsRepository($database)));
+    }
 
     /**
      * Crée un token persona pour visualiser en tant que target_email.
@@ -43,16 +60,11 @@ final readonly class PersonaService
         }
 
         try {
-            $pdo = $this->database->getPdo();
             $token = bin2hex(random_bytes(16));
             $id = generate_uuid();
             $expires_at = gmdate('Y-m-d H:i:s', time() + self::TOKEN_TTL);
 
-            $stmt = $pdo->prepare('
-                INSERT INTO persona_tokens (id, token, admin_email, target_email, expires_at)
-                VALUES (?, ?, ?, ?, ?)
-            ');
-            $stmt->execute([$id, $token, $admin_email, $target_email, $expires_at]);
+            $this->personaTokenRepository->createToken($id, $token, $admin_email, $target_email, $expires_at);
 
             App::audit()->log('persona_create', 'admin:' . $admin_email, "Persona créé pour $target_email (expire $expires_at)", '');
             return $token;
@@ -81,17 +93,8 @@ final readonly class PersonaService
         }
 
         try {
-            $pdo = $this->database->getPdo();
-            $stmt = $pdo->prepare('
-                SELECT pt.target_email, pt.expires_at, pt.revoked_at, pt.admin_email
-                FROM persona_tokens pt
-                WHERE pt.token = ?
-                LIMIT 1
-            ');
-            $stmt->execute([$token]);
-            /** @var array{target_email: string, expires_at: string, revoked_at: string|null, admin_email: string}|false $row */
-            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($row === false) {
+            $row = $this->personaTokenRepository->findActiveByToken($token);
+            if ($row === null) {
                 return '';
             }
 
@@ -104,9 +107,9 @@ final readonly class PersonaService
                 return '';
             }
 
-            $admin_check = $pdo->prepare('SELECT 1 FROM admins WHERE email = ?');
-            $admin_check->execute([$row['admin_email']]);
-            if (!$admin_check->fetchColumn()) {
+            // Vérifier que l'admin qui a créé le token est toujours admin
+            // (sécurité : si l'admin a été révoqué entre-temps, le token meurt).
+            if (!$this->adminRepository->isAdmin($row['admin_email'])) {
                 return '';
             }
 
@@ -130,14 +133,7 @@ final readonly class PersonaService
         }
 
         try {
-            $pdo = $this->database->getPdo();
-            $stmt = $pdo->prepare("
-                UPDATE persona_tokens
-                SET revoked_at = datetime('now')
-                WHERE token = ? AND revoked_at IS NULL
-            ");
-            $stmt->execute([$token]);
-            $revoked = $stmt->rowCount() > 0;
+            $revoked = $this->personaTokenRepository->revokeByToken($token) > 0;
             if ($revoked) {
                 App::audit()->log('persona_revoke', 'token:' . substr($token, 0, 8) . '…', 'Persona révoqué', '');
             }
@@ -157,23 +153,8 @@ final readonly class PersonaService
     public function cleanup(): int
     {
         try {
-            $pdo = $this->database->getPdo();
             $cutoff = gmdate('Y-m-d H:i:s', time() - 30 * 86400);
-
-            $stmt = $pdo->prepare('
-                DELETE FROM persona_tokens
-                WHERE revoked_at IS NOT NULL AND revoked_at < ?
-            ');
-            $stmt->execute([$cutoff]);
-            $deleted = $stmt->rowCount();
-
-            $stmt2 = $pdo->prepare('
-                DELETE FROM persona_tokens
-                WHERE revoked_at IS NULL AND expires_at < ?
-            ');
-            $stmt2->execute([$cutoff]);
-
-            return $deleted + $stmt2->rowCount();
+            return $this->personaTokenRepository->cleanup($cutoff);
         } catch (\Throwable $e) {
             error_log('persona_cleanup error: ' . $e->getMessage());
             return 0;

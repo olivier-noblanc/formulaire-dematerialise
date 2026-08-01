@@ -111,4 +111,51 @@ final class AdminRepository extends BaseRepository
             [$rejectedBy, $requestId]
         );
     }
+
+    /**
+     * Supprime un admin par son email. Utilisé par AuthService::removeAdmin().
+     */
+    public function deleteByEmail(string $email): bool
+    {
+        return $this->execute(
+            'DELETE FROM admins WHERE email = ?',
+            [strtolower($email)]
+        );
+    }
+
+    /**
+     * Vérifie s'il existe une demande d'admin en attente pour un email donné.
+     * Utilisé par AuthService::processAdminRequest() pour éviter les doublons.
+     */
+    public function hasPendingRequestByEmail(string $email): bool
+    {
+        $result = $this->fetchOne(
+            "SELECT 1 FROM admin_requests WHERE email = ? AND status = '" . AdminRequestStatus::Pending->value . "'",
+            [strtolower($email)]
+        );
+        return $result !== null;
+    }
+
+    /**
+     * Crée une nouvelle demande d'accès admin.
+     * Utilisé par AuthService::processAdminRequest().
+     */
+    public function createAdminRequest(string $id, string $email, string $requestedAt, string $status, string $token): bool
+    {
+        return $this->execute(
+            "INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, ?, ?)",
+            [$id, $email, $requestedAt, $status, $token]
+        );
+    }
+
+    /**
+     * Supprime toutes les demandes d'admin d'un email donné (anonymisation RGPD).
+     * Utilisé par RgpdService::deleteUserData().
+     */
+    public function deleteAdminRequestsByEmail(string $email): int
+    {
+        $stmt = $this->pdo()->prepare('DELETE FROM admin_requests WHERE email = ?');
+        $stmt->execute([$email]);
+        return $stmt->rowCount();
+    }
 }

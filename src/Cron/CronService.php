@@ -4,19 +4,33 @@ declare(strict_types=1);
 
 namespace App\Cron;
 
+use App\Core\App;
 use App\Core\Database;
+use App\Repository\LazyCronRepository;
 
 /**
  * Service de cron différé — exécution de tâches planifiées + handler POST.
  *
  * Extrait de lib/lazy_cron.php — run_lazy_cron, parse_db_datetime, handle_post.
  * Les fonctions globales dans lib/lazy_cron.php délèguent maintenant ici.
+ *
+ * Le paramètre $database est conservé pour la compatibilité ascendante
+ * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
+ * passe par le LazyCronRepository injecté.
  */
 final class CronService
 {
     private static bool $running = false;
 
-    public function __construct(private readonly Database $database) {}
+    public LazyCronRepository $lazyCronRepository;
+
+    public function __construct(
+        private readonly Database $database,
+        ?LazyCronRepository $lazyCronRepository = null
+    ) {
+        $app = App::getInstance();
+        $this->lazyCronRepository = $lazyCronRepository ?? ($app->has(LazyCronRepository::class) ? $app->get(LazyCronRepository::class) : new LazyCronRepository($database));
+    }
 
     /**
      * Exécute les tâches planifiées dont l'intervalle est écoulé.
@@ -39,7 +53,6 @@ final class CronService
         }
         self::$running = true;
 
-        $pdo = $this->database->getPdo();
         $nowTs = time();
         $tasks = [
             'remind'      => ['interval' => 3600,  'file' => __DIR__ . '/../../remind.php'],
@@ -50,21 +63,23 @@ final class CronService
         ];
 
         $due = [];
-        /** @var array<string, string|false|null> $prevLastRun capture la valeur avant update pour revert en cas d'échec */
+        /** @var array<string, string|null> $prevLastRun capture la valeur avant update pour revert en cas d'échec */
         $prevLastRun = [];
 
-        // Pass 1 : déterminer les tâches à exécuter et enregistrer en DB
+        // Pass 1 : déterminer les tâches à exécuter et enregistrer en DB.
+        // La lecture initiale (hors transaction) est utilisée pour filtrer
+        // rapidement les tâches non dues — le claim atomique est fait par
+        // le repository (tryClaimTask) qui gère la race condition via
+        // BEGIN EXCLUSIVE.
         try {
             foreach ($tasks as $key => $task) {
-                $stmt = $pdo->prepare('SELECT last_run FROM lazy_cron WHERE task_key = ?');
-                $stmt->execute([$key]);
-                $last_run = $stmt->fetchColumn();
+                $lastRun = $this->lazyCronRepository->findLastRun($key);
 
                 $should_run = false;
-                if (in_array($last_run, [false, null, ''], true)) {
+                if ($lastRun === null) {
                     $should_run = true;
                 } else {
-                    $ts = self::parseDbDatetime((string) $last_run);
+                    $ts = self::parseDbDatetime($lastRun);
                     if ($ts === null) {
                         $should_run = true;
                     } elseif (($nowTs - $ts) >= $task['interval']) {
@@ -77,28 +92,19 @@ final class CronService
                 }
 
                 try {
-                    $pdo->exec('BEGIN EXCLUSIVE');
-                    $stmt2 = $pdo->prepare('SELECT last_run FROM lazy_cron WHERE task_key = ?');
-                    $stmt2->execute([$key]);
-                    $last_run2 = $stmt2->fetchColumn();
-                    if (!in_array($last_run2, [false, null, ''], true)) {
-                        $ts2 = self::parseDbDatetime((string) $last_run2);
-                        if ($ts2 !== null && ($nowTs - $ts2) < $task['interval']) {
-                            $pdo->exec('COMMIT');
-                            continue;
-                        }
+                    $claim = $this->lazyCronRepository->tryClaimTask(
+                        $key,
+                        gmdate('Y-m-d H:i:s', $nowTs),
+                        $task['interval'],
+                        $nowTs
+                    );
+                    if (!$claim['claimed']) {
+                        continue;
                     }
                     // B9 : capturer la valeur précédente pour revert en cas d'échec du callback
-                    $prevLastRun[$key] = $last_run2;
-                    $pdo->prepare('INSERT OR REPLACE INTO lazy_cron (task_key, last_run, run_count) VALUES (?, ?, COALESCE((SELECT run_count FROM lazy_cron WHERE task_key = ?), 0) + 1)')
-                        ->execute([$key, gmdate('Y-m-d H:i:s', $nowTs), $key]);
-                    $pdo->exec('COMMIT');
+                    $prevLastRun[$key] = $claim['prev_last_run'];
                     $due[] = $key;
                 } catch (\PDOException $e) {
-                    try {
-                        $pdo->exec('ROLLBACK');
-                    } catch (\Throwable) {
-                    }
                     if (str_contains($e->getMessage(), 'busy') || str_contains($e->getMessage(), 'locked')) {
                         continue;
                     }
@@ -137,15 +143,14 @@ final class CronService
             if ($callbackFailed) {
                 $prev = $prevLastRun[$key] ?? null;
                 try {
-                    if (in_array($prev, [false, null, ''], true)) {
+                    if ($prev === null) {
                         // Première exécution qui a échoué → supprimer la ligne pour
                         // que should_run=true au prochain passage.
-                        $pdo->prepare('DELETE FROM lazy_cron WHERE task_key = ?')->execute([$key]);
+                        $this->lazyCronRepository->deleteByKey($key);
                     } else {
                         // Écrire l'ancienne valeur (assez ancienne pour que la tâche
                         // soit de nouveau considérée due au prochain passage).
-                        $pdo->prepare('UPDATE lazy_cron SET last_run = ? WHERE task_key = ?')
-                            ->execute([(string) $prev, $key]);
+                        $this->lazyCronRepository->updateLastRun($key, $prev);
                     }
                 } catch (\Throwable $revertErr) {
                     error_log("Lazy cron revert error ({$key}): " . $revertErr->getMessage());
@@ -160,10 +165,6 @@ final class CronService
      */
     public static function parseDbDatetime(string $datetime): ?int
     {
-        $dt = \DateTime::createFromFormat('Y-m-d H:i:s', $datetime, new \DateTimeZone('UTC'));
-        if ($dt === false) {
-            return null;
-        }
-        return $dt->getTimestamp();
+        return LazyCronRepository::parseDbDatetime($datetime);
     }
 }

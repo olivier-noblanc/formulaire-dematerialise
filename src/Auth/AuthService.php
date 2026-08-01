@@ -9,15 +9,36 @@ use App\Contract\MailInterface;
 use App\Core\App;
 use App\Core\Database;
 use App\Enum\AdminRequestStatus;
+use App\Repository\AdminRepository;
+use App\Repository\FormRepository;
+use App\Repository\SettingsRepository;
 
 /**
  * Service d'authentification et gestion des admins.
+ *
+ * Le paramètre $database est conservé pour la compatibilité ascendante
+ * (tests AuthServiceTest qui instancient AuthService avec une DB isolée
+ * sans passer par le bootstrap global). En production, tout accès DB
+ * passe par les repositories injectés ou résolus via App::getInstance().
  */
 final class AuthService implements AuthInterface
 {
     private ?MailInterface $mail = null;
+    public AdminRepository $adminRepository;
+    public FormRepository $formRepository;
+    public SettingsRepository $settingsRepository;
 
-    public function __construct(private readonly Database $database) {}
+    public function __construct(
+        private readonly Database $database,
+        ?AdminRepository $adminRepository = null,
+        ?FormRepository $formRepository = null,
+        ?SettingsRepository $settingsRepository = null
+    ) {
+        $app = App::getInstance();
+        $this->adminRepository = $adminRepository ?? ($app->has(AdminRepository::class) ? $app->get(AdminRepository::class) : new AdminRepository($database, new SettingsRepository($database)));
+        $this->formRepository = $formRepository ?? ($app->has(FormRepository::class) ? $app->get(FormRepository::class) : new FormRepository($database));
+        $this->settingsRepository = $settingsRepository ?? ($app->has(SettingsRepository::class) ? $app->get(SettingsRepository::class) : new SettingsRepository($database));
+    }
 
     public function setMailer(MailInterface $mail): void
     {
@@ -105,32 +126,16 @@ final class AuthService implements AuthInterface
      *
      * CS-11 (audit 2026-07-26) : délègue à AdminRepository::isAdmin() quand
      * le container DI a enregistré un AdminRepository (cas normal). Sinon
-     * fallback sur SELECT direct (cas des tests qui instancient AuthService
-     * avec une DB isolée sans passer par le bootstrap global — AuthServiceTest).
-     *
-     * La dépendance circulaire au constructeur (AuthService créé AVANT
-     * AdminRepository dans bootstrap.php) interdit l'injection directe —
-     * on utilise donc App::getInstance() pour récupérer le repo à l'appel.
+     * fallback sur AdminRepository créé à la volée (cas des tests qui
+     * instancient AuthService avec une DB isolée sans passer par le
+     * bootstrap global — AuthServiceTest).
      */
     private function isAdminByEmail(string $email): bool
     {
         if ($email === '') {
             return false;
         }
-        // Tenter via AdminRepository si disponible dans le container DI
-        try {
-            $app = \App\Core\App::getInstance();
-            if ($app->has(\App\Repository\AdminRepository::class)) {
-                return $app->get(\App\Repository\AdminRepository::class)->isAdmin($email);
-            }
-        } catch (\Throwable) {
-            // Container non initialisé — fallback ci-dessous
-        }
-        // Fallback : SELECT direct (ancien comportement, pour AuthServiceTest)
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('SELECT 1 FROM admins WHERE email = ?');
-        $stmt->execute([$email]);
-        return $stmt->fetch() !== false;
+        return $this->adminRepository->isAdmin($email);
     }
 
     public function isAdmin(): bool
@@ -236,28 +241,23 @@ final class AuthService implements AuthInterface
     public function getAdminEmail(): string
     {
         // CS-11 (audit 2026-07-26) : délègue à AdminRepository::getSuperAdminEmail()
-        // quand disponible dans le container DI. Sinon fallback SELECT direct
-        // (cas des tests AuthServiceTest qui ne passe pas par bootstrap global).
+        // quand disponible dans le container DI. Sinon fallback SettingsRepository
+        // puis SETTINGS_DEFAULTS (cas des tests AuthServiceTest qui ne passe pas
+        // par bootstrap global).
         try {
-            $app = \App\Core\App::getInstance();
-            if ($app->has(\App\Repository\AdminRepository::class)) {
-                $email = $app->get(\App\Repository\AdminRepository::class)->getSuperAdminEmail();
-                if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
-                    return $email;
-                }
+            $email = $this->adminRepository->getSuperAdminEmail();
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
+                return $email;
             }
         } catch (\Throwable) {
-            // Container DI ou DB pas encore prêt (tôt dans le bootstrap)
+            // DB pas encore prête (tôt dans le bootstrap)
         }
 
-        // Fallback : SELECT direct puis SETTINGS_DEFAULTS
+        // Fallback : SettingsRepository direct puis SETTINGS_DEFAULTS
         try {
-            $pdo = $this->database->getPdo();
-            $stmt = $pdo->prepare('SELECT value FROM settings WHERE key = ?');
-            $stmt->execute(['admin_email']);
-            $val = $stmt->fetchColumn();
-            if ($val !== false && $val !== null && filter_var($val, FILTER_VALIDATE_EMAIL) !== false) {
-                return (string) $val;
+            $val = $this->settingsRepository->get('admin_email');
+            if ($val !== null && $val !== '' && filter_var($val, FILTER_VALIDATE_EMAIL) !== false) {
+                return $val;
             }
         } catch (\Throwable) {
             // DB pas encore prête
@@ -280,10 +280,7 @@ final class AuthService implements AuthInterface
         if ($email === null) {
             $email = $this->getUser();
         }
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('SELECT 1 FROM form_owners WHERE form_id = ? AND LOWER(email) = LOWER(?)');
-        $stmt->execute([$formId, $email]);
-        return $stmt->fetch() !== false;
+        return $this->formRepository->isOwnerByEmail($formId, $email);
     }
 
 
@@ -294,16 +291,7 @@ final class AuthService implements AuthInterface
         if ($email === null) {
             $email = $this->getUser();
         }
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('
-            SELECT f.id, f.label, f.slug, f.actif
-            FROM forms f
-            JOIN form_owners fo ON fo.form_id = f.id
-            WHERE LOWER(fo.email) = LOWER(?)
-            ORDER BY f.label
-        ');
-        $stmt->execute([$email]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->formRepository->findOwnedFormsByEmail($email);
     }
 
     // ── ADMIN REQUEST MANAGEMENT ────────────────────────────────
@@ -316,22 +304,17 @@ final class AuthService implements AuthInterface
     public function processAdminRequest(string $email): array
     {
         try {
-            $pdo = $this->database->getPdo();
-
             if ($this->isAdmin()) {
                 return ['success' => true, 'reason' => 'already_admin'];
             }
 
-            $stmt = $pdo->prepare("SELECT 1 FROM admin_requests WHERE email = ? AND status = '" . AdminRequestStatus::Pending->value . "'");
-            $stmt->execute([$email]);
-            if ($stmt->fetch() !== false) {
+            if ($this->adminRepository->hasPendingRequestByEmail($email)) {
                 return ['success' => false, 'reason' => \App\Enum\AdminRequestStatus::Pending->value];
             }
 
             $token = bin2hex(random_bytes(32));
             $ar_id = generate_uuid();
-            $stmt = $pdo->prepare("INSERT INTO admin_requests (id, email, requested_at, status, token) VALUES (?, ?, ?, '" . AdminRequestStatus::Pending->value . "', ?)");
-            $stmt->execute([$ar_id, $email, gmdate('Y-m-d H:i:s'), $token]);
+            $this->adminRepository->createAdminRequest($ar_id, $email, gmdate('Y-m-d H:i:s'), AdminRequestStatus::Pending->value, $token);
 
             App::audit()->log('admin_request', 'admin:' . $email, 'Demande d\'accès admin', $email);
 
@@ -378,18 +361,16 @@ final class AuthService implements AuthInterface
     public function approveAdminRequest(string $email, ?string $requestId = null): bool
     {
         try {
-            $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
-
             // Si pas d'ID, trouver la demande pending par email
             if ($requestId === null) {
-                $request = $adminRepo->findPendingByEmail($email);
+                $request = $this->adminRepository->findPendingByEmail($email);
                 if ($request === null) {
                     return false;
                 }
                 $requestId = $request['id'];
             }
 
-            $adminRepo->approveRequest($requestId, $this->getUser());
+            $this->adminRepository->approveRequest($requestId, $this->getUser());
 
             $subject = 'Accès admin approuvé - ' . \App\Render\NavigationRenderer::getAppName();
             $body = '
@@ -418,18 +399,16 @@ final class AuthService implements AuthInterface
     public function rejectAdminRequest(string $email, ?string $requestId = null): bool
     {
         try {
-            $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
-
             // Si pas d'ID, trouver la demande pending par email
             if ($requestId === null) {
-                $request = $adminRepo->findPendingByEmail($email);
+                $request = $this->adminRepository->findPendingByEmail($email);
                 if ($request === null) {
                     return false;
                 }
                 $requestId = $request['id'];
             }
 
-            $adminRepo->rejectRequest($requestId, $this->getUser());
+            $this->adminRepository->rejectRequest($requestId, $this->getUser());
 
             $subject = 'Demande d\'accès admin refusée - ' . \App\Render\NavigationRenderer::getAppName();
             $body = '
@@ -455,15 +434,12 @@ final class AuthService implements AuthInterface
 
     public function removeAdmin(string $email): bool
     {
-        $pdo = $this->database->getPdo();
-
         if ($email === $this->getAdminEmail()) {
             return false;
         }
 
         try {
-            $stmt = $pdo->prepare('DELETE FROM admins WHERE email = ?');
-            $stmt->execute([$email]);
+            $this->adminRepository->deleteByEmail($email);
             App::audit()->log('admin_remove', 'admin:' . $email, 'Admin supprimé', $email);
             return true;
         } catch (\Exception $e) {

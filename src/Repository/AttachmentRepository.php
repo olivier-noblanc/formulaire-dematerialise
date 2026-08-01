@@ -62,4 +62,26 @@ final class AttachmentRepository extends BaseRepository
         $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM attachments');
         return (int) ($result['cnt'] ?? 0);
     }
+
+    /**
+     * Supprime toutes les pièces jointes d'une soumission (mono-id).
+     * Utilisé par RgpdService::deleteUserData() et autoPurge().
+     */
+    public function deleteBySubmissionId(string $submissionId): int
+    {
+        $stmt = $this->pdo()->prepare('DELETE FROM attachments WHERE submission_id = ?');
+        $stmt->execute([$submissionId]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Taille totale de toutes les pièces jointes (SUM(file_size)).
+     * Utilisé par StatsService::getGlobalStats().
+     */
+    public function getTotalFileSize(): int
+    {
+        /** @var array{total: int|string|null}|null $result */
+        $result = $this->fetchOne('SELECT COALESCE(SUM(file_size), 0) as total FROM attachments');
+        return (int) ($result['total'] ?? 0);
+    }
 }

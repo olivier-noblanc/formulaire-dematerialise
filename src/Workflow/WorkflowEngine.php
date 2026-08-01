@@ -9,15 +9,37 @@ use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Forms\FieldService;
 use App\Mail\MailService;
+use App\Repository\FormRepository;
 use App\Repository\SubmissionRepository;
+use App\Repository\TokenRepository;
 use App\Settings\SettingsService;
 
 /**
  * Moteur de workflow — tokens, steps, validation.
+ *
+ * Le paramètre $database est conservé pour la compatibilité ascendante
+ * (tests existants, bootstrap) mais n'est plus utilisé directement — tout
+ * accès DB passe par les repositories injectés ($tokenRepository,
+ * $formRepository, $submissionRepository).
  */
 final readonly class WorkflowEngine
 {
-    public function __construct(private Database $database, private SettingsService $settingsService, private MailService $mailService, private FieldService $fieldService, private ConditionEvaluator $conditionEvaluator, private SubmissionRepository $submissionRepository) {}
+    public TokenRepository $tokenRepository;
+    public FormRepository $formRepository;
+
+    public function __construct(
+        private Database $database,
+        private SettingsService $settingsService,
+        private MailService $mailService,
+        private FieldService $fieldService,
+        private ConditionEvaluator $conditionEvaluator,
+        private SubmissionRepository $submissionRepository,
+        ?TokenRepository $tokenRepository = null,
+        ?FormRepository $formRepository = null
+    ) {
+        $this->tokenRepository = $tokenRepository ?? \App\Core\App::getInstance()->get(TokenRepository::class);
+        $this->formRepository = $formRepository ?? \App\Core\App::getInstance()->get(FormRepository::class);
+    }
 
     /**
      * @return array{
@@ -108,23 +130,7 @@ final readonly class WorkflowEngine
      */
     private function fetchTokenByCondition(string $whereClause, array $params): ?array
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare("
-            SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
-                   t.done_at, t.relance_at, t.expires_at, t.relance_count, t.invalidated_at, t.action,
-                   st.label as step_label, s.form_id,
-                   f.label as form_label, s.data, s.closed_at, s.status,
-                   s.submitted_by
-            FROM tokens t
-            JOIN steps st ON st.id = t.step_id
-            JOIN submissions s ON s.id = t.submission_id
-            JOIN forms f ON f.id = s.form_id
-            WHERE {$whereClause}
-        ");
-        $stmt->execute($params);
-        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_id: string, form_label: string, data: string, closed_at: string|null, status: string, submitted_by: string}|false $result */
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result !== false ? $result : null;
+        return $this->tokenRepository->findTokenWithContextByCondition($whereClause, $params);
     }
 
     /**
@@ -139,20 +145,7 @@ final readonly class WorkflowEngine
      */
     public function getWorkflowSteps(string $formId): array
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare("
-            SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.condition,
-                   GROUP_CONCAT(sr.email, '|') as recipient_emails
-            FROM steps st
-            LEFT JOIN step_recipients sr ON sr.step_id = st.id
-            WHERE st.form_id = ? AND st.actif = 1
-            GROUP BY st.id
-            ORDER BY st.ordre ASC, st.id ASC
-        ");
-        $stmt->execute([$formId]);
-        /** @var array<int, array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $result */
-        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $result;
+        return $this->formRepository->findWorkflowStepsForEngine($formId);
     }
 
     /**
@@ -171,23 +164,7 @@ final readonly class WorkflowEngine
      */
     public function getSubmissionWithFormLabel(string $submissionId): ?array
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('
-            SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at,
-                   s.closed_at, s.status, s.admin_comment, s.rgpd_consent,
-                   f.label as form_label
-            FROM submissions s
-            JOIN forms f ON f.id = s.form_id
-            WHERE s.id = ?
-        ');
-        $stmt->execute([$submissionId]);
-        // CS-12 fix (audit 2026-07-26) : la shape PHPDoc omettait rgpd_consent
-        // bien que le SELECT l'inclue. Contourné par isset() dans
-        // DownloadController:210, mais PHPStan ne pouvait pas détecter les
-        // accès à des clés inexistantes. Shape maintenant complète.
-        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string}|false $result */
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result !== false ? $result : null;
+        return $this->submissionRepository->findWithFormLabelById($submissionId);
     }
 
     /** @param array<string, mixed> $formData */
@@ -196,12 +173,9 @@ final readonly class WorkflowEngine
         // Cas spécial : {{owner}}
         if ($recipient === '{{owner}}') {
             if ($submissionId !== null) {
-                $pdo = $this->database->getPdo();
-                $formIdStmt = $pdo->prepare('SELECT form_id FROM submissions WHERE id = ?');
-                $formIdStmt->execute([$submissionId]);
-                $fid = (string) $formIdStmt->fetchColumn();
-                if ($fid !== '') {
-                    $owners = $this->getFormOwners($fid);
+                $fid = $this->submissionRepository->findFormIdById($submissionId);
+                if ($fid !== null && $fid !== '') {
+                    $owners = $this->formRepository->findOwnersByFormId($fid);
                     $firstOwnerEmail = $owners[0]['email'] ?? '';
                     if ($owners !== [] && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL)) {
                         return $firstOwnerEmail;
@@ -237,23 +211,10 @@ final readonly class WorkflowEngine
         return $recipient;
     }
 
-    /** @return array<int, array{id: string, email: string, added_at: string}> */
-    private function getFormOwners(string $formId): array
-    {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email');
-        $stmt->execute([$formId]);
-        /** @var array<int, array{id: string, email: string, added_at: string}> $result */
-        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $result;
-    }
-
     public function advanceWorkflow(string $submissionId): void
     {
         // CS-01 (audit 2026-07-26) : god function de 160 lignes décomposée en 3 helpers
         // privés. Comportement inchangé, juste plus lisible et testable.
-        $pdo = $this->database->getPdo();
-
         $submission = $this->getSubmissionWithFormLabel($submissionId);
         if (!$submission) {
             return;
@@ -278,15 +239,15 @@ final readonly class WorkflowEngine
         $expiresAt = gmdate('Y-m-d H:i:s', $expiresAt_ts !== false ? $expiresAt_ts : time());
 
         // Transaction pour séquencer les lectures/écritures de tokens
-        // et empêcher les doublons entre requêtes concurrentes
-        $pdo->beginTransaction();
+        // et empêcher les doublons entre requêtes concurrentes.
+        // BaseRepository expose beginTransaction/commit/rollBack — les repos
+        // partagent la même connexion PDO (Database singleton).
+        $this->tokenRepository->beginTransaction();
         $committed = false;
         try {
             // Tokens déjà créés (lu dans la transaction pour un snapshot cohérent)
-            $tokenStmt = $pdo->prepare('SELECT step_id, done_at FROM tokens WHERE submission_id = ?');
-            $tokenStmt->execute([$submissionId]);
             $tokensByStep = [];
-            foreach ($tokenStmt->fetchAll(\PDO::FETCH_ASSOC) as $t) {
+            foreach ($this->tokenRepository->findStepIdsAndDonesBySubmission($submissionId) as $t) {
                 $tokensByStep[(string) $t['step_id']][] = $t['done_at'];
             }
 
@@ -310,12 +271,11 @@ final readonly class WorkflowEngine
                         $submission,
                         $submissionId,
                         $now,
-                        $expiresAt,
-                        $pdo
+                        $expiresAt
                     );
                     $totalTokensCreated += $tokenCreated ? 1 : 0;
                     if ($tokenCreated) {
-                        $pdo->commit();
+                        $this->tokenRepository->commit();
                         $committed = true;
                         return;
                     }
@@ -323,7 +283,7 @@ final readonly class WorkflowEngine
                     // invalides), on ne le considère PAS comme complété. On sort en
                     // attendant qu'une action humaine corrige la config (condition,
                     // recipients) — la soumission reste en_cours, pas clôturée.
-                    $pdo->commit();
+                    $this->tokenRepository->commit();
                     $committed = true;
                     \App\Core\App::audit()->log(
                         'workflow_stalled',
@@ -336,7 +296,7 @@ final readonly class WorkflowEngine
 
                 // Vérifier si toutes les étapes de cet ordre sont validées
                 if (!$this->isGroupComplete($groupe, $tokensByStep)) {
-                    $pdo->commit();
+                    $this->tokenRepository->commit();
                     $committed = true;
                     return;
                 }
@@ -349,7 +309,7 @@ final readonly class WorkflowEngine
             // n'avait aucune étape active. On ne clôture QUE si des tokens existent.
             if ($tokensByStep === []) {
                 // Aucune étape active dans le formulaire → on ne clôture PAS
-                $pdo->commit();
+                $this->tokenRepository->commit();
                 $committed = true;
                 \App\Core\App::audit()->log(
                     'workflow_no_steps',
@@ -361,17 +321,16 @@ final readonly class WorkflowEngine
             }
 
             // Toutes les étapes sont validées → clôturer
-            $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
-                ->execute([$now, SubmissionStatus::Valide->value, $submissionId]);
+            $this->submissionRepository->closeWithStatus($submissionId, $now, SubmissionStatus::Valide->value);
 
-            $pdo->commit();
+            $this->tokenRepository->commit();
             $committed = true;
 
             // Notifier l'agent (hors transaction — side effect)
             $this->notifyAgentOfCompletion($submission);
         } catch (\Throwable $e) {
-            if (!$committed && $pdo->inTransaction()) {
-                $pdo->rollBack();
+            if (!$committed && $this->tokenRepository->inTransaction()) {
+                $this->tokenRepository->rollBack();
             }
             throw $e;
         }
@@ -390,8 +349,7 @@ final readonly class WorkflowEngine
         array $submission,
         string $submissionId,
         string $now,
-        string $expiresAt,
-        \PDO $pdo
+        string $expiresAt
     ): bool {
         $formData = json_decode($submission['data'] ?? '{}', true) ?? [];
         $validatorData = $this->getValidatorDataForEvaluation($submissionId);
@@ -428,17 +386,14 @@ final readonly class WorkflowEngine
                 $hasRecipient = true;
 
                 // Vérifier doublon
-                $dupCheck = $pdo->prepare('SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL');
-                $dupCheck->execute([$submissionId, $step['step_id'], $rawEmail]);
-                if ($dupCheck->fetch()) {
+                if ($this->tokenRepository->hasPendingDuplicate($submissionId, $step['step_id'], $rawEmail)) {
                     continue;
                 }
 
                 $token = $this->generateToken();
                 $tokenRowId = $this->generateUuid();
                 try {
-                    $pdo->prepare('INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?,?,?,?,?,?,?)')
-                        ->execute([$tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt]);
+                    $this->tokenRepository->insertToken($tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt);
                 } catch (\PDOException $e) {
                     if ($e->getCode() === '23000') {
                         error_log("Workflow: duplicate token prevented for step {$step['step_id']}, email {$rawEmail}");
@@ -549,12 +504,11 @@ final readonly class WorkflowEngine
             return ['status' => 'invalid', 'message' => 'Action non autorisée.'];
         }
 
-        $pdo = $this->database->getPdo();
-        $pdo->beginTransaction();
+        $this->tokenRepository->beginTransaction();
 
         $t = $this->getTokenWithContext($token);
         if ($t === null) {
-            $pdo->rollBack();
+            $this->tokenRepository->rollBack();
             return ['status' => 'invalid'];
         }
         // B-V1 fix (audit fonctionnel 2026-07-26) : un token invalidé (par cancel,
@@ -563,11 +517,11 @@ final readonly class WorkflowEngine
         // les tokens invalidés — l'utilisateur voyait une page de validation
         // fonctionnelle alors que le token était mort.
         if (!empty($t['done_at']) || !empty($t['invalidated_at'])) {
-            $pdo->rollBack();
+            $this->tokenRepository->rollBack();
             return ['status' => 'already_done', 'data' => $t];
         }
         if (!empty($t['closed_at'])) {
-            $pdo->rollBack();
+            $this->tokenRepository->rollBack();
             return ['status' => 'closed', 'data' => $t];
         }
 
@@ -582,7 +536,7 @@ final readonly class WorkflowEngine
             // v10.22.0 (remind.php) — n'avait pas été appliqué ici.
             $expTs = strtotime($t['expires_at'] . ' UTC');
             if ($expTs !== false && $expTs < time()) {
-                $pdo->rollBack();
+                $this->tokenRepository->rollBack();
                 return ['status' => 'expired', 'data' => $t];
             }
         }
@@ -590,20 +544,17 @@ final readonly class WorkflowEngine
         $comment = mb_substr($comment, 0, 1000);
 
         if ($action === ValidationAction::Refuser->value) {
-            $stmt = $pdo->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
-            $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
-            if ($stmt->rowCount() === 0) {
-                $pdo->rollBack();
+            $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
+            if ($rowCount === 0) {
+                $this->tokenRepository->rollBack();
                 return ['status' => 'already_done', 'data' => $t];
             }
 
-            $pdo->prepare('UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?')
-                ->execute([gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value, $t['submission_id']]);
+            $this->submissionRepository->closeWithStatus($t['submission_id'], gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value);
         } else {
-            $stmt = $pdo->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
-            $stmt->execute([gmdate('Y-m-d H:i:s'), $token]);
-            if ($stmt->rowCount() === 0) {
-                $pdo->rollBack();
+            $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
+            if ($rowCount === 0) {
+                $this->tokenRepository->rollBack();
                 return ['status' => 'already_done', 'data' => $t];
             }
         }
@@ -626,7 +577,7 @@ final readonly class WorkflowEngine
             return $data;
         });
         if (!$appended) {
-            $pdo->rollBack();
+            $this->tokenRepository->rollBack();
             // Audit l'échec pour diagnose (règle AGENTS.md #9 : ne pas avaler silencieusement)
             \App\Core\App::audit()->log(
                 'validation_data_append_failed',
@@ -637,7 +588,7 @@ final readonly class WorkflowEngine
             return ['status' => 'data_conflict', 'data' => $t];
         }
 
-        $pdo->commit();
+        $this->tokenRepository->commit();
 
         // Emails et advanceWorkflow APRES le commit (side effects hors transaction)
         if ($action === ValidationAction::Refuser->value) {
@@ -659,22 +610,12 @@ final readonly class WorkflowEngine
 
     public function hasActiveSubmissions(string $formId): int
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM submissions WHERE form_id = ? AND status = ?');
-        $stmt->execute([$formId, SubmissionStatus::EnCours->value]);
-        return (int) $stmt->fetchColumn();
+        return $this->submissionRepository->countActiveByFormAndStatus($formId, SubmissionStatus::EnCours->value);
     }
 
     public function hasActiveStepSubmissions(string $stepId): int
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->prepare('
-            SELECT COUNT(*) FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = ?
-        ');
-        $stmt->execute([$stepId, SubmissionStatus::EnCours->value]);
-        return (int) $stmt->fetchColumn();
+        return $this->tokenRepository->countActiveByStepId($stepId, SubmissionStatus::EnCours->value);
     }
 
     private function generateToken(): string

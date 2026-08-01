@@ -22,12 +22,9 @@ final class DashboardController extends BaseController
      */
     public function handle(): void
     {
-
-
         // Sécurité : le dashboard est réservé aux administrateurs
         $this->auth->requireAdminEffective();
 
-        $this->db->getPdo();
         $filtre  = $_GET['statut'] ?? 'tous';
         $form_f  = $_GET['form']   ?? '';
         $form_f = is_string($form_f) ? $form_f : '';

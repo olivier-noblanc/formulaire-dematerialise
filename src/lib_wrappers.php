@@ -67,14 +67,11 @@ function get_form_by_uuid(string $uuid): ?array
 }
 
 // ── DATABASE (lib/database.php → App\Core\App::db()) ────────────
-function get_pdo(): PDO
-{
-    return \App\Core\App::db()->getPdo();
-}
-function release_pdo(): void
-{
-    \App\Core\App::db()->release();
-}
+// get_pdo() et release_pdo() sont définis dans helpers.php (qui est dans
+// l'allowIn de la règle disallowed-calls). Les wrappers qui suivent
+// n'accèdent PAS à PDO directement — ils passent par App::db() qui est
+// l'API publique de Database (et non par ->getPdo() qui est interdit
+// hors de la couche Repository).
 
 // ── JARGON (lib/jargon.php → App\Render\JargonService) ─────────
 function t_jargon(string $text): string
