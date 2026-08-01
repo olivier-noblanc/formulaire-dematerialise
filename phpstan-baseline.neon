@@ -1210,7 +1210,7 @@ parameters:
                 -
                         message: '#^Parameter .+ of method App\\Render\\.+ expects .+, list<array\{.+\}> given\.#'
                 -
-                        message: '#^Parameter .+ of method App\\Render\\.+ expects .+, array<int\|string, .+> given\.#'
+                        message: '#^Parameter .+ of method App\\Render\\.+ expects .+, array<.+> given\.#'
                 -
                         message: '#^Method call ->getFile\(\) is prohibited on unknown type#'
                 -
