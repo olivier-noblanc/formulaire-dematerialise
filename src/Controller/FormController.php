@@ -24,7 +24,6 @@ final class FormController extends BaseController
      */
     public function handle(): void
     {
-        $this->db->getPdo();
         $slug = trim($_GET['f'] ?? '');
 
         // Sécurité (A-01) : valider le slug du formulaire

@@ -570,4 +570,320 @@ final class SubmissionRepository extends BaseRepository
         );
         return (int) ($result['cnt'] ?? 0);
     }
+
+    // ── Workflow / Validation context ─────────────────────────────
+
+    /**
+     * Récupère une soumission avec son form_label (pour WorkflowEngine).
+     *
+     * @return array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string}|null
+     */
+    public function findWithFormLabelById(string $submissionId): ?array
+    {
+        /** @var array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string}|null $result */
+        $result = $this->fetchOne(
+            'SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at,
+                   s.closed_at, s.status, s.admin_comment, s.rgpd_consent,
+                   f.label as form_label
+            FROM submissions s
+            JOIN forms f ON f.id = s.form_id
+            WHERE s.id = ?',
+            [$submissionId]
+        );
+        return $result;
+    }
+
+    /**
+     * Clôture une soumission avec un statut donné (Valide/Refuse/Annule).
+     * Utilisé par WorkflowEngine::advanceWorkflow() et validateToken().
+     */
+    public function closeWithStatus(string $id, string $now, string $status): bool
+    {
+        return $this->execute(
+            'UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?',
+            [$now, $status, $id]
+        );
+    }
+
+    /**
+     * Annule toutes les soumissions en_cours d'un demandeur (status=annule, closed_at=now).
+     * Utilisé par RgpdService::deleteUserData().
+     */
+    public function cancelActiveBySubmitter(string $email, string $now): int
+    {
+        $stmt = $this->pdo()->prepare("UPDATE submissions SET closed_at = ?, status = '" . SubmissionStatus::Annule->value . "' WHERE submitted_by = ? AND status = '" . SubmissionStatus::EnCours->value . "' AND closed_at IS NULL");
+        $stmt->execute([$now, $email]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Récupère (id, data) pour toutes les soumissions d'un demandeur.
+     * Utilisé par RgpdService::deleteUserData() pour anonymiser le JSON data.
+     *
+     * @return list<array{id: string, data: string}>
+     */
+    public function findIdAndDataBySubmitter(string $email): array
+    {
+        /** @var list<array{id: string, data: string}> $result */
+        $result = $this->fetchAll(
+            'SELECT id, data FROM submissions WHERE submitted_by = ?',
+            [$email]
+        );
+        return $result;
+    }
+
+    /**
+     * Met à jour submitted_by et data pour une soumission (anonymisation RGPD).
+     */
+    public function updateSubmittedByAndData(string $id, string $submittedBy, string $data): bool
+    {
+        return $this->execute(
+            'UPDATE submissions SET submitted_by = ?, data = ? WHERE id = ?',
+            [$submittedBy, $data, $id]
+        );
+    }
+
+    /**
+     * Récupère les IDs des soumissions purgables (status != en_cours ET closed_at < cutoff).
+     * Utilisé par RgpdService::autoPurge().
+     *
+     * @return list<string>
+     */
+    public function findIdsPurgeableByCutoffForRgpd(string $cutoff): array
+    {
+        $rows = $this->fetchAll(
+            "SELECT id FROM submissions WHERE status != '" . SubmissionStatus::EnCours->value . "' AND closed_at < ?",
+            [$cutoff]
+        );
+        return array_map(static fn(array $r): string => (string) $r['id'], $rows);
+    }
+
+    /**
+     * Supprime cascade pour RgpdService::autoPurge() — une soumission à la fois.
+     * Inclut attachments, delegations, tokens, alert_log, submissions.
+     */
+    public function deleteCascadeForRgpd(string $submissionId): void
+    {
+        $pdo = $this->pdo();
+        $pdo->beginTransaction();
+        try {
+            $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$submissionId]);
+            $this->execute('DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)', [$submissionId]);
+            $this->execute('DELETE FROM tokens WHERE submission_id = ?', [$submissionId]);
+            $this->execute('DELETE FROM alert_log WHERE submission_id = ?', [$submissionId]);
+            $this->execute('DELETE FROM submissions WHERE id = ?', [$submissionId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Récupère les soumissions d'un demandeur pour export RGPD (avec form_label).
+     * Utilisé par RgpdService::exportUserData().
+     *
+     * @return list<array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string}>
+     */
+    public function findForRgpdExportByEmail(string $email): array
+    {
+        /** @var list<array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string}> $result */
+        $result = $this->fetchAll(
+            'SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status, s.admin_comment, s.rgpd_consent, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.submitted_by = ? ORDER BY s.submitted_at DESC',
+            [$email]
+        );
+        return $result;
+    }
+
+    /**
+     * Récupère les soumissions paginées pour ExportService (avec form_label/slug).
+     *
+     * @param array<int, mixed> $params
+     * @return list<array{id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, form_label: string, form_slug: string}>
+     */
+    public function findForExportWithForm(string $whereSql, array $params, int $limit, int $offset): array
+    {
+        /** @var list<array{id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, form_label: string, form_slug: string}> $result */
+        $result = $this->fetchAll(
+            "SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status,
+                   f.label as form_label, f.slug as form_slug
+            FROM submissions s
+            JOIN forms f ON f.id = s.form_id
+            WHERE $whereSql
+            ORDER BY s.submitted_at DESC
+            LIMIT $limit OFFSET $offset",
+            $params
+        );
+        return $result;
+    }
+
+    /**
+     * Récupère les clés JSON distinctes dans submissions.data pour ExportService.
+     *
+     * @param array<int, mixed> $params
+     * @return list<string>
+     */
+    public function findDistinctJsonKeys(string $whereSql, array $params): array
+    {
+        $rows = $this->fetchAll(
+            "SELECT DISTINCT j.key
+            FROM submissions s, json_each(s.data) j
+            JOIN forms f ON f.id = s.form_id
+            WHERE $whereSql AND json_valid(s.data) AND j.key != 'validations'",
+            $params
+        );
+        return array_map(static fn(array $r): string => (string) $r['key'], $rows);
+    }
+
+    /**
+     * Compte les soumissions actives (status = ?) pour un formulaire.
+     * Utilisé par WorkflowEngine::hasActiveSubmissions().
+     */
+    public function countActiveByFormAndStatus(string $formId, string $status): int
+    {
+        /** @var array{cnt: int|string|null}|null $result */
+        $result = $this->fetchOne(
+            'SELECT COUNT(*) as cnt FROM submissions WHERE form_id = ? AND status = ?',
+            [$formId, $status]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    /**
+     * Stats agrégées par période (week/month/year) pour StatsService::getStatsByPeriod().
+     *
+     * @return list<array{period: string, total: int|string, valide: int|string, refuse: int|string, en_cours: int|string, avg_processing_seconds: float|string|null}>
+     */
+    public function getStatsByPeriod(string $format, string $interval, int $limit): array
+    {
+        /** @var list<array{period: string, total: int|string, valide: int|string, refuse: int|string, en_cours: int|string, avg_processing_seconds: float|string|null}> $result */
+        $result = $this->fetchAll(
+            "SELECT
+                strftime(?, s.submitted_at) as period,
+                COUNT(*) as total,
+                SUM(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
+                SUM(CASE WHEN s.status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
+                SUM(CASE WHEN s.status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
+                AVG(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' AND s.closed_at IS NOT NULL
+                    THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
+                    ELSE NULL END) as avg_processing_seconds
+            FROM submissions s
+            WHERE s.submitted_at >= datetime('now', ?)
+            GROUP BY strftime(?, s.submitted_at)
+            ORDER BY period DESC
+            LIMIT ?",
+            [$format, $interval, $format, $limit]
+        );
+        return $result;
+    }
+
+    /**
+     * Stats globales agrégées (total, en_cours, valide, refuse, today, this_week, this_month)
+     * pour StatsService::getGlobalStats(). Une seule requête.
+     *
+     * @return array{total: int|string, en_cours: int|string, valide: int|string, refuse: int|string, today: int|string, this_week: int|string, this_month: int|string}
+     */
+    public function getGlobalStatsCounts(): array
+    {
+        /** @var array{total: int|string, en_cours: int|string, valide: int|string, refuse: int|string, today: int|string, this_week: int|string, this_month: int|string}|null $result */
+        $result = $this->fetchOne(
+            "SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
+                SUM(CASE WHEN status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
+                SUM(CASE WHEN status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
+                SUM(CASE WHEN DATE(submitted_at) = DATE('now') THEN 1 ELSE 0 END) as today,
+                SUM(CASE WHEN submitted_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as this_week,
+                SUM(CASE WHEN submitted_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) as this_month
+            FROM submissions"
+        );
+        return $result ?? ['total' => 0, 'en_cours' => 0, 'valide' => 0, 'refuse' => 0, 'today' => 0, 'this_week' => 0, 'this_month' => 0];
+    }
+
+    /**
+     * Avg processing time en secondes pour les soumissions validées.
+     * Utilisé par StatsService::getGlobalStats().
+     */
+    public function getAvgProcessingSeconds(): float
+    {
+        /** @var array{avg: float|string|null}|null $result */
+        $result = $this->fetchOne(
+            "SELECT AVG(CAST(strftime('%s', closed_at) AS REAL) - CAST(strftime('%s', submitted_at) AS REAL)) as avg
+            FROM submissions WHERE status = '" . SubmissionStatus::Valide->value . "' AND closed_at IS NOT NULL"
+        );
+        return (float) ($result['avg'] ?? 0);
+    }
+
+    /**
+     * Stats par formulaire (joins submissions) pour StatsService::getFormStats().
+     *
+     * @return list<array{label: string, slug: string, total: int|string, en_cours: int|string, valide: int|string, refuse: int|string, avg_seconds: float|string|null}>
+     */
+    public function getFormStats(): array
+    {
+        /** @var list<array{label: string, slug: string, total: int|string, en_cours: int|string, valide: int|string, refuse: int|string, avg_seconds: float|string|null}> $result */
+        $result = $this->fetchAll(
+            "SELECT f.label, f.slug, COUNT(s.id) as total,
+                   SUM(CASE WHEN s.status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
+                   SUM(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
+                   SUM(CASE WHEN s.status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
+                   AVG(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' AND s.closed_at IS NOT NULL
+                       THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
+                       ELSE NULL END) as avg_seconds
+            FROM forms f
+            LEFT JOIN submissions s ON s.form_id = f.id
+            GROUP BY f.id
+            ORDER BY total DESC"
+        );
+        return $result;
+    }
+
+    /**
+     * UPSERT d'une entrée submission_validator_data.
+     * Utilisé par FieldService::saveValidatorData().
+     */
+    public function upsertValidatorData(
+        string $id,
+        string $submissionId,
+        string $fieldName,
+        string $fieldLabel,
+        string $fieldType,
+        string $value,
+        string $filledBy,
+        string $filledAt,
+        ?string $stepId,
+        ?string $stepLabel,
+        ?string $filledByEmail,
+        ?string $tokenId
+    ): bool {
+        $sql = 'INSERT INTO submission_validator_data
+            (id, submission_id, field_name, field_label, field_type, value, filled_by, filled_at, step_id, step_label, filled_by_email, token_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(submission_id, field_name) DO UPDATE SET
+                value = excluded.value,
+                field_label = excluded.field_label,
+                field_type = excluded.field_type,
+                filled_by = excluded.filled_by,
+                filled_at = excluded.filled_at,
+                step_id = excluded.step_id,
+                step_label = excluded.step_label,
+                filled_by_email = excluded.filled_by_email,
+                token_id = excluded.token_id';
+        return $this->execute($sql, [
+            $id, $submissionId, $fieldName, $fieldLabel, $fieldType,
+            $value, $filledBy, $filledAt, $stepId, $stepLabel, $filledByEmail, $tokenId,
+        ]);
+    }
+
+    /**
+     * Supprime une entrée submission_validator_data par (submission_id, field_name).
+     * Utilisé par FieldService::deleteValidatorData().
+     */
+    public function deleteValidatorDataBySubmissionAndField(string $submissionId, string $fieldName): bool
+    {
+        return $this->execute(
+            'DELETE FROM submission_validator_data WHERE submission_id = ? AND field_name = ?',
+            [$submissionId, $fieldName]
+        );
+    }
 }

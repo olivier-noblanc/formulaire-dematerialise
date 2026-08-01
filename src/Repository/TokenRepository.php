@@ -301,4 +301,315 @@ final class TokenRepository extends BaseRepository
         );
         return (int) ($result['cnt'] ?? 0);
     }
+
+    // ── Workflow / Validation context ─────────────────────────────
+
+    /**
+     * Récupère un token avec tout son contexte (submission, form, step label).
+     * Utilisé par WorkflowEngine::getTokenWithContext() / getTokenByIdWithContext().
+     *
+     * @param list<string> $params
+     * @return array{
+     *   id: string,
+     *   submission_id: string,
+     *   step_id: string,
+     *   email: string,
+     *   token: string,
+     *   sent_at: string,
+     *   done_at: string|null,
+     *   relance_at: string|null,
+     *   expires_at: string|null,
+     *   relance_count: int,
+     *   invalidated_at: string|null,
+     *   action: string|null,
+     *   step_label: string,
+     *   form_id: string,
+     *   form_label: string,
+     *   data: string,
+     *   closed_at: string|null,
+     *   status: string,
+     *   submitted_by: string
+     * }|null
+     */
+    public function findTokenWithContextByCondition(string $whereClause, array $params): ?array
+    {
+        /** @var array{
+         *   id: string,
+         *   submission_id: string,
+         *   step_id: string,
+         *   email: string,
+         *   token: string,
+         *   sent_at: string,
+         *   done_at: string|null,
+         *   relance_at: string|null,
+         *   expires_at: string|null,
+         *   relance_count: int,
+         *   invalidated_at: string|null,
+         *   action: string|null,
+         *   step_label: string,
+         *   form_id: string,
+         *   form_label: string,
+         *   data: string,
+         *   closed_at: string|null,
+         *   status: string,
+         *   submitted_by: string
+         * }|null $result
+         */
+        $result = $this->fetchOne(
+            "SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
+                   t.done_at, t.relance_at, t.expires_at, t.relance_count, t.invalidated_at, t.action,
+                   st.label as step_label, s.form_id,
+                   f.label as form_label, s.data, s.closed_at, s.status,
+                   s.submitted_by
+            FROM tokens t
+            JOIN steps st ON st.id = t.step_id
+            JOIN submissions s ON s.id = t.submission_id
+            JOIN forms f ON f.id = s.form_id
+            WHERE {$whereClause}",
+            $params
+        );
+        return $result;
+    }
+
+    /**
+     * Récupère la liste (step_id, done_at) pour une soumission.
+     * Utilisé par WorkflowEngine::advanceWorkflow() pour grouper les tokens par step.
+     *
+     * @return list<array{step_id: string, done_at: string|null}>
+     */
+    public function findStepIdsAndDonesBySubmission(string $submissionId): array
+    {
+        /** @var list<array{step_id: string, done_at: string|null}> $result */
+        $result = $this->fetchAll(
+            'SELECT step_id, done_at FROM tokens WHERE submission_id = ?',
+            [$submissionId]
+        );
+        return $result;
+    }
+
+    /**
+     * Vérifie s'il existe un token pending (done_at IS NULL) pour le triplet
+     * (submission_id, step_id, email). Utilisé par WorkflowEngine::createTokensForGroup()
+     * et TokenService::delegate() pour éviter les doublons.
+     */
+    public function hasPendingDuplicate(string $submissionId, string $stepId, string $email): bool
+    {
+        $result = $this->fetchOne(
+            'SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL',
+            [$submissionId, $stepId, $email]
+        );
+        return $result !== null;
+    }
+
+    /**
+     * Insère un nouveau token.
+     */
+    public function insertToken(
+        string $id,
+        string $submissionId,
+        string $stepId,
+        string $email,
+        string $token,
+        string $sentAt,
+        string $expiresAt
+    ): bool {
+        return $this->execute(
+            'INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [$id, $submissionId, $stepId, $email, $token, $sentAt, $expiresAt]
+        );
+    }
+
+    /**
+     * Marque un token comme traité (done_at) par sa valeur de token.
+     * Retourne le nombre de lignes affectées (0 si déjà traité ou introuvable).
+     */
+    public function markDoneByTokenValue(string $token, string $doneAt): int
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tokens SET done_at = ? WHERE token = ? AND done_at IS NULL');
+        $stmt->execute([$doneAt, $token]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Marque un token comme traité + invalidé (done_at + invalidated_at).
+     * Utilisé par TokenService::regenerate() et TokenService::delegate().
+     * Retourne le nombre de lignes affectées.
+     */
+    public function markDoneAndInvalidatedById(string $tokenId, string $doneAt, string $invalidatedAt): bool
+    {
+        return $this->execute(
+            'UPDATE tokens SET done_at = ?, invalidated_at = ? WHERE id = ?',
+            [$doneAt, $invalidatedAt, $tokenId]
+        );
+    }
+
+    /**
+     * Invalide+done atomique avec WHERE done_at IS NULL AND invalidated_at IS NULL.
+     * Utilisé par TokenService::delegate() pour gérer la race condition.
+     * Retourne le nombre de lignes affectées.
+     */
+    public function tryInvalidateForDelegation(string $tokenId): int
+    {
+        $stmt = $this->pdo()->prepare("UPDATE tokens SET done_at = datetime('now'), invalidated_at = datetime('now') WHERE id = ? AND done_at IS NULL AND invalidated_at IS NULL");
+        $stmt->execute([$tokenId]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Met à jour relance_count et relance_at uniquement si le token est
+     * encore pending (done_at IS NULL). Utilisé par TokenService::remind()
+     * pour gérer la race condition validation/refus concurrente.
+     * Retourne le nombre de lignes affectées.
+     */
+    public function updateRelanceCountIfPending(string $tokenId, int $newCount, string $relanceAt): int
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tokens SET relance_count = ?, relance_at = ? WHERE id = ? AND done_at IS NULL');
+        $stmt->execute([$newCount, $relanceAt, $tokenId]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Invalide tous les tokens actifs (done_at IS NULL, invalidated_at IS NULL)
+     * d'un email donné. Utilisé par RgpdService::deleteUserData() avant
+     * l'anonymisation de l'agent.
+     * Retourne le nombre de lignes affectées.
+     */
+    public function invalidateActiveByEmail(string $email, string $now): int
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tokens SET invalidated_at = ? WHERE email = ? AND done_at IS NULL AND invalidated_at IS NULL');
+        $stmt->execute([$now, $email]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Invalide tous les tokens actifs d'une soumission donnée.
+     * Utilisé par TokenService::cancel().
+     */
+    public function invalidateActiveBySubmission(string $submissionId, string $now): int
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tokens SET invalidated_at = ? WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL');
+        $stmt->execute([$now, $submissionId]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Met à jour l'email d'un token (anonymisation RGPD).
+     * Utilisé par RgpdService::deleteUserData().
+     */
+    public function updateEmailByOldEmail(string $oldEmail, string $newEmail): int
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tokens SET email = ? WHERE email = ?');
+        $stmt->execute([$newEmail, $oldEmail]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Supprime tous les tokens d'une soumission (mono-id).
+     * Utilisé par RgpdService::autoPurge() (parcours soumission par soumission).
+     */
+    public function deleteBySubmissionId(string $submissionId): int
+    {
+        $stmt = $this->pdo()->prepare('DELETE FROM tokens WHERE submission_id = ?');
+        $stmt->execute([$submissionId]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Compte les tokens actifs (done_at IS NULL) liés à une step dont la
+     * soumission parente est EnCours. Utilisé par WorkflowEngine::hasActiveStepSubmissions().
+     */
+    public function countActiveByStepId(string $stepId, string $submissionStatus): int
+    {
+        /** @var array{cnt: int|string|null}|null $result */
+        $result = $this->fetchOne(
+            'SELECT COUNT(*) as cnt FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = ?',
+            [$stepId, $submissionStatus]
+        );
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    /**
+     * Nombre total de tokens en attente (done_at IS NULL).
+     * Utilisé par StatsService::getGlobalStats().
+     */
+    public function countPending(): int
+    {
+        /** @var array{cnt: int|string|null}|null $result */
+        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM tokens WHERE done_at IS NULL');
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    /**
+     * Récupère le label d'une step par son ID.
+     * Utilisé par TokenService::regenerate() pour construire l'email de renvoi.
+     */
+    public function findStepLabelByStepId(string $stepId): ?string
+    {
+        $result = $this->fetchOne('SELECT label FROM steps WHERE id = ?', [$stepId]);
+        return $result !== null ? (string) $result['label'] : null;
+    }
+
+    /**
+     * Récupère un token avec son contexte pour TokenService::regenerate().
+     *
+     * @return array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string, relance_count: int, sub_status: string}|null
+     */
+    public function findForRegenerate(string $tokenId): ?array
+    {
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string, relance_count: int, sub_status: string}|null $result */
+        $result = $this->fetchOne(
+            'SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
+                   t.done_at, t.relance_at, t.expires_at, t.relance_count,
+                   s.status as sub_status
+            FROM tokens t
+            JOIN submissions s ON s.id = t.submission_id
+            WHERE t.id = ?',
+            [$tokenId]
+        );
+        return $result;
+    }
+
+    /**
+     * Récupère les validations effectuées par un email (tokens done, non invalidés),
+     * avec contexte step/form. Utilisé par RgpdService::exportUserData().
+     *
+     * @return list<array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}>
+     */
+    public function findDoneValidationsByEmail(string $email): array
+    {
+        /** @var list<array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}> $result */
+        $result = $this->fetchAll(
+            'SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at, t.done_at, t.relance_at, t.expires_at, t.relance_count, st.label as step_label, f.label as form_label FROM tokens t JOIN steps st ON st.id = t.step_id JOIN submissions s ON s.id = t.submission_id JOIN forms f ON f.id = s.form_id WHERE t.email = ? AND t.done_at IS NOT NULL AND t.invalidated_at IS NULL ORDER BY t.done_at DESC',
+            [$email]
+        );
+        return $result;
+    }
+
+    /**
+     * Statistiques agrégées par validateur (top 20).
+     * Utilisé par StatsService::getValidatorStats().
+     *
+     * @return list<array{email: string, total: int|string, done: int|string, pending: int|string, avg_response_seconds: float|string|null}>
+     */
+    public function getValidatorStats(string $submissionStatus): array
+    {
+        /** @var list<array{email: string, total: int|string, done: int|string, pending: int|string, avg_response_seconds: float|string|null}> $result */
+        $result = $this->fetchAll(
+            "SELECT t.email,
+                   COUNT(t.id) as total,
+                   SUM(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL THEN 1 ELSE 0 END) as done,
+                   SUM(CASE WHEN t.done_at IS NULL THEN 1 ELSE 0 END) as pending,
+                   AVG(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL
+                       THEN CAST(strftime('%s', t.done_at) AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL)
+                       ELSE NULL END) as avg_response_seconds
+            FROM tokens t
+            JOIN submissions s ON s.id = t.submission_id
+            WHERE s.status = ? OR (t.done_at IS NOT NULL AND t.invalidated_at IS NULL)
+            GROUP BY t.email
+            ORDER BY total DESC
+            LIMIT 20",
+            [$submissionStatus]
+        );
+        return $result;
+    }
 }

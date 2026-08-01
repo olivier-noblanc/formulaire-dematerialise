@@ -50,6 +50,9 @@ use App\Repository\AlertRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
 use App\Repository\MailRepository;
+use App\Repository\DelegationRepository;
+use App\Repository\PersonaTokenRepository;
+use App\Repository\LazyCronRepository;
 
 $app = App::getInstance();
 
@@ -66,6 +69,9 @@ $app->set(SubmissionRepository::class, new SubmissionRepository($db));
 $app->set(TokenRepository::class, new TokenRepository($db));
     $app->set(AttachmentRepository::class, new AttachmentRepository($db));
     $app->set(AlertRepository::class, new AlertRepository($db));
+    $app->set(DelegationRepository::class, new DelegationRepository($db));
+    $app->set(PersonaTokenRepository::class, new PersonaTokenRepository($db));
+    $app->set(LazyCronRepository::class, new LazyCronRepository($db));
     $app->set(AuthService::class, new AuthService($db));
     $app->set(CacheService::class, new CacheService());
     $app->set(HtmlService::class, new HtmlService());
@@ -84,7 +90,9 @@ $app->set(WorkflowEngine::class, new WorkflowEngine(
     $app->get(MailService::class),
     $app->get(FieldService::class),
     $app->get(ConditionEvaluator::class),
-    $app->get(SubmissionRepository::class)
+    $app->get(SubmissionRepository::class),
+    $app->get(TokenRepository::class),
+    $app->get(FormRepository::class)
 ));
 $app->set(TokenService::class, new TokenService(
     $db,
@@ -92,15 +100,18 @@ $app->set(TokenService::class, new TokenService(
     $app->get(AuthService::class),
     $app->get(AuditLogService::class),
     $app->get(MailService::class),
-    $app->get(SubmissionRepository::class)
+    $app->get(SubmissionRepository::class),
+    $app->get(TokenRepository::class),
+    $app->get(DelegationRepository::class)
 ));
 $app->set(ValidatorDataService::class, new ValidatorDataService($app->get(SubmissionRepository::class), $app->get(FormRepository::class), $app->get(FieldService::class)));
 $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRepository::class)));
-$app->set(CronService::class, new CronService($db));
+$app->set(CronService::class, new CronService($db, $app->get(LazyCronRepository::class)));
 $app->set(ValidationService::class, new ValidationService());
-$app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class)));
+$app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class), $app->get(SubmissionRepository::class)));
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
 $app->set(DocumentationService::class, new DocumentationService());
+$app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($db, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(AttachmentRepository::class), $app->get(AlertRepository::class), $app->get(AdminRepository::class), $app->get(DelegationRepository::class)));
 
 // Seed testeur@e2e.test in admins (s'assure qu'il existe même si la
 // migration v28 a été exécutée avant l'ajout de ce seed dans son code).

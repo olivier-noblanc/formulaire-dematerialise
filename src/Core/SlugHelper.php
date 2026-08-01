@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Repository\FormRepository;
+
 /**
  * Slug and field name generation helpers.
+ *
+ * Historiquement ces helpers accédaient directement à PDO via App::db()->getPdo().
+ * Depuis la migration vers le pattern Repository, ils délèguent à FormRepository
+ * (résolu via App::getInstance()) pour tout accès DB.
  */
 final class SlugHelper
 {
@@ -43,22 +49,14 @@ final class SlugHelper
             $base = 'formulaire';
         }
 
-        $pdo = \App\Core\App::db()->getPdo();
+        $formRepo = self::getFormRepository();
         $slug = $base;
         $suffix = 2;
 
         $maxAttempts = 100;
         $attempts = 0;
         while ($attempts < $maxAttempts) {
-            $sql = 'SELECT COUNT(*) FROM forms WHERE slug = ?';
-            $params = [$slug];
-            if ($excludeFormId !== null) {
-                $sql .= ' AND id != ?';
-                $params[] = $excludeFormId;
-            }
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            if ((int) $stmt->fetchColumn() === 0) {
+            if ($formRepo->countBySlug($slug, $excludeFormId) === 0) {
                 return $slug;
             }
             $slug = $base . '_' . $suffix;
@@ -98,11 +96,20 @@ final class SlugHelper
      */
     public static function getFormByUuid(string $uuid): ?array
     {
-        $pdo = \App\Core\App::db()->getPdo();
-        $stmt = $pdo->prepare('SELECT id, slug, label, description, actif, created_at, deadline_field FROM forms WHERE id = ?');
-        $stmt->execute([$uuid]);
-        /** @var array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string}|false */
-        $form = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $form !== false ? $form : null;
+        return self::getFormRepository()->findById($uuid);
+    }
+
+    /**
+     * Résout le FormRepository via App::getInstance(). Fallback : instancie
+     * un FormRepository directement (pour les contextes où App n'a pas le
+     * repo enregistré, ex. tests unitaires isolés).
+     */
+    private static function getFormRepository(): FormRepository
+    {
+        $app = \App\Core\App::getInstance();
+        if ($app->has(FormRepository::class)) {
+            return $app->get(FormRepository::class);
+        }
+        return new FormRepository($app->get(Database::class));
     }
 }

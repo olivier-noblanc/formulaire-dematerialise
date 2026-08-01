@@ -5,18 +5,32 @@ declare(strict_types=1);
 namespace App\Export;
 
 use App\Auth\AuthService;
+use App\Core\App;
 use App\Core\Database;
-use PDO;
+use App\Repository\SubmissionRepository;
 
 /**
  * Service d'export CSV des soumissions.
  *
  * Extrait de lib/export_csv.php — export streamé avec filtres et headers HTTP.
  * Les fonctions globales dans lib/export_csv.php délèguent maintenant ici.
+ *
+ * Le paramètre $database est conservé pour la compatibilité ascendante
+ * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
+ * passe par le SubmissionRepository injecté.
  */
 final readonly class ExportService
 {
-    public function __construct(private Database $database, private AuthService $authService) {}
+    public SubmissionRepository $submissionRepository;
+
+    public function __construct(
+        private Database $database,
+        private AuthService $authService,
+        ?SubmissionRepository $submissionRepository = null
+    ) {
+        $app = App::getInstance();
+        $this->submissionRepository = $submissionRepository ?? $app->get(SubmissionRepository::class);
+    }
 
     /**
      * Transforme une valeur brute pour l'export CSV.
@@ -74,17 +88,8 @@ final readonly class ExportService
     {
         [$where_sql, $params] = $this->buildWhereClause($options);
 
-        $pdo = $this->database->getPdo();
-
         // Récupérer les colonnes JSON distinctes via json_each (une seule requête légère)
-        $keysStmt = $pdo->prepare("
-            SELECT DISTINCT j.key
-            FROM submissions s, json_each(s.data) j
-            JOIN forms f ON f.id = s.form_id
-            WHERE $where_sql AND json_valid(s.data) AND j.key != 'validations'
-        ");
-        $keysStmt->execute($params);
-        $all_keys = $keysStmt->fetchAll(PDO::FETCH_COLUMN);
+        $all_keys = $this->submissionRepository->findDistinctJsonKeys($where_sql, $params);
 
         $output = fopen('php://memory', 'r+');
         if ($output === false) {
@@ -103,17 +108,7 @@ final readonly class ExportService
         $offset = 0;
 
         do {
-            $stmt = $pdo->prepare("
-                SELECT s.id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status,
-                       f.label as form_label, f.slug as form_slug
-                FROM submissions s
-                JOIN forms f ON f.id = s.form_id
-                WHERE $where_sql
-                ORDER BY s.submitted_at DESC
-                LIMIT $batch_size OFFSET $offset
-            ");
-            $stmt->execute($params);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $this->submissionRepository->findForExportWithForm($where_sql, $params, $batch_size, $offset);
 
             foreach ($rows as $row) {
                 $data = json_decode($row['data'], true) ?? [];

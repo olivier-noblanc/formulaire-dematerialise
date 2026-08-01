@@ -113,4 +113,15 @@ final class AlertRepository extends BaseRepository
         $result = $this->fetchOne('SELECT label FROM alert_rules WHERE id = ?', [$ruleId]);
         return $result !== null ? (string) $result['label'] : null;
     }
+
+    /**
+     * Supprime les entrées d'alert_log pour une soumission (mono-id).
+     * Utilisé par RgpdService::autoPurge().
+     */
+    public function deleteLogBySubmissionId(string $submissionId): int
+    {
+        $stmt = $this->pdo()->prepare('DELETE FROM alert_log WHERE submission_id = ?');
+        $stmt->execute([$submissionId]);
+        return $stmt->rowCount();
+    }
 }

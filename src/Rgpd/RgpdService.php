@@ -7,14 +7,46 @@ namespace App\Rgpd;
 use App\Core\App;
 use App\Core\Database;
 use App\Enum\SubmissionStatus;
-use PDO;
+use App\Repository\AdminRepository;
+use App\Repository\AlertRepository;
+use App\Repository\AttachmentRepository;
+use App\Repository\DelegationRepository;
+use App\Repository\SubmissionRepository;
+use App\Repository\TokenRepository;
 
 /**
  * Service RGPD — export, suppression, purge automatique.
+ *
+ * Le paramètre $database est conservé pour la compatibilité ascendante
+ * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
+ * passe par les repositories injectés.
  */
 final readonly class RgpdService
 {
-    public function __construct(private Database $database) {}
+    public SubmissionRepository $submissionRepository;
+    public TokenRepository $tokenRepository;
+    public AttachmentRepository $attachmentRepository;
+    public AlertRepository $alertRepository;
+    public AdminRepository $adminRepository;
+    public DelegationRepository $delegationRepository;
+
+    public function __construct(
+        private Database $database,
+        ?SubmissionRepository $submissionRepository = null,
+        ?TokenRepository $tokenRepository = null,
+        ?AttachmentRepository $attachmentRepository = null,
+        ?AlertRepository $alertRepository = null,
+        ?AdminRepository $adminRepository = null,
+        ?DelegationRepository $delegationRepository = null
+    ) {
+        $app = App::getInstance();
+        $this->submissionRepository = $submissionRepository ?? $app->get(SubmissionRepository::class);
+        $this->tokenRepository = $tokenRepository ?? $app->get(TokenRepository::class);
+        $this->attachmentRepository = $attachmentRepository ?? $app->get(AttachmentRepository::class);
+        $this->alertRepository = $alertRepository ?? $app->get(AlertRepository::class);
+        $this->adminRepository = $adminRepository ?? $app->get(AdminRepository::class);
+        $this->delegationRepository = $delegationRepository ?? $app->get(DelegationRepository::class);
+    }
 
     /**
      * Exporte toutes les données d'un agent au format JSON (droit d'accès RGPD)
@@ -30,13 +62,9 @@ final readonly class RgpdService
             return ['email' => $email, 'error' => 'Accès refusé : vous ne pouvez exporter que vos propres données.'];
         }
 
-        $pdo = $this->database->getPdo();
         $data = ['email' => $email, 'export_date' => gmdate('c'), 'submissions' => [], 'validations' => []];
 
-        $stmt = $pdo->prepare('SELECT s.id, s.form_id, s.data, s.submitted_by, s.submitted_at, s.closed_at, s.status, s.admin_comment, s.rgpd_consent, f.label as form_label FROM submissions s JOIN forms f ON f.id = s.form_id WHERE s.submitted_by = ? ORDER BY s.submitted_at DESC');
-        $stmt->execute([$email]);
-        /** @var array<int, array{id: string, form_label: string, status: string, submitted_at: string, closed_at: string|null, data: string}> */
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->submissionRepository->findForRgpdExportByEmail($email);
         foreach ($rows as $row) {
             $data['submissions'][] = [
                 'id' => $row['id'],
@@ -48,11 +76,7 @@ final readonly class RgpdService
             ];
         }
 
-        $stmt2 = $pdo->prepare('SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at, t.done_at, t.relance_at, t.expires_at, t.relance_count, st.label as step_label, f.label as form_label FROM tokens t JOIN steps st ON st.id = t.step_id JOIN submissions s ON s.id = t.submission_id JOIN forms f ON f.id = s.form_id WHERE t.email = ? AND t.done_at IS NOT NULL AND t.invalidated_at IS NULL ORDER BY t.done_at DESC');
-        $stmt2->execute([$email]);
-        /** @var array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}> $validations */
-        $validations = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-        $data['validations'] = $validations;
+        $data['validations'] = $this->tokenRepository->findDoneValidationsByEmail($email);
 
         return $data;
     }
@@ -69,10 +93,8 @@ final readonly class RgpdService
             return false;
         }
 
-        $pdo = $this->database->getPdo();
-
         try {
-            $pdo->beginTransaction();
+            $this->tokenRepository->beginTransaction();
 
             // B-RG1 fix (audit fonctionnel 2026-07-26) : avant d'anonymiser, on doit
             // invalider les tokens actifs de l'agent ET fermer ses soumissions en cours.
@@ -82,39 +104,35 @@ final readonly class RgpdService
             // tokens (lien email). Maintenant : on clôture explicitement.
             $now = gmdate('Y-m-d H:i:s');
             // 1. Invalider tous les tokens actifs de l'agent
-            $pdo->prepare('UPDATE tokens SET invalidated_at = ? WHERE email = ? AND done_at IS NULL AND invalidated_at IS NULL')
-                ->execute([$now, $email]);
+            $this->tokenRepository->invalidateActiveByEmail($email, $now);
             // 2. Clôturer les soumissions en_cours de l'agent (status annule, closed_at now)
-            $pdo->prepare("UPDATE submissions SET closed_at = ?, status = '" . SubmissionStatus::Annule->value . "' WHERE submitted_by = ? AND status = '" . SubmissionStatus::EnCours->value . "' AND closed_at IS NULL")
-                ->execute([$now, $email]);
+            $this->submissionRepository->cancelActiveBySubmitter($email, $now);
 
-            $stmt = $pdo->prepare('SELECT id, data FROM submissions WHERE submitted_by = ?');
-            $stmt->execute([$email]);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $rows = $this->submissionRepository->findIdAndDataBySubmitter($email);
+            foreach ($rows as $row) {
                 $submissionData = json_decode($row['data'], true) ?? [];
                 foreach (['prenom', 'nom', 'email', 'telephone', 'mobile', 'adresse'] as $field) {
                     if (isset($submissionData[$field])) {
                         $submissionData[$field] = '[supprimé]';
                     }
                 }
-                $pdo->prepare('UPDATE submissions SET submitted_by = ?, data = ? WHERE id = ?')
-                    ->execute(['[supprimé]', json_encode($submissionData, JSON_UNESCAPED_UNICODE), $row['id']]);
-                $pdo->prepare('DELETE FROM attachments WHERE submission_id = ?')->execute([$row['id']]);
+                $this->submissionRepository->updateSubmittedByAndData($row['id'], '[supprimé]', json_encode($submissionData, JSON_UNESCAPED_UNICODE));
+                $this->attachmentRepository->deleteBySubmissionId($row['id']);
             }
 
-            $pdo->prepare("UPDATE tokens SET email = '[supprimé]' WHERE email = ?")->execute([$email]);
-            $pdo->prepare("UPDATE delegations SET from_email = '[supprimé]' WHERE from_email = ?")->execute([$email]);
-            $pdo->prepare("UPDATE delegations SET to_email = '[supprimé]' WHERE to_email = ?")->execute([$email]);
-            $pdo->prepare('DELETE FROM admin_requests WHERE email = ?')->execute([$email]);
+            $this->tokenRepository->updateEmailByOldEmail($email, '[supprimé]');
+            $this->delegationRepository->anonymizeFromEmail($email, '[supprimé]');
+            $this->delegationRepository->anonymizeToEmail($email, '[supprimé]');
+            $this->adminRepository->deleteAdminRequestsByEmail($email);
             // Utiliser AuthService::removeAdmin() qui inclut le garde-fou anti-auto-suppression du super-admin
             App::auth()->removeAdmin($email);
 
-            $pdo->commit();
+            $this->tokenRepository->commit();
             App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
             return true;
         } catch (\Exception $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
+            if ($this->tokenRepository->inTransaction()) {
+                $this->tokenRepository->rollBack();
             }
             $errorMsg = 'RGPD delete error: ' . $e->getMessage();
             error_log($errorMsg);
@@ -128,29 +146,31 @@ final readonly class RgpdService
      */
     public function autoPurge(int $months = 24): int
     {
-        $pdo = $this->database->getPdo();
         $cutoff_ts = strtotime("-{$months} months");
         $cutoff = gmdate('Y-m-d H:i:s', $cutoff_ts !== false ? $cutoff_ts : time());
 
-        $stmt = $pdo->prepare("SELECT id FROM submissions WHERE status != '" . SubmissionStatus::EnCours->value . "' AND closed_at < ?");
-        $stmt->execute([$cutoff]);
-        $oldIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $oldIds = $this->submissionRepository->findIdsPurgeableByCutoffForRgpd($cutoff);
 
         $count = 0;
-        $pdo->beginTransaction();
+        $this->tokenRepository->beginTransaction();
         try {
             foreach ($oldIds as $oldId) {
-                $pdo->prepare('DELETE FROM attachments WHERE submission_id = ?')->execute([$oldId]);
-                $pdo->prepare('DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)')->execute([$oldId]);
-                $pdo->prepare('DELETE FROM tokens WHERE submission_id = ?')->execute([$oldId]);
-                $pdo->prepare('DELETE FROM alert_log WHERE submission_id = ?')->execute([$oldId]);
-                $pdo->prepare('DELETE FROM submissions WHERE id = ?')->execute([$oldId]);
+                // deleteCascadeForRgpd() supprime attachments, delegations, tokens, alert_log, submissions
+                // dans une sous-transaction (mais SQLite n'impose pas de nesting — on est
+                // déjà dans une transaction ici, donc les execute() individuels sont ok).
+                // On ne peut pas appeler deleteCascadeForRgpd() qui appellerait beginTransaction()
+                // (SQLite ne supporte pas les transactions imbriquées). On décompose ici.
+                $this->attachmentRepository->deleteBySubmissionId($oldId);
+                $this->delegationRepository->deleteBySubmissionId($oldId);
+                $this->tokenRepository->deleteBySubmissionId($oldId);
+                $this->alertRepository->deleteLogBySubmissionId($oldId);
+                $this->submissionRepository->deleteById($oldId);
                 $count++;
             }
-            $pdo->commit();
+            $this->tokenRepository->commit();
         } catch (\Exception $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
+            if ($this->tokenRepository->inTransaction()) {
+                $this->tokenRepository->rollBack();
             }
             error_log('RGPD autoPurge error: ' . $e->getMessage());
             return 0;

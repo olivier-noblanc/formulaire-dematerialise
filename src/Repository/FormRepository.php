@@ -235,6 +235,29 @@ final class FormRepository extends BaseRepository
         return $result;
     }
 
+    /**
+     * Récupère les steps actives d'un formulaire avec recipients agrégés (pipe-separated).
+     * Inclut la colonne `condition` (nécessaire pour WorkflowEngine::createTokensForGroup).
+     * Variante mono-form_id de getWorkflowStepsByFormIds().
+     *
+     * @return list<array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}>
+     */
+    public function findWorkflowStepsForEngine(string $formId): array
+    {
+        /** @var list<array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $result */
+        $result = $this->fetchAll(
+            "SELECT st.id as step_id, st.label as step_label, st.ordre, st.actif, st.condition,
+                   GROUP_CONCAT(sr.email, '|') as recipient_emails
+            FROM steps st
+            LEFT JOIN step_recipients sr ON sr.step_id = st.id
+            WHERE st.form_id = ? AND st.actif = 1
+            GROUP BY st.id
+            ORDER BY st.ordre ASC, st.id ASC",
+            [$formId]
+        );
+        return $result;
+    }
+
     public function findOwnerEmailById(string $ownerId): ?string
     {
         $result = $this->fetchOne('SELECT email FROM form_owners WHERE id = ?', [$ownerId]);
@@ -474,5 +497,118 @@ final class FormRepository extends BaseRepository
     {
         $result = $this->fetchOne('SELECT label FROM steps WHERE id = ?', [$stepId]);
         return $result !== null ? (string) $result['label'] : null;
+    }
+
+    /**
+     * Récupère les owners (id, email, added_at) d'un formulaire.
+     * Utilisé par WorkflowEngine::resolveDynamicRecipient() pour {{owner}}.
+     *
+     * @return list<array{id: string, email: string, added_at: string}>
+     */
+    public function findOwnersByFormId(string $formId): array
+    {
+        /** @var list<array{id: string, email: string, added_at: string}> $result */
+        $result = $this->fetchAll(
+            'SELECT id, email, added_at FROM form_owners WHERE form_id = ? ORDER BY email',
+            [$formId]
+        );
+        return $result;
+    }
+
+    /**
+     * Vérifie si un email est owner d'un formulaire (case-insensitive).
+     * Utilisé par AuthService::isFormOwner().
+     */
+    public function isOwnerByEmail(string $formId, string $email): bool
+    {
+        $result = $this->fetchOne(
+            'SELECT 1 FROM form_owners WHERE form_id = ? AND LOWER(email) = LOWER(?)',
+            [$formId, $email]
+        );
+        return $result !== null;
+    }
+
+    /**
+     * Récupère les formulaires owned par un email (case-insensitive).
+     * Utilisé par AuthService::getOwnedForms().
+     *
+     * @return list<array{id: string, label: string, slug: string, actif: int}>
+     */
+    public function findOwnedFormsByEmail(string $email): array
+    {
+        /** @var list<array{id: string, label: string, slug: string, actif: int}> $result */
+        $result = $this->fetchAll(
+            'SELECT f.id, f.label, f.slug, f.actif
+            FROM forms f
+            JOIN form_owners fo ON fo.form_id = f.id
+            WHERE LOWER(fo.email) = LOWER(?)
+            ORDER BY f.label',
+            [$email]
+        );
+        return $result;
+    }
+
+    /**
+     * Compte les formulaires avec un slug donné (excluant un form_id optionnel).
+     * Utilisé par SlugHelper::generateSlug() pour vérifier l'unicité du slug.
+     */
+    public function countBySlug(string $slug, ?string $excludeFormId = null): int
+    {
+        /** @var array{cnt: int|string|null}|null $result */
+        $sql = 'SELECT COUNT(*) as cnt FROM forms WHERE slug = ?';
+        $params = [$slug];
+        if ($excludeFormId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeFormId;
+        }
+        $result = $this->fetchOne($sql, $params);
+        return (int) ($result['cnt'] ?? 0);
+    }
+
+    /**
+     * Récupère les champs d'un formulaire filtrés par filled_by (optionnel).
+     * Variante de getFields() avec filtre filled_by — utilisée par FieldService::getFields().
+     *
+     * @return list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}>
+     */
+    public function getFieldsByFilledBy(string $formId, ?string $filledBy = null): array
+    {
+        $sql = 'SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ?';
+        $params = [$formId];
+        if ($filledBy !== null) {
+            $sql .= ' AND filled_by = ?';
+            $params[] = $filledBy;
+        }
+        $sql .= ' ORDER BY ordre, id';
+        /** @var list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
+        $result = $this->fetchAll($sql, $params);
+        return $result;
+    }
+
+    /**
+     * Récupère le label d'une step en vérifiant qu'elle appartient bien au form_id.
+     * Variante défensive de getStepLabel() — utilisée par FieldService::getValidatorFields().
+     */
+    public function getStepLabelByForm(string $stepId, string $formId): ?string
+    {
+        $result = $this->fetchOne('SELECT label FROM steps WHERE id = ? AND form_id = ?', [$stepId, $formId]);
+        return $result !== null ? (string) $result['label'] : null;
+    }
+
+    /**
+     * Récupère les infos d'un champ (label, field_type) par son field_name.
+     * Utilisé par FieldService::saveValidatorData() pour récupérer le label/type
+     * avant l'UPSERT dans submission_validator_data.
+     *
+     * @return array{label: string, field_type: string}|null
+     */
+    public function findFieldLabelAndTypeByName(string $fieldName): ?array
+    {
+        /** @var array{label: string, field_type: string}|null $result */
+        $result = $this->fetchOne(
+            'SELECT label, field_type FROM form_fields WHERE field_name = ?',
+            [$fieldName]
+        );
+        return $result;
     }
 }

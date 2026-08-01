@@ -4,16 +4,37 @@ declare(strict_types=1);
 
 namespace App\Stats;
 
+use App\Core\App;
 use App\Core\Database;
 use App\Enum\SubmissionStatus;
-use PDO;
+use App\Repository\AttachmentRepository;
+use App\Repository\SubmissionRepository;
+use App\Repository\TokenRepository;
 
 /**
  * Service de statistiques et recherche plein texte.
+ *
+ * Le paramètre $database est conservé pour la compatibilité ascendante
+ * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
+ * passe par les repositories injectés.
  */
 final readonly class StatsService
 {
-    public function __construct(private Database $database) {}
+    public SubmissionRepository $submissionRepository;
+    public TokenRepository $tokenRepository;
+    public AttachmentRepository $attachmentRepository;
+
+    public function __construct(
+        private Database $database,
+        ?SubmissionRepository $submissionRepository = null,
+        ?TokenRepository $tokenRepository = null,
+        ?AttachmentRepository $attachmentRepository = null
+    ) {
+        $app = App::getInstance();
+        $this->submissionRepository = $submissionRepository ?? $app->get(SubmissionRepository::class);
+        $this->tokenRepository = $tokenRepository ?? $app->get(TokenRepository::class);
+        $this->attachmentRepository = $attachmentRepository ?? $app->get(AttachmentRepository::class);
+    }
 
     /**
      * Statistiques par période.
@@ -29,8 +50,6 @@ final readonly class StatsService
      */
     public function getStatsByPeriod(string $period = 'month', int $limit = 12): array
     {
-        $pdo = $this->database->getPdo();
-
         switch ($period) {
             case 'week':
                 $format = '%Y-W%W';
@@ -45,25 +64,19 @@ final readonly class StatsService
                 $interval = '-12 months';
         }
 
-        $stmt = $pdo->prepare("
-            SELECT
-                strftime(?, s.submitted_at) as period,
-                COUNT(*) as total,
-                SUM(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
-                SUM(CASE WHEN s.status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
-                SUM(CASE WHEN s.status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
-                AVG(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' AND s.closed_at IS NOT NULL
-                    THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
-                    ELSE NULL END) as avg_processing_seconds
-            FROM submissions s
-            WHERE s.submitted_at >= datetime('now', ?)
-            GROUP BY strftime(?, s.submitted_at)
-            ORDER BY period DESC
-            LIMIT ?
-        ");
-        $stmt->execute([$format, $interval, $format, $limit]);
-        /** @var array<int, array{period: string, total: int, valide: int, refuse: int, en_cours: int, avg_processing_seconds: float|null}> $result */
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->submissionRepository->getStatsByPeriod($format, $interval, $limit);
+        // Normaliser les types (SQLite retourne int|string selon le contexte)
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'period' => (string) $row['period'],
+                'total' => (int) $row['total'],
+                'valide' => (int) $row['valide'],
+                'refuse' => (int) $row['refuse'],
+                'en_cours' => (int) $row['en_cours'],
+                'avg_processing_seconds' => $row['avg_processing_seconds'] !== null ? (float) $row['avg_processing_seconds'] : null,
+            ];
+        }
         return $result;
     }
 
@@ -87,50 +100,28 @@ final readonly class StatsService
      */
     public function getGlobalStats(): array
     {
-        $pdo = $this->database->getPdo();
+        $row = $this->submissionRepository->getGlobalStatsCounts();
 
-        $rowStmt = $pdo->query("
-            SELECT
-                COUNT(*) as total,
-                SUM(CASE WHEN status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
-                SUM(CASE WHEN status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
-                SUM(CASE WHEN status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
-                SUM(CASE WHEN DATE(submitted_at) = DATE('now') THEN 1 ELSE 0 END) as today,
-                SUM(CASE WHEN submitted_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as this_week,
-                SUM(CASE WHEN submitted_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) as this_month
-            FROM submissions
-        ");
-        assert($rowStmt !== false);
-        $row = $rowStmt->fetch(PDO::FETCH_ASSOC);
-        $row = is_array($row) ? $row : [];
+        $tokensPending = $this->tokenRepository->countPending();
+        $attachmentsCount = $this->attachmentRepository->countAll();
+        $attachmentsSize = $this->attachmentRepository->getTotalFileSize();
 
-        $tokensStmt = $pdo->query('SELECT COUNT(*) FROM tokens WHERE done_at IS NULL');
-        assert($tokensStmt !== false);
-        $attachmentsCountStmt = $pdo->query('SELECT COUNT(*) FROM attachments');
-        assert($attachmentsCountStmt !== false);
-        $attachmentsSizeStmt = $pdo->query('SELECT COALESCE(SUM(file_size), 0) FROM attachments');
-        assert($attachmentsSizeStmt !== false);
         $stats = [
             'total' => (int) ($row['total'] ?? 0),
-            SubmissionStatus::EnCours->value => (int) ($row[SubmissionStatus::EnCours->value] ?? 0),
-            SubmissionStatus::Valide->value => (int) ($row[SubmissionStatus::Valide->value] ?? 0),
-            SubmissionStatus::Refuse->value => (int) ($row[SubmissionStatus::Refuse->value] ?? 0),
+            SubmissionStatus::EnCours->value => (int) ($row['en_cours'] ?? 0),
+            SubmissionStatus::Valide->value => (int) ($row['valide'] ?? 0),
+            SubmissionStatus::Refuse->value => (int) ($row['refuse'] ?? 0),
             'today' => (int) ($row['today'] ?? 0),
             'this_week' => (int) ($row['this_week'] ?? 0),
             'this_month' => (int) ($row['this_month'] ?? 0),
-            'avg_days' => 0,
-            'tokens_pending' => (int) $tokensStmt->fetchColumn(),
-            'attachments_count' => (int) $attachmentsCountStmt->fetchColumn(),
-            'attachments_size' => (int) $attachmentsSizeStmt->fetchColumn(),
+            'avg_days' => 0.0,
+            'tokens_pending' => $tokensPending,
+            'attachments_count' => $attachmentsCount,
+            'attachments_size' => $attachmentsSize,
         ];
 
-        $avgStmt = $pdo->query("
-            SELECT AVG(CAST(strftime('%s', closed_at) AS REAL) - CAST(strftime('%s', submitted_at) AS REAL))
-            FROM submissions WHERE status = '" . SubmissionStatus::Valide->value . "' AND closed_at IS NOT NULL
-        ");
-        assert($avgStmt !== false);
-        $avg_raw = $avgStmt->fetchColumn();
-        $stats['avg_days'] = round((float) ($avg_raw !== false ? $avg_raw : 0) / 86400, 1);
+        $avgSeconds = $this->submissionRepository->getAvgProcessingSeconds();
+        $stats['avg_days'] = round($avgSeconds / 86400, 1);
 
         $stats['taux_validation'] = $stats['total'] > 0
             ? round(($stats[SubmissionStatus::Valide->value] / $stats['total']) * 100, 1)
@@ -152,23 +143,19 @@ final readonly class StatsService
      */
     public function getFormStats(): array
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->query("
-            SELECT f.label, f.slug, COUNT(s.id) as total,
-                   SUM(CASE WHEN s.status = '" . SubmissionStatus::EnCours->value . "' THEN 1 ELSE 0 END) as en_cours,
-                   SUM(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' THEN 1 ELSE 0 END) as valide,
-                   SUM(CASE WHEN s.status = '" . SubmissionStatus::Refuse->value . "' THEN 1 ELSE 0 END) as refuse,
-                   AVG(CASE WHEN s.status = '" . SubmissionStatus::Valide->value . "' AND s.closed_at IS NOT NULL
-                       THEN CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
-                       ELSE NULL END) as avg_seconds
-            FROM forms f
-            LEFT JOIN submissions s ON s.form_id = f.id
-            GROUP BY f.id
-            ORDER BY total DESC
-        ");
-        assert($stmt !== false);
-        /** @var array<int, array{label: string, slug: string, total: int, en_cours: int, valide: int, refuse: int, avg_seconds: float|null}> $result */
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->submissionRepository->getFormStats();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'label' => (string) $row['label'],
+                'slug' => (string) $row['slug'],
+                'total' => (int) $row['total'],
+                'en_cours' => (int) $row['en_cours'],
+                'valide' => (int) $row['valide'],
+                'refuse' => (int) $row['refuse'],
+                'avg_seconds' => $row['avg_seconds'] !== null ? (float) $row['avg_seconds'] : null,
+            ];
+        }
         return $result;
     }
 
@@ -183,25 +170,17 @@ final readonly class StatsService
      */
     public function getValidatorStats(): array
     {
-        $pdo = $this->database->getPdo();
-        $stmt = $pdo->query("
-            SELECT t.email,
-                   COUNT(t.id) as total,
-                   SUM(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL THEN 1 ELSE 0 END) as done,
-                   SUM(CASE WHEN t.done_at IS NULL THEN 1 ELSE 0 END) as pending,
-                   AVG(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL
-                       THEN CAST(strftime('%s', t.done_at) AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL)
-                       ELSE NULL END) as avg_response_seconds
-            FROM tokens t
-            JOIN submissions s ON s.id = t.submission_id
-            WHERE s.status = '" . SubmissionStatus::EnCours->value . "' OR (t.done_at IS NOT NULL AND t.invalidated_at IS NULL)
-            GROUP BY t.email
-            ORDER BY total DESC
-            LIMIT 20
-        ");
-        assert($stmt !== false);
-        /** @var array<int, array{email: string, total: int, done: int, pending: int, avg_response_seconds: float|null}> $result */
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->tokenRepository->getValidatorStats(SubmissionStatus::EnCours->value);
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'email' => (string) $row['email'],
+                'total' => (int) $row['total'],
+                'done' => (int) $row['done'],
+                'pending' => (int) $row['pending'],
+                'avg_response_seconds' => $row['avg_response_seconds'] !== null ? (float) $row['avg_response_seconds'] : null,
+            ];
+        }
         return $result;
     }
 }

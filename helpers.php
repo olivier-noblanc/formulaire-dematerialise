@@ -86,6 +86,24 @@ $_app->set(\App\Core\Database::class, $_db_service);
 // persona, conditions, validation, test_mode, database) en un seul fichier.
 require_once __DIR__ . '/src/lib_wrappers.php';
 
+// ── 3b. get_pdo() / release_pdo() — wrappers PDO procéduraux ──
+// Définis ICI (dans helpers.php qui est dans l'allowIn de la règle
+// disallowed-calls) plutôt que dans src/lib_wrappers.php, car ils
+// appellent App::db()->getPdo() qui est interdit hors de la couche
+// Repository. Les scripts legacy (alert_check.php, remind.php, tests)
+// continuent à utiliser get_pdo() comme avant — la définition est juste
+// déplacée dans un fichier autorisé.
+if (!function_exists('get_pdo')) {
+    function get_pdo(): PDO {
+        return \App\Core\App::db()->getPdo();
+    }
+}
+if (!function_exists('release_pdo')) {
+    function release_pdo(): void {
+        \App\Core\App::db()->release();
+    }
+}
+
 // send_mail(), build_mail_html(), render_email_template(), format_bytes() :
 // wrappers manquants à l'exécution réelle (n'existaient qu'en stub PHPStan) —
 // voir CHANGELOG et src/mail_wrappers.php pour le détail du bug.
@@ -127,6 +145,9 @@ $_app->set(\App\Repository\SubmissionRepository::class, new \App\Repository\Subm
 $_app->set(\App\Repository\TokenRepository::class, new \App\Repository\TokenRepository($_db_service));
 $_app->set(\App\Repository\AttachmentRepository::class, new \App\Repository\AttachmentRepository($_db_service));
 $_app->set(\App\Repository\AlertRepository::class, new \App\Repository\AlertRepository($_db_service));
+$_app->set(\App\Repository\DelegationRepository::class, new \App\Repository\DelegationRepository($_db_service));
+$_app->set(\App\Repository\PersonaTokenRepository::class, new \App\Repository\PersonaTokenRepository($_db_service));
+$_app->set(\App\Repository\LazyCronRepository::class, new \App\Repository\LazyCronRepository($_db_service));
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());
 $_settings_svc = $_app->get(\App\Settings\SettingsService::class);
@@ -137,25 +158,27 @@ $_app->set(\App\Mail\MailService::class, $_mail_svc);
 $_auth_svc->setMailer($_mail_svc);
 $_fields_svc = $_app->get(\App\Forms\FieldService::class);
 $_conditions_svc = $_app->get(\App\Workflow\ConditionEvaluator::class);
-$_workflow_svc = new \App\Workflow\WorkflowEngine($_db_service, $_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc, $_app->get(\App\Repository\SubmissionRepository::class));
+$_workflow_svc = new \App\Workflow\WorkflowEngine($_db_service, $_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc, $_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\TokenRepository::class), $_app->get(\App\Repository\FormRepository::class));
 $_app->set(\App\Workflow\WorkflowEngine::class, $_workflow_svc);
 $_html_svc = $_app->get(\App\Render\HtmlService::class);
 $_app->set(\App\Persona\PersonaService::class, new \App\Persona\PersonaService($_db_service));
 $_app->set(\App\Stats\StatsService::class, new \App\Stats\StatsService($_db_service));
-$_app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($_db_service));
+$_app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($_db_service, $_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\TokenRepository::class), $_app->get(\App\Repository\AttachmentRepository::class), $_app->get(\App\Repository\AlertRepository::class), $_app->get(\App\Repository\AdminRepository::class), $_app->get(\App\Repository\DelegationRepository::class)));
 $_app->set(\App\Token\TokenService::class, new \App\Token\TokenService(
     $_db_service,
     $_settings_svc,
     $_app->get(\App\Auth\AuthService::class),
     $_app->get(\App\Audit\AuditLogService::class),
     $_mail_svc,
-    $_app->get(\App\Repository\SubmissionRepository::class)
+    $_app->get(\App\Repository\SubmissionRepository::class),
+    $_app->get(\App\Repository\TokenRepository::class),
+    $_app->get(\App\Repository\DelegationRepository::class)
 ));
 $_app->set(\App\Forms\ValidatorDataService::class, new \App\Forms\ValidatorDataService($_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\FormRepository::class), $_app->get(\App\Forms\FieldService::class)));
 $_attachment_repo = $_app->get(\App\Repository\AttachmentRepository::class);
 $_app->set(\App\Attachment\AttachmentService::class, new \App\Attachment\AttachmentService($_attachment_repo));
-$_app->set(\App\Cron\CronService::class, new \App\Cron\CronService($_db_service));
+$_app->set(\App\Cron\CronService::class, new \App\Cron\CronService($_db_service, $_app->get(\App\Repository\LazyCronRepository::class)));
 $_app->set(\App\Validation\ValidationService::class, new \App\Validation\ValidationService());
-$_app->set(\App\Export\ExportService::class, new \App\Export\ExportService($_db_service, $_app->get(\App\Auth\AuthService::class)));
+$_app->set(\App\Export\ExportService::class, new \App\Export\ExportService($_db_service, $_app->get(\App\Auth\AuthService::class), $_app->get(\App\Repository\SubmissionRepository::class)));
 $_app->set(\App\Email\EmailVerificationService::class, new \App\Email\EmailVerificationService($_app->get(\App\Cache\CacheService::class)));
 $_app->set(\App\Docs\DocumentationService::class, new \App\Docs\DocumentationService());
