@@ -13,7 +13,6 @@ use App\Enum\ValidationAction;
 use App\Mail\MailService;
 use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
-use App\Workflow\WorkflowEngine;
 
 /**
  * Service de gestion des tokens de validation.

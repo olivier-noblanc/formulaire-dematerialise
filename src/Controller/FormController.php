@@ -124,7 +124,7 @@ final class FormController extends BaseController
                 if ($field['field_type'] === FieldType::File->value) {
                     continue; // les fichiers sont validés dans le second loop
                 }
-                $value = trim((string)($_POST[$field['field_name']] ?? ''));
+                $value = trim((string) ($_POST[$field['field_name']] ?? ''));
                 if ($field['required'] && in_array($value, ['', '0'], true)) {
                     $field_errors[$field['field_name']] = 'Ce champ est obligatoire';
                     continue;

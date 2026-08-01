@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Webhook;
 
-use App\Core\Database;
-
 /**
  * Service utilitaire — taille de la base de données.
  */

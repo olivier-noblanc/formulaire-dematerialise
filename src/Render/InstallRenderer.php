@@ -354,7 +354,7 @@ final class InstallRenderer
         <div class="config-preview"><?php
             $config_lines = [
                 'BASE_URL'       => $confirm_config['base_url'],
-                'DEFAULT_DB_PATH'=> '__DIR__ . \'/db/workflow.db\'',
+                'DEFAULT_DB_PATH' => '__DIR__ . \'/db/workflow.db\'',
                 'DB_PATH'        => 'DEFAULT_DB_PATH',
                 'SETTINGS_DEFAULTS → smtp_host'        => $confirm_config['smtp_host'],
                 'SETTINGS_DEFAULTS → smtp_port'        => (string) $confirm_config['smtp_port'],
