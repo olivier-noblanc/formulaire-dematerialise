@@ -1164,10 +1164,13 @@ parameters:
                         message: '#^Using [+\-] over non-number#'
 
                 -
-                        message: '#^Param.tre .+ typ. array .bare..+#'
+                        message: '#^Param.tre .+ typ. array .bare..+#u'
 
                 -
-                        message: '#^Param.tre .+ typ. \?array .bare..+#'
+                        message: '#^Param.tre .+ typ. \?array .bare..+#u'
+
+                -
+                        message: '#^Param.tre .+ typ. aucun type.+#u'
 
                 -
                         message: '#^Public property .+ not marked as readonly\.$#'
@@ -1203,7 +1206,7 @@ parameters:
                 -
                         message: '#^Parameter .+ of class App\\Render\\.+ constructor expects list<.+>, array<.+> given\.#'
                 -
-                        message: '#^Parameter .+ of (static )?method App\\Render\\.+ expects .+, list<array.+> given\.#'
+                        message: '#^Parameter .+ of (static )?method App\\Render\\.+ expects .+, list<array.*> given\.#'
                 -
                         message: '#^Parameter .+ of method App\\Render\\.+ expects .+, list<array\{.+\}> given\.#'
                 -
