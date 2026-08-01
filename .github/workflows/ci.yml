@@ -262,10 +262,11 @@ jobs:
           restore-keys: composer-
       - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Check code style (dry-run)
-        # CS Fixer révèle 33 fichiers à formater. Job non-bloquant temporairement
-        # le temps d'appliquer php-cs-fixer fix (sans --dry-run).
-        # TODO : retirer le `|| true` une fois les 33 fichiers formatés.
-        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none --using-cache=no || true
+        # Job bloquant depuis le 2026-08-01.
+        # 32 constructeurs vides simplifiés (one-liner), 4 DTOs avec ) {}.
+        # Reste : tri alphabétique des use statements + réindentation
+        # NavigationRenderer/AdminFormsRenderer (à faire si PHP disponible).
+        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none --using-cache=no
 
   # ── Modernisation PHP ────────────────────────────────────────
   rector:

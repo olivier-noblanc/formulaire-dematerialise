@@ -15,9 +15,7 @@ final class SettingsService implements SettingsInterface
     /** @var array<string, string> */
     private static array $cache = [];
 
-    public function __construct(private readonly SettingsRepository $settingsRepository)
-    {
-    }
+    public function __construct(private readonly SettingsRepository $settingsRepository) {}
 
     public function get(string $key, string $default = ''): string
     {

@@ -17,9 +17,7 @@ final class AuthService implements AuthInterface
 {
     private ?MailInterface $mail = null;
 
-    public function __construct(private readonly Database $database)
-    {
-    }
+    public function __construct(private readonly Database $database) {}
 
     public function setMailer(MailInterface $mail): void
     {

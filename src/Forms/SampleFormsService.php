@@ -11,9 +11,7 @@ use App\Repository\FormRepository;
  */
 final readonly class SampleFormsService
 {
-    public function __construct(private FormRepository $formRepository)
-    {
-    }
+    public function __construct(private FormRepository $formRepository) {}
 
     /**
      * Crée les formulaires d'exemple dans la base de données.

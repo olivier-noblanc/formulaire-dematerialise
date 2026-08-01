@@ -12,9 +12,7 @@ use App\Core\Database;
  */
 final readonly class FieldService implements FieldInterface
 {
-    public function __construct(private Database $database)
-    {
-    }
+    public function __construct(private Database $database) {}
 
     /**
      * Récupère les champs d'un formulaire, optionnellement filtrés par filled_by.

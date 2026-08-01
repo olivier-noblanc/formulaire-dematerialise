@@ -23,9 +23,7 @@ use App\Workflow\WorkflowEngine;
  */
 final readonly class TokenService
 {
-    public function __construct(private Database $database, private SettingsService $settingsService, private AuthService $authService, private AuditLogService $auditLogService, private MailService $mailService, private SubmissionRepository $submissionRepository)
-    {
-    }
+    public function __construct(private Database $database, private SettingsService $settingsService, private AuthService $authService, private AuditLogService $auditLogService, private MailService $mailService, private SubmissionRepository $submissionRepository) {}
 
     /**
      * Régénère un token expiré pour un validateur (admin uniquement).

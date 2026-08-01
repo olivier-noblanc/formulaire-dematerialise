@@ -32,7 +32,7 @@ final class SubmissionViewController extends BaseController
         $status = $sub['status'] ?? SubmissionStatus::EnCours->value;
         $user = App::auth()->getUser();
         $isAdmin = App::auth()->isAdminEffective();
-        $isFormOwner = App::auth()->isFormOwner((string)$sub['form_id']);
+        $isFormOwner = App::auth()->isFormOwner((string) $sub['form_id']);
 
         $isValidator = false;
         if (!$isAdmin && !$isFormOwner && $sub['submitted_by'] !== $user) {
@@ -130,7 +130,7 @@ final class SubmissionViewController extends BaseController
       <tbody>
       <?php foreach ($data as $key => $value):
         if (in_array($key, ['validations', 'submitted_at', 'closed_at'], true)) continue;
-        $valStr = is_array($value) ? implode(', ', $value) : (string)$value;
+        $valStr = is_array($value) ? implode(', ', $value) : (string) $value;
       ?>
         <tr>
           <td><strong><?= \App\Core\App::html()->escape(App::html()->tJargon($key)) ?></strong></td>
@@ -154,7 +154,7 @@ final class SubmissionViewController extends BaseController
       <?php foreach ($attachments as $att): ?>
         <tr>
           <td><?= \App\Core\App::html()->escape($att['original_name']) ?></td>
-          <td><?= \App\Core\App::html()->escape(format_bytes((int)$att['file_size'])) ?></td>
+          <td><?= \App\Core\App::html()->escape(format_bytes((int) $att['file_size'])) ?></td>
           <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($att['uploaded_at']))) ?></td>
           <td>
             <a href="index.php?p=download&id=<?= urlencode((string) ($att['id'] ?? '')) ?>" class="btn btn-secondary u-fs-xxs-p-xxs-f4127e">Télécharger</a>

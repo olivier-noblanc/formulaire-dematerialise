@@ -15,9 +15,7 @@ use App\Cache\CacheService;
  */
 final readonly class EmailVerificationService
 {
-    public function __construct(private CacheService $cacheService)
-    {
-    }
+    public function __construct(private CacheService $cacheService) {}
 
     /**
      * Vérifie qu'une adresse email existe dans l'Active Directory via LDAP.

@@ -73,6 +73,5 @@ final readonly class MonitoringContext
         public array $action_types,
         public string $audit_base_url,
         public string $audit_base_qs,
-    ) {
-    }
+    ) {}
 }

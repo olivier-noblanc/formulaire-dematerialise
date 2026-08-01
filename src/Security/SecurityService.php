@@ -14,9 +14,7 @@ final class SecurityService implements SecurityInterface
 {
     private string $scriptNonce = '';
 
-    public function __construct(private readonly HtmlService $htmlService)
-    {
-    }
+    public function __construct(private readonly HtmlService $htmlService) {}
 
     /**
      * Nonce CSP de la requête courante — à appliquer sur tout <script> ou

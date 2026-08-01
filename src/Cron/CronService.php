@@ -16,9 +16,7 @@ final class CronService
 {
     private static bool $running = false;
 
-    public function __construct(private readonly Database $database)
-    {
-    }
+    public function __construct(private readonly Database $database) {}
 
     /**
      * Exécute les tâches planifiées dont l'intervalle est écoulé.

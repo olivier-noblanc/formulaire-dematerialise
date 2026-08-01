@@ -16,9 +16,7 @@ use App\Repository\AttachmentRepository;
  */
 final readonly class AttachmentService
 {
-    public function __construct(private AttachmentRepository $attachmentRepository)
-    {
-    }
+    public function __construct(private AttachmentRepository $attachmentRepository) {}
 
     /**
      * Types MIME autorisés pour les pièces jointes.

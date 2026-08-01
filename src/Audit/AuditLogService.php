@@ -13,9 +13,7 @@ use App\Repository\AuditRepository;
  */
 final readonly class AuditLogService implements AuditInterface
 {
-    public function __construct(private AuditRepository $auditRepository)
-    {
-    }
+    public function __construct(private AuditRepository $auditRepository) {}
 
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): void
     {
