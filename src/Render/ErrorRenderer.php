@@ -101,7 +101,12 @@ final class ErrorRenderer
 </html>';
 
         /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
-        if (TEST_MODE && php_sapi_name() !== 'cli') {
+        if (TEST_MODE && php_sapi_name() !== 'cli' && !isset($GLOBALS['_in_exception_handler'])) {
+            // En TEST_MODE web, on throw pour permettre aux tests de capter le code HTTP.
+            // Guard anti-récursion : si on est déjà dans le global exception handler
+            // ($GLOBALS['_in_exception_handler'] = true), on NE throw PAS — sinon
+            // PHP émet un fatal "Exception thrown within exception handler" et le
+            // status code final est 500 au lieu du code original (403/404).
             throw new ErrorResponseException($code, $title, $message, $hint, $back_url);
         }
         // B-EXIT (audit 2026-07-26) : mode 'no-exit' pour tests PHPUnit en CLI.

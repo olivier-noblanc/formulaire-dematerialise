@@ -22,7 +22,7 @@ env:
         'smtp_from' => 'test@localhost', 'smtp_from_name' => 'CircuitDemat',
         'delai_relance_h' => '48', 'admin_email' => 'admin.local@exemple.invalid',
         'token_expire_days' => '30', 'relance_max' => '3',
-        'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'test.local',
+        'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'exemple.invalid',
         'base_url' => 'http://localhost',
     ]);
 
@@ -152,13 +152,12 @@ jobs:
   # ── PHPStan : catch qui avale une exception silencieusement ─────
   # Règle custom (phpstan-rules/NoSilentCatchRule.php) — opérationnalise
   # AGENTS.md règle 9 ("Ne jamais avaler une exception sur un chemin
-  # critique"). continue-on-error pour ce premier run — volume réel
-  # inconnu tant que ça n'a pas tourné une fois en CI sur le vrai code
-  # (même précaution que les 3 règles précédentes de la session).
+  # critique"). Tous les patterns NoSilentCatchRule + strict-rules résiduels
+  # sont baselinés dans phpstan-no-silent-catch.neon (47 patterns). Job
+  # bloquant depuis le 2026-08-01 (zéro continue-on-error, zéro tolérance).
   phpstan-no-silent-catch:
     name: PHPStan (no silent catch)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -397,9 +396,10 @@ jobs:
     name: E2E Playwright (Firefox)
     runs-on: ubuntu-latest
     needs: [phpstan]
-    # continue-on-error conservé le temps de confirmer que la bascule
-    # chromium→firefox (2026-07-30) résout bien le bug de chemin
-    # chromium_headless_shell — à retirer une fois un run vert confirmé.
+    # Job bloquant. La bascule chromium→firefox (2026-07-30) a résolu le bug
+    # de chemin chromium_headless_shell. Le seeding admin a été aligné le
+    # 2026-08-01 (email_domain='exemple.invalid' → AUTH_USER dérive en
+    # 'admin.local@exemple.invalid' qui matche l'admin en DB).
 
     steps:
       - uses: actions/checkout@v4
