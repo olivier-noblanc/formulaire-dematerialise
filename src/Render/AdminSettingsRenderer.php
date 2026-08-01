@@ -436,7 +436,7 @@ final class AdminSettingsRenderer
                     <td class="p-5">
                         <?php
                         /** @phpstan-ignore-next-line */
-                        if (method_exists('PHPMailer\PHPMailer\PHPMailer', 'getSMTPInstance')): ?>
+                        if (method_exists(\PHPMailer\PHPMailer\PHPMailer::class, 'getSMTPInstance')): ?>
                             <span class="text-4caf50">Vraie bibliothèque</span>
                         <?php else: ?>
                             <span class="text-ff9800">Stub (aucun envoi réel possible)</span>
@@ -461,7 +461,7 @@ final class AdminSettingsRenderer
             $security_items[] = 'Vérification destinataires';
         }
         /** @phpstan-ignore-next-line */
-        if (!method_exists('PHPMailer\PHPMailer\PHPMailer', 'getSMTPInstance')) {
+        if (!method_exists(\PHPMailer\PHPMailer\PHPMailer::class, 'getSMTPInstance')) {
             $security_score++;
             $security_items[] = 'PHPMailer en mode stub';
         }
