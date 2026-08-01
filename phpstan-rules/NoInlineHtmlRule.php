@@ -40,6 +40,8 @@ class NoInlineHtmlRule implements Rule
      */
     private const array FILE_EXCEPTIONS = [
         'NavigationRenderer.php' => 'Seul <script> inline du projet (menu persona) — noncé via SecurityService::getScriptNonce(), plus de fallback unsafe-inline sur script-src (2026-07-30).',
+        'ErrorRenderer.php' => 'Balise <style> de fallback (fallback CSS d\'urgence quand style.php est injoignable) — noncée via SecurityService::getScriptNonce(). Sert uniquement pour les pages d\'erreur 500/403 quand le système est défaillant.',
+        'InstallRenderer.php' => 'Balise <style> pour la page d\'installation (style.php n\'est pas encore disponible avant l\'installation) — noncée via SecurityService::getScriptNonce().',
     ];
 
     /**
@@ -126,6 +128,21 @@ class NoInlineHtmlRule implements Rule
             $errors[] = RuleErrorBuilder::message(
                 "Attribut style=\"\" inline détecté — README : \"Zéro fichier .css : le CSS passe exclusivement par style.php\". Non autorisable par nonce en CSP (seuls <script>/<style> le sont). Déplacer vers une classe CSS ou un <style nonce> ciblé pour les valeurs dynamiques."
             )->identifier('noInlineHtml.styleAttr')->build();
+        }
+
+        // Détection des balises <style> inline — le CSS doit passer par
+        // style.php (README : "Zéro fichier .css : le CSS passe exclusivement
+        // par style.php"). Les balises <style> sont la seule exception
+        // autorisée par nonce en CSP, mais le principe du projet est de
+        // centraliser tout le CSS dans style.php. Si une balise <style> est
+        // vraiment nécessaire (fallback, page d'install), elle doit être
+        // noncée ET listée dans FILE_EXCEPTIONS avec un motif documenté.
+        if (preg_match('/<style\b/i', $text) === 1) {
+            if ($exceptionReason === null) {
+                $errors[] = RuleErrorBuilder::message(
+                    "Balise <style> inline détectée — README : \"Zéro fichier .css : le CSS passe exclusivement par style.php\". Déplacer le CSS vers lib/*.css ou style.php. Si une balise <style> est indispensable (fallback d'urgence, page d'installation), l'ajouter à NoInlineHtmlRule::FILE_EXCEPTIONS avec un motif ET la noncer via SecurityService::getScriptNonce()."
+                )->identifier('noInlineHtml.styleTag')->build();
+            }
         }
 
         return $errors;
