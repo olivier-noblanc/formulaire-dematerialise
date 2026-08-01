@@ -41,6 +41,7 @@ const CSP_INIT_SCRIPT = `
 window.__cspViolations = [];
 window.__cspInlineStyleCount = 0;
 window.__cspInlineScriptCount = 0;
+window.__cspStyleTagsWithoutNonce = 0;
 
 // Listener CSP violations (SecurityPolicyViolationEvent)
 document.addEventListener('securitypolicyviolation', function(e) {
@@ -56,12 +57,14 @@ document.addEventListener('securitypolicyviolation', function(e) {
 
 // Comptage inline styles et scripts au chargement
 window.addEventListener('DOMContentLoaded', function() {
-    // style= attributes
+    // style= attributes (interdits — non autorisables par nonce en CSP)
     var allEls = document.querySelectorAll('[style]');
     window.__cspInlineStyleCount = allEls.length;
-    // <style> tags
+    // <style> tags — comptage total ET sans nonce
     var styleTags = document.querySelectorAll('style');
     window.__cspInlineTagCount = styleTags.length;
+    var styleTagsWithoutNonce = document.querySelectorAll('style:not([nonce])');
+    window.__cspStyleTagsWithoutNonce = styleTagsWithoutNonce.length;
     // <script> tags sans nonce
     var scripts = document.querySelectorAll('script:not([nonce])');
     window.__cspInlineScriptCount = scripts.length;
@@ -111,11 +114,14 @@ async function main() {
                         t.ko(`[${p.label}] frame-ancestors présent`, 'directive frame-ancestors manquante');
                     }
 
-                    // Alerte si 'unsafe-inline' est présent sur style-src (attendu
-                    // pour l'instant, migration en cours — cf. TODO.md). Ne devrait
-                    // plus jamais apparaître sur script-src (retiré le 2026-07-30).
+                    // Alerte si 'unsafe-inline' est présent sur style-src.
+                    // Depuis le 2026-08-01, style-src ne devrait PLUS avoir
+                    // 'unsafe-inline' — les balises <style> sont noncées et
+                    // les style="" attrs sont interdits (NoInlineHtmlRule).
                     if (/style-src[^;]*'unsafe-inline'/.test(cspHeader)) {
-                        console.log(`  ⚠️  [${p.label}] 'unsafe-inline' présent sur style-src — migration en cours`);
+                        t.ko(`[${p.label}] style-src sans unsafe-inline`, "'unsafe-inline' ne devrait plus être présent sur style-src (les <style> doivent être noncés, les style=\"\" interdits)");
+                    } else {
+                        t.ok(`[${p.label}] style-src sans unsafe-inline`);
                     }
                     if (/script-src[^;]*'unsafe-inline'/.test(cspHeader)) {
                         t.ko(`[${p.label}] script-src sans unsafe-inline`, "'unsafe-inline' ne devrait plus être présent sur script-src");
@@ -128,11 +134,8 @@ async function main() {
                 await page.waitForTimeout(200);
 
                 // 3. Lire les violations CSP capturées par le navigateur.
-                // script-src : échec dur (plus de fallback unsafe-inline depuis
-                // le 2026-07-30, cf. TODO.md § CSP — zéro inline).
-                // style-src : avertissement seulement — migration des style=""
-                // dynamiques vers des <style nonce> ciblés en cours, pas encore
-                // terminée (voir TODO.md pour le volume mesuré par page).
+                // script-src ET style-src : échec dur (plus de fallback
+                // unsafe-inline depuis le 2026-08-01, cf. TODO.md § CSP).
                 const violations = await page.evaluate(() => window.__cspViolations || []);
                 const scriptViolations = violations.filter(v => v.directive.startsWith('script-src'));
                 const styleViolations = violations.filter(v => v.directive.startsWith('style-src'));
@@ -147,8 +150,13 @@ async function main() {
                     );
                 }
 
-                if (styleViolations.length > 0) {
-                    console.log(`  ⚠️  [${p.label}] ${styleViolations.length} violation(s) style-src (migration en cours, non bloquant — cf. TODO.md)`);
+                if (styleViolations.length === 0) {
+                    t.ok(`[${p.label}] Aucune violation style-src runtime`);
+                } else {
+                    t.ko(
+                        `[${p.label}] Aucune violation style-src runtime`,
+                        `${styleViolations.length} violation(s) : ${styleViolations.map(v => v.directive + ' (' + v.blocked + ')').join(', ')}`
+                    );
                 }
 
                 if (otherViolations.length === 0) {
@@ -160,18 +168,37 @@ async function main() {
                     );
                 }
 
-                // Log détaillé (toutes violations, y compris style-src en info)
+                // Log détaillé (toutes violations)
                 for (const v of violations) {
                     console.log(`    ⛔ ${v.directive} — ${v.blocked} @ ${v.source}:${v.line}:${v.column}`);
                     if (v.sample) console.log(`       sample: ${v.sample}`);
                 }
 
-                // 4. Comptage inline (informationnel — pas un échec tant que unsafe-inline)
+                // 4. Comptage inline — ÉCHEC DUR depuis le 2026-08-01.
+                // style="" attrs : interdits (non autorisables par nonce en CSP).
+                // <style> sans nonce : interdits (doivent être noncés).
+                // <script> sans nonce : interdits (déjà depuis le 2026-07-30).
                 const inlineStyles = await page.evaluate(() => window.__cspInlineStyleCount || 0);
                 const inlineStyleTags = await page.evaluate(() => window.__cspInlineTagCount || 0);
+                const styleTagsWithoutNonce = await page.evaluate(() => window.__cspStyleTagsWithoutNonce || 0);
                 const inlineScripts = await page.evaluate(() => window.__cspInlineScriptCount || 0);
-                if (inlineStyles > 0 || inlineStyleTags > 0 || inlineScripts > 0) {
-                    console.log(`  ℹ️  [${p.label}] inline: ${inlineStyles} style= attr, ${inlineStyleTags} <style> tags, ${inlineScripts} <script> sans nonce`);
+
+                if (inlineStyles === 0) {
+                    t.ok(`[${p.label}] Aucun attribut style="" inline`);
+                } else {
+                    t.ko(`[${p.label}] Aucun attribut style="" inline`, `${inlineStyles} attribut(s) style="" trouvé(s) — déplacer vers une classe CSS`);
+                }
+
+                if (styleTagsWithoutNonce === 0) {
+                    t.ok(`[${p.label}] Aucune balise <style> sans nonce`);
+                } else {
+                    t.ko(`[${p.label}] Aucune balise <style> sans nonce`, `${styleTagsWithoutNonce} balise(s) <style> sans nonce — ajouter nonce="${ '<%= nonce %' }" ou déplacer vers lib/*.css`);
+                }
+
+                if (inlineScripts === 0) {
+                    t.ok(`[${p.label}] Aucune balise <script> sans nonce`);
+                } else {
+                    t.ko(`[${p.label}] Aucune balise <script> sans nonce`, `${inlineScripts} balise(s) <script> sans nonce`);
                 }
 
             } catch (e) {

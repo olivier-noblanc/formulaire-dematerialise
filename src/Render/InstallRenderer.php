@@ -412,7 +412,7 @@ final class InstallRenderer
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Installation — <?= \App\Core\App::html()->escape(NavigationRenderer::getAppName()) ?></title>
     <?= NavigationRenderer::favicon() ?>
-    <style>
+    <style nonce="<?= \App\Core\App::security()->getScriptNonce() ?>">
         <?= $this->pageCss() ?>
     </style>
 </head>

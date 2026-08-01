@@ -46,21 +46,17 @@ final class SecurityService implements SecurityInterface
         // génère un NOUVEAU nonce → le HTML (qui a le 1er nonce injecté par
         // renderAfterMain) ne matche plus le header CSP (qui a le 2e nonce)
         // → violations CSP script-src-elem (inline) sur admin_settings.
-        if ($this->scriptNonce === '') {
-            $this->scriptNonce = bin2hex(random_bytes(16));
-        }
+        $this->scriptNonce = $this->scriptNonce === '' ? bin2hex(random_bytes(16)) : $this->scriptNonce;
         $nonceValue = $this->scriptNonce;
         // script-src : plus de 'unsafe-inline' — le seul <script> inline
-        // (NavigationRenderer::footer(), menu persona) est noncé (2026-07-30,
-        // cf. README "JavaScript : Aucun" — objectif zéro JS non conforme
-        // à ce jour, mais au moins plus de fallback unsafe-inline).
-        // style-src : 'unsafe-inline' encore nécessaire — les attributs
-        // style="" ne peuvent PAS être autorisés par nonce (contrairement
-        // aux éléments <script>/<style> — nuance CSP), et le code utilise
-        // encore largement des style="" dynamiques (pourcentages, couleurs
-        // calculées...). Migration vers des <style nonce> ciblés à faire
-        // page par page, pas en un seul commit.
-        $csp = "default-src 'self'; script-src 'self' 'nonce-{$nonceValue}'; style-src 'self' 'unsafe-inline' 'nonce-{$nonceValue}'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
+        // (NavigationRenderer::footer(), menu persona) est noncé (2026-07-30).
+        // style-src : plus de 'unsafe-inline' depuis le 2026-08-01 — les
+        // balises <style> sont noncées (ErrorRenderer fallback, InstallRenderer,
+        // AdminSettingsScripts) et les attributs style="" sont interdits
+        // (NoInlineHtmlRule les bloque à la source). Les style="" résiduels
+        // dans les templates email (MailService, TokenService) ne passent
+        // pas par le header CSP (emails ≠ pages web).
+        $csp = "default-src 'self'; script-src 'self' 'nonce-{$nonceValue}'; style-src 'self' 'nonce-{$nonceValue}'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
         header('Content-Security-Policy: ' . $csp);
 
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
