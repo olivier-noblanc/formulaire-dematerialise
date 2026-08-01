@@ -60,19 +60,35 @@ if (php_sapi_name() !== 'cli') {
 
 // ── GESTION GLOBALE DES ERREURS — ERREURS TOUJOURS AFFICHÉES ─────
 // Affiche le message, le fichier et la ligne en toutes circonstances.
+//
+// Anti-récursion (fix 2026-08-01) : errorPage() en TEST_MODE throw une
+// ErrorResponseException. Sans guard, le handler global rappelle errorPage(500),
+// qui re-throw → fatal "Exception thrown within exception handler" → status 500
+// au lieu du code original (403/404). Le flag $_in_exception_handler permet à
+// errorPage() de savoir qu'elle est appelée depuis le handler et de rendre le
+// HTML directement sans re-throw.
 set_exception_handler(function (\Throwable $e): never {
     error_log('Uncaught: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    // Préserver le code HTTP de l'ErrorResponseException si applicable
+    // (sinon 500 par défaut).
+    $httpCode = 500;
+    if ($e instanceof \App\Render\ErrorResponseException && $e->getCode() >= 400 && $e->getCode() < 600) {
+        $httpCode = $e->getCode();
+    }
     if (!headers_sent()) {
-        http_response_code(500);
+        http_response_code($httpCode);
         header('Content-Type: text/html; charset=utf-8');
     }
     $msg = htmlspecialchars($e->getMessage());
     $file = htmlspecialchars($e->getFile());
     $trace = htmlspecialchars($e->getTraceAsString());
+    // Guard anti-récursion : indique à errorPage() qu'elle est appelée depuis
+    // le handler global — elle ne doit pas re-throw ErrorResponseException.
+    $GLOBALS['_in_exception_handler'] = true;
     if (class_exists(\App\Render\ErrorRenderer::class)) {
-        (new \App\Render\ErrorRenderer())->errorPage(500, 'Erreur interne', $msg);
+        (new \App\Render\ErrorRenderer())->errorPage($httpCode, 'Erreur interne', $msg);
     } else {
-        echo '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Erreur 500</title></head>'
+        echo '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Erreur ' . $httpCode . '</title></head>'
            . '<body style="font-family:Arial,sans-serif;max-width:900px;margin:2rem auto;color:#222;">'
            . '<h1 style="color:#c0392b;">Erreur interne du serveur</h1>'
            . '<pre style="background:#f4f4f4;padding:1rem;overflow:auto;font-size:.85rem;border-left:4px solid #c0392b;white-space:pre-wrap;word-wrap:break-word;">'

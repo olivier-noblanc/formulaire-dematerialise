@@ -23,9 +23,9 @@ env:
     define('SETTINGS_DEFAULTS', [
         'smtp_host' => 'localhost', 'smtp_port' => '25',
         'smtp_from' => 'test@localhost', 'smtp_from_name' => 'CircuitDemat',
-        'delai_relance_h' => '48', 'admin_email' => 'olivier.noblanc@test.local',
+        'delai_relance_h' => '48', 'admin_email' => 'olivier.noblanc@dreets.gouv.fr',
         'token_expire_days' => '30', 'relance_max' => '3',
-        'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'test.local',
+        'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'dreets.gouv.fr',
         'base_url' => 'http://localhost',
     ]);
 
@@ -64,10 +64,9 @@ jobs:
     name: CSP Compliance (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # continue-on-error conservé le temps de confirmer que la bascule
-    # chromium→firefox (2026-07-30) fait tourner ce workflow correctement
-    # (jamais eu de run vert jusqu'ici) — à retirer une fois confirmé.
-    continue-on-error: true
+    # Job bloquant depuis le 2026-08-01 (fix seeding admin + email_domain
+    # aligné sur 'dreets.gouv.fr' → AUTH_USER 'DREETS\olivier.noblanc'
+    # dérive en 'olivier.noblanc@dreets.gouv.fr' qui matche l'admin en DB).
 
     steps:
       - name: Checkout
