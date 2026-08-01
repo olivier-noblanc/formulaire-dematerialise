@@ -657,7 +657,7 @@ final class MonitoringRenderer
 
         $export_link = '';
         if ($audit_total > 0) {
-            $export_link = "· <a href=\"{$export_url}\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;text-decoration:none;\"><span aria-hidden=\"true\">📥</span> Export CSV</a>";
+            $export_link = "· <a href=\"{$export_url}\" class=\"btn btn-secondary u-fs-xxs-p-xs-td-none-43bc55\"><span aria-hidden=\"true\">📥</span> Export CSV</a>";
         }
 
         if ($audit_logs === '' || $audit_logs === null || $audit_logs === '0') {
@@ -700,12 +700,12 @@ final class MonitoringRenderer
             $next_link = '';
             if ($audit_page > 1) {
                 $prev_url = \App\Core\App::html()->escape($audit_base_url) . '&log_page=' . ($audit_page - 1);
-                $prev_link = "<a href=\"{$prev_url}\" class=\"btn btn-secondary\" style=\"font-size:.8rem;padding:.3rem .75rem;\">← Précédent</a>";
+                $prev_link = "<a href=\"{$prev_url}\" class=\"btn btn-secondary u-fs-xs-p-custom-745e0f\">← Précédent</a>";
             }
-            $page_info = "<span style=\"font-size:.85rem;color:#555;\">Page {$audit_page} / {$audit_total_pages}</span>";
+            $page_info = "<span class=\"u-c-muted-fs-sm-acdf91\">Page {$audit_page} / {$audit_total_pages}</span>";
             if ($audit_page < $audit_total_pages) {
                 $next_url = \App\Core\App::html()->escape($audit_base_url) . '&log_page=' . ($audit_page + 1);
-                $next_link = "<a href=\"{$next_url}\" class=\"btn btn-secondary\" style=\"font-size:.8rem;padding:.3rem .75rem;\">Suivant →</a>";
+                $next_link = "<a href=\"{$next_url}\" class=\"btn btn-secondary u-fs-xs-p-custom-745e0f\">Suivant →</a>";
             }
             $pagination = <<<HTML
                         <div class="pagination flex-gap5-5">

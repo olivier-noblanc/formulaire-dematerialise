@@ -224,7 +224,7 @@ final class DashboardRenderer
         $html .= "      </tr>\n    </thead>\n    <tbody>\n";
 
         if ($rows === []) {
-            $html .= "      <tr><td colspan=\"7\" style=\"text-align:center;padding:2rem;color:#595959;\">Aucune soumission.</td></tr>\n";
+            $html .= "      <tr><td colspan=\"7\" class=\"u-c-muted-ta-center-p-custom-e478a3\">Aucune soumission.</td></tr>\n";
         } else {
             foreach ($rows as $i => $row) {
                 $tokens = $tokens_by_submission[$row['id']] ?? [];
@@ -358,13 +358,13 @@ final class DashboardRenderer
         $html = '';
 
         if (is_array($d) && isset($d['validations']) && is_array($d['validations'])) {
-            $html .= "              <h3 style=\"margin-top:0;margin-bottom:1rem;\">Historique des validations</h3>\n";
+            $html .= "              <h3 class=\"u-mt-0-mb-1-dbe4e0\">Historique des validations</h3>\n";
             foreach ($d['validations'] as $validation) {
                 $step_label = \App\Core\App::html()->escape((string) ($validation['step_label'] ?? ''));
                 $email      = \App\Core\App::html()->escape((string) ($validation['email'] ?? ''));
                 $action     = (string) ($validation['action'] ?? '');
                 $is_valide  = ($action === ValidationAction::Valider->value);
-                $color      = $is_valide ? '#1a6b3c' : '#c0392b';
+                $color_class = $is_valide ? 'text-success' : 'text-danger';
                 $icon       = $is_valide ? '✅' : '❌';
                 $label      = $is_valide ? 'Validé' : 'Refusé';
                 $comment    = '';
@@ -374,24 +374,24 @@ final class DashboardRenderer
                 }
                 $val_date_ts = strtotime((string) ($validation['date'] ?? ''));
                 $date = $val_date_ts !== false ? \App\Core\App::html()->escape(date('d/m/Y à H:i', $val_date_ts)) : '—';
-                $html .= "              <div style=\"border-left:3px solid #003189;padding-left:1rem;margin-bottom:1rem;\">\n"
+                $html .= "              <div class=\"validation-item\">\n"
                     . "                <strong>{$step_label}</strong> - {$email} -\n"
-                    . "                <span style=\"color:{$color};\">\n"
+                    . "                <span class=\"{$color_class}\">\n"
                     . "                  <span aria-hidden=\"true\">{$icon}</span> {$label}\n"
                     . "                </span>\n"
                     . "                {$comment}\n"
                     . "                <br><small>{$date}</small>\n"
                     . "              </div>\n";
             }
-            $html .= "              <hr style=\"margin:1rem 0;\">\n";
+            $html .= "              <hr class=\"u-m-custom-b98e73\">\n";
         }
 
         $data_array = is_array($d) ? $d : [];
         $html .= '              ' . new FormRenderer()->submissionData($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
 
         if ($status === SubmissionStatus::EnCours->value) {
-            $html .= "              <hr style=\"margin:1rem 0;\">\n";
-            $html .= "              <div style=\"display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start;\">\n";
+            $html .= "              <hr class=\"u-m-custom-b98e73\">\n";
+            $html .= "              <div class=\"u-d-flex-gap-05-fw-wrap-a0ccd9\">\n";
             if (App::auth()->isAdminEffective()) {
                 foreach ($tokens as $token) {
                     if (!empty($token['done_at'])) {
@@ -399,23 +399,23 @@ final class DashboardRenderer
                     }
                     $tid   = \App\Core\App::html()->escape((string) ($token['id'] ?? ''));
                     $temail = \App\Core\App::html()->escape((string) ($token['email'] ?? ''));
-                    $html .= "                <form method=\"POST\" style=\"display:inline;\">\n"
+                    $html .= "                <form method=\"POST\" class=\"u-d-inline-5677b9\">\n"
                         . App::security()->csrfField() . "\n"
                         . "                  <input type=\"hidden\" name=\"action\" value=\"remind_one\">\n"
                         . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
-                        . "                  <button type=\"submit\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;\"><span aria-hidden=\"true\">📧</span> Rappeler {$temail}</button>\n"
+                        . "                  <button type=\"submit\" class=\"btn btn-secondary u-fs-xxs-p-xs-d405db\"><span aria-hidden=\"true\">📧</span> Rappeler {$temail}</button>\n"
                         . "                </form>\n";
-                    $html .= "                <form method=\"POST\" style=\"display:inline;\">\n"
+                    $html .= "                <form method=\"POST\" class=\"u-d-inline-5677b9\">\n"
                         . App::security()->csrfField() . "\n"
                         . "                  <input type=\"hidden\" name=\"action\" value=\"regenerate_token\">\n"
                         . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
-                        . "                  <button type=\"submit\" class=\"btn btn-secondary\" style=\"font-size:.75rem;padding:.3rem .6rem;\"><span aria-hidden=\"true\">🔄</span> Régénérer {$temail}</button>\n"
+                        . "                  <button type=\"submit\" class=\"btn btn-secondary u-fs-xxs-p-xs-d405db\"><span aria-hidden=\"true\">🔄</span> Régénérer {$temail}</button>\n"
                         . "                </form>\n";
                 }
             }
             $cancel_url = 'index.php?p=confirm_action&action=cancel_submission&submission_id='
                 . urlencode((string) ($row['id'] ?? '')) . '&from=dashboard.phpfrom=index.php?p=dashboard';
-            $html .= "                <a href=\"{$cancel_url}\" class=\"btn btn-danger\" style=\"font-size:.75rem;padding:.3rem .6rem;text-decoration:none;\"><span aria-hidden=\"true\">🗑</span> Annuler</a>\n";
+            $html .= "                <a href=\"{$cancel_url}\" class=\"btn btn-danger u-fs-xxs-p-xs-td-none-43bc55\"><span aria-hidden=\"true\">🗑</span> Annuler</a>\n";
             $html .= "              </div>\n";
         }
 
