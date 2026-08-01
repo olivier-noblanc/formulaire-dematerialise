@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Workflow;
 
 use App\Core\Database;
+use App\Enum\SubmissionStatus;
+use App\Enum\ValidationAction;
 use App\Forms\FieldService;
 use App\Mail\MailService;
 use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
-use App\Enum\SubmissionStatus;
-use App\Enum\ValidationAction;
 
 /**
  * Moteur de workflow — tokens, steps, validation.

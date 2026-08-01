@@ -146,7 +146,7 @@ final class SubmissionRepository extends BaseRepository
             }
 
             // Conflict: someone else wrote between our read and write
-            error_log("appendToDataJson: conflict on attempt " . ($attempt + 1) . " for submission $submissionId");
+            error_log('appendToDataJson: conflict on attempt ' . ($attempt + 1) . " for submission $submissionId");
         }
 
         error_log("appendToDataJson: max retries ($maxRetries) exceeded for submission $submissionId");

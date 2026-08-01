@@ -82,7 +82,7 @@ final readonly class RgpdService
             // tokens (lien email). Maintenant : on clôture explicitement.
             $now = gmdate('Y-m-d H:i:s');
             // 1. Invalider tous les tokens actifs de l'agent
-            $pdo->prepare("UPDATE tokens SET invalidated_at = ? WHERE email = ? AND done_at IS NULL AND invalidated_at IS NULL")
+            $pdo->prepare('UPDATE tokens SET invalidated_at = ? WHERE email = ? AND done_at IS NULL AND invalidated_at IS NULL')
                 ->execute([$now, $email]);
             // 2. Clôturer les soumissions en_cours de l'agent (status annule, closed_at now)
             $pdo->prepare("UPDATE submissions SET closed_at = ?, status = '" . SubmissionStatus::Annule->value . "' WHERE submitted_by = ? AND status = '" . SubmissionStatus::EnCours->value . "' AND closed_at IS NULL")

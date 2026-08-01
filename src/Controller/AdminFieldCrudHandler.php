@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\FieldType;
 use App\Enum\FieldVisibility;
 use App\Enum\FilledBy;
-use App\Enum\FieldType;
 
 /**
  * Handlers CRUD pour les champs de formulaire (add, update, delete).
