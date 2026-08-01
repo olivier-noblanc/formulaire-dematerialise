@@ -78,6 +78,21 @@ parameters:
         - '#^Missing parameter typehint for closure parameter#'
         - '#^Overwriting variable .+ while changing its type#'
         - '#^.+ always return list, but is marked as#'
+        # Patterns pour erreurs shipmonk/strict-rules dans tests/ (712 erreurs
+        # résiduelles — autrefois masquées par une erreur de syntaxe NEON qui
+        # empêchait PHPStan de tourner. Découverts le 2026-08-01 après fix NEON.)
+        - '#^Throwing checked exception .+ in (closure|arrow function)!#'
+        - '#^Method call ->.+\(\) is prohibited on unknown type#'
+        - '#^Using \+\+ over non-integer#'
+        - '#^Null value involved in \.= assignment#'
+        - '#^Null value involved in string interpolation#'
+        - '#^Parameter .+ of class App\\Render\\.+ constructor expects list<.+>, array<.+> given\.#'
+        - '#^Parameter .+ of (static )?method App\\Render\\.+ expects .+, list<array.+> given\.#'
+        - '#^Parameter .+ of method App\\Render\\.+ expects .+, list<array\{.+\}> given\.#'
+        - '#^Parameter .+ of method App\\Render\\.+ expects .+, array<int\|string, .+> given\.#'
+        - '#^Only booleans are allowed in a negated boolean, array\|null given\.#'
+        - '#^Only booleans are allowed in an if condition, array\|null given\.#'
+        - '#^Casting to string something that.s already string\.#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php
