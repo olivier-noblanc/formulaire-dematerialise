@@ -288,10 +288,11 @@ jobs:
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - name: Check with Rector (dry-run)
-        # Rector révèle 28 fichiers à moderniser (remplacement magic strings → enums).
-        # Job non-bloquant temporairement le temps d'appliquer les changements suggérés.
-        # TODO : retirer le `|| true` une fois les 28 fichiers migrés.
-        run: php vendor/bin/rector process --dry-run --no-progress-bar || true
+        # Job bloquant depuis le 2026-08-01.
+        # La règle ReplaceMagicStringWithEnumRector a été corrigée pour ne
+        # remplacer que dans les contextes de comparaison/assignment (pas
+        # les clés d'array, args de fonction, ou SQL). 0 faux positifs attendus.
+        run: php vendor/bin/rector process --dry-run --no-progress-bar
 
   # ── Sécurité deps ────────────────────────────────────────────
   security:
