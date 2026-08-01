@@ -73,7 +73,7 @@ $app->set(AlertRepository::class, new AlertRepository($db));
 $app->set(DelegationRepository::class, new DelegationRepository($db));
 $app->set(PersonaTokenRepository::class, new PersonaTokenRepository($db));
 $app->set(LazyCronRepository::class, new LazyCronRepository($db));
-$app->set(FieldService::class, new FieldService($db));
+$app->set(FieldService::class, new FieldService());
 $app->set(HtmlService::class, new HtmlService());
 $app->set(\App\Render\DynamicCssService::class, new \App\Render\DynamicCssService());
 $app->set(SecurityService::class, new SecurityService($app->get(HtmlService::class)));
@@ -81,7 +81,7 @@ $auditRepo = $app->get(AuditRepository::class);
 $app->set(AuditLogService::class, new AuditLogService($auditRepo));
 $app->set(CacheService::class, new CacheService());
 $app->set(ConditionEvaluator::class, new ConditionEvaluator());
-$app->set(StatsService::class, new StatsService($db));
+$app->set(StatsService::class, new StatsService());
 $app->set(PersonaService::class, new PersonaService($db));
 
 // Services avec dépendances
@@ -94,11 +94,11 @@ $app->get(AuthService::class)->setMailer($mail);
 
 $fields = $app->get(FieldService::class);
 $conditions = $app->get(ConditionEvaluator::class);
-$workflow = new WorkflowEngine($db, $settings, $mail, $fields, $conditions, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(FormRepository::class));
+$workflow = new WorkflowEngine($settings, $mail, $fields, $conditions, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(FormRepository::class));
 $app->set(WorkflowEngine::class, $workflow);
 
 // Token lifecycle service
-$tokenService = new TokenService($db, $settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(DelegationRepository::class));
+$tokenService = new TokenService($settings, $app->get(AuthService::class), $app->get(AuditLogService::class), $mail, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(DelegationRepository::class));
 $app->set(TokenService::class, $tokenService);
 
 // Attachment service
@@ -115,7 +115,7 @@ $app->set(CronService::class, new CronService($db, $app->get(LazyCronRepository:
 $app->set(ValidationService::class, new ValidationService());
 
 // Export service
-$app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class), $app->get(SubmissionRepository::class)));
+$app->set(ExportService::class, new ExportService($app->get(AuthService::class), $app->get(SubmissionRepository::class)));
 
 // Email verification service
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
@@ -124,7 +124,7 @@ $app->set(EmailVerificationService::class, new EmailVerificationService($app->ge
 $app->set(DocumentationService::class, new DocumentationService());
 
 // RGPD service
-$app->set(RgpdService::class, new RgpdService($db, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(AttachmentRepository::class), $app->get(AlertRepository::class), $app->get(AdminRepository::class), $app->get(DelegationRepository::class)));
+$app->set(RgpdService::class, new RgpdService($app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(AttachmentRepository::class), $app->get(AlertRepository::class), $app->get(AdminRepository::class), $app->get(DelegationRepository::class)));
 
 // Note : les méthodes statiques App::db(), App::auth() sont
 // définies dans src/Core/App.php. Le bloc `if (!method_exists(App::class, 'auth'))`

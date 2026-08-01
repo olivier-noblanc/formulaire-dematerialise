@@ -48,7 +48,7 @@ final class WorkflowEngineMutationTest extends TestCase
         $this->db = App::getInstance()->get(Database::class);
         $settings = new SettingsService(new SettingsRepository($this->db));
         $mail = new MailService(new MailRepository($this->db), $settings);
-        $fields = new FieldService($this->db);
+        $fields = new FieldService();
         $conditions = new ConditionEvaluator();
         $this->workflow = new WorkflowEngine(
             $this->db,

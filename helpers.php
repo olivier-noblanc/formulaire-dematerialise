@@ -149,7 +149,7 @@ $_app->set(\App\Repository\PersonaTokenRepository::class, new \App\Repository\Pe
 $_app->set(\App\Repository\LazyCronRepository::class, new \App\Repository\LazyCronRepository($_db_service));
 // FieldService DOIT être instancié APRÈS FormRepository + SubmissionRepository
 // (son constructeur les résout via App::getInstance()->get() si non passés)
-$_app->set(\App\Forms\FieldService::class, new \App\Forms\FieldService($_db_service));
+$_app->set(\App\Forms\FieldService::class, new \App\Forms\FieldService());
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());
 $_settings_svc = $_app->get(\App\Settings\SettingsService::class);
@@ -160,14 +160,13 @@ $_app->set(\App\Mail\MailService::class, $_mail_svc);
 $_auth_svc->setMailer($_mail_svc);
 $_fields_svc = $_app->get(\App\Forms\FieldService::class);
 $_conditions_svc = $_app->get(\App\Workflow\ConditionEvaluator::class);
-$_workflow_svc = new \App\Workflow\WorkflowEngine($_db_service, $_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc, $_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\TokenRepository::class), $_app->get(\App\Repository\FormRepository::class));
+$_workflow_svc = new \App\Workflow\WorkflowEngine($_settings_svc, $_mail_svc, $_fields_svc, $_conditions_svc, $_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\TokenRepository::class), $_app->get(\App\Repository\FormRepository::class));
 $_app->set(\App\Workflow\WorkflowEngine::class, $_workflow_svc);
 $_html_svc = $_app->get(\App\Render\HtmlService::class);
 $_app->set(\App\Persona\PersonaService::class, new \App\Persona\PersonaService($_db_service));
-$_app->set(\App\Stats\StatsService::class, new \App\Stats\StatsService($_db_service));
-$_app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($_db_service, $_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\TokenRepository::class), $_app->get(\App\Repository\AttachmentRepository::class), $_app->get(\App\Repository\AlertRepository::class), $_app->get(\App\Repository\AdminRepository::class), $_app->get(\App\Repository\DelegationRepository::class)));
+$_app->set(\App\Stats\StatsService::class, new \App\Stats\StatsService());
+$_app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\TokenRepository::class), $_app->get(\App\Repository\AttachmentRepository::class), $_app->get(\App\Repository\AlertRepository::class), $_app->get(\App\Repository\AdminRepository::class), $_app->get(\App\Repository\DelegationRepository::class)));
 $_app->set(\App\Token\TokenService::class, new \App\Token\TokenService(
-    $_db_service,
     $_settings_svc,
     $_app->get(\App\Auth\AuthService::class),
     $_app->get(\App\Audit\AuditLogService::class),
@@ -181,6 +180,6 @@ $_attachment_repo = $_app->get(\App\Repository\AttachmentRepository::class);
 $_app->set(\App\Attachment\AttachmentService::class, new \App\Attachment\AttachmentService($_attachment_repo));
 $_app->set(\App\Cron\CronService::class, new \App\Cron\CronService($_db_service, $_app->get(\App\Repository\LazyCronRepository::class)));
 $_app->set(\App\Validation\ValidationService::class, new \App\Validation\ValidationService());
-$_app->set(\App\Export\ExportService::class, new \App\Export\ExportService($_db_service, $_app->get(\App\Auth\AuthService::class), $_app->get(\App\Repository\SubmissionRepository::class)));
+$_app->set(\App\Export\ExportService::class, new \App\Export\ExportService($_app->get(\App\Auth\AuthService::class), $_app->get(\App\Repository\SubmissionRepository::class)));
 $_app->set(\App\Email\EmailVerificationService::class, new \App\Email\EmailVerificationService($_app->get(\App\Cache\CacheService::class)));
 $_app->set(\App\Docs\DocumentationService::class, new \App\Docs\DocumentationService());

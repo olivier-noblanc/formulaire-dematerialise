@@ -39,12 +39,11 @@ final class TokenServiceTest extends TestCase
         $auth = new AuthService($this->db);
         $audit = new AuditLogService(new \App\Repository\AuditRepository($this->db));
         $mailer = new MailService(new \App\Repository\MailRepository($this->db), $settings);
-        $fields = new FieldService($this->db);
+        $fields = new FieldService();
         $conditions = new ConditionEvaluator();
-        $workflow = new WorkflowEngine($this->db, $settings, $mailer, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
+        $workflow = new WorkflowEngine($settings, $mailer, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
 
         $this->tokenService = new TokenService(
-            $this->db,
             $settings,
             $auth,
             $audit,

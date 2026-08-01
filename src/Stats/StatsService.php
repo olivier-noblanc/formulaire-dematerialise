@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Stats;
 
 use App\Core\App;
-use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Repository\AttachmentRepository;
 use App\Repository\SubmissionRepository;
@@ -14,9 +13,7 @@ use App\Repository\TokenRepository;
 /**
  * Service de statistiques et recherche plein texte.
  *
- * Le paramètre $database est conservé pour la compatibilité ascendante
- * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
- * passe par les repositories injectés.
+ * Tout accès DB passe par les repositories injectés ou résolus via App.
  */
 final readonly class StatsService
 {
@@ -25,7 +22,6 @@ final readonly class StatsService
     public AttachmentRepository $attachmentRepository;
 
     public function __construct(
-        private Database $database,
         ?SubmissionRepository $submissionRepository = null,
         ?TokenRepository $tokenRepository = null,
         ?AttachmentRepository $attachmentRepository = null
@@ -71,9 +67,9 @@ final readonly class StatsService
             $result[] = [
                 'period' => (string) $row['period'],
                 'total' => (int) $row['total'],
-                'valide' => (int) $row['valide'],
-                'refuse' => (int) $row['refuse'],
-                'en_cours' => (int) $row['en_cours'],
+                SubmissionStatus::Valide->value => (int) $row[SubmissionStatus::Valide->value],
+                SubmissionStatus::Refuse->value => (int) $row[SubmissionStatus::Refuse->value],
+                SubmissionStatus::EnCours->value => (int) $row[SubmissionStatus::EnCours->value],
                 'avg_processing_seconds' => $row['avg_processing_seconds'] !== null ? (float) $row['avg_processing_seconds'] : null,
             ];
         }
@@ -108,9 +104,9 @@ final readonly class StatsService
 
         $stats = [
             'total' => (int) ($row['total'] ?? 0),
-            SubmissionStatus::EnCours->value => (int) ($row['en_cours'] ?? 0),
-            SubmissionStatus::Valide->value => (int) ($row['valide'] ?? 0),
-            SubmissionStatus::Refuse->value => (int) ($row['refuse'] ?? 0),
+            SubmissionStatus::EnCours->value => (int) ($row[SubmissionStatus::EnCours->value] ?? 0),
+            SubmissionStatus::Valide->value => (int) ($row[SubmissionStatus::Valide->value] ?? 0),
+            SubmissionStatus::Refuse->value => (int) ($row[SubmissionStatus::Refuse->value] ?? 0),
             'today' => (int) ($row['today'] ?? 0),
             'this_week' => (int) ($row['this_week'] ?? 0),
             'this_month' => (int) ($row['this_month'] ?? 0),
@@ -150,9 +146,9 @@ final readonly class StatsService
                 'label' => (string) $row['label'],
                 'slug' => (string) $row['slug'],
                 'total' => (int) $row['total'],
-                'en_cours' => (int) $row['en_cours'],
-                'valide' => (int) $row['valide'],
-                'refuse' => (int) $row['refuse'],
+                SubmissionStatus::EnCours->value => (int) $row[SubmissionStatus::EnCours->value],
+                SubmissionStatus::Valide->value => (int) $row[SubmissionStatus::Valide->value],
+                SubmissionStatus::Refuse->value => (int) $row[SubmissionStatus::Refuse->value],
                 'avg_seconds' => $row['avg_seconds'] !== null ? (float) $row['avg_seconds'] : null,
             ];
         }

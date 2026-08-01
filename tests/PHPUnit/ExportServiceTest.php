@@ -23,7 +23,7 @@ final class ExportServiceTest extends TestCase
 
     public function testServiceCanBeInstantiated(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertInstanceOf(ExportService::class, $service);
     }
 
@@ -83,14 +83,14 @@ final class ExportServiceTest extends TestCase
 
     public function testServiceUsesInjectedDatabase(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionProperty($service, 'database');
         self::assertSame($this->db, $reflection->getValue($service));
     }
 
     public function testServiceUsesInjectedAuth(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionProperty($service, 'authService');
         self::assertSame($this->auth, $reflection->getValue($service));
     }
@@ -99,132 +99,132 @@ final class ExportServiceTest extends TestCase
 
     public function testTransformValueOneReturnsOui(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('Oui', $service->transformValue('1'));
     }
 
     public function testTransformValueZeroReturnsNon(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('Non', $service->transformValue('0'));
     }
 
     public function testTransformValueStringPassthrough(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('hello world', $service->transformValue('hello world'));
     }
 
     public function testTransformValueIntegerPassthrough(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame(42, $service->transformValue(42));
     }
 
     public function testTransformValueNullPassthrough(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertNull($service->transformValue(null));
     }
 
     public function testTransformValueEmptyStringPassthrough(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('', $service->transformValue(''));
     }
 
     public function testTransformValueArrayToJson(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $result = $service->transformValue(['a', 'b', 'c']);
         self::assertSame('["a","b","c"]', $result);
     }
 
     public function testTransformValueAssociativeArrayToJson(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $result = $service->transformValue(['key' => 'value']);
         self::assertSame('{"key":"value"}', $result);
     }
 
     public function testTransformValueNestedArrayToJson(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $result = $service->transformValue(['outer' => ['inner' => 'val']]);
         self::assertSame('{"outer":{"inner":"val"}}', $result);
     }
 
     public function testTransformValueFormulaInjectionEquals(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame("'=SUM(A1:A10)", $service->transformValue('=SUM(A1:A10)'));
     }
 
     public function testTransformValueFormulaInjectionPlus(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame("'+cmd|'/C calc'!A0", $service->transformValue("+cmd|'/C calc'!A0"));
     }
 
     public function testTransformValueFormulaInjectionMinus(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame("'-cmd|'/C calc'!A0", $service->transformValue("-cmd|'/C calc'!A0"));
     }
 
     public function testTransformValueFormulaInjectionAt(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame("'@SUM(1+1)", $service->transformValue('@SUM(1+1)'));
     }
 
     public function testTransformValueNoInjectionForRegularString(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('Jean Dupont', $service->transformValue('Jean Dupont'));
     }
 
     public function testTransformValueNoInjectionForNumberAsString(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('12345', $service->transformValue('12345'));
     }
 
     public function testTransformValueStringContainingEqualsNotAtStart(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('a=b', $service->transformValue('a=b'));
     }
 
     public function testTransformValueBooleanFalsePassthrough(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertFalse($service->transformValue(false));
     }
 
     public function testTransformValueBooleanTruePassthrough(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertTrue($service->transformValue(true));
     }
 
     public function testTransformValueZeroIntegerNotConverted(): void
     {
         // Integer 0 is NOT '0' string, so it should not convert to Non
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame(0, $service->transformValue(0));
     }
 
     public function testTransformValueOneIntegerNotConverted(): void
     {
         // Integer 1 is NOT '1' string, so it should not convert to Oui
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame(1, $service->transformValue(1));
     }
 
     public function testTransformValueEmptyArray(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertSame('[]', $service->transformValue([]));
     }
 
@@ -232,7 +232,7 @@ final class ExportServiceTest extends TestCase
 
     public function testBuildWhereClauseDefaultReturns1Eq1(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         [$where, $params] = $service->buildWhereClause([]);
         self::assertSame('1=1', $where);
         self::assertSame([], $params);
@@ -240,7 +240,7 @@ final class ExportServiceTest extends TestCase
 
     public function testBuildWhereClauseEmptyOptions(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         [$where, $params] = $service->buildWhereClause(['form_id' => '', 'status' => '']);
         self::assertSame('1=1', $where);
         self::assertSame([], $params);
@@ -248,7 +248,7 @@ final class ExportServiceTest extends TestCase
 
     public function testBuildWhereClauseFormIdOnly(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         [$where, $params] = $service->buildWhereClause(['form_id' => 'abc-123']);
         self::assertSame('1=1 AND s.form_id = ?', $where);
         self::assertSame(['abc-123'], $params);
@@ -256,7 +256,7 @@ final class ExportServiceTest extends TestCase
 
     public function testBuildWhereClauseStatusOnly(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         [$where, $params] = $service->buildWhereClause(['status' => 'validated']);
         self::assertSame('1=1 AND s.status = ?', $where);
         self::assertSame(['validated'], $params);
@@ -264,7 +264,7 @@ final class ExportServiceTest extends TestCase
 
     public function testBuildWhereClauseBothFilters(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         [$where, $params] = $service->buildWhereClause(['form_id' => 'abc', 'status' => 'pending']);
         self::assertSame('1=1 AND s.form_id = ? AND s.status = ?', $where);
         self::assertSame(['abc', 'pending'], $params);
@@ -272,7 +272,7 @@ final class ExportServiceTest extends TestCase
 
     public function testBuildWhereClauseIgnoresUnknownKeys(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         [$where, $params] = $service->buildWhereClause(['unknown' => 'value']);
         self::assertSame('1=1', $where);
         self::assertSame([], $params);
@@ -282,7 +282,7 @@ final class ExportServiceTest extends TestCase
 
     public function testGenerateCsvStringEmptyDatabase(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString();
         self::assertIsString($csv);
         // Should contain BOM + at least header row
@@ -291,7 +291,7 @@ final class ExportServiceTest extends TestCase
 
     public function testGenerateCsvStringContainsBom(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString();
         // UTF-8 BOM: EF BB BF
         self::assertStringStartsWith(chr(0xEF) . chr(0xBB) . chr(0xBF), $csv);
@@ -299,7 +299,7 @@ final class ExportServiceTest extends TestCase
 
     public function testGenerateCsvStringContainsHeaderRow(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString();
         // Remove BOM for easier parsing
         $withoutBom = substr($csv, 3);
@@ -316,14 +316,14 @@ final class ExportServiceTest extends TestCase
 
     public function testGenerateCsvStringUsesSemicolonDelimiter(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString();
         self::assertStringContainsString(';', $csv);
     }
 
     public function testGenerateCsvStringWithFormIdFilter(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => 'nonexistent-form-id']);
         // Should still produce valid CSV (just empty)
         self::assertIsString($csv);
@@ -332,7 +332,7 @@ final class ExportServiceTest extends TestCase
 
     public function testGenerateCsvStringWithStatusFilter(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['status' => 'validated']);
         self::assertIsString($csv);
         self::assertNotEmpty($csv);
@@ -340,7 +340,7 @@ final class ExportServiceTest extends TestCase
 
     public function testGenerateCsvStringWithBothFilters(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => 'nonexistent', 'status' => 'pending']);
         self::assertIsString($csv);
         self::assertNotEmpty($csv);
@@ -363,7 +363,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             $withoutBom = substr($csv, 3);
             $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
@@ -403,7 +403,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             $withoutBom = substr($csv, 3);
             $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
@@ -433,7 +433,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             $withoutBom = substr($csv, 3);
             $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
@@ -463,7 +463,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             // The formula should be prefixed with apostrophe
             self::assertStringContainsString("'=SUM(A1:A10)", $csv);
@@ -494,7 +494,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId2, $formId, $data2, 'agent2@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             $withoutBom = substr($csv, 3);
             $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
@@ -530,7 +530,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId2, $formId, $data2, 'agent_' . uniqid() . '@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             $withoutBom = substr($csv, 3);
             $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
@@ -567,7 +567,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId2, $formId, $data2, 'agent_' . uniqid() . '@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             $withoutBom = substr($csv, 3);
             $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
@@ -596,7 +596,7 @@ final class ExportServiceTest extends TestCase
             ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
 
         try {
-            $service = new ExportService($this->db, $this->auth);
+            $service = new ExportService($this->auth);
             $csv = $service->generateCsvString(['form_id' => $formId]);
             self::assertIsString($csv);
             self::assertNotEmpty($csv);
@@ -610,59 +610,59 @@ final class ExportServiceTest extends TestCase
 
     public function testExportCsvMethodExists(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertTrue(method_exists($service, 'exportCsv'));
     }
 
     public function testExportCsvMethodIsPublic(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'exportCsv');
         self::assertTrue($reflection->isPublic());
     }
 
     public function testTransformValueMethodExists(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertTrue(method_exists($service, 'transformValue'));
     }
 
     public function testTransformValueMethodIsPublic(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'transformValue');
         self::assertTrue($reflection->isPublic());
     }
 
     public function testBuildWhereClauseMethodExists(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertTrue(method_exists($service, 'buildWhereClause'));
     }
 
     public function testBuildWhereClauseMethodIsPublic(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'buildWhereClause');
         self::assertTrue($reflection->isPublic());
     }
 
     public function testGenerateCsvStringMethodExists(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         self::assertTrue(method_exists($service, 'generateCsvString'));
     }
 
     public function testGenerateCsvStringMethodIsPublic(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'generateCsvString');
         self::assertTrue($reflection->isPublic());
     }
 
     public function testExportCsvReturnTypeIsVoid(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'exportCsv');
         $returnType = $reflection->getReturnType();
         self::assertNotNull($returnType);
@@ -671,7 +671,7 @@ final class ExportServiceTest extends TestCase
 
     public function testGenerateCsvStringReturnTypeIsString(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'generateCsvString');
         $returnType = $reflection->getReturnType();
         self::assertNotNull($returnType);
@@ -680,7 +680,7 @@ final class ExportServiceTest extends TestCase
 
     public function testTransformValueReturnTypeIsMixed(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'transformValue');
         $returnType = $reflection->getReturnType();
         self::assertNotNull($returnType);
@@ -689,7 +689,7 @@ final class ExportServiceTest extends TestCase
 
     public function testBuildWhereClauseReturnTypeIsArray(): void
     {
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $reflection = new \ReflectionMethod($service, 'buildWhereClause');
         $returnType = $reflection->getReturnType();
         self::assertNotNull($returnType);

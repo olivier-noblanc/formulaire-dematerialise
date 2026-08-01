@@ -55,7 +55,7 @@ final readonly class MailService implements MailInterface
     public function sendDetailed(string $to, string $subject, string $body): array
     {
         $result = ['success' => false, 'error' => '', 'smtp_log' => '', 'status' => 'error'];
-        $to = $to |> trim(...) |> strtolower(...);
+        $to = strtolower(trim($to));
 
         if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
             $msg = "Adresse destinataire invalide : $to";

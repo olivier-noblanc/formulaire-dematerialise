@@ -25,7 +25,7 @@ final class CronService
     public LazyCronRepository $lazyCronRepository;
 
     public function __construct(
-        private readonly Database $database,
+        Database $database,
         ?LazyCronRepository $lazyCronRepository = null
     ) {
         $app = App::getInstance();

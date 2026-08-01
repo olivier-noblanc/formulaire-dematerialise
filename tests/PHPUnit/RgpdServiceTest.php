@@ -18,7 +18,7 @@ final class RgpdServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(Database::class);
-        $this->service = new RgpdService($this->db);
+        $this->service = new RgpdService();
         $this->originalUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
 
         // Create a dedicated test form + step to satisfy FK constraints

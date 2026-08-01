@@ -6,7 +6,6 @@ namespace App\Export;
 
 use App\Auth\AuthService;
 use App\Core\App;
-use App\Core\Database;
 use App\Repository\SubmissionRepository;
 
 /**
@@ -15,16 +14,13 @@ use App\Repository\SubmissionRepository;
  * Extrait de lib/export_csv.php — export streamé avec filtres et headers HTTP.
  * Les fonctions globales dans lib/export_csv.php délèguent maintenant ici.
  *
- * Le paramètre $database est conservé pour la compatibilité ascendante
- * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
- * passe par le SubmissionRepository injecté.
+ * Tout accès DB passe par le SubmissionRepository injecté (ou résolu via App).
  */
 final readonly class ExportService
 {
     public SubmissionRepository $submissionRepository;
 
     public function __construct(
-        private Database $database,
         private AuthService $authService,
         ?SubmissionRepository $submissionRepository = null
     ) {

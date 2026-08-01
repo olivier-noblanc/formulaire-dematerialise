@@ -28,9 +28,9 @@ abstract class Base extends TestCase
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $settings = new SettingsService(new SettingsRepository($this->db));
         $mail = new MailService(new \App\Repository\MailRepository($this->db), $settings);
-        $fields = new FieldService($this->db);
+        $fields = new FieldService();
         $conditions = new ConditionEvaluator();
-        $this->workflow = new WorkflowEngine($this->db, $settings, $mail, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
+        $this->workflow = new WorkflowEngine($settings, $mail, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
         $this->createdIds = ['forms' => [], 'steps' => [], 'step_recipients' => [], 'submissions' => [], 'tokens' => [], 'form_owners' => []];
     }
 

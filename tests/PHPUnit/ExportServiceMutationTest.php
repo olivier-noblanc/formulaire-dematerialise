@@ -92,7 +92,7 @@ final class ExportServiceMutationTest extends TestCase
         $pdo = $this->db->getPdo();
         [$formId, $insertedIds] = $this->insertSubmissions(501);
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         // Vérifie que CHAQUE id inséré est présent dans le CSV
@@ -146,7 +146,7 @@ final class ExportServiceMutationTest extends TestCase
         $pdo = $this->db->getPdo();
         [$formId, $insertedIds] = $this->insertSubmissions(1);
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         self::assertStringContainsString(
@@ -174,7 +174,7 @@ final class ExportServiceMutationTest extends TestCase
         $pdo = $this->db->getPdo();
         [$formId, $insertedIds] = $this->insertSubmissions(500);
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         // Compte les occurrences d'un id unique inséré — doit être 1.
@@ -220,7 +220,7 @@ final class ExportServiceMutationTest extends TestCase
     {
         [$formId, $insertedIds] = $this->insertSubmissions(499);
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         foreach ($insertedIds as $id) {
@@ -266,7 +266,7 @@ final class ExportServiceMutationTest extends TestCase
             ->execute([$subId, $formId, $data, 'agent.mutant5@test.com']);
         $this->createdSubmissionIds[] = $subId;
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         // Strip BOM + parse les lignes non vides
@@ -320,7 +320,7 @@ final class ExportServiceMutationTest extends TestCase
             ->execute([$subId, $formId, 'agent.closed@test.com']);
         $this->createdSubmissionIds[] = $subId;
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         $withoutBom = substr($csv, 3);
@@ -359,7 +359,7 @@ final class ExportServiceMutationTest extends TestCase
             ->execute([$subId, $formId, 'agent.null@test.com', gmdate('Y-m-d H:i:s')]);
         $this->createdSubmissionIds[] = $subId;
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         $withoutBom = substr($csv, 3);
@@ -389,7 +389,7 @@ final class ExportServiceMutationTest extends TestCase
     {
         [$formId, $insertedIds] = $this->insertSubmissions(1000);
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         // Vérifie qu'au moins les première et dernière lignes sont présentes
@@ -418,7 +418,7 @@ final class ExportServiceMutationTest extends TestCase
     {
         [$formId, $insertedIds] = $this->insertSubmissions(750);
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         // Le 501e id (premier du 2e batch) doit être présent exactement 1 fois
@@ -455,7 +455,7 @@ final class ExportServiceMutationTest extends TestCase
     {
         [$formId, $insertedIds] = $this->insertSubmissions(2);
 
-        $service = new ExportService($this->db, $this->auth);
+        $service = new ExportService($this->auth);
         $csv = $service->generateCsvString(['form_id' => $formId]);
 
         foreach ($insertedIds as $id) {

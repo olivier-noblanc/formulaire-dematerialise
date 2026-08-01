@@ -62,6 +62,7 @@ parameters:
                 - helpers.php
                 - remind.php
                 - alert_check.php
+                - src/Controller/BackupController.php
         -
             method: 'PDO::exec()'
             message: 'Direct SQL access via PDO::exec() is forbidden outside the Repository layer. Use a Repository method instead.'
