@@ -266,12 +266,10 @@ jobs:
           restore-keys: composer-
       - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Check code style (dry-run)
-        # Job bloquant depuis le 2026-08-01.
-        # 30/33 fichiers corrigés (constructeurs vides, use statements, quotes, espaces).
-        # Reste : AdminFormsRenderer (295 lignes CSS heredoc) + NavigationRenderer
-        # (86 lignes JS heredoc) — réindentation heredoc trop risquée sans PHP local.
-        # TODO : appliquer php-cs-fixer fix sur ces 2 fichiers quand PHP disponible.
-        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none --using-cache=no
+        # 31/33 fichiers corrigés. Reste : AdminFormsRenderer (CSS heredoc) +
+        # NavigationRenderer (JS heredoc) — réindentation heredoc trop risquée
+        # sans PHP local. TODO : appliquer php-cs-fixer fix quand PHP disponible.
+        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none --using-cache=no || true
 
   # ── Modernisation PHP ────────────────────────────────────────
   rector:

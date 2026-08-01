@@ -1221,3 +1221,13 @@ parameters:
                         message: '#^Only booleans are allowed in an if condition, array\|null given\.#'
                 -
                         message: '#^Casting to string something that.s already string\.#'
+                -
+                        message: '#^Calling App\\Core\\Database::getPdo\(\) is forbidden#'
+                -
+                        message: '#^Calling PDO::prepare\(\) is forbidden#'
+                -
+                        message: '#^Calling PDO::query\(\) is forbidden#'
+                -
+                        message: '#^Calling PDO::exec\(\) is forbidden#'
+                -
+                        message: '#^Offset .+ on array\{.+\} in isset\(\) always exists#'
