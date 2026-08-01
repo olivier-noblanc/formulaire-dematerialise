@@ -54,7 +54,7 @@ check_gap('display_user: = user → "Vous"',
     \App\Core\App::html()->displayUser('admin@ci.test', $_test_user) === '<strong>Vous</strong>');
 
 check_gap('display_user: même domaine → masque',
-    \App\Core\App::html()->displayUser('jean.dupont@exemple.invalid', $_test_user) === 'jean.dupont@');
+    \App\Core\App::html()->displayUser('jean.dupont@ci.test', $_test_user) === 'jean.dupont@');
 
 check_gap('display_user: domaine différent → complet',
     \App\Core\App::html()->displayUser('jean.dupont@externe.fr', $_test_user) === 'jean.dupont@externe.fr');
