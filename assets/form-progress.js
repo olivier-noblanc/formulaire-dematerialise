@@ -25,7 +25,9 @@
       if (isFilled(inputs[i])) filled++;
     }
     var pct = total > 0 ? Math.round((filled / total) * 100) : 0;
-    fillEl.style.width = pct + '%';
+    // CSP-safe: use CSS class instead of inline style.width
+    // 101 classes (.progress-0 to .progress-100) are pre-generated in style_utility.css
+    fillEl.className = 'progress-' + pct;
     filledEl.textContent = filled;
     if (barEl) barEl.setAttribute('aria-valuenow', String(filled));
     if (currentEl && fieldsets.length > 1) {
