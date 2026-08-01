@@ -36,7 +36,7 @@
     conditionalDivs.forEach(function(div) {
       var cond = div.getAttribute('data-condition');
       var visible = evaluateCondition(cond);
-      div.style.display = visible ? '' : 'none';
+      div.classList.toggle('is-hidden', !visible);
       // Retirer/ajouter required selon la visibilité
       var inputs = div.querySelectorAll('input, select, textarea');
       inputs.forEach(function(input) {

@@ -55,7 +55,7 @@
     if (!btn) return;
     e.preventDefault();
     var target = btn.closest(btn.getAttribute('data-dismiss'));
-    if (target) target.style.display = 'none';
+    if (target) target.classList.add('is-hidden');
   });
 
   // ── 4. Close details ──────────────────────────────────────────
