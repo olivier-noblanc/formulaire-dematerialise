@@ -48,9 +48,9 @@ final class HtmlLibTest extends TestCase
     public function testDisplayUserSameDomain(): void
     {
         $currentUser = 'admin@ci.test';
-        $result = $this->html->displayUser('jean.dupont@dreets.gouv.fr', $currentUser);
+        $result = $this->html->displayUser('jean.dupont@ci.test', $currentUser);
         self::assertStringContainsString('jean.dupont', $result);
-        self::assertStringNotContainsString('@dreets.gouv.fr', $result);
+        self::assertStringNotContainsString('@ci.test', $result);
     }
 
     public function testDisplayUserDifferentDomain(): void
