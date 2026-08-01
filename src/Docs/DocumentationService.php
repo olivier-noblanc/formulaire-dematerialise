@@ -135,7 +135,7 @@ class DocumentationService
 
     <!-- ── Workflow visual mockup ── -->
     <div class="mockup">
-      <p style="font-weight:bold; color:#003189; margin:0 0 .75rem; font-size:.9rem;">Circuit de validation — Vue d'ensemble</p>
+      <p class="u-c-primary-fs-md-fw-bold-mb-075-0a644b">Circuit de validation — Vue d'ensemble</p>
       <div class="wf-mockup">
         <div class="wf-step">
           <div class="wf-box done">✓ Étape 1</div>
@@ -152,7 +152,7 @@ class DocumentationService
           <div class="wf-label">Direction</div>
         </div>
       </div>
-      <p style="font-size:.95rem; color:#595959; margin:.5rem 0 0;">Exemple : les étapes s'enchaînent automatiquement après chaque validation</p>
+      <p class="u-c-muted-fs-lg-m-custom-751a63">Exemple : les étapes s'enchaînent automatiquement après chaque validation</p>
     </div>
 
     <div class="tip-box">
@@ -294,7 +294,7 @@ class DocumentationService
 
     <!-- ── Progress bar mockup ── -->
     <div class="mockup">
-      <p style="font-weight:bold; color:#003189; margin:0 0 .75rem; font-size:.9rem;">Barre de progression d'une demande</p>
+      <p class="u-c-primary-fs-md-fw-bold-mb-075-0a644b">Barre de progression d'une demande</p>
       <div class="progress-mockup">
         <div class="progress-bar-track">
           <div class="progress-bar-fill"></div>
@@ -311,8 +311,8 @@ class DocumentationService
 
     <!-- ── Status badge mockup ── -->
     <div class="mockup">
-      <p style="font-weight:bold; color:#003189; margin:0 0 .75rem; font-size:.9rem;">Badges de statut</p>
-      <p style="margin:0;">
+      <p class="u-c-primary-fs-md-fw-bold-mb-075-0a644b">Badges de statut</p>
+      <p class="u-m-0-1386d5">
         <span class="status-badge status-validated">🟢 Validée</span>
         <span class="status-badge status-pending">🟠 En cours</span>
         <span class="status-badge status-refused">🔴 Refusée</span>
@@ -330,9 +330,9 @@ class DocumentationService
       <div class="step-text">
         <p><strong>Consultez le statut</strong> — Chaque demande affiche son statut avec des badges colorés :</p>
         <ul>
-          <li style="color:#1a6b3c;"><strong>■ Vert</strong> = validé (étape terminée)</li>
-          <li style="color:#b45309;"><strong>■ Orange</strong> = en attente (étape en cours)</li>
-          <li style="color:#595959;"><strong>■ Gris</strong> = pas encore démarré</li>
+          <li class="u-c-success-8becb1"><strong>■ Vert</strong> = validé (étape terminée)</li>
+          <li class="u-c-warning-0c118e"><strong>■ Orange</strong> = en attente (étape en cours)</li>
+          <li class="u-c-muted-89d000"><strong>■ Gris</strong> = pas encore démarré</li>
         </ul>
       </div>
     </div>
@@ -430,8 +430,8 @@ class DocumentationService
     <div class="email-mockup">
       <div class="email-header">CircuitDémat — Action requise</div>
       <div class="email-body">
-        <p style="margin:0 0 .75rem; font-size:1rem;">Bonjour,</p>
-        <p style="margin:0 0 .75rem; font-size:1rem;">Une nouvelle demande nécessite votre validation pour l'étape <strong>Informatique</strong>.</p>
+        <p class="u-fs-base-mb-075-2af86d">Bonjour,</p>
+        <p class="u-fs-base-mb-075-2af86d">Une nouvelle demande nécessite votre validation pour l'étape <strong>Informatique</strong>.</p>
         <table>
           <tr><td>Agent</td><td>Dupont Marie</td></tr>
           <tr><td>Service</td><td>Service Emploi</td></tr>
@@ -623,9 +623,9 @@ class DocumentationService
       <li><strong>Filtres</strong> — Par statut (tous, en cours, clôturés) et par formulaire</li>
       <li><strong>Badges du circuit de validation</strong> — Chaque étape est représentée par un badge coloré :
         <ul>
-          <li style="color:#1a6b3c;">■ <strong>Vert</strong> = validé</li>
-          <li style="color:#b45309;">■ <strong>Orange</strong> = en attente (étape courante)</li>
-          <li style="color:#595959;">■ <strong>Gris</strong> = pas encore démarré</li>
+          <li class="u-c-success-8becb1">■ <strong>Vert</strong> = validé</li>
+          <li class="u-c-warning-0c118e">■ <strong>Orange</strong> = en attente (étape courante)</li>
+          <li class="u-c-muted-89d000">■ <strong>Gris</strong> = pas encore démarré</li>
         </ul>
       </li>
       <li><strong>Bouton « détail »</strong> — Affiche l'historique des validations et les données du formulaire</li>
@@ -1562,7 +1562,7 @@ class DocumentationService
   <!-- ═══════════════════════════════════════════════════════════ -->
   <div class="card" id="technique">
     <h2>9. Architecture technique (pour l'équipe IT)</h2>
-    <p style="margin-bottom:1rem;color:#555;">
+    <p class="u-c-muted-mb-1-af23e6">
       Cette section est destinée au personnel technique. Elle fournit un aperçu de l'architecture.
     </p>
 
@@ -1611,7 +1611,7 @@ class DocumentationService
     <details>
       <summary>Schéma de la base de données (simplifié)</summary>
       <div class="detail-body">
-        <h3 style="margin-top:0;">Table <code>forms</code></h3>
+        <h3 class="u-mt-0-53896a">Table <code>forms</code></h3>
         <table class="schema-table">
           <thead><tr><th>Colonne</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>

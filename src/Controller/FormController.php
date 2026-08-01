@@ -350,7 +350,7 @@ final class FormController extends BaseController
     <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $date ?>).</p>
     <p>Voulez-vous vraiment en soumettre une nouvelle ?</p>
   </div>
-  <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;">
+  <div class="u-mt-15-d-flex-gap-05-jc-center-70238d">
     <a href="index.php?p=submission_view&id=<?= $existingId ?>" class="btn btn-secondary">Voir la demande existante</a>
     <a href="<?= $h($confirmUrl) ?>" class="btn btn-primary">Soumettre quand même</a>
     <a href="index.php" class="btn btn-secondary">Annuler</a>
@@ -401,7 +401,7 @@ final class FormController extends BaseController
     <div class="warn-box">
       <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $h(date('d/m/Y à H:i', (int) strtotime((string) ($existing_submission['submitted_at'] ?? '')))) ?>).</p>
       <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
-      <p><a href="index.php?p=submission_view&id=<?= urlencode((string) ($existing_submission['id'] ?? '')) ?>" style="color:#b45309;font-weight:bold;">Voir la demande existante →</a></p>
+      <p><a href="index.php?p=submission_view&id=<?= urlencode((string) ($existing_submission['id'] ?? '')) ?>" class="u-c-warning-fw-bold-3570af">Voir la demande existante →</a></p>
     </div>
   <?php endif; ?>
 
@@ -410,7 +410,7 @@ final class FormController extends BaseController
       <strong><span aria-hidden="true">✓</span> Demande enregistrée</strong>
       <?= $h($tJargon('Le workflow de validation a été déclenché automatiquement.')) ?> Un email de confirmation vous a été envoyé.
     </div>
-    <div style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;">
+    <div class="u-mt-15-d-flex-gap-05-jc-center-e4952c">
       <a href="index.php?p=submission_view&id=<?= urlencode($submission_id) ?>" class="btn btn-primary">Voir ma demande</a>
       <a href="index.php?p=my_submissions" class="btn btn-secondary">Mes demandes</a>
       <a href="index.php" class="btn btn-secondary">Accueil</a>
@@ -454,7 +454,7 @@ final class FormController extends BaseController
             <?php endif; ?>
             <?php if ($checkboxes !== []): ?>
               <div class="checkboxes"<?php if ($non_checkboxes !== []) {
-                  echo ' style="margin-top:1rem;"';
+                  echo ' class="u-mt-1-9dae1d"';
               } ?>>
                 <?php foreach ($checkboxes as $checkbox): ?>
                   <?php $cond = empty($checkbox['condition']) ? '' : ' data-condition="' . htmlspecialchars((string) $checkbox['condition'], ENT_QUOTES) . '"'; ?>
@@ -473,23 +473,23 @@ final class FormController extends BaseController
       <?= $ldap_datalist_html ?>
 
       <?php if ($grouped !== []): ?>
-        <div class="card" style="background:#f8f8ff;border-color:#003189;">
-          <label class="checkbox-item" style="font-size:.85rem;line-height:1.5;">
+        <div class="card u-bg-lavender-border-510553">
+          <label class="checkbox-item u-fs-sm-lh-15-52f832">
             <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true"<?= empty($_POST['rgpd_consent']) ? '' : ' checked' ?>>
             J'accepte le traitement de mes données personnelles dans le cadre de cette procédure.
           </label>
           <?php // Message d'erreur si le consentement RGPD a été oublié lors d'une soumission précédente?>
           <?php if (!empty($field_errors['rgpd_consent'])): ?>
-            <p class="error-hint" style="margin-top:.5rem;margin-left:1.7rem;color:#c0392b;font-size:.8rem;" role="alert">
+            <p class="error-hint u-c-danger-fs-xs-mt-05-ml-17-8b8964" role="alert">
               <?= $h($field_errors['rgpd_consent']) ?>
             </p>
           <?php endif; ?>
-          <p style="font-size:.75rem;color:#595959;margin-top:.5rem;margin-left:1.7rem;">
+          <p class="u-c-muted-fs-xxs-mt-05-ml-17-704c93">
             <?php // S4-UI / Action 1 : la mention légale contient « dématérialisation » → on traduit.?>
             <?= $h($tJargon($this->settings->get('legal_mentions', 'Les données collectées sont traitées dans le cadre de la dématérialisation des procédures internes de la DREETS. Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Durée de conservation : 24 mois après clôture.'))) ?>
           </p>
         </div>
-        <div class="form-actions" style="margin-top:1.5rem;justify-content:center;gap:1rem;flex-wrap:wrap;">
+        <div class="form-actions u-mt-15-gap-1-jc-center-fw-wrap-e1f70a">
           <button type="submit" class="btn-submit">✓ Envoyer ma demande</button>
         </div>
       <?php endif; ?>

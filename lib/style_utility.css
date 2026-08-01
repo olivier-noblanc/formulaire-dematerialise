@@ -237,3 +237,57 @@
 
 /* Bouton "Copier" compact (FormJsonValidator — validation feedback) */
 .btn-copy-sm { font-size:.75rem;padding:.2rem .6rem;margin-left:.5rem;cursor:pointer;background:var(--c-primary);color:#fff;border:none;border-radius:4px; }
+
+/* === Classes générées par migrate_style_attrs.py (2026-08-01) ===
+   Migration de tous les style="" inline vers des classes sémantiques.
+   Nommage: u-{properties}-{hash} pour garantir l'unicité. */
+.u-bg-lavender-border-510553 { background:#f8f8ff;border-color:#003189; }
+.u-c-custom-m-custom-mw-custom-4a98e2 { font-family:Arial,sans-serif;max-width:900px;margin:2rem auto;color:#222; }
+.u-c-danger-a69329 { color:#c0392b; }
+.u-c-danger-fs-xs-mt-05-ml-17-8b8964 { margin-top:.5rem;margin-left:1.7rem;color:#c0392b;font-size:.8rem; }
+.u-c-muted-89d000 { color:#595959; }
+.u-c-muted-fs-lg-m-custom-751a63 { font-size:.95rem; color:#595959; margin:.5rem 0 0; }
+.u-c-muted-fs-md-mb-1-7501d4 { margin-bottom:1rem;color:#555;font-size:.9rem; }
+.u-c-muted-fs-md-mb-15-7f1d17 { margin-bottom:1.5rem;color:#555;font-size:.9rem; }
+.u-c-muted-fs-sm-acdf91 { font-size:.85rem;color:#555; }
+.u-c-muted-fs-sm-mb-15-7343a8 { font-size:.85rem;color:#555;margin-bottom:1.5rem; }
+.u-c-muted-fs-sm-mb-custom-da74ac { font-size:.85rem;color:#555;margin-bottom:2rem; }
+.u-c-muted-fs-xs-a0e08a { font-size:.8rem;color:#555; }
+.u-c-muted-fs-xs-mt-15-ta-center-661752 { text-align:center;margin-top:1.5rem;font-size:.8rem;color:#595959; }
+.u-c-muted-fs-xxs-mt-05-ml-17-704c93 { font-size:.75rem;color:#595959;margin-top:.5rem;margin-left:1.7rem; }
+.u-c-muted-mb-1-af23e6 { margin-bottom:1rem;color:#555; }
+.u-c-muted-mt-05-f3feb6 { margin-top:.5rem;color:#555; }
+.u-c-primary-fs-md-fw-bold-mb-075-0a644b { font-weight:bold; color:#003189; margin:0 0 .75rem; font-size:.9rem; }
+.u-c-success-8becb1 { color:#1a6b3c; }
+.u-c-warning-0c118e { color:#b45309; }
+.u-c-warning-fs-sm-ml-1-672292 { color:#b45309;font-size:.85rem;margin-left:1rem; }
+.u-c-warning-fw-bold-3570af { color:#b45309;font-weight:bold; }
+.u-d-flex-gap-05-660ce1 { display:flex;gap:.5rem; }
+.u-d-flex-jc-between-ai-center-p-075-0903bb { display:flex;justify-content:space-between;align-items:center;padding:.75rem;border-bottom:1px solid #eee; }
+.u-d-inline-5677b9 { display:inline; }
+.u-fs-base-mb-075-2af86d { margin:0 0 .75rem; font-size:1rem; }
+.u-fs-sm-lh-15-52f832 { font-size:.85rem;line-height:1.5; }
+.u-fs-sm-ml-12-mt-05-fb2fa3 { margin:.5rem 0 0 1.2rem;font-size:.85rem; }
+.u-fs-sm-p-custom-bg-light-border-5fcfd9 { background:#f4f4f4;padding:1rem;overflow:auto;font-size:.85rem;border-left:4px solid #c0392b;white-space:pre-wrap;word-wrap:break-word; }
+.u-fs-sm-ws-nowrap-79c5ae { white-space:nowrap;font-size:.85rem; }
+.u-fs-sm2-fw-bold-024217 { font-size:.82rem;font-weight:bold; }
+.u-fs-xs-p-xs-1fc5bd { font-size:.8rem;padding:.3rem .6rem; }
+.u-fs-xs2-mt-025-p-075-bg-dark-f70a99 { background:#1e293b;color:#e2e8f0;padding:.75rem;border-radius:6px;font-size:.78rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:250px;overflow-y:auto;margin-top:.25rem; }
+.u-fs-xxs-p-xxs-f4127e { font-size:.75rem;padding:.2rem .5rem; }
+.u-m-0-1386d5 { margin:0; }
+.u-mb-025-61a2f1 { margin-bottom:.25rem; }
+.u-mb-05-8691cb { margin-bottom:.5rem; }
+.u-mb-05-p-custom-bg-warn-border-0ce4bc { margin-bottom:.5rem;background:#fff3cd;border:1px solid #ffc107;color:#856404;padding:.75rem 1rem;border-radius:6px; }
+.u-mb-1-9590f7 { margin-bottom:1rem; }
+.u-mb-15-f7683c { margin-bottom:1.5rem; }
+.u-mt-0-53896a { margin-top:0; }
+.u-mt-075-b33383 { margin-top:.75rem; }
+.u-mt-1-9dae1d { margin-top:1rem; }
+.u-mt-1-d-flex-gap-05-f1d1cb { display:flex;gap:.5rem;margin-top:1rem; }
+.u-mt-15-b06fb3 { margin-top:1.5rem; }
+.u-mt-15-d-flex-gap-05-jc-center-70238d { margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap; }
+.u-mt-15-d-flex-gap-05-jc-center-e4952c { margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center; }
+.u-mt-15-gap-1-jc-center-fw-wrap-e1f70a { margin-top:1.5rem;justify-content:center;gap:1rem;flex-wrap:wrap; }
+.u-ov-auto-df74e8 { overflow-x:auto; }
+.u-p-0-ov-hidden-20dcef { padding:0;overflow:hidden; }
+.u-pe-none-1f5d8c { pointer-events:none; }

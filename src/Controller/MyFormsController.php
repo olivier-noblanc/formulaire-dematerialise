@@ -27,10 +27,10 @@ final class MyFormsController extends BaseController
     <div class="empty-state">
       <div class="empty-icon" aria-hidden="true">📋</div>
       <p>Vous n'êtes propriétaire d'aucun formulaire.</p>
-      <p style="font-size:.85rem;color:#555;">Contactez un administrateur pour devenir propriétaire d'un formulaire.</p>
+      <p class="u-c-muted-fs-sm-acdf91">Contactez un administrateur pour devenir propriétaire d'un formulaire.</p>
     </div>
   <?php else: ?>
-    <p style="margin-bottom:1.5rem;color:#555;font-size:.9rem;">
+    <p class="u-c-muted-fs-md-mb-15-7f1d17">
       Vous êtes propriétaire de <?= count($ownedForms) ?> formulaire(s). Cliquez sur un formulaire pour voir le suivi des demandes.
     </p>
     <div class="form-cards">
