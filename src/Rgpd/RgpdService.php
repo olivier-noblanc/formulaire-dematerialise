@@ -14,9 +14,7 @@ use PDO;
  */
 final readonly class RgpdService
 {
-    public function __construct(private Database $database)
-    {
-    }
+    public function __construct(private Database $database) {}
 
     /**
      * Exporte toutes les données d'un agent au format JSON (droit d'accès RGPD)

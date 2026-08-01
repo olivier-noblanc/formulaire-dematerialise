@@ -17,9 +17,7 @@ use App\Enum\ValidationAction;
  */
 final readonly class WorkflowEngine
 {
-    public function __construct(private Database $database, private SettingsService $settingsService, private MailService $mailService, private FieldService $fieldService, private ConditionEvaluator $conditionEvaluator, private SubmissionRepository $submissionRepository)
-    {
-    }
+    public function __construct(private Database $database, private SettingsService $settingsService, private MailService $mailService, private FieldService $fieldService, private ConditionEvaluator $conditionEvaluator, private SubmissionRepository $submissionRepository) {}
 
     /**
      * @return array{

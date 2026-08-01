@@ -16,9 +16,7 @@ use PDO;
  */
 final readonly class ExportService
 {
-    public function __construct(private Database $database, private AuthService $authService)
-    {
-    }
+    public function __construct(private Database $database, private AuthService $authService) {}
 
     /**
      * Transforme une valeur brute pour l'export CSV.

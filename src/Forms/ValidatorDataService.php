@@ -21,8 +21,7 @@ final readonly class ValidatorDataService
         private SubmissionRepository $submissionRepository,
         private FormRepository $formRepository,
         private FieldService $fieldService,
-    ) {
-    }
+    ) {}
 
     /**
      * Récupère les données saisies par les validateurs pour une soumission.

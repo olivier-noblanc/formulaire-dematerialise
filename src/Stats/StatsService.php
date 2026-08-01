@@ -13,9 +13,7 @@ use PDO;
  */
 final readonly class StatsService
 {
-    public function __construct(private Database $database)
-    {
-    }
+    public function __construct(private Database $database) {}
 
     /**
      * Statistiques par période.

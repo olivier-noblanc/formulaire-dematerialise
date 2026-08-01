@@ -43,6 +43,5 @@ final readonly class AdminFormsContext
         public array $form_fields,
         public string $edit_field_id,
         public array $existing_groups,
-    ) {
-    }
+    ) {}
 }

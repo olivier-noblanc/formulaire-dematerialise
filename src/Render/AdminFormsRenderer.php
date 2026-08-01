@@ -865,7 +865,7 @@ Voici le document administratif à analyser :
                             <?php foreach ($ordre_steps as $idx => $wstep): ?>
                                 <div class="workflow-box <?= $wstep['actif'] ? '' : 'inactive' ?> <?= count($ordre_steps) > 1 && $idx > 0 ? 'wf-gap' : '' ?>">
                                     <div class="wb-label"><?= \App\Core\App::html()->escape($wstep['label']) ?></div>
-                                    <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string)$ordre) ?></div>
+                                    <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string) $ordre) ?></div>
                                     <?php if (!empty($wstep['recipients'])): ?>
                                         <div class="wb-emails"><?= \App\Core\App::html()->escape(implode(', ', array_column($wstep['recipients'], 'email'))) ?></div>
                                     <?php else: ?>
@@ -951,7 +951,7 @@ Voici le document administratif à analyser :
                                             }
                                         }
 
-                                        $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string)$form_id) : [];
+                                        $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string) $form_id) : [];
                                         ?>
 
                                         <?php if ($can_have_condition): ?>
@@ -1012,7 +1012,7 @@ Voici le document administratif à analyser :
                                 <div class="step-info">
                                     <span class="step-label"><?= \App\Core\App::html()->escape($step['label']) ?></span>
                                     <div class="step-meta">
-                                        Ordre <?= \App\Core\App::html()->escape((string)$step['ordre']) ?>
+                                        Ordre <?= \App\Core\App::html()->escape((string) $step['ordre']) ?>
                                         <?php if ($step['actif']): ?>
                                             <span class="badge badge-ok">Actif</span>
                                         <?php else: ?>
@@ -1217,7 +1217,7 @@ Voici le document administratif à analyser :
                                 </tr>
                             <?php else: ?>
                                 <tr id="field-<?= \App\Core\App::html()->escape($ff['id']) ?>">
-                                    <td><?= \App\Core\App::html()->escape((string)$ff['ordre']) ?></td>
+                                    <td><?= \App\Core\App::html()->escape((string) $ff['ordre']) ?></td>
                                     <td><span class="caption-6"><?= \App\Core\App::html()->escape($ff['card_group']) ?></span></td>
                                     <td>
                                         <?= \App\Core\App::html()->escape($ff['label']) ?>

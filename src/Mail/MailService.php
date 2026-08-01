@@ -14,9 +14,7 @@ use PHPMailer\PHPMailer\PHPMailer;
  */
 final readonly class MailService implements MailInterface
 {
-    public function __construct(private MailRepository $mailRepository, private SettingsService $settingsService)
-    {
-    }
+    public function __construct(private MailRepository $mailRepository, private SettingsService $settingsService) {}
 
     public function send(string $to, string $subject, string $body): bool
     {

@@ -22,6 +22,5 @@ final readonly class AdminSettingsContext
         public string $error,
         public string $test,
         public ?array $verify_result,
-    ) {
-    }
+    ) {}
 }

@@ -69,6 +69,5 @@ final readonly class SubmissionViewContext
         public array $attachments,
         public array $delegations,
         public string $admin_comment,
-    ) {
-    }
+    ) {}
 }

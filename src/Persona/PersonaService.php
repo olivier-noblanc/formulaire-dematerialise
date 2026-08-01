@@ -27,9 +27,7 @@ final readonly class PersonaService
 {
     public const int TOKEN_TTL = 28800;
 
-    public function __construct(private Database $database)
-    {
-    }
+    public function __construct(private Database $database) {}
 
     /**
      * Crée un token persona pour visualiser en tant que target_email.
