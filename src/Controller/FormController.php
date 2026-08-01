@@ -246,7 +246,7 @@ final class FormController extends BaseController
                         'mails_count'   => count($GLOBALS['_test_mails']),
                     ]);
                 }
-            /** @phpstan-ignore-next-line elseif.alwaysFalse */
+                /** @phpstan-ignore-next-line elseif.alwaysFalse */
             } elseif (TEST_MODE) {
                 // Erreurs de validation en mode test
                 test_json_response(['error' => 'Erreurs de validation', 'field_errors' => $field_errors]);

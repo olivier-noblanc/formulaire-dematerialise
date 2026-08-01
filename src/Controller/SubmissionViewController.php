@@ -23,9 +23,12 @@ final class SubmissionViewController extends BaseController
         $sub = $this->submissionRepo->findByIdWithForm($subId);
 
         if (!$sub) {
-            new \App\Render\ErrorRenderer()->errorPage(404, 'Soumission introuvable',
+            new \App\Render\ErrorRenderer()->errorPage(
+                404,
+                'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
-                'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.');
+                'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.'
+            );
         }
 
         $data = json_decode($sub['data'], true) ?? [];
@@ -198,7 +201,7 @@ final class SubmissionViewController extends BaseController
       <a href="index.php?p=download&mode=export_submission&submission_id=<?= urlencode($subId) ?>" class="btn btn-secondary"><span aria-hidden="true">📥</span> Exporter JSON</a>
   </div>
 <?php
-        $content = (string)ob_get_clean();
+        $content = (string) ob_get_clean();
         echo $this->renderPage('Détail soumission', 'submission_view', $pageCss, $content);
     }
 }
