@@ -134,7 +134,6 @@ $_app->set(\App\Auth\AuthService::class, $_auth_svc);
 $_app->set(\App\Repository\SettingsRepository::class, new \App\Repository\SettingsRepository($_db_service));
 $_settings_repo = $_app->get(\App\Repository\SettingsRepository::class);
 $_app->set(\App\Settings\SettingsService::class, new \App\Settings\SettingsService($_settings_repo));
-$_app->set(\App\Forms\FieldService::class, new \App\Forms\FieldService($_db_service));
 $_app->set(\App\Cache\CacheService::class, new \App\Cache\CacheService());
 $_app->set(\App\Repository\AuditRepository::class, new \App\Repository\AuditRepository($_db_service));
 $_audit_repo = $_app->get(\App\Repository\AuditRepository::class);
@@ -148,6 +147,9 @@ $_app->set(\App\Repository\AlertRepository::class, new \App\Repository\AlertRepo
 $_app->set(\App\Repository\DelegationRepository::class, new \App\Repository\DelegationRepository($_db_service));
 $_app->set(\App\Repository\PersonaTokenRepository::class, new \App\Repository\PersonaTokenRepository($_db_service));
 $_app->set(\App\Repository\LazyCronRepository::class, new \App\Repository\LazyCronRepository($_db_service));
+// FieldService DOIT être instancié APRÈS FormRepository + SubmissionRepository
+// (son constructeur les résout via App::getInstance()->get() si non passés)
+$_app->set(\App\Forms\FieldService::class, new \App\Forms\FieldService($_db_service));
 $_app->set(\App\Render\HtmlService::class, new \App\Render\HtmlService());
 $_app->set(\App\Workflow\ConditionEvaluator::class, new \App\Workflow\ConditionEvaluator());
 $_settings_svc = $_app->get(\App\Settings\SettingsService::class);
