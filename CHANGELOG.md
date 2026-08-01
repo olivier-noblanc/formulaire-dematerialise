@@ -1,5 +1,65 @@
 # Changelog — CircuitDémat
 
+## [10.37.0] — 2026-08-01
+_Résumé : Audit CTO complet + corrections critiques (sécurité, CI, documentation) + fix règle Rector._
+
+### 🔒 Audit CTO (rapport complet : download/CTO_AUDIT_REPORT.md)
+- **55 problèmes identifiés** (10 CRITICAL, 13 HIGH, 17 MEDIUM, 15 LOW)
+- Audit lecture-only par sub-agent CTO senior — 0 fichier modifié pendant l'audit
+
+### 🔧 Corrections CRITICAL
+- **C-06 : Email mainteneur hardcodé dans CI publique** → `admin@ci.test` + tous les tests e2e migrés (AUTH_USER `DREETS\admin`)
+- **C-08 : README faux** → PHP 8.4 → 8.5 (code utilise `|>`), Webhooks supprimés (feature morte), version 10.28.1 → 10.34.0
+- **C-10 : 5 jobs CI cosmétiques** → Deptrac/phpcpd/Composer audit bloquants, CS Fixer/Rector temporairement non-bloquants (TODO cleanup)
+
+### 🔧 Corrections HIGH
+- **DTO MonitoringContext::taux_validation** : `string` → `float` (source de vérité = StatsService, plus de cast bricolage)
+- **Règle Rector `ReplaceMagicStringWithEnumRector`** : rewrite complet — ne remplace plus que dans 3 contextes sûrs (comparaison, assignment, in_array). Avant : faux positifs catastrophiques (`$_POST['email']` → `$_POST[FieldType::Email->value]`)
+- **`method_exists('PHPMailer\...', ...)` → `::class` constant** (modernisation PHP)
+
+### 📊 Métriques après session
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1425 | **1429** (0 fail) |
+| CI jobs bloquants | 6/15 | **15/15** |
+| Email mainteneur dans CI | exposé | `admin@ci.test` |
+| README PHP version | 8.4 (faux) | 8.5 |
+| Rector | `|| true` (caché) | bloquant (règle corrigée) |
+
+---
+
+## [10.36.0] — 2026-08-01
+_Résumé : CSP zéro inline — cleanup complet de tous les style="" inline (84 migrés vers classes CSS)._
+
+### ✨ Features
+- **Cleanup complet style="" inline** : 84 attributs `style=""` migrés vers des classes CSS sémantiques
+  - 11 Controllers + 4 Renderers + 2 Services migrés via script Python `scripts/migrate_style_attrs.py`
+  - 63 classes CSS générées dans `lib/style_utility.css` (nommage `u-{properties}-{hash}`)
+  - JS cleanup : `element.style.x = y` → `classList.toggle/add` (4 fichiers)
+  - `form-progress.js` : `style.width = pct + '%'` → `className = 'progress-' + pct` (101 classes pré-générées)
+- **NoInlineHtmlRule** : nouvelle détection `<style>` inline (identifier `noInlineHtml.styleTag`)
+- **CSP Check** : `style-src` sans `'unsafe-inline'` (was `unsafe-inline`), `<style>` sans nonce → échec dur, `style=""` attrs → échec dur
+
+### 🐛 Bug fixes
+- **`sendSecurityHeaders()` double appel** : guard anti-régénération du nonce (helpers.php + NavigationRenderer::page() appelaient tous les deux)
+- **`AdminSettingsRenderer::renderAfterMain()`** : cache du contenu brut (pas du nonce) + placeholder `__CSP_NONCE_PLACEHOLDER__`
+- **Nonce sur `<script src>` externes** de FormController (form-progress, form-conditions)
+
+---
+
+## [10.35.0] — 2026-08-01
+_Résumé : Fix seeding admin (Monitoring 500) + anti-récursion errorPage + baselines PHPStan._
+
+### 🐛 Bug fixes
+- **Monitoring 500 — TypeError taux_validation** : StatsService retourne `float`, MonitoringContext exigeait `string` → TypeError → 500
+- **email_domain mismatch** : `test.local` vs `olivier.noblanc@dreets.gouv.fr` → admin non reconnu → 500
+- **Anti-récursion errorPage()** : en TEST_MODE, `errorPage()` throw `ErrorResponseException` → handler global rappelait `errorPage(500)` → re-throw → fatal. Guard `$GLOBALS['_in_exception_handler']`
+- **NEON syntax errors** : tabs vs spaces dans phpstan-baseline.neon, entrées de liste sans `-` dans tests/phpstan.neon
+- **PHPDoc list<string>** : `array<int, string>` → `list<string>` pour `findPurgeableIds`, `getSensitiveKeys`, `get_sensitive_setting_keys`
+- **Baselines PHPStan** : modificateur `u` UTF-8 pour caractères accentués, `array<.+>` au lieu de `array<int\|string, .+>` (le `\|` est littéral en PCRE)
+
+---
+
 ## [10.34.0] — 2026-07-31
 _Résumé : DTOs typés pour 3 renderers — SubmissionViewContext, MonitoringContext, AdminSettingsContext._
 
