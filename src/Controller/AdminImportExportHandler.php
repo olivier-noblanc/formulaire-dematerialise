@@ -116,7 +116,7 @@ final class AdminImportExportHandler
             $validation_html = '<div class="msg-success" role="status" aria-live="polite">✓ JSON valide (l\'import fonctionnera), mais avec des avertissements :</div>';
             $validation_html .= \App\Forms\FormJsonValidator::formatResults($result);
         } else {
-            $validation_html = '<div class="msg-error" role="alert" aria-live="assertive" style="margin-bottom:.25rem;">✗ JSON invalide — l\'import échouerait. Corrigez les erreurs ci-dessous :</div>';
+            $validation_html = '<div class="msg-error" role="alert" aria-live="assertive" class="u-mb-025-61a2f1">✗ JSON invalide — l\'import échouerait. Corrigez les erreurs ci-dessous :</div>';
             $validation_html .= \App\Forms\FormJsonValidator::formatResults($result);
         }
         return ['validation_html' => $validation_html, 'preserved_json' => $json_input];
