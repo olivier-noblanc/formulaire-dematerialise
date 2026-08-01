@@ -49,6 +49,7 @@ parameters:
         - '#^Missing parameter typehint for arrow function parameter#'
         - '#^Missing native return typehint#'
         - '#^Overwriting variable .+ while changing its type#'
+        - '#^.+ always return list, but is marked as#'
 
 services:
     -

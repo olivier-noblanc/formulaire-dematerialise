@@ -104,7 +104,7 @@ function test_json_response(array $data): void
 
 // ── SETTINGS (lib/settings.php → App\Settings\SettingsService) ──
 /**
- * @return array<int, string>
+ * @return list<string>
  */
 function get_sensitive_setting_keys(): array
 {
