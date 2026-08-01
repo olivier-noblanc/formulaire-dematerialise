@@ -25,6 +25,10 @@ env:
         'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'ci.test',
         'base_url' => 'http://localhost',
     ]);
+  # Clé de chiffrement pour les tests CI (secrets SMTP/LDAP chiffrés en DB).
+  # En prod, cette clé doit être définie dans l'environnement (secret GitHub).
+  # Fail-fast : SettingsService::encrypt() throw si absente (audit CTO C-01).
+  APP_ENCRYPTION_KEY: ci-test-encryption-key-32-bytes-minimum-required
 
 jobs:
   # ── Lint ──────────────────────────────────────────────────────

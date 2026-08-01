@@ -1,6 +1,7 @@
 includes:
     - phpstan-baseline.neon
     - phpstan-rules.neon
+    - disallowed-calls.neon
 parameters:
     level: 8
     paths:

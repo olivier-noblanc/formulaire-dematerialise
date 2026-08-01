@@ -9,7 +9,7 @@
 | `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **371** (level 8) |
+| PHPStan erreurs baseline | **220** (level 8) — toutes LOW (strict-rules style) |
 | Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
 | Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
@@ -133,28 +133,52 @@
 
 ## 🎯 Ce qui reste
 
-### Baseline PHPStan (371 erreurs — toutes LOW)
+### Audit CTO (rapport : download/CTO_AUDIT_REPORT.md)
+
+55 problèmes identifiés (10 CRITICAL, 13 HIGH, 17 MEDIUM, 15 LOW).
+Corrigés : C-06 (email CI), C-08 (README), C-10 (jobs CI), DTO taux_validation, Rector.
+Décision projet non négociable : C-04 (display_errors=1) et C-05 (SMTPDebug=3) — voulu.
+
+**Reste à traiter (5 CRITICAL) :**
+
+| # | Problème | Fichiers | Priorité |
+|---|----------|---------|----------|
+| C-01 | `SettingsService::encrypt()` silent plaintext si APP_ENCRYPTION_KEY absente | src/Settings/SettingsService.php:63-87 | HIGH |
+| C-02 | AES-256-CBC sans HMAC/GCM (padding-oracle théorique) | src/Settings/SettingsService.php:81 | MEDIUM |
+| C-03 | `AuditLogService::log()` avale exceptions (violation règle #9 AGENTS.md) | src/Audit/AuditLogService.php:31-35 | HIGH |
+| C-07 | `disallowed-calls.neon` non chargé par phpstan.neon (Repository pattern non enforced) | phpstan.neon, disallowed-calls.neon | HIGH |
+| C-09 | `schema_initial.php` avale erreurs seeding (DB sans admin = app inutilisable) | classes/migrations/schema_initial.php:270-285 | HIGH |
+
+**Reste à traiter (HIGH/MEDIUM/LOW) :**
+- H-01 : 13 fichiers > 350 lignes (DocumentationService 1753, AdminFormsRenderer 1416, etc.)
+- H-08 : 45 markTestSkipped dans 9 fichiers de tests
+- CS Fixer : 2 fichiers avec heredoc à réindenter (AdminFormsRenderer, NavigationRenderer)
+- 17 MEDIUM + 15 LOW (cf. rapport complet)
+
+### Baseline PHPStan (220 erreurs — toutes LOW)
 
 Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs) ou des faux positifs shipmonk. Aucune n'est bloquante.
 
-| Catégorie | Count | Priorité | Détail |
-|-----------|-------|----------|--------|
-| `empty.notAllowed` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
-| `noMagicString` | **0** | ~~HIGH~~ | **Migration terminée** — toutes les strings métier sont en enums |
-| `ternary.shortNotAllowed` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
-| `booleanNot.exprNotBoolean` | 38 | **LOW** | Expressions non-booléennes dans des `!` → caster en bool |
-| `if.condNotBoolean` | 22 | **LOW** | Conditions non-booléennes dans les `if` |
-| `function.strict` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
-| `equal.notAllowed` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
-| `cast.useless` | 0 | ~~LOW~~ | **Corrigé** (v10.33.0) |
-| `shipmonk.deadMethod` | 5 | **LOW** | Faux positifs restants (InstallRenderer, SubmissionViewRenderer, AuditRepository, DynamicCssService) — méthodes utilisées via paths non tracés |
-| `offsetAccess.notFound` | 11 | **LOW** | Accès à des clés potentiellement inexistantes sur tableaux |
-| `booleanAnd/rightNotBoolean` | 8 | **LOW** | Opérandes non-booléennes dans `&&` |
-| `booleanAnd/leftNotBoolean` | 6 | **LOW** | Idem (côté gauche) |
-| `arrayFilter.strict` | 3 | **LOW** | `array_filter()` sans callback |
-| `deadProperty.neverRead` | 3 | **LOW** | Propriétés jamais lues |
-| `elseIf.condNotBoolean` | 2 | **LOW** | Conditions non-booléennes dans `elseif` |
-| Autres | ~273 | **LOW** | Divers (plus.leftNonNumeric, foreach.valueOverwrite, argument.type, ternary.condNotBoolean, etc.) |
+| Catégorie | Count | Détail |
+|-----------|-------|--------|
+| `booleanNot.exprNotBoolean` | 39 | Expressions non-booléennes dans des `!` |
+| `empty.notAllowed` | 36 | `empty()` interdit par strict-rules |
+| `if.condNotBoolean` | 22 | Conditions non-booléennes dans les `if` |
+| `ternary.condNotBoolean` | 15 | Ternaires avec condition non-booléenne |
+| `identical.alwaysFalse` | 13 | `===` toujours false (dead code) |
+| `offsetAccess.notFound` | 11 | Accès à clés inexistantes |
+| `booleanAnd.rightNotBoolean` | 8 | `&&` opérande droite non-booléenne |
+| `argument.type` | 7 | Type d'argument ne matche pas |
+| `notIdentical.alwaysTrue` | 7 | `!==` toujours true |
+| `booleanAnd.leftNotBoolean` | 6 | `&&` opérande gauche non-booléenne |
+| `cast.useless` | 4 | Cast inutile |
+| `shipmonk.deadProperty.neverRead` | 3 | Propriétés jamais lues |
+| `shipmonk.deadMethod` | 3 | Méthodes mortes (faux positifs) |
+| `nullCoalesce.variable` | 3 | `??` sur variable toujours définie |
+| `arrayFilter.strict` | 3 | `array_filter()` sans callback |
+| `equal.notAllowed` | 2 | `==` interdit par strict-rules |
+| `elseif.condNotBoolean` | 2 | `elseif` condition non-booléenne |
+| Autres | ~34 | Divers (plus.leftNonNumeric, etc.) |
 
 ### DTOs Renderer — migration array $ctx → DTOs typés
 
@@ -178,17 +202,15 @@ Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 
 ### CSP — zéro inline (décision 2026-07-30)
 
-Le README annonçait "JavaScript : Aucun (CSP `script-src 'none'`)" — plus vrai
-depuis l'ajout du menu persona (dropdown JS). Décision : viser un vrai zéro
-`unsafe-inline`, pas un filet permanent — cohérent avec les principes déjà
-affichés ailleurs dans le README ("Zéro fichier .css : le CSS passe
-exclusivement par `style.php`").
+**Fait** — cleanup complet le 2026-08-01.
 
 | Directive | État | Détail |
 |---|---|---|
-| `script-src` | **Fait** | `unsafe-inline` retiré. Seul `<script>` inline du projet (`NavigationRenderer::footer()`, menu persona) désormais noncé par requête (`SecurityService::getScriptNonce()`). README corrigé (n'annonce plus "Aucun JavaScript"). |
-| `style-src` | **Reste à faire** | `unsafe-inline` toujours nécessaire — usage large de `style=""` dynamiques (pourcentages, couleurs calculées) dans les renderers. Un nonce ne fonctionne PAS sur un attribut `style=""` (seulement sur les éléments `<script>`/`<style>`, nuance CSP) — la migration demande de déplacer chaque valeur dynamique vers un `<style nonce="...">#id{...}</style>` ciblé, page par page. Volume mesuré via `tests/e2e/csp_check.spec.js` le 2026-07-30 : admin_alerts (68), admin_settings (53), monitoring (42), admin_forms (21), docs (16), dashboard/form onboarding (8 chacun), admin_access/stats (5 chacun), index (3), changelog (1). |
-| `style-src-attr` résiduel après migration | À décider | Une fois les style="" dynamiques migrés vers `<style nonce>`, il restera peut-être des style="" statiques (mise en page fixe) — à évaluer si ça vaut la peine de les déplacer en classes CSS `style.php` plutôt que de garder `unsafe-inline` pour si peu. |
+| `script-src` | **Fait** | `unsafe-inline` retiré. Scripts noncés via `SecurityService::getScriptNonce()`. |
+| `style-src` | **Fait** | `unsafe-inline` retiré (2026-08-01). 84 style="" migrés vers classes CSS. `<style>` noncés. |
+| `style-src-attr` | **Fait** | Zéro style="" dans les pages web (cleanup complet). |
+
+Exclusions légitimes : templates email (MailService, TokenService, etc.) — les emails ne passent pas par le header CSP.
 
 
 

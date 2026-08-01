@@ -61,24 +61,31 @@ final class SettingsService implements SettingsInterface
     public function encrypt(string $value): string
     {
         $key = getenv('APP_ENCRYPTION_KEY') !== false ? getenv('APP_ENCRYPTION_KEY') : '';
+        // Fail-fast : refuser de stocker un secret en clair si la clé est absente
+        // ou trop courte. Avant, la valeur était retournée en clair silencieusement
+        // (audit CTO C-01 2026-08-01). Maintenant on throw pour forcer la config.
         if ($key === '') {
-            error_log('[SECURITY] APP_ENCRYPTION_KEY non définie — valeur stockée en clair');
-            return $value;
+            throw new \RuntimeException(
+                'APP_ENCRYPTION_KEY non définie — refus de stocker une valeur sensible en clair. '
+                . 'Définissez APP_ENCRYPTION_KEY (32+ octets) dans l\'environnement.'
+            );
         }
         if (strlen($key) < 32) {
-            error_log('[SECURITY] APP_ENCRYPTION_KEY trop courte (< 32 octets) — valeur stockée en clair');
-            return $value;
+            throw new \RuntimeException(
+                'APP_ENCRYPTION_KEY trop courte (' . strlen($key) . ' octets, minimum 32 requis) — '
+                . 'refus de stocker une valeur sensible en clair.'
+            );
         }
 
         $ivLength = openssl_cipher_iv_length('aes-256-cbc');
         if ($ivLength === false || $ivLength < 1) {
-            return $value;
+            throw new \RuntimeException('openssl_cipher_iv_length a échoué — extension OpenSSL défaillante');
         }
 
         $iv = random_bytes($ivLength);
         $encrypted = openssl_encrypt($value, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
         if ($encrypted === false) {
-            return $value;
+            throw new \RuntimeException('openssl_encrypt a échoué — vérifiez la clé et l\'IV');
         }
 
         return 'enc:' . base64_encode($iv . $encrypted);
