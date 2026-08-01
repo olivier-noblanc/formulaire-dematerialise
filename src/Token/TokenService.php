@@ -7,7 +7,6 @@ namespace App\Token;
 use App\Audit\AuditLogService;
 use App\Auth\AuthService;
 use App\Core\App;
-use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Mail\MailService;
@@ -32,7 +31,6 @@ final readonly class TokenService
     public DelegationRepository $delegationRepository;
 
     public function __construct(
-        private Database $database,
         private SettingsService $settingsService,
         private AuthService $authService,
         private AuditLogService $auditLogService,
@@ -265,7 +263,7 @@ final readonly class TokenService
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
 
-        $toEmail = $toEmail |> trim(...) |> strtolower(...);
+        $toEmail = strtolower(trim($toEmail));
         if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
             return ['success' => false, 'message' => 'Adresse email invalide.'];
         }

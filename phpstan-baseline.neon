@@ -1223,21 +1223,3 @@ parameters:
                         message: '#^Casting to string something that.s already string\.#'
                 -
                         message: '#^Offset .+ on array\{.+\} in isset\(\) always exists#'
-                -
-                        message: '#^Calling PDO::query\(\) is forbidden#'
-                -
-                        message: '#^Magic string .+ detected#'
-                -
-                        message: '#^Method .+ should return list<.+> but returns array<.+>#'
-                -
-                        message: '#^Method .+ should return .+ but returns .+#'
-                -
-                        message: '#^Parameter .+ expects .+, .+ given#'
-                -
-                        message: '#^Property App\\.+::\$database is never read#'
-                -
-                        message: '#^Property App\\.+::\$database is never read, only written#'
-                -
-                        message: '#^Unused App\\Repository\\.+#'
-                -
-                        message: '#^Variable \$.+ in PHPDoc tag .+ does not match assigned variable#'

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Workflow;
 
-use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Forms\FieldService;
@@ -17,10 +16,8 @@ use App\Settings\SettingsService;
 /**
  * Moteur de workflow — tokens, steps, validation.
  *
- * Le paramètre $database est conservé pour la compatibilité ascendante
- * (tests existants, bootstrap) mais n'est plus utilisé directement — tout
- * accès DB passe par les repositories injectés ($tokenRepository,
- * $formRepository, $submissionRepository).
+ * Tout accès DB passe par les repositories injectés ($tokenRepository,
+ * $formRepository, $submissionRepository) ou résolus via App.
  */
 final readonly class WorkflowEngine
 {
@@ -28,7 +25,6 @@ final readonly class WorkflowEngine
     public FormRepository $formRepository;
 
     public function __construct(
-        private Database $database,
         private SettingsService $settingsService,
         private MailService $mailService,
         private FieldService $fieldService,
@@ -154,7 +150,7 @@ final readonly class WorkflowEngine
      *   form_id: string,
      *   data: string,
      *   submitted_by: string,
-     *   submitted_at: string,
+     *   submitted_at: string|null,
      *   closed_at: string|null,
      *   status: string,
      *   admin_comment: string,
@@ -341,7 +337,7 @@ final readonly class WorkflowEngine
      *
      * @param list<array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $groupe
      * @param array<string, list<string|null>> $tokensByStep map step_id => [done_at values] (sera mutée in-place pour les nouveaux tokens)
-     * @param array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string} $submission
+     * @param array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string} $submission
      */
     private function createTokensForGroup(
         array $groupe,

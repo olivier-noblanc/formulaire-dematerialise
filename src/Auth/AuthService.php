@@ -29,7 +29,7 @@ final class AuthService implements AuthInterface
     public SettingsRepository $settingsRepository;
 
     public function __construct(
-        private readonly Database $database,
+        Database $database,
         ?AdminRepository $adminRepository = null,
         ?FormRepository $formRepository = null,
         ?SettingsRepository $settingsRepository = null
@@ -75,7 +75,7 @@ final class AuthService implements AuthInterface
             if ($token !== '' && function_exists('persona_lookup')) {
                 $target = persona_lookup($token);
                 if ($target !== '') {
-                    return $target |> trim(...) |> strtolower(...);
+                    return strtolower(trim($target));
                 }
             }
         }
@@ -92,10 +92,10 @@ final class AuthService implements AuthInterface
             $testUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
             if ($testUser !== '') {
                 if (str_contains($testUser, '@')) {
-                    return $testUser |> trim(...) |> strtolower(...);
+                    return strtolower(trim($testUser));
                 }
                 $domain = $this->getEmailDomain();
-                return ($testUser |> trim(...) |> strtolower(...)) . '@' . $domain;
+                return (strtolower(trim($testUser))) . '@' . $domain;
             }
         }
 

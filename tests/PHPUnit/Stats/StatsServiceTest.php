@@ -15,7 +15,7 @@ final class StatsServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->db = \App\Core\App::getInstance()->get(Database::class);
-        $this->stats = new StatsService($this->db);
+        $this->stats = new StatsService();
     }
 
     protected function tearDown(): void

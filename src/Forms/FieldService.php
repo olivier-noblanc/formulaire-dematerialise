@@ -6,7 +6,6 @@ namespace App\Forms;
 
 use App\Contract\FieldInterface;
 use App\Core\App;
-use App\Core\Database;
 use App\Enum\FieldType;
 use App\Enum\FilledBy;
 use App\Repository\FormRepository;
@@ -15,9 +14,8 @@ use App\Repository\SubmissionRepository;
 /**
  * Service de gestion des champs de formulaire (demandeur + validateur).
  *
- * Le paramètre $database est conservé pour la compatibilité ascendante
- * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
- * passe par les repositories injectés ($formRepository, $submissionRepository).
+ * Tout accès DB passe par les repositories injectés ($formRepository,
+ * $submissionRepository) ou résolus via App::getInstance().
  */
 final readonly class FieldService implements FieldInterface
 {
@@ -25,7 +23,6 @@ final readonly class FieldService implements FieldInterface
     public SubmissionRepository $submissionRepository;
 
     public function __construct(
-        private Database $database,
         ?FormRepository $formRepository = null,
         ?SubmissionRepository $submissionRepository = null
     ) {

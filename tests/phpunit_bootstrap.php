@@ -80,12 +80,11 @@ $app->set(TokenRepository::class, new TokenRepository($db));
     $app->set(AuditLogService::class, new AuditLogService($app->get(AuditRepository::class)));
     $app->set(MailRepository::class, new MailRepository($db));
     $app->set(MailService::class, new MailService($app->get(MailRepository::class), $app->get(SettingsService::class)));
-    $app->set(FieldService::class, new FieldService($db));
+    $app->set(FieldService::class, new FieldService());
     $app->set(ConditionEvaluator::class, new ConditionEvaluator());
     $app->set(PersonaService::class, new PersonaService($db));
-    $app->set(StatsService::class, new StatsService($db));
+    $app->set(StatsService::class, new StatsService());
 $app->set(WorkflowEngine::class, new WorkflowEngine(
-    $db,
     $app->get(SettingsService::class),
     $app->get(MailService::class),
     $app->get(FieldService::class),
@@ -95,7 +94,6 @@ $app->set(WorkflowEngine::class, new WorkflowEngine(
     $app->get(FormRepository::class)
 ));
 $app->set(TokenService::class, new TokenService(
-    $db,
     $app->get(SettingsService::class),
     $app->get(AuthService::class),
     $app->get(AuditLogService::class),
@@ -108,10 +106,10 @@ $app->set(ValidatorDataService::class, new ValidatorDataService($app->get(Submis
 $app->set(AttachmentService::class, new AttachmentService($app->get(AttachmentRepository::class)));
 $app->set(CronService::class, new CronService($db, $app->get(LazyCronRepository::class)));
 $app->set(ValidationService::class, new ValidationService());
-$app->set(ExportService::class, new ExportService($db, $app->get(AuthService::class), $app->get(SubmissionRepository::class)));
+$app->set(ExportService::class, new ExportService($app->get(AuthService::class), $app->get(SubmissionRepository::class)));
 $app->set(EmailVerificationService::class, new EmailVerificationService($app->get(CacheService::class)));
 $app->set(DocumentationService::class, new DocumentationService());
-$app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($db, $app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(AttachmentRepository::class), $app->get(AlertRepository::class), $app->get(AdminRepository::class), $app->get(DelegationRepository::class)));
+$app->set(\App\Rgpd\RgpdService::class, new \App\Rgpd\RgpdService($app->get(SubmissionRepository::class), $app->get(TokenRepository::class), $app->get(AttachmentRepository::class), $app->get(AlertRepository::class), $app->get(AdminRepository::class), $app->get(DelegationRepository::class)));
 
 // Seed testeur@e2e.test in admins (s'assure qu'il existe même si la
 // migration v28 a été exécutée avant l'ajout de ce seed dans son code).

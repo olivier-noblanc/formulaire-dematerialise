@@ -20,7 +20,7 @@ final class ValidatorDataServiceTest extends TestCase
         $this->db = \App\Core\App::getInstance()->get(\App\Core\Database::class);
         $formRepo = new FormRepository($this->db);
         $submissionRepo = new SubmissionRepository($this->db);
-        $fields = new FieldService($this->db);
+        $fields = new FieldService();
         $this->service = new ValidatorDataService($submissionRepo, $formRepo, $fields);
     }
 

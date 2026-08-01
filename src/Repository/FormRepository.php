@@ -554,13 +554,13 @@ final class FormRepository extends BaseRepository
      */
     public function countBySlug(string $slug, ?string $excludeFormId = null): int
     {
-        /** @var array{cnt: int|string|null}|null $result */
         $sql = 'SELECT COUNT(*) as cnt FROM forms WHERE slug = ?';
         $params = [$slug];
         if ($excludeFormId !== null) {
             $sql .= ' AND id != ?';
             $params[] = $excludeFormId;
         }
+        /** @var array{cnt: int|string|null}|null $result */
         $result = $this->fetchOne($sql, $params);
         return (int) ($result['cnt'] ?? 0);
     }
@@ -583,16 +583,6 @@ final class FormRepository extends BaseRepository
         /** @var list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
         $result = $this->fetchAll($sql, $params);
         return $result;
-    }
-
-    /**
-     * Récupère le label d'une step en vérifiant qu'elle appartient bien au form_id.
-     * Variante défensive de getStepLabel() — utilisée par FieldService::getValidatorFields().
-     */
-    public function getStepLabelByForm(string $stepId, string $formId): ?string
-    {
-        $result = $this->fetchOne('SELECT label FROM steps WHERE id = ? AND form_id = ?', [$stepId, $formId]);
-        return $result !== null ? (string) $result['label'] : null;
     }
 
     /**

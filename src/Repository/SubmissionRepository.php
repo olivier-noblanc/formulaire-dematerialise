@@ -655,28 +655,7 @@ final class SubmissionRepository extends BaseRepository
             "SELECT id FROM submissions WHERE status != '" . SubmissionStatus::EnCours->value . "' AND closed_at < ?",
             [$cutoff]
         );
-        return array_map(static fn(array $r): string => (string) $r['id'], $rows);
-    }
-
-    /**
-     * Supprime cascade pour RgpdService::autoPurge() — une soumission à la fois.
-     * Inclut attachments, delegations, tokens, alert_log, submissions.
-     */
-    public function deleteCascadeForRgpd(string $submissionId): void
-    {
-        $pdo = $this->pdo();
-        $pdo->beginTransaction();
-        try {
-            $this->execute('DELETE FROM attachments WHERE submission_id = ?', [$submissionId]);
-            $this->execute('DELETE FROM delegations WHERE token_id IN (SELECT id FROM tokens WHERE submission_id = ?)', [$submissionId]);
-            $this->execute('DELETE FROM tokens WHERE submission_id = ?', [$submissionId]);
-            $this->execute('DELETE FROM alert_log WHERE submission_id = ?', [$submissionId]);
-            $this->execute('DELETE FROM submissions WHERE id = ?', [$submissionId]);
-            $pdo->commit();
-        } catch (\Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
+        return array_values(array_map(static fn(array $r): string => (string) $r['id'], $rows));
     }
 
     /**
@@ -732,7 +711,7 @@ final class SubmissionRepository extends BaseRepository
             WHERE $whereSql AND json_valid(s.data) AND j.key != 'validations'",
             $params
         );
-        return array_map(static fn(array $r): string => (string) $r['key'], $rows);
+        return array_values(array_map(static fn(array $r): string => (string) $r['key'], $rows));
     }
 
     /**
@@ -797,7 +776,7 @@ final class SubmissionRepository extends BaseRepository
                 SUM(CASE WHEN submitted_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) as this_month
             FROM submissions"
         );
-        return $result ?? ['total' => 0, 'en_cours' => 0, 'valide' => 0, 'refuse' => 0, 'today' => 0, 'this_week' => 0, 'this_month' => 0];
+        return $result ?? ['total' => 0, SubmissionStatus::EnCours->value => 0, SubmissionStatus::Valide->value => 0, SubmissionStatus::Refuse->value => 0, 'today' => 0, 'this_week' => 0, 'this_month' => 0];
     }
 
     /**

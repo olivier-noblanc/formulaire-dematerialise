@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Rgpd;
 
 use App\Core\App;
-use App\Core\Database;
 use App\Enum\SubmissionStatus;
 use App\Repository\AdminRepository;
 use App\Repository\AlertRepository;
@@ -17,9 +16,7 @@ use App\Repository\TokenRepository;
 /**
  * Service RGPD — export, suppression, purge automatique.
  *
- * Le paramètre $database est conservé pour la compatibilité ascendante
- * (bootstrap, tests) mais n'est plus utilisé directement — tout accès DB
- * passe par les repositories injectés.
+ * Tout accès DB passe par les repositories injectés ou résolus via App.
  */
 final readonly class RgpdService
 {
@@ -31,7 +28,6 @@ final readonly class RgpdService
     public DelegationRepository $delegationRepository;
 
     public function __construct(
-        private Database $database,
         ?SubmissionRepository $submissionRepository = null,
         ?TokenRepository $tokenRepository = null,
         ?AttachmentRepository $attachmentRepository = null,
@@ -51,7 +47,7 @@ final readonly class RgpdService
     /**
      * Exporte toutes les données d'un agent au format JSON (droit d'accès RGPD)
      *
-     * @return array{email: string, export_date?: string, submissions?: array<int, array{id: string, form: string, status: string, submitted_at: string, closed_at: string|null, data: mixed}>, validations?: array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}>, error?: string}
+     * @return array{email: string, export_date?: string, submissions?: array<int, array{id: string, form: string, status: string, submitted_at: string|null, closed_at: string|null, data: mixed}>, validations?: array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}>, error?: string}
      */
     public function exportUserData(string $email): array
     {
@@ -116,7 +112,8 @@ final readonly class RgpdService
                         $submissionData[$field] = '[supprimé]';
                     }
                 }
-                $this->submissionRepository->updateSubmittedByAndData($row['id'], '[supprimé]', json_encode($submissionData, JSON_UNESCAPED_UNICODE));
+                $encoded = json_encode($submissionData, JSON_UNESCAPED_UNICODE);
+                $this->submissionRepository->updateSubmittedByAndData($row['id'], '[supprimé]', $encoded === false ? '{}' : $encoded);
                 $this->attachmentRepository->deleteBySubmissionId($row['id']);
             }
 
@@ -155,11 +152,10 @@ final readonly class RgpdService
         $this->tokenRepository->beginTransaction();
         try {
             foreach ($oldIds as $oldId) {
-                // deleteCascadeForRgpd() supprime attachments, delegations, tokens, alert_log, submissions
-                // dans une sous-transaction (mais SQLite n'impose pas de nesting — on est
-                // déjà dans une transaction ici, donc les execute() individuels sont ok).
-                // On ne peut pas appeler deleteCascadeForRgpd() qui appellerait beginTransaction()
-                // (SQLite ne supporte pas les transactions imbriquées). On décompose ici.
+                // Cascade delete : attachments, delegations, tokens, alert_log, submissions.
+                // Décomposé en appels individuels (et non via une méthode unique) car on est
+                // déjà dans une transaction, et SQLite ne supporte pas les transactions
+                // imbriquées.
                 $this->attachmentRepository->deleteBySubmissionId($oldId);
                 $this->delegationRepository->deleteBySubmissionId($oldId);
                 $this->tokenRepository->deleteBySubmissionId($oldId);

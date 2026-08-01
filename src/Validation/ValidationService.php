@@ -51,7 +51,7 @@ final class ValidationService
      */
     public function validateEmail(string $email): string
     {
-        $email = $email |> trim(...) |> strtolower(...);
+        $email = strtolower(trim($email));
         return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
     }
 

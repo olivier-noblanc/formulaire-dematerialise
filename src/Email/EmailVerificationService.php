@@ -186,7 +186,7 @@ final readonly class EmailVerificationService
                     $display = $mail;
                 }
 
-                $results[] = ['email' => $mail |> trim(...) |> strtolower(...), 'cn' => $display];
+                $results[] = ['email' => strtolower(trim($mail)), 'cn' => $display];
             }
 
             usort($results, fn(array $a, array $b) => strcasecmp($a['cn'], $b['cn']));

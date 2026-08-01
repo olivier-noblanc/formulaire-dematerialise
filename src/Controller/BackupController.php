@@ -85,6 +85,11 @@ final class BackupController extends BaseController
                         }
                         if ($backupOk && move_uploaded_file($tmpPath, $dbPath)) {
                             try {
+                                // Sanity-check de la DB restaurée : on ouvre une connexion PDO
+                                // dédiée (pas le singleton App::db()) sur le fichier backup, et
+                                // on vérifie que sqlite_master répond. Cette PDO n'est PAS couverte
+                                // par le Repository layer — c'est un test ponctuel d'un fichier
+                                // externe. allowIn: disallowed-calls.neon → PDO::query().
                                 $testPdo = new \PDO('sqlite:' . $dbPath);
                                 $testPdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                                 $testCountStmt = $testPdo->query('SELECT COUNT(*) FROM sqlite_master');

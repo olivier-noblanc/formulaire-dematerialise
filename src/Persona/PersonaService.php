@@ -37,7 +37,7 @@ final readonly class PersonaService
     public AdminRepository $adminRepository;
 
     public function __construct(
-        private Database $database,
+        Database $database,
         ?PersonaTokenRepository $personaTokenRepository = null,
         ?AdminRepository $adminRepository = null
     ) {
