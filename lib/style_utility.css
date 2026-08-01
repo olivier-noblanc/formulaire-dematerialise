@@ -291,3 +291,23 @@
 .u-ov-auto-df74e8 { overflow-x:auto; }
 .u-p-0-ov-hidden-20dcef { padding:0;overflow:hidden; }
 .u-pe-none-1f5d8c { pointer-events:none; }
+
+/* Validation history item (DashboardRenderer) */
+.validation-item { border-left:3px solid #003189;padding-left:1rem;margin-bottom:1rem; }
+
+/* === Classes générées par migrate_style_attrs.py (2026-08-01) ===
+   Migration de tous les style="" inline vers des classes sémantiques.
+   Nommage: u-{properties}-{hash} pour garantir l'unicité. */
+.u-c-muted-fs-sm-acdf91 { font-size:.85rem;color:#555; }
+.u-c-muted-fs-xs-5931a3 { font-size:.8rem;color:#595959; }
+.u-c-muted-ta-center-p-custom-e478a3 { text-align:center;padding:2rem;color:#595959; }
+.u-c-warning-fs-xs-cc7688 { font-size:.8rem;color:#b45309; }
+.u-c-warning-fs-xxxs-ml-custom-a442b3 { color:#b45309;font-size:.7rem;margin-left:.25rem; }
+.u-d-flex-gap-05-fw-wrap-a0ccd9 { display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start; }
+.u-d-inline-5677b9 { display:inline; }
+.u-fs-xs-p-custom-745e0f { font-size:.8rem;padding:.3rem .75rem; }
+.u-fs-xxs-p-xs-d405db { font-size:.75rem;padding:.3rem .6rem; }
+.u-fs-xxs-p-xs-td-none-43bc55 { font-size:.75rem;padding:.3rem .6rem;text-decoration:none; }
+.u-m-custom-b98e73 { margin:1rem 0; }
+.u-m-custom-f20ec6 { margin:.25rem; }
+.u-mt-0-mb-1-dbe4e0 { margin-top:0;margin-bottom:1rem; }
