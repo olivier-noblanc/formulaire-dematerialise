@@ -250,10 +250,14 @@ final class HttpRouteTest extends TestCase
             'form'             => ['/?p=form', 200],
             'validate'         => ['/?p=validate', 200],
             'submission_view'  => ['/?p=submission_view', 302],
-            'form_tracking'    => ['/?p=form_tracking', 500],
-            'form_preview'     => ['/?p=form_preview', 500],
+            // Avant le fix anti-récursion errorPage() (2026-08-01), ces pages
+            // retournaient 500 car errorPage() throw ErrorResponseException en
+            // TEST_MODE → handler global re-throw → fatal. Maintenant elles
+            // retournent proprement leur code HTTP d'origine (404/400).
+            'form_tracking'    => ['/?p=form_tracking', 404],
+            'form_preview'     => ['/?p=form_preview', 404],
             'confirm_action'   => ['/?p=confirm_action', 302],
-            'download'         => ['/?p=download', 500],
+            'download'         => ['/?p=download', 400],
             'screenshot'       => ['/?p=screenshot', 400],
         ];
     }
@@ -633,9 +637,9 @@ final class HttpRouteTest extends TestCase
     {
         [$status, $body] = self::httpGet('/?p=nonexistent_page_xyz');
 
-        // In TEST_MODE, errorPage() throws ErrorResponseException which is caught
-        // by the exception handler and returns 500. Accept both 404 and 500.
-        self::assertContains($status, [404, 500], 'Unknown page should return 404 or 500 in TEST_MODE');
+        // Depuis le fix anti-récursion errorPage() (2026-08-01), errorPage(404)
+        // en TEST_MODE web ne cascade plus en 500 via le handler global.
+        self::assertSame(404, $status, 'Unknown page should return 404');
     }
 
     /**
@@ -645,8 +649,11 @@ final class HttpRouteTest extends TestCase
     {
         [$status, $body] = self::httpGet('/?p=<script>alert(1)</script>');
 
-        // In TEST_MODE, errorPage() throws which results in 500. Accept both.
-        self::assertContains($status, [404, 500], 'XSS attempt should result in 404 or 500');
+        // Le paramètre est sanitizé via preg_replace('/[^a-z_]/', '', $page)
+        // → devient '' → page 'accueil' (fallback) → 200. Mais peut aussi
+        // retourner 404 si la whitelist échoue. Les deux sont acceptables
+        // tant que <script> n'est pas reflété.
+        self::assertContains($status, [200, 404], 'XSS attempt should not crash');
         self::assertStringNotContainsString('<script>', $body, 'XSS script tag should not be reflected');
     }
 

@@ -420,7 +420,7 @@ final class SubmissionRepository extends BaseRepository
     }
 
     /**
-     * @return array<int, string>
+     * @return list<string>
      */
     public function findPurgeableIds(string $cutoff): array
     {
