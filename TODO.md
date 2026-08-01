@@ -4,17 +4,17 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1425** (0 fail) |
-| Assertions | **4094** |
+| Tests | **1429** (0 fail) |
+| Assertions | **4135** |
 | `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **371** (level 8) |
-| Style "" inline | **0** (zéro — CSP compliant) |
-| Classes CSS sémantiques | **215** (style_utility.css + DynamicCssService) |
+| Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
+| Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
 | Repositories | **10** |
-| CI | **GitHub Actions** (12 jobs, ~3 min) — CI + CSP Check + Dependabot |
+| CI | **GitHub Actions** (15 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
 ---
@@ -231,4 +231,4 @@ exclusivement par `style.php`").
 
 ---
 
-_Dernière mise à jour : 2026-07-31 (v10.33.0)_
+_Dernière mise à jour : 2026-08-01 (v10.37.0)_
