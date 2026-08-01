@@ -488,12 +488,24 @@ final class AdminSettingsRenderer
 
     /**
      * Scripts JS à injecter après le contenu principal.
+     *
+     * Le fichier lib/admin_settings_scripts.js contient 2 blocs <script> inline.
+     * Depuis le 2026-08-01, script-src n'a plus 'unsafe-inline' — chaque <script>
+     * inline doit avoir un nonce CSP. On injecte le nonce dynamiquement via
+     * str_replace (même pattern que NavigationRenderer::footer() pour le persona).
      */
     public function renderAfterMain(): string
     {
         static $after_main = null;
         if ($after_main === null) {
-            $after_main = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
+            $raw = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
+            // Injecter le nonce CSP sur chaque <script> inline.
+            // str_replace remplace TOUTES les occurrences (2 blocs <script>).
+            $after_main = str_replace(
+                '<script>',
+                '<script nonce="' . \App\Core\App::security()->getScriptNonce() . '">',
+                $raw
+            );
         }
         return $after_main;
     }
