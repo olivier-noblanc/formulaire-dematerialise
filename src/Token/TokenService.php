@@ -309,7 +309,7 @@ final readonly class TokenService
             // référentiel que le reste de l'app (relance_at, done_at, etc.).
             // Avant : delegated_at venait de SQLite, les autres colonnes de PHP —
             // différence potentielle de 1s entre les deux appels.
-            $pdo->prepare("INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            $pdo->prepare('INSERT INTO delegations (id, token_id, from_email, to_email, reason, delegated_at, new_token_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
                 ->execute([$delegationId, $tokenId, $tok['email'], $toEmail, $reason, $now, $newTokenRowId]);
 
             $pdo->commit();
