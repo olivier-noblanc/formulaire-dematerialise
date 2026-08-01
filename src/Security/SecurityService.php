@@ -40,7 +40,15 @@ final class SecurityService implements SecurityInterface
         header('Referrer-Policy: strict-origin-when-cross-origin');
         header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 
-        $this->scriptNonce = bin2hex(random_bytes(16));
+        // Anti-double-appel (fix 2026-08-01) : helpers.php appelle
+        // sendSecurityHeaders() au chargement, puis NavigationRenderer::page()
+        // appelle à NOUVEAU sendSecurityHeaders(). Sans ce guard, le 2e appel
+        // génère un NOUVEAU nonce → le HTML (qui a le 1er nonce injecté par
+        // renderAfterMain) ne matche plus le header CSP (qui a le 2e nonce)
+        // → violations CSP script-src-elem (inline) sur admin_settings.
+        if ($this->scriptNonce === '') {
+            $this->scriptNonce = bin2hex(random_bytes(16));
+        }
         $nonceValue = $this->scriptNonce;
         // script-src : plus de 'unsafe-inline' — le seul <script> inline
         // (NavigationRenderer::footer(), menu persona) est noncé (2026-07-30,
