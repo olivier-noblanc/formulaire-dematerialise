@@ -253,14 +253,17 @@ final class SettingsServiceTest extends TestCase
         }
     }
 
-    public function testEncryptWithoutKeyReturnsPlaintext(): void
+    public function testEncryptWithoutKeyThrowsRuntimeException(): void
     {
         $originalKey = getenv('APP_ENCRYPTION_KEY');
         putenv('APP_ENCRYPTION_KEY');
 
         try {
-            $result = $this->settings->encrypt('plaintext_value');
-            self::assertSame('plaintext_value', $result);
+            $this->settings->encrypt('plaintext_value');
+            self::fail('encrypt() should throw RuntimeException when APP_ENCRYPTION_KEY is missing');
+        } catch (\RuntimeException $e) {
+            self::assertStringContainsString('APP_ENCRYPTION_KEY', $e->getMessage());
+            self::assertStringContainsString('non définie', $e->getMessage());
         } finally {
             if ($originalKey !== false) {
                 putenv("APP_ENCRYPTION_KEY=$originalKey");
