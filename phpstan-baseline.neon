@@ -1200,3 +1200,21 @@ parameters:
                         message: '#^Missing parameter typehint for closure parameter#'
                 -
                         message: '#^.+ always return list, but is marked as#'
+                -
+                        message: '#^Parameter .+ of class App\\Render\\.+ constructor expects list<.+>, array<.+> given\.#'
+                -
+                        message: '#^Parameter .+ of (static )?method App\\Render\\.+ expects .+, list<array.+> given\.#'
+                -
+                        message: '#^Parameter .+ of method App\\Render\\.+ expects .+, list<array\{.+\}> given\.#'
+                -
+                        message: '#^Parameter .+ of method App\\Render\\.+ expects .+, array<int\|string, .+> given\.#'
+                -
+                        message: '#^Method call ->getFile\(\) is prohibited on unknown type#'
+                -
+                        message: '#^Null value involved in string interpolation#'
+                -
+                        message: '#^Only booleans are allowed in a negated boolean, array\|null given\.#'
+                -
+                        message: '#^Only booleans are allowed in an if condition, array\|null given\.#'
+                -
+                        message: '#^Casting to string something that.s already string\.#'
