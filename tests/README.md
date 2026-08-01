@@ -86,7 +86,7 @@ En test (CLI ou PHP -S), on n'a pas IIS. Deux approches :
    - Le serveur PHP -S est démarré avec `tests/router_test_auth.php` comme router
    - Le router fait `$_SERVER['AUTH_USER'] = $_SERVER['HTTP_AUTH_USER']` au début de chaque requête
    - TEST_MODE reste false → le HTML est rendu normalement
-   - Playwright envoie le header `HTTP_AUTH_USER: DREETS\admin.local` (l'admin en DB de test)
+   - Playwright envoie le header `HTTP_AUTH_USER: DREETS\admin` (l'admin en DB de test)
 
 Cette 2ᵉ approche permet de tester le HTML rendu avec auth admin simulée.
 

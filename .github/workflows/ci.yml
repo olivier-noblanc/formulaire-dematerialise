@@ -20,9 +20,9 @@ env:
     define('SETTINGS_DEFAULTS', [
         'smtp_host' => 'localhost', 'smtp_port' => '25',
         'smtp_from' => 'test@localhost', 'smtp_from_name' => 'CircuitDemat',
-        'delai_relance_h' => '48', 'admin_email' => 'admin.local@exemple.invalid',
+        'delai_relance_h' => '48', 'admin_email' => 'admin@ci.test',
         'token_expire_days' => '30', 'relance_max' => '3',
-        'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'exemple.invalid',
+        'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'ci.test',
         'base_url' => 'http://localhost',
     ]);
 
@@ -201,7 +201,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
-          fail_ci_if_error: false # non-blocking — la couverture est informative
+          fail_ci_if_error: true # bloquant — échec d'upload coverage = échec CI
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
@@ -262,7 +262,7 @@ jobs:
           restore-keys: composer-
       - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Check code style (dry-run)
-        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --no-progress --using-cache=no 2>&1 || true
+        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --no-progress --using-cache=no
 
   # ── Modernisation PHP ────────────────────────────────────────
   rector:
@@ -285,7 +285,7 @@ jobs:
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - name: Check with Rector (dry-run)
-        run: php vendor/bin/rector process --dry-run --no-progress-bar 2>&1 || true
+        run: php vendor/bin/rector process --dry-run --no-progress-bar
 
   # ── Sécurité deps ────────────────────────────────────────────
   security:
@@ -306,7 +306,7 @@ jobs:
           restore-keys: composer-
       - run: composer update --no-interaction --prefer-dist --no-scripts
       - name: Audit dependencies for vulnerabilities
-        run: composer audit --no-dev 2>&1 || echo "::warning::Composer audit found issues (non-blocking)"
+        run: composer audit --no-dev
 
   # ── Architecture : Deptrac + dead-code detector ───────────────
   architecture:
@@ -329,9 +329,8 @@ jobs:
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - name: Deptrac (architecture layers)
-        # Non-blocking : affiche les violations sans faire échouer la CI.
-        # Quand les violations seront à 0, on retirera le `|| true`.
-        run: php vendor/bin/deptrac analyse --no-progress || true
+        # Job bloquant depuis le 2026-08-01 — les violations doivent être à 0.
+        run: php vendor/bin/deptrac analyse --no-progress
       # Le dead-code detector (shipmonk) est intégré à PHPStan via son extension.
       # Il est déjà couvert par le job phpstan ci-dessus.
 
@@ -351,9 +350,8 @@ jobs:
           curl -sSLo phpcpd.phar https://phar.phpunit.de/phpcpd.phar
           chmod +x phpcpd.phar
       - name: Run phpcpd on src/
-        # Non-blocking : on affiche les doublons détectés sans faire échouer la CI.
-        # Quand le seuil sera acceptable, on pourra retirer le `|| true`.
-        run: php phpcpd.phar src/ --min-lines=10 --min-tokens=50 --no-progress || true
+        # Job bloquant depuis le 2026-08-01 — les doublons doivent être sous le seuil.
+        run: php phpcpd.phar src/ --min-lines=10 --min-tokens=50 --no-progress
 
   # ── Tests fonctionnels ───────────────────────────────────────
   functional:

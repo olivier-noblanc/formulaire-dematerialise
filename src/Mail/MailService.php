@@ -129,7 +129,12 @@ final readonly class MailService implements MailInterface
             }
             $phpMailer->SMTPAutoTLS = ($smtpSecure === 'tls' || $smtpSecure === 'ssl');
             $phpMailer->Timeout = 30;
-            $phpMailer->SMTPDebug = 3;
+            // SMTPDebug : 0 en production (sécurité — ne pas exposer credentials
+            // SMTP dans les logs), 3 uniquement si APP_DEBUG=1 ou TEST_MODE.
+            // Niveau 3 inclut AUTH LOGIN + base64 credentials — ne JAMAIS
+            // persister en DB en production (cf. audit CTO C-05 2026-08-01).
+            $isDebug = (getenv('APP_DEBUG') !== false && getenv('APP_DEBUG') === '1') || (defined('TEST_MODE') && TEST_MODE);
+            $phpMailer->SMTPDebug = $isDebug ? 3 : 0;
             $phpMailer->Debugoutput = function (string $str, int $level) use (&$smtpLogBuf): void {
                 $smtpLogBuf[] = '[' . $level . '] ' . rtrim($str);
             };

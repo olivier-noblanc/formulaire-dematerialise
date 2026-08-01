@@ -40,7 +40,7 @@ async function main() {
 
         browser = await launchBrowser();
         // Auth simulée — la plupart des pages publiques l'acceptent et l'ignorent
-        const context = await newContext(browser, 'DREETS\\admin.local');
+        const context = await newContext(browser, 'DREETS\\admin');
 
         t.section('Tests smoke — pages publiques');
         for (const p of PAGES) {

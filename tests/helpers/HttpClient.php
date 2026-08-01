@@ -18,7 +18,7 @@ declare(strict_types=1);
  *   HttpClient::assertResponseStatus($html, 200)
  *
  * Pour les routes admin, passer `isAdmin: true` → le sous-processus injecte
- * `$_SERVER['AUTH_USER'] = 'DREETS\admin.local'` (admin en DB de test).
+ * `$_SERVER['AUTH_USER'] = 'DREETS\admin'` (admin en DB de test).
  *
  * Usage :
  *   require_once __DIR__ . '/HttpClient.php';
@@ -36,7 +36,7 @@ final class HttpClient
      * Utilisateur admin de référence dans la DB de test.
      * (présent dans la table `admins` de workflow.db ET workflow_test.db)
      */
-    private const ADMIN_AUTH_USER = 'DREETS\admin.local';
+    private const ADMIN_AUTH_USER = 'DREETS\admin';
 
     /**
      * Utilisateur non-admin de référence pour les routes publiques.
@@ -51,7 +51,7 @@ final class HttpClient
      * @param string $path   Chemin absolu depuis la racine web, ex: '/form.php?f=onboarding'
      *                       (la query string est extraite automatiquement)
      * @param array<string,string> $post Données POST (pour method='POST')
-     * @param bool $isAdmin  Si true → injecte AUTH_USER admin (DREETS\admin.local)
+     * @param bool $isAdmin  Si true → injecte AUTH_USER admin (DREETS\admin)
      * @return array{html:string, stderr:string, exit_code:int}
      */
     public static function renderRoute(

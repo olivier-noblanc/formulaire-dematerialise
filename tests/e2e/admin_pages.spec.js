@@ -8,8 +8,8 @@
 //      (Warning / Notice / Deprecated / Fatal error / Parse error)
 //   4. Vérifier que le HTML contient un <title> non vide
 //
-// Note : on simule l'auth admin via AUTH_USER: DREETS\admin.local
-// (admin.local@exemple.invalid est présent dans la table admins).
+// Note : on simule l'auth admin via AUTH_USER: DREETS\admin
+// (admin@ci.test est présent dans la table admins).
 //
 // Note sur la détection des warnings PHP : la spec mentionnait `page.on('console')`
 // mais le browser console ne capte PAS les erreurs PHP — elles vont dans stderr
@@ -31,7 +31,7 @@ const {
 // ─── Pages admin à tester ────────────────────────────────────────
 // Toutes ces pages appellent require_admin() (sauf admin_access.php qui est
 // la page où l'utilisateur demande l'accès admin). On utilise le header
-// AUTH_USER= DREETS\admin.local (admin en DB).
+// AUTH_USER= DREETS\admin (admin en DB).
 const ADMIN_PAGES = [
     { url: '/index.php?p=admin_settings', label: 'admin_settings.php (config SMTP/sécurité)' },
     { url: '/index.php?p=monitoring',     label: 'monitoring.php (tableau de bord monitoring)' },
@@ -47,11 +47,11 @@ async function main() {
     let stop, browser;
     try {
         console.log('── Démarrage du serveur PHP (port 8900) ──');
-        ({ stop } = await startTestServer('DREETS\\admin.local'));
+        ({ stop } = await startTestServer('DREETS\\admin'));
         console.log('  Serveur prêt.\n');
 
         browser = await launchBrowser();
-        const context = await newContext(browser, 'DREETS\\admin.local');
+        const context = await newContext(browser, 'DREETS\\admin');
 
         t.section('Tests pages admin — chargement + titre + pas d\'erreur PHP');
 

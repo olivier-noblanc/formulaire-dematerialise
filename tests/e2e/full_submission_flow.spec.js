@@ -2,7 +2,7 @@
 // d'un formulaire par un agent (Approche A : page.fill + page.check + page.click).
 //
 // Étapes :
-//   1. Démarrer serveur PHP avec AUTH_USER: DREETS\admin.local (admin)
+//   1. Démarrer serveur PHP avec AUTH_USER: DREETS\admin (admin)
 //   2. GET /index.php?p=form&f=onboarding
 //   3. Extraire le CSRF token du HTML (input[name=csrf_token])
 //   4. Vérifier que la page contient <form id="form-main">, la checkbox rgpd_consent
@@ -62,11 +62,11 @@ async function main() {
     let stop, browser;
     try {
         console.log('── Démarrage du serveur PHP (port 8900) ──');
-        ({ stop } = await startTestServer('DREETS\\admin.local'));
+        ({ stop } = await startTestServer('DREETS\\admin'));
         console.log('  Serveur prêt.\n');
 
         browser = await launchBrowser();
-        const context = await newContext(browser, 'DREETS\\admin.local');
+        const context = await newContext(browser, 'DREETS\\admin');
 
         // ═══════════════════════════════════════════════════════════════
         // ÉTAPE 1-4 : GET /index.php?p=form&f=onboarding et vérifier le rendu initial

@@ -147,10 +147,10 @@ async function main() {
         await page1.close();
 
         // ─── Test 3 : dashboard.php — badges et stats (avec admin) ───
-        t.section('dashboard.php — badges et stats admin (avec admin admin.local)');
+        t.section('dashboard.php — badges et stats admin (avec admin)');
         const adminContext = await browser.newContext({
             extraHTTPHeaders: {
-                'AUTH_USER': 'DREETS\\admin.local',
+                'AUTH_USER': 'DREETS\\admin',
             },
         });
         const page2 = await adminContext.newPage();

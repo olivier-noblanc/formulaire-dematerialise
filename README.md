@@ -3,7 +3,7 @@
 > Système de validation dématérialisé pour la DREETS Bourgogne-Franche-Comté.
 > Workflows de formulaires, suivi en temps réel, alertes automatiques J-N, supervision complète.
 
-**Version 10.28.1** | PHP 8.4 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
+**Version 10.34.0** | PHP 8.5 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
 
 ---
 
@@ -57,7 +57,6 @@ chacun valide ou refuse à son rythme — le système trace, relance et alerte a
 | **Conformité RGPD** | Mentions légales, durée de conservation, export JSON, anonymisation, purge automatique | — |
 | **Sauvegarde / restauration** | Téléchargement .db et restauration depuis l'interface | — |
 | **Health check** | Page `health.php` (HTTP 200/503) pour la supervision externe | — |
-| **Webhooks** | Notifications JSON sur événements clés (validation, refus, clôture) pour intégration SI | — |
 | **Documentation in-app** | Guide utilisateur complet accessible depuis la barre de navigation | ![Docs](docs/screenshots/13_docs.png) |
 | **Journal des versions** | `CHANGELOG.md` parsé et affiché dans l'interface | ![Changelog](docs/screenshots/14_changelog.png) |
 
@@ -67,7 +66,7 @@ chacun valide ou refuse à son rythme — le système trace, relance et alerte a
 
 | Composant | Technologie |
 |---|---|
-| Langage | PHP 8.4 orienté objet — 0 framework |
+| Langage | PHP 8.5 orienté objet — 0 framework |
 | Base de données | SQLite (embarquée, migration automatique versionnée, mode WAL) |
 | Architecture | Services (DI container) + Repository pattern — 10 repositories, 10+ services |
 | CSS | Pur — stylesheet partagée via `style.php`, design Marianne conforme RGAA |
@@ -132,7 +131,7 @@ Le script sauvegarde automatiquement l'existant et préserve `config.php`.
 | Actions destructives | Protection par confirmation + CSRF |
 | Liens d'approbation | En POST (pas d'effet de bord au GET) |
 | Journal d'audit | Toutes les actions administratives tracées dans `audit_log` + `security_log()` |
-| Chiffrement au repos | AES-256-CBC pour `smtp_pass`, `ldap_bind_pass`, `webhook_secret`, `app_test_secret` (clé via `APP_ENCRYPTION_KEY`) |
+| Chiffrement au repos | AES-256-CBC pour `smtp_pass`, `ldap_bind_pass`, `app_test_secret` (clé via `APP_ENCRYPTION_KEY`) |
 | Headers HTTP | CSP, HSTS (HTTPS), X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy |
 | Rate limiting | Géré nativement par IIS (pas de duplication PHP) |
 | Protection répertoires | `db/`, `classes/`, `PHPMailer/` bloqués via `web.config` IIS |

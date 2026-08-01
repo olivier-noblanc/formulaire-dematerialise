@@ -18,7 +18,7 @@ declare(strict_types=1);
  *   3. Applique chaque règle, capture les AssertionError
  *   4. Affiche une ligne par route avec le statut de chaque règle (S1✓ S2✓ ...)
  *
- * Routes admin : utilisent AUTH_USER = 'DREETS\admin.local' (admin en DB).
+ * Routes admin : utilisent AUTH_USER = 'DREETS\admin' (admin en DB).
  *
  * Usage : php tests/StructuralHtmlTest.php
  */

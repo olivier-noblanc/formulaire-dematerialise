@@ -105,7 +105,7 @@ $onlinePatterns = [
 ];
 
 foreach ($pages as $page) {
-    $resp = http_get($baseUrl . $page, ['AUTH_USER: DREETS\admin.local']);
+    $resp = http_get($baseUrl . $page, ['AUTH_USER: DREETS\admin']);
     $html = $resp['body'];
 
     $found = [];
@@ -193,7 +193,7 @@ if ($jsEtag !== '') {
 // ── Test 6 : Les pages HTML référencent <link> vers assets.php ──
 echo "\n── Test 6 : Pages HTML référencent assets.php via <link> ──\n";
 
-$respIndex = http_get($baseUrl . '/index.php', ['AUTH_USER: DREETS\admin.local']);
+$respIndex = http_get($baseUrl . '/index.php', ['AUTH_USER: DREETS\admin']);
 $indexHtml = $respIndex['body'];
 
 $hasLinkToAssets = strpos($indexHtml, '<link rel="stylesheet" href="assets.php?type=css">') !== false
@@ -214,7 +214,7 @@ check(
 // ── Test 7 : form.php référence les JS via assets.php ──
 echo "\n── Test 7 : form.php référence les JS via assets.php ──\n";
 
-$respForm = http_get($baseUrl . '/index.php?p=form&f=onboarding', ['AUTH_USER: DREETS\admin.local']);
+$respForm = http_get($baseUrl . '/index.php?p=form&f=onboarding', ['AUTH_USER: DREETS\admin']);
 $formHtml = $respForm['body'];
 
 $hasJsViaAssets = strpos($formHtml, 'assets.php?type=js&file=form-progress') !== false
