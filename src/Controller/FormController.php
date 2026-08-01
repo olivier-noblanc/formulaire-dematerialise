@@ -494,8 +494,8 @@ final class FormController extends BaseController
         </div>
       <?php endif; ?>
     </form>
-    <script src="assets.php?type=js&file=form-progress"></script>
-    <script src="assets.php?type=js&file=form-conditions"></script>
+    <script src="assets.php?type=js&file=form-progress" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
+    <script src="assets.php?type=js&file=form-conditions" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
   <?php endif; ?>
 <?php
         $content = ob_get_clean();
