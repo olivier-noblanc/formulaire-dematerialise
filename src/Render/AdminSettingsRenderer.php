@@ -489,10 +489,10 @@ final class AdminSettingsRenderer
     /**
      * Scripts JS à injecter après le contenu principal.
      *
-     * Le fichier lib/admin_settings_scripts.js contient 2 blocs <script> inline.
-     * Depuis le 2026-08-01, script-src n'a plus 'unsafe-inline' — chaque <script>
-     * inline doit avoir un nonce CSP. On injecte le nonce dynamiquement via
-     * str_replace (même pattern que NavigationRenderer::footer() pour le persona).
+     * Le fichier lib/admin_settings_scripts.js contient 2 blocs <script> inline
+     * avec le placeholder __CSP_NONCE_PLACEHOLDER__. On remplace le placeholder
+     * par le nonce CSP de la requête courante (même pattern que
+     * NavigationRenderer::footer() pour le persona JS).
      *
      * IMPORTANT : on ne cache que le contenu BRUT (sans nonce), pas le résultat
      * avec nonce. Le serveur PHP -S est un process unique qui gère plusieurs
@@ -506,11 +506,11 @@ final class AdminSettingsRenderer
         if ($raw_scripts === null) {
             $raw_scripts = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
         }
-        // Injecter le nonce CSP sur chaque <script> inline À CHAQUE APPEL
+        // Remplacer le placeholder par le nonce CSP À CHAQUE APPEL
         // (le nonce change à chaque requête — ne pas le cacher).
         return str_replace(
-            '<script>',
-            '<script nonce="' . \App\Core\App::security()->getScriptNonce() . '">',
+            '__CSP_NONCE_PLACEHOLDER__',
+            'nonce="' . \App\Core\App::security()->getScriptNonce() . '"',
             $raw_scripts
         );
     }
