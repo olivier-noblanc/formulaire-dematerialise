@@ -28,6 +28,7 @@ env:
         'app_name' => 'CircuitDémat — DREETS BFC', 'email_domain' => 'ci.test',
         'base_url' => 'http://localhost',
     ]);
+  APP_ENCRYPTION_KEY: ci-test-encryption-key-32-bytes-minimum-required
 
 on:
   workflow_dispatch:

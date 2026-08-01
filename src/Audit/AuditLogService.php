@@ -26,11 +26,12 @@ final readonly class AuditLogService implements AuditInterface
             $detail = preg_replace('/[\w.\-]+@[\w.\-]+\.\w+/', '[email]', $detail) ?? $detail;
         }
 
-        try {
-            $this->auditRepository->log($action, $target, $detail, $actor);
-        } catch (\Throwable $e) {
-            error_log('AuditLog error: ' . $e->getMessage() . ' [' . $action . '] ' . $e->getTraceAsString());
-        }
+        // Audit log est un chemin critique (RGPD, traçabilité).
+        // Règle #9 AGENTS.md : ne jamais avaler une exception sur un chemin critique.
+        // Si l'écriture échoue (DB locked, disque plein, schéma drift), l'audit trail
+        // est vide sans signal → on relance l'exception pour que l'appelant décide.
+        // (audit CTO C-03 2026-08-01)
+        $this->auditRepository->log($action, $target, $detail, $actor);
     }
 
     public function securityLog(string $event, string $detail = '', string $actor = ''): void

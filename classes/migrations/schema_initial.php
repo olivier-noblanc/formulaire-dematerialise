@@ -266,22 +266,39 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
     ");
 
     // ── Seeding admin par défaut ──
+    // Règle #9 AGENTS.md : ne jamais avaler une exception sur un chemin critique.
+    // Si le seeding échoue (DB locked, AuthService non disponible), la base est
+    // créée SANS admin → application inutilisable (personne ne peut se connecter).
+    // On log l'erreur explicitement pour diagnostic (audit CTO C-09 2026-08-01).
     $seed_needed = false;
     try {
         $count_stmt = _dbm_q($pdo, "SELECT COUNT(*) FROM admins");
         if ((int) $count_stmt->fetchColumn() === 0) {
-            $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
-                ->execute([generate_uuid(), App::auth()->getAdminEmail(), date('Y-m-d H:i:s')]);
+            $adminEmail = '';
+            try {
+                $adminEmail = App::auth()->getAdminEmail();
+            } catch (\Throwable $authEx) {
+                // App::auth() non disponible (tests précoces) — utiliser SETTINGS_DEFAULTS
+                $adminEmail = defined('SETTINGS_DEFAULTS') && isset(SETTINGS_DEFAULTS['admin_email'])
+                    ? SETTINGS_DEFAULTS['admin_email']
+                    : '';
+            }
+            if ($adminEmail !== '') {
+                $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
+                    ->execute([generate_uuid(), $adminEmail, date('Y-m-d H:i:s')]);
+            } else {
+                error_log('[schema_initial] WARNING: admin_email vide — base créée sans admin par défaut');
+            }
         }
     } catch (\Throwable $e) {
-        // Silencieux — App::auth() peut ne pas être disponible lors des tests
+        error_log('[schema_initial] FAILED seeding admin: ' . $e->getMessage() . ' — base potentiellement sans admin');
     }
 
     // ── Seed formulaires par défaut ──
     try {
         seed_default_forms($pdo);
     } catch (\Throwable $e) {
-        // Silencieux
+        error_log('[schema_initial] FAILED seeding default forms: ' . $e->getMessage());
     }
 
     return $current_version;
