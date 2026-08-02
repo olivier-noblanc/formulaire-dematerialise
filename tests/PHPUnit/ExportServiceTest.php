@@ -48,16 +48,15 @@ final class ExportServiceTest extends TestCase
         self::assertSame($service1, $service2);
     }
 
-    public function testConstructorRequiresDatabaseAndAuth(): void
+    public function testConstructorRequiresAuthAndSubmissionRepository(): void
     {
         $reflection = new \ReflectionClass(ExportService::class);
         $constructor = $reflection->getConstructor();
         self::assertNotNull($constructor);
         $params = $constructor->getParameters();
-        self::assertCount(3, $params);
-        self::assertSame('database', $params[0]->getName());
-        self::assertSame('authService', $params[1]->getName());
-        self::assertSame('submissionRepository', $params[2]->getName());
+        self::assertCount(2, $params);
+        self::assertSame('authService', $params[0]->getName());
+        self::assertSame('submissionRepository', $params[1]->getName());
     }
 
     public function testConstructorParamTypes(): void
@@ -65,8 +64,7 @@ final class ExportServiceTest extends TestCase
         $reflection = new \ReflectionClass(ExportService::class);
         $constructor = $reflection->getConstructor();
         $params = $constructor->getParameters();
-        self::assertSame(Database::class, $params[0]->getType()->getName());
-        self::assertSame(AuthService::class, $params[1]->getType()->getName());
+        self::assertSame(AuthService::class, $params[0]->getType()->getName());
     }
 
     public function testClassIsFinal(): void
@@ -79,13 +77,6 @@ final class ExportServiceTest extends TestCase
     {
         $reflection = new \ReflectionClass(ExportService::class);
         self::assertSame('App\Export', $reflection->getNamespaceName());
-    }
-
-    public function testServiceUsesInjectedDatabase(): void
-    {
-        $service = new ExportService($this->auth);
-        $reflection = new \ReflectionProperty($service, 'database');
-        self::assertSame($this->db, $reflection->getValue($service));
     }
 
     public function testServiceUsesInjectedAuth(): void
@@ -694,12 +685,6 @@ final class ExportServiceTest extends TestCase
         $returnType = $reflection->getReturnType();
         self::assertNotNull($returnType);
         self::assertSame('array', $returnType->getName());
-    }
-
-    public function testClassHasDbProperty(): void
-    {
-        $reflection = new \ReflectionClass(ExportService::class);
-        self::assertTrue($reflection->hasProperty('database'));
     }
 
     public function testClassHasAuthProperty(): void

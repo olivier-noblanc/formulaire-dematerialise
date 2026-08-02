@@ -51,7 +51,6 @@ final class WorkflowEngineMutationTest extends TestCase
         $fields = new FieldService();
         $conditions = new ConditionEvaluator();
         $this->workflow = new WorkflowEngine(
-            $this->db,
             $settings,
             $mail,
             $fields,
