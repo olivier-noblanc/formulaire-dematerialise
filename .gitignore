@@ -82,3 +82,7 @@ package-lock.json
 
 # Fichier temporaire
 monofichier_code_source.php
+
+# Accidental clones (agent-pulse mangled clone path)
+agent-pulse/
+Usersolivier*
