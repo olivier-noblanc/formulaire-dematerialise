@@ -123,10 +123,10 @@ final class HealthController extends BaseController
 
   <div class="status-banner <?= $allHealthy ? 'healthy' : 'unhealthy' ?>">
     <h2><?= $allHealthy ? '<span aria-hidden="true">✓</span> Système opérationnel' : '<span aria-hidden="true">⚠</span> Problème détecté' ?></h2>
-    <p class="u-c-muted-mt-05-f3feb6">v<?= \App\Core\App::html()->escape(App::cache()->getLatestVersion()) ?> — <?= \App\Core\App::html()->escape(date('d/m/Y à H:i')) ?></p>
+    <p class="u-c-muted-mt-05">v<?= \App\Core\App::html()->escape(App::cache()->getLatestVersion()) ?> — <?= \App\Core\App::html()->escape(date('d/m/Y à H:i')) ?></p>
   </div>
 
-  <div class="card u-p-0-ov-hidden-20dcef">
+  <div class="card u-p-0-ov-hidden">
     <?php foreach ($checks as $check): ?>
     <div class="check-item">
       <div class="check-icon" aria-label="<?= $check['ok'] ? 'Succès' : 'Échec' ?>"><?= $check['ok'] ? '✅' : '❌' ?></div>
@@ -138,7 +138,7 @@ final class HealthController extends BaseController
     <?php endforeach; ?>
   </div>
 
-  <p class="u-c-muted-fs-xs-mt-15-ta-center-661752">
+  <p class="u-c-muted-fs-xs-mt-15-ta-center">
     Endpoint de monitoring : <code>health.php?format=json</code>
   </p>
 <?php

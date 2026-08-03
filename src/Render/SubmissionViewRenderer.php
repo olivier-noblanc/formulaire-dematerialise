@@ -415,7 +415,7 @@ final class SubmissionViewRenderer
                     $relance_html = '';
                     if ($relance > 0 && !$done) {
                         $sfx   = $relance > 1 ? 's' : '';
-                        $relance_html = "<span class=\"u-c-warning-fs-xxxs-ml-custom-a442b3\">({$relance} rappel{$sfx})</span>";
+                        $relance_html = "<span class=\"u-c-warning-fs-xxxs-ml-025\">({$relance} rappel{$sfx})</span>";
                     }
 
                     $validators_html .= <<<HTML
@@ -777,19 +777,19 @@ final class SubmissionViewRenderer
                     $sent_html = '';
                     if (!empty($pending_token['sent_at'])) {
                         $sent_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['sent_at'])));
-                        $sent_html = "<span class=\"u-c-muted-fs-xs-5931a3\">Notifié le : {$sent_date}</span>";
+                        $sent_html = "<span class=\"u-c-muted-fs-xs\">Notifié le : {$sent_date}</span>";
                     }
 
                     $last_remind = '';
                     if (!empty($pending_token['relance_at'])) {
                         $last_remind_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['relance_at'])));
-                        $last_remind = "<span class=\"u-c-warning-fs-xs-cc7688\">Dernière relance : {$last_remind_date}</span>";
+                        $last_remind = "<span class=\"u-c-warning-fs-xs\">Dernière relance : {$last_remind_date}</span>";
                     }
 
                     $expires_html = '';
                     if (!empty($pending_token['expires_at'])) {
                         $expires_date = \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $pending_token['expires_at'])));
-                        $expires_html = "<span class=\"u-c-muted-fs-xs-5931a3\">Expire le : {$expires_date}</span>";
+                        $expires_html = "<span class=\"u-c-muted-fs-xs\">Expire le : {$expires_date}</span>";
                     }
 
                     $relance_badge = '';

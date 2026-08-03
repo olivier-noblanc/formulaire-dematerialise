@@ -66,7 +66,7 @@ final class MySubmissionsRenderer
                 foreach ($activeForms as $activeForm) {
                     $slug  = App::html()->escape($activeForm['slug']);
                     $label = App::html()->escape(self::simplifyLabel($activeForm['label']));
-                    $html .= "        <a href=\"index.php?p=form&f={$slug}\" class=\"btn btn-primary u-m-custom-f20ec6\">{$label}</a>\n";
+                    $html .= "        <a href=\"index.php?p=form&f={$slug}\" class=\"btn btn-primary u-m-025rem\">{$label}</a>\n";
                 }
             }
             $html .= '    </div>' . "\n";

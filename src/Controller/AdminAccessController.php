@@ -130,8 +130,8 @@ final class AdminAccessController extends BaseController
   <div class="card">
     <h2><?= ($confirmAction ?? 'approve') === 'reject' ? 'Confirmer le refus' : 'Confirmer l\'approbation' ?></h2>
     <p><?= ($confirmAction ?? 'approve') === 'reject' ? 'Refuser' : 'Approuver' ?> la demande d'accès de <strong><?= \App\Core\App::html()->escape($confirmData['email']) ?></strong> ?</p>
-    <p class="u-c-muted-fs-sm-acdf91">Demande créée le <?= \App\Core\App::html()->escape($confirmData['created_at']) ?></p>
-    <div class="u-mt-1-d-flex-gap-05-f1d1cb">
+    <p class="u-c-muted-fs-sm">Demande créée le <?= \App\Core\App::html()->escape($confirmData['created_at']) ?></p>
+    <div class="u-mt-1-d-flex-gap-05">
       <form method="POST">
         <?= $this->security->csrfField() ?>
         <input type="hidden" name="action" value="approve_request">
@@ -152,7 +152,7 @@ final class AdminAccessController extends BaseController
   <?php if (!$isSuperAdmin): ?>
   <div class="card">
     <h2>Demande d'accès administrateur</h2>
-    <p class="u-c-muted-fs-md-mb-1-7501d4">
+    <p class="u-c-muted-fs-md-mb-1">
       Vous n'êtes pas administrateur. Vous pouvez demander l'accès en cliquant ci-dessous.
       L'administrateur principal recevra un email et pourra approuver ou refuser votre demande.
     </p>
@@ -168,23 +168,23 @@ final class AdminAccessController extends BaseController
   <div class="card">
     <h2>Demandes en attente (<?= count($pendingRequests) ?>)</h2>
     <?php foreach ($pendingRequests as $pendingRequest): ?>
-    <div class="u-d-flex-jc-between-ai-center-p-075-0903bb">
+    <div class="u-d-flex-jc-between-ai-center-p-075">
       <div>
         <strong><?= \App\Core\App::html()->escape($pendingRequest['email']) ?></strong>
-        <div class="u-c-muted-fs-xs-a0e08a">Demandé le <?= \App\Core\App::html()->escape($pendingRequest['requested_at']) ?></div>
+        <div class="u-c-muted-555-fs-xs">Demandé le <?= \App\Core\App::html()->escape($pendingRequest['requested_at']) ?></div>
       </div>
-      <div class="u-d-flex-gap-05-660ce1">
-        <form method="POST" class="u-d-inline-5677b9">
+      <div class="u-d-flex-gap-05">
+        <form method="POST" class="u-d-inline">
           <?= $this->security->csrfField() ?>
           <input type="hidden" name="action" value="approve_request">
           <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($pendingRequest['email']) ?>">
-          <button type="submit" class="btn btn-primary u-fs-xs-p-xs-1fc5bd">Approuver</button>
+          <button type="submit" class="btn btn-primary u-fs-xs-p-xs">Approuver</button>
         </form>
-        <form method="POST" class="u-d-inline-5677b9">
+        <form method="POST" class="u-d-inline">
           <?= $this->security->csrfField() ?>
           <input type="hidden" name="action" value="reject_request">
           <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($pendingRequest['email']) ?>">
-          <button type="submit" class="btn btn-danger u-fs-xs-p-xs-1fc5bd">Refuser</button>
+          <button type="submit" class="btn btn-danger u-fs-xs-p-xs">Refuser</button>
         </form>
       </div>
     </div>
@@ -208,11 +208,11 @@ final class AdminAccessController extends BaseController
           <td><span class="badge <?= $isSuper ? 'badge-ok' : 'badge-info' ?>"><?= $isSuper ? 'Super Admin' : 'Admin' ?></span></td>
           <td>
             <?php if (!$isCurrent && !$isSuper): ?>
-            <form method="POST" class="u-d-inline-5677b9">
+            <form method="POST" class="u-d-inline">
               <?= $this->security->csrfField() ?>
               <input type="hidden" name="action" value="remove_admin">
               <input type="hidden" name="email" value="<?= \App\Core\App::html()->escape($allAdmin['email']) ?>">
-              <a href="index.php?p=confirm_action&action=remove_admin&email=<?= urlencode((string) ($allAdmin['email'] ?? '')) ?>" class="btn btn-danger u-fs-xxs-p-xxs-f4127e">Retirer</a>
+              <a href="index.php?p=confirm_action&action=remove_admin&email=<?= urlencode((string) ($allAdmin['email'] ?? '')) ?>" class="btn btn-danger u-fs-xxs-p-xxs">Retirer</a>
             </form>
             <?php endif; ?>
           </td>

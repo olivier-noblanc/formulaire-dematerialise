@@ -302,8 +302,8 @@ final class FormJsonValidator
         $html = '';
 
         if (!empty($result['errors'])) {
-            $html .= '<div class="msg-error" role="alert" aria-live="assertive" class="u-mb-05-8691cb"><strong>' . count($result['errors']) . ' erreur(s)</strong> bloquante(s) :';
-            $html .= '<ul class="u-fs-sm-ml-12-mt-05-fb2fa3">';
+            $html .= '<div class="msg-error" role="alert" aria-live="assertive" class="u-mb-05"><strong>' . count($result['errors']) . ' erreur(s)</strong> bloquante(s) :';
+            $html .= '<ul class="u-fs-sm-ml-12-mt-05">';
             foreach ($result['errors'] as $e) {
                 $html .= '<li>' . \App\Core\App::html()->escape($e) . '</li>';
             }
@@ -311,8 +311,8 @@ final class FormJsonValidator
         }
 
         if (!empty($result['warnings'])) {
-            $html .= '<div class="msg-warning" role="status" aria-live="polite" class="u-mb-05-p-custom-bg-warn-border-0ce4bc"><strong>' . count($result['warnings']) . ' avertissement(s)</strong> (non bloquant) :';
-            $html .= '<ul class="u-fs-sm-ml-12-mt-05-fb2fa3">';
+            $html .= '<div class="msg-warning" role="status" aria-live="polite" class="u-mb-05-p-075-bg-warn"><strong>' . count($result['warnings']) . ' avertissement(s)</strong> (non bloquant) :';
+            $html .= '<ul class="u-fs-sm-ml-12-mt-05">';
             foreach ($result['warnings'] as $w) {
                 $html .= '<li>' . \App\Core\App::html()->escape($w) . '</li>';
             }
@@ -334,10 +334,10 @@ final class FormJsonValidator
                     $copy_text .= "- $w\n";
                 }
             }
-            $html .= '<div class="u-mt-075-b33383">';
-            $html .= '<label class="u-fs-sm2-fw-bold-024217">Message à copier-coller à l\'IA pour corriger le JSON : ';
+            $html .= '<div class="u-mt-075">';
+            $html .= '<label class="u-fs-sm2-fw-bold">Message à copier-coller à l\'IA pour corriger le JSON : ';
             $html .= '<button type="button" data-copy-target="#validation-feedback" class="btn-copy-sm">📋 Copier le message</button></label>';
-            $html .= '<pre id="validation-feedback" class="u-fs-xs2-mt-025-p-075-bg-dark-f70a99">' . \App\Core\App::html()->escape($copy_text) . '</pre>';
+            $html .= '<pre id="validation-feedback" class="u-fs-xs2-mt-025-p-075-bg-dark">' . \App\Core\App::html()->escape($copy_text) . '</pre>';
             $html .= '</div>';
         }
 

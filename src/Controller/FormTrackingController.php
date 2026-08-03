@@ -113,7 +113,7 @@ final class FormTrackingController extends BaseController
       <p>Aucune soumission pour ce formulaire.</p>
     </div>
   <?php else: ?>
-    <div class="card u-ov-auto-df74e8">
+    <div class="card u-ov-auto">
       <table>
         <thead>
           <tr>
@@ -134,7 +134,7 @@ final class FormTrackingController extends BaseController
             $statusLabel = $status === SubmissionStatus::Valide->value ? 'Validée' : ($status === SubmissionStatus::Refuse->value ? 'Refusée' : ($status === SubmissionStatus::Annule->value ? 'Annulée' : 'En cours'));
             ?>
           <tr>
-            <td class="u-fs-sm-ws-nowrap-79c5ae"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($submission['submitted_at'] ?? ''))) ?></td>
+            <td class="u-fs-sm-ws-nowrap"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($submission['submitted_at'] ?? ''))) ?></td>
             <td><?= \App\Core\App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')) ?></td>
             <?php foreach ($keyFields as $keyField):
                 $val = $data[$keyField['field_name']] ?? '';
@@ -145,7 +145,7 @@ final class FormTrackingController extends BaseController
             <?php endforeach; ?>
             <td><span class="badge <?= $badgeCls ?>"><?= $statusLabel ?></span></td>
             <td>
-              <a href="index.php?p=submission_view&id=<?= urlencode((string) ($submission['id'] ?? '')) ?>" class="btn btn-secondary u-fs-xxs-p-xxs-f4127e">Voir</a>
+              <a href="index.php?p=submission_view&id=<?= urlencode((string) ($submission['id'] ?? '')) ?>" class="btn btn-secondary u-fs-xxs-p-xxs">Voir</a>
             </td>
           </tr>
         <?php endforeach; ?>

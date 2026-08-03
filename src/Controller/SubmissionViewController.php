@@ -116,7 +116,7 @@ final class SubmissionViewController extends BaseController
 
   <div class="card">
     <h2><?= \App\Core\App::html()->escape($sub['form_label']) ?></h2>
-    <p class="u-c-muted-fs-sm-acdf91">
+    <p class="u-c-muted-fs-sm">
       Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime($sub['submitted_at'] ?? 'now'))) ?>
       <?php if ($sub['closed_at']): ?>
         — Clôturé le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime($sub['closed_at']))) ?>
@@ -160,7 +160,7 @@ final class SubmissionViewController extends BaseController
           <td><?= \App\Core\App::html()->escape(format_bytes((int) $att['file_size'])) ?></td>
           <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($att['uploaded_at']))) ?></td>
           <td>
-            <a href="index.php?p=download&id=<?= urlencode((string) ($att['id'] ?? '')) ?>" class="btn btn-secondary u-fs-xxs-p-xxs-f4127e">Télécharger</a>
+            <a href="index.php?p=download&id=<?= urlencode((string) ($att['id'] ?? '')) ?>" class="btn btn-secondary u-fs-xxs-p-xxs">Télécharger</a>
           </td>
         </tr>
       <?php endforeach; ?>
@@ -190,7 +190,7 @@ final class SubmissionViewController extends BaseController
   <?php endif; ?>
 
   <!-- Actions -->
-  <div class="card-actions u-mt-15-b06fb3">
+  <div class="card-actions u-mt-15">
     <a href="index.php?p=my_submissions" class="btn btn-secondary"><span aria-hidden="true">←</span> Retour</a>
     <?php if ($status === SubmissionStatus::EnCours->value && ($isAdmin || $sub['submitted_by'] === $user)): ?>
       <a href="index.php?p=confirm_action&action=cancel_submission&submission_id=<?= urlencode($subId) ?>&from=<?= urlencode('index.php?p=submission_view&id=' . $subId) ?>" class="btn btn-danger"><span aria-hidden="true">🗑</span> Annuler</a>

@@ -41,11 +41,11 @@ final class FormPreviewController extends BaseController
 
         ob_start();
         ?>
-  <div class="preview-banner"><span aria-hidden="true">👁</span> Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) ($form['id'] ?? '')) ?>" class="u-c-warning-fs-sm-ml-1-672292"><span aria-hidden="true">⚙</span> Retour à l'édition</a></div>
+  <div class="preview-banner"><span aria-hidden="true">👁</span> Mode prévisualisation — Ce formulaire n'est pas soumis, les données ne sont pas enregistrées <a href="index.php?p=admin_forms&form_id=<?= urlencode((string) ($form['id'] ?? '')) ?>" class="u-c-warning-fs-sm-ml-1"><span aria-hidden="true">⚙</span> Retour à l'édition</a></div>
 
   <h1><?= \App\Core\App::html()->escape($form['label']) ?></h1>
-  <?php if ($form['description']): ?><p class="u-c-muted-fs-sm-mb-custom-da74ac"><?= \App\Core\App::html()->escape($form['description']) ?></p><?php endif; ?>
-  <p class="u-c-muted-fs-sm-mb-15-7343a8">Formulaire rempli par : <strong><?= \App\Core\App::html()->escape(App::auth()->getUser()) ?></strong></p>
+  <?php if ($form['description']): ?><p class="u-c-muted-fs-sm-mb-2"><?= \App\Core\App::html()->escape($form['description']) ?></p><?php endif; ?>
+  <p class="u-c-muted-fs-sm-mb-15">Formulaire rempli par : <strong><?= \App\Core\App::html()->escape(App::auth()->getUser()) ?></strong></p>
 
   <?php if ($workflowSteps !== []): ?>
   <div class="workflow-preview">
@@ -69,10 +69,10 @@ final class FormPreviewController extends BaseController
   <?php endif; ?>
 
   <?php if ($grouped !== []): ?>
-  <form id="preview-form" class="u-pe-none-1f5d8c">
+  <form id="preview-form" class="u-pe-none">
     <?php foreach ($grouped as $groupName => $fields): ?>
-    <div class="card u-mb-15-f7683c">
-      <h3 class="u-mb-1-9590f7"><?= \App\Core\App::html()->escape($groupName) ?></h3>
+    <div class="card u-mb-15">
+      <h3 class="u-mb-1"><?= \App\Core\App::html()->escape($groupName) ?></h3>
       <?php foreach ($fields as $field):
           $fieldName = \App\Core\App::html()->escape($field['field_name']);
           $fieldLabel = \App\Core\App::html()->escape($field['label']);
@@ -80,7 +80,7 @@ final class FormPreviewController extends BaseController
           $placeholder = empty($field['hint']) ? '' : \App\Core\App::html()->escape($field['hint']);
           ?>
       <div class="field">
-        <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= empty($field['required']) ? '' : '<span class="u-c-danger-a69329">*</span>' ?></label>
+        <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= empty($field['required']) ? '' : '<span class="u-c-danger">*</span>' ?></label>
         <?php if ($field['field_type'] === FieldType::Textarea->value): ?>
           <textarea id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" rows="3" <?= $required ?> placeholder="<?= $placeholder ?>"></textarea>
         <?php elseif ($field['field_type'] === FieldType::Select->value && !empty($field['options'])): ?>
