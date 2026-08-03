@@ -14,7 +14,6 @@ parameters:
     tmpDir: /tmp/phpstan-no-silent-catch
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        - '#^Ce catch n.a ni throw ni exit#'
         - '#^Array key must be integer or string#'
         - '#^Comparison .+ contains non-comparable type#'
         - '#^Null value involved in binary operation#'
@@ -45,3 +44,9 @@ parameters:
 
         - '#^Overwriting variable .+ while changing its type#'
         - '#^.+ always return list, but is marked as#'
+
+services:
+    -
+        class: App\PHPStan\NoSilentCatchRule
+        tags:
+            - phpstan.rules.rule

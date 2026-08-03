@@ -3,7 +3,7 @@
 > Système de validation dématérialisé pour la DREETS Bourgogne-Franche-Comté.
 > Workflows de formulaires, suivi en temps réel, alertes automatiques J-N, supervision complète.
 
-**Version 10.34.0** | PHP 8.5 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
+**Version 10.37.0** | PHP 8.5 • SQLite • IIS • PHPMailer • Zéro framework • Zéro CDN
 
 ---
 
