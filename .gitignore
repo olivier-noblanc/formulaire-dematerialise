@@ -4,6 +4,9 @@
 !vendor/composer/
 !vendor/PHPMailer/
 
+# Deptrac cache
+.deptrac.cache
+
 # Base de données SQLite
 /db/*.db
 *.db
