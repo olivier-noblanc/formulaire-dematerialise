@@ -1,5 +1,29 @@
 # Changelog — CircuitDémat
 
+## [10.38.0] — 2026-08-04
+_Résumé : Fix isolation tests + suppression encryption morte + cleanup WIP._
+
+### 🔧 Fixes
+- **Isolation tests** : BackupControllerTest ne supprime plus `testeur@e2e.test` de `admins` — full suite passe (1415 tests, 0 fail, 3 deprecations)
+- **Encryption supprimée** : 11 tests retirés + methods `encrypt()`/`decrypt()` de SettingsService (feature morte, `APP_ENCRYPTION_KEY` jamais en prod)
+- **Admin routes e2e** : `admin@ci.test` → `testeur@e2e.test` dans HttpRouteTest (30 failures "Accès refusé" fixées)
+- **Tests obsolètes** : 3 tests retirés (commit c44f21b, properties `$database` supprimées des services)
+
+### 🧹 Cleanup
+- `.deptrac.cache` untracked + gitignored
+- `agent-pulse/` pattern gitignored (clone accidentel)
+- `phpstan_inst_stubs.php` : stub `SETTINGS_DEFAULTS` pour config.php gitignored
+
+### 📊 Métriques après session
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1429 | **1415** (0 fail) |
+| Assertions | 4135 | **4150** |
+| Deprecations | 0 | **3** (mineures, hors tests) |
+| PHPStan | 0 erreur | **0 erreur** |
+
+---
+
 ## [10.37.0] — 2026-08-01
 _Résumé : Audit CTO complet + corrections critiques (sécurité, CI, documentation) + fix règle Rector._
 

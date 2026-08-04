@@ -4,7 +4,7 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1429** (0 fail) |
+| Tests | **1415** (0 fail) |
 | Assertions | **4135** |
 | `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
@@ -28,6 +28,15 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.38.0 — Fix isolation tests + suppression encryption morte
+| Tâche | Détail |
+|-------|--------|
+| Isolation tests | BackupControllerTest ne supprime plus `testeur@e2e.test` de admins — full suite passe (1415 tests, 0 fail) |
+| Encryption supprimée | 11 tests retirés (feature morte, APP_ENCRYPTION_KEY jamais en prod) |
+| Tests obsolètes | 3 tests retirés (c44f21b, properties `$database` supprimées des services) |
+| Admin routes e2e | `admin@ci.test` → `testeur@e2e.test` (30 failures fixées) |
+| PHPStan | 0 erreur, level 8 |
 
 ### v10.28.0 — Persona self-agent, suppression confirmation
 | Tâche | Détail |
