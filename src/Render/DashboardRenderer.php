@@ -6,7 +6,6 @@ namespace App\Render;
 
 use App\Core\App;
 use App\Enum\SubmissionStatus;
-use App\Enum\ValidationAction;
 
 /**
  * Rendu de la page tableau de bord (dashboard.php).
@@ -355,71 +354,14 @@ final class DashboardRenderer
      */
     public static function submissionDetail($d, string $status, array $tokens, array $row): string
     {
-        $html = '';
-
-        if (is_array($d) && isset($d['validations']) && is_array($d['validations'])) {
-            $html .= "              <h3 class=\"u-mt-0-mb-1\">Historique des validations</h3>\n";
-            foreach ($d['validations'] as $validation) {
-                $step_label = \App\Core\App::html()->escape((string) ($validation['step_label'] ?? ''));
-                $email      = \App\Core\App::html()->escape((string) ($validation['email'] ?? ''));
-                $action     = (string) ($validation['action'] ?? '');
-                $is_valide  = ($action === ValidationAction::Valider->value);
-                $color_class = $is_valide ? 'text-success' : 'text-danger';
-                $icon       = $is_valide ? '✅' : '❌';
-                $label      = $is_valide ? 'Validé' : 'Refusé';
-                $comment    = '';
-                if (!empty($validation['commentaire'])) {
-                    $c = \App\Core\App::html()->escape((string) $validation['commentaire']);
-                    $comment = "<br><em>Commentaire :</em> {$c}";
-                }
-                $val_date_ts = strtotime((string) ($validation['date'] ?? ''));
-                $date = $val_date_ts !== false ? \App\Core\App::html()->escape(date('d/m/Y à H:i', $val_date_ts)) : '—';
-                $html .= "              <div class=\"validation-item\">\n"
-                    . "                <strong>{$step_label}</strong> - {$email} -\n"
-                    . "                <span class=\"{$color_class}\">\n"
-                    . "                  <span aria-hidden=\"true\">{$icon}</span> {$label}\n"
-                    . "                </span>\n"
-                    . "                {$comment}\n"
-                    . "                <br><small>{$date}</small>\n"
-                    . "              </div>\n";
-            }
-            $html .= "              <hr class=\"u-m-1rem-0\">\n";
-        }
-
         $data_array = is_array($d) ? $d : [];
-        $html .= '              ' . new FormRenderer()->submissionData($data_array, ['validations', 'csrf_token'], 'inline') . "\n";
+        $form_data_html = (string) new FormRenderer()->submissionData($data_array, ['validations', 'csrf_token'], 'inline');
+        $cancel_url = 'index.php?p=confirm_action&action=cancel_submission&submission_id='
+            . urlencode((string) ($row['id'] ?? '')) . '&from=dashboard.phpfrom=index.php?p=dashboard';
 
-        if ($status === SubmissionStatus::EnCours->value) {
-            $html .= "              <hr class=\"u-m-1rem-0\">\n";
-            $html .= "              <div class=\"u-d-flex-gap-05-fw-wrap\">\n";
-            if (App::auth()->isAdminEffective()) {
-                foreach ($tokens as $token) {
-                    if (!empty($token['done_at'])) {
-                        continue;
-                    }
-                    $tid   = \App\Core\App::html()->escape((string) ($token['id'] ?? ''));
-                    $temail = \App\Core\App::html()->escape((string) ($token['email'] ?? ''));
-                    $html .= "                <form method=\"POST\" class=\"u-d-inline\">\n"
-                        . App::security()->csrfField() . "\n"
-                        . "                  <input type=\"hidden\" name=\"action\" value=\"remind_one\">\n"
-                        . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
-                        . "                  <button type=\"submit\" class=\"btn btn-secondary u-fs-xxs-p-xs2\"><span aria-hidden=\"true\">📧</span> Rappeler {$temail}</button>\n"
-                        . "                </form>\n";
-                    $html .= "                <form method=\"POST\" class=\"u-d-inline\">\n"
-                        . App::security()->csrfField() . "\n"
-                        . "                  <input type=\"hidden\" name=\"action\" value=\"regenerate_token\">\n"
-                        . "                  <input type=\"hidden\" name=\"token_id\" value=\"{$tid}\">\n"
-                        . "                  <button type=\"submit\" class=\"btn btn-secondary u-fs-xxs-p-xs2\"><span aria-hidden=\"true\">🔄</span> Régénérer {$temail}</button>\n"
-                        . "                </form>\n";
-                }
-            }
-            $cancel_url = 'index.php?p=confirm_action&action=cancel_submission&submission_id='
-                . urlencode((string) ($row['id'] ?? '')) . '&from=dashboard.phpfrom=index.php?p=dashboard';
-            $html .= "                <a href=\"{$cancel_url}\" class=\"btn btn-danger u-fs-xxs-p-xs-td-none\"><span aria-hidden=\"true\">🗑</span> Annuler</a>\n";
-            $html .= "              </div>\n";
-        }
-
-        return $html;
+        ob_start();
+        require __DIR__ . '/templates/submission_detail.php';
+        return (string) ob_get_clean();
     }
 
     /**
