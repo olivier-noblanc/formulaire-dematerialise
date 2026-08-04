@@ -1,3 +1,4 @@
+@~/.config/opencode/AGENTS.md
 # Agent Guide — CircuitDémat
 
 Guide technique pour agents IA travaillant sur le codebase CircuitDémat.

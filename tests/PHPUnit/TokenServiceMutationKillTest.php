@@ -52,6 +52,7 @@ final class TokenServiceMutationKillTest extends TestCase
     {
         [$formId, $stepId, $subId, $tokenId, $token] = $this->createFullSubmission(
             validatorEmail: 'regen-validator@test.com',
+            formLabel: 'Test Regen Form',
             stepLabel: 'Validation Manager'
         );
         $formLabel = 'Test Regen Form';

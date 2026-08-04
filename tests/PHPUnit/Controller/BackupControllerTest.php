@@ -133,10 +133,10 @@ final class BackupControllerTest extends TestCase
         foreach ($this->createdFormIds as $id) {
             try { $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$id]); } catch (\Throwable) {}
         }
-        // Retirer testeur@e2e.test des admins (pour ne pas polluer les autres tests)
-        try {
-            $pdo->prepare("DELETE FROM admins WHERE email = 'testeur@e2e.test'")->execute();
-        } catch (\Throwable) {}
+        // Ne PAS retirer testeur@e2e.test des admins ici : c'est l'admin
+        // seedé par phpunit_bootstrap.php pour toute la suite de tests.
+        // Le supprimer contaminerait les autres tests qui dépendent de
+        // sa présence (notamment les tests e2e).
         $pdo->exec("DELETE FROM audit_log WHERE action IN ('backup_download', 'backup_restore', 'purge_data')");
         $this->createdSubmissionIds = [];
         $this->createdFormIds = [];
