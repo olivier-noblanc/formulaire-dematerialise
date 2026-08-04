@@ -187,12 +187,8 @@ final class MailServiceTest extends TestCase
 
     public function testRenderEmailTemplateContainsBody(): void
     {
-        try {
-            $html = $this->mail->renderEmailTemplate('Title', '<p>My Content</p>');
-            self::assertStringContainsString('My Content', $html);
-        } catch (\RuntimeException $e) {
-            self::markTestSkipped('App container services not registered');
-        }
+        $html = $this->mail->renderEmailTemplate('Title', '<p>My Content</p>');
+        self::assertStringContainsString('My Content', $html);
     }
 
     // ── Container integration ───────────────────────────────────

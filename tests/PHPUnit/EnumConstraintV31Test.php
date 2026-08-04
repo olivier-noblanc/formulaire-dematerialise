@@ -31,15 +31,6 @@ final class EnumConstraintV31Test extends TestCase
         $pdo->exec("DELETE FROM mail_log WHERE recipient LIKE '%enum-v31-test%'");
     }
 
-    private function skipIfNoCheckConstraints(string $table, string $column): void
-    {
-        $pdo = $this->db->getPdo();
-        $sql = $pdo->query("SELECT sql FROM sqlite_master WHERE type='table' AND name='$table'")->fetchColumn();
-        if ($sql === false || !str_contains($sql, "$column IN")) {
-            self::markTestSkipped("CHECK constraint sur $table.$column absente (migration v31 peut avoir échoué)");
-        }
-    }
-
     // ── form_fields.field_type ──────────────────────────────────────
 
     public function testFormFieldsFieldTypeRejectsInvalidInsert(): void

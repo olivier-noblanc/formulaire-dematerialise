@@ -34,15 +34,6 @@ final class EnumConstraintTest extends TestCase
         $pdo->exec('DELETE FROM admin_requests WHERE 1=1');
     }
 
-    private function skipIfNoCheckConstraints(string $table): void
-    {
-        $pdo = $this->db->getPdo();
-        $sql = $pdo->query("SELECT sql FROM sqlite_master WHERE type='table' AND name='$table'")->fetchColumn();
-        if ($sql === false || !str_contains($sql, 'CHECK')) {
-            self::markTestSkipped("CHECK constraints not present on $table (migration v30 may have failed)");
-        }
-    }
-
     // ── submissions.status (triggers) ──────────────────────────────
 
     public function testSubmissionsStatusRejectsInvalidInsert(): void
@@ -140,7 +131,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testFormFieldsFilledByRejectsInvalidInsert(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
 
@@ -152,7 +142,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testFormFieldsFilledByRejectsInvalidUpdate(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $fieldId = $this->createTestFormField($pdo, $formId);
@@ -165,7 +154,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testFormFieldsFilledByAcceptsValidValues(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
 
@@ -181,7 +169,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testFormFieldsVisibilityRejectsInvalidInsert(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
 
@@ -193,7 +180,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testFormFieldsVisibilityRejectsInvalidUpdate(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $fieldId = $this->createTestFormField($pdo, $formId);
@@ -206,7 +192,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testFormFieldsVisibilityAcceptsValidValues(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
 
@@ -222,7 +207,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testAdminRequestsStatusRejectsInvalidInsert(): void
     {
-        $this->skipIfNoCheckConstraints('admin_requests');
         $pdo = $this->db->getPdo();
 
         $this->expectException(\PDOException::class);
@@ -233,7 +217,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testAdminRequestsStatusRejectsInvalidUpdate(): void
     {
-        $this->skipIfNoCheckConstraints('admin_requests');
         $pdo = $this->db->getPdo();
         $reqId = $this->createTestAdminRequest($pdo);
 
@@ -245,7 +228,6 @@ final class EnumConstraintTest extends TestCase
 
     public function testAdminRequestsStatusAcceptsValidValues(): void
     {
-        $this->skipIfNoCheckConstraints('admin_requests');
         $pdo = $this->db->getPdo();
 
         foreach (['pending', 'approved', 'rejected'] as $status) {

@@ -8,7 +8,6 @@ use App\Contract\AuthInterface;
 use App\Contract\MailInterface;
 use App\Core\App;
 use App\Core\Database;
-use App\Enum\AdminRequestStatus;
 use App\Repository\AdminRepository;
 use App\Repository\FormRepository;
 use App\Repository\SettingsRepository;
@@ -23,6 +22,8 @@ use App\Repository\SettingsRepository;
  */
 final class AuthService implements AuthInterface
 {
+    use AdminRequestManagementTrait;
+
     private ?MailInterface $mail = null;
     public AdminRepository $adminRepository;
     public FormRepository $formRepository;

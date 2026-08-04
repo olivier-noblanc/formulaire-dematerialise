@@ -6,6 +6,7 @@ namespace App\Controller;
 use App\Core\App;
 use App\Enum\FieldType;
 use App\Enum\FilledBy;
+use App\Render\FormRenderer;
 
 /**
  * Contrôleur du formulaire de demande (form.php?f=<slug>).
