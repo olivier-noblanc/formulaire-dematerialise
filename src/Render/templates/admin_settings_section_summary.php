@@ -65,7 +65,7 @@
     <div class="<?= $security_score >= 3 ? 'score-ok' : 'score-warn' ?>">
         <strong>Niveau de sécurité : <?= $security_score ?>/4</strong>
         <div class="hint-muted-3">
-            <?= implode(' · ', array_map(fn(string $i) => '✔ ' . $i, $security_items)) ?>
+            <?= implode(' · ', array_map(fn(string $i): string => '✔ ' . $i, $security_items)) ?>
         </div>
         <?php if ($security_score < 3): ?>
             <div class="hint-warning">

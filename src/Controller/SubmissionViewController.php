@@ -18,24 +18,26 @@ final class SubmissionViewController extends BaseController
         if ($subId === '' || $subId === '0') {
             // B-EXIT : utiliser redirect() pour mode 'no-exit' (tests PHPUnit)
             $this->redirect(App::html()->buildUrl('index.php?p=dashboard'));
+            return;
         }
 
         $sub = $this->submissionRepo->findByIdWithForm($subId);
 
-        if (!$sub) {
+        if ($sub === null) {
             new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Soumission introuvable',
                 'La soumission demandée n\'existe pas ou a été supprimée.',
                 'Vérifiez que l\'identifiant dans l\'adresse est correct. Retournez à votre tableau de bord pour voir vos demandes.'
             );
+            return;
         }
 
         $data = json_decode($sub['data'], true) ?? [];
         $status = $sub['status'] ?? SubmissionStatus::EnCours->value;
         $user = App::auth()->getUser();
         $isAdmin = App::auth()->isAdminEffective();
-        $isFormOwner = App::auth()->isFormOwner((string) $sub['form_id']);
+        $isFormOwner = App::auth()->isFormOwner($sub['form_id']);
 
         $isValidator = false;
         if (!$isAdmin && !$isFormOwner && $sub['submitted_by'] !== $user) {
@@ -45,6 +47,7 @@ final class SubmissionViewController extends BaseController
                 new \App\Render\ErrorRenderer()->errorPage(403, 'Accès non autorisé',
                     'Vous n\'avez pas les droits pour voir cette soumission.',
                     'Seuls l\'auteur, les validateurs et les administrateurs peuvent consulter une soumission.');
+                return;
             }
         } else {
             $isValidator = $this->tokenRepo->existsForSubmissionAndEmail($subId, $user);
@@ -87,7 +90,7 @@ final class SubmissionViewController extends BaseController
             $allDone = true;
             $hasTokens = $stepTokens !== [];
             foreach ($stepTokens as $tk) {
-                if (empty($tk['done_at'])) { $allDone = false; break; }
+                if (!((bool)($tk['done_at']))) { $allDone = false; break; }
             }
             $stepStatus = $allDone && $hasTokens ? 'validated' : ($hasTokens ? 'current' : 'upcoming');
             $renderedSteps[] = [
@@ -118,7 +121,7 @@ final class SubmissionViewController extends BaseController
     <h2><?= \App\Core\App::html()->escape($sub['form_label']) ?></h2>
     <p class="u-c-muted-fs-sm">
       Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime($sub['submitted_at'] ?? 'now'))) ?>
-      <?php if ($sub['closed_at']): ?>
+      <?php if ($sub['closed_at'] !== null && $sub['closed_at'] !== ''): ?>
         — Clôturé le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime($sub['closed_at']))) ?>
       <?php endif; ?>
     </p>

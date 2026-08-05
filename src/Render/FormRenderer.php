@@ -93,7 +93,7 @@ final class FormRenderer
                 break;
         }
 
-        $user_hint = empty($field['hint']) ? '' : '<span class="hint">' . \App\Core\App::html()->escape(t_jargon($field['hint'])) . '</span>';
+        $user_hint = (bool)($field['hint']) ? '<span class="hint">' . \App\Core\App::html()->escape(t_jargon($field['hint'])) . '</span>' : '';
 
         $auto_hint_html = '';
         if ($auto_hint_text !== '') {
@@ -122,59 +122,40 @@ final class FormRenderer
 
         $placeholder_attr = $placeholder !== '' ? ' placeholder="' . \App\Core\App::html()->escape($placeholder) . '"' : '';
 
-        switch ($field['field_type']) {
-            case FieldType::Email->value:
-                $val       = \App\Core\App::html()->escape($posted_val ?? '');
-                $maxlength = ' maxlength="500"';
-                $list_attr = $datalist_id === '' || $datalist_id === '0' ? '' : ' list="' . \App\Core\App::html()->escape($datalist_id) . '"';
-                return <<<HTML
-                    <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="email" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$maxlength}{$placeholder_attr} pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"{$list_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
-                    HTML;
-
-            case FieldType::Date->value:
-                $val = \App\Core\App::html()->escape($posted_val ?? '');
-                return <<<HTML
-                    <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="date" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" value="{$val}"{$placeholder_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
-                    HTML;
-
-            case FieldType::Select->value:
-                $opts_raw    = $field['options'] ?? '[]';
-                $opts        = json_decode($opts_raw, true) ?? [];
-                $options_html = '<option value="">— Sélectionner —</option>';
+        $template = 'form_field_' . $field['field_type'] . '.php';
+        if (!file_exists(__DIR__ . '/templates/' . $template)) {
+            $template = 'form_field_default.php';
+        }
+        return $this->loadTemplate($template, [
+            'name'            => $name,
+            'label'           => $label,
+            'req_span'        => $req_span,
+            'required_attr'   => $required_attr,
+            'error_class'     => $error_class,
+            'disabled_attr'   => $disabled_attr,
+            'auto_hint_html'  => $auto_hint_html,
+            'user_hint'       => $user_hint,
+            'error_html'      => $error_html,
+            'placeholder_attr'=> $placeholder_attr,
+            'html5_type'      => $html5_type,
+            'html5_extra'     => $html5_extra,
+            'val'             => \App\Core\App::html()->escape($posted_val ?? ''),
+            'maxlength'       => ' maxlength="500"',
+            'list_attr'       => $datalist_id === '' || $datalist_id === '0' ? '' : ' list="' . \App\Core\App::html()->escape($datalist_id) . '"',
+            'checked'         => in_array($posted_val, ['', null, '0'], true) ? '' : ' checked',
+            'options_html'    => (function() use ($field, $posted_val): string {
+                $opts_raw = $field['options'] ?? '[]';
+                $opts     = json_decode($opts_raw, true) ?? [];
+                $html     = '<option value="">— Sélectionner —</option>';
                 foreach ($opts as $opt) {
                     $sel = ($posted_val === $opt) ? ' selected' : '';
-                    $options_html .= '<option value="' . \App\Core\App::html()->escape($opt) . '"' . $sel . '>' . \App\Core\App::html()->escape($opt) . '</option>';
+                    $html .= '<option value="' . \App\Core\App::html()->escape($opt) . '"' . $sel . '>' . \App\Core\App::html()->escape($opt) . '</option>';
                 }
-                return <<<HTML
-                    <div class="field"><label for="{$name}">{$label}{$req_span}</label><select id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}"{$disabled_attr}>{$options_html}</select>{$user_hint}{$error_html}</div>
-                    HTML;
-
-            case FieldType::Checkbox->value:
-                $checked = $posted_val === '' || $posted_val === null || $posted_val === '0' ? '' : ' checked';
-                return <<<HTML
-                    <label class="checkbox-item"><input type="checkbox" name="{$name}" value="1"{$checked}{$required_attr}{$disabled_attr}> {$label}{$req_span}</label>
-                    HTML;
-
-            case FieldType::Textarea->value:
-                $val       = \App\Core\App::html()->escape($posted_val ?? '');
-                $maxlength = ' maxlength="' . $textarea_maxlength . '"';
-                return <<<HTML
-                    <div class="field full"><label for="{$name}">{$label}{$req_span}</label><textarea id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}"{$placeholder_attr}{$maxlength}{$disabled_attr}>{$val}</textarea>{$auto_hint_html}{$user_hint}{$error_html}</div>
-                    HTML;
-
-            case FieldType::File->value:
-                $accept = implode(',', array_map(fn(string $ext) => '.' . $ext, App::attachment()->getAllowedExtensions()));
-                return <<<HTML
-                    <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="file" id="{$name}" name="{$name}"{$required_attr}{$aria_attr} class="{$error_class}" accept="{$accept}"{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
-                    HTML;
-
-            default:
-                $val       = \App\Core\App::html()->escape($posted_val ?? '');
-                $maxlength = ' maxlength="500"';
-                return <<<HTML
-                    <div class="field"><label for="{$name}">{$label}{$req_span}</label><input type="{$html5_type}" id="{$name}" name="{$name}"{$required_attr}{$aria_attr}{$html5_extra} class="{$error_class}" value="{$val}"{$maxlength}{$placeholder_attr}{$disabled_attr}>{$auto_hint_html}{$user_hint}{$error_html}</div>
-                    HTML;
-        }
+                return $html;
+            })(),
+            'accept'          => implode(',', array_map(fn(string $ext): string => '.' . $ext, App::attachment()->getAllowedExtensions())),
+            'textarea_maxlength' => $textarea_maxlength,
+        ]);
     }
 
     /**
@@ -196,7 +177,6 @@ final class FormRenderer
         $html .= '<button type="submit" class="btn btn-secondary btn-sm-2">Rechercher</button>';
         if ($current_search !== '') {
             $clear_url = $action_url;
-            $sep = (str_contains($clear_url, '?')) ? '&' : '?';
             $parts = [];
             foreach ($hidden_fields as $hname => $hval) {
                 $parts[] = \App\Core\App::html()->escape($hname) . '=' . urlencode((string) $hval);
@@ -221,7 +201,7 @@ final class FormRenderer
     {
         $html = '';
         foreach ($data as $k => $v) {
-            if ($v === '' || $v === null || $v === '0') {
+            if (in_array($v, ['', null, '0'], true)) {
                 continue;
             }
             if (in_array($k, $exclude, true)) {
@@ -266,18 +246,99 @@ final class FormRenderer
             return '';
         }
 
-        $html  = '<div class="form-progress" aria-live="polite">';
-        $html .=   '<div class="form-progress-header">';
-        $html .=     '<span class="form-progress-label">Étape <strong id="form-progress-current">0</strong> sur ' . $section_count . '</span>';
-        $html .=     '<span class="form-progress-count"><span id="form-progress-filled">0</span> / ' . $total_fields . ' champ(s) rempli(s)</span>';
-        $html .=   '</div>';
-        $html .=   '<div class="form-progress-bar" role="progressbar" '
-             . 'aria-valuemin="0" aria-valuemax="' . $total_fields . '" aria-valuenow="0" '
-             . 'aria-label="Progression de la saisie du formulaire" id="form-progress-bar">';
-        $html .=     '<div class="form-progress-fill w-0" id="form-progress-fill"></div>';
-        $html .=   '</div>';
-        $html .=   '<input type="hidden" id="form-progress-total-fields" value="' . $total_fields . '">';
-        $html .=   '<input type="hidden" id="form-progress-section-count" value="' . $section_count . '">';
-        return $html . '</div>';
+        return $this->loadTemplate('form_progress_indicator.php', [
+            'section_count' => $section_count,
+            'total_fields'  => $total_fields,
+        ]);
+    }
+
+    /**
+     * Rendu HTML de l'écran de confirmation affiché quand l'agent a déjà une
+     * soumission en cours sur ce formulaire (v34 — remplace le blocage en base).
+     *
+     * @param array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string} $form
+     * @param array{submitted_at: string|null, id: string}       $existing_submission
+     */
+    public function confirmDuplicate(array $form, array $existing_submission, string $slug): string
+    {
+        $h       = \App\Core\App::html()->h(...);
+        $tJargon = \App\Core\App::html()->tJargon(...);
+
+        return $this->loadTemplate('form_confirm_duplicate.php', [
+            'h'          => $h,
+            'tJargon'    => $tJargon,
+            'form'       => $form,
+            'date'       => $h(date('d/m/Y à H:i', (int) strtotime((string) ($existing_submission['submitted_at'] ?? '')))),
+            'existingId' => urlencode((string) ($existing_submission['id'] ?? '')),
+            'confirmUrl' => 'index.php?p=form&f=' . urlencode($slug) . '&confirmed=1',
+        ]);
+    }
+
+    /**
+     * Rendu HTML du formulaire (titre, champs, consentement RGPD,
+     * bouton submit, script de progression). Reproduit à l'identique la
+     * structure HTML historique de form.php (output buffering + inline PHP).
+     *
+     * @param array{label: string, description: string|null}  $form
+     * @param array{submitted_at: string|null, id: string}|null $existing_submission
+     * @param array<string, list<array<string, mixed>>>       $grouped  Clé=nom du groupe, valeur=liste des champs
+     * @param array<string, string>                           $field_errors
+     * @param array<string, mixed>                            $file_errors  Erreurs spécifiques aux uploads
+     * @param array<string, string>                           $field_values
+     */
+    public function formContent(
+        array $form,
+        string $submitted_by,
+        $existing_submission,
+        bool $success,
+        string $submission_id,
+        array $grouped,
+        array $field_errors,
+        array $file_errors,
+        array $field_values,
+        string $ldap_datalist_id,
+        string $ldap_datalist_html,
+        string $slug
+    ): string {
+        $h       = \App\Core\App::html()->h(...);
+        $tJargon = \App\Core\App::html()->tJargon(...);
+
+        return $this->loadTemplate('form_content.php', [
+            'h'                   => $h,
+            'tJargon'             => $tJargon,
+            'form'                => $form,
+            'submitted_by'        => $submitted_by,
+            'existing_submission' => $existing_submission,
+            'success'             => $success,
+            'submission_id'       => $submission_id,
+            'grouped'             => $grouped,
+            'field_errors'        => $field_errors,
+            'file_errors'         => $file_errors,
+            'field_values'        => $field_values,
+            'ldap_datalist_id'    => $ldap_datalist_id,
+            'ldap_datalist_html'  => $ldap_datalist_html,
+            'slug'                => $slug,
+        ]);
+    }
+
+    /**
+     * Charge un template PHP depuis le dossier templates/ avec des variables extraites.
+     *
+     * @param array<string, mixed> $vars
+     */
+    private function loadTemplate(string $filename, array $vars = []): string
+    {
+        $filepath = __DIR__ . '/templates/' . $filename;
+        if (!file_exists($filepath)) {
+            throw new \RuntimeException("Template not found: {$filepath}");
+        }
+
+        extract($vars);
+        unset($vars);
+
+        ob_start();
+        include $filepath;
+        $html = ob_get_clean();
+        return $html === false ? '' : $html;
     }
 }

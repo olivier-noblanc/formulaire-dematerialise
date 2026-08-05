@@ -72,7 +72,7 @@ class SqlPlaceholderCountRule implements Rule
         $traverser->addVisitor($visitor);
         $traverser->traverse($stmts);
 
-        return $visitor->errors;
+        return $visitor->getErrors();
     }
 
     /**
@@ -156,7 +156,15 @@ final class SqlPlaceholderVisitor extends \PhpParser\NodeVisitorAbstract
     private array $preparedCounts = [];
 
     /** @var list<\PHPStan\Rules\IdentifierRuleError> */
-    public array $errors = [];
+    private array $errors = [];
+
+    /**
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
+     */
+    public function getErrors(): array
+    {
+        return $this->errors;
+    }
 
     public function __construct(private readonly SqlPlaceholderCountRule $rule)
     {

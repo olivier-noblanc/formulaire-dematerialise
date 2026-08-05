@@ -53,8 +53,9 @@ function apply_migration_v21(PDO $pdo, int $current_version): int {
             $stmt_update = $pdo->prepare("UPDATE steps SET condition = ? WHERE id = ?");
             foreach ($steps as $step) {
                 $cond = json_decode($step['condition'], true);
-                if (is_array($cond) && isset($cond['op']) && isset($convert[$cond['op']])) {
-                    $cond['op'] = $convert[$cond['op']];
+                $op = is_array($cond) ? ($cond['op'] ?? null) : null;
+                if (is_string($op) && isset($convert[$op])) {
+                    $cond['op'] = $convert[$op];
                     $stmt_update->execute([json_encode($cond, JSON_UNESCAPED_UNICODE), $step['id']]);
                 }
             }

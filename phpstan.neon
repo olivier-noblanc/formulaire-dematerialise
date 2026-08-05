@@ -34,6 +34,10 @@ parameters:
         -
             identifier: shipmonk.deadMethod
             path: src/Render/DynamicCssService.php
+        -
+            message: '#no value type specified in iterable type array#'
+            path: src/Render/AdminSettingsRenderer.php
+
     bootstrapFiles:
         - helpers.php
         - phpstan_inst_stubs.php

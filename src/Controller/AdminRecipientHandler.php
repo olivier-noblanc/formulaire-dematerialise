@@ -24,8 +24,8 @@ final class AdminRecipientHandler
         if ($step_id === '' || $step_id === '0' || ($email === '' || $email === '0')) {
             return ['error' => 'L\'étape et le courriel sont requis.'];
         }
-        $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email);
-        if (!$is_dynamic && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email) === 1;
+        if (!$is_dynamic && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             return ['error' => 'Le destinataire "' . \App\Core\App::html()->escape($email) . '" n\'est ni une adresse email valide ni une référence dynamique {{field_name}}. Format attendu : prenom.nom@' . App::settings()->get('email_domain', 'exemple.invalid') . ' ou {{nom_du_champ}}'];
         }
         try {
@@ -71,7 +71,7 @@ final class AdminRecipientHandler
         if ($form_id === '' || $form_id === '0' || ($owner_email === '' || $owner_email === '0')) {
             return ['error' => 'Le courriel du propriétaire est requis.'];
         }
-        if (!filter_var($owner_email, FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($owner_email, FILTER_VALIDATE_EMAIL) === false) {
             return ['error' => 'L\'adresse courriel "' . \App\Core\App::html()->escape($owner_email) . '" n\'est pas valide. Format attendu : prenom.nom@' . App::settings()->get('email_domain', 'exemple.invalid') . ''];
         }
         try {

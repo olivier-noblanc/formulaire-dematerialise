@@ -57,7 +57,7 @@ final class SecurityService implements SecurityInterface
         $csp = "default-src 'self'; script-src 'self' 'nonce-{$nonceValue}'; style-src 'self' 'nonce-{$nonceValue}'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
         header('Content-Security-Policy: ' . $csp);
 
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+        $isSecure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== '' && $_SERVER['HTTPS'] !== 'off');
         if ($isSecure) {
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
         }
@@ -65,7 +65,7 @@ final class SecurityService implements SecurityInterface
 
     public function generateCsrfToken(): string
     {
-        if (empty($_SESSION['csrf_token'])) {
+        if (($_SESSION['csrf_token'] ?? '') === '') {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
         return $_SESSION['csrf_token'];
@@ -102,7 +102,7 @@ final class SecurityService implements SecurityInterface
         $token = $_POST['csrf_token'] ?? '';
         $sessionToken = $_SESSION['csrf_token'] ?? '';
 
-        if ($token === '' || $token === null || $token === '0' || $sessionToken === '' || $sessionToken === null || $sessionToken === '0') {
+        if ($token === '' || $token === '0' || $sessionToken === '' || $sessionToken === '0') {
             return false;
         }
         if (!hash_equals($sessionToken, $token)) {

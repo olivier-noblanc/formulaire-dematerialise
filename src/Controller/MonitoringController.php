@@ -31,10 +31,11 @@ final class MonitoringController extends BaseController
         // Query #2: Blocked tokens
         $delaiRelance = (int) App::settings()->get('delai_relance_h', '48');
         $bloqueHours = $delaiRelance * 2;
+        /** @var list<array{id: string, email: string, sent_at: string|null, relance_count: int, expires_at: string|null, step_label: string, ordre: int, submission_id: string, submitted_by: string|null, submitted_at: string|null, form_label: string}> $tokensBloques */
         $tokensBloques = $this->tokenRepo->findBlocked($bloqueHours);
 
         // Query #3: Expired tokens
-        $tokensExpired = $this->tokenRepo->countExpired();
+        $this->tokenRepo->countExpired();
 
         // Query #4 & #5: Active submissions with deadlines + batch pending counts
         $activeAlerts = [];
@@ -53,12 +54,15 @@ final class MonitoringController extends BaseController
                 $data = json_decode($alertSubmission['data'], true) ?? [];
                 $deadlineField = $alertSubmission['deadline_field'];
                 $deadlineStr = $data[$deadlineField] ?? '';
-                if ($deadlineStr === '' || $deadlineStr === '0') {
+                if ($deadlineStr === '') {
+                    continue;
+                }
+                if ($deadlineStr === '0') {
                     continue;
                 }
 
                 $deadlineTs = parse_deadline_date($deadlineStr);
-                if (!$deadlineTs) {
+                if (!((bool)$deadlineTs)) {
                     continue;
                 }
 
@@ -79,7 +83,7 @@ final class MonitoringController extends BaseController
                     ];
                 }
             }
-            usort($activeAlerts, fn($a, $b) => $a['days_remaining'] - $b['days_remaining']);
+            usort($activeAlerts, fn(array $a, array $b): int|float => $a['days_remaining'] - $b['days_remaining']);
         } catch (\Exception) {
             $activeAlerts = [];
         }
@@ -87,6 +91,7 @@ final class MonitoringController extends BaseController
         // Query #6: Recent alerts (existing repo method)
         $recentAlerts = [];
         try {
+            /** @var list<array{id: string, rule_id: string, submission_id: string, sent_at: string, message: string|null, form_label: string, rule_label: string|null}> $recentAlerts */
             $recentAlerts = $this->alertRepo->getLogsWithForm(20);
         } catch (\Exception) {
             $recentAlerts = [];
@@ -116,14 +121,17 @@ final class MonitoringController extends BaseController
             App::audit()->log('smtp_test', 'smtp', $smtpDetail);
         }
 
+        /** @var list<array{id: string, created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}> $mailLogs */
         $mailLogs = App::mail()->getRecentLogs(20);
         $lastRemind = App::settings()->get('last_remind_run', '');
         $lastAlertCheck = App::settings()->get('last_alert_check', '');
 
         // Query #7: Daily activity
+        /** @var list<array{day: string, cnt: int}> $dailyStats */
         $dailyStats = $this->submissionRepo->getDailyCounts(7);
 
         // Query #8: Per-form stats
+        /** @var list<array{label: string, total: int, en_cours: int, valide: int, refuse: int}> $byFormStats */
         $byFormStats = $this->formRepo->getSubmissionCounts();
 
         // Audit filters
@@ -181,9 +189,11 @@ final class MonitoringController extends BaseController
         $auditOffset = ($auditPage - 1) * $auditPerPage;
 
         // Query #11: Audit paginated
+        /** @var list<array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}> $auditLogs */
         $auditLogs = $this->auditRepo->findFilteredPaginated($auditFilters, $auditPerPage, $auditOffset);
 
         // Query #12: Distinct action types
+        /** @var list<string> $actionTypes */
         $actionTypes = $this->auditRepo->getDistinctActionTypes();
 
         $auditBaseQs = http_build_query(array_filter([
@@ -192,7 +202,7 @@ final class MonitoringController extends BaseController
             'log_target'     => $auditFilters['log_target'],
             'log_date_debut' => $auditFilters['log_date_debut'],
             'log_date_fin'   => $auditFilters['log_date_fin'],
-        ], fn($v) => $v !== ''));
+        ], fn(string $v): bool => $v !== ''));
         $auditBaseUrl = 'index.php?p=monitoring' . ($auditBaseQs !== '' && $auditBaseQs !== '0' ? '?' . $auditBaseQs : '');
 
         $ctx = new \App\Render\MonitoringContext(
@@ -203,8 +213,8 @@ final class MonitoringController extends BaseController
             taux_validation: $tauxValidation,
             avg_days: $avgDays,
             avg_hours: $avgHours,
-            tokens_bloques: $tokensBloques,
             bloque_hours: $bloqueHours,
+            tokens_bloques: $tokensBloques,
             active_alerts: $activeAlerts,
             recent_alerts: $recentAlerts,
             by_form_stats: $byFormStats,
@@ -229,6 +239,6 @@ final class MonitoringController extends BaseController
         $navExtra   = \App\Render\MonitoringRenderer::navExtra();
         $content    = \App\Render\MonitoringRenderer::content($ctx);
 
-        echo new \App\Render\NavigationRenderer()->page('Surveillance', 'monitoring', $pageCss, $content, ['nav_extra' => $navExtra]);
+        echo new \App\Render\PageRenderer()->page('Surveillance', 'monitoring', $pageCss, $content, ['nav_extra' => $navExtra]);
     }
 }

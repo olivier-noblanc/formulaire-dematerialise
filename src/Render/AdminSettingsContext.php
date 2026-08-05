@@ -12,9 +12,6 @@ namespace App\Render;
 final readonly class AdminSettingsContext
 {
     /**
-     * @param string               $success
-     * @param string               $error
-     * @param string               $test
      * @param array<string, mixed>|null $verify_result
      */
     public function __construct(
@@ -23,4 +20,19 @@ final readonly class AdminSettingsContext
         public string $test,
         public ?array $verify_result,
     ) {}
+
+    /**
+     * Build from legacy array state (BC for lib_wrappers).
+     *
+     * @param array<string, mixed> $state
+     */
+    public static function fromLegacyArray(array $state): self
+    {
+        return new self(
+            success: (string) ($state['success'] ?? ''),
+            error: (string) ($state['error'] ?? ''),
+            test: (string) ($state['test'] ?? ''),
+            verify_result: $state['verify_result'] ?? null,
+        );
+    }
 }

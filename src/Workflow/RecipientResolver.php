@@ -22,7 +22,7 @@ final readonly class RecipientResolver
     ) {}
 
     /** @param array<string, mixed> $formData */
-    public function resolve(string $recipient, array $formData, ?string $submissionId = null): string
+    public function resolve(string $recipient, mixed $formData, ?string $submissionId = null): string
     {
         // Cas spécial : {{owner}}
         if ($recipient === '{{owner}}') {
@@ -31,11 +31,11 @@ final readonly class RecipientResolver
                 if ($fid !== null && $fid !== '') {
                     $owners = $this->formRepository->findOwnersByFormId($fid);
                     $firstOwnerEmail = $owners[0]['email'] ?? '';
-                    if ($owners !== [] && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL)) {
+                    if ($owners !== [] && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL) !== false) {
                         return $firstOwnerEmail;
                     }
                     $adminEmail = $this->settingsService->get('admin_email');
-                    if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+                    if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL) !== false) {
                         return $adminEmail;
                     }
                 }
@@ -43,18 +43,18 @@ final readonly class RecipientResolver
             return $recipient;
         }
 
-        if (preg_match('/^\{\{([a-z][a-z0-9_]*)\}\}$/', $recipient, $m)) {
+        if (preg_match('/^\{\{([a-z][a-z0-9_]*)\}\}$/', $recipient, $m) === 1) {
             $fieldName = $m[1];
-            if (isset($formData[$fieldName]) && !empty($formData[$fieldName])) {
+            if (isset($formData[$fieldName]) && (bool)($formData[$fieldName])) {
                 $resolved = trim((string) $formData[$fieldName]);
-                if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                if (filter_var($resolved, FILTER_VALIDATE_EMAIL) !== false) {
                     return $resolved;
                 }
             }
             foreach ($formData as $key => $val) {
                 if (strtolower((string) $key) === $fieldName && $val !== '' && $val !== null && $val !== '0') {
                     $resolved = trim((string) $val);
-                    if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                    if (filter_var($resolved, FILTER_VALIDATE_EMAIL) !== false) {
                         return $resolved;
                     }
                 }

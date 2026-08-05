@@ -62,7 +62,7 @@ final readonly class AttachmentService
     /**
      * Gère l'upload d'un fichier pour une soumission.
      *
-     * @param array<string, mixed> $file Le tableau $_FILES['field_name']
+     * @param array{name: string, type: string, tmp_name: string, error: int, size: int, full_path?: string} $file Le tableau $_FILES['field_name']
      * @param string $submissionId ID de la soumission
      * @param string $fieldName Nom du champ
      * @return array{success: bool, message: string, attachment_id: string|null}

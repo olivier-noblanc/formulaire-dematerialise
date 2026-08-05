@@ -14,12 +14,6 @@ declare(strict_types=1);
 function run_tests_unit_wave4_validation(): void {
 echo "── 12. Tests Wave 4 — Audit remediation (A-18) ──\n";
 
-// ── Setup: APP_ENCRYPTION_KEY for encrypt_setting / decrypt_setting tests ──
-// Use a stable 32-byte key for the test session (encrypt_setting requires >= 32 bytes).
-if (getenv('APP_ENCRYPTION_KEY') === false || strlen(getenv('APP_ENCRYPTION_KEY')) < 32) {
-    putenv('APP_ENCRYPTION_KEY=' . str_repeat('a', 32));
-}
-
 // ───────────────────────────────────────────────────────────────
 // 12.1 — validate_input() — uuid rule
 // ───────────────────────────────────────────────────────────────

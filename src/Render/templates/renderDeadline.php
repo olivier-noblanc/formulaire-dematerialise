@@ -1,4 +1,10 @@
 <?php
+/**
+ * @var int                                 $deadline_ts
+ * @var string                              $status
+ * @var array{urgency?: string}             $dl_info
+ * @var int                                 $days_remaining
+ */
 if (!$deadline_ts || $status !== \App\Enum\SubmissionStatus::EnCours->value) {
     return '';
 }

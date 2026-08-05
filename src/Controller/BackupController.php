@@ -58,7 +58,7 @@ final class BackupController extends BaseController
                         UPLOAD_ERR_CANT_WRITE => 'Échec de l\'écriture du fichier sur le disque.',
                         UPLOAD_ERR_EXTENSION  => 'Téléchargement bloqué par une extension PHP.',
                     ];
-                    $code = $_FILES['backup_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+                    $code = (int) ($_FILES['backup_file']['error'] ?? UPLOAD_ERR_NO_FILE);
                     $errorMsg = $uploadErrors[$code] ?? 'Erreur inconnue lors du téléchargement.';
                 } else {
                     $tmpPath  = $_FILES['backup_file']['tmp_name'];
@@ -247,7 +247,11 @@ final class BackupController extends BaseController
 
     private function isValidSqliteDb(string $path): bool
     {
-        if (!file_exists($path) || filesize($path) < 16) {
+        if (!file_exists($path)) {
+            return false;
+        }
+        $size = @filesize($path);
+        if ($size === false || $size < 16) {
             return false;
         }
         $handle = fopen($path, 'rb');

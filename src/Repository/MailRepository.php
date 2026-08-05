@@ -45,6 +45,6 @@ final class MailRepository extends BaseRepository
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='mail_log'"
         );
-        return ($result['cnt'] ?? 0) > 0;
+        return ((int) ($result['cnt'] ?? 0)) > 0;
     }
 }

@@ -56,7 +56,7 @@ final class TestModeService
             return;
         }
         // B-EXIT : mode 'no-exit' pour tests PHPUnit — capture au lieu d'exit.
-        // On utilise isset() plutôt que !empty() pour satisfaire phpstan-strict-rules
+        // On utilise isset() plutôt que (bool)() pour satisfaire phpstan-strict-rules
         // (règle empty.notAllowed). Le flag peut être false (default) ou true.
         if (isset($GLOBALS['_test_no_exit']) && $GLOBALS['_test_no_exit'] === true) {
             $GLOBALS['_test_json_output'] = $data;

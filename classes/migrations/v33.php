@@ -55,8 +55,12 @@ function apply_migration_v33(PDO $pdo, int $current_version): int {
         if ($dbListStmt === false) {
             throw new \RuntimeException('v33: PRAGMA database_list failed');
         }
-        $dbPath = $dbListStmt->fetchColumn(2);
+        $dbPathRaw = $dbListStmt->fetchColumn(2);
         $dbListStmt = null;
+        if ($dbPathRaw === false || $dbPathRaw === null) {
+            throw new \RuntimeException('v33: PRAGMA database_list returned no path');
+        }
+        $dbPath = (string) $dbPathRaw;
 
         $rebuild = new PDO('sqlite:' . $dbPath);
         $rebuild->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

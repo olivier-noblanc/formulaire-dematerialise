@@ -7,5 +7,5 @@ namespace App\Contract;
 interface ConditionInterface
 {
     /** @param array<string, mixed> $data */
-    public function evaluate(?string $conditionJson, array $data): bool;
+    public function evaluate(?string $conditionJson, mixed $data): bool;
 }

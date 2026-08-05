@@ -30,10 +30,11 @@ final class NavigationRenderer
     {
         $svg = App::settings()->get('app_favicon', '');
         if ($svg !== '' && $svg !== '0') {
-            return '<link rel="icon" href="data:image/svg+xml,' . \App\Core\App::html()->escape($svg) . '">';
+            return '<link rel="icon" href="data:image/svg+xml,' . App::html()->escape($svg) . '">';
         }
         return '<link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'20\' fill=\'%231E40AF\'/><text x=\'50\' y=\'78\' font-size=\'80\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'>&#9670;</text></svg>">';
     }
+
     /**
      * Generates the shared navigation bar.
      * Alias of header() for backward compatibility.
@@ -80,10 +81,10 @@ final class NavigationRenderer
                 $persona_display = App::html()->displayUserShort($persona_active_email);
                 $persona_active = '<div class="persona-banner" role="status">'
                     . '<span aria-hidden="true">🎭</span> '
-                    . 'Mode persona : <strong>' . \App\Core\App::html()->escape($persona_display) . '</strong>'
+                    . 'Mode persona : <strong>' . App::html()->escape($persona_display) . '</strong>'
                     . ' <form method="POST" action="index.php?p=persona&action=stop" class="u-dis">'
-                    . \App\Core\App::security()->csrfField()
-                    . '<input type="hidden" name="persona_token" value="' . \App\Core\App::html()->escape($persona_current_token) . '">'
+                    . App::security()->csrfField()
+                    . '<input type="hidden" name="persona_token" value="' . App::html()->escape($persona_current_token) . '">'
                     . '<button type="submit" class="persona-reset u-bac-bor-col-cur-pad-tex">✕ Quitter</button>'
                     . '</form>'
                     . '</div>';
@@ -165,10 +166,10 @@ final class NavigationRenderer
         $user_short = App::html()->displayUserShort($user);
 
         $persona_active_short = $persona_active_email !== '' ? App::html()->displayUserShort($persona_active_email) : '';
-        $user_card_data_persona = $is_admin ? ' data-persona-self="' . \App\Core\App::html()->escape($persona_self_email) . '"' : '';
-        $user_card_data_active  = $persona_active_email !== '' ? ' data-persona-active="' . \App\Core\App::html()->escape($persona_active_email) . '"' : '';
-        $csrfToken = $is_admin ? \App\Core\App::security()->generateCsrfToken() : '';
-        $user_card_data_csrf = $is_admin ? ' data-csrf-token="' . \App\Core\App::html()->escape($csrfToken) . '"' : '';
+        $user_card_data_persona = $is_admin ? ' data-persona-self="' . App::html()->escape($persona_self_email) . '"' : '';
+        $user_card_data_active  = $persona_active_email !== '' ? ' data-persona-active="' . App::html()->escape($persona_active_email) . '"' : '';
+        $csrfToken = $is_admin ? App::security()->generateCsrfToken() : '';
+        $user_card_data_csrf = $is_admin ? ' data-csrf-token="' . App::html()->escape($csrfToken) . '"' : '';
 
         $displayed_user_short = $persona_active_short !== '' ? $persona_active_short : $user_short;
         $displayed_user_title = $persona_active_email !== '' ? $persona_active_email : $user;
@@ -178,13 +179,13 @@ final class NavigationRenderer
             . '<div class="sidebar-user-card' . ($is_admin ? ' sidebar-user-card-admin' : '') . '"'
             . ' id="sidebar-user-card" tabindex="0" role="button"'
             . ' aria-label="' . ($is_admin ? 'Cliquer pour changer de persona' : 'Utilisateur connecté') . '"'
-            . ' title="' . \App\Core\App::html()->escape($displayed_user_title) . '"'
+            . ' title="' . App::html()->escape($displayed_user_title) . '"'
             . $user_card_data_persona
             . $user_card_data_active
             . $user_card_data_csrf
             . '>'
             . '<span class="sidebar-user-avatar' . ($persona_active_email !== '' ? ' persona-active' : '') . '">' . $displayed_initials . '</span>'
-            . '<span class="sidebar-user-email">' . \App\Core\App::html()->escape($displayed_user_short) . '</span>'
+            . '<span class="sidebar-user-email">' . App::html()->escape($displayed_user_short) . '</span>'
             . ($is_admin ? '<span class="sidebar-user-chevron" aria-hidden="true">▾</span>' : '')
             . '</div>'
             . '</div>';
@@ -193,7 +194,7 @@ final class NavigationRenderer
             . '<nav class="sidebar" aria-label="Navigation principale">'
             . '<a href="index.php" class="sidebar-brand">'
             . '<span class="sidebar-logo-mark" aria-hidden="true">&#9670;</span>'
-            . '<span class="sidebar-brand-text">' . \App\Core\App::html()->escape(self::getAppName()) . '</span>'
+            . '<span class="sidebar-brand-text">' . App::html()->escape(self::getAppName()) . '</span>'
             . '</a>'
             . '<div class="sidebar-nav">'
             . $nav_html
@@ -210,217 +211,18 @@ final class NavigationRenderer
      */
     public function footer(): string
     {
-        $persona_js = <<<'HTML_WRAP'
-        <script __CSP_NONCE_PLACEHOLDER__>
-        (function() {
-          var card = document.getElementById('sidebar-user-card');
-          if (!card || !card.classList.contains('sidebar-user-card-admin')) return;
-        
-          var dropdown = document.createElement('div');
-          dropdown.className = 'sidebar-persona-dropdown';
-          dropdown.id = 'sidebar-persona-dropdown';
-        
-          var selfEmail = card.getAttribute('data-persona-self') || '';
-          var activeEmail = card.getAttribute('data-persona-active') || '';
-          var csrfToken = card.getAttribute('data-csrf-token') || '';
-        
-          function createPersonaForm(action, email, token) {
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = 'index.php?p=persona&action=' + action;
-            var fields = {csrf_token: csrfToken};
-            if (email) fields.email = email;
-            if (token) fields.persona_token = token;
-            for (var k in fields) {
-              var inp = document.createElement('input');
-              inp.type = 'hidden';
-              inp.name = k;
-              inp.value = fields[k];
-              form.appendChild(inp);
-            }
-            return form;
-          }
-        
-          var html = '<div class="sidebar-persona-dropdown-header">🎭 Changer de rôle</div>';
-          if (activeEmail) {
-            var stopLink = document.createElement('a');
-            stopLink.className = 'sidebar-persona-option-reset';
-            stopLink.href = '#';
-            stopLink.textContent = '✕ Revenir en mode admin';
-            stopLink.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              var form = createPersonaForm('stop', '', new URLSearchParams(window.location.search).get('persona_token') || '');
-              document.body.appendChild(form);
-              form.submit();
-            });
-            dropdown.innerHTML = html;
-            dropdown.appendChild(stopLink);
-          } else if (selfEmail) {
-            var startLink = document.createElement('a');
-            startLink.className = 'sidebar-persona-option';
-            startLink.href = '#';
-            startLink.innerHTML = '<span class="u-fon-mar-3">👤</span> Vue agent'
-                  + '<div class="hint-muted-2">Visualiser l\'interface avec des droits réduits</div>';
-            startLink.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              var form = createPersonaForm('start', selfEmail, '');
-              document.body.appendChild(form);
-              form.submit();
-            });
-            dropdown.innerHTML = html;
-            dropdown.appendChild(startLink);
-          } else {
-            dropdown.innerHTML = html + '<div class="btn-sm">Mode admin uniquement</div>';
-          }
-          card.appendChild(dropdown);
-        
-          card.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdown.classList.toggle('open');
-          });
-          document.addEventListener('click', function(e) {
-            if (!card.contains(e.target)) {
-              dropdown.classList.remove('open');
-            }
-          });
-          card.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              dropdown.classList.toggle('open');
-            }
-            if (e.key === 'Escape') {
-              dropdown.classList.remove('open');
-            }
-          });
-        })();
-        </script>
-        HTML_WRAP;
-
-        $persona_js = str_replace(
-            '__CSP_NONCE_PLACEHOLDER__',
-            'nonce="' . App::security()->getScriptNonce() . '"',
-            $persona_js
-        );
+        ob_start();
+        $script_nonce = App::security()->getScriptNonce();
+        require __DIR__ . '/templates/persona_js.php';
+        $persona_js = (string) ob_get_clean();
 
         return '</div><!-- /.content -->'
              . '</div><!-- /.main-area -->'
              . '</div><!-- /.app-layout -->'
              . $persona_js
              . '<footer>'
-             . '<a href="index.php?p=changelog" title="Voir le journal des modifications">v' . \App\Core\App::html()->escape(get_latest_version()) . '</a>'
-             . ' · ' . \App\Core\App::html()->escape(self::getAppName())
+             . '<a href="index.php?p=changelog" title="Voir le journal des modifications">v' . App::html()->escape(get_latest_version()) . '</a>'
+             . ' · ' . App::html()->escape(self::getAppName())
              . '</footer>';
-    }
-
-    /**
-     * Generates a full HTML page (D1) — eliminates boilerplate duplication.
-     *
-     * @param array<string, mixed> $options Page options
-     */
-    public function page(
-        string $title,
-        string $nav_key,
-        string $page_css  = '',
-        string $content   = '',
-        array  $options   = []
-    ): string {
-        $container_class = $options['container_class'] ?? 'container';
-        $body_attr       = $options['body_attr'] ?? '';
-        $before_main     = $options['before_main'] ?? '';
-        $after_main      = $options['after_main'] ?? '';
-        $nav_extra       = $options['nav_extra'] ?? [];
-        $raw_title       = $options['raw_title'] ?? false;
-
-        $page_body_class = 'page-' . preg_replace('/[^a-z0-9_-]/i', '', $nav_key);
-        if ($body_attr) {
-            if (preg_match('/class=["\']/', (string) $body_attr)) {
-                $body_attr = preg_replace('/class=["\']/', 'class="' . $page_body_class . ' ', (string) $body_attr, 1);
-            } else {
-                $body_attr = 'class="' . $page_body_class . '" ' . $body_attr;
-            }
-        } else {
-            $body_attr = 'class="' . $page_body_class . '"';
-        }
-
-        $full_title = $raw_title ? $title : ($title . ' — ' . \App\Core\App::html()->escape(self::getAppName()));
-
-        ob_start();
-        if (!headers_sent()) {
-            App::security()->sendSecurityHeaders();
-        }
-        ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?= $full_title ?></title>
-  <?= self::favicon() ?>
-  <link rel="stylesheet" href="assets.php?type=css">
-</head>
-<body<?= $body_attr ? ' ' . $body_attr : '' ?>>
-<a href="#main-content" class="skip-link">Aller au contenu principal</a>
-<?= $this->nav($nav_key, $nav_extra) ?>
-<?= $before_main ?>
-<main class="<?= \App\Core\App::html()->escape($container_class) ?>" id="main-content">
-<?= $content ?>
-</main>
-<?= $after_main ?>
-<?= $this->footer() ?>
-<script src="assets.php?type=js&file=app" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
-</body>
-</html>
-        <?php
-        $page_out = ob_get_clean();
-        if ($page_out === false) {
-            return '';
-        }
-
-        return $this->personaRewriteUrls($page_out);
-    }
-
-    /**
-     * Rewrites URLs in rendered HTML to propagate ?persona_token.
-     *
-     * @param string $html The rendered HTML
-     * @return string The HTML with rewritten URLs
-     */
-    public function personaRewriteUrls(string $html): string
-    {
-        $token = isset($_GET['persona_token']) ? (string) $_GET['persona_token'] : '';
-        if ($token === '') {
-            return $html;
-        }
-
-        return preg_replace_callback(
-            '/href=(["\'])(index\.php[^"\']*?)\1/',
-            function (array $m) use ($token) {
-                $quote = $m[1];
-                $url = $m[2];
-                if (str_contains($url, '<?')) {
-                    return $m[0];
-                }
-                if (str_contains($url, 'p=persona')) {
-                    return $m[0];
-                }
-                if (str_contains($url, 'persona_token=')) {
-                    return $m[0];
-                }
-
-                $anchor = '';
-                $url_main = $url;
-                $pos = strpos($url, '#');
-                if ($pos !== false) {
-                    $anchor = substr($url, $pos);
-                    $url_main = substr($url, 0, $pos);
-                }
-
-                $sep = str_contains($url_main, '?') ? '&' : '?';
-                return 'href=' . $quote . $url_main . $sep . 'persona_token=' . urlencode($token) . $anchor . $quote;
-            },
-            $html
-        ) ?? $html;
     }
 }

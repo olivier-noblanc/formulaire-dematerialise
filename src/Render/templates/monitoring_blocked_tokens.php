@@ -10,9 +10,9 @@ if ($tokens_bloques === []) {
         $email        = \App\Core\App::html()->escape((string) $token_bloque['email']);
         $sent_at      = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string) $token_bloque['sent_at'])));
         $relance      = (int) $token_bloque['relance_count'];
-        $expires      = empty($token_bloque['expires_at'])
-            ? '—'
-            : \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $token_bloque['expires_at'])));
+        $expires      = $token_bloque['expires_at']
+            ? \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $token_bloque['expires_at'])))
+            : '—';
         $submitted_by = \App\Core\App::html()->escape((string) $token_bloque['submitted_by']);
 
         $rows .= <<<HTML

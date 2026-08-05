@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 $steps_html = '';
 foreach ($workflow_steps as $i => $ws) {
     $step_cls = (string) ($ws['step_status'] ?? 'upcoming');
@@ -17,7 +19,7 @@ foreach ($workflow_steps as $i => $ws) {
         foreach ($tokens as $token) {
             $email        = \App\Core\App::html()->displayUser((string) ($token['email'] ?? ''));
             $relance      = (int) ($token['relance_count'] ?? 0);
-            $done         = !empty($token['done_at']);
+            $done         = (bool)($token['done_at']);
             $is_current   = ($ws['step_status'] ?? '') === 'current';
 
             if ($done) {

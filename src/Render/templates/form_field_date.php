@@ -1,0 +1,1 @@
+<div class="field"><label for="<?= $name ?>"><?= $label ?><?= $req_span ?></label><input type="date" id="<?= $name ?>" name="<?= $name ?>"<?= $required_attr ?><?= $aria_attr ?> class="<?= $error_class ?>" value="<?= $val ?>"<?= $placeholder_attr ?><?= $disabled_attr ?>><?= $auto_hint_html ?><?= $user_hint ?><?= $error_html ?></div>

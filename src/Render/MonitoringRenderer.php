@@ -68,7 +68,7 @@ final class MonitoringRenderer
      */
     public static function repartition(int $total_sub, int $valide_sub, int $en_cours_sub, int $refuse_sub): string
     {
-        return self::loadTemplate('monitoring_repartition.php', compact('total_sub', 'valide_sub', 'en_cours_sub', 'refuse_sub'));
+        return self::loadTemplate('monitoring_repartition.php', ['total_sub' => $total_sub, 'valide_sub' => $valide_sub, 'en_cours_sub' => $en_cours_sub, 'refuse_sub' => $refuse_sub]);
     }
 
     /**
@@ -76,7 +76,7 @@ final class MonitoringRenderer
      */
     public static function smtpCard(string $smtp_status, string $smtp_detail, string $smtp_debug_log = ''): string
     {
-        return self::loadTemplate('monitoring_smtp_card.php', compact('smtp_status', 'smtp_detail', 'smtp_debug_log'));
+        return self::loadTemplate('monitoring_smtp_card.php', ['smtp_status' => $smtp_status, 'smtp_detail' => $smtp_detail, 'smtp_debug_log' => $smtp_debug_log]);
     }
 
     /**
@@ -84,7 +84,7 @@ final class MonitoringRenderer
      */
     public static function scriptsCard(string $last_remind, string $last_alert_check): string
     {
-        return self::loadTemplate('monitoring_scripts_card.php', compact('last_remind', 'last_alert_check'));
+        return self::loadTemplate('monitoring_scripts_card.php', ['last_remind' => $last_remind, 'last_alert_check' => $last_alert_check]);
     }
 
     /**
@@ -94,7 +94,7 @@ final class MonitoringRenderer
      */
     public static function activeAlerts(array $active_alerts): string
     {
-        return self::loadTemplate('monitoring_active_alerts.php', compact('active_alerts'));
+        return self::loadTemplate('monitoring_active_alerts.php', ['active_alerts' => $active_alerts]);
     }
 
     /**
@@ -104,7 +104,7 @@ final class MonitoringRenderer
      */
     public static function recentAlerts(array $recent_alerts): string
     {
-        return self::loadTemplate('monitoring_recent_alerts.php', compact('recent_alerts'));
+        return self::loadTemplate('monitoring_recent_alerts.php', ['recent_alerts' => $recent_alerts]);
     }
 
     /**
@@ -114,7 +114,7 @@ final class MonitoringRenderer
      */
     public static function byForm(array $by_form_stats): string
     {
-        return self::loadTemplate('monitoring_by_form.php', compact('by_form_stats'));
+        return self::loadTemplate('monitoring_by_form.php', ['by_form_stats' => $by_form_stats]);
     }
 
     /**
@@ -124,7 +124,7 @@ final class MonitoringRenderer
      */
     public static function dailyActivity(array $daily_stats): string
     {
-        return self::loadTemplate('monitoring_daily_activity.php', compact('daily_stats'));
+        return self::loadTemplate('monitoring_daily_activity.php', ['daily_stats' => $daily_stats]);
     }
 
     /**
@@ -134,7 +134,7 @@ final class MonitoringRenderer
      */
     public static function blockedTokens(array $tokens_bloques, int $bloque_hours): string
     {
-        return self::loadTemplate('monitoring_blocked_tokens.php', compact('tokens_bloques', 'bloque_hours'));
+        return self::loadTemplate('monitoring_blocked_tokens.php', ['tokens_bloques' => $tokens_bloques, 'bloque_hours' => $bloque_hours]);
     }
 
     /**
@@ -144,7 +144,7 @@ final class MonitoringRenderer
      */
     public static function mailLogs(array $mail_logs): string
     {
-        return self::loadTemplate('monitoring_mail_logs.php', compact('mail_logs'));
+        return self::loadTemplate('monitoring_mail_logs.php', ['mail_logs' => $mail_logs]);
     }
 
     /**

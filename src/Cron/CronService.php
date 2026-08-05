@@ -105,7 +105,10 @@ final class CronService
                     $prevLastRun[$key] = $claim['prev_last_run'];
                     $due[] = $key;
                 } catch (\PDOException $e) {
-                    if (str_contains($e->getMessage(), 'busy') || str_contains($e->getMessage(), 'locked')) {
+                    if (str_contains($e->getMessage(), 'busy')) {
+                        continue;
+                    }
+                    if (str_contains($e->getMessage(), 'locked')) {
                         continue;
                     }
                     error_log("lazy_cron error for $key: " . $e->getMessage());

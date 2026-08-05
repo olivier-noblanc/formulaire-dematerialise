@@ -69,7 +69,7 @@ final class MySubmissionsController extends BaseController
                     $allDone = true;
                     $detailParts = [];
                     foreach ($tokensByStep[$stepId] as $tok) {
-                        if (!empty($tok['done_at'])) {
+                        if ((bool)($tok['done_at'])) {
                             $detailParts[] = App::html()->displayUser($tok['email']) . ' <span aria-hidden="true">✓</span>';
                         } else {
                             $allDone = false;
@@ -83,7 +83,7 @@ final class MySubmissionsController extends BaseController
             unset($ws);
 
             $total = count($sub['workflow_steps']);
-            $done = count(array_filter($sub['workflow_steps'], fn(array $s) => $s['step_status'] === 'validated'));
+            $done = count(array_filter($sub['workflow_steps'], fn(array $s): bool => $s['step_status'] === 'validated'));
             $sub['progress_pct'] = $total > 0 ? round(($done / $total) * 100) : 0;
             $sub['progress_done'] = $done;
             $sub['progress_total'] = $total;

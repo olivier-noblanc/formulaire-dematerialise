@@ -23,7 +23,7 @@ function evaluate_condition(?string $condition_json, array $data): bool
 function evaluate_step_condition(array $step, string $submission_id): bool
 {
     $condition_json = $step['condition'] ?? '';
-    if ($condition_json === '' || $condition_json === null || $condition_json === '0') {
+    if ($condition_json === '' || $condition_json === '0') {
         return true;
     }
 
@@ -37,7 +37,7 @@ function evaluate_step_condition(array $step, string $submission_id): bool
 }
 
 /**
- * @param array<string, mixed> $field
+ * @param array{condition?: string} $field
  * @param array<string, mixed> $form_data
  */
 function evaluate_field_condition(array $field, array $form_data): bool

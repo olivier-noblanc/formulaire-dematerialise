@@ -1,11 +1,21 @@
 <?php
+/**
+ * @var array<string, mixed>                                       $data
+ * @var array<string, array{card_group?: string, label?: string}>  $field_info
+ */
 $items_html = '';
 $current_group = '';
 foreach ($data as $k => $v) {
     if ($k === 'validations') {
         continue;
     }
-    if ($v === '' || $v === null || $v === '0' && $v !== '0') {
+    if ($v === '') {
+        continue;
+    }
+    if ($v === null) {
+        continue;
+    }
+    if ($v === '0' && $v !== '0') {
         continue;
     }
 

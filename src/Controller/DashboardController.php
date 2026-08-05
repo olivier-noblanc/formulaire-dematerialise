@@ -58,7 +58,7 @@ final class DashboardController extends BaseController
             $options = [];
             if ($form_f !== '' && $form_f !== '0') {
                 $fid = $this->formRepo->findIdBySlug($form_f);
-                if ($fid) {
+                if ($fid !== null) {
                     $options['form_id'] = $fid;
                 }
             }
@@ -85,7 +85,7 @@ final class DashboardController extends BaseController
                 $regen_msg = 'Identifiant de token invalide.';
                 $token_id  = '';
             }
-            if ($token_id) {
+            if ($token_id !== '') {
                 $result    = \App\Core\App::token()->regenerate((string) $token_id);
                 $regen_msg = $result['message'];
                 /** @phpstan-ignore-next-line if.alwaysTrue */
@@ -107,7 +107,7 @@ final class DashboardController extends BaseController
                 $remind_msg = 'Identifiant de token invalide.';
                 $token_id   = '';
             }
-            if ($token_id) {
+            if ($token_id !== '') {
                 $result     = \App\Core\App::token()->remind((string) $token_id);
                 $remind_msg = $result['message'];
             }
@@ -125,8 +125,8 @@ final class DashboardController extends BaseController
                 $cancel_msg = 'Identifiant de soumission invalide.';
                 $sub_id     = '';
             }
-            if ($sub_id) {
-                $confirmed = !empty($_POST['confirmed']);
+            if ($sub_id !== '') {
+                $confirmed = (bool)($_POST['confirmed']);
                 if (!$confirmed) {
                     // B-EXIT : utiliser redirect() pour mode 'no-exit' (tests PHPUnit)
                     $this->redirect(
@@ -182,17 +182,17 @@ final class DashboardController extends BaseController
             $params[] = '%' . $search . '%';
             $params[] = '%' . $search . '%';
         }
-        $where = implode(' AND ', $where);
+        $whereClause = implode(' AND ', $where);
 
         // Count total matching rows for pagination
-        $total_rows  = $this->submissionRepo->countWithForm($where, $params);
+        $total_rows  = $this->submissionRepo->countWithForm($whereClause, $params);
         $total_pages = max(1, (int) ceil($total_rows / $per_page));
         if ($page > $total_pages) {
             $page = $total_pages;
         }
         $offset = ($page - 1) * $per_page;
 
-        $rows = $this->submissionRepo->findPaginatedWithForm($where, $params, $per_page, $offset);
+        $rows = $this->submissionRepo->findPaginatedWithForm($whereClause, $params, $per_page, $offset);
 
         // A-13: optimisé — était N+1 (1 requête get_tokens_for_submission() par ligne).
         // Batch fetch all tokens for all submissions on this page in one query,
@@ -251,7 +251,7 @@ final class DashboardController extends BaseController
         $sys_last_backup = '—';
         try {
             $sys_bk_row = $this->auditRepo->getLastBackupDate();
-            if ($sys_bk_row) {
+            if ($sys_bk_row !== null && $sys_bk_row !== '') {
                 // B-02-10 fix (audit 2026-07-26) : strtotime() sans UTC sur une date stockée
                 // en UTC (audit_log.created_at = datetime('now') SQLite = UTC) provoque un
                 // décalage de 1-2h en prod (Europe/Paris). On force l'interprétation UTC.

@@ -63,7 +63,7 @@ final class FormRepository extends BaseRepository
              WHERE f.actif = 1
              GROUP BY f.id, f.slug, f.label, f.description
              ORDER BY nb_soumissions DESC, f.label ASC
-             LIMIT ' . (int) $limit
+             LIMIT ' . $limit
         );
         return $result;
     }
@@ -83,7 +83,7 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{label: string, slug: string, description?: string|null, actif?: int, deadline_field?: string} $data
      */
     public function create(array $data): string
     {
@@ -96,7 +96,7 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{label?: string, slug?: string, description?: string|null, actif?: int, deadline_field?: string} $data
      */
     public function update(string $id, array $data): bool
     {
@@ -180,7 +180,7 @@ final class FormRepository extends BaseRepository
     // ── Duplicate ───────────────────────────────────────────────
 
     /**
-     * @param array<string, mixed> $srcForm
+     * @param array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string} $srcForm
      */
     public function duplicate(string $sourceId, string $newId, string $newLabel, string $newSlug, array $srcForm): void
     {
@@ -204,6 +204,7 @@ final class FormRepository extends BaseRepository
                 [$newStepId, $newId, $s['label'], $s['ordre'], $s['actif'], (string) ($s['condition'] ?? '')]
             );
 
+            /** @var list<array{id: string, step_id: string, email: string}> $recips */
             $recips = $this->fetchAll('SELECT id, step_id, email FROM step_recipients WHERE step_id = ?', [$s['id']]);
             foreach ($recips as $recip) {
                 $newRecipId = \generate_uuid();

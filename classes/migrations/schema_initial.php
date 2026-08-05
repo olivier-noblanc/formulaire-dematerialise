@@ -279,9 +279,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
                 $adminEmail = App::auth()->getAdminEmail();
             } catch (\Throwable $authEx) {
                 // App::auth() non disponible (tests précoces) — utiliser SETTINGS_DEFAULTS
-                $adminEmail = defined('SETTINGS_DEFAULTS') && isset(SETTINGS_DEFAULTS['admin_email'])
-                    ? SETTINGS_DEFAULTS['admin_email']
-                    : '';
+                $adminEmail = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : '';
             }
             if ($adminEmail !== '') {
                 $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, ?)")
@@ -292,6 +290,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
         }
     } catch (\Throwable $e) {
         error_log('[schema_initial] FAILED seeding admin: ' . $e->getMessage() . ' — base potentiellement sans admin');
+        throw $e;
     }
 
     // ── Seed formulaires par défaut ──
@@ -299,6 +298,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
         seed_default_forms($pdo);
     } catch (\Throwable $e) {
         error_log('[schema_initial] FAILED seeding default forms: ' . $e->getMessage());
+        throw $e;
     }
 
     return $current_version;

@@ -65,13 +65,13 @@ final class AdminStepCrudHandler
 
         $condition_json = '';
         if ($condition_field !== '' && $condition_op !== '') {
-            $condition_json = json_encode([
+            $encoded = json_encode([
                 'field' => $condition_field,
                 'op'    => $condition_op,
                 'value' => $condition_value,
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            if ($condition_json === false) {
-                $condition_json = '';
+            if ($encoded !== false) {
+                $condition_json = $encoded;
             }
         }
 

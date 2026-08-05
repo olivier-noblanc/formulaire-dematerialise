@@ -47,4 +47,11 @@ final class SettingsService implements SettingsInterface
         self::$cache[$key] = $value;
     }
 
+    /**
+     * @return list<string>
+     */
+    public static function getSensitiveKeys(): array
+    {
+        return ['smtp_pass', 'ldap_bind_pass', 'app_test_secret'];
+    }
 }

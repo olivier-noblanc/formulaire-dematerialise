@@ -1,7 +1,14 @@
 <?php
+/**
+ * @var array                                                                                                                             $pending_with_relance
+ * @var string                                                                                                                            $status
+ * @var bool                                                                                                                              $is_admin
+ * @var list<array{id?: string, email?: string, done_at?: string|null, sent_at?: string|null, relance_count?: int, expires_at?: string|null, relance_at?: string|null}>  $all_tokens
+ * @var list<array{detail?: string, created_at?: string, actor?: string}>                                                                 $submission_reminds
+ */
 $pending_html = '';
 if ($pending_with_relance !== [] || ($status === \App\Enum\SubmissionStatus::EnCours->value && $all_tokens !== [])) {
-    $pending_tokens = array_filter($all_tokens, fn(array $t) => empty($t['done_at']));
+    $pending_tokens = array_filter($all_tokens, fn(array $t): bool => !($t['done_at']));
 
     if ($pending_tokens !== []) {
         $rows = '';
@@ -10,19 +17,19 @@ if ($pending_with_relance !== [] || ($status === \App\Enum\SubmissionStatus::EnC
             $relance = (int) ($pending_token['relance_count'] ?? 0);
 
             $sent_html = '';
-            if (!empty($pending_token['sent_at'])) {
+            if ((bool)($pending_token['sent_at'])) {
                 $sent_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['sent_at'])));
                 $sent_html = "<span class=\"u-c-muted-fs-xs\">Notifié le : {$sent_date}</span>";
             }
 
             $last_remind = '';
-            if (!empty($pending_token['relance_at'])) {
+            if ((bool)($pending_token['relance_at'])) {
                 $last_remind_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['relance_at'])));
                 $last_remind = "<span class=\"u-c-warning-fs-xs\">Dernière relance : {$last_remind_date}</span>";
             }
 
             $expires_html = '';
-            if (!empty($pending_token['expires_at'])) {
+            if ((bool)($pending_token['expires_at'])) {
                 $expires_date = \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $pending_token['expires_at'])));
                 $expires_html = "<span class=\"u-c-muted-fs-xs\">Expire le : {$expires_date}</span>";
             }

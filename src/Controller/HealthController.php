@@ -44,7 +44,7 @@ final class HealthController extends BaseController
 
         // 3. Répertoire db/ accessible en écriture
         $dbPath = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
-        $dbDir = dirname($dbPath);
+        $dbDir = dirname((string) $dbPath);
         $dirWritable = is_writable($dbDir);
         $dirDetail = $dirWritable ? 'Répertoire ' . basename($dbDir) . '/ accessible en écriture' : 'Répertoire ' . basename($dbDir) . '/ non accessible en écriture';
         if (!$dirWritable) {
@@ -90,7 +90,7 @@ final class HealthController extends BaseController
 
         // 6. Extensions PHP requises
         $requiredExt = ['mbstring', 'pdo_sqlite', 'json', 'session', 'pcre'];
-        $missingExt = array_filter($requiredExt, fn(string $ext) => !extension_loaded($ext));
+        $missingExt = array_filter($requiredExt, fn(string $ext): bool => !extension_loaded($ext));
         $extOk = $missingExt === [];
         $extDetail = $extOk
             ? 'Toutes les extensions requises sont présentes (' . count($requiredExt) . ')'
@@ -111,7 +111,7 @@ final class HealthController extends BaseController
                 'status' => $allHealthy ? 'healthy' : 'unhealthy',
                 'version' => App::cache()->getLatestVersion(),
                 'timestamp' => date('c'),
-                'checks' => array_map(fn(array $c) => ['label' => $c['label'], 'status' => $c['ok'] ? 'ok' : 'error', 'detail' => $c['detail']], $checks),
+                'checks' => array_map(fn(array $c): array => ['label' => $c['label'], 'status' => $c['ok'] ? 'ok' : 'error', 'detail' => $c['detail']], $checks),
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             exit;
         }

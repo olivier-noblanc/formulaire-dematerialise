@@ -43,7 +43,8 @@ final readonly class CacheService implements CacheInterface
         $lockFile = $file . '.lock';
 
         // Fast path: cache hit
-        if (file_exists($file) && (time() - filemtime($file)) < $ttl) {
+        $fileMtime = file_exists($file) ? @filemtime($file) : false;
+        if ($fileMtime !== false && (time() - $fileMtime) < $ttl) {
             $raw = @file_get_contents($file);
             if ($raw !== false) {
                 $data = json_decode($raw, true);
@@ -56,9 +57,10 @@ final readonly class CacheService implements CacheInterface
 
         // Thundering herd protection: acquire exclusive lock
         $lock = @fopen($lockFile, 'c');
-        if ($lock && flock($lock, LOCK_EX)) {
+        if ($lock !== false && flock($lock, LOCK_EX)) {
             // Double-check after acquiring lock (another process may have populated)
-            if (file_exists($file) && (time() - filemtime($file)) < $ttl) {
+            $fileMtime2 = file_exists($file) ? @filemtime($file) : false;
+            if ($fileMtime2 !== false && (time() - $fileMtime2) < $ttl) {
                 $raw = @file_get_contents($file);
                 if ($raw !== false) {
                     $data = json_decode($raw, true);
@@ -95,6 +97,19 @@ final readonly class CacheService implements CacheInterface
         file_put_contents($file, $payload, LOCK_EX);
     }
 
+    public function clear(string $key): void
+    {
+        $file = $this->cacheDir . '/' . md5($key) . '.json';
+        if (file_exists($file)) {
+            @unlink($file);
+        }
+    }
+
+    public function getCacheDir(): string
+    {
+        return $this->cacheDir;
+    }
+
 
 
     public function getLatestVersion(): string
@@ -118,14 +133,19 @@ final readonly class CacheService implements CacheInterface
         foreach ($lines as $line) {
             $t = trim($line);
             if (str_starts_with($t, '## [')) {
-                $open = strpos($t, '[') + 1;
-                $close = strpos($t, ']');
-                if ($close > $open) {
-                    $v = trim(substr($t, $open, $close - $open));
-                    if (preg_match('/^\d+\.\d+\.\d+$/', $v)) {
-                        $version = $v;
-                        return $v;
-                    }
+                $open = strpos($t, '[');
+                if ($open === false) {
+                    continue;
+                }
+                ++$open;
+                $close = strpos($t, ']', $open);
+                if ($close === false) {
+                    continue;
+                }
+                $v = trim(substr($t, $open, $close - $open));
+                if (preg_match('/^\d+\.\d+\.\d+$/', $v) === 1) {
+                    $version = $v;
+                    return $v;
                 }
             }
         }
@@ -147,9 +167,16 @@ final readonly class CacheService implements CacheInterface
             return;
         }
         foreach ($jsonFiles as $jsonFile) {
-            $size = filesize($jsonFile);
+            $size = @filesize($jsonFile);
+            if ($size === false) {
+                continue;
+            }
+            $mtime = @filemtime($jsonFile);
+            if ($mtime === false) {
+                continue;
+            }
             $totalSize += $size;
-            $files[] = ['path' => $jsonFile, 'size' => $size, 'mtime' => filemtime($jsonFile)];
+            $files[] = ['path' => $jsonFile, 'size' => $size, 'mtime' => $mtime];
         }
 
         if ($totalSize <= $this->maxSizeBytes || $files === []) {
@@ -157,7 +184,7 @@ final readonly class CacheService implements CacheInterface
         }
 
         // Sort by mtime ascending (oldest first)
-        usort($files, fn(array $a, array $b) => $a['mtime'] <=> $b['mtime']);
+        usort($files, fn(array $a, array $b): int => $a['mtime'] <=> $b['mtime']);
 
         foreach ($files as $file) {
             if ($totalSize <= $this->maxSizeBytes * 0.8) {

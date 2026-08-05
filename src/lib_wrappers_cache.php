@@ -69,7 +69,7 @@ function get_latest_version(): string
     $changelog_path = dirname(__DIR__, 1) . '/CHANGELOG.md';
     if (file_exists($changelog_path)) {
         $content = file_get_contents($changelog_path);
-        if ($content !== false && preg_match('/^##\s*\[(\d+\.\d+\.\d+)\]/m', $content, $m)) {
+        if ($content !== false && preg_match('/^##\s*\[(\d+\.\d+\.\d+)\]/m', $content, $m) === 1) {
             $version = $m[1];
             return $version;
         }

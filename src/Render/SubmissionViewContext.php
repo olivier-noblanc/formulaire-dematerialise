@@ -13,33 +13,17 @@ namespace App\Render;
 final readonly class SubmissionViewContext
 {
     /**
-     * @param string                                                           $sub_id
      * @param array{form_label: string, submitted_by: string, submitted_at: string, closed_at?: string|null}|array<empty, empty> $sub
      * @param array<string, mixed>                                             $data
-     * @param string                                                           $status
-     * @param string                                                           $status_label
-     * @param string                                                           $status_cls
-     * @param string                                                           $user
-     * @param bool                                                             $is_admin
-     * @param bool                                                             $is_form_owner
-     * @param string                                                           $nom_agent
      * @param list<array{step_status: string, step_label: string, ordre: int, tokens: list<array>}> $workflow_steps
      * @param list<array>                                                      $all_tokens
-     * @param int                                                              $total_steps
-     * @param int                                                              $done_steps
-     * @param int                                                              $progress_pct
      * @param array<string, mixed>                                             $dl_info
-     * @param int|null                                                         $deadline_ts
-     * @param int                                                              $days_remaining
-     * @param string                                                           $action_msg
      * @param array<string, array{card_group?: string, label?: string}>        $field_info
      * @param list<array{field_name: string, field_label?: string, value: string, filled_by_email?: string, step_label?: string, filled_at?: string}> $validator_data_rows
      * @param list<array{detail?: string, created_at?: string, actor?: string}> $submission_reminds
-     * @param int                                                              $total_relances
      * @param list<array>                                                      $pending_with_relance
      * @param list<array{id?: string, mime_type?: string, original_name?: string, file_size?: int, uploaded_at?: string}> $attachments
      * @param list<array{step_label?: string, from_email?: string, to_email?: string, delegated_at?: string, reason?: string}> $delegations
-     * @param string                                                           $admin_comment
      */
     public function __construct(
         public string $sub_id,
@@ -70,4 +54,42 @@ final readonly class SubmissionViewContext
         public array $delegations,
         public string $admin_comment,
     ) {}
+
+    /**
+     * Build from legacy array context (BC for lib_wrappers).
+     *
+     * @param array<string, mixed> $ctx
+     */
+    public static function fromLegacyArray(array $ctx): self
+    {
+        return new self(
+            sub_id: (string) ($ctx['sub_id'] ?? ''),
+            sub: $ctx['sub'] ?? [],
+            data: $ctx['data'] ?? [],
+            status: (string) ($ctx['status'] ?? \App\Enum\SubmissionStatus::EnCours->value),
+            status_label: (string) ($ctx['status_label'] ?? ''),
+            status_cls: (string) ($ctx['status_cls'] ?? ''),
+            user: (string) ($ctx['user'] ?? ''),
+            is_admin: (bool) ($ctx['is_admin'] ?? false),
+            is_form_owner: (bool) ($ctx['is_form_owner'] ?? false),
+            nom_agent: (string) ($ctx['nom_agent'] ?? ''),
+            workflow_steps: $ctx['workflow_steps'] ?? [],
+            all_tokens: $ctx['all_tokens'] ?? [],
+            total_steps: (int) ($ctx['total_steps'] ?? 0),
+            done_steps: (int) ($ctx['done_steps'] ?? 0),
+            progress_pct: (int) ($ctx['progress_pct'] ?? 0),
+            dl_info: $ctx['dl_info'] ?? [],
+            deadline_ts: $ctx['deadline_ts'] ?? null,
+            days_remaining: (int) ($ctx['days_remaining'] ?? 0),
+            action_msg: (string) ($ctx['action_msg'] ?? ''),
+            field_info: $ctx['field_info'] ?? [],
+            validator_data_rows: $ctx['validator_data_rows'] ?? [],
+            submission_reminds: $ctx['submission_reminds'] ?? [],
+            total_relances: (int) ($ctx['total_relances'] ?? 0),
+            pending_with_relance: $ctx['pending_with_relance'] ?? [],
+            attachments: $ctx['attachments'] ?? [],
+            delegations: $ctx['delegations'] ?? [],
+            admin_comment: (string) ($ctx['admin_comment'] ?? ''),
+        );
+    }
 }

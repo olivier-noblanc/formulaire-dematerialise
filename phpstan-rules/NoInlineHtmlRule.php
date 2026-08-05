@@ -70,14 +70,14 @@ class NoInlineHtmlRule implements Rule
     public function processNode(Node $node, Scope $scope): array
     {
         if ($node instanceof String_) {
-            return $this->checkText($node->value, $node, $scope);
+            return $this->checkText($node->value, $scope);
         }
 
         if ($node instanceof InterpolatedString) {
             $errors = [];
             foreach ($node->parts as $part) {
                 if ($part instanceof InterpolatedStringPart) {
-                    $errors = [...$errors, ...$this->checkText($part->value, $node, $scope)];
+                    $errors = [...$errors, ...$this->checkText($part->value, $scope)];
                 }
             }
             return $errors;
@@ -89,15 +89,14 @@ class NoInlineHtmlRule implements Rule
     /**
      * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
-    private function checkText(string $text, Node $node, Scope $scope): array
+    private function checkText(string $text, Scope $scope): array
     {
         if ($text === '') {
             return [];
         }
 
         $fileDescription = $scope->getFileDescription();
-        // @phpstan-ignore function.alreadyNarrowedType
-        $file = is_string($fileDescription) ? $fileDescription : $fileDescription->getFile();
+        $file = $fileDescription;
 
         foreach (self::ALLOWED_PATTERNS as $pattern) {
             if (str_contains($file, $pattern)) {

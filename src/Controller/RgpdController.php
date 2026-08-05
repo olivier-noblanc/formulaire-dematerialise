@@ -56,15 +56,15 @@ final class RgpdController extends BaseController
                     $data['validator_data_filled'] = $this->submissionRepo->getValidatorDataFilledByEmail($email);
                     $data['validator_data_on_submissions'] = $this->submissionRepo->getValidatorDataOnSubmissionsByEmail($email);
 
-                    if (empty($data['submissions'])
-                        && empty($data['validations'])
-                        && empty($data['validator_data_filled'])
-                        && empty($data['validator_data_on_submissions'])) {
+                    if (($data['submissions'] ?? []) === []
+                        && ($data['validations'] ?? []) === []
+                        && ($data['validator_data_filled'] ?? []) === []
+                        && ($data['validator_data_on_submissions'] ?? []) === []) {
                         $infoMsg = 'Aucune donnée trouvée pour ' . \App\Core\App::html()->escape($email) . '.';
                     } else {
                         App::audit()->log('rgpd_export', 'user:' . $email, 'Export des données demandé');
                         header('Content-Type: application/json; charset=utf-8');
-                        $safeEmail = preg_replace('/[^a-zA-Z0-9_-]/', '_', $email);
+                        $safeEmail = (string) preg_replace('/[^a-zA-Z0-9_-]/', '_', $email);
                         header('Content-Disposition: attachment; filename="rgpd_export_' . $safeEmail . '_' . date('Ymd_His') . '.json"');
                         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                         exit;
@@ -75,7 +75,7 @@ final class RgpdController extends BaseController
             // Suppression des données d'un utilisateur
             if ($action === 'delete_user') {
                 $email = validate_email($_POST['delete_email'] ?? '');
-                $confirmed = !empty($_POST['confirmed']);
+                $confirmed = ($_POST['confirmed'] ?? '') !== '';
                 if ($email === '' || $email === '0') {
                     $errorMsg = 'Adresse email invalide.';
                 } elseif (!$confirmed) {
@@ -100,7 +100,7 @@ final class RgpdController extends BaseController
 
             // Purge automatique des données anciennes
             if ($action === 'auto_purge') {
-                $confirmed = !empty($_POST['confirmed']);
+                $confirmed = ($_POST['confirmed'] ?? '') !== '';
                 if (!$confirmed) {
                     $errorMsg = 'Veuillez confirmer la purge en cochant la case de confirmation.';
                 } else {

@@ -135,7 +135,7 @@ final class ErrorRenderer
     {
         $html = '';
         foreach ($messages as $type => $text) {
-            if (empty($text)) {
+            if (!((bool)($text))) {
                 continue;
             }
             $class = match ($type) {

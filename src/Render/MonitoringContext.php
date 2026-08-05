@@ -17,10 +17,6 @@ namespace App\Render;
 final readonly class MonitoringContext
 {
     /**
-     * @param int $total_sub
-     * @param int $valide_sub
-     * @param int $en_cours_sub
-     * @param int $refuse_sub
      * @param float $taux_validation Percentage 0-100, rounded to 1 decimal (e.g. 67.5). Source: StatsService::getGlobalStats()['taux_validation']
      * @param float $avg_days Average processing time in days (rounded to 1 decimal)
      * @param float $avg_hours Average processing time in hours (rounded to 1 decimal)
@@ -74,4 +70,42 @@ final readonly class MonitoringContext
         public string $audit_base_url,
         public string $audit_base_qs,
     ) {}
+
+    /**
+     * Build from legacy array context (BC for lib_wrappers).
+     *
+     * @param array<string, mixed> $ctx
+     */
+    public static function fromLegacyArray(array $ctx): self
+    {
+        return new self(
+            total_sub: (int) ($ctx['total_sub'] ?? 0),
+            valide_sub: (int) ($ctx['valide_sub'] ?? 0),
+            en_cours_sub: (int) ($ctx['en_cours_sub'] ?? 0),
+            refuse_sub: (int) ($ctx['refuse_sub'] ?? 0),
+            taux_validation: (float) ($ctx['taux_validation'] ?? 0.0),
+            avg_days: (float) ($ctx['avg_days'] ?? 0),
+            avg_hours: (float) ($ctx['avg_hours'] ?? 0),
+            bloque_hours: (int) ($ctx['bloque_hours'] ?? 0),
+            tokens_bloques: $ctx['tokens_bloques'] ?? [],
+            active_alerts: $ctx['active_alerts'] ?? [],
+            recent_alerts: $ctx['recent_alerts'] ?? [],
+            by_form_stats: $ctx['by_form_stats'] ?? [],
+            daily_stats: $ctx['daily_stats'] ?? [],
+            smtp_status: (string) ($ctx['smtp_status'] ?? 'inconnu'),
+            smtp_detail: (string) ($ctx['smtp_detail'] ?? ''),
+            smtp_debug_log: (string) ($ctx['smtp_debug_log'] ?? ''),
+            mail_logs: $ctx['mail_logs'] ?? [],
+            last_remind: (string) ($ctx['last_remind'] ?? ''),
+            last_alert_check: (string) ($ctx['last_alert_check'] ?? ''),
+            audit_filters: $ctx['audit_filters'] ?? [],
+            audit_total: (int) ($ctx['audit_total'] ?? 0),
+            audit_total_pages: (int) ($ctx['audit_total_pages'] ?? 1),
+            audit_page: (int) ($ctx['audit_page'] ?? 1),
+            audit_logs: $ctx['audit_logs'] ?? [],
+            action_types: $ctx['action_types'] ?? [],
+            audit_base_url: (string) ($ctx['audit_base_url'] ?? 'index.php?p=monitoring'),
+            audit_base_qs: (string) ($ctx['audit_base_qs'] ?? ''),
+        );
+    }
 }

@@ -1,4 +1,12 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * @var int $progress_pct
+ * @var int $done_steps
+ * @var int $total_steps
+ */
+
 $fill_cls = $progress_pct === 100 ? 'complete' : ($progress_pct > 0 ? 'in-progress' : 'not-started');
 $width    = max($progress_pct, 8);
 $width_cls = 'pw-' . (int) $width;

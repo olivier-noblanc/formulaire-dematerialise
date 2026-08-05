@@ -20,7 +20,7 @@ if ($audit_total > 0) {
     $export_link = "· <a href=\"{$export_url}\" class=\"btn btn-secondary u-fs-xxs-p-xs-td-none\"><span aria-hidden=\"true\">📥</span> Export CSV</a>";
 }
 
-if ($audit_logs === '' || $audit_logs === null || $audit_logs === '0') {
+if (in_array($audit_logs, ['', null, '0'], true)) {
     $table_html = '<p class="empty-state">Aucune entrée dans le journal d\'audit pour ces filtres.</p>';
 } else {
     $rows = '';

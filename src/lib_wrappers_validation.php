@@ -21,7 +21,7 @@ function validate_email(string $email): string
 }
 
 /**
- * @param array<string, mixed> $options
+ * @param array{max_length?: int, allowed_values?: list<string>, min?: int, max?: int} $options
  */
 function validate_input(mixed $value, string $rule, array $options = []): string|int
 {

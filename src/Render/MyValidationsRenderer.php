@@ -77,7 +77,7 @@ final class MyValidationsRenderer
         } else {
             foreach ($pendingTokens as $pendingToken) {
                 $data = json_decode((string) ($pendingToken['data'] ?? '{}'), true) ?? [];
-                $expired = !empty($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
+                $expired = (bool)($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
                 $nomAgent = $htmlService->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
                 $allSteps = $allStepsBySub[$pendingToken['submission_id']] ?? [];
 
@@ -88,7 +88,7 @@ final class MyValidationsRenderer
                 $html .= '      <div class="vc-title">' . $htmlService->escape($pendingToken['form_label']) . ' — Étape ' . (int) $pendingToken['ordre'] . ' : ' . $htmlService->escape($pendingToken['step_label']) . '</div>' . "\n";
                 $html .= '      <div class="vc-meta">' . "\n";
                 $html .= '        Agent : <strong>' . ($nomAgent ?? $htmlService->escape($pendingToken['data'] ? 'Inconnu' : '')) . '</strong>' . "\n";
-                if (!empty($data['affectation'])) {
+                if ((bool)($data['affectation'])) {
                     $html .= ' — ' . $htmlService->escape($data['affectation']);
                 }
                 $html .= '<br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($pendingToken['submitted_at'] ?? '')))) . "\n";
@@ -216,7 +216,7 @@ final class MyValidationsRenderer
     {
         $doneTs = strtotime($doneAt);
         $sentTs = strtotime($sentAt);
-        if (!$doneTs || !$sentTs) {
+        if (!((bool)$doneTs) || !((bool)$sentTs)) {
             return '?';
         }
 
@@ -225,14 +225,14 @@ final class MyValidationsRenderer
             $days = (int) floor($diffSec / 86400);
             $hours = (int) floor(($diffSec % 86400) / 3600);
             return App::html()->escape($days . ' j ' . $hours . ' h');
-        } elseif ($diffSec >= 3600) {
+        }
+        if ($diffSec >= 3600) {
             $hours = (int) floor($diffSec / 3600);
             $mins = (int) floor(($diffSec % 3600) / 60);
             return App::html()->escape($hours . ' h ' . ($mins > 0 ? $mins . ' min' : ''));
-        } else {
-            $mins = (int) floor($diffSec / 60);
-            return App::html()->escape($mins . ' min');
         }
+        $mins = (int) floor($diffSec / 60);
+        return App::html()->escape($mins . ' min');
     }
 
     /**
@@ -263,13 +263,13 @@ final class MyValidationsRenderer
         $html .= '      <tbody>' . "\n";
 
         foreach ($myVdRows as $myVdRow) {
-            $rFilledAt  = isset($myVdRow['filled_at']) ? (string) $myVdRow['filled_at'] : '';
-            $rFormLabel = isset($myVdRow['form_label']) ? (string) $myVdRow['form_label'] : '';
-            $rSubId     = isset($myVdRow['submission_id']) ? (string) $myVdRow['submission_id'] : '';
-            $rStepLabel = isset($myVdRow['step_label']) ? (string) $myVdRow['step_label'] : '';
-            $rFieldLbl  = isset($myVdRow['field_label']) ? (string) $myVdRow['field_label'] : '';
-            $rFieldName = isset($myVdRow['field_name']) ? (string) $myVdRow['field_name'] : '';
-            $rValue     = isset($myVdRow['value']) ? (string) $myVdRow['value'] : '';
+            $rFilledAt  = $myVdRow['filled_at'] ?? '';
+            $rFormLabel = $myVdRow['form_label'] ?? '';
+            $rSubId     = $myVdRow['submission_id'] ?? '';
+            $rStepLabel = $myVdRow['step_label'] ?? '';
+            $rFieldLbl  = $myVdRow['field_label'] ?? '';
+            $rFieldName = $myVdRow['field_name'] ?? '';
+            $rValue     = $myVdRow['value'] ?? '';
             $ts = $rFilledAt !== '' ? strtotime($rFilledAt) : false;
             $rValueShort = mb_strimwidth($rValue, 0, 80, '…', 'UTF-8');
 

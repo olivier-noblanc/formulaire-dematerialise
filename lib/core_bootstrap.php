@@ -23,7 +23,7 @@ require_once __DIR__ . '/../config.php';
 if (php_sapi_name() !== 'cli') {
     @ini_set("session.save_path", sys_get_temp_dir() . "/php-sessions");
     @mkdir(sys_get_temp_dir() . "/php-sessions", 0775, true);
-    $is_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    $is_secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
     session_set_cookie_params([
         'httponly'  => true,
         'samesite'  => 'Strict',
@@ -39,7 +39,7 @@ if (php_sapi_name() !== 'cli') {
     // Sécurité (S-17) : régénérer l'ID de session au premier accès authentifié
     // pour prévenir la fixation de session. On ne le fait qu'une seule fois
     // par session (flag en session). require_admin() le fait aussi après élévation.
-    if (empty($_SESSION['_session_initialized'])) {
+    if (!isset($_SESSION['_session_initialized']) || $_SESSION['_session_initialized'] !== true) {
         session_regenerate_id(true);
         $_SESSION['_session_initialized'] = true;
     }
@@ -110,17 +110,19 @@ set_exception_handler(function (\Throwable $e): never {
 // En contexte web, le header X-Test-Mode doit correspondre au secret APP_TEST_SECRET (env).
 // Si APP_TEST_SECRET n'est pas défini, le header HTTP est ignoré en contexte web.
 $_test_header = $_SERVER['HTTP_X_TEST_MODE'] ?? '';
-$_test_env = !empty(getenv('APP_TEST_MODE'));
-$_test_secret = getenv('APP_TEST_SECRET') !== false ? getenv('APP_TEST_SECRET') : '';
+$_test_env_val = getenv('APP_TEST_MODE');
+$_test_env = $_test_env_val !== false && $_test_env_val !== '';
+$_test_secret_raw = getenv('APP_TEST_SECRET');
+$_test_secret = $_test_secret_raw !== false ? $_test_secret_raw : '';
 $_is_cli = php_sapi_name() === 'cli';
-if ($_is_cli && !empty($_test_header)) {
+if ($_is_cli && $_test_header !== '') {
     // CLI : activation par header (scripts de test via php -S)
     define('TEST_MODE', true);
-} elseif (!empty($_test_header) && $_test_env && !empty($_test_secret) && hash_equals($_test_secret, $_test_header)) {
+} elseif ($_test_header !== '' && $_test_env && $_test_secret !== '' && hash_equals($_test_secret, $_test_header)) {
     // Web : activation par header + secret partagé (requiert APP_TEST_MODE et APP_TEST_SECRET)
     define('TEST_MODE', true);
     error_log('[SECURITY] TEST_MODE activated via HTTP with valid secret from IP: ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
-} elseif ($_test_env && empty($_test_header)) {
+} elseif ($_test_env && $_test_header === '') {
     // Web : activation uniquement par variable d'environnement (pas de header)
     define('TEST_MODE', true);
 } else {
@@ -146,7 +148,7 @@ if (TEST_MODE) {
 // dans le code métier (tout passe par PDO).
 $required_extensions = ['mbstring', 'pdo_sqlite', 'json', 'session', 'pcre'];
 $missing_extensions = array_filter($required_extensions, fn(string $ext) => !extension_loaded($ext));
-if (!empty($missing_extensions)) {
+if ($missing_extensions !== []) {
     // health.php peut quand même tourner pour signaler le problème
     $script = basename($_SERVER['SCRIPT_NAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? '');
     $is_health_check = ($script === 'index.php?p=health');

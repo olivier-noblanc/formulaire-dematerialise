@@ -1,5 +1,7 @@
 <?php
-if (!isset($data['validations']) || !is_array($data['validations']) || empty($data['validations'])) {
+declare(strict_types=1);
+
+if (!isset($data['validations']) || !is_array($data['validations']) || !((bool)($data['validations']))) {
     return '';
 }
 
@@ -25,7 +27,7 @@ foreach ($data['validations'] as $v) {
     }
 
     $comment_html = '';
-    if (!empty($v['commentaire'])) {
+    if ((bool)($v['commentaire'])) {
         $comment = \App\Core\App::html()->escape((string) $v['commentaire']);
         $comment_html = <<<HTML
                       <div class="val-comment"><span aria-hidden="true">💬</span> {$comment}</div>

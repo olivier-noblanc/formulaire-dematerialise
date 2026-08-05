@@ -9,7 +9,7 @@
     <div class="section-card-body">
         <p class="caption-3">Ces champs définissent le formulaire que les agents rempliront. <span class="required-star">*</span> = champ obligatoire.</p>
 
-        <?php if (!empty($form_fields)): ?>
+        <?php if ((bool)($form_fields)): ?>
             <table class="fields-table">
                 <thead>
                     <tr>
@@ -57,16 +57,16 @@
                                             </div>
                                             <div class="field">
                                                 <label>Groupe (carte)</label>
-                                                <?php if (!empty($existing_groups)): ?>
+                                                <?php if ((bool)($existing_groups)): ?>
                                                     <select name="ff_card_group">
                                                         <?php foreach ($existing_groups as $g): ?>
                                                             <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $ff['card_group'] === $g ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>
                                                         <?php endforeach; ?>
-                                                        <option value="__new__" <?= !in_array($ff['card_group'], $existing_groups, true) ? 'selected' : '' ?>>— Nouveau groupe —</option>
+                                                        <option value="__new__" <?= in_array($ff['card_group'], $existing_groups, true) ? '' : 'selected' ?>>— Nouveau groupe —</option>
                                                     </select>
                                                 <?php endif; ?>
                                                 <input type="text" name="ff_card_group_new" placeholder="Nom du nouveau groupe" value="" class="mt-3">
-                                                <?php if (empty($existing_groups)): ?>
+                                                <?php if (!($existing_groups)): ?>
                                                     <input type="hidden" name="ff_card_group" value="">
                                                 <?php endif; ?>
                                             </div>
@@ -136,7 +136,7 @@
                                 <td title="<?= \App\Core\App::html()->escape($ff['options'] ?? '') ?>" class="preformatted">
                                     <?php
                                     $opts = $ff['options'] ?? '';
-                                    if (!empty($opts)) {
+                                    if ((bool)($opts)) {
                                         $decoded = json_decode($opts, true);
                                         if (is_array($decoded)) {
                                             echo \App\Core\App::html()->escape(implode(', ', $decoded));
@@ -200,7 +200,7 @@
                     </div>
                     <div class="field">
                         <label>Groupe (carte)</label>
-                        <?php if (!empty($existing_groups)): ?>
+                        <?php if ((bool)($existing_groups)): ?>
                             <select name="ff_card_group">
                                 <?php foreach ($existing_groups as $g): ?>
                                     <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $g === 'Général' ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>

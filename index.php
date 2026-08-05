@@ -50,18 +50,18 @@ $ALLOWED_PAGES = [
 $page = $_GET['p'] ?? '';
 if ($page === '') {
     // Auto-détection : si form_id est présent sans ?p=, c'est admin_forms
-    if (isset($_GET['form_id']) && !empty($_GET['form_id'])) {
+    if (isset($_GET['form_id']) && $_GET['form_id'] !== '') {
         $page = 'admin_forms';
-    } elseif (isset($_GET['token']) && !empty($_GET['token'])) {
+    } elseif (isset($_GET['token']) && $_GET['token'] !== '') {
         $page = 'validate';
-    } elseif (isset($_GET['id']) && !empty($_GET['id']) && !isset($_GET['action'])) {
+    } elseif (isset($_GET['id']) && $_GET['id'] !== '' && !isset($_GET['action'])) {
         // ?id=XXX sans ?action= → submission_view (mais pas si ?action= qui est pour admin_access)
         $page = 'submission_view';
     } else {
         $page = 'accueil';
     }
 }
-$page = preg_replace('/[^a-z_]/', '', $page); // Sanitize : lettres + underscore uniquement
+$page = preg_replace('/[^a-z_]/', '', $page) ?? ''; // Sanitize : lettres + underscore uniquement
 
 if (!array_key_exists($page, $ALLOWED_PAGES)) {
     http_response_code(404);

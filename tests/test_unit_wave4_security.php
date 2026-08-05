@@ -1,6 +1,6 @@
 <?php
 /**
- * tests/test_unit_wave4_security.php — Section 12.10-12.14 : Wave 4 — encrypt_setting, parse_date, security_log, security_headers, rate limiting
+ * tests/test_unit_wave4_security.php — Section 12.10-12.14 : Wave 4 — parse_date, security_log, security_headers, rate limiting
  *
  * Module thématique extrait de test_unit.php (refactor P-TESTS).
  * Dépendances : test_bootstrap.php (test), tests/test_unit_helpers.php (helpers shared).
@@ -9,156 +9,9 @@
 declare(strict_types=1);
 
 /**
- * Section 12.10-12.14 : Wave 4 — encrypt_setting, parse_date, security_log, security_headers, rate limiting
+ * Section 12.10-12.14 : Wave 4 — parse_date, security_log, security_headers, rate limiting
  */
 function run_tests_unit_wave4_security(): void {
-// 12.10 — encrypt_setting() / decrypt_setting() round-trip
-// Note : selon la disponibilité de l'extension openssl, encrypt_setting()
-// chiffre (AES-256-CBC) ou fallback en clair avec warning error_log.
-// Les tests s'adaptent aux deux comportements.
-// ───────────────────────────────────────────────────────────────
-test('encrypt_setting() chaîne vide retourne chaîne vide', function() {
-    $result = encrypt_setting('');
-    return $result === '' ? true : "Got: $result";
-});
-
-test('encrypt_setting() idempotente : ne rechiffre pas une valeur déjà chiffrée', function() {
-    if (!function_exists('openssl_cipher_iv_length')) {
-        // Sans openssl, encrypt_setting() crasherait si une clé est définie (32+ chars).
-        // On neutralise la clé pour tester le fallback en clair, qui est trivialement idempotent.
-        $saved_key = getenv('APP_ENCRYPTION_KEY');
-        putenv('APP_ENCRYPTION_KEY');
-        try {
-            $result = encrypt_setting('test-value');
-            $double = encrypt_setting($result);
-            return $double === $result ? true : "Idempotence cassée (fallback): $double";
-        } finally {
-            if ($saved_key !== false) putenv('APP_ENCRYPTION_KEY=' . $saved_key);
-        }
-    }
-    $encrypted = encrypt_setting('test-value');
-    $double = encrypt_setting($encrypted);
-    return $double === $encrypted ? true : "Double-chiffrement détecté";
-});
-
-test('encrypt_setting() sans clé retourne la valeur en clair', function() {
-    $saved_key = getenv('APP_ENCRYPTION_KEY');
-    putenv('APP_ENCRYPTION_KEY');
-    try {
-        $result = encrypt_setting('test-no-key');
-        return $result === 'test-no-key' ? true : "Got: $result";
-    } finally {
-        if ($saved_key !== false) putenv('APP_ENCRYPTION_KEY=' . $saved_key);
-    }
-});
-
-test('encrypt_setting() avec clé trop courte retourne la valeur en clair', function() {
-    $saved_key = getenv('APP_ENCRYPTION_KEY');
-    putenv('APP_ENCRYPTION_KEY=short');  // Clé trop courte (< 32 chars)
-    try {
-        $result = encrypt_setting('test-short-key');
-        return $result === 'test-short-key' ? true : "Got: $result";
-    } finally {
-        if ($saved_key !== false) putenv('APP_ENCRYPTION_KEY=' . $saved_key);
-    }
-});
-
-test('encrypt_setting() / decrypt_setting() round-trip restitue la valeur originale', function() {
-    if (!function_exists('openssl_cipher_iv_length')) {
-        // Sans openssl : encrypt_setting crasherait si une clé 32+ est définie.
-        // On neutralise la clé pour tester le fallback (valeur en clair des deux côtés).
-        $saved_key = getenv('APP_ENCRYPTION_KEY');
-        putenv('APP_ENCRYPTION_KEY');
-        try {
-            $original = 'fallback-secret-value';
-            $encrypted = encrypt_setting($original);
-            $decrypted = decrypt_setting($encrypted);
-            return $decrypted === $original ? true : "Fallback round-trip cassé: $decrypted";
-        } finally {
-            if ($saved_key !== false) putenv('APP_ENCRYPTION_KEY=' . $saved_key);
-        }
-    }
-    $original = 'smtp-secret-password-123';
-    $encrypted = encrypt_setting($original);
-    $decrypted = decrypt_setting($encrypted);
-    return $decrypted === $original ? true : "Got: $decrypted (attendu: $original)";
-});
-
-test('encrypt_setting() produit le préfixe enc: quand openssl est disponible', function() {
-    if (!function_exists('openssl_cipher_iv_length')) {
-        return true;  // N/A sans openssl — fallback en clair, pas de préfixe
-    }
-    $result = encrypt_setting('my-secret-value');
-    return strpos($result, 'enc:') === 0 ? true : "Pas de préfixe enc: dans: $result";
-});
-
-test('encrypt_setting() / decrypt_setting() avec valeur longue', function() {
-    if (!function_exists('openssl_cipher_iv_length')) {
-        return true;  // N/A sans openssl
-    }
-    $original = str_repeat('A very long secret. ', 100);
-    $encrypted = encrypt_setting($original);
-    $decrypted = decrypt_setting($encrypted);
-    return $decrypted === $original ? true : 'Round-trip échec sur valeur longue';
-});
-
-test('encrypt_setting() produit des ciphertexts différents (IV aléatoire)', function() {
-    if (!function_exists('openssl_cipher_iv_length')) {
-        return true;  // N/A sans openssl
-    }
-    $a = encrypt_setting('same-value');
-    $b = encrypt_setting('same-value');
-    return $a !== $b ? true : 'IV non aléatoire (ciphertexts identiques)';
-});
-
-test('decrypt_setting() chaîne non chiffrée retournée telle quelle', function() {
-    $result = decrypt_setting('plaintext-value');
-    return $result === 'plaintext-value' ? true : "Got: $result";
-});
-
-test('decrypt_setting() chaîne vide retournée telle quelle', function() {
-    $result = decrypt_setting('');
-    return $result === '' ? true : "Got: $result";
-});
-
-test('decrypt_setting() sans clé retourne [chiffré] pour une valeur chiffrée', function() {
-    if (!function_exists('openssl_cipher_iv_length')) {
-        return true;  // N/A sans openssl : encrypt_setting ne chiffre pas
-    }
-    $encrypted = encrypt_setting('test-value');
-    $saved_key = getenv('APP_ENCRYPTION_KEY');
-    putenv('APP_ENCRYPTION_KEY');
-    try {
-        $result = decrypt_setting($encrypted);
-        return $result === '[chiffré]' ? true : "Got: $result";
-    } finally {
-        if ($saved_key !== false) putenv('APP_ENCRYPTION_KEY=' . $saved_key);
-    }
-});
-
-test('decrypt_setting() avec mauvaise clé retourne [chiffré]', function() {
-    if (!function_exists('openssl_cipher_iv_length')) {
-        return true;  // N/A sans openssl
-    }
-    $encrypted = encrypt_setting('test-value');
-    $saved_key = getenv('APP_ENCRYPTION_KEY');
-    putenv('APP_ENCRYPTION_KEY=' . str_repeat('z', 32));  // Mauvaise clé
-    try {
-        $result = decrypt_setting($encrypted);
-        return $result === '[chiffré]' ? true : "Got: $result";
-    } finally {
-        if ($saved_key !== false) putenv('APP_ENCRYPTION_KEY=' . $saved_key);
-    }
-});
-
-test('get_sensitive_setting_keys() retourne les clés attendues', function() {
-    $keys = get_sensitive_setting_keys();
-    $expected = ['smtp_pass', 'ldap_bind_pass', 'app_test_secret'];
-    sort($keys);
-    sort($expected);
-    return $keys === $expected ? true : 'Clés sensibles incorrectes: ' . implode(',', $keys);
-});
-
 // ───────────────────────────────────────────────────────────────
 // 12.11 — parse_date() avec formats YYYY-MM-DD et DD/MM/YYYY
 // ───────────────────────────────────────────────────────────────

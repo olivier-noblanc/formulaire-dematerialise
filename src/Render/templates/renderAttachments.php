@@ -1,4 +1,7 @@
 <?php
+/**
+ * @var list<array{id?: string, mime_type?: string, original_name?: string, file_size?: int, uploaded_at?: string}> $attachments
+ */
 if ($attachments === []) {
     return '';
 }

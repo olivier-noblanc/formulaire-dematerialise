@@ -8,7 +8,7 @@
     <div class="section-card-body">
 
         <!-- ── Visual Workflow Diagram ─────────────────── -->
-        <?php if (!empty($steps_by_ordre)): ?>
+        <?php if ((bool)($steps_by_ordre)): ?>
             <div class="workflow-diagram">
                 <?php
                 $ordre_keys = array_keys($steps_by_ordre);
@@ -20,7 +20,7 @@
                             <div class="workflow-box <?= $wstep['actif'] ? '' : 'inactive' ?> <?= count($ordre_steps) > 1 && $idx > 0 ? 'wf-gap' : '' ?>">
                                 <div class="wb-label"><?= \App\Core\App::html()->escape($wstep['label']) ?></div>
                                 <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string) $ordre) ?></div>
-                                <?php if (!empty($wstep['recipients'])): ?>
+                                <?php if ((bool)($wstep['recipients'])): ?>
                                     <div class="wb-emails"><?= \App\Core\App::html()->escape(implode(', ', array_column($wstep['recipients'], 'email'))) ?></div>
                                 <?php else: ?>
                                     <div class="wb-emails u-fon-6">Aucun destinataire</div>
@@ -62,7 +62,7 @@
         </div>
 
         <!-- ── Step list ───────────────────────────────── -->
-        <?php if (!empty($steps)): ?>
+        <?php if ((bool)($steps)): ?>
             <div class="mt-125">
                 <?php foreach ($steps as $step): ?>
                     <?php if ($edit_step_id === $step['id']): ?>
@@ -173,7 +173,7 @@
                                         <span class="badge u-bac-col">Inactif</span>
                                     <?php endif; ?>
                                 </div>
-                                <?php if (!empty($step['recipients'])): ?>
+                                <?php if ((bool)($step['recipients'])): ?>
                                     <div class="recipient-chips">
                                         <?php foreach ($step['recipients'] as $rcpt): ?>
                                             <span class="recipient-chip">
@@ -225,7 +225,7 @@
             </div>
         <?php endif; ?>
 
-        <?php if (!empty($steps)): ?>
+        <?php if ((bool)($steps)): ?>
             <?= new \App\Render\LdapRenderer()->datalist('ldap-recipient-suggestions', '', 300) ?>
         <?php endif; ?>
     </div>

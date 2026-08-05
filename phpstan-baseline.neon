@@ -1,6 +1,240 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Overwriting variable \$currentVersion while changing its type from non\-empty\-array\<string, array\<string, array\<int, string\>\>\|string\> to array\<string, array\{\}\|string\>$#'
+			identifier: shipmonk.variableTypeOverwritten
+			count: 1
+			path: src/Controller/ChangelogController.php
+
+		-
+			message: '#^Parameter \#1 \$form_fields of static method App\\Controller\\FormValidationHandler\:\:validateFields\(\) expects list\<array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\>, array\<int, array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/FormController.php
+
+		-
+			message: '#^Parameter \#1 \$form_fields of static method App\\Controller\\FormValidationHandler\:\:validateFiles\(\) expects list\<array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\>, array\<int, array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/FormController.php
+
+		-
+			message: '#^Parameter \#2 \$form_fields of static method App\\Controller\\FormSubmissionHandler\:\:process\(\) expects list\<array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\>, array\<int, array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/FormController.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 1
+			path: src/Controller/HealthController.php
+
+		-
+			message: '#^Anonymous function never returns float so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Controller/MonitoringController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Controller/MonitoringController.php
+
+		-
+			message: '#^Method call \-\>field\(\) is prohibited on unknown type \(\$renderer\)$#'
+			identifier: shipmonk.methodCallOnMixed
+			count: 2
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Using \+ over non\-number \(mixed \+ mixed\)$#'
+			identifier: shipmonk.arithmeticOnNonNumber
+			count: 2
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$csrf_field might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$existing_submission might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$field_errors might not be defined\.$#'
+			identifier: variable.undefined
+			count: 4
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$file_errors might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$form might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$grouped might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$h might not be defined\.$#'
+			identifier: variable.undefined
+			count: 8
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$legal_mentions might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$progress_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$renderer might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$slug might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$submission_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$submitted_by might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$success might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Variable \$tJargon might not be defined\.$#'
+			identifier: variable.undefined
+			count: 4
+			path: src/Controller/templates/form_content.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 4
+			path: src/Core/DateHelper.php
+
+		-
+			message: '#^Public property `lazyCronRepository` not marked as readonly\.$#'
+			identifier: shipmonk.publicPropertyNotReadonly
+			count: 1
+			path: src/Cron/CronService.php
+
+		-
+			message: '#^Variable \$legal_mentions might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Docs/templates/renderRgpd_section.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Email/EmailVerificationService.php
+
+		-
+			message: '#^Unused App\\Email\\EmailVerificationService\:\:verifyLdap$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Email/EmailVerificationService.php
+
+		-
+			message: '#^Unused App\\Email\\EmailVerificationService\:\:verifySmtp$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Email/EmailVerificationService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Email/LdapVerifier.php
+
+		-
+			message: '#^Null value involved in binary operation\: string \. string\|null$#'
+			identifier: shipmonk.binaryOperationWithNull
+			count: 2
+			path: src/Email/SmtpVerifier.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, bool\|int given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Email/SmtpVerifier.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: src/Export/ExportService.php
+
+		-
+			message: '#^Cannot compare different types in float\|int\|string \< int\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 2
+			path: src/Forms/FormJsonValidator.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 2
+			path: src/Forms/FormJsonValidator.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Forms/FormJsonValidator.php
+
+		-
+			message: '#^Only booleans are allowed in an elseif condition, int\|false given\.$#'
+			identifier: elseif.condNotBoolean
+			count: 1
+			path: src/Forms/FormJsonValidator.php
+
+		-
+			message: '#^Using \+ over non\-number \(\(int\|string\) \+ int\)$#'
+			identifier: shipmonk.arithmeticOnNonNumber
+			count: 5
+			path: src/Forms/FormJsonValidator.php
+
+		-
 			message: '#^Casting to int something that''s already int\.$#'
 			identifier: cast.useless
 			count: 1
@@ -11,3 +245,2055 @@ parameters:
 			identifier: offsetAccess.notFound
 			count: 1
 			path: src/Forms/SampleFormsService.php
+
+		-
+			message: '#^Parameter \#1 \$data of method App\\Repository\\FormRepository\:\:createField\(\) expects array\{form_id\: string, label\: string, field_name\: string, field_type\?\: string, options\?\: string\|null, hint\?\: string, required\?\: int, ordre\?\: int, \.\.\.\}, array\{form_id\: string, label\: ''Application / SI…''\|''Badge accès''\|''Bilan de départ''\|''Bureau / Poste''\|''Clôture compte SI''\|''Clôture messagerie''\|''Coût estimé \(€\)''\|''Création compte SI''\|''Création messagerie''\|''Date''\|''Date d\\''arrivée''\|''Date de départ''\|''Date début''\|''Date fin''\|''Date souhaitée''\|''Direction / Service''\|''Direction actuelle''\|''Direction demandée''\|''Décision de…''\|''Heure départ''\|''Intitulé de la…''\|''Justificatif''\|''Justification''\|''Matériel…''\|''Montant \(€\)''\|''Motif''\|''Motif de départ''\|''Nom complet''\|''Organisme''\|''Remarques''\|''Restitution matériel''\|''Type d\\''arrivée''\|''Type de demande''\|''Type de matériel''\|''Validation…''\|''Validation DRH''\|''Validation DSI''\|''Validation manager''\|''Validation manager…''\|''Validation RH'', field_type\: ''''\|''checkbox''\|''date''\|''file''\|''select''\|''text''\|''textarea'', field_name\: ''''\|''application_si''\|''badge_acces''\|''bilan_depart''\|''bureau_poste''\|''cloture_compte_si''\|''cloture_messagerie''\|''cout_estime''\|''creation_compte_si''\|''creation_messagerie''\|''date_arrivee''\|''date_debut''\|''date_depart''\|''date_fin''\|''date_sortie''\|''date_souhaitee''\|''decision_validation''\|''direction_actuelle''\|''direction_demandee''\|''direction_service''\|''heure_depart''\|''intitule_formation''\|''justificatif''\|''justification''\|''materiel_info''\|''montant''\|''motif''\|''motif_depart''\|''nom_complet''\|''organisme''\|''remarques''\|''restitution_materiel''\|''type_arrivee''\|''type_demande''\|''type_materiel'', options\: non\-empty\-string\|false\|null, required\: 0\|1, ordre\: int\<1, max\>, card_group\: ''Affectation''\|''Agent''\|''Demande''\|''Divers''\|''Décision''\|''Finance''\|''Formation''\|''Général''\|''Identité''\|''IT''\|''Logistique''\|''Matériel''\|''Mutation'', \.\.\.\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Forms/SampleFormsService.php
+
+		-
+			message: '#^Paramètre ''\$submissions'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Forms/ValidatorDataService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Mail/MailService.php
+
+		-
+			message: '#^Overwriting variable \$v while changing its type from array\<mixed, mixed\> to bool\|string$#'
+			identifier: shipmonk.variableTypeOverwritten
+			count: 1
+			path: src/Mail/MailService.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, int given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/AdminAlertsRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, string\|false given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/AdminAlertsRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: src/Render/AdminAlertsRenderer.php
+
+		-
+			message: '#^Paramètre ''\$dateFieldsByForm'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/AdminAlertsRenderer.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and 0 will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Render/AdminAlertsRenderer.php
+
+		-
+			message: '#^Method App\\Render\\AdminFormsContext\:\:__construct\(\) has parameter \$form with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/AdminFormsContext.php
+
+		-
+			message: '#^Method App\\Render\\AdminFormsContext\:\:__construct\(\) has parameter \$form_fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/AdminFormsContext.php
+
+		-
+			message: '#^Method App\\Render\\AdminFormsContext\:\:__construct\(\) has parameter \$forms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/AdminFormsContext.php
+
+		-
+			message: '#^Method App\\Render\\AdminFormsContext\:\:__construct\(\) has parameter \$owners with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/AdminFormsContext.php
+
+		-
+			message: '#^Method App\\Render\\AdminFormsContext\:\:__construct\(\) has parameter \$steps with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/AdminFormsContext.php
+
+		-
+			message: '#^Method App\\Render\\AdminFormsContext\:\:__construct\(\) has parameter \$steps_by_ordre with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/AdminFormsContext.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: src/Render/AdminFormsRenderer.php
+
+		-
+			message: '#^Overwriting variable \$content while changing its type from bool to string$#'
+			identifier: shipmonk.variableTypeOverwritten
+			count: 1
+			path: src/Render/AdminFormsRenderer.php
+
+		-
+			message: '#^Offset ''error'' might not exist on array\{file_size\?\: int\|false, file_exists\: bool, file_size_readable\: string, file_modified\: string, row_counts\: array\<string, ''—''\|int\>, oldest_submission\?\: string, newest_submission\?\: string, page_size\?\: int, \.\.\.\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/BackupRenderer.php
+
+		-
+			message: '#^Paramètre ''\$purge_preview'' typé \?array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 2
+			path: src/Render/BackupRenderer.php
+
+		-
+			message: '#^Array key must be integer or string, but mixed given\.$#'
+			identifier: shipmonk.unsafeArrayKey
+			count: 1
+			path: src/Render/ConfirmActionRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 4
+			path: src/Render/ConfirmActionRenderer.php
+
+		-
+			message: '#^Paramètre ''\$tokens_by_submission'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/DashboardRenderer.php
+
+		-
+			message: '#^Paramètre ''\$d'' typé aucun type — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/DashboardTableRenderer.php
+
+		-
+			message: '#^Paramètre ''\$tokens_by_submission'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/DashboardTableRenderer.php
+
+		-
+			message: '#^Paramètre ''\$vstatus'' typé \?array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/DashboardTableRenderer.php
+
+		-
+			message: '#^Variable \$deadline_val on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Render/DashboardTableRenderer.php
+
+		-
+			message: '#^Property App\\Render\\ErrorResponseException\:\:\$backUrl is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/ErrorRenderer.php
+
+		-
+			message: '#^Property App\\Render\\ErrorResponseException\:\:\$hint is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/ErrorRenderer.php
+
+		-
+			message: '#^Property App\\Render\\ErrorResponseException\:\:\$title is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/ErrorRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in &&, mixed given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: src/Render/FormRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/FormRenderer.php
+
+		-
+			message: '#^Overwriting variable \$max_size_mo while changing its type from int to float$#'
+			identifier: shipmonk.variableTypeOverwritten
+			count: 1
+			path: src/Render/FormRenderer.php
+
+		-
+			message: '#^Paramètre ''\$existing_submission'' typé aucun type — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/FormRenderer.php
+
+		-
+			message: '#^Paramètre ''\$grouped'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/FormRenderer.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and false will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Render/HtmlService.php
+
+		-
+			message: '#^Paramètre ''\$active_forms'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Paramètre ''\$welcome_forms'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/IndexRenderer.php
+
+		-
+			message: '#^Paramètre ''\$confirm_config'' typé \?array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/InstallRenderer.php
+
+		-
+			message: '#^Paramètre ''\$p'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/InstallRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\InstallRenderer\:\:__construct$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/InstallRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\InstallRenderer\:\:renderPage$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/InstallRenderer.php
+
+		-
+			message: '#^Method App\\Render\\MonitoringRenderer\:\:loadTemplate\(\) has parameter \$vars with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/MonitoringRenderer.php
+
+		-
+			message: '#^Method App\\Render\\MonitoringRenderer\:\:loadTemplate\(\) should return string but returns string\|false\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Render/MonitoringRenderer.php
+
+		-
+			message: '#^Parameter \#1 \$recent_alerts of static method App\\Render\\MonitoringRenderer\:\:recentAlerts\(\) expects array\<int, array\{sent_at\: string, rule_label\: string, form_label\: string, message\: string\}\>, list\<array\{id\: string, rule_id\: string, submission_id\: string, sent_at\: string, message\: string\|null, form_label\: string, rule_label\: string\|null\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Render/MonitoringRenderer.php
+
+		-
+			message: '#^Paramètre ''\$vars'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/MonitoringRenderer.php
+
+		-
+			message: '#^Array key must be integer or string, but mixed~\(0\|0\.0\|''''\|''0''\|array\{\}\|false\|null\) given\.$#'
+			identifier: shipmonk.unsafeArrayKey
+			count: 1
+			path: src/Render/MySubmissionsRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/MySubmissionsRenderer.php
+
+		-
+			message: '#^Paramètre ''\$submissions'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/MySubmissionsRenderer.php
+
+		-
+			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
+			identifier: arrayFilter.strict
+			count: 1
+			path: src/Render/MyValidationsRenderer.php
+
+		-
+			message: '#^Comparison int\|false \< int\<1, max\> contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 1
+			path: src/Render/MyValidationsRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/MyValidationsRenderer.php
+
+		-
+			message: '#^Paramètre ''\$allStepsBySub'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 2
+			path: src/Render/MyValidationsRenderer.php
+
+		-
+			message: '#^Variable \$nomAgent on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Render/MyValidationsRenderer.php
+
+		-
+			message: '#^Null value involved in binary operation\: string \. string\|null$#'
+			identifier: shipmonk.binaryOperationWithNull
+			count: 1
+			path: src/Render/PageRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/PageRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/PageRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: src/Render/PageRenderer.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: src/Render/PageRenderer.php
+
+		-
+			message: '#^Property App\\Render\\SubmissionViewContext\:\:\$action_msg is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/SubmissionViewContext.php
+
+		-
+			message: '#^Property App\\Render\\SubmissionViewContext\:\:\$admin_comment is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/SubmissionViewContext.php
+
+		-
+			message: '#^Property App\\Render\\SubmissionViewContext\:\:\$is_form_owner is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/SubmissionViewContext.php
+
+		-
+			message: '#^Property App\\Render\\SubmissionViewContext\:\:\$pending_with_relance is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/SubmissionViewContext.php
+
+		-
+			message: '#^Property App\\Render\\SubmissionViewContext\:\:\$total_relances is never read$#'
+			identifier: shipmonk.deadProperty.neverRead
+			count: 1
+			path: src/Render/SubmissionViewContext.php
+
+		-
+			message: '#^Cannot cast 0\|0\.0\|array\{\}\|string\|false to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: src/Render/SubmissionViewRenderer.php
+
+		-
+			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
+			identifier: noMagicString
+			count: 1
+			path: src/Render/SubmissionViewRenderer.php
+
+		-
+			message: '#^Parameter \#1 \$sub of method App\\Render\\SubmissionViewRenderer\:\:renderHeader\(\) expects array\{form_label\?\: string, submitted_by\?\: string, submitted_at\?\: string, closed_at\?\: string\|null\}, array\<int\|string, 0\|0\.0\|array\{\}\|string\|false\|null\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Render/SubmissionViewRenderer.php
+
+		-
+			message: '#^Paramètre ''\$steps'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/SubmissionViewRenderer.php
+
+		-
+			message: '#^Paramètre ''\$sub'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/SubmissionViewRenderer.php
+
+		-
+			message: '#^Unused App\\Render\\SubmissionViewRenderer\:\:renderContent$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Render/SubmissionViewRenderer.php
+
+		-
+			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
+			identifier: arrayFilter.strict
+			count: 2
+			path: src/Render/ValidateRenderer.php
+
+		-
+			message: '#^Paramètre ''\$visible_attachments'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
+			identifier: noUntypedArray
+			count: 1
+			path: src/Render/ValidateRenderer.php
+
+		-
+			message: '#^Method call \-\>fieldTypeIcon\(\) is prohibited on unknown type \(\$this\)$#'
+			identifier: shipmonk.methodCallOnMixed
+			count: 1
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Method call \-\>fieldTypeLabel\(\) is prohibited on unknown type \(\$this\)$#'
+			identifier: shipmonk.methodCallOnMixed
+			count: 1
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Method call \-\>optionsToLines\(\) is prohibited on unknown type \(\$this\)$#'
+			identifier: shipmonk.methodCallOnMixed
+			count: 1
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$edit_field_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$existing_groups might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$field_types might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$form_fields might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$form_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 6
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$steps might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/adminForms_formFieldsSection.php
+
+		-
+			message: '#^Variable \$form might not be defined\.$#'
+			identifier: variable.undefined
+			count: 7
+			path: src/Render/templates/adminForms_formInfoSection.php
+
+		-
+			message: '#^Variable \$preserved_json might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_importJsonPanel.php
+
+		-
+			message: '#^Variable \$validation_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_importJsonPanel.php
+
+		-
+			message: '#^Variable \$form_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/adminForms_ownersSection.php
+
+		-
+			message: '#^Variable \$owners might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_ownersSection.php
+
+		-
+			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+			identifier: equal.notAllowed
+			count: 1
+			path: src/Render/templates/adminForms_selectorPanel.php
+
+		-
+			message: '#^Variable \$form_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_selectorPanel.php
+
+		-
+			message: '#^Variable \$forms might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_selectorPanel.php
+
+		-
+			message: '#^Variable \$form might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_topActionBar.php
+
+		-
+			message: '#^Variable \$form_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_topActionBar.php
+
+		-
+			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 1
+			path: src/Render/templates/adminForms_workflowDiagramSection.php
+
+		-
+			message: '#^Using \+ over non\-number \(mixed \+ int\)$#'
+			identifier: shipmonk.arithmeticOnNonNumber
+			count: 1
+			path: src/Render/templates/adminForms_workflowDiagramSection.php
+
+		-
+			message: '#^Variable \$edit_step_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_workflowDiagramSection.php
+
+		-
+			message: '#^Variable \$form_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 5
+			path: src/Render/templates/adminForms_workflowDiagramSection.php
+
+		-
+			message: '#^Variable \$steps might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/adminForms_workflowDiagramSection.php
+
+		-
+			message: '#^Variable \$steps_by_ordre might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/adminForms_workflowDiagramSection.php
+
+		-
+			message: '#^Variable \$email_verify_mode might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_base_dn might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_bind_dn might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_bind_pass might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_ext_available might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_filter might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_host might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_port might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_suggest_enabled might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$ldap_suggest_filter might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$mail_dry_run might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_security.php
+
+		-
+			message: '#^Variable \$delai_relance_h might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$relance_max might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$retention_months might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_auth might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_from might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_from_name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_host might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_pass might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_port might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_secure might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$smtp_user might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$token_expire_days might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_smtp.php
+
+		-
+			message: '#^Variable \$email_verify_mode might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_summary.php
+
+		-
+			message: '#^Variable \$ldap_ext_available might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_summary.php
+
+		-
+			message: '#^Variable \$ldap_host might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_summary.php
+
+		-
+			message: '#^Variable \$mail_dry_run might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_summary.php
+
+		-
+			message: '#^Variable \$mail_dry_run might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_test_send.php
+
+		-
+			message: '#^Variable \$verify_result might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/admin_settings_section_verify_test.php
+
+		-
+			message: '#^Variable \$confirmUrl might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_confirm_duplicate.php
+
+		-
+			message: '#^Variable \$date might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_confirm_duplicate.php
+
+		-
+			message: '#^Variable \$existingId might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_confirm_duplicate.php
+
+		-
+			message: '#^Variable \$form might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_confirm_duplicate.php
+
+		-
+			message: '#^Variable \$h might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/form_confirm_duplicate.php
+
+		-
+			message: '#^Variable \$tJargon might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_confirm_duplicate.php
+
+		-
+			message: '#^Using \+ over non\-number \(mixed \+ mixed\)$#'
+			identifier: shipmonk.arithmeticOnNonNumber
+			count: 2
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$existing_submission might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$field_errors might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$file_errors might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$form might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$grouped might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$h might not be defined\.$#'
+			identifier: variable.undefined
+			count: 8
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$ldap_datalist_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$ldap_datalist_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$slug might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$submission_id might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$submitted_by might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$success might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$tJargon might not be defined\.$#'
+			identifier: variable.undefined
+			count: 4
+			path: src/Render/templates/form_content.php
+
+		-
+			message: '#^Variable \$checked might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_checkbox.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_checkbox.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_checkbox.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_checkbox.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_checkbox.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_checkbox.php
+
+		-
+			message: '#^Variable \$aria_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$auto_hint_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$error_class might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$error_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$placeholder_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$user_hint might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$val might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_date.php
+
+		-
+			message: '#^Variable \$aria_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$auto_hint_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$error_class might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$error_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$html5_extra might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$html5_type might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$maxlength might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$placeholder_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$user_hint might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$val might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_default.php
+
+		-
+			message: '#^Variable \$aria_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$auto_hint_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$error_class might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$error_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$list_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$maxlength might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$placeholder_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$user_hint might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$val might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_email.php
+
+		-
+			message: '#^Variable \$accept might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$aria_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$auto_hint_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$error_class might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$error_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$user_hint might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_file.php
+
+		-
+			message: '#^Variable \$aria_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$error_class might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$error_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$options_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$user_hint might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_select.php
+
+		-
+			message: '#^Variable \$aria_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$auto_hint_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$error_class might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$error_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$html5_extra might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$html5_type might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$maxlength might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$placeholder_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$user_hint might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$val might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_text.php
+
+		-
+			message: '#^Variable \$aria_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$auto_hint_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$disabled_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$error_class might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$error_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$name might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$placeholder_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$req_span might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$required_attr might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$user_hint might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$val might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/form_field_textarea.php
+
+		-
+			message: '#^Variable \$section_count might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/form_progress_indicator.php
+
+		-
+			message: '#^Variable \$total_fields might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/form_progress_indicator.php
+
+		-
+			message: '#^Variable \$messages might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/messages.php
+
+		-
+			message: '#^Variable \$active_alerts might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_active_alerts.php
+
+		-
+			message: '#^Comparison mixed \< mixed contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 4
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Using \+ over non\-number \(mixed \+ int\)$#'
+			identifier: shipmonk.arithmeticOnNonNumber
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Using \- over non\-number \(mixed \- int\)$#'
+			identifier: shipmonk.arithmeticOnNonNumber
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$action_types might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$audit_base_qs might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$audit_base_url might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$audit_logs might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$audit_page might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$audit_total might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$audit_total_pages might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_audit_log.php
+
+		-
+			message: '#^Variable \$bloque_hours might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_blocked_tokens.php
+
+		-
+			message: '#^Variable \$tokens_bloques might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_blocked_tokens.php
+
+		-
+			message: '#^Magic string ''en_cours'' detected → use SubmissionStatus\:\:EnCours\-\>value instead\.$#'
+			identifier: noMagicString
+			count: 1
+			path: src/Render/templates/monitoring_by_form.php
+
+		-
+			message: '#^Magic string ''refuse'' detected → use SubmissionStatus\:\:Refuse\-\>value instead\.$#'
+			identifier: noMagicString
+			count: 1
+			path: src/Render/templates/monitoring_by_form.php
+
+		-
+			message: '#^Magic string ''valide'' detected → use SubmissionStatus\:\:Valide\-\>value instead\.$#'
+			identifier: noMagicString
+			count: 1
+			path: src/Render/templates/monitoring_by_form.php
+
+		-
+			message: '#^Variable \$by_form_stats might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_by_form.php
+
+		-
+			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 1
+			path: src/Render/templates/monitoring_daily_activity.php
+
+		-
+			message: '#^Using / over non\-number \(int / mixed\)$#'
+			identifier: shipmonk.arithmeticOnNonNumber
+			count: 1
+			path: src/Render/templates/monitoring_daily_activity.php
+
+		-
+			message: '#^Variable \$daily_stats might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_daily_activity.php
+
+		-
+			message: '#^Variable \$mail_logs might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_mail_logs.php
+
+		-
+			message: '#^Variable \$recent_alerts might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_recent_alerts.php
+
+		-
+			message: '#^Variable \$en_cours_sub might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_repartition.php
+
+		-
+			message: '#^Variable \$refuse_sub might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_repartition.php
+
+		-
+			message: '#^Variable \$total_sub might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_repartition.php
+
+		-
+			message: '#^Variable \$valide_sub might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_repartition.php
+
+		-
+			message: '#^Variable \$last_alert_check might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_scripts_card.php
+
+		-
+			message: '#^Variable \$last_remind might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_scripts_card.php
+
+		-
+			message: '#^Variable \$smtp_debug_log might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_smtp_card.php
+
+		-
+			message: '#^Variable \$smtp_detail might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/monitoring_smtp_card.php
+
+		-
+			message: '#^Variable \$smtp_status might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_smtp_card.php
+
+		-
+			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Variable \$active_alerts might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Variable \$avg_days might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Variable \$avg_hours might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Variable \$en_cours_sub might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Variable \$taux_validation might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Variable \$tokens_bloques might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Variable \$total_sub might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/monitoring_stats.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, string given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: src/Render/templates/page_html.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Render/templates/renderDeadline.php
+
+		-
+			message: '#^Offset ''done_at'' might not exist on array\{id\?\: string, ordre\?\: int, email\?\: string, done_at\?\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderDelegationForm.php
+
+		-
+			message: '#^Offset ''email'' might not exist on array\{id\?\: string, ordre\?\: int, email\?\: string, done_at\: ''''\|''0''\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderDelegationForm.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Render/templates/renderDelegationForm.php
+
+		-
+			message: '#^Offset ''reason'' might not exist on array\{step_label\?\: string, from_email\?\: string, to_email\?\: string, delegated_at\?\: string, reason\?\: string\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderDelegations.php
+
+		-
+			message: '#^Offset ''card_group'' might not exist on array\{card_group\?\: string, label\?\: string\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderFormData.php
+
+		-
+			message: '#^Offset ''label'' might not exist on array\{card_group\?\: string, label\?\: string\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderFormData.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Render/templates/renderFormData.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 2
+			path: src/Render/templates/renderFormData.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''0'' and ''0'' will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: src/Render/templates/renderFormData.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between bool and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Render/templates/renderFormData.php
+
+		-
+			message: '#^Offset ''closed_at'' might not exist on array\{form_label\?\: string, submitted_by\?\: string, submitted_at\?\: string, closed_at\?\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderHeader.php
+
+		-
+			message: '#^Offset ''done_at'' might not exist on array\{id\?\: string, email\?\: string, done_at\?\: string\|null, sent_at\?\: string\|null, relance_count\?\: int, expires_at\?\: string\|null, relance_at\?\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderRemindHistory.php
+
+		-
+			message: '#^Offset ''expires_at'' might not exist on array\{id\?\: string, email\?\: string, done_at\: ''''\|''0''\|null, sent_at\: string\|null, relance_count\?\: int, expires_at\?\: string\|null, relance_at\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderRemindHistory.php
+
+		-
+			message: '#^Offset ''relance_at'' might not exist on array\{id\?\: string, email\?\: string, done_at\: ''''\|''0''\|null, sent_at\: string\|null, relance_count\?\: int, expires_at\?\: string\|null, relance_at\?\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderRemindHistory.php
+
+		-
+			message: '#^Offset ''sent_at'' might not exist on array\{id\?\: string, email\?\: string, done_at\: ''''\|''0''\|null, sent_at\?\: string\|null, relance_count\?\: int, expires_at\?\: string\|null, relance_at\?\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderRemindHistory.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: src/Render/templates/renderRemindHistory.php
+
+		-
+			message: '#^PHPDoc tag @var for variable \$pending_with_relance has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Render/templates/renderRemindHistory.php
+
+		-
+			message: '#^Offset ''label'' might not exist on array\{label\?\: string\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderValidatorData.php
+
+		-
+			message: '#^Offset ''done_at'' might not exist on array\{id\?\: string, email\?\: string, done_at\?\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Render/templates/renderWorkflowActions.php
+
+		-
+			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
+			identifier: shipmonk.comparingNonComparableTypes
+			count: 1
+			path: src/Render/templates/renderWorkflowDiagram.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Render/templates/renderWorkflowDiagram.php
+
+		-
+			message: '#^Variable \$status might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/renderWorkflowDiagram.php
+
+		-
+			message: '#^Variable \$workflow_steps might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/renderWorkflowDiagram.php
+
+		-
+			message: '#^Variable \$en_cours might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/stats.php
+
+		-
+			message: '#^Variable \$refuse might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/stats.php
+
+		-
+			message: '#^Variable \$total might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/stats.php
+
+		-
+			message: '#^Variable \$valide might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/stats.php
+
+		-
+			message: '#^Variable \$cancel_url might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_detail.php
+
+		-
+			message: '#^Variable \$d might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_detail.php
+
+		-
+			message: '#^Variable \$form_data_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_detail.php
+
+		-
+			message: '#^Variable \$status might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_detail.php
+
+		-
+			message: '#^Variable \$tokens might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_detail.php
+
+		-
+			message: '#^Variable \$admin_comment_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$deadline_urgency might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$deadline_val might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$detail might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$detail_summary might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$etat might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$form_label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$nom might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$submitted might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$tokens_html might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$validator_badge might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$view_url might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/submission_row.php
+
+		-
+			message: '#^Variable \$en_cours might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/system_overview.php
+
+		-
+			message: '#^Variable \$last_backup might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/system_overview.php
+
+		-
+			message: '#^Variable \$smtp_dot might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/system_overview.php
+
+		-
+			message: '#^Variable \$smtp_host might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/system_overview.php
+
+		-
+			message: '#^Variable \$smtp_label might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/system_overview.php
+
+		-
+			message: '#^Variable \$smtp_port might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/system_overview.php
+
+		-
+			message: '#^Variable \$filtre_h might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: src/Render/templates/toolbar.php
+
+		-
+			message: '#^Variable \$form_h might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/toolbar.php
+
+		-
+			message: '#^Variable \$options might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/toolbar.php
+
+		-
+			message: '#^Variable \$search_bar might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/toolbar.php
+
+		-
+			message: '#^Variable \$search_h might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/Render/templates/toolbar.php
+
+		-
+			message: '#^Unused App\\Repository\\AuditRepository\:\:getLogs$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: src/Repository/AuditRepository.php

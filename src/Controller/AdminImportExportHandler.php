@@ -27,7 +27,7 @@ final class AdminImportExportHandler
 
         $repo = App::getInstance()->get(FormRepository::class);
         $form_data = $repo->findById($export_id);
-        if (!$form_data) {
+        if (!((bool)$form_data)) {
             return ['error' => 'Formulaire introuvable.'];
         }
         $export = [
@@ -49,7 +49,7 @@ final class AdminImportExportHandler
                 'label' => $f['label'],
                 'field_type' => $f['field_type'],
                 'field_name' => $f['field_name'],
-                'options' => $f['options'] ? json_decode($f['options'], true) : null,
+                'options' => ($f['options'] !== null && $f['options'] !== '') ? json_decode($f['options'], true) : null,
                 'required' => (int) $f['required'],
                 'ordre' => (int) $f['ordre'],
                 'card_group' => $f['card_group'] ?? 'Général',
@@ -61,7 +61,7 @@ final class AdminImportExportHandler
         }
 
         foreach ($repo->getStepsWithRecipients($export_id) as $s) {
-            $recipients = $s['recipient_emails'] ? explode('|', $s['recipient_emails']) : [];
+            $recipients = ($s['recipient_emails'] !== null && $s['recipient_emails'] !== '') ? explode('|', $s['recipient_emails']) : [];
             $raw_condition = (string) ($s['condition'] ?? '');
             $condition_export = null;
             if ($raw_condition !== '') {
@@ -79,7 +79,7 @@ final class AdminImportExportHandler
             ];
         }
 
-        $filename = preg_replace('/[^a-z0-9_-]/i', '_', $form_data['slug']) . '.json';
+        $filename = (preg_replace('/[^a-z0-9_-]/i', '_', $form_data['slug']) ?? '') . '.json';
         $jsonOutput = json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return [
             'filename' => $filename,
@@ -110,7 +110,7 @@ final class AdminImportExportHandler
             ];
         }
         $result = \App\Forms\FormJsonValidator::validate($data);
-        if ($result['valid'] && empty($result['warnings'])) {
+        if ($result['valid'] && $result['warnings'] === []) {
             $validation_html = '<div class="msg-success" role="status" aria-live="polite">✓ JSON valide ! Le formulaire et le circuit de validation sont correctement définis. Vous pouvez lancer l\'import.</div>';
         } elseif ($result['valid']) {
             $validation_html = '<div class="msg-success" role="status" aria-live="polite">✓ JSON valide (l\'import fonctionnera), mais avec des avertissements :</div>';
@@ -161,15 +161,16 @@ final class AdminImportExportHandler
                 'deadline_field' => $deadline,
             ]);
 
-            if (!empty($data['fields'])) {
+            if (isset($data['fields']) && $data['fields'] !== []) {
                 $ordre = 1;
                 foreach ($data['fields'] as $f) {
                     $options_json = null;
-                    if (!empty($f['options'])) {
-                        $options_json = is_string($f['options']) ? $f['options'] : json_encode($f['options'], JSON_UNESCAPED_UNICODE);
+                    if (isset($f['options']) && $f['options'] !== '') {
+                        $encoded = is_string($f['options']) ? $f['options'] : json_encode($f['options'], JSON_UNESCAPED_UNICODE);
+                        $options_json = $encoded !== false ? $encoded : null;
                     }
-                    $field_name = empty($f['field_name']) ? \generate_field_name($f['label']) : $f['field_name'];
-                    $filled_by = empty($f['filled_by']) ? FilledBy::Demandeur->value : $f['filled_by'];
+                    $field_name = (!isset($f['field_name']) || $f['field_name'] === '') ? \generate_field_name($f['label']) : $f['field_name'];
+                    $filled_by = (!isset($f['filled_by']) || $f['filled_by'] === '') ? FilledBy::Demandeur->value : $f['filled_by'];
                     if (!in_array($filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value], true)) {
                         $filled_by = FilledBy::Demandeur->value;
                     }
@@ -199,14 +200,14 @@ final class AdminImportExportHandler
                 }
             }
 
-            if (!empty($data['steps'])) {
+            if (isset($data['steps']) && $data['steps'] !== []) {
                 foreach ($data['steps'] as $s) {
                     $raw_cond_import = $s['condition'] ?? '';
                     $cond_db = '';
                     if (is_array($raw_cond_import)) {
                         $op_imp = (string) ($raw_cond_import['op'] ?? '');
                         $valid_ops = \App\Workflow\ConditionEvaluator::VALID_OPS;
-                        if (!empty($raw_cond_import['field']) && in_array($op_imp, $valid_ops, true)) {
+                        if (isset($raw_cond_import['field']) && $raw_cond_import['field'] !== '' && in_array($op_imp, $valid_ops, true)) {
                             $encoded = json_encode([
                                 'field' => (string) $raw_cond_import['field'],
                                 'op'    => $op_imp,
@@ -231,7 +232,7 @@ final class AdminImportExportHandler
                         'condition' => $cond_db,
                     ]);
 
-                    if (!empty($s['recipients'])) {
+                    if (isset($s['recipients']) && $s['recipients'] !== []) {
                         foreach ($s['recipients'] as $email) {
                             $repo->createRecipient($step_id, $email);
                         }

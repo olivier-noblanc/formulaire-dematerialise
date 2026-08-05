@@ -261,9 +261,10 @@ final class CssCoverageTest extends TestCase
                  'step_label' => 'RH', 'ordre' => 1],
             ],
         ];
-        $html2 = DashboardRenderer::table([$row], $tokens);
+        $tableRenderer = new \App\Render\DashboardTableRenderer();
+        $html2 = $tableRenderer->table([$row], $tokens);
         $classes2 = $this->extractHtmlClasses($html2);
-        self::assertCssClassesInFile($classes2, $cssClasses, ['token-', 'ordre-', 'detail-'], 'DashboardRenderer::table');
+        self::assertCssClassesInFile($classes2, $cssClasses, ['token-', 'ordre-', 'detail-'], 'DashboardTableRenderer::table');
     }
 
     // ═══════════════════════════════════════════════════════════════

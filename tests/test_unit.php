@@ -10,7 +10,7 @@
  *   - test_unit_render_data.php      : Sections 5-8 — Rendu, Accès données, Erreurs, Sécurité
  *   - test_unit_nav_utils.php        : Sections 9-11 — Navigation, Version, Utilitaires suppl.
  *   - test_unit_wave4_validation.php : Section 12.1-12.9 — validate_input() (9 règles)
- *   - test_unit_wave4_security.php   : Section 12.10-12.14 — encrypt, parse_date, security_log,
+ *   - test_unit_wave4_security.php   : Section 12.10-12.14 — parse_date, security_log,
  *                                      security_headers, rate limiting
  *   - test_unit_wave5.php            : Section 13 — Wave 5 (Alertes, release_pdo, régression SQL)
  *   - test_unit_wave6.php            : Section 14 — Wave 6 (Brouillons, indicateur progression)
@@ -72,7 +72,7 @@ run_tests_unit_basics();              // Sections 1-4 : Utilitaires, Dates, Auth
 run_tests_unit_render_data();         // Sections 5-8 : Rendu, Accès données, Erreurs, Sécurité
 run_tests_unit_nav_utils();           // Sections 9-11 : Navigation, Version, Utilitaires suppl.
 run_tests_unit_wave4_validation();    // Section 12.1-12.9 : validate_input() (9 règles)
-run_tests_unit_wave4_security();      // Section 12.10-12.14 : encrypt, parse_date, security_log, etc.
+run_tests_unit_wave4_security();      // Section 12.10-12.14 : parse_date, security_log, etc.
 run_tests_unit_wave5();               // Section 13 : Wave 5 — R2-TESTER
 run_tests_unit_wave6();               // Section 14 : Wave 6 — S2-CTO
 run_tests_unit_wave7();               // Section 15 : Wave 7 — S3-TESTER

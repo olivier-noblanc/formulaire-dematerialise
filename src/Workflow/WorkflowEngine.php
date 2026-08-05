@@ -24,6 +24,8 @@ final readonly class WorkflowEngine
     public TokenRepository $tokenRepository;
     public FormRepository $formRepository;
 
+    private TokenValidationHandler $validationHandler;
+
     public function __construct(
         private SettingsService $settingsService,
         private MailService $mailService,
@@ -35,6 +37,11 @@ final readonly class WorkflowEngine
     ) {
         $this->tokenRepository = $tokenRepository ?? \App\Core\App::getInstance()->get(TokenRepository::class);
         $this->formRepository = $formRepository ?? \App\Core\App::getInstance()->get(FormRepository::class);
+        $this->validationHandler = new TokenValidationHandler(
+            $this->tokenRepository,
+            $this->submissionRepository,
+            $this->mailService,
+        );
     }
 
     /**
@@ -124,13 +131,13 @@ final readonly class WorkflowEngine
      *   submitted_by: string
      * }|null
      */
-    private function fetchTokenByCondition(string $whereClause, array $params): ?array
+    private function fetchTokenByCondition(string $whereClause, mixed $params): ?array
     {
         return $this->tokenRepository->findTokenWithContextByCondition($whereClause, $params);
     }
 
     /**
-     * @return array<int, array{
+     * @return list<array{
      *   step_id: string,
      *   step_label: string,
      *   ordre: int,
@@ -163,8 +170,13 @@ final readonly class WorkflowEngine
         return $this->submissionRepository->findWithFormLabelById($submissionId);
     }
 
-    /** @param array<string, mixed> $formData */
-    public function resolveDynamicRecipient(string $recipient, array $formData, ?string $submissionId = null): string
+    /**
+     * Resolve a dynamic recipient string (e.g. {{owner}}, {{field_name}}).
+     *
+     * @param array<string, mixed> $formData
+     * @phpstan-ignore shipmonk.deadMethod (used by tests only)
+     */
+    public function resolveDynamicRecipient(string $recipient, mixed $formData, ?string $submissionId = null): string
     {
         // Cas spécial : {{owner}}
         if ($recipient === '{{owner}}') {
@@ -173,11 +185,11 @@ final readonly class WorkflowEngine
                 if ($fid !== null && $fid !== '') {
                     $owners = $this->formRepository->findOwnersByFormId($fid);
                     $firstOwnerEmail = $owners[0]['email'] ?? '';
-                    if ($owners !== [] && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL)) {
+                    if ($owners !== [] && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL) !== false) {
                         return $firstOwnerEmail;
                     }
                     $adminEmail = $this->settingsService->get('admin_email');
-                    if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+                    if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL) !== false) {
                         return $adminEmail;
                     }
                 }
@@ -185,18 +197,18 @@ final readonly class WorkflowEngine
             return $recipient;
         }
 
-        if (preg_match('/^\{\{([a-z][a-z0-9_]*)\}\}$/', $recipient, $m)) {
+        if (preg_match('/^\{\{([a-z][a-z0-9_]*)\}\}$/', $recipient, $m) === 1) {
             $fieldName = $m[1];
-            if (isset($formData[$fieldName]) && !empty($formData[$fieldName])) {
+            if (isset($formData[$fieldName]) && (bool)($formData[$fieldName])) {
                 $resolved = trim((string) $formData[$fieldName]);
-                if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                if (filter_var($resolved, FILTER_VALIDATE_EMAIL) !== false) {
                     return $resolved;
                 }
             }
             foreach ($formData as $key => $val) {
                 if (strtolower((string) $key) === $fieldName && $val !== '' && $val !== null && $val !== '0') {
                     $resolved = trim((string) $val);
-                    if (filter_var($resolved, FILTER_VALIDATE_EMAIL)) {
+                    if (filter_var($resolved, FILTER_VALIDATE_EMAIL) !== false) {
                         return $resolved;
                     }
                 }
@@ -252,115 +264,14 @@ final readonly class WorkflowEngine
      */
     public function validateToken(string $token, string $action = ValidationAction::Valider->value, string $comment = '', string $doneBy = ''): array
     {
-        if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
-            return ['status' => 'invalid'];
-        }
-        if (!in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value], true)) {
-            return ['status' => 'invalid', 'message' => 'Action non autorisée.'];
-        }
-
-        $this->tokenRepository->beginTransaction();
-
-        $t = $this->getTokenWithContext($token);
-        if ($t === null) {
-            $this->tokenRepository->rollBack();
-            return ['status' => 'invalid'];
-        }
-        // B-V1 fix (audit fonctionnel 2026-07-26) : un token invalidé (par cancel,
-        // regenerate ou delegate) ne doit pas pouvoir être validé même si done_at
-        // est NULL. Avant, le check seul `!empty($t['done_at'])` laissait passer
-        // les tokens invalidés — l'utilisateur voyait une page de validation
-        // fonctionnelle alors que le token était mort.
-        if (!empty($t['done_at']) || !empty($t['invalidated_at'])) {
-            $this->tokenRepository->rollBack();
-            return ['status' => 'already_done', 'data' => $t];
-        }
-        if (!empty($t['closed_at'])) {
-            $this->tokenRepository->rollBack();
-            return ['status' => 'closed', 'data' => $t];
-        }
-
-        if (!empty($t['expires_at'])) {
-            // B1 fix (audit 2026-07-26) : les dates sont stockées en UTC (soit via
-            // SQLite datetime('now'), soit via PHP gmdate()). strtotime() sans
-            // fuseau explicite interprète la chaîne avec le fuseau serveur
-            // (Europe/Paris en prod), causant un décalage de 1-2h : tokens
-            // marqués expirés trop tôt. On force l'interprétation UTC en suffixant
-            // la chaîne avec ' UTC' (notation reconnue par strtotime).
-            // Même pattern que les fixes historiques #12 (alert_check.php) et
-            // v10.22.0 (remind.php) — n'avait pas été appliqué ici.
-            $expTs = strtotime($t['expires_at'] . ' UTC');
-            if ($expTs !== false && $expTs < time()) {
-                $this->tokenRepository->rollBack();
-                return ['status' => 'expired', 'data' => $t];
-            }
-        }
-
-        $comment = mb_substr($comment, 0, 1000);
-
-        if ($action === ValidationAction::Refuser->value) {
-            $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
-            if ($rowCount === 0) {
-                $this->tokenRepository->rollBack();
-                return ['status' => 'already_done', 'data' => $t];
-            }
-
-            $this->submissionRepository->closeWithStatus($t['submission_id'], gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value);
-        } else {
-            $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
-            if ($rowCount === 0) {
-                $this->tokenRepository->rollBack();
-                return ['status' => 'already_done', 'data' => $t];
-            }
-        }
-
-        $validationEntry = [
-            'step_label' => $t['step_label'],
-            'email' => $t['email'],
-            'done_by' => $doneBy,
-            'action' => $action,
-            'commentaire' => $comment,
-            'date' => gmdate('Y-m-d H:i:s'),
-        ];
-
-        // B8 fix : appendToDataJson() fait de l'optimistic locking (WHERE data = old_json)
-        // et peut retourner false si 3 conflits successifs. Avant, ce retour était
-        // ignoré — l'audit_log disait 'validated' mais la data JSON n'avait pas la nouvelle
-        // validation. Maintenant on rollback et on informe l'appelant.
-        $appended = $this->submissionRepository->appendToDataJson($t['submission_id'], function (array $data) use ($validationEntry): array {
-            $data['validations'][] = $validationEntry;
-            return $data;
-        });
-        if (!$appended) {
-            $this->tokenRepository->rollBack();
-            // Audit l'échec pour diagnose (règle AGENTS.md #9 : ne pas avaler silencieusement)
-            \App\Core\App::audit()->log(
-                'validation_data_append_failed',
-                'submission:' . $t['submission_id'],
-                'Échec appendToDataJson (conflit optimistic locking 3x) pour token ' . $token,
-                $doneBy
-            );
-            return ['status' => 'data_conflict', 'data' => $t];
-        }
-
-        $this->tokenRepository->commit();
-
-        // Emails et advanceWorkflow APRES le commit (side effects hors transaction)
-        if ($action === ValidationAction::Refuser->value) {
-            $agentEmail = $t['submitted_by'] ?? '';
-            if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
-                $subject = 'Demande refusée — ' . ($t['form_label'] ?? '');
-                $body = '<h2 style="color:#c0392b;">Demande refusée</h2>'
-                    . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . \App\Core\App::html()->escape($t['step_label']) . '</strong>.</p>'
-                    . ($comment === '' || $comment === '0' ? '' : '<p><strong>Motif :</strong> ' . \App\Core\App::html()->escape($comment) . '</p>');
-                $this->mailService->send($agentEmail, $subject, $this->mailService->renderEmailTemplate('Demande refusée', $body));
-            }
-        } else {
-            $this->advanceWorkflow($t['submission_id']);
-        }
-
-        $t['done_at'] = gmdate('Y-m-d H:i:s');
-        return ['status' => 'ok', 'data' => $t];
+        return $this->validationHandler->validate(
+            $token,
+            $action,
+            $comment,
+            $doneBy,
+            $this->advanceWorkflow(...),
+            $this->getTokenWithContext(...),
+        );
     }
 
     public function hasActiveSubmissions(string $formId): int

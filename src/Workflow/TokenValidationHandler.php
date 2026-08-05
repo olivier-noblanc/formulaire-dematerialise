@@ -59,7 +59,7 @@ final readonly class TokenValidationHandler
         callable $advanceWorkflow,
         callable $getTokenWithContext,
     ): array {
-        if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+        if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
             return ['status' => 'invalid'];
         }
         if (!in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value], true)) {
@@ -75,19 +75,19 @@ final readonly class TokenValidationHandler
         }
         // B-V1 fix (audit fonctionnel 2026-07-26) : un token invalidé (par cancel,
         // regenerate ou delegate) ne doit pas pouvoir être validé même si done_at
-        // est NULL. Avant, le check seul `!empty($t['done_at'])` laissait passer
+        // est NULL. Avant, le check seul `(bool)($t['done_at'])` laissait passer
         // les tokens invalidés — l'utilisateur voyait une page de validation
         // fonctionnelle alors que le token était mort.
-        if (!empty($t['done_at']) || !empty($t['invalidated_at'])) {
+        if ((bool)($t['done_at']) || (bool)($t['invalidated_at'])) {
             $this->tokenRepository->rollBack();
             return ['status' => 'already_done', 'data' => $t];
         }
-        if (!empty($t['closed_at'])) {
+        if ((bool)($t['closed_at'])) {
             $this->tokenRepository->rollBack();
             return ['status' => 'closed', 'data' => $t];
         }
 
-        if (!empty($t['expires_at'])) {
+        if ((bool)($t['expires_at'])) {
             // B1 fix (audit 2026-07-26) : les dates sont stockées en UTC (soit via
             // SQLite datetime('now'), soit via PHP gmdate()). strtotime() sans
             // fuseau explicite interprète la chaîne avec le fuseau serveur
@@ -155,7 +155,7 @@ final readonly class TokenValidationHandler
         // Emails et advanceWorkflow APRES le commit (side effects hors transaction)
         if ($action === ValidationAction::Refuser->value) {
             $agentEmail = $t['submitted_by'] ?? '';
-            if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
+            if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL) !== false) {
                 $subject = 'Demande refusée — ' . ($t['form_label'] ?? '');
                 $body = '<h2 style="color:#c0392b;">Demande refusée</h2>'
                     . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($t['form_label'] ?? '') . '</strong> a été refusée à l\'étape <strong>' . \App\Core\App::html()->escape($t['step_label']) . '</strong>.</p>'

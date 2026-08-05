@@ -1,7 +1,7 @@
 <?php
 $remind_html = '';
 if ($last_remind !== '' && $last_remind !== '0') {
-    $remind_ts  = strtotime($last_remind);
+    $remind_ts  = strtotime((string) $last_remind);
     $remind_age = ($remind_ts !== false) ? (time() - $remind_ts) : 999999;
     $remind_ok  = $remind_age < 86400;
     $remind_dot_cls = $remind_ok ? 'health-ok' : 'health-warn';
@@ -20,7 +20,7 @@ if ($last_remind !== '' && $last_remind !== '0') {
 
 $alert_html = '';
 if ($last_alert_check !== '' && $last_alert_check !== '0') {
-    $alert_ts  = strtotime($last_alert_check);
+    $alert_ts  = strtotime((string) $last_alert_check);
     $alert_age = ($alert_ts !== false) ? (time() - $alert_ts) : 999999;
     $alert_ok  = $alert_age < 86400;
     $alert_dot_cls = $alert_ok ? 'health-ok' : 'health-warn';

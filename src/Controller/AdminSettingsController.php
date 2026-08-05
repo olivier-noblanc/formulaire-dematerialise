@@ -21,6 +21,6 @@ final class AdminSettingsController extends BaseController
         $content   = render_admin_settings_content($postResult);
         $afterMain = render_admin_settings_after_main();
 
-        echo new \App\Render\NavigationRenderer()->page('Paramètres', 'settings', $pageCss, $content, ['after_main' => $afterMain]);
+        echo new \App\Render\PageRenderer()->page('Paramètres', 'settings', $pageCss, $content, ['after_main' => $afterMain]);
     }
 }

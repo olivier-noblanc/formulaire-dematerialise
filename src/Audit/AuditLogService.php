@@ -18,7 +18,8 @@ final readonly class AuditLogService implements AuditInterface
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): void
     {
         if ($actor === '' || $actor === '0') {
-            $actor = App::auth()->getUser() !== false ? App::auth()->getUser() : 'system';
+            $user = App::auth()->getUser();
+            $actor = $user !== '' ? $user : 'system';
         }
 
         // Masquer les emails sauf en CLI ou actions critiques
@@ -37,7 +38,8 @@ final readonly class AuditLogService implements AuditInterface
     public function securityLog(string $event, string $detail = '', string $actor = ''): void
     {
         if ($actor === '' || $actor === '0') {
-            $actor = App::auth()->getUser() !== false ? App::auth()->getUser() : 'system';
+            $user = App::auth()->getUser();
+            $actor = $user !== '' ? $user : 'system';
         }
         error_log('[SECURITY] ' . $event . ': ' . $detail . ' (actor: ' . $actor . ')');
         $this->log('security_event', 'security:' . $event, $detail, $actor);

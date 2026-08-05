@@ -62,11 +62,11 @@ final readonly class ExportService
     {
         $where = ['1=1'];
         $params = [];
-        if (!empty($options['form_id'])) {
+        if ((bool)($options['form_id'])) {
             $where[] = 's.form_id = ?';
             $params[] = $options['form_id'];
         }
-        if (!empty($options['status'])) {
+        if ((bool)($options['status'])) {
             $where[] = 's.status = ?';
             $params[] = $options['status'];
         }

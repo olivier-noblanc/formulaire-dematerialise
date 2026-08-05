@@ -45,7 +45,7 @@ if (!in_array($type, ['css', 'js'], true)) {
 // (évite le coût de session_start() + send_security_headers() pour un fichier statique)
 if ($type === 'js') {
     // Valider le nom du fichier (sécurité : pas de path traversal)
-    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $file)) {
+    if (preg_match('/^[a-zA-Z0-9_-]+$/', $file) !== 1) {
         http_response_code(400);
         header('Content-Type: text/plain; charset=UTF-8');
         echo 'Nom de fichier invalide. Utilisez ?type=js&file=form-progress';
@@ -106,7 +106,7 @@ else {
         $content = file_get_contents($cssFile);
         $hashes[] = $section . ':' . md5((string) $content);
         $mtime = filemtime($cssFile);
-        if ($mtime > $maxMtime) $maxMtime = $mtime;
+        if ($mtime !== false && $mtime > $maxMtime) $maxMtime = $mtime;
     }
     // Ajouter les CSS spécifiques de pages (non bloquants si absents)
     foreach ($pageCssFiles as $pcf) {
@@ -115,7 +115,7 @@ else {
             $content = file_get_contents($cssFile);
             $hashes[] = $pcf . ':' . md5((string) $content);
             $mtime = filemtime($cssFile);
-            if ($mtime > $maxMtime) $maxMtime = $mtime;
+            if ($mtime !== false && $mtime > $maxMtime) $maxMtime = $mtime;
         }
     }
 
@@ -134,7 +134,8 @@ else {
     if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
     $cacheFile = $cacheDir . '/assets_css_v' . $version . '.css';
 
-    if (is_file($cacheFile) && filemtime($cacheFile) >= $maxMtime) {
+    $cacheMtime = filemtime($cacheFile);
+    if (is_file($cacheFile) && $cacheMtime !== false && $cacheMtime >= $maxMtime) {
         readfile($cacheFile);
     } else {
         $compiled = '';
@@ -160,7 +161,7 @@ function extract_version_from_changelog(string $path): string {
     $content = file_get_contents($path);
     if ($content === false) return '0.0.0';
     // Chercher la 1re ligne "## [X.Y.Z]" 
-    if (preg_match('/^##\s*\[(\d+\.\d+\.\d+)\]/m', $content, $m)) {
+    if (preg_match('/^##\s*\[(\d+\.\d+\.\d+)\]/m', $content, $m) === 1) {
         return $m[1];
     }
     return '0.0.0';

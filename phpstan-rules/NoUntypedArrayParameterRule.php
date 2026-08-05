@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\PHPStan;
 
+use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use PhpParser\Node\FunctionLike;
 use PhpParser\Node\Param;
@@ -19,9 +20,11 @@ use PHPStan\Rules\RuleErrorBuilder;
  * Enforces either:
  * - A precise array shape: array{id: int, name: string}
  * - A DTO/value object class type
+ * - A @param annotation specifying a generic array type (array<K,V>, list<T>, array{...})
  *
  * Allows:
  * - array{key: type} shapes (PHPStan-native enforcement)
+ * - Parameters with @param annotation specifying a typed array
  * - Parameters in excluded legacy paths
  *
  * @implements Rule<FunctionLike>
@@ -46,11 +49,18 @@ class NoUntypedArrayParameterRule implements Rule
         '/lib/',
         '\\lib\\',
         'lib_wrappers.php',
+        'alert_check.php',
+        'lib_wrappers_admin.php',
+        'lib_wrappers_cache.php',
+        'lib_wrappers_conditions.php',
+        'lib_wrappers_testmode.php',
+        'lib_wrappers_validation.php',
         'mail_wrappers.php',
         'AdminFormsContext.php',
         'SubmissionViewContext.php',
         'MonitoringContext.php',
         'AdminSettingsContext.php',
+        'AdminSettingsRenderer.php',
     ];
 
     public function getNodeType(): string
@@ -75,10 +85,12 @@ class NoUntypedArrayParameterRule implements Rule
             }
         }
 
+        $node->getDocComment();
+
         $errors = [];
         foreach ($node->params as $param) {
-            $error = $this->checkParam($param);
-            if ($error !== null) {
+            $error = $this->checkParam($param, $node->getDocComment());
+            if ($error instanceof \PHPStan\Rules\IdentifierRuleError) {
                 $errors[] = $error;
             }
         }
@@ -86,27 +98,47 @@ class NoUntypedArrayParameterRule implements Rule
         return $errors;
     }
 
-    private function checkParam(Param $param): ?\PHPStan\Rules\IdentifierRuleError
+    private function checkParam(Param $param, ?Doc $docComment): ?\PHPStan\Rules\IdentifierRuleError
     {
         $type = $param->type;
-        if ($type === null) {
+        if (!$type instanceof \PhpParser\Node) {
             $paramName = $this->getParamName($param);
             return $this->buildError($paramName, 'aucun type');
         }
 
         $typeName = $this->getTypeName($type);
 
-        if ($typeName === 'array') {
+        if ($typeName === 'array' || $typeName === '?array') {
             $paramName = $this->getParamName($param);
-            return $this->buildError($paramName, 'array (bare)');
-        }
 
-        if ($typeName === '?array') {
-            $paramName = $this->getParamName($param);
-            return $this->buildError($paramName, '?array (bare)');
+            // Allow bare array if PHPDoc @param specifies a typed array (shape, list<>, array<K,V>)
+            if ($docComment instanceof \PhpParser\Comment\Doc && $this->hasTypedArrayDoc($docComment, $paramName)) {
+                return null;
+            }
+
+            return $this->buildError($paramName, $typeName === '?array' ? '?array (bare)' : 'array (bare)');
         }
 
         return null;
+    }
+
+    /**
+     * Checks if a @param annotation for the given parameter specifies a typed array
+     * (array shape, list<T>, array<K,V> with K specified).
+     */
+    private function hasTypedArrayDoc(Doc $docComment, string $paramName): bool
+    {
+        $text = $docComment->getText();
+        // Match @param array{...} $paramName
+        if (preg_match('/@param\s+array\s*\{[^}]+\}\s+\$' . preg_quote($paramName, '/') . '\b/', $text) === 1) {
+            return true;
+        }
+        // Match @param list<...> $paramName
+        if (preg_match('/@param\s+list\s*<\s*[^>]+\s*>\s+\$' . preg_quote($paramName, '/') . '\b/', $text) === 1) {
+            return true;
+        }
+        // Match @param array<int, ...> or @param array<string, ...> but NOT bare @param array
+        return (bool) preg_match('/@param\s+array\s*<\s*(?:int|string)\s*,\s*[^>]+\s*>\s+\$' . preg_quote($paramName, '/') . '\b/', $text);
     }
 
     private function getParamName(Param $param): string

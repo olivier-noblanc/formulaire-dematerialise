@@ -54,7 +54,7 @@ final class AuditRepository extends BaseRepository
     public function log(string $action, string $target = '', string $detail = '', string $actor = ''): bool
     {
         if ($actor === '') {
-            $actor = App::auth()->getUser() !== false ? App::auth()->getUser() : '';
+            $actor = App::auth()->getUser();
         }
         $ip = $this->getClientIp();
         return $this->execute(
@@ -100,7 +100,7 @@ final class AuditRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, string> $filters
+     * @param array{log_action?: string, log_actor?: string, log_target?: string, log_date_debut?: string, log_date_fin?: string} $filters
      * @return array<int, array{created_at: string, action: string, actor: string, target: string|null, detail: string|null, ip: string|null}>
      */
     public function findFiltered(array $filters): array
@@ -115,7 +115,7 @@ final class AuditRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, string> $filters
+     * @param array{log_action?: string, log_actor?: string, log_target?: string, log_date_debut?: string, log_date_fin?: string} $filters
      */
     public function countFiltered(array $filters): int
     {
@@ -126,7 +126,7 @@ final class AuditRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, string> $filters
+     * @param array{log_action?: string, log_actor?: string, log_target?: string, log_date_debut?: string, log_date_fin?: string} $filters
      * @return array<int, array{id: string, action: string, target: string|null, detail: string|null, actor: string, ip: string|null, created_at: string}>
      */
     public function findFilteredPaginated(array $filters, int $limit, int $offset): array
@@ -153,7 +153,7 @@ final class AuditRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, string> $filters
+     * @param array{log_action?: string, log_actor?: string, log_target?: string, log_date_debut?: string, log_date_fin?: string} $filters
      * @return array{0: string, 1: array<int, mixed>}
      */
     private function buildFilterWhere(array $filters): array

@@ -32,7 +32,7 @@ function apply_post_migration_fixes(PDO $pdo, bool $seed_needed = false): void {
         if ((int) $alert_count === 0) {
             // Onboarding : alerter 5 jours et 2 jours avant la prise de poste
             $onb = _dbm_q($pdo, "SELECT id FROM forms WHERE slug = 'onboarding' LIMIT 1")->fetchColumn();
-            if ($onb) {
+            if ($onb !== false && $onb !== null) {
                 $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, ?, 1)");
                 $stmt_ar->execute([generate_uuid(), $onb, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
                 $stmt_ar->execute([generate_uuid(), $onb, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);
@@ -40,7 +40,7 @@ function apply_post_migration_fixes(PDO $pdo, bool $seed_needed = false): void {
             }
             // Outboarding : alerter 5 jours et 2 jours avant le départ
             $ob = _dbm_q($pdo, "SELECT id FROM forms WHERE slug = 'outboarding' LIMIT 1")->fetchColumn();
-            if ($ob) {
+            if ($ob !== false && $ob !== null) {
                 $stmt_ar = $pdo->prepare("INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, ?, 1)");
                 $stmt_ar->execute([generate_uuid(), $ob, 5, 'steps_incomplete', 'admin', 'Alerte J-5 : étapes non complétées']);
                 $stmt_ar->execute([generate_uuid(), $ob, 2, 'steps_incomplete', 'admin', 'Alerte J-2 : étapes non complétées']);

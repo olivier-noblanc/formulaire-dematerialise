@@ -35,7 +35,7 @@ final readonly class StatsService
     /**
      * Statistiques par période.
      *
-     * @return array<int, array{
+     * @return list<array{
      *   period: string,
      *   total: int,
      *   valide: int,
@@ -127,7 +127,7 @@ final readonly class StatsService
     }
 
     /**
-     * @return array<int, array{
+     * @return list<array{
      *   label: string,
      *   slug: string,
      *   total: int,
@@ -156,7 +156,7 @@ final readonly class StatsService
     }
 
     /**
-     * @return array<int, array{
+     * @return list<array{
      *   email: string,
      *   total: int,
      *   done: int,

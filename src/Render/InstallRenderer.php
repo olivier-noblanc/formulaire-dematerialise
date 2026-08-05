@@ -13,7 +13,7 @@ namespace App\Render;
  * inst_csrf_field() restent définies dans install.php (autonomie du
  * wizard — il ne dépend ni de helpers.php ni de config.php à l'exécution).
  */
-final class InstallRenderer
+final readonly class InstallRenderer
 {
     private string $tplDir;
 
@@ -35,7 +35,7 @@ final class InstallRenderer
      */
     public function renderStepper(int $step): string
     {
-        return $this->loadTemplate('render_stepper.php', compact('step'));
+        return $this->loadTemplate('render_stepper.php', ['step' => $step]);
     }
 
     /**
@@ -46,7 +46,7 @@ final class InstallRenderer
      */
     public function renderMessages(array $messages, array $error_messages): string
     {
-        return $this->loadTemplate('render_messages.php', compact('messages', 'error_messages'));
+        return $this->loadTemplate('render_messages.php', ['messages' => $messages, 'error_messages' => $error_messages]);
     }
 
     /**
@@ -56,7 +56,7 @@ final class InstallRenderer
      */
     public function renderStep1(array $prerequisites, bool $all_prereqs_ok): string
     {
-        return $this->loadTemplate('render_step1.php', compact('prerequisites', 'all_prereqs_ok'));
+        return $this->loadTemplate('render_step1.php', ['prerequisites' => $prerequisites, 'all_prereqs_ok' => $all_prereqs_ok]);
     }
 
     /**
@@ -66,7 +66,7 @@ final class InstallRenderer
      */
     public function renderStep2(array $d): string
     {
-        return $this->loadTemplate('render_step2.php', compact('d'));
+        return $this->loadTemplate('render_step2.php', ['d' => $d]);
     }
 
     /**
@@ -76,7 +76,7 @@ final class InstallRenderer
      */
     public function renderStep3(?array $confirm_config, string $install_dir = ''): string
     {
-        return $this->loadTemplate('render_step3.php', compact('confirm_config', 'install_dir'));
+        return $this->loadTemplate('render_step3.php', ['confirm_config' => $confirm_config, 'install_dir' => $install_dir]);
     }
 
     /**

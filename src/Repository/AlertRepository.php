@@ -9,7 +9,7 @@ use App\Enum\SubmissionStatus;
 final class AlertRepository extends BaseRepository
 {
     /**
-     * @param array<string, mixed> $data
+     * @param array{form_id: string, days_before: int, condition_type: string, notify_who: string, label: string} $data
      */
     public function createRule(array $data): string
     {
@@ -22,7 +22,7 @@ final class AlertRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{days_before: int, condition_type: string, notify_who: string, label: string, actif: int} $data
      */
     public function updateRule(string $ruleId, array $data): bool
     {

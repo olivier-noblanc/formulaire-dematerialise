@@ -30,7 +30,7 @@ function apply_migration_v35(PDO $pdo, int $current_version): int {
         }
 
         $cleaned = $pdo->exec("UPDATE form_fields SET hint = '' WHERE TRIM(hint) GLOB '[0-9]*' AND LENGTH(TRIM(hint)) <= 3");
-        if ($cleaned > 0) {
+        if ($cleaned !== false && $cleaned > 0) {
             error_log("[db_migrate] v35: $cleaned hint(s) contenant uniquement un chiffre nettoyé(s)");
         }
 

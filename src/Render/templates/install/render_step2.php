@@ -84,8 +84,8 @@ $default_delai_relance_h = $d['delai_relance_h'] ?? 48;
             <input type="hidden" name="smtp_from_name" value="<?= inst_h($default_smtp_from_name) ?>">
             <input type="hidden" name="admin_email" value="<?= inst_h($default_admin_email) ?>">
             <input type="hidden" name="delai_relance_h" value="<?= inst_h((string) $default_delai_relance_h) ?>">
-            <button type="submit" class="btn btn-test" <?= $default_admin_email === '' || $default_admin_email === null || $default_admin_email === '0' ? 'disabled' : '' ?>><span aria-hidden="true">📧</span> Envoyer un email de test</button>
-            <?php if ($default_admin_email === '' || $default_admin_email === null || $default_admin_email === '0'): ?>
+            <button type="submit" class="btn btn-test" <?= in_array($default_admin_email, ['', null, '0'], true) ? 'disabled' : '' ?>><span aria-hidden="true">📧</span> Envoyer un email de test</button>
+            <?php if (in_array($default_admin_email, ['', null, '0'], true)): ?>
                 <span class="hint u-mar">Renseignez l'email administrateur ci-dessus d'abord.</span>
             <?php endif; ?>
         </form>

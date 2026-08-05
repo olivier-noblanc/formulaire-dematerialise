@@ -91,7 +91,7 @@ final class MySubmissionsRenderer
                 $deadlineField = $submission['deadline_field'] ?? '';
                 $deadlineVal   = $deadlineField ? ($data[$deadlineField] ?? '') : '';
                 $deadlineBadge = '';
-                if ($deadlineVal !== '' && $deadlineVal !== null && $deadlineVal !== '0' && $status === SubmissionStatus::EnCours->value) {
+                if (!in_array($deadlineVal, ['', null, '0'], true) && $status === SubmissionStatus::EnCours->value) {
                     $dl     = calculate_deadline_urgency($deadlineVal, $status);
                     $dlDays = $dl['days_left'];
                     if ($dlDays !== null) {
@@ -157,7 +157,7 @@ final class MySubmissionsRenderer
                     $html .= "            <div class=\"tl-step {$cls}\">\n";
                     $html .= "              <span class=\"tl-icon\" aria-hidden=\"true\">{$icon}</span>\n";
                     $html .= "              <span class=\"tl-label\">{$stepLabel}</span>\n";
-                    if (!empty($ws['step_detail'])) {
+                    if ((bool)($ws['step_detail'])) {
                         $html .= "                <span class=\"tl-detail\">{$ws['step_detail']}</span>\n";
                     }
                     $html .= "            </div>\n";
@@ -173,7 +173,7 @@ final class MySubmissionsRenderer
                             $refStep  = App::html()->escape($v['step_label']);
                             $html .= "          <div class=\"refusal-box\">\n";
                             $html .= "            <strong>Refusé par :</strong> {$refUser} ({$refStep})\n";
-                            if (!empty($v['commentaire'])) {
+                            if ((bool)($v['commentaire'])) {
                                 $refComment = App::html()->escape($v['commentaire']);
                                 $html .= "            <br><strong>Motif :</strong> {$refComment}\n";
                             }
@@ -195,7 +195,7 @@ final class MySubmissionsRenderer
                         $valUser  = App::html()->displayUser($lastValidator['email']);
                         $valStep  = App::html()->escape($lastValidator['step_label']);
                         $html .= "            <strong>Validée par :</strong> {$valUser} ({$valStep})\n";
-                        if (!empty($lastValidator['commentaire'])) {
+                        if ((bool)($lastValidator['commentaire'])) {
                             $valComment = App::html()->escape($lastValidator['commentaire']);
                             $html .= "            <br><strong>Commentaire :</strong> {$valComment}\n";
                         }

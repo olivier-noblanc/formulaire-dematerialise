@@ -111,19 +111,19 @@ final readonly class TokenService
     /** @return array{success: bool, message: string} */
     public function cancel(string $submissionId, string $cancelledBy = ''): array
     {
-        $caller = $cancelledBy ?? $this->authService->getUser();
+        $caller = $cancelledBy !== '' ? $cancelledBy : $this->authService->getUser();
         $callerIsAdmin = $this->authService->isAdmin();
 
         $submission = App::workflow()->getSubmissionWithFormLabel($submissionId);
 
-        if (!$submission) {
+        if (!((bool)$submission)) {
             return ['success' => false, 'message' => 'Soumission introuvable.'];
         }
         if ($submission['status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'Seules les soumissions en cours peuvent être annulées.'];
         }
 
-        if (!$callerIsAdmin && strtolower($submission['submitted_by']) !== strtolower((string) $caller)) {
+        if (!$callerIsAdmin && strtolower($submission['submitted_by']) !== strtolower($caller)) {
             $this->auditLogService->log('access_denied', 'submission:' . $submissionId, 'Tentative d\'annulation non autorisée par ' . $caller);
             return ['success' => false, 'message' => 'Vous n\'êtes pas autorisé à annuler cette soumission.'];
         }
@@ -142,7 +142,7 @@ final readonly class TokenService
                 }
                 $data['validations'][] = [
                     'step_label' => 'Annulation',
-                    'email' => $cancelledBy ?? 'system',
+                    'email' => $cancelledBy !== '' ? $cancelledBy : 'system',
                     'action' => ValidationAction::Annule->value,
                     'commentaire' => 'Soumission annulée',
                     'date' => $now,
@@ -171,7 +171,7 @@ final readonly class TokenService
 
         // Notifier l'agent
         $agentEmail = $submission['submitted_by'] ?? '';
-        if ($agentEmail !== '' && $agentEmail !== null && $agentEmail !== '0' && filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
+        if ($agentEmail !== '' && $agentEmail !== '0' && filter_var($agentEmail, FILTER_VALIDATE_EMAIL) !== false) {
             $subject = 'Demande annulée — ' . ($submission['form_label'] ?? \App\Render\NavigationRenderer::getAppName());
             $bodyHtml = '<h2 style="color:#b45309;">Demande annulée</h2>'
                 . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($submission['form_label'] ?? '') . '</strong> a été annulée.</p>';
@@ -264,7 +264,7 @@ final readonly class TokenService
         }
 
         $toEmail = strtolower(trim($toEmail));
-        if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($toEmail, FILTER_VALIDATE_EMAIL) === false) {
             return ['success' => false, 'message' => 'Adresse email invalide.'];
         }
         if ($toEmail === $tok['email']) {

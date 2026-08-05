@@ -52,7 +52,7 @@ final class ValidationService
     public function validateEmail(string $email): string
     {
         $email = strtolower(trim($email));
-        return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false ? $email : '';
     }
 
     /**
@@ -70,7 +70,7 @@ final class ValidationService
 
     private function validateUuid(string $value): string
     {
-        if (!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i', $value)) {
+        if (preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i', $value) !== 1) {
             throw new \InvalidArgumentException('Identifiant invalide');
         }
         return strtolower($value);
@@ -82,7 +82,7 @@ final class ValidationService
         if ($maxLength > 0) {
             $value = mb_substr($value, 0, $maxLength);
         }
-        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
             throw new \InvalidArgumentException('Adresse email invalide');
         }
         return $value;
@@ -90,22 +90,22 @@ final class ValidationService
 
     private function validateSlug(string $value, int $maxLength): string
     {
-        if (!preg_match('/^[a-z0-9_-]+$/i', $value)) {
+        if (preg_match('/^[a-z0-9_-]+$/i', $value) !== 1) {
             throw new \InvalidArgumentException('Slug invalide (caractères autorisés : a-z, 0-9, _, -)');
         }
         if ($maxLength > 0) {
-            $value = mb_substr($value, 0, $maxLength);
+            return mb_substr($value, 0, $maxLength);
         }
         return $value;
     }
 
     private function validateAction(string $value, int $maxLength): string
     {
-        if (!preg_match('/^\w+$/', $value)) {
+        if (preg_match('/^\w+$/', $value) !== 1) {
             throw new \InvalidArgumentException('Nom d\'action invalide');
         }
         if ($maxLength > 0) {
-            $value = mb_substr($value, 0, $maxLength);
+            return mb_substr($value, 0, $maxLength);
         }
         return $value;
     }
@@ -122,11 +122,11 @@ final class ValidationService
 
     private function validateAlphaNum(string $value, int $maxLength): string
     {
-        if (!preg_match('/^[\p{L}0-9\s._\-]+$/u', $value)) {
+        if (preg_match('/^[\p{L}0-9\s._\-]+$/u', $value) !== 1) {
             throw new \InvalidArgumentException('Caractères non autorisés');
         }
         if ($maxLength > 0) {
-            $value = mb_substr($value, 0, $maxLength);
+            return mb_substr($value, 0, $maxLength);
         }
         return $value;
     }
@@ -149,7 +149,7 @@ final class ValidationService
 
     private function validateDate(string $value): string
     {
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
             throw new \InvalidArgumentException('Format de date invalide (YYYY-MM-DD attendu)');
         }
         $ts = strtotime($value);
@@ -161,7 +161,7 @@ final class ValidationService
 
     private function validateToken(string $value): string
     {
-        if (!preg_match('/^[a-f0-9]{64}$/', $value)) {
+        if (preg_match('/^[a-f0-9]{64}$/', $value) !== 1) {
             throw new \InvalidArgumentException('Token invalide');
         }
         return $value;

@@ -1,4 +1,9 @@
 <?php
+/**
+ * @var bool   $can_edit
+ * @var string $admin_comment
+ * @var string $sub_id
+ */
 if (!$can_edit) {
     return '';
 }

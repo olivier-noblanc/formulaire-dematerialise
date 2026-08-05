@@ -30,7 +30,7 @@ final class AttachmentRepository extends BaseRepository
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{submission_id: string, field_name: string, original_name: string, mime_type: string, file_size: int, file_data: string|null} $data
      */
     public function create(array $data): string
     {

@@ -1,4 +1,10 @@
 <?php
+/**
+ * @var list<array{field_name?: string, field_label?: string, value?: string, filled_by_email?: string, step_label?: string, filled_at?: string}>  $validator_data_rows
+ * @var array<string, array{label?: string}>                                                                                                     $field_info
+ * @var bool                                                                                                                                     $can_edit
+ * @var string                                                                                                                                   $sub_id
+ */
 if ($validator_data_rows === []) {
     return '';
 }
@@ -13,9 +19,9 @@ foreach ($validator_data_rows as $validator_data_row) {
     $value_raw = (string) ($validator_data_row['value'] ?? '');
     $display_val = \App\Core\App::html()->escape($value_raw);
 
-    $by_email  = isset($validator_data_row['filled_by_email']) ? (string) $validator_data_row['filled_by_email'] : '';
-    $step_lab  = isset($validator_data_row['step_label']) ? (string) $validator_data_row['step_label'] : '';
-    $filled_at = isset($validator_data_row['filled_at']) ? (string) $validator_data_row['filled_at'] : '';
+    $by_email  = $validator_data_row['filled_by_email'] ?? '';
+    $step_lab  = $validator_data_row['step_label'] ?? '';
+    $filled_at = $validator_data_row['filled_at'] ?? '';
 
     $audit_parts   = ['Rempli'];
     if ($by_email !== '') {

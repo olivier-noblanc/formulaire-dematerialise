@@ -44,4 +44,29 @@ final readonly class AdminFormsContext
         public string $edit_field_id,
         public array $existing_groups,
     ) {}
+
+    /**
+     * Build from legacy array context (BC for lib_wrappers).
+     *
+     * @param array<string, mixed> $ctx
+     */
+    public static function fromLegacyArray(array $ctx): self
+    {
+        return new self(
+            form_id: (string) ($ctx['form_id'] ?? ''),
+            form: $ctx['form'] ?? null,
+            forms: $ctx['forms'] ?? [],
+            error_msg: (string) ($ctx['error_msg'] ?? ''),
+            success_msg: (string) ($ctx['success_msg'] ?? ''),
+            preserved_json: (string) ($ctx['preserved_json'] ?? ''),
+            validation_html: (string) ($ctx['validation_html'] ?? ''),
+            owners: $ctx['owners'] ?? [],
+            steps: $ctx['steps'] ?? [],
+            steps_by_ordre: $ctx['steps_by_ordre'] ?? [],
+            edit_step_id: (string) ($ctx['edit_step_id'] ?? ''),
+            form_fields: $ctx['form_fields'] ?? [],
+            edit_field_id: (string) ($ctx['edit_field_id'] ?? ''),
+            existing_groups: $ctx['existing_groups'] ?? [],
+        );
+    }
 }

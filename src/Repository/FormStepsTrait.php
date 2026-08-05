@@ -7,9 +7,9 @@ namespace App\Repository;
 /**
  * @internal Trait utilisé par FormRepository pour limiter la taille du fichier principal.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array $params = [])
- * @method bool execute(string $sql, array $params = [])
+ * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
+ * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
+ * @method bool execute(string $sql, array<int, mixed> $params = [])
  */
 trait FormStepsTrait
 {
@@ -126,7 +126,7 @@ trait FormStepsTrait
     // ── Step CRUD ────────────────────────────────────────────────
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{form_id: string, label: string, ordre?: int, actif?: int, condition?: string} $data
      */
     public function createStep(array $data): string
     {
@@ -139,7 +139,7 @@ trait FormStepsTrait
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{label?: string, ordre?: int, actif?: int, condition?: string} $data
      */
     public function updateStep(string $stepId, array $data): bool
     {

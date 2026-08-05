@@ -1,4 +1,8 @@
 <?php
+/**
+ * @var bool   $is_admin
+ * @var string $action_msg
+ */
 $back_link = $is_admin
     ? '<a href="index.php?p=dashboard" class="back-link">← Retour au tableau de bord</a>'
     : '<a href="index.php?p=my_submissions" class="back-link">← Retour à mes demandes</a>';

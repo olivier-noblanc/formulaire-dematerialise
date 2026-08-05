@@ -25,9 +25,9 @@ final class AuthService implements AuthInterface
     use AdminRequestManagementTrait;
 
     private ?MailInterface $mail = null;
-    public AdminRepository $adminRepository;
-    public FormRepository $formRepository;
-    public SettingsRepository $settingsRepository;
+    public readonly AdminRepository $adminRepository;
+    public readonly FormRepository $formRepository;
+    public readonly SettingsRepository $settingsRepository;
 
     public function __construct(
         Database $database,
@@ -92,11 +92,11 @@ final class AuthService implements AuthInterface
         if (defined('TEST_MODE') && TEST_MODE) {
             $testUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
             if ($testUser !== '') {
-                if (str_contains($testUser, '@')) {
-                    return strtolower(trim($testUser));
+                if (str_contains((string) $testUser, '@')) {
+                    return strtolower(trim((string) $testUser));
                 }
                 $domain = $this->getEmailDomain();
-                return (strtolower(trim($testUser))) . '@' . $domain;
+                return (strtolower(trim((string) $testUser))) . '@' . $domain;
             }
         }
 
@@ -105,7 +105,7 @@ final class AuthService implements AuthInterface
             return '';
         }
 
-        $authUser = trim($authUser);
+        $authUser = trim((string) $authUser);
         if (str_contains($authUser, '@')) {
             return strtolower($authUser);
         }
@@ -286,7 +286,7 @@ final class AuthService implements AuthInterface
 
 
 
-    /** @return array<int, array<string, mixed>> */
+    /** @return list<array<string, mixed>> */
     public function getOwnedForms(?string $email = null): array
     {
         if ($email === null) {

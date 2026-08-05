@@ -7,9 +7,9 @@ namespace App\Repository;
 /**
  * @internal Trait utilisé par FormRepository pour limiter la taille du fichier principal.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array $params = [])
- * @method bool execute(string $sql, array $params = [])
+ * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
+ * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
+ * @method bool execute(string $sql, array<int, mixed> $params = [])
  */
 trait FormOwnersTrait
 {

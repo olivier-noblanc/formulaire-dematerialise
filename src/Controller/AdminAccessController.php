@@ -48,7 +48,7 @@ final class AdminAccessController extends BaseController
                 $token = $_POST['token'] ?? '';
                 $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
                 $request = $adminRepo->findByToken($token);
-                if ($request) {
+                if ($request !== null && $request !== []) {
                     if (App::auth()->approveAdminRequest($request['email'], $request['id'] ?? null)) {
                         $successMsg = 'Demande d\'accès approuvée pour ' . \App\Core\App::html()->escape($request['email']) . '.';
                     } else {
@@ -61,7 +61,7 @@ final class AdminAccessController extends BaseController
                 $token = $_POST['token'] ?? '';
                 $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
                 $request = $adminRepo->findByToken($token);
-                if ($request) {
+                if ($request !== null && $request !== []) {
                     if (App::auth()->rejectAdminRequest($request['email'], $request['id'] ?? null)) {
                         $successMsg = 'Demande d\'accès refusée pour ' . \App\Core\App::html()->escape($request['email']) . '.';
                     } else {
@@ -99,7 +99,7 @@ final class AdminAccessController extends BaseController
             $token = $_GET['token'];
             $adminRepo = App::getInstance()->get(\App\Repository\AdminRepository::class);
             $confirmData = $adminRepo->findByToken($token);
-            if (!$confirmData) {
+            if (!((bool)$confirmData)) {
                 $errorMsg = 'Lien invalide ou demande déjà traitée.';
                 $confirmData = null;
             }
@@ -126,7 +126,7 @@ final class AdminAccessController extends BaseController
 
   <?= new \App\Render\ErrorRenderer()->messages(['success' => $successMsg, 'error' => $errorMsg, 'warning' => $warningMsg]) ?>
 
-  <?php if ($confirmData): ?>
+  <?php if ($confirmData !== null && $confirmData !== []): ?>
   <div class="card">
     <h2><?= ($confirmAction ?? 'approve') === 'reject' ? 'Confirmer le refus' : 'Confirmer l\'approbation' ?></h2>
     <p><?= ($confirmAction ?? 'approve') === 'reject' ? 'Refuser' : 'Approuver' ?> la demande d'accès de <strong><?= \App\Core\App::html()->escape($confirmData['email']) ?></strong> ?</p>

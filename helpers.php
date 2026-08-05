@@ -31,22 +31,22 @@ if (!function_exists('resolve_base_url')) {
 
             // Si BASE_URL contient localhost, la détecter dynamiquement
             if (strpos($base, 'localhost') !== false || $base === '') {
-                $protocol = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
-                if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+                $protocol = (($_SERVER['HTTPS'] ?? '') !== '' && strtolower((string)$_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
+                if (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') !== '') {
                     $protocol = strtolower(trim($_SERVER['HTTP_X_FORWARDED_PROTO'])) === 'https' ? 'https' : 'http';
                 }
                 $host = '';
-                if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+                if (($_SERVER['HTTP_X_FORWARDED_HOST'] ?? '') !== '') {
                     $hosts = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_HOST']));
                     $host = $hosts[0];
-                } elseif (!empty($_SERVER['HTTP_HOST'])) {
+                } elseif (($_SERVER['HTTP_HOST'] ?? '') !== '') {
                     $host = $_SERVER['HTTP_HOST'];
-                } elseif (!empty($_SERVER['SERVER_NAME'])) {
+                } elseif (($_SERVER['SERVER_NAME'] ?? '') !== '') {
                     $host = $_SERVER['SERVER_NAME'];
                 }
                 // Détecter le path depuis SCRIPT_NAME
                 $path = '';
-                if (!empty($_SERVER['SCRIPT_NAME'])) {
+                if (($_SERVER['SCRIPT_NAME'] ?? '') !== '') {
                     $dir = dirname($_SERVER['SCRIPT_NAME']);
                     if ($dir !== '/' && $dir !== '\\' && $dir !== '.') {
                         $path = $dir;

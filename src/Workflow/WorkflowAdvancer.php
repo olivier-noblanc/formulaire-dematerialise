@@ -20,11 +20,6 @@ use App\Settings\SettingsService;
  */
 final readonly class WorkflowAdvancer
 {
-    /**
-     * @param list<array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $groupe
-     * @param array<string, list<string|null>> $tokensByStep
-     * @param array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string} $submission
-     */
     public function __construct(
         private SettingsService $settingsService,
         private MailService $mailService,
@@ -41,14 +36,14 @@ final readonly class WorkflowAdvancer
         // CS-01 (audit 2026-07-26) : god function de 160 lignes décomposée en 3 helpers
         // privés. Comportement inchangé, juste plus lisible et testable.
         $submission = $this->getSubmissionWithFormLabel($submissionId);
-        if (!$submission) {
+        if (!((bool)$submission)) {
             return;
         }
-        if (!empty($submission['closed_at'])) {
+        if ((bool)($submission['closed_at'])) {
             return;
         }
 
-        $formId = (string) $submission['form_id'];
+        $formId = $submission['form_id'];
         $allSteps = $this->getWorkflowSteps($formId);
 
         // Grouper par ordre
@@ -169,9 +164,9 @@ final readonly class WorkflowAdvancer
      * @param array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string} $submission
      */
     private function createTokensForGroup(
-        array $groupe,
-        array &$tokensByStep,
-        array $submission,
+        mixed $groupe,
+        mixed &$tokensByStep,
+        mixed $submission,
         string $submissionId,
         string $now,
         string $expiresAt
@@ -198,12 +193,15 @@ final readonly class WorkflowAdvancer
             $hasRecipient = false;
             foreach ($rawEmails as $rawEmail) {
                 $rawEmail = trim($rawEmail);
-                if ($rawEmail === '' || $rawEmail === '0') {
+                if ($rawEmail === '') {
+                    continue;
+                }
+                if ($rawEmail === '0') {
                     continue;
                 }
 
                 $rawEmail = $this->recipientResolver->resolve($rawEmail, $formData, $submissionId);
-                if (!filter_var($rawEmail, FILTER_VALIDATE_EMAIL)) {
+                if (filter_var($rawEmail, FILTER_VALIDATE_EMAIL) === false) {
                     error_log("WorkflowAdvancer: skipping invalid recipient '{$rawEmail}' for step {$step['step_id']}");
                     continue;
                 }
@@ -252,7 +250,7 @@ final readonly class WorkflowAdvancer
      * @param list<array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $groupe
      * @param array<string, list<string|null>> $tokensByStep
      */
-    private function isGroupComplete(array $groupe, array $tokensByStep): bool
+    private function isGroupComplete(mixed $groupe, mixed $tokensByStep): bool
     {
         foreach ($groupe as $step) {
             // Étape sans token = condition false ou recipients invalides → pas concernée
@@ -260,7 +258,7 @@ final readonly class WorkflowAdvancer
                 continue;
             }
             $dones = $tokensByStep[$step['step_id']];
-            if (!array_all($dones, fn(mixed $d) => $d !== null)) {
+            if (!array_all($dones, fn(mixed $d): bool => $d !== null)) {
                 return false;
             }
         }
@@ -272,10 +270,10 @@ final readonly class WorkflowAdvancer
      *
      * @param array{submitted_by: string, form_label: string} $submission
      */
-    private function notifyAgentOfCompletion(array $submission): void
+    private function notifyAgentOfCompletion(mixed $submission): void
     {
         $agentEmail = $submission['submitted_by'] ?? '';
-        if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($agentEmail, FILTER_VALIDATE_EMAIL) !== false) {
             $subject = 'Demande validée — ' . ($submission['form_label'] ?? '');
             $body = $this->mailService->renderEmailTemplate('Demande validée', '<p>Votre demande a été validée.</p>');
             $this->mailService->send($agentEmail, $subject, $body);
@@ -313,7 +311,7 @@ final readonly class WorkflowAdvancer
     }
 
     /**
-     * @return array<int, array{
+     * @return list<array{
      *   step_id: string,
      *   step_label: string,
      *   ordre: int,

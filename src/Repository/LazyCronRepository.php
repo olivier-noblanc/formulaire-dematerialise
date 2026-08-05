@@ -21,7 +21,7 @@ final class LazyCronRepository extends BaseRepository
         $stmt = $this->pdo()->prepare('SELECT last_run FROM lazy_cron WHERE task_key = ?');
         $stmt->execute([$key]);
         $val = $stmt->fetchColumn();
-        if ($val === false || $val === null || $val === '') {
+        if (in_array($val, [false, null, ''], true)) {
             return null;
         }
         return (string) $val;
@@ -47,7 +47,7 @@ final class LazyCronRepository extends BaseRepository
             $stmt->execute([$key]);
             $lastRun = $stmt->fetchColumn();
 
-            if ($lastRun !== false && $lastRun !== null && $lastRun !== '') {
+            if (!in_array($lastRun, [false, null, ''], true)) {
                 $ts = self::parseDbDatetime((string) $lastRun);
                 if ($ts !== null && ($nowTs - $ts) < $interval) {
                     $pdo->exec('COMMIT');
@@ -55,7 +55,7 @@ final class LazyCronRepository extends BaseRepository
                 }
             }
 
-            $prev = ($lastRun !== false && $lastRun !== null && $lastRun !== '') ? (string) $lastRun : null;
+            $prev = (in_array($lastRun, [false, null, ''], true)) ? null : (string) $lastRun;
 
             $pdo->prepare('INSERT OR REPLACE INTO lazy_cron (task_key, last_run, run_count) VALUES (?, ?, COALESCE((SELECT run_count FROM lazy_cron WHERE task_key = ?), 0) + 1)')
                 ->execute([$key, $newLastRun, $key]);

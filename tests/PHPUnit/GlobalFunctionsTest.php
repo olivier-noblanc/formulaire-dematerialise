@@ -55,8 +55,6 @@ final class GlobalFunctionsTest extends TestCase
 
         // Settings
         'get_sensitive_setting_keys',
-        'encrypt_setting',
-        'decrypt_setting',
         'get_setting',
         'set_setting',
 

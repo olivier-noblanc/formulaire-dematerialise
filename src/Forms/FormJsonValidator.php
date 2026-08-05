@@ -32,7 +32,7 @@ final class FormJsonValidator
         if (!isset($data['form']) || !is_array($data['form'])) {
             $errors[] = 'Propriété "form" manquante ou n\'est pas un objet. Attendu : { "form": { "label": "...", "description": "..." } }';
         } else {
-            if (empty($data['form']['label']) || !is_string($data['form']['label'])) {
+            if (!isset($data['form']['label']) || $data['form']['label'] === '' || !is_string($data['form']['label'])) {
                 $errors[] = 'form.label est requis et doit être une chaîne de caractères non vide.';
             } elseif (strlen($data['form']['label']) > 255) {
                 $errors[] = 'form.label est trop long (' . strlen($data['form']['label']) . ' caractères). Maximum : 255.';
@@ -67,19 +67,19 @@ final class FormJsonValidator
                 }
 
                 // label
-                if (empty($f['label']) || !is_string($f['label'])) {
+                if (!isset($f['label']) || $f['label'] === '' || !is_string($f['label'])) {
                     $errors[] = "$prefix.label est requis et doit être une chaîne non vide.";
                 }
 
                 // field_type
-                if (empty($f['field_type'])) {
-                    $errors[] = "$prefix.field_type est requis. Valeurs possibles : " . implode(', ', array_map(fn(string $t) => '"' . $t . '"', $valid_field_types));
+                if (!isset($f['field_type']) || $f['field_type'] === '') {
+                    $errors[] = "$prefix.field_type est requis. Valeurs possibles : " . implode(', ', array_map(fn(string $t): string => '"' . $t . '"', $valid_field_types));
                 } elseif (!in_array($f['field_type'], $valid_field_types, true)) {
-                    $errors[] = "$prefix.field_type = \"{$f['field_type']}\" n'est pas valide. Valeurs possibles : " . implode(', ', array_map(fn(string $t) => '"' . $t . '"', $valid_field_types));
+                    $errors[] = "$prefix.field_type = \"{$f['field_type']}\" n'est pas valide. Valeurs possibles : " . implode(', ', array_map(fn(string $t): string => '"' . $t . '"', $valid_field_types));
                 }
 
                 // field_name
-                if (!empty($f['field_name'])) {
+                if (isset($f['field_name']) && $f['field_name'] !== '') {
                     if (!is_string($f['field_name'])) {
                         $errors[] = "$prefix.field_name doit être une chaîne. Trouvé : " . gettype($f['field_name']);
                     } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $f['field_name'])) {
@@ -98,7 +98,7 @@ final class FormJsonValidator
 
                 // options for select
                 if (($f['field_type'] ?? '') === \App\Enum\FieldType::Select->value) {
-                    if (empty($f['options']) || !is_array($f['options'])) {
+                    if (!isset($f['options']) || !is_array($f['options']) || $f['options'] === []) {
                         $errors[] = "$prefix : field_type = \"select\" mais \"options\" est manquant ou n'est pas un tableau. Exemple : \"options\": [\"Option A\", \"Option B\"]";
                     } else {
                         foreach ($f['options'] as $j => $opt) {
@@ -127,7 +127,7 @@ final class FormJsonValidator
                 // card_group
                 if (isset($f['card_group']) && !is_string($f['card_group'])) {
                     $errors[] = "$prefix.card_group doit être une chaîne de caractères.";
-                } elseif (empty($f['card_group'])) {
+                } elseif (!isset($f['card_group']) || $f['card_group'] === '') {
                     $warnings[] = "$prefix.card_group est vide. Il sera placé dans le groupe \"Général\" par défaut. Recommandé : regrouper les champs par thème (ex: \"Identité\", \"Affectation\", \"IT\").";
                 }
 
@@ -152,17 +152,17 @@ final class FormJsonValidator
                 }
 
                 // Cohérence : si filled_by='validator' et validator_step vide → warning
-                if (($f['filled_by'] ?? '') === \App\Enum\FilledBy::Validator->value && empty($f['validator_step'])) {
+                if (($f['filled_by'] ?? '') === \App\Enum\FilledBy::Validator->value && (!isset($f['validator_step']) || $f['validator_step'] === '')) {
                     $warnings[] = "$prefix : filled_by = \"validator\" mais validator_step est vide. Le champ sera disponible sur TOUTES les étapes (champ global). Précisez validator_step pour le limiter à une étape.";
                 }
 
                 // Cohérence : si filled_by='demandeur' et validator_step renseigné → warning
-                if (($f['filled_by'] ?? \App\Enum\FilledBy::Demandeur->value) === \App\Enum\FilledBy::Demandeur->value && !empty($f['validator_step'])) {
+                if (($f['filled_by'] ?? \App\Enum\FilledBy::Demandeur->value) === \App\Enum\FilledBy::Demandeur->value && isset($f['validator_step']) && $f['validator_step'] !== '') {
                     $warnings[] = "$prefix : filled_by = \"demandeur\" mais validator_step est renseigné. validator_step sera ignoré pour les champs demandeur. Mettez filled_by = \"validator\" si vous voulez un champ validateur.";
                 }
 
                 // Si filled_by='validator', vérifier que validator_step correspond à un step existant
-                if (($f['filled_by'] ?? '') === \App\Enum\FilledBy::Validator->value && !empty($f['validator_step'])) {
+                if (($f['filled_by'] ?? '') === \App\Enum\FilledBy::Validator->value && isset($f['validator_step']) && $f['validator_step'] !== '') {
                     $step_match = false;
                     foreach ($data['steps'] ?? [] as $s) {
                         if (($s['label'] ?? '') === $f['validator_step'] || ($s['id'] ?? '') === $f['validator_step']) {
@@ -209,7 +209,7 @@ final class FormJsonValidator
                 }
 
                 // label
-                if (empty($s['label']) || !is_string($s['label'])) {
+                if (!isset($s['label']) || $s['label'] === '' || !is_string($s['label'])) {
                     $errors[] = "$prefix.label est requis et doit être une chaîne non vide. Exemple : \"Validation manager\", \"Validation RH\".";
                 }
 
@@ -236,7 +236,7 @@ final class FormJsonValidator
                 $valid_ops_json = \App\Workflow\ConditionEvaluator::VALID_OPS;
                 if ($raw_cond !== null && $raw_cond !== '') {
                     if (is_array($raw_cond)) {
-                        if (empty($raw_cond['field']) || !is_string($raw_cond['field'])) {
+                        if (!isset($raw_cond['field']) || $raw_cond['field'] === '' || !is_string($raw_cond['field'])) {
                             $errors[] = "$prefix.condition.field est requis et doit être une chaîne (nom technique du champ validateur).";
                         } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $raw_cond['field'])) {
                             $warnings[] = "$prefix.condition.field = \"{$raw_cond['field']}\" n'est pas en snake_case valide. Format attendu : minuscules, chiffres et underscores, commençant par une lettre.";
@@ -245,7 +245,7 @@ final class FormJsonValidator
                         }
                         $cond_op = $raw_cond['op'] ?? '';
                         if (!is_string($cond_op) || !in_array($cond_op, $valid_ops_json, true)) {
-                            $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn(string $o) => "\"$o\"", $valid_ops_json)) . '. Trouvé : ' . json_encode($cond_op);
+                            $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn(string $o): string => "\"$o\"", $valid_ops_json)) . '. Trouvé : ' . json_encode($cond_op);
                         }
                         if (isset($raw_cond['value']) && !is_string($raw_cond['value'])) {
                             $warnings[] = "$prefix.condition.value devrait être une chaîne. Trouvé : " . gettype($raw_cond['value']);
@@ -301,7 +301,7 @@ final class FormJsonValidator
     {
         $html = '';
 
-        if (!empty($result['errors'])) {
+        if ($result['errors'] !== []) {
             $html .= '<div class="msg-error" role="alert" aria-live="assertive" class="u-mb-05"><strong>' . count($result['errors']) . ' erreur(s)</strong> bloquante(s) :';
             $html .= '<ul class="u-fs-sm-ml-12-mt-05">';
             foreach ($result['errors'] as $e) {
@@ -310,7 +310,7 @@ final class FormJsonValidator
             $html .= '</ul></div>';
         }
 
-        if (!empty($result['warnings'])) {
+        if ($result['warnings'] !== []) {
             $html .= '<div class="msg-warning" role="status" aria-live="polite" class="u-mb-05-p-075-bg-warn"><strong>' . count($result['warnings']) . ' avertissement(s)</strong> (non bloquant) :';
             $html .= '<ul class="u-fs-sm-ml-12-mt-05">';
             foreach ($result['warnings'] as $w) {
@@ -320,15 +320,15 @@ final class FormJsonValidator
         }
 
         // Copyable text block for LLM feedback
-        if (!empty($result['errors']) || !empty($result['warnings'])) {
+        if ($result['errors'] !== [] || $result['warnings'] !== []) {
             $copy_text = "Le JSON généré contient des erreurs. Merci de corriger et de régénérer le JSON.\n\n";
-            if (!empty($result['errors'])) {
+            if ($result['errors'] !== []) {
                 $copy_text .= "ERREURS BLOQUANTES :\n";
                 foreach ($result['errors'] as $e) {
                     $copy_text .= "- $e\n";
                 }
             }
-            if (!empty($result['warnings'])) {
+            if ($result['warnings'] !== []) {
                 $copy_text .= "\nAVERTISSEMENTS :\n";
                 foreach ($result['warnings'] as $w) {
                     $copy_text .= "- $w\n";

@@ -16,12 +16,12 @@
     <?= $h($tJargon('Le workflow de validation a été déclenché automatiquement.')) ?> Un email de confirmation vous a été envoyé.
   </div>
   <div class="u-mt-15-flex-center">
-    <a href="index.php?p=submission_view&id=<?= urlencode($submission_id) ?>" class="btn btn-primary">Voir ma demande</a>
+    <a href="index.php?p=submission_view&id=<?= urlencode((string) $submission_id) ?>" class="btn btn-primary">Voir ma demande</a>
     <a href="index.php?p=my_submissions" class="btn btn-secondary">Mes demandes</a>
     <a href="index.php" class="btn btn-secondary">Accueil</a>
   </div>
 <?php else: ?>
-  <form method="POST" action="index.php?p=form&f=<?= urlencode($slug) ?>" enctype="multipart/form-data" id="form-main">
+  <form method="POST" action="index.php?p=form&f=<?= urlencode((string) $slug) ?>" enctype="multipart/form-data" id="form-main">
     <?= $csrf_field ?>
     <?php if ($existing_submission !== null): ?><input type="hidden" name="confirmed" value="1"><?php endif; ?>
   <aside class="form-help-box" aria-label="Aide pour remplir le formulaire">
@@ -45,7 +45,7 @@
           <?php if ($non_checkboxes !== []): ?>
             <div class="grid-2">
               <?php foreach ($non_checkboxes as $non_checkbox): ?>
-                <?php $cond = empty($non_checkbox['condition']) ? '' : ' data-condition="' . htmlspecialchars((string) $non_checkbox['condition'], ENT_QUOTES) . '"'; ?>
+                <?php $cond = $non_checkbox['condition'] ? ' data-condition="' . htmlspecialchars((string) $non_checkbox['condition'], ENT_QUOTES) . '"' : ''; ?>
                 <div<?php if ($cond !== '' && $cond !== '0') { echo $cond; } ?>>
                 <?= $renderer->field($non_checkbox, $field_values[(string) $non_checkbox['field_name']] ?? null, $field_errors + $file_errors, '') ?>
                 </div>
@@ -55,7 +55,7 @@
           <?php if ($checkboxes !== []): ?>
             <div class="checkboxes"<?php if ($non_checkboxes !== []) { echo ' class="u-mt-1"'; } ?>>
               <?php foreach ($checkboxes as $checkbox): ?>
-                <?php $cond = empty($checkbox['condition']) ? '' : ' data-condition="' . htmlspecialchars((string) $checkbox['condition'], ENT_QUOTES) . '"'; ?>
+                <?php $cond = $checkbox['condition'] ? ' data-condition="' . htmlspecialchars((string) $checkbox['condition'], ENT_QUOTES) . '"' : ''; ?>
                 <div<?php if ($cond !== '' && $cond !== '0') { echo $cond; } ?>>
                 <?= $renderer->field($checkbox, $field_values[(string) $checkbox['field_name']] ?? null, $field_errors + $file_errors, '') ?>
                 </div>
@@ -69,10 +69,10 @@
     <?php if ($grouped !== []): ?>
       <div class="card u-bg-lavender-border-primary">
         <label class="checkbox-item u-fs-sm-lh-15">
-          <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true"<?= empty($_POST['rgpd_consent']) ? '' : ' checked' ?>>
+          <input type="checkbox" name="rgpd_consent" value="1" required aria-required="true"<?= (bool)($_POST['rgpd_consent']) ? ' checked' : '' ?>>
           J'accepte le traitement de mes données personnelles dans le cadre de cette procédure.
         </label>
-        <?php if (!empty($field_errors['rgpd_consent'])): ?>
+        <?php if ((bool)($field_errors['rgpd_consent'])): ?>
           <p class="error-hint u-c-danger-fs-xs-mt-05-ml-17" role="alert">
             <?= $h($field_errors['rgpd_consent']) ?>
           </p>

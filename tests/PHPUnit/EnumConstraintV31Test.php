@@ -17,6 +17,9 @@ use PHPUnit\Framework\TestCase;
  *
  * Suit le même pattern que EnumConstraintTest.php (v30) : un test par
  * violation (INSERT/UPDATE) + un test d'acceptation des valeurs valides.
+ *
+ * Note : les contraintes CHECK sont créées par les migrations, donc toujours
+ * présentes dans la base de test. Pas de skip nécessaire.
  */
 final class EnumConstraintV31Test extends TestCase
 {
@@ -35,7 +38,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testFormFieldsFieldTypeRejectsInvalidInsert(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields', 'field_type');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
 
@@ -47,7 +49,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testFormFieldsFieldTypeRejectsInvalidUpdate(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields', 'field_type');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $fieldId = $this->createTestFormField($pdo, $formId);
@@ -60,7 +61,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testFormFieldsFieldTypeAcceptsValidValues(): void
     {
-        $this->skipIfNoCheckConstraints('form_fields', 'field_type');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
 
@@ -76,7 +76,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testValidatorDataFieldTypeRejectsInvalidInsert(): void
     {
-        $this->skipIfNoCheckConstraints('submission_validator_data', 'field_type');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $subId = $this->createTestSubmission($pdo, $formId);
@@ -89,7 +88,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testValidatorDataFieldTypeAcceptsValidValues(): void
     {
-        $this->skipIfNoCheckConstraints('submission_validator_data', 'field_type');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $subId = $this->createTestSubmission($pdo, $formId);
@@ -106,7 +104,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testValidatorDataFilledByRejectsInvalidInsert(): void
     {
-        $this->skipIfNoCheckConstraints('submission_validator_data', 'filled_by');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $subId = $this->createTestSubmission($pdo, $formId);
@@ -119,7 +116,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testValidatorDataFilledByRejectsInvalidUpdate(): void
     {
-        $this->skipIfNoCheckConstraints('submission_validator_data', 'filled_by');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $subId = $this->createTestSubmission($pdo, $formId);
@@ -133,7 +129,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testValidatorDataFilledByAcceptsValidValues(): void
     {
-        $this->skipIfNoCheckConstraints('submission_validator_data', 'filled_by');
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
         $subId = $this->createTestSubmission($pdo, $formId);
@@ -150,7 +145,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testMailLogStatusRejectsInvalidInsert(): void
     {
-        $this->skipIfNoCheckConstraints('mail_log', 'status');
         $pdo = $this->db->getPdo();
 
         $this->expectException(\PDOException::class);
@@ -161,7 +155,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testMailLogStatusRejectsInvalidUpdate(): void
     {
-        $this->skipIfNoCheckConstraints('mail_log', 'status');
         $pdo = $this->db->getPdo();
         $logId = $this->createTestMailLog($pdo);
 
@@ -173,7 +166,6 @@ final class EnumConstraintV31Test extends TestCase
 
     public function testMailLogStatusAcceptsValidValues(): void
     {
-        $this->skipIfNoCheckConstraints('mail_log', 'status');
         $pdo = $this->db->getPdo();
 
         foreach (['sent', 'blocked', 'dry_run', 'error'] as $status) {

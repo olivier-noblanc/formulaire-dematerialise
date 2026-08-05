@@ -9,7 +9,7 @@
     $icon       = $is_valide ? '✅' : '❌';
     $label      = $is_valide ? 'Validé' : 'Refusé';
     $comment    = '';
-    if (!empty($validation['commentaire'])) {
+    if ((bool)($validation['commentaire'])) {
       $c = \App\Core\App::html()->escape((string) $validation['commentaire']);
       $comment = "<br><em>Commentaire :</em> {$c}";
     }
@@ -35,7 +35,7 @@
       <div class="u-d-flex-gap-05-fw-wrap">
 <?php if (\App\Core\App::auth()->isAdminEffective()): ?>
   <?php foreach ($tokens as $token):
-    if (!empty($token['done_at'])) { continue; }
+    if ((bool)($token['done_at'])) { continue; }
     $tid   = \App\Core\App::html()->escape((string) ($token['id'] ?? ''));
     $temail = \App\Core\App::html()->escape((string) ($token['email'] ?? ''));
   ?>

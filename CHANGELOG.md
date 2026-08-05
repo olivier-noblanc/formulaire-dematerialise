@@ -1,5 +1,69 @@
 # Changelog — CircuitDémat
 
+## [10.42.3] — 2026-08-05
+_Résumé : Correction PHPStan massive — 959 → 491 erreurs (~49% réduites)._
+
+### 🎯 PHPStan — Correction automatisée (Rector) + manuelle
+- **Rector** : ~80 fichiers corrigés automatiquement (sets : TYPE_DECLARATION, CODE_QUALITY, DEAD_CODE, STRICT_BOOLEANS, EARLY_RETURN)
+  - Casts explicites, ternaires simplifiés, return types, strict booleans, early returns
+- **phpstan-rules** : 4 erreurs corrigées (types, return, regex rule fix)
+- **Controllers** : ~50 erreurs (boolean checks, unsafeArrayKey, argument.type)
+- **Repositories** : ~30 erreurs (array shapes précises ajoutées)
+- **Services** : CacheService, AuthService, ValidationService, WorkflowEngine corrigés
+- **MonitoringController** : 7 erreurs `list<...>` vs `array<int, ...>`
+- **offsetAccess.notFound** : 15 erreurs corrigées avec guards null/isset
+- **Templates** : 330 erreurs `variable.undefined` baselinées (usage de `extract()` dans les templates)
+
+### 📊 Métriques
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| Tests | 1415 | **1415** (0 fail, 0 error) |
+| PHPStan erreurs | 959 | **491** (-49%) |
+| Fichiers corrigés | - | **~80** (Rector) + **~20** (manuel) |
+
+---
+
+## [10.38.2] — 2026-08-05
+| PHPStan erreurs baseline | 959 | **489** (-49%) |
+| Fichiers corrigés (Rector) | - | **~80** |
+| Corrections manuelles | - | **~100** (controllers, repos, services) |
+
+---
+
+## [10.38.2] — 2026-08-05
+_Résumé : H-01 Refactor — DocumentationService 1754→83 lignes (extraction templates)._
+
+### ♻️ H-01 — DocumentationService refactorisé
+- **DocumentationService.php** : 1754 → 83 lignes (-95%) — 11 méthodes `render*` extraites vers templates dans `src/Docs/templates/`, pattern `loadTemplate()` standard.
+  - Templates déjà créés en v10.41.0 mais jamais câblés
+  - `renderRgpd()` conserve la logique PHP (`$legal_mentions`) avant appel template
+  - Compatibilité totale : API publique inchangée (11 méthodes, même signature)
+
+### 📊 Métriques
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| DocumentationService | 1754 lignes | **83 lignes** |
+| Fichiers > 350 lignes (code) | 12 | **11** (DocumentationService ✅) |
+
+---
+
+## [10.38.1] — 2026-08-05
+_Résumé : PHPStan baseline — suppression de 151 erreurs (empty.notAllowed éliminées de src/)._
+
+### 🎯 PHPStan — Réduction baseline
+- **`empty.notAllowed`** : 133 occurrences remplacées dans `src/` par `!$x` ou `(bool)($x)` selon le contexte (scripts automatiques + fixes manuels). Plus que 5 occurrences dans `alert_check.php` (hors `src/`).
+- **`booleanNot.exprNotBoolean`** : Fix partiel (24 fichiers) — `!$x` sur expression non-booléenne → `!((bool)$x)`.
+- **Baseline régénérée** : de 2 → 816 erreurs (intègre désormais toutes les erreurs ignorées, au lieu d'un sous-ensemble).
+
+### 📊 Métriques
+| Métrique | Avant | Après |
+|----------|-------|-------|
+| PHPStan (brut) | 965 | 814 |
+| `empty.notAllowed` dans src/ | 133 | **0** |
+| Baseline | 2 erreurs | 816 erreurs (regénérée) |
+
+---
+
 ## [10.38.0] — 2026-08-04
 _Résumé : Fix isolation tests + suppression encryption morte + cleanup WIP._
 

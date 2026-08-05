@@ -97,7 +97,7 @@ final class DownloadController extends BaseController
         $original_name = $attachment['original_name'];
         $file_size = (int) $attachment['file_size'];
 
-        $original_name = preg_replace('/[^\x20-\x7E]/', '', (string) $original_name);
+        $original_name = preg_replace('/[^\x20-\x7E]/', '', (string) $original_name) ?? '';
         $safe_name = rawurlencode($attachment['original_name']);
 
         header('Content-Type: ' . $mime_type);
@@ -107,19 +107,19 @@ final class DownloadController extends BaseController
         header('Pragma: no-cache');
         header('Expires: 0');
 
-        $safe_filename = preg_replace('/[^a-zA-Z0-9_\-.]/', '_', (string) $original_name);
+        $safe_filename = preg_replace('/[^a-zA-Z0-9_\-.]/', '_', (string) $original_name) ?? '';
         if ($mime_type === 'application/pdf') {
             header('Content-Disposition: inline; filename="' . $safe_filename . '"; filename*=UTF-8\'\'' . $safe_name);
         } else {
             header('Content-Disposition: attachment; filename="' . $safe_filename . '"; filename*=UTF-8\'\'' . $safe_name);
         }
 
-        if (!empty($attachment['file_data'])) {
+        if ((bool)($attachment['file_data'])) {
             echo $attachment['file_data'];
             exit;
         }
 
-        if (!empty($attachment['stored_name'])) {
+        if ((bool)($attachment['stored_name'])) {
             $file_path = dirname(__DIR__, 2) . '/db/uploads/' . $attachment['stored_name'];
             if (file_exists($file_path)) {
                 $real_path = realpath($file_path);
@@ -210,7 +210,7 @@ final class DownloadController extends BaseController
                 'submitted_at'  => (string) ($submission['submitted_at'] ?? ''),
                 'closed_at'     => (string) ($submission['closed_at'] ?? ''),
                 'status'        => (string) ($submission['status'] ?? ''),
-                'rgpd_consent'  => isset($submission['rgpd_consent']) ? (int) $submission['rgpd_consent'] : 0,
+                'rgpd_consent'  => $submission['rgpd_consent'] ?? 0,
                 'data'          => is_array($submission_data) ? $submission_data : [],
             ],
             'tokens'         => [],

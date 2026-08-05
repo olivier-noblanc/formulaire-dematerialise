@@ -21,14 +21,14 @@ final class ConditionEvaluator implements ConditionInterface
      * @param string|null $conditionJson Le JSON de la condition
      * @param array<string, mixed> $data Les données disponibles
      */
-    public function evaluate(?string $conditionJson, array $data): bool
+    public function evaluate(?string $conditionJson, mixed $data): bool
     {
         if (in_array($conditionJson, [null, '', '0'], true)) {
             return true;
         }
 
         $condition = json_decode($conditionJson, true);
-        if (!is_array($condition) || empty($condition['field'])) {
+        if (!is_array($condition) || !((bool)($condition['field']))) {
             return true;
         }
 
@@ -36,11 +36,8 @@ final class ConditionEvaluator implements ConditionInterface
         $op = (string) ($condition['op'] ?? 'eq');
         $expected = $condition['value'] ?? '';
 
-        $actual = $data[$fieldName] ?? '';
-        if (is_array($actual)) {
-            $actual = implode(', ', $actual);
-        }
-        $actual = (string) $actual;
+        $rawActual = $data[$fieldName] ?? '';
+        $actual = is_array($rawActual) ? implode(', ', $rawActual) : (string) $rawActual;
 
         $result = match ($op) {
             'eq', 'equals' => $actual === (string) $expected,
@@ -59,5 +56,39 @@ final class ConditionEvaluator implements ConditionInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Évalue la condition d'une étape de workflow en allant chercher les données
+     * de validation en base.
+     *
+     * @param array{condition?: string} $step
+     */
+    public static function evaluateStepCondition(mixed $step, string $submission_id): bool
+    {
+        $condition_json = $step['condition'] ?? '';
+        if ($condition_json === '' || $condition_json === '0') {
+            return true;
+        }
+
+        $validator_data = \App\Core\App::validatorData()->getSubmissionValidatorData($submission_id);
+        $data = [];
+        foreach ($validator_data as $vd) {
+            $data[$vd['field_name'] ?? ''] = $vd['value'] ?? '';
+        }
+
+        return \App\Core\App::conditions()->evaluate($condition_json, $data);
+    }
+
+    /**
+     * Évalue la condition d'un champ avec les données du formulaire.
+     *
+     * @param array<string, mixed> $field
+     * @param array<string, mixed> $form_data
+     */
+    public static function evaluateFieldCondition(mixed $field, mixed $form_data): bool
+    {
+        $condition_json = $field['condition'] ?? '';
+        return \App\Core\App::conditions()->evaluate($condition_json, $form_data);
     }
 }

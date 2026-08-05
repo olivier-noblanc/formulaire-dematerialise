@@ -38,7 +38,7 @@ final class MyFormsController extends BaseController
           $f_id    = \App\Core\App::html()->escape((string) ($ownedForm['id'] ?? ''));
           $f_label = \App\Core\App::html()->escape(App::html()->tJargon((string) ($ownedForm['label'] ?? '')));
           $f_desc  = '';
-          if (!empty($ownedForm['description'])) {
+          if ((bool)($ownedForm['description'])) {
               $f_desc = '<div class="fc-desc">' . \App\Core\App::html()->escape(App::html()->tJargon((string) $ownedForm['description'])) . '</div>';
           }
           ?>

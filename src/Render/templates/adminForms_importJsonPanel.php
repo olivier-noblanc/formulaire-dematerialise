@@ -1,5 +1,5 @@
 <!-- ── Import JSON panel ──────────────────────────────────── -->
-<div id="import-panel" class="<?= !empty($preserved_json) ? '' : 'hidden' ?> mb-15">
+<div id="import-panel" class="<?= (bool)($preserved_json) ? '' : 'hidden' ?> mb-15">
     <div class="section-card">
         <div class="section-card-header">
             <h2><span aria-hidden="true">📥</span> Importer un formulaire depuis JSON</h2>
@@ -7,7 +7,7 @@
         <div class="section-card-body">
             <p class="caption-3">Collez un JSON décrivant un formulaire <strong>et son circuit de validation</strong> (exporté depuis cette page ou généré par une IA). Le format attendu : <code>{ "form": { "label": "..." }, "fields": [...], "steps": [...] }</code></p>
 
-            <?php if (!empty($validation_html)): ?>
+            <?php if ((bool)($validation_html)): ?>
                 <?= $validation_html ?>
             <?php endif; ?>
 

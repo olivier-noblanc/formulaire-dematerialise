@@ -90,7 +90,7 @@ final class AdminFormsRenderer
      */
     public function optionsToLines(?string $json): string
     {
-        if (empty($json)) return '';
+        if (!((bool)($json))) return '';
         $decoded = json_decode($json, true);
         if (is_array($decoded)) return implode("\n", $decoded);
         return $json;
@@ -137,7 +137,7 @@ final class AdminFormsRenderer
      */
     public function renderTopActionBar(AdminFormsContext $ctx): string
     {
-        if (!$ctx->form) {
+        if (!((bool)$ctx->form)) {
             return '';
         }
         return $this->loadTemplate('adminForms_topActionBar.php', $ctx);
@@ -148,7 +148,7 @@ final class AdminFormsRenderer
      */
     public function renderFormInfoSection(AdminFormsContext $ctx): string
     {
-        if (!$ctx->form) {
+        if (!((bool)$ctx->form)) {
             return '';
         }
         return $this->loadTemplate('adminForms_formInfoSection.php', $ctx);
@@ -159,7 +159,7 @@ final class AdminFormsRenderer
      */
     public function renderOwnersSection(AdminFormsContext $ctx): string
     {
-        if (!$ctx->form) {
+        if (!((bool)$ctx->form)) {
             return '';
         }
         return $this->loadTemplate('adminForms_ownersSection.php', $ctx);
@@ -203,11 +203,11 @@ final class AdminFormsRenderer
         ?>
         <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
 
-        <?php if (!empty($success_msg)): ?>
+        <?php if ((bool)($success_msg)): ?>
             <div class="msg-success" role="status" aria-live="polite"><?= \App\Core\App::html()->escape($success_msg) ?></div>
         <?php endif; ?>
 
-        <?php if (!empty($error_msg)): ?>
+        <?php if ((bool)($error_msg)): ?>
             <div class="msg-error" role="alert" aria-live="assertive"><?= \App\Core\App::html()->escape($error_msg) ?></div>
         <?php endif; ?>
 
@@ -215,7 +215,7 @@ final class AdminFormsRenderer
         <?= $this->renderImportJsonPanel($ctx) ?>
         <?= $this->renderPromptIaPanel($ctx) ?>
 
-        <?php if (empty($form_id)): ?>
+        <?php if (!((bool)($form_id))): ?>
             <?= $this->renderNewFormPanel($ctx) ?>
         <?php else: ?>
             <?php if ($form): ?>
@@ -235,7 +235,7 @@ final class AdminFormsRenderer
         if ($content === false) {
             $content = '';
         }
-        echo new NavigationRenderer()->page('Gestion des formulaires', 'forms', $page_css, $content);
+        echo new PageRenderer()->page('Gestion des formulaires', 'forms', $page_css, $content);
     }
 
     // ── Template loader ──────────────────────────────────────────
@@ -255,7 +255,7 @@ final class AdminFormsRenderer
             throw new \RuntimeException("Template not found: {$filepath}");
         }
 
-        if ($ctx !== null) {
+        if ($ctx instanceof \App\Render\AdminFormsContext) {
             $form_id         = $ctx->form_id;
             $form            = $ctx->form;
             $forms           = $ctx->forms;

@@ -82,10 +82,10 @@ final class AdminSettingsHandlers
             'retention_months'  => trim($_POST['retention_months'] ?? '24'),
         ];
 
-        if (empty($settings['smtp_pass'])) {
+        if ($settings['smtp_pass'] === '') {
             $settings['smtp_pass'] = App::settings()->get('smtp_pass', '');
         }
-        if (($settings['admin_email'] !== '' && $settings['admin_email'] !== '0') && !filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL)) {
+        if (($settings['admin_email'] !== '' && $settings['admin_email'] !== '0') && filter_var($settings['admin_email'], FILTER_VALIDATE_EMAIL) === false) {
             $error_msg = 'L\'adresse email de l\'administrateur principal est invalide.';
             unset($settings['admin_email']);
         }
@@ -134,7 +134,7 @@ final class AdminSettingsHandlers
             $ev_settings['email_verify_mode'] = 'none';
         }
 
-        if ($ev_settings['email_verify_mode'] === 'ldap' && (empty($ev_settings['ldap_host']) || empty($ev_settings['ldap_base_dn']))) {
+        if ($ev_settings['email_verify_mode'] === 'ldap' && ($ev_settings['ldap_host'] === '' || $ev_settings['ldap_base_dn'] === '')) {
             $error_msg = 'Le mode LDAP nécessite au minimum un hôte LDAP et un base DN.';
         }
 
@@ -181,7 +181,7 @@ final class AdminSettingsHandlers
     public static function handleTestVerifyEmail(string $error_msg): array
     {
         $test_addr = trim($_POST['verify_test_email'] ?? '');
-        if ($test_addr !== '' && $test_addr !== '0' && filter_var($test_addr, FILTER_VALIDATE_EMAIL)) {
+        if ($test_addr !== '' && $test_addr !== '0' && filter_var($test_addr, FILTER_VALIDATE_EMAIL) !== false) {
             $verify_result = App::emailVerify()->testVerification($test_addr);
             App::audit()->log('email_verify_test', 'mail:' . $test_addr, 'Test de vérification email', App::auth()->getUser());
             return [$verify_result, $error_msg];

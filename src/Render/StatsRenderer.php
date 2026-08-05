@@ -77,7 +77,7 @@ final class StatsRenderer
         } else {
             $column = array_column($periodStats, 'total');
             $maxTotal = $column !== [] ? max($column) : 1;
-            $maxTotal = $maxTotal >= 1 ? $maxTotal : 1;
+            $maxTotal = max($maxTotal, 1);
             $periodStatsAsc = array_reverse($periodStats);
             $html .= '<div class="bar-chart">';
             foreach ($periodStatsAsc as $periodStatAsc) {
@@ -123,7 +123,7 @@ final class StatsRenderer
                 $fsTotal  = (int) $formStat['total'];
                 $fsValide = (int) $formStat[SubmissionStatus::Valide->value];
                 $fsRate   = $fsTotal > 0 ? round(($fsValide / $fsTotal) * 100, 1) : 0;
-                $fsAvg    = empty($formStat['avg_seconds']) ? '—' : round((float) $formStat['avg_seconds'] / 86400, 1) . ' j';
+                $fsAvg    = (bool)($formStat['avg_seconds']) ? round((float) $formStat['avg_seconds'] / 86400, 1) . ' j' : '—';
                 $fsLabel  = $h((string) $formStat['label']);
                 $fsEnC    = (int) $formStat[SubmissionStatus::EnCours->value];
                 $fsRef    = (int) $formStat[SubmissionStatus::Refuse->value];
@@ -144,7 +144,7 @@ final class StatsRenderer
         } else {
             $html .= '<table><thead><tr><th>Validateur</th><th>Total assigné</th><th>Traitées</th><th>En attente</th><th>Temps de réponse moyen</th></tr></thead><tbody>';
             foreach ($validatorStats as $validatorStat) {
-                $vsAvg   = empty($validatorStat['avg_response_seconds']) ? '—' : round((float) $validatorStat['avg_response_seconds'] / 3600, 1) . ' h';
+                $vsAvg   = (bool)($validatorStat['avg_response_seconds']) ? round((float) $validatorStat['avg_response_seconds'] / 3600, 1) . ' h' : '—';
                 $vsEmail = App::html()->displayUser((string) $validatorStat['email']);
                 $vsTotal = (int) $validatorStat['total'];
                 $vsDone  = (int) $validatorStat['done'];

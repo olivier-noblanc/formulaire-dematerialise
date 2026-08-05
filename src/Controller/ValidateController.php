@@ -57,20 +57,20 @@ final class ValidateController extends BaseController
             if (!isset($error)) {
                 if ($action === ValidationAction::Refuser->value && in_array(trim($comment), ['', '0'], true)) {
                     // Ne pas traiter — on affiche la page avec un message d'erreur
-                } elseif ($token && in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value], true)) {
+                } elseif ($token !== '' && in_array($action, [ValidationAction::Valider->value, ValidationAction::Refuser->value], true)) {
                     $pre_ctx = App::workflow()->getTokenWithContext((string) $token);
                     $pre_validator_fields = [];
-                    if ($pre_ctx && !empty($pre_ctx['form_id'])) {
+                    if ($pre_ctx !== null && (bool)($pre_ctx['form_id'])) {
                         $pre_validator_fields = App::validatorData()->getFormValidatorFields(
-                            (string) $pre_ctx['form_id'],
-                            isset($pre_ctx['step_id']) ? (string) $pre_ctx['step_id'] : null
+                            $pre_ctx['form_id'],
+                            $pre_ctx['step_id'] ?? null
                         );
                     }
 
                     if ($action === ValidationAction::Valider->value && $pre_validator_fields !== []) {
                         $missing = [];
                         foreach ($pre_validator_fields as $pre_validator_field) {
-                            if (!empty($pre_validator_field['required'])) {
+                            if ((bool)($pre_validator_field['required'])) {
                                 $fname = (string) ($pre_validator_field['field_name'] ?? '');
                                 if ($fname === '') {
                                     continue;
@@ -113,10 +113,10 @@ final class ValidateController extends BaseController
                             $success = true;
 
                             $token_ctx = $result['data'] ?? [];
-                            if (!empty($token_ctx['form_id'])) {
+                            if ((bool)($token_ctx['form_id'] ?? false)) {
                                 $form_id = (string) $token_ctx['form_id'];
-                                $step_id = isset($token_ctx['step_id']) ? (string) $token_ctx['step_id'] : null;
-                                $subm_id = isset($token_ctx['submission_id']) ? (string) $token_ctx['submission_id'] : '';
+                                $step_id = $token_ctx['step_id'] ?? null;
+                                $subm_id = $token_ctx['submission_id'] ?? '';
                                 $validator_fields = App::validatorData()->getFormValidatorFields($form_id, $step_id);
                                 if ($validator_fields !== [] && $subm_id !== '') {
                                     foreach ($validator_fields as $validator_field) {
@@ -133,8 +133,8 @@ final class ValidateController extends BaseController
                                                 FilledBy::Validator->value,
                                                 $step_id,
                                                 null,
-                                                isset($token_ctx['email']) ? (string) $token_ctx['email'] : null,
-                                                isset($token_ctx['id']) ? (string) $token_ctx['id'] : null
+                                                $token_ctx['email'] ?? null,
+                                                $token_ctx['id'] ?? null
                                             );
                                         } else {
                                             App::validatorData()->deleteValidatorData($subm_id, $fname);
@@ -164,20 +164,20 @@ final class ValidateController extends BaseController
             $token = trim($_GET['token'] ?? '');
 
             if ($token !== '' && $token !== '0') {
-                if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+                if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
                     $result = ['status' => 'invalid'];
                 } else {
                     $this->audit->log('token_view', 'token:' . substr($token, 0, 8) . '...', 'Consultation page de validation', '');
 
                     $data = App::workflow()->getTokenWithContext($token);
 
-                    if (!$data) {
+                    if (!((bool)$data)) {
                         $result = ['status' => 'invalid'];
-                    } elseif ($data['done_at']) {
+                    } elseif (($data['done_at'] ?? '') !== '') {
                         $result = ['status' => 'already_done', 'data' => $data];
-                    } elseif ($data['closed_at']) {
+                    } elseif (($data['closed_at'] ?? '') !== '') {
                         $result = ['status' => 'closed', 'data' => $data];
-                    } elseif (!empty($data['expires_at'])) {
+                    } elseif ((bool)($data['expires_at'])) {
                         $exp_ts = strtotime($data['expires_at']);
                         if ($exp_ts !== false && $exp_ts < time()) {
                             $result = ['status' => 'expired', 'data' => $data];
@@ -226,7 +226,7 @@ final class ValidateController extends BaseController
         if ($result['status'] === 'pending' || $result['status'] === 'ok') {
             $rdata = $result['data'] ?? [];
             $form_id = (string) ($rdata['form_id'] ?? '');
-            $step_id = isset($rdata['step_id']) ? (string) $rdata['step_id'] : null;
+            $step_id = $rdata['step_id'] ?? null;
             $subm_id = (string) ($rdata['submission_id'] ?? '');
 
             $all_wf_steps = $this->formRepo->getWorkflowStepsWithTokens($form_id, $subm_id);
@@ -251,7 +251,7 @@ final class ValidateController extends BaseController
                 if (in_array($fname, $current_step_field_names, true)) {
                     continue;
                 }
-                if (empty($vd_row['value'])) {
+                if (!((bool)($vd_row['value']))) {
                     continue;
                 }
                 $previous_vd_rows[] = $vd_row;

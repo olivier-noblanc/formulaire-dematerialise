@@ -9,9 +9,9 @@ namespace App\Repository\Traits;
  *
  * Utilisé par SubmissionRepository.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array $params = [])
- * @method bool execute(string $sql, array $params = [])
+ * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
+ * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
+ * @method bool execute(string $sql, array<int, mixed> $params = [])
  * @method \PDO pdo()
  */
 trait SubmissionStatsTrait
@@ -44,18 +44,21 @@ trait SubmissionStatsTrait
 
     public function countByForm(string $formId): int
     {
+        /** @var array{cnt: int|string|null}|null $result */
         $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM submissions WHERE form_id = ?', [$formId]);
         return (int) ($result['cnt'] ?? 0);
     }
 
     public function countAll(): int
     {
+        /** @var array{cnt: int|string|null}|null $result */
         $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM submissions');
         return (int) ($result['cnt'] ?? 0);
     }
 
     public function getAvgProcessingTime(): float
     {
+        /** @var array{avg_seconds: float|string|null}|null $result */
         $result = $this->fetchOne(
             "SELECT AVG(
                 CAST(strftime('%s', s.closed_at) AS REAL) - CAST(strftime('%s', s.submitted_at) AS REAL)
@@ -85,6 +88,7 @@ trait SubmissionStatsTrait
 
     public function countOldByRetention(int $retentionMonths): int
     {
+        /** @var array{cnt: int|string|null}|null $result */
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM submissions WHERE status != '" . \App\Enum\SubmissionStatus::EnCours->value . "' AND closed_at < datetime('now', '-' || ? || ' months')",
             [$retentionMonths]
@@ -97,6 +101,7 @@ trait SubmissionStatsTrait
      */
     public function countByStatusForSubmitter(string $email): array
     {
+        /** @var list<array{status: string, cnt: int|string}> $rows */
         $rows = $this->fetchAll(
             'SELECT status, COUNT(*) as cnt FROM submissions WHERE submitted_by = ? GROUP BY status',
             [$email]
@@ -231,12 +236,14 @@ trait SubmissionStatsTrait
 
     public function getOldestSubmittedAt(): ?string
     {
+        /** @var array{val: string|null}|null $result */
         $result = $this->fetchOne('SELECT MIN(submitted_at) as val FROM submissions');
         return $result !== null && $result['val'] !== null ? (string) $result['val'] : null;
     }
 
     public function getNewestSubmittedAt(): ?string
     {
+        /** @var array{val: string|null}|null $result */
         $result = $this->fetchOne('SELECT MAX(submitted_at) as val FROM submissions');
         return $result !== null && $result['val'] !== null ? (string) $result['val'] : null;
     }

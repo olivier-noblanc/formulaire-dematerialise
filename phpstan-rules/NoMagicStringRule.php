@@ -131,8 +131,7 @@ class NoMagicStringRule implements Rule
 
         // Skip allowed files
         $fileDescription = $scope->getFileDescription();
-        // @phpstan-ignore function.alreadyNarrowedType (getFileDescription() returns FileDescription|string, PHPStan narrows to string)
-        $file = is_string($fileDescription) ? $fileDescription : $fileDescription->getFile();
+        $file = $fileDescription;
         foreach (self::ALLOWED_PATTERNS as $pattern) {
             if (str_contains($file, $pattern)) {
                 return [];

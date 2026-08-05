@@ -118,7 +118,7 @@ final class ValidateRenderer
                 $html .= '  <h3>Avancement des étapes</h3>' . "\n";
                 $html .= '  <div class="wf-steps">' . "\n";
                 foreach ($all_wf_steps as $all_wf_step) {
-                    $dones_arr = array_filter(explode('|', $all_wf_step['dones'] ?? ''), fn(string $x) => $x !== '' && $x !== null && $x !== '0');
+                    $dones_arr = array_filter(explode('|', $all_wf_step['dones'] ?? ''), fn(string $x): bool => !in_array($x, ['', null, '0'], true));
                     $all_done = count($dones_arr) > 0 && count(array_filter(explode('|', $all_wf_step['dones'] ?? ''))) === count(array_filter(explode('|', $all_wf_step['emails'] ?? '')));
                     $is_current = ($all_wf_step['id'] === ($data['step_id'] ?? 0));
 

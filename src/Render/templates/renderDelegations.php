@@ -1,4 +1,10 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * @var list<array{step_label?: string, from_email?: string, to_email?: string, delegated_at?: string, reason?: string}> $delegations
+ */
+
 if ($delegations === []) {
     return '';
 }
@@ -11,7 +17,7 @@ foreach ($delegations as $delegation) {
     $date       = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($delegation['delegated_at'] ?? 'now'))));
 
     $reason_html = '';
-    if (!empty($delegation['reason'])) {
+    if ((bool)($delegation['reason'])) {
         $reason = \App\Core\App::html()->escape((string) $delegation['reason']);
         $reason_html = <<<HTML
                       <div class="val-comment"><span aria-hidden="true">💬</span> Motif : {$reason}</div>

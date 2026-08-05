@@ -39,8 +39,12 @@ function apply_migration_v30(PDO $pdo, int $current_version): int {
         if ($dbListStmt === false) {
             throw new \RuntimeException('v30: PRAGMA database_list failed');
         }
-        $dbPath = $dbListStmt->fetchColumn(2);
+        $dbPathRaw = $dbListStmt->fetchColumn(2);
         $dbListStmt = null;
+        if ($dbPathRaw === false || $dbPathRaw === null) {
+            throw new \RuntimeException('v30: PRAGMA database_list returned no path');
+        }
+        $dbPath = (string) $dbPathRaw;
 
         // Ouvrir $rebuild (connexion séparée pour le DDL)
         $rebuild = new PDO('sqlite:' . $dbPath);
@@ -58,11 +62,13 @@ function apply_migration_v30(PDO $pdo, int $current_version): int {
         $hasFFNew = $hasFFNewStmt !== false ? $hasFFNewStmt->fetchColumn() : false;
         $hasFFNewStmt = null;
 
-        if (!$hasFF && $hasFFNew) {
+        $hasFFBool = ($hasFF !== false && $hasFF !== null);
+        $hasFFNewBool = ($hasFFNew !== false && $hasFFNew !== null);
+        if (!$hasFFBool && $hasFFNewBool) {
             $rebuild->exec('ALTER TABLE form_fields_new RENAME TO form_fields');
             $rebuild->exec('CREATE INDEX IF NOT EXISTS idx_ff_form ON form_fields(form_id)');
             $rebuild->exec('CREATE INDEX IF NOT EXISTS idx_ff_filled_by ON form_fields(form_id, filled_by)');
-        } elseif ($hasFF && $hasFFNew) {
+        } elseif ($hasFFBool && $hasFFNewBool) {
             $rebuild->exec('DROP TABLE form_fields_new');
         }
 
@@ -74,9 +80,11 @@ function apply_migration_v30(PDO $pdo, int $current_version): int {
         $hasARNew = $hasARNewStmt !== false ? $hasARNewStmt->fetchColumn() : false;
         $hasARNewStmt = null;
 
-        if (!$hasAR && $hasARNew) {
+        $hasARBool = ($hasAR !== false && $hasAR !== null);
+        $hasARNewBool = ($hasARNew !== false && $hasARNew !== null);
+        if (!$hasARBool && $hasARNewBool) {
             $rebuild->exec('ALTER TABLE admin_requests_new RENAME TO admin_requests');
-        } elseif ($hasAR && $hasARNew) {
+        } elseif ($hasARBool && $hasARNewBool) {
             $rebuild->exec('DROP TABLE admin_requests_new');
         }
 
@@ -115,7 +123,7 @@ function apply_migration_v30(PDO $pdo, int $current_version): int {
         $rebuild->exec("INSERT INTO schema_version (version, applied_at) VALUES (30, datetime('now'))");
         $rebuild = null;
 
-        if (!empty($fkErrors)) {
+        if ($fkErrors !== []) {
             throw new \RuntimeException('v30: FK integrity broken: ' . json_encode($fkErrors));
         }
 

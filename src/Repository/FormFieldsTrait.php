@@ -10,9 +10,9 @@ use App\Enum\FilledBy;
 /**
  * @internal Trait utilisé par FormRepository pour limiter la taille du fichier principal.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array $params = [])
- * @method bool execute(string $sql, array $params = [])
+ * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
+ * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
+ * @method bool execute(string $sql, array<int, mixed> $params = [])
  * @method string|null getStepLabel(string $stepId)  Défini dans FormStepsTrait
  */
 trait FormFieldsTrait
@@ -86,7 +86,7 @@ trait FormFieldsTrait
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{form_id: string, label: string, field_name: string, field_type?: string, options?: string|null, hint?: string, required?: int, ordre?: int, card_group?: string, filled_by?: string, validator_step?: string, visibility?: string} $data
      */
     public function createField(array $data): string
     {
@@ -99,7 +99,7 @@ trait FormFieldsTrait
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array{label?: string, field_type?: string, field_name?: string, options?: string|null, hint?: string, required?: int, ordre?: int, card_group?: string, filled_by?: string, validator_step?: string, visibility?: string, condition?: string} $data
      */
     public function updateField(string $fieldId, array $data): bool
     {

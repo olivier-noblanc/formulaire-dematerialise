@@ -61,8 +61,7 @@ final class PersonaTokenRepository extends BaseRepository
 
         $stmt2 = $this->pdo()->prepare('DELETE FROM persona_tokens WHERE revoked_at IS NULL AND expires_at < ?');
         $stmt2->execute([$cutoff]);
-        $deleted += $stmt2->rowCount();
 
-        return $deleted;
+        return $deleted + $stmt2->rowCount();
     }
 }

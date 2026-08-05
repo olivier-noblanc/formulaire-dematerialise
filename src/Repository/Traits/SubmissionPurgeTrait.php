@@ -9,9 +9,9 @@ namespace App\Repository\Traits;
  *
  * Utilisé par SubmissionRepository.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array $params = [])
- * @method bool execute(string $sql, array $params = [])
+ * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
+ * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
+ * @method bool execute(string $sql, array<int, mixed> $params = [])
  * @method \PDO pdo()
  */
 trait SubmissionPurgeTrait
@@ -39,6 +39,7 @@ trait SubmissionPurgeTrait
 
     public function countPurgeableByCutoff(string $cutoff): int
     {
+        /** @var array{cnt: int|string|null}|null $result */
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM submissions
              WHERE status IN ('" . \App\Enum\SubmissionStatus::Valide->value . "', '" . \App\Enum\SubmissionStatus::Refuse->value . "') AND closed_at IS NOT NULL AND closed_at < ?",
@@ -52,6 +53,7 @@ trait SubmissionPurgeTrait
      */
     public function findPurgeableIds(string $cutoff): array
     {
+        /** @var list<array{id: string}> $rows */
         $rows = $this->fetchAll(
             "SELECT id FROM submissions
              WHERE status IN ('" . \App\Enum\SubmissionStatus::Valide->value . "', '" . \App\Enum\SubmissionStatus::Refuse->value . "') AND closed_at IS NOT NULL AND closed_at < ?",
@@ -128,6 +130,7 @@ trait SubmissionPurgeTrait
      */
     public function findIdsPurgeableByCutoffForRgpd(string $cutoff): array
     {
+        /** @var list<array{id: string}> $rows */
         $rows = $this->fetchAll(
             "SELECT id FROM submissions WHERE status != '" . \App\Enum\SubmissionStatus::EnCours->value . "' AND closed_at < ?",
             [$cutoff]

@@ -1,0 +1,1 @@
+<div class="field"><label for="<?= $name ?>"><?= $label ?><?= $req_span ?></label><select id="<?= $name ?>" name="<?= $name ?>"<?= $required_attr ?><?= $aria_attr ?> class="<?= $error_class ?>"<?= $disabled_attr ?>><?= $options_html ?></select><?= $user_hint ?><?= $error_html ?></div>

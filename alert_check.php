@@ -55,8 +55,9 @@ foreach ($rules as $rule) {
     $submissions = $subs->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($submissions as $sub) {
+        /** @var array<string, mixed> $data */
         $data = json_decode($sub['data'], true) ?? [];
-        $deadline_str = $data[$deadline_field] ?? '';
+        $deadline_str = is_string($deadline_field) ? ($data[$deadline_field] ?? '') : '';
 
         if ($deadline_str === '' || $deadline_str === '0') {
             // Pas de date limite dans les donnees du formulaire
@@ -65,7 +66,7 @@ foreach ($rules as $rule) {
 
         // Parser la date limite (format YYYY-MM-DD ou DD/MM/YYYY)
         $deadline = parse_date($deadline_str);
-        if (!$deadline) {
+        if ($deadline === null) {
             echo "[{$now->format('Y-m-d H:i:s')}] Date invalide '{$deadline_str}' pour soumission #{$sub['id']}. Ignore.\n";
             continue;
         }
@@ -97,7 +98,7 @@ foreach ($rules as $rule) {
               AND DATE(sent_at) = DATE(?)
         ");
         $already->execute([$rule['id'], $sub['id'], gmdate('Y-m-d H:i:s')]);
-        if ($already->fetchColumn() > 0) {
+        if ((int)$already->fetchColumn() > 0) {
             // Alerte deja envoyee aujourd'hui pour cette regle + soumission
             $nb_skipped++;
             continue;
@@ -203,7 +204,7 @@ function has_incomplete_steps(PDO $pdo, string $submission_id): bool {
 /**
  * Determine les destinataires d'une alerte
  *
- * @param array<string, mixed> $submission
+ * @param array{id: string, submitted_by?: string, data?: string, form_label?: string} $submission
  * @return list<string>
  */
 function resolve_recipients(PDO $pdo, string $notify_who, array $submission): array {
@@ -218,7 +219,7 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
 
         case 'submitter':
             // L'agent qui a soumis le formulaire
-            if (!empty($submission['submitted_by'])) {
+            if (isset($submission['submitted_by']) && $submission['submitted_by'] !== '' && $submission['submitted_by'] !== '0') {
                 $recipients[] = $submission['submitted_by'];
             }
             break;
@@ -235,7 +236,7 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
             // Admin + agent
             $admins = _dbm_q($pdo, "SELECT email FROM admins")->fetchAll(PDO::FETCH_COLUMN);
             $recipients = array_merge($recipients, $admins);
-            if (!empty($submission['submitted_by'])) {
+            if (isset($submission['submitted_by']) && $submission['submitted_by'] !== '' && $submission['submitted_by'] !== '0') {
                 $recipients[] = $submission['submitted_by'];
             }
             break;
@@ -252,23 +253,23 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
 
         default:
             // Adresse email specifique
-            if (filter_var($notify_who, FILTER_VALIDATE_EMAIL)) {
+            if (filter_var($notify_who, FILTER_VALIDATE_EMAIL) !== false) {
                 $recipients[] = $notify_who;
             }
             break;
     }
 
     // Dedoublonner et filtrer les emails invalides
-    $recipients = array_values(array_unique(array_filter($recipients, fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL) !== false)));
+    $recipients = array_values(array_unique(array_filter($recipients, fn(string $e) => filter_var($e, FILTER_VALIDATE_EMAIL) !== false)));
     return $recipients;
 }
 
 /**
  * Construit le HTML de l'email d'alerte
  *
- * @param array<string, mixed> $sub
- * @param array<string, mixed> $rule
- * @param array<string, mixed> $data
+ * @param array{id: string, data: string} $sub
+ * @param array{id: string, form_label: string, days_before: int|string, condition_type?: string, notify_who: string} $rule
+ * @param array{prenom?: string, nom?: string} $data
  */
 function build_alert_html(array $sub, string $nom_agent, string $deadline_formatted, int $days_remaining, array $rule, array $data, PDO $pdo): string {
     // Recuperer les etapes et leur statut

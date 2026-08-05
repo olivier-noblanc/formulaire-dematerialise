@@ -229,7 +229,10 @@ final readonly class MailService implements MailInterface
 
         $lignes = '';
         foreach ($data as $k => $v) {
-            if ($v === '' || $v === null || $v === '0' || $k === 'validations') {
+            if (in_array($v, ['', null, '0'], true)) {
+                continue;
+            }
+            if ($k === 'validations') {
                 continue;
             }
             if (is_array($v)) {

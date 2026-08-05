@@ -164,7 +164,10 @@ final readonly class ValidatorDataService
         foreach ($submissions as $submission) {
             $subId  = (string) ($submission['id'] ?? '');
             $formId = (string) ($submission['form_id'] ?? '');
-            if ($subId === '' || $formId === '') {
+            if ($subId === '') {
+                continue;
+            }
+            if ($formId === '') {
                 continue;
             }
             $formIdBySub[$subId] = $formId;

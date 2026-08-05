@@ -44,7 +44,7 @@ final class AdminAlertsController extends BaseController
                     if ($notifyWho === 'custom') {
                         if ($customEmail === '' || $customEmail === '0') {
                             $errorMsg = 'L\'adresse email personnalisée est obligatoire.';
-                        } elseif (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
+                        } elseif (filter_var($customEmail, FILTER_VALIDATE_EMAIL) === false) {
                             $errorMsg = 'L\'adresse email personnalisée est invalide.';
                         } else {
                             $notifyWho = $customEmail;
@@ -86,7 +86,7 @@ final class AdminAlertsController extends BaseController
                     if ($notifyWho === 'custom') {
                         if ($customEmail === '' || $customEmail === '0') {
                             $errorMsg = 'L\'adresse email personnalisée est obligatoire.';
-                        } elseif (!filter_var($customEmail, FILTER_VALIDATE_EMAIL)) {
+                        } elseif (filter_var($customEmail, FILTER_VALIDATE_EMAIL) === false) {
                             $errorMsg = 'L\'adresse email personnalisée est invalide.';
                         } else {
                             $notifyWho = $customEmail;

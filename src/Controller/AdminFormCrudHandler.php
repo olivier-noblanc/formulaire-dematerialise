@@ -119,7 +119,7 @@ final class AdminFormCrudHandler
         }
         $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
         $src_form = $formRepository->findById((string) $source_id);
-        if (!$src_form) {
+        if (!((bool)$src_form)) {
             return ['error' => 'Formulaire source introuvable.'];
         }
         $new_label = $src_form['label'] . ' (copie)';

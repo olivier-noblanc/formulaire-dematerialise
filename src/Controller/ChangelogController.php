@@ -40,7 +40,7 @@ final class ChangelogController extends BaseController
     <?php
     $hasSummaries = false;
       foreach ($changelog as $v) {
-          if (!empty($v['summary'])) {
+          if ((bool)($v['summary'])) {
               $hasSummaries = true;
               break;
           }
@@ -53,7 +53,7 @@ final class ChangelogController extends BaseController
       <ul class="summary-list">
         <?php
           foreach ($changelog as $v):
-              $hasSummary = !empty($v['summary']);
+              $hasSummary = (bool)($v['summary']);
               $badgeCls = $hasSummary ? 'version-recent' : 'version-old';
               ?>
           <li>
@@ -132,12 +132,12 @@ final class ChangelogController extends BaseController
             $trimmed = trim($line);
 
             // Titre principal (# ) — on l'ignore
-            if (preg_match('/^# (?!#)/', $trimmed)) {
+            if (preg_match('/^# (?!#)/', $trimmed) === 1) {
                 continue;
             }
 
             // Version : ## [x.y.z] — date
-            if (preg_match('/^## \[(\d+\.\d+\.\d+)\]\s*[—\-]\s*(.+)$/u', $trimmed, $m)) {
+            if (preg_match('/^## \[(\d+\.\d+\.\d+)\]\s*[—\-]\s*(.+)$/u', $trimmed, $m) === 1) {
                 if ($currentVersion !== null) {
                     $versions[] = $currentVersion;
                 }
@@ -152,13 +152,13 @@ final class ChangelogController extends BaseController
             }
 
             // Résumé exécutif optionnel
-            if ($currentVersion !== null && preg_match('/^_Résumé\s*:\s*(.+?)_\s*$/u', $trimmed, $m)) {
+            if ($currentVersion !== null && preg_match('/^_Résumé\s*:\s*(.+?)_\s*$/u', $trimmed, $m) === 1) {
                 $currentVersion['summary'] = trim($m[1]);
                 continue;
             }
 
             // Section : ### Titre
-            if ($currentVersion !== null && preg_match('/^### (.+)$/', $trimmed, $m)) {
+            if ($currentVersion !== null && preg_match('/^### (.+)$/', $trimmed, $m) === 1) {
                 $currentSection = trim($m[1]);
                 $currentVersion['sections'][$currentSection] = [];
                 continue;
@@ -170,7 +170,7 @@ final class ChangelogController extends BaseController
             }
 
             // Élément de liste : - texte
-            if ($currentVersion !== null && $currentSection !== null && preg_match('/^- (.+)$/', $trimmed, $m)) {
+            if ($currentVersion !== null && $currentSection !== null && preg_match('/^- (.+)$/', $trimmed, $m) === 1) {
                 $currentVersion['sections'][$currentSection][] = $m[1];
             }
         }

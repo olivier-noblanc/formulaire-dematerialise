@@ -14,7 +14,7 @@ final class FormTrackingController extends BaseController
 {
     public function handle(): void
     {
-        $user = App::auth()->getUser();
+        App::auth()->getUser();
         $formUuid = trim($_GET['f'] ?? '');
 
         $form = null;
@@ -22,13 +22,14 @@ final class FormTrackingController extends BaseController
             $form = get_form_by_uuid($formUuid);
         }
 
-        if (!$form) {
+        if ($form === null) {
             new \App\Render\ErrorRenderer()->errorPage(
                 404,
                 'Formulaire introuvable',
                 'Le formulaire que vous cherchez n\'existe pas ou a été désactivé.',
                 'Vérifiez l\'adresse dans votre navigateur.' . "\n" . 'Si vous avez suivi un lien, contactez l\'expéditeur pour obtenir le bon lien.'
             );
+            return;
         }
 
         $formId = $form['id'];
@@ -43,6 +44,7 @@ final class FormTrackingController extends BaseController
                 'Vous n\'êtes pas propriétaire de ce formulaire. Seuls les propriétaires désignés et les administrateurs peuvent accéder au tableau de suivi.',
                 'Si vous pensez que vous devriez avoir accès, contactez un administrateur pour vérifier vos droits de propriétaire sur ce formulaire.'
             );
+            return;
         }
 
         $fields = App::validatorData()->getFormFields($formId, FilledBy::Demandeur->value);

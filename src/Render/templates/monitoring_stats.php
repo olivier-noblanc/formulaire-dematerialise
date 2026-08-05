@@ -1,6 +1,6 @@
 <?php
 $avg_label = $avg_days > 0 ? $avg_days . ' j' : $avg_hours . ' h';
-$alert_cls = $active_alerts === '' || $active_alerts === null || $active_alerts === '0' ? 'success' : 'danger';
+$alert_cls = in_array($active_alerts, ['', null, '0'], true) ? 'success' : 'danger';
 $nb_tokens_bloques = count($tokens_bloques);
 $nb_active_alerts  = count($active_alerts);
 ?>

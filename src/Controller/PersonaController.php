@@ -30,7 +30,7 @@ final class PersonaController extends BaseController
 
         if ($action === 'start') {
             $adminEmail = App::auth()->getUser();
-            $targetEmail = strtolower(trim($_POST['email'] ?? $_GET['email'] ?? ''));
+            $targetEmail = strtolower(trim((string) ($_POST['email'] ?? $_GET['email'] ?? '')));
             if ($targetEmail === '') {
                 http_response_code(400);
                 new \App\Render\ErrorRenderer()->errorPage(

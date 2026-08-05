@@ -1,11 +1,19 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * @var bool                                                                                                    $is_admin
+ * @var string                                                                                                  $status
+ * @var list<array{id?: string, email?: string, done_at?: string|null}>                                         $all_tokens
+ */
+
 if (!$is_admin || $status !== \App\Enum\SubmissionStatus::EnCours->value) {
     return '';
 }
 
 $forms_html = '';
 foreach ($all_tokens as $all_token) {
-    if (!empty($all_token['done_at'])) {
+    if ((bool)($all_token['done_at'])) {
         continue;
     }
     $tok_id  = \App\Core\App::html()->escape((string) ($all_token['id'] ?? ''));

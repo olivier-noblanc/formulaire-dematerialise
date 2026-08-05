@@ -93,7 +93,7 @@ class NoSilentCatchRule implements Rule
             $stmts,
             static fn (Node $n): bool => $n instanceof Throw_ || $n instanceof Exit_
         );
-        return $found !== null;
+        return $found instanceof \PhpParser\Node;
     }
 
     private function hasSilentOkMarker(Catch_ $catch): bool

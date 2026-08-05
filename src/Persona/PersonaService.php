@@ -36,6 +36,17 @@ final readonly class PersonaService
     public PersonaTokenRepository $personaTokenRepository;
     public AdminRepository $adminRepository;
 
+    /**
+     * Get service instance from DI container or create one.
+     */
+    public static function getService(): self
+    {
+        if (App::getInstance()->has(self::class)) {
+            return App::getInstance()->get(self::class);
+        }
+        return new self(new Database());
+    }
+
     public function __construct(
         Database $database,
         ?PersonaTokenRepository $personaTokenRepository = null,
@@ -98,7 +109,7 @@ final readonly class PersonaService
                 return '';
             }
 
-            if (!empty($row['revoked_at'])) {
+            if ((bool)($row['revoked_at'])) {
                 return '';
             }
 

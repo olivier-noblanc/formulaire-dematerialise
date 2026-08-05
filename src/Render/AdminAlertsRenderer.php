@@ -108,7 +108,7 @@ final class AdminAlertsRenderer
             $html .= '          <button type="submit" class="btn btn-primary btn-sm-6">Enregistrer</button>' . "\n";
             $html .= '        </form>' . "\n";
 
-            if (!empty($f['deadline_field'])) {
+            if ((bool)($f['deadline_field'])) {
                 $html .= '          <p class="hint-text-5">' . "\n";
                 $html .= '            <span aria-hidden="true">✓</span> Champ date limite : <strong>' . $h($f['deadline_field']) . '</strong>' . "\n";
                 $html .= '          </p>' . "\n";
@@ -133,7 +133,7 @@ final class AdminAlertsRenderer
             $html .= '      <p class="empty-state">Aucune règle d\'alerte configurée. Ajoutez-en une ci-dessous.</p>' . "\n";
         } else {
             foreach ($rules as $rule) {
-                $isInactive = empty($rule['actif']);
+                $isInactive = !((bool)($rule['actif']));
                 $daysCls = $rule['days_before'] <= 2 ? 'urgent' : ($rule['days_before'] === 0 ? 'passed' : '');
 
                 $html .= '        <div class="rule-card ' . ($isInactive ? 'inactive' : '') . '">' . "\n";
@@ -235,7 +235,7 @@ final class AdminAlertsRenderer
         $html .= '          <select name="form_id" required>' . "\n";
         $html .= '            <option value="">— Sélectionner —</option>' . "\n";
         foreach ($forms as $form) {
-            $html .= '            <option value="' . $h($form['id']) . '">' . $h($form['label']) . (empty($form['deadline_field']) ? ' (⚠ pas de champ date)' : '') . '</option>' . "\n";
+            $html .= '            <option value="' . $h($form['id']) . '">' . $h($form['label']) . ((bool)($form['deadline_field']) ? '' : ' (⚠ pas de champ date)') . '</option>' . "\n";
         }
         $html .= '          </select>' . "\n";
         $html .= '        </div>' . "\n";
