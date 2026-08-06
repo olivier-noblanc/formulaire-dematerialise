@@ -43,12 +43,6 @@ parameters:
 			path: src/Controller/MonitoringController.php
 
 		-
-			message: '#^Method call \-\>field\(\) is prohibited on unknown type \(\$renderer\)$#'
-			identifier: shipmonk.methodCallOnMixed
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
 			message: '#^Using \+ over non\-number \(mixed \+ mixed\)$#'
 			identifier: shipmonk.arithmeticOnNonNumber
 			count: 2
@@ -106,12 +100,6 @@ parameters:
 			message: '#^Variable \$progress_html might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Variable \$renderer might not be defined\.$#'
-			identifier: variable.undefined
-			count: 2
 			path: src/Controller/templates/form_content.php
 
 		-
@@ -241,7 +229,7 @@ parameters:
 			path: src/Forms/SampleFormsService.php
 
 		-
-			message: '#^Offset ''recipients'' might not exist on array\{label\: ''Application / SI…'', field_type\: ''text'', field_name\: ''application_si'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Badge accès'', field_type\: ''checkbox'', field_name\: ''badge_acces'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Bilan de départ'', field_type\: ''textarea'', field_name\: ''bilan_depart'', required\: 0, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Bureau / Poste'', field_type\: ''text'', field_name\: ''bureau_poste'', required\: 0, card_group\: ''Affectation''\}\|array\{label\: ''Clôture compte SI'', field_type\: ''checkbox'', field_name\: ''cloture_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Clôture messagerie'', field_type\: ''checkbox'', field_name\: ''cloture_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Coût estimé \(€\)'', field_type\: ''text'', field_name\: ''cout_estime'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Création compte SI'', field_type\: ''checkbox'', field_name\: ''creation_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Création messagerie'', field_type\: ''checkbox'', field_name\: ''creation_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Date d\\''arrivée'', field_type\: ''date'', field_name\: ''date_arrivee'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date de départ'', field_type\: ''date'', field_name\: ''date_depart'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date début'', field_type\: ''date'', field_name\: ''date_debut'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Date fin'', field_type\: ''date'', field_name\: ''date_fin'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Date souhaitée'', field_type\: ''date'', field_name\: ''date_souhaitee'', required\: 0, card_group\: ''Demande''\|''Mutation''\}\|array\{label\: ''Date'', field_type\: ''date'', field_name\: ''date_sortie'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Direction / Service'', field_type\: ''text'', field_name\: ''direction_service'', required\: 1, card_group\: ''Affectation''\}\|array\{label\: ''Direction actuelle'', field_type\: ''text'', field_name\: ''direction_actuelle'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Direction demandée'', field_type\: ''text'', field_name\: ''direction_demandee'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Décision de…'', field_type\: ''select'', field_name\: ''decision_validation'', options\: array\{''Accepté'', ''Accepté avec…'', ''Refusé''\}, required\: 1, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Heure départ'', field_type\: ''text'', field_name\: ''heure_depart'', required\: 1, card_group\: ''Demande'', hint\: ''ex \: 16h30''\}\|array\{label\: ''Intitulé de la…'', field_type\: ''text'', field_name\: ''intitule_formation'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Justificatif'', field_type\: ''file'', field_name\: ''justificatif'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 0, card_group\: ''Demande''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Matériel…'', field_type\: ''select'', field_name\: ''materiel_info'', options\: array\{''PC portable'', ''PC fixe'', ''Tablette'', ''Aucun''\}, required\: 0, card_group\: ''IT''\}\|array\{label\: ''Montant \(€\)'', field_type\: ''text'', field_name\: ''montant'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Motif de départ'', field_type\: ''select'', field_name\: ''motif_depart'', options\: array\{''Démission'', ''Retraite'', ''Mutation sortante'', ''Fin de contrat'', ''Licenciement''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Motif'', field_type\: ''textarea'', field_name\: ''motif'', required\: 1, card_group\: ''Demande''\|''Finance''\|''Matériel''\|''Mutation''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Agent''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Identité'', hint\?\: ''Nom Prénom''\}\|array\{label\: ''Organisme'', field_type\: ''text'', field_name\: ''organisme'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Remarques'', field_type\: ''textarea'', field_name\: ''remarques'', required\: 0, card_group\: ''Divers''\}\|array\{label\: ''Restitution matériel'', field_type\: ''checkbox'', field_name\: ''restitution_materiel'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Type d\\''arrivée'', field_type\: ''select'', field_name\: ''type_arrivee'', options\: array\{''Nouveau recruté'', ''Mutation entrante'', ''Contrat temporaire'', ''Stage''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Création'', ''Modification'', ''Suppression''\}, required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Remboursement'', ''Avance''\}, required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Type de matériel'', field_type\: ''select'', field_name\: ''type_materiel'', options\: array\{''PC portable'', ''PC fixe'', ''Écran'', ''Imprimante'', ''Clavier/Souris'', ''Autre''\}, required\: 1, card_group\: ''Matériel''\}\|array\{label\: ''Validation DRH''\|''Validation DSI''\|''Validation…''\|''Validation manager''\|''Validation manager…''\|''Validation RH'', ordre\: 1\|2\|3\|4, recipients\: array\{''drh@exemple\.invalid''\}\|array\{''dsi@exemple\.invalid''\}\|array\{''logistique@dreets…''\}\|array\{''manager\-accueil…''\}\|array\{''manager@dreets\.gouv…''\}\|array\{''rh@exemple\.invalid''\}\}\|array\{label\: ''Validation…'', ordre\: 2, recipients\: array\{''compta@dreets\.gouv…''\}\}\.$#'
+			message: '#^Offset ''recipients'' might not exist on array\{label\: ''Application / SI…'', field_type\: ''text'', field_name\: ''application_si'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Badge accès'', field_type\: ''checkbox'', field_name\: ''badge_acces'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Bilan de départ'', field_type\: ''textarea'', field_name\: ''bilan_depart'', required\: 0, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Bureau / Poste'', field_type\: ''text'', field_name\: ''bureau_poste'', required\: 0, card_group\: ''Affectation''\}\|array\{label\: ''Clôture compte SI'', field_type\: ''checkbox'', field_name\: ''cloture_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Clôture messagerie'', field_type\: ''checkbox'', field_name\: ''cloture_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Coût estimé \(€\)'', field_type\: ''text'', field_name\: ''cout_estime'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Création compte SI'', field_type\: ''checkbox'', field_name\: ''creation_compte_si'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Création messagerie'', field_type\: ''checkbox'', field_name\: ''creation_messagerie'', required\: 0, card_group\: ''IT''\}\|array\{label\: ''Date d\\''arrivée'', field_type\: ''date'', field_name\: ''date_arrivee'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date de départ'', field_type\: ''date'', field_name\: ''date_depart'', required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Date début'', field_type\: ''date'', field_name\: ''date_debut'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Date fin'', field_type\: ''date'', field_name\: ''date_fin'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Date souhaitée'', field_type\: ''date'', field_name\: ''date_souhaitee'', required\: 0, card_group\: ''Demande''\|''Mutation''\}\|array\{label\: ''Date'', field_type\: ''date'', field_name\: ''date_sortie'', required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Direction / Service'', field_type\: ''text'', field_name\: ''direction_service'', required\: 1, card_group\: ''Affectation''\}\|array\{label\: ''Direction actuelle'', field_type\: ''text'', field_name\: ''direction_actuelle'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Direction demandée'', field_type\: ''text'', field_name\: ''direction_demandee'', required\: 1, card_group\: ''Mutation''\}\|array\{label\: ''Décision de…'', field_type\: ''select'', field_name\: ''decision_validation'', options\: array\{''Accepté'', ''Accepté avec…'', ''Refusé''\}, required\: 1, card_group\: ''Décision'', filled_by\: ''validator'', validator_step\: ''Validation manager''\}\|array\{label\: ''Heure départ'', field_type\: ''text'', field_name\: ''heure_depart'', required\: 1, card_group\: ''Demande'', hint\: ''ex \: 16h30''\}\|array\{label\: ''Intitulé de la…'', field_type\: ''text'', field_name\: ''intitule_formation'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Justificatif'', field_type\: ''file'', field_name\: ''justificatif'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 0, card_group\: ''Demande''\}\|array\{label\: ''Justification'', field_type\: ''textarea'', field_name\: ''justification'', required\: 1, card_group\: ''Formation''\}\|array\{label\: ''Matériel…'', field_type\: ''select'', field_name\: ''materiel_info'', options\: array\{''PC portable'', ''PC fixe'', ''Tablette'', ''Aucun''\}, required\: 0, card_group\: ''IT''\}\|array\{label\: ''Montant \(€\)'', field_type\: ''text'', field_name\: ''montant'', required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Motif de départ'', field_type\: ''select'', field_name\: ''motif_depart'', options\: array\{''Démission'', ''Retraite'', ''Mutation sortante'', ''Fin de contrat'', ''Licenciement''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Motif'', field_type\: ''textarea'', field_name\: ''motif'', required\: 1, card_group\: ''Demande''\|''Finance''\|''Matériel''\|''Mutation''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Agent''\}\|array\{label\: ''Nom complet'', field_type\: ''text'', field_name\: ''nom_complet'', required\: 1, card_group\: ''Identité'', hint\?\: ''Nom Prénom''\}\|array\{label\: ''Organisme'', field_type\: ''text'', field_name\: ''organisme'', required\: 0, card_group\: ''Formation''\}\|array\{label\: ''Remarques'', field_type\: ''textarea'', field_name\: ''remarques'', required\: 0, card_group\: ''Divers''\}\|array\{label\: ''Restitution matériel'', field_type\: ''checkbox'', field_name\: ''restitution_materiel'', required\: 0, card_group\: ''Logistique''\}\|array\{label\: ''Type d\\''arrivée'', field_type\: ''select'', field_name\: ''type_arrivee'', options\: array\{''Nouveau recruté'', ''Mutation entrante'', ''Contrat temporaire'', ''Stage''\}, required\: 1, card_group\: ''Identité''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Création'', ''Modification'', ''Suppression''\}, required\: 1, card_group\: ''Demande''\}\|array\{label\: ''Type de demande'', field_type\: ''select'', field_name\: ''type_demande'', options\: array\{''Remboursement'', ''Avance''\}, required\: 1, card_group\: ''Finance''\}\|array\{label\: ''Type de matériel'', field_type\: ''select'', field_name\: ''type_materiel'', options\: array\{''PC portable'', ''PC fixe'', ''Écran'', ''Imprimante'', ''Clavier/Souris'', ''Autre''\}, required\: 1, card_group\: ''Matériel''\}\|array\{label\: ''Validation DRH''\|''Validation DSI''\|''Validation…''\|''Validation manager''\|''Validation manager…''\|''Validation RH'', ordre\: 1\|2\|3\|4, recipients\: array\{''drh@exemple\.invalid''\}\|array\{''dsi@exemple\.invalid''\}\|array\{''logistique@exemple…''\}\|array\{''manager\-accueil…''\}\|array\{''manager@exemple…''\}\|array\{''rh@exemple\.invalid''\}\}\|array\{label\: ''Validation…'', ordre\: 2, recipients\: array\{''compta@exemple…''\}\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 1
 			path: src/Forms/SampleFormsService.php
@@ -673,24 +661,6 @@ parameters:
 			path: src/Render/ValidateRenderer.php
 
 		-
-			message: '#^Method call \-\>fieldTypeIcon\(\) is prohibited on unknown type \(\$this\)$#'
-			identifier: shipmonk.methodCallOnMixed
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Method call \-\>fieldTypeLabel\(\) is prohibited on unknown type \(\$this\)$#'
-			identifier: shipmonk.methodCallOnMixed
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Method call \-\>optionsToLines\(\) is prohibited on unknown type \(\$this\)$#'
-			identifier: shipmonk.methodCallOnMixed
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
 			message: '#^Variable \$edit_field_id might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -724,12 +694,6 @@ parameters:
 			message: '#^Variable \$steps might not be defined\.$#'
 			identifier: variable.undefined
 			count: 2
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Variable \$this might not be defined\.$#'
-			identifier: variable.undefined
-			count: 3
 			path: src/Render/templates/adminForms_formFieldsSection.php
 
 		-
@@ -1817,18 +1781,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
-			identifier: shipmonk.comparingNonComparableTypes
-			count: 1
-			path: src/Render/templates/monitoring_daily_activity.php
-
-		-
-			message: '#^Using / over non\-number \(int / mixed\)$#'
-			identifier: shipmonk.arithmeticOnNonNumber
-			count: 1
-			path: src/Render/templates/monitoring_daily_activity.php
 
 		-
 			message: '#^Variable \$daily_stats might not be defined\.$#'

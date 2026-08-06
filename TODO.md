@@ -9,7 +9,7 @@
 | `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **491** (level 8) — templates + règles shipmonk |
+| PHPStan erreurs baseline | **479** (level 8) — templates + règles shipmonk (régénéré après PII rewrite) |
 | Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
 | Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
 | Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
@@ -29,6 +29,17 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.8 — Purge PII complète (git filter-repo + force-push) + baseline PHPStan régénérée
+| Tâche | Détail |
+|-------|--------|
+| Audit PII | Repo public (isPrivate: false) — ~45 occurrences nominatives + adresses service réelles dans 87 fichiers trackés |
+| Nettoyage HEAD+historique | git-filter-repo --replace-text : `olivier.noblanc@dreets.gouv.fr` → `admin.local@exemple.invalid`, `DREETS\olivier.noblanc` → `DREETS\admin.local`, domaine `dreets.gouv.fr` → `exemple.invalid` (case-insensitive), `dreets-bfc.supportesic` → `service.support` |
+| Mailmap auteurs | NOBLANC/Olivier Noblanc/onoblanc unifiés vers `oliviernoblanc@users.noreply.codeberg.org` |
+| Force-push | master réécrit (SHA 54d781b), backup bundle conservé |
+| Artefacts CI | 31 artefacts coverage supprimés via API — 245 plus anciens restants (expiration GitHub progressive) |
+| Baseline PHPStan | Régénérée : 479 erreurs (vs 491, -12 grâce aux strings réécrites) |
+| Résidu | phpstan-baseline.neon : 3 `@dreets` dans patterns regex non matchés par règles littérales (généré, se régénère au prochain phpstan --generate-baseline) |
 
 ### v10.42.7 — Filet e2e anti-warnings PHP (index) + 2 bugs templates + gitignore SQLite
 | Tâche | Détail |

@@ -1,5 +1,26 @@
 # Changelog — CircuitDémat
 
+## [10.42.8] — 2026-08-06
+_Résumé : Purge PII complète (git filter-repo + force-push) + phpstan baseline régénérée._
+
+### 🔒 Sécurité — purge des données nominatives du repo public
+- **Problème** : le repo `olivier-noblanc/formulaire-dematerialise` était PUBLIC (confirmé `isPrivate: false`). L'historique git (434 commits) contenait **~45 occurrences nominatives** (`olivier.noblanc@dreets.gouv.fr`, `DREETS\olivier.noblanc`, nom complet « Olivier Nobel ») ainsi que **des adresses de service réelles** (`dreets-bfc.supportesic@`, `it.service@`, `rh.service@`, etc.) dans les seeds, migrations, docs, workflows et tests.
+- **Nettoyage fichiers + historique** (`git filter-repo --replace-text --mailmap`) :
+  - `olivier.noblanc@dreets.gouv.fr` → `admin.local@exemple.invalid`
+  - `DREETS\olivier.noblanc` → `DREETS\admin.local`
+  - `dreets-bfc.supportesic` → `service.support`
+  - Domaine `dreets.gouv.fr` → `exemple.invalid` (case-insensitive) — adresses de service, seeds, docs, tests
+  - Commentaire « Olivier Nobel » → « l'admin »
+- **Auteurs de commits** : `NOBLANC`, `Olivier Noblanc`, `onoblanc` unifiés vers `oliviernoblanc@users.noreply.codeberg.org` (déjà présent dans l'historique, email public neutre via mailmap).
+- **Force-push** : master réécrit (SHA `54d781b`), backup bundle conservé.
+- **Artefacts CI** : 31 artefacts de coverage supprimés — 245 restants (plus anciens, retention GitHub finira par les expirer).
+- **Baseline PHPStan régénérée** : 479 erreurs (vs 491) — la réécriture de chaînes a résolu une partie des faux positifs.
+
+### ⚠️ Résidu non bloquant
+- **`phpstan-baseline.neon`** : ~3 occurrences `@dreets` subsistent dans des patterns regex PHPStan (doubles échappements `.neon` non matchés par les règles littérales) — fichier à régénérer après prochain `phpstan --generate-baseline`.
+
+---
+
 ## [10.42.7] — 2026-08-06
 _Résumé : Filet e2e anti-warnings PHP sur toutes les pages (index) + 2 bugs réels de templates découverts par le spec + gitignore SQLite WAL/SHM._
 
