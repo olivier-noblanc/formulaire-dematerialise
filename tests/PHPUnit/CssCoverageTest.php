@@ -528,12 +528,15 @@ final class CssCoverageTest extends TestCase
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  InstallRenderer → install_page.css
+    //  InstallRenderer → page_css.php (template install)
+    //  NOTE : le CSS de la page d'install est servi inline par InstallRenderer
+    //  depuis src/Render/templates/install/page_css.php (lib/install_page.css
+    //  était un orphelin jamais servi — supprimé 2026-08-06).
     // ═══════════════════════════════════════════════════════════════
 
     public function testInstallRendererCssCoverage(): void
     {
-        $cssClasses = $this->extractCssClassesFromFile(__DIR__ . '/../../lib/install_page.css');
+        $cssClasses = $this->extractCssClassesFromFile(__DIR__ . '/../../src/Render/templates/install/page_css.php');
 
         $renderer = new InstallRenderer();
 

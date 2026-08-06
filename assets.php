@@ -82,7 +82,7 @@ if ($type === 'js') {
 // $type est forcément 'css' ici (le cas 'js' a déjà été traité + exit ci-dessus,
 // et les types invalides ont été rejetés par in_array plus haut).
 else {
-    $sections = ['tokens', 'layout', 'components', 'forms', 'responsive', 'features', 'onboarding', 'pages'];
+    $sections = ['tokens', 'layout', 'components', 'forms', 'responsive', 'features', 'onboarding', 'pages', 'utility'];
     // CSS spécifiques à certaines pages (anciennement inline via $page_css)
     // TOUS les fichiers *_page.css sont inclus ici — sinon les pages perdent
     // leur CSS spécifique (bug introduit quand $page_css a été deprecated).

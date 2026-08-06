@@ -1,5 +1,23 @@
 # Changelog — CircuitDémat
 
+## [10.42.10] — 2026-08-06
+_Résumé : Fix CSS jamais servi (style_utility.css absent d'assets.php) + test de couverture des assets CSS._
+
+### 🐛 Bug fix — classes utilitaires jamais servies (bouton « Supprimer » en style navigateur brut)
+- **Problème** : `assets.php` concaténait 8 sections `style_*.css` mais **oubliait `utility`** → `lib/style_utility.css` (classes `styled-box-*`, `text-danger`/`text-success`/`text-warning`, etc.) n'était **jamais** servi. Résultat vérifié au rendu (Playwright) : le bouton « Supprimer » d'admin_forms s'affichait en style navigateur par défaut (fond `rgb(240,240,240)`, bordure noire, curseur `default`) au lieu du rouge `#c0392b` — et toutes les classes sémantiques du design system étaient inopérantes sur toutes les pages.
+- **Pourquoi `CssCoverageTest` n'a pas attrapé le bug** : il vérifie que les classes HTML existent dans les **fichiers** `lib/*.css` (lecture directe), pas que ces fichiers sont **chargés** par `assets.php`.
+- **Fix** :
+  - `assets.php` : ajout de `'utility'` à `$sections`.
+  - `lib/install_page.css` : supprimé (orphelin — le CSS de la page d'install est servi par `InstallRenderer` depuis `src/Render/templates/install/page_css.php`, qui contient toutes ses classes). `CssCoverageTest::testInstallRendererCssCoverage` pointe désormais sur le template réellement servi.
+- **Tests** :
+  - `tests/PHPUnit/AssetsCssCoverageTest.php` (nouveau) : vérifie que chaque `lib/style_*.css` a sa section dans `$sections` d'assets.php, et chaque `lib/*_page.css` est dans `$pageCssFiles` **ou** chargé par un renderer (`pageCss()`). Sans le fix, échoue sur `style_utility` et `install_page`.
+
+### 🧪 Vérifications
+- PHPUnit : **1419 tests, 0 failure** (3:26).
+- Blob CSS servi en local (assets.php?type=css) : `.styled-box-6` présent, 183 823 octets.
+
+---
+
 ## [10.42.9] — 2026-08-06
 _Résumé : Fix régression admin_forms (sections steps/champs/owners vides) + Playwright migré sur MS Edge (channel msedge)._
 
