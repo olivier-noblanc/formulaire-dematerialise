@@ -386,10 +386,11 @@ jobs:
           key: composer-${{ hashFiles('composer.json') }}
           restore-keys: composer-
       - run: composer update --no-interaction --prefer-dist --no-scripts
-      - name: Create config.php + db dir
+      - name: Create config.php + db dir + session dir
         run: |
           echo "$CI_CONFIG" > config.php
           mkdir -p db
+          mkdir -p /tmp/php-sessions
       - name: test_all.php
         run: php tests/test_all.php
       - name: test_mail_escaping.php

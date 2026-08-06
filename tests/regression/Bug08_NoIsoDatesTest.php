@@ -110,25 +110,25 @@ function run_bug08_test(): bool {
     else $failures[] = $r['msg'];
 
     // ── 4. DashboardRenderer.php — $submitted_ts doit utiliser date('d/m/Y', ...) ──
-    $r = bug08_check_date_format(
-        $root . '/src/Render/DashboardRenderer.php',
+        $r = bug08_check_date_format(
+        $root . '/src/Render/DashboardTableRenderer.php',
         '$submitted_ts',
         '/date\s*\(\s*[\'"]d\/m\/Y[\'"]/',
         '',
-        'DashboardRenderer.php : submitted_at'
+        'DashboardTableRenderer.php : submitted_at'
     );
-    if ($r['ok']) $successes[] = 'DashboardRenderer.php (submitted_at)';
+    if ($r['ok']) $successes[] = 'DashboardTableRenderer.php (submitted_at)';
     else $failures[] = $r['msg'];
 
-    // ── 5. DashboardRenderer.php — $val_date_ts doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 5. submission_detail.php — $val_date_ts doit utiliser date('d/m/Y à H:i', ...) ──
     $r = bug08_check_date_format(
-        $root . '/src/Render/DashboardRenderer.php',
+        $root . '/src/Render/templates/submission_detail.php',
         '$val_date_ts',
         '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*\$val_date_ts/',
         '',
-        'DashboardRenderer.php : val_date_ts'
+        'submission_detail.php : val_date_ts'
     );
-    if ($r['ok']) $successes[] = 'DashboardRenderer.php (val_date_ts)';
+    if ($r['ok']) $successes[] = 'submission_detail.php (val_date_ts)';
     else $failures[] = $r['msg'];
 
     // ── 6. MyValidationsRenderer.php — « Soumis le » doit utiliser date('d/m/Y à H:i', ...) ──

@@ -169,7 +169,7 @@ final class IndexRenderer
         $slug  = \App\Core\App::html()->escape((string) ($form['slug'] ?? ''));
         $label = \App\Core\App::html()->escape((string) ($form['label'] ?? ''));
         $desc  = '';
-        if ((bool)($form['description'])) {
+        if ((bool) ($form['description'] ?? false)) {
             $desc = \App\Core\App::html()->escape((string) $form['description']);
         }
         return ['slug' => $slug, 'label' => $label, 'desc' => $desc];

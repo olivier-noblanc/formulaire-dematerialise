@@ -17,6 +17,7 @@ define('BASE_URL', 'http://localhost');
 define('SETTINGS_DEFAULTS', [
     'smtp_host' => '', 'smtp_port' => '25',
     'smtp_from' => 'test@localhost', 'smtp_from_name' => 'CircuitDemat',
+    'admin_email' => 'admin@localhost', 'email_domain' => 'localhost',
     'app_name' => 'CircuitDémat',
 ]);
 
