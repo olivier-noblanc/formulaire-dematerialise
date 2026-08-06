@@ -5,12 +5,17 @@ namespace App\Docs;
 
 class DocumentationService
 {
-    private function loadTemplate(string $filename): string
+    /**
+     * @param array<string, string> $vars variables extraites avant include
+     */
+    private function loadTemplate(string $filename, array $vars = []): string
     {
         $filepath = __DIR__ . '/templates/' . $filename;
         if (!file_exists($filepath)) {
             throw new \RuntimeException("Template not found: {$filepath}");
         }
+        extract($vars);
+        unset($vars);
         ob_start();
         include $filepath;
         $html = ob_get_clean();
@@ -73,7 +78,7 @@ class DocumentationService
             error_log('DocumentationService::renderRgpd legal_mentions error: ' . $e->getMessage());
         }
 
-        return $this->loadTemplate('renderRgpd_section.php');
+        return $this->loadTemplate('renderRgpd_section.php', ['legal_mentions' => $legal_mentions]);
     }
 
     public function renderTechnique(): string

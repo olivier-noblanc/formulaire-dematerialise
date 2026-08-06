@@ -30,6 +30,14 @@
 
 ## ✅ Terminé (historique)
 
+### v10.42.7 — Filet e2e anti-warnings PHP (index) + 2 bugs templates + gitignore SQLite
+| Tâche | Détail |
+|-------|--------|
+| Nouveau e2e | `tests/e2e/index_pages_no_warning.spec.js` : 7 pages (/, health, docs, form onboarding, admin settings, monitoring, mes soumissions) — 200 + corps sans warning + stderr sans erreur. Header `AUTH_USER` + env `E2E_ADMIN_AUTH` (les admins locaux sont seedés par email ; `DREETS\admin` n'existe qu'en CI). 21 assertions, 0 échec local. Enregistré dans run_all.js |
+| Bug FormRenderer | `$aria_attr` calculée mais absente du tableau `$vars` → warning « Undefined variable: aria_attr » sur chaque champ. Fix : `'aria_attr' => $aria_attr` ajouté |
+| Bug DocumentationService | `renderRgpd()` sans `$legal_mentions` + `loadTemplate()` sans param vars → warning sur la page docs. Fix : signature `loadTemplate($filename, array $vars = [])` + `extract($vars)` |
+| gitignore | Patterns `*.db-shm`/`*.db-wal` ajoutés (artefacts SQLite WAL/SHM non couverts par `*.db`) |
+
 ### v10.42.6 — Fix CSS corrompu (filemtime warning) + tests durcis
 | Tâche | Détail |
 |-------|--------|

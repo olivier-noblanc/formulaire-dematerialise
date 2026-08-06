@@ -1,5 +1,23 @@
 # Changelog — CircuitDémat
 
+## [10.42.7] — 2026-08-06
+_Résumé : Filet e2e anti-warnings PHP sur toutes les pages (index) + 2 bugs réels de templates découverts par le spec + gitignore SQLite WAL/SHM._
+
+### 🧪 Nouveau e2e — `tests/e2e/index_pages_no_warning.spec.js`
+- Vérifie 7 pages (`/`, health, docs, form onboarding, admin settings, monitoring, mes soumissions) : HTTP 200 + corps sans warning PHP + stderr sans erreur (`capturePhpErrors`).
+- Authentification Windows simulée : `httpGet()` envoie le header `AUTH_USER` (`process.env.E2E_ADMIN_AUTH`, défaut `DREETS\admin`) — les pages admin répondent 200 en local comme en CI (les admins locaux sont seedés par email, `DREETS\admin` n'existe qu'en CI).
+- Enregistré dans `run_all.js` (2e spec, après smoke). **21 assertions, 0 échec** en local.
+
+### 🐛 Bug fix — 2 warnings PHP réels découverts par le spec
+- **`FormRenderer.php`** : `$aria_attr` était calculée (l.110-116) mais **absente du tableau `$vars`** passé à `loadTemplate()` → warning « Undefined variable: aria_attr » sur chaque champ rendu (templates `form_field_*`). Fix : ajout de `'aria_attr' => $aria_attr` au tableau.
+- **`DocumentationService.php`** : `renderRgpd()` appelait `loadTemplate('renderRgpd_section.php')` **sans passer `$legal_mentions`**, et `loadTemplate(string $filename)` faisait un `include` sans vars → warning « Undefined variable: legal_mentions » sur la page docs. Fix : signature `loadTemplate(string $filename, array $vars = [])` + `extract($vars)` + `unset($vars)` (pattern FormRenderer), appel avec `['legal_mentions' => $legal_mentions]`.
+- Ces warnings étaient **invisibles en prod** (`display_errors=Off`) mais polluaient le corps HTTP en dev — le spec les attrape désormais (corps + stderr).
+
+### 🧹 Divers
+- **`.gitignore`** : patterns `*.db-shm` / `*.db-wal` ajoutés (artefacts SQLite non couverts par `*.db` → `?? db/` permanent en local après les tests).
+
+---
+
 ## [10.42.6] — 2026-08-06
 _Résumé : Fix CSS corrompu par warning `filemtime()` au 1er hit après déploiement + durcissement des tests qui ne le détectaient pas._
 

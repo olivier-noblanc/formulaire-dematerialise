@@ -131,6 +131,7 @@ final class FormRenderer
             'label'           => $label,
             'req_span'        => $req_span,
             'required_attr'   => $required_attr,
+            'aria_attr'       => $aria_attr,
             'error_class'     => $error_class,
             'disabled_attr'   => $disabled_attr,
             'auto_hint_html'  => $auto_hint_html,
