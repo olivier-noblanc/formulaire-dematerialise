@@ -1,6 +1,25 @@
 # Changelog — CircuitDémat
 
-## [10.42.10] — 2026-08-06
+## [10.42.11] — 2026-08-06
+_Résumé : Cache-busting des assets par version (enum `AssetType` de bout en bout) — corrige le CSS/JS périmé servi par le cache navigateur pendant 24 h._
+
+### 🐛 Bug fix — assets servis en cache navigateur périmé pendant 24 h (boutons en style brut après déploiement)
+- **Problème** : `assets.php?type=css|js` était référencé **sans paramètre de version** et servait `Cache-Control: public, max-age=86400, must-revalidate` (24 h). Après un déploiement, le navigateur gardait l'ancien blob CSS/JS jusqu'à expiration — vérifié en prod : le footer affichait `v10.42.10` mais le CSS servi était encore le blob `v10.42.7` (bouton « Supprimer » et barre d'action my_submissions en style navigateur brut).
+- **Fix** :
+  - `src/Enum/AssetType.php` (nouveau) : enum string `Css = 'css'` / `Js = 'js'` — **liste fermée de valeurs portée par un enum** (règle AGENTS.md #12), plus aucune chaîne littérale.
+  - `src/Render/HtmlService.php` : `assetUrl(AssetType $type, string $file = '')` → `assets.php?type=…&v=<version CHANGELOG>`.
+  - `assets.php` : validation du type via `AssetType::tryFrom()` ; autoloader chargé sans `helpers.php` (pas de `session_start()` sur les assets).
+  - `src/Render/PageRenderer.php` (CSS + JS app), `src/Render/templates/form_content.php` (form-progress, form-conditions) : URLs via `assetUrl()` → toute nouvelle version CHANGELOG invalide le cache navigateur.
+  - `src/Render/NavigationRenderer.php` + `assets/persona.js` (nouveau) : le JS inline du dropdown persona (`templates/persona_js.php`, supprimé) devient un asset externe servi avec nonce CSP — même cache-busting.
+- **Tests** :
+  - `tests/test_assets_cache.php` : checks mis à jour en regex `assets.php?type=css&v=X.Y.Z` (index.php) et `file=form-progress|form-conditions&v=X.Y.Z` (form.php).
+
+### 🧪 Vérifications
+- PHPUnit : **1419 tests, 0 failure** (3:24).
+- test_assets_cache : **21/21** — assets versionnés + cache HTTP (ETag, 304) OK.
+- Blob CSS servi en local : `.styled-box-6` présent.
+
+---
 _Résumé : Fix CSS jamais servi (style_utility.css absent d'assets.php) + test de couverture des assets CSS._
 
 ### 🐛 Bug fix — classes utilitaires jamais servies (bouton « Supprimer » en style navigateur brut)

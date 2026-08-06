@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\AssetType;
 
 /**
  * Navigation rendering — header, nav, breadcrumb, footer, page wrapper.
@@ -212,15 +213,12 @@ final class NavigationRenderer
      */
     public function footer(): string
     {
-        ob_start();
         $script_nonce = App::security()->getScriptNonce();
-        require __DIR__ . '/templates/persona_js.php';
-        $persona_js = (string) ob_get_clean();
 
         return '</div><!-- /.content -->'
              . '</div><!-- /.main-area -->'
              . '</div><!-- /.app-layout -->'
-             . $persona_js
+             . '<script src="' . App::html()->assetUrl(AssetType::Js, 'persona') . '" nonce="' . $script_nonce . '"></script>'
              . '<footer>'
              . '<a href="index.php?p=changelog" title="Voir le journal des modifications">v' . App::html()->escape(get_latest_version()) . '</a>'
              . ' · ' . App::html()->escape(self::getAppName())

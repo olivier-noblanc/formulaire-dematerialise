@@ -12,7 +12,7 @@ declare(strict_types=1);
  *
  * Usage : php tests/test_assets_cache.php
  *
- * Prérequis : un serveur PHP -S doit tourner sur 127.0.0.1:8899 (démarré par le test).
+ * Prérequis : un serveur PHP -S doit tourner sur 127.0.0.1:8767 (démarré par le test).
  */
 
 require_once __DIR__ . '/test_bootstrap.php';
@@ -76,8 +76,10 @@ function http_get(string $url, array $headers = []): array {
 // ── Démarrer un serveur PHP -S ──
 $projectRoot = dirname(__DIR__);
 $phpBin = PHP_BINARY;
-// Tuer tout serveur existant
-exec('pkill -9 -f "php -S 127.0.0.1:8899" 2>/dev/null');
+// Port dans la plage de test 8760-8799 (kill_port() refuse hors plage)
+$PORT = 8767;
+// Tuer tout serveur existant sur ce port (cross-platform : netstat+taskkill sur Windows)
+kill_port($PORT);
 sleep(1);
 
 // Purger le cache CSS : reproduit le scénario "cache froid" (1er hit après
@@ -92,12 +94,20 @@ foreach (glob($projectRoot . '/db/cache/assets_css_*.css') ?: [] as $cacheFile) 
 // corps HTTP QUE si display_errors est On. En CI (php.ini production, Off par
 // défaut) le warning part dans les logs serveur et le test ne peut rien voir.
 // Avec display_errors=1, tout warning pollue le corps → l'assertion Test 2 le détecte.
-$serverCmd = "$phpBin -d display_errors=1 -d error_reporting=E_ALL -S 127.0.0.1:8899 -t "
-    . escapeshellarg($projectRoot) . " > /dev/null 2>&1 &";
-exec($serverCmd);
+// Démarrage cross-platform (pattern tests/e2e/start_server.php : COM sur Windows,
+// background & sur Linux — shell_exec("... &") BLOQUE sous cmd.exe, ne jamais l'utiliser).
+$serverCmd = $phpBin . ' -d display_errors=1 -d error_reporting=E_ALL -S 127.0.0.1:' . $PORT
+    . ' -t ' . escapeshellarg($projectRoot)
+    . ' > ' . escapeshellarg(test_temp_dir() . '/php_server_assets.log') . ' 2>&1';
+if (PHP_OS_FAMILY === 'Windows') {
+    $wsh = new COM('WScript.Shell');
+    $wsh->Run('cmd /c ' . $serverCmd, 0, false);
+} else {
+    shell_exec($serverCmd . ' &');
+}
 sleep(2);
 
-$baseUrl = 'http://127.0.0.1:8899';
+$baseUrl = 'http://127.0.0.1:' . $PORT;
 
 // ── Test 1 : Aucun asset online dans le HTML ──
 echo "\n── Test 1 : Aucun asset online (CDN, Google Fonts, etc.) ──\n";
@@ -223,9 +233,9 @@ echo "\n── Test 6 : Pages HTML référencent assets.php via <link> ──\n"
 $respIndex = http_get($baseUrl . '/index.php', ['AUTH_USER: DREETS\admin']);
 $indexHtml = $respIndex['body'];
 
-$hasLinkToAssets = strpos($indexHtml, '<link rel="stylesheet" href="assets.php?type=css">') !== false
-    || strpos($indexHtml, "href='assets.php?type=css'") !== false;
-check("index.php référence <link> vers assets.php?type=css", $hasLinkToAssets);
+$hasLinkToAssets = preg_match('/<link rel="stylesheet" href="[^"]*assets\.php\?type=css&v=\d+\.\d+\.\d+">/', $indexHtml) === 1
+    || preg_match("/href='[^']*assets\.php\?type=css&v=\d+\.\d+\.\d+'/", $indexHtml) === 1;
+check("index.php référence <link> vers assets.php?type=css&v=<version>", $hasLinkToAssets);
 
 // Vérifier qu'il n'y a PLUS de <style> global (le gros bloc CSS inline)
 // On accepte les petits <style> pour le page_css spécifique, mais pas le gros bloc style.php
@@ -244,9 +254,9 @@ echo "\n── Test 7 : form.php référence les JS via assets.php ──\n";
 $respForm = http_get($baseUrl . '/index.php?p=form&f=onboarding', ['AUTH_USER: DREETS\admin']);
 $formHtml = $respForm['body'];
 
-$hasJsViaAssets = strpos($formHtml, 'assets.php?type=js&file=form-progress') !== false
-    && strpos($formHtml, 'assets.php?type=js&file=form-conditions') !== false;
-check("form.php référence les JS via assets.php?type=js", $hasJsViaAssets);
+$hasJsViaAssets = preg_match('/assets\.php\?type=js&file=form-progress&v=\d+\.\d+\.\d+/', $formHtml) === 1
+    && preg_match('/assets\.php\?type=js&file=form-conditions&v=\d+\.\d+\.\d+/', $formHtml) === 1;
+check("form.php référence les JS via assets.php?type=js&v=<version>", $hasJsViaAssets);
 
 // Vérifier qu'il n'y a PLUS de références directes à assets/*.js
 $hasDirectJsRef = strpos($formHtml, 'src="assets/form-progress.js"') !== false
@@ -254,7 +264,7 @@ $hasDirectJsRef = strpos($formHtml, 'src="assets/form-progress.js"') !== false
 check("form.php ne référence plus assets/*.js directement", !$hasDirectJsRef);
 
 // ── Nettoyage ──
-exec('pkill -9 -f "php -S 127.0.0.1:8899" 2>/dev/null');
+kill_port($PORT);
 
 // ── Résumé ──
 echo "\n═══════════════════════════════════════════════════\n";

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\AssetType;
 
 /**
  * Page rendering — full HTML page composition.
@@ -57,7 +58,7 @@ final class PageRenderer
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= $full_title ?></title>
   <?= NavigationRenderer::favicon() ?>
-  <link rel="stylesheet" href="assets.php?type=css">
+  <link rel="stylesheet" href="<?= App::html()->assetUrl(AssetType::Css) ?>">
 </head>
 <body<?= $body_attr ? ' ' . $body_attr : '' ?>>
 <a href="#main-content" class="skip-link">Aller au contenu principal</a>
@@ -68,7 +69,7 @@ final class PageRenderer
 </main>
 <?= $after_main ?>
 <?= new NavigationRenderer()->footer() ?>
-<script src="assets.php?type=js&file=app" nonce="<?= App::security()->getScriptNonce() ?>"></script>
+<script src="<?= App::html()->assetUrl(AssetType::Js, 'app') ?>" nonce="<?= App::security()->getScriptNonce() ?>"></script>
 </body>
 </html>
         <?php

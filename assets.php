@@ -29,12 +29,19 @@ declare(strict_types=1);
 ini_set('default_mimetype', '');
 ini_set('default_charset', 'UTF-8');
 
+// ── Charger l'autoload PSR-4 pour pouvoir utiliser les enums ──
+// (on ne charge PAS helpers.php ici — on veut éviter session_start()
+// pour les assets statiques ; on charge seulement l'autoloader)
+require_once __DIR__ . '/vendor/autoload.php';
+
+use App\Enum\AssetType;
+
 // ── Sécurité : empêcher l'accès direct aux fichiers PHP sensibles ──
-$type = $_GET['type'] ?? '';
 $file = $_GET['file'] ?? '';
 
-// Valider le type tôt (avant de charger helpers.php)
-if (!in_array($type, ['css', 'js'], true)) {
+// Valider le type via l'enum
+$type = AssetType::tryFrom($_GET['type'] ?? '');
+if ($type === null) {
     http_response_code(400);
     header('Content-Type: text/plain; charset=UTF-8');
     echo 'Type invalide. Utilisez ?type=css ou ?type=js&file=<name>';
@@ -43,7 +50,7 @@ if (!in_array($type, ['css', 'js'], true)) {
 
 // ── Pour le JS, on n'a pas besoin de helpers.php — servir directement ──
 // (évite le coût de session_start() + send_security_headers() pour un fichier statique)
-if ($type === 'js') {
+if ($type === AssetType::Js) {
     // Valider le nom du fichier (sécurité : pas de path traversal)
     if (preg_match('/^[a-zA-Z0-9_-]+$/', $file) !== 1) {
         http_response_code(400);

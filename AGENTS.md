@@ -363,6 +363,7 @@ Pour toute nouvelle fonctionnalité impliquant un champ obligatoire, un import/e
 **Corollaire découvert en pratique** : la règle s'applique de façon récursive — une correction n'est pas vérifiée du seul fait qu'elle corrige le diagnostic initial. Après avoir identifié la vraie cause d'un échec, le correctif proposé doit lui-même être exécuté, pas seulement écrit et jugé plausible. Une explication de ce qui n'a pas marché n'est pas une preuve que la solution proposée, elle, marche.
 
 ### Checklist avant de clore une tâche
+10. Liste fermée de valeurs (type, statut, enum-like) → enum dans `src/Enum/` référencé partout, pas de chaînes dupliquées
 
 1. Grep le champ/colonne/clé dans tout le dépôt
 2. Pas de liste de valeurs dupliquée
@@ -375,6 +376,13 @@ Pour toute nouvelle fonctionnalité impliquant un champ obligatoire, un import/e
 9. Tout `catch` sur chemin d'écriture/audit relance l'exception ou surface l'échec — jamais `error_log()` muet
 
 ### 11. Avant de supprimer une méthode "morte en prod", grep aussi dans les tests
+### 12. Pas de string magiques pour une liste fermée de valeurs — enum obligatoire
+
+**Règle** : dès qu'une valeur appartient à une liste fermée (type d'asset, type de champ, statut, opérateur, action), elle doit être portée par un `enum` dans `src/Enum/` (ex. `AssetType`, `FieldType`) et référencée via cet enum partout — y compris la validation des entrées (`tryFrom()`), jamais une chaîne littérale recopiée dans un controller, un renderer ou un test.
+
+**Pourquoi** : les chaînes littérales se désynchronisent entre fichiers (une liste d'opérateurs existait en 3 exemplaires légèrement différents) et ni PHPStan ni les tests ne détectent une valeur orpheline. L'enum garantit une seule source de vérité typée, détectable à la compilation.
+
+**Action** : à chaque nouvelle liste fermée de valeurs, créer l'enum dans `src/Enum/` (pattern `src/Enum/FieldType.php`) et l'utiliser de bout en bout (assets.php, renderers, tests). Ne jamais écrire la chaîne en dur ailleurs que dans la définition de l'enum.
 
 **Règle** : quand une méthode est confirmée morte en production (zero callers dans `src/`), vérifier aussi son usage dans `tests/` avant de la supprimer. Un usage test-only n'est pas une preuve de vie en prod, mais c'est un usage qui va casser au moment de la suppression — à anticiper, pas à découvrir en cours de route.
 

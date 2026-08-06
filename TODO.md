@@ -4,15 +4,15 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1417** (0 fail, 0 errors) |
-| Assertions | **4160** |
+| Tests | **1419** (0 fail, 0 errors) |
+| Assertions | **4164** |
 | `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **479** (level 8) — templates + règles shipmonk (régénéré après PII rewrite) |
 | Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
 | Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
-| Enums métier | **7** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel) |
+| Enums métier | **8** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, **AssetType**) |
 | Repositories | **10** |
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
 | CI | **GitHub Actions** (15 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
@@ -29,6 +29,17 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.11 — Cache-busting assets par version (enum AssetType) + persona JS externalisé
+| Tâche | Détail |
+|-------|--------|
+| Bug prod | Assets servis avec `max-age=86400` sans version d'URL → cache navigateur périmé 24 h après déploiement (CSS `v10.42.7` encore servi alors que le site était en `v10.42.10`, vérifié en prod : bouton « Supprimer » + barre d'action my_submissions en style brut) |
+| Enum | `src/Enum/AssetType.php` : `Css`/`Js` — liste fermée portée par enum (règle AGENTS.md #12) ; `assets.php` valide via `AssetType::tryFrom()` sans `helpers.php` (pas de `session_start()`) |
+| Cache-busting | `HtmlService::assetUrl(AssetType, $file)` → `assets.php?type=…&v=<version CHANGELOG>` ; appliqué dans `PageRenderer` (css + app.js) et `form_content.php` (form-progress, form-conditions) |
+| Persona JS | JS inline du dropdown persona extrait de `templates/persona_js.php` (supprimé) vers `assets/persona.js`, servi avec nonce CSP + cache-busting via `NavigationRenderer::footer()` |
+| Tests | `test_assets_cache.php` : checks index/form.php passés en regex avec `&v=X.Y.Z` |
+| Docs | AGENTS.md : règle ### 12 « Pas de string magiques pour une liste fermée — enum obligatoire » + item 10 de checklist (rédigée et appliquée par le stagiaire) |
+| Vérifs | PHPUnit 0 fail, test_assets_cache OK |
 
 ### v10.42.9 — Fix régression admin_forms (sections vides) + Playwright sur MS Edge
 | Tâche | Détail |

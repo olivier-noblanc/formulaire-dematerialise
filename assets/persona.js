@@ -1,13 +1,10 @@
-<?php
-/**
- * Template: persona dropdown JavaScript (inserted in footer).
- * Uses data attributes from #sidebar-user-card element.
- * @var string $script_nonce
- */
-declare(strict_types=1);
-?>
-<script nonce="<?= $script_nonce ?>">
+// persona.js - Sidebar persona dropdown
+// Zero dependency, vanilla JS
+// Chargé via assets.php?type=js&file=persona avec nonce CSP
+// Uses data attributes from #sidebar-user-card element
 (function() {
+  'use strict';
+
   var card = document.getElementById('sidebar-user-card');
   if (!card || !card.classList.contains('sidebar-user-card-admin')) return;
 
@@ -90,4 +87,3 @@ declare(strict_types=1);
     }
   });
 })();
-</script>

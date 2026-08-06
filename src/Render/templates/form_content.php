@@ -103,6 +103,6 @@
       </div>
     <?php endif; ?>
   </form>
-  <script src="assets.php?type=js&file=form-progress" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
-  <script src="assets.php?type=js&file=form-conditions" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
+  <script src="<?= \App\Core\App::html()->assetUrl(\App\Enum\AssetType::Js, 'form-progress') ?>" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
+  <script src="<?= \App\Core\App::html()->assetUrl(\App\Enum\AssetType::Js, 'form-conditions') ?>" nonce="<?= \App\Core\App::security()->getScriptNonce() ?>"></script>
 <?php endif; ?>

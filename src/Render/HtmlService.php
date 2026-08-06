@@ -6,6 +6,7 @@ namespace App\Render;
 
 use App\Contract\HtmlInterface;
 use App\Core\App;
+use App\Enum\AssetType;
 
 /**
  * Service de rendu HTML — échappement, icônes, jargon.
@@ -177,6 +178,21 @@ final class HtmlService implements HtmlInterface
             $html .= '<a href="' . $this->h($base_url . $sep . 'page=' . ($page + 1)) . '" class="btn btn-secondary btn-sm-4">Suivant →</a>';
         }
         return $html . '</div>';
+    }
+
+    /**
+     * URL d'un asset avec cache-busting par version (CHANGELOG).
+     *
+     * @param AssetType $type Type d'asset (css ou js)
+     * @param string $file Nom du fichier JS (vide pour CSS)
+     */
+    public function assetUrl(AssetType $type, string $file = ''): string
+    {
+        $url = 'assets.php?type=' . $type->value;
+        if ($file !== '') {
+            $url .= '&file=' . $file;
+        }
+        return $url . '&v=' . get_latest_version();
     }
 
     /**
