@@ -29,6 +29,7 @@ final class AdminFormCrudHandler
             App::audit()->log('form_create', 'form:' . $newFormId, "Formulaire '$label' créé (slug auto: $slug)");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($newFormId)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleAddForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -56,6 +57,7 @@ final class AdminFormCrudHandler
             App::audit()->log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleUpdateForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -87,6 +89,7 @@ final class AdminFormCrudHandler
             $formRepository->deleteCascade($form_id);
             $db->commit();
         } catch (\Throwable $e) {
+            // @silent-ok: fallback with rollback cleanup
             $db->rollBack();
             error_log('handleDeleteForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
@@ -105,6 +108,7 @@ final class AdminFormCrudHandler
         try {
             $source_id = \validate_input($source_id, 'uuid');
         } catch (\InvalidArgumentException $e) {
+            // @silent-ok: fallback returns user-facing validation error
             return ['error' => 'Identifiant de formulaire source invalide.'];
         }
         if (in_array($source_id, ['', '0', 0], true)) {
@@ -132,6 +136,7 @@ final class AdminFormCrudHandler
             $formRepository->duplicate((string) $source_id, $new_id, $new_label, $new_slug, $src_form);
             $db->commit();
         } catch (\Throwable $e) {
+            // @silent-ok: fallback with rollback cleanup
             $db->rollBack();
             error_log('handleDuplicateForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];

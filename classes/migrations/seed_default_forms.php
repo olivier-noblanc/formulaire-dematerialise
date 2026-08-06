@@ -114,7 +114,7 @@ function seed_default_forms(PDO $pdo): void {
     try {
         $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('relance_max', '3')")->execute();
     } catch (PDOException $e) {
-        // Ignorer si déjà présent
+        // @silent-ok: fallback — migration idempotent, ignore si déjà présent
     }
 
     // Seed formulaire onboarding s'il n'existe pas

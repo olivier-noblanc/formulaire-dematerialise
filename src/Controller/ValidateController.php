@@ -47,6 +47,7 @@ final class ValidateController extends BaseController
                     $action = validate_input($action, 'action');
                 }
             } catch (\InvalidArgumentException) {
+                // @silent-ok: fallback sets user-facing validation error
                 $error = 'Données invalides.';
                 /** @phpstan-ignore-next-line if.alwaysTrue */
                 if (TEST_MODE) {

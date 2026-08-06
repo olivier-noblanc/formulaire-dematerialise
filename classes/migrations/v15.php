@@ -91,6 +91,7 @@ function apply_migration_v15(PDO $pdo, int $current_version): int {
                 error_log('[db_migrate] v15 FAILED: admin_email toujours à l\'ancienne valeur, version NON marquée');
             }
         } catch (PDOException $e) {
+            // @silent-ok: log-only — la migration sera retentée au prochain appel
             error_log('[db_migrate] v15 FAILED: ' . $e->getMessage() . ' — retry au prochain appel');
         }
     }

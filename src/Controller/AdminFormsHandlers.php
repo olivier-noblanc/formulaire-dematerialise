@@ -33,6 +33,7 @@ final class AdminFormsHandlers
             $form_id = (string) \validate_input($form_id, 'uuid');
             return [$form_id, null];
         } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback returns user-facing validation error
             return ['', 'Identifiant de formulaire invalide.'];
         }
     }
@@ -48,6 +49,7 @@ final class AdminFormsHandlers
             $step_id = (string) \validate_input($step_id, 'uuid');
             return [$step_id, null];
         } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback returns user-facing validation error
             return ['', 'Identifiant d\'étape invalide.'];
         }
     }

@@ -35,6 +35,7 @@ final class AdminRecipientHandler
             App::audit()->log('recipient_add', 'step:' . $step_id, $label);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleAddRecipient error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -56,6 +57,7 @@ final class AdminRecipientHandler
             $anchor = $step_id_for_anchor !== null ? '#step-' . urlencode($step_id_for_anchor) : '#workflow';
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . $anchor];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleDeleteRecipient error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -80,6 +82,7 @@ final class AdminRecipientHandler
             App::audit()->log('owner_add', 'form:' . $form_id, "Propriétaire $owner_email ajouté");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners'];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleAddOwner error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -101,6 +104,7 @@ final class AdminRecipientHandler
             App::audit()->log('owner_remove', 'form:' . $form_id, 'Propriétaire retiré');
             return ['redirect' => App::html()->buildUrl('index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#owners')];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleDeleteOwner error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }

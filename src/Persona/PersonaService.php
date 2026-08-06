@@ -80,6 +80,7 @@ final readonly class PersonaService
             App::audit()->log('persona_create', 'admin:' . $admin_email, "Persona créé pour $target_email (expire $expires_at)", '');
             return $token;
         } catch (\Throwable $e) {
+            // @silent-ok: log-only, returns '' caller handles it
             error_log('persona_create_token error: ' . $e->getMessage());
             return '';
         }
@@ -126,6 +127,7 @@ final readonly class PersonaService
 
             return (string) $row['target_email'];
         } catch (\Throwable $e) {
+            // @silent-ok: log-only, returns '' caller handles it
             error_log('persona_lookup error: ' . $e->getMessage());
             return '';
         }
@@ -150,6 +152,7 @@ final readonly class PersonaService
             }
             return $revoked;
         } catch (\Throwable $e) {
+            // @silent-ok: log-only, returns false caller handles it
             error_log('persona_revoke error: ' . $e->getMessage());
             return false;
         }
@@ -167,6 +170,7 @@ final readonly class PersonaService
             $cutoff = gmdate('Y-m-d H:i:s', time() - 30 * 86400);
             return $this->personaTokenRepository->cleanup($cutoff);
         } catch (\Throwable $e) {
+            // @silent-ok: log-only background cleanup
             error_log('persona_cleanup error: ' . $e->getMessage());
             return 0;
         }

@@ -73,12 +73,12 @@ function run_bug02_test(): bool {
 
         if (!$found_advance && preg_match('/advanceWorkflow\s*\(\s*\$/', $src, $m, PREG_OFFSET_CAPTURE)) {
             $found_advance = true;
-            $aw_pos = $m[0][1] + 99999 * array_search($path, $files_to_check, true);
+            $aw_pos = $m[0][1] + 99999 * (int) array_search($path, $files_to_check, true);
         }
 
         if (!$found_send && preg_match('/->send\s*\(\s*\$/', $src, $m, PREG_OFFSET_CAPTURE)) {
             $found_send = true;
-            $sm_pos = $m[0][1] + 99999 * array_search($path, $files_to_check, true);
+            $sm_pos = $m[0][1] + 99999 * (int) array_search($path, $files_to_check, true);
         }
     }
 

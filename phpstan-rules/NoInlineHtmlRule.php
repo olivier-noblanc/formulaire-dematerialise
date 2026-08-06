@@ -42,6 +42,7 @@ class NoInlineHtmlRule implements Rule
         'NavigationRenderer.php' => 'Seul <script> inline du projet (menu persona) — noncé via SecurityService::getScriptNonce(), plus de fallback unsafe-inline sur script-src (2026-07-30).',
         'ErrorRenderer.php' => 'Balise <style> de fallback (fallback CSS d\'urgence quand style.php est injoignable) — noncée via SecurityService::getScriptNonce(). Sert uniquement pour les pages d\'erreur 500/403 quand le système est défaillant.',
         'InstallRenderer.php' => 'Balise <style> pour la page d\'installation (style.php n\'est pas encore disponible avant l\'installation) — noncée via SecurityService::getScriptNonce().',
+        'SubmissionViewRenderer.php' => 'Balise <style> via pageCss() : charge le CSS depuis lib/submission_view_page.css (fichier séparé) — le wrapper <style> est le mécanisme standard pour embarquer le CSS dans le <head>. Noncé via SecurityService::getScriptNonce().',
     ];
 
     /**
@@ -59,6 +60,7 @@ class NoInlineHtmlRule implements Rule
         '\\phpstan-rules\\',
     ];
 
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function getNodeType(): string
     {
         return Node::class;
@@ -66,18 +68,22 @@ class NoInlineHtmlRule implements Rule
 
     /**
      * @return list<\PHPStan\Rules\IdentifierRuleError>
+     * @phpstan-ignore shipmonk.deadMethod
      */
     public function processNode(Node $node, Scope $scope): array
     {
+        $line = $node->getLine();
+
         if ($node instanceof String_) {
-            return $this->checkText($node->value, $scope);
+            return $this->checkText($node->value, $scope, $line);
         }
 
         if ($node instanceof InterpolatedString) {
+            /** @var list<\PHPStan\Rules\IdentifierRuleError> $errors */
             $errors = [];
             foreach ($node->parts as $part) {
                 if ($part instanceof InterpolatedStringPart) {
-                    $errors = [...$errors, ...$this->checkText($part->value, $scope)];
+                    $errors = [...$errors, ...$this->checkText($part->value, $scope, $line)];
                 }
             }
             return $errors;
@@ -87,9 +93,17 @@ class NoInlineHtmlRule implements Rule
     }
 
     /**
+     * @param array{file: string, line: int} $loc
+     */
+    private function prefix(string $msg, array $loc): string
+    {
+        return "{$loc['file']}:{$loc['line']} — {$msg}";
+    }
+
+    /**
      * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
-    private function checkText(string $text, Scope $scope): array
+    private function checkText(string $text, Scope $scope, int $line): array
     {
         if ($text === '') {
             return [];
@@ -112,20 +126,29 @@ class NoInlineHtmlRule implements Rule
         if (preg_match('/<script\b(?![^>]*\bsrc\s*=)/i', $text) === 1) {
             if ($exceptionReason === null) {
                 $errors[] = RuleErrorBuilder::message(
-                    "<script> inline détecté (sans attribut src) — CSP script-src n'a plus 'unsafe-inline', ce script ne s'exécutera pas sans nonce."
+                    $this->prefix(
+                        "<script> inline détecté (sans attribut src) — CSP script-src n'a plus 'unsafe-inline', ce script ne s'exécutera pas sans nonce.",
+                        ['file' => $file, 'line' => $line]
+                    )
                 )->identifier('noInlineHtml.script')->build();
             }
         }
 
         if (preg_match('/\son[a-z]+\s*=\s*["\']/i', $text) === 1) {
             $errors[] = RuleErrorBuilder::message(
-                "Gestionnaire d'événement inline détecté (onXxx=\"...\") — non autorisable par nonce en CSP (seuls <script>/<style> le sont, pas les attributs). Déplacer vers addEventListener() dans un <script nonce> ou externaliser."
+                $this->prefix(
+                    "Gestionnaire d'événement inline détecté (onXxx=\"...\") — non autorisable par nonce en CSP.",
+                    ['file' => $file, 'line' => $line]
+                )
             )->identifier('noInlineHtml.eventHandler')->build();
         }
 
         if (preg_match('/\sstyle\s*=\s*["\']/i', $text) === 1) {
             $errors[] = RuleErrorBuilder::message(
-                "Attribut style=\"\" inline détecté — README : \"Zéro fichier .css : le CSS passe exclusivement par style.php\". Non autorisable par nonce en CSP (seuls <script>/<style> le sont). Déplacer vers une classe CSS ou un <style nonce> ciblé pour les valeurs dynamiques."
+                $this->prefix(
+                    "Attribut style=\"\" inline — déplacer vers une classe CSS ou <style nonce>.",
+                    ['file' => $file, 'line' => $line]
+                )
             )->identifier('noInlineHtml.styleAttr')->build();
         }
 
@@ -134,12 +157,15 @@ class NoInlineHtmlRule implements Rule
         // par style.php"). Les balises <style> sont la seule exception
         // autorisée par nonce en CSP, mais le principe du projet est de
         // centraliser tout le CSS dans style.php. Si une balise <style> est
-        // vraiment nécessaire (fallback, page d'install), elle doit être
+        // vraiment nécessaire (fallback, urgence, page d'install), elle doit être
         // noncée ET listée dans FILE_EXCEPTIONS avec un motif documenté.
         if (preg_match('/<style\b/i', $text) === 1) {
             if ($exceptionReason === null) {
                 $errors[] = RuleErrorBuilder::message(
-                    "Balise <style> inline détectée — README : \"Zéro fichier .css : le CSS passe exclusivement par style.php\". Déplacer le CSS vers lib/*.css ou style.php. Si une balise <style> est indispensable (fallback d'urgence, page d'installation), l'ajouter à NoInlineHtmlRule::FILE_EXCEPTIONS avec un motif ET la noncer via SecurityService::getScriptNonce()."
+                    $this->prefix(
+                        "Balise <style> inline — déplacer vers lib/*.css ou style.php.",
+                        ['file' => $file, 'line' => $line]
+                    )
                 )->identifier('noInlineHtml.styleTag')->build();
             }
         }

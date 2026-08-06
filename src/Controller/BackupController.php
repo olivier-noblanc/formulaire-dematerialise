@@ -107,6 +107,7 @@ final class BackupController extends BaseController
                                 $successMsg = 'La base de données a été restaurée avec succès depuis « ' . App::html()->escape($origName) . ' ». '
                                                . 'Une copie de la base précédente a été conservée : ' . App::html()->escape(basename($backupBefore));
                             } catch (\Exception $e) {
+                                // @silent-ok: fallback with rollback cleanup
                                 // B-02-3 fix : copy() de secours non vérifié — si échec, message
                                 // disait 'rétablie' alors que la DB était vide/corrompue.
                                 $rollbackOk = true;
@@ -194,6 +195,7 @@ final class BackupController extends BaseController
                                 $infoMsg = 'Aucune donnée à purger.';
                             }
                         } catch (\Exception $e) {
+                            // @silent-ok: fallback sets user-facing error
                             error_log('purge_confirm error: ' . $e->getMessage());
                             $errorMsg = 'Une erreur technique est survenue.';
                         }
@@ -218,6 +220,7 @@ final class BackupController extends BaseController
         try {
             $dbStats['row_counts'] = $this->submissionRepo->countByTableNames($dbTables);
         } catch (\Exception $e) {
+            // @silent-ok: fallback sets placeholder values
             foreach ($dbTables as $dbTable) {
                 $dbStats['row_counts'][$dbTable] = '—';
             }

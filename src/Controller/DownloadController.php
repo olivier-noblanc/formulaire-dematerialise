@@ -31,6 +31,7 @@ final class DownloadController extends BaseController
         try {
             $attachmentId = (string) validate_input($attachmentId, 'uuid');
         } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback logs security event and shows error page (which exits)
             App::audit()->securityLog('invalid_attachment_id', 'ID=' . substr($attachmentId, 0, 20));
             new \App\Render\ErrorRenderer()->errorPage(
                 400,
@@ -154,6 +155,7 @@ final class DownloadController extends BaseController
         try {
             $submission_id = (string) validate_input($submission_id, 'uuid');
         } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback logs security event and shows error page (which exits)
             App::audit()->securityLog('invalid_submission_id', 'ID=' . substr($submission_id, 0, 20));
             new \App\Render\ErrorRenderer()->errorPage(
                 400,

@@ -61,6 +61,7 @@ trait AdminRequestManagementTrait
 
             return ['success' => true, 'reason' => 'sent'];
         } catch (\Exception $e) {
+            // @silent-ok: log-only, returns structured error to caller
             error_log('Erreur lors de la demande d\'accès admin : ' . $e->getMessage());
             return ['success' => false, 'reason' => 'exception', 'error' => $e->getMessage()];
         }
@@ -86,6 +87,7 @@ trait AdminRequestManagementTrait
             \App\Core\App::audit()->log('admin_approve', 'admin:' . $email, 'Accès admin approuvé');
             return true;
         } catch (\Exception $e) {
+            // @silent-ok: log-only, returns false caller handles it
             error_log('Erreur lors de l\'approbation de la demande admin : ' . $e->getMessage());
             return false;
         }
@@ -111,6 +113,7 @@ trait AdminRequestManagementTrait
             \App\Core\App::audit()->log('admin_reject', 'admin:' . $email, 'Accès admin refusé');
             return true;
         } catch (\Exception $e) {
+            // @silent-ok: log-only, returns false caller handles it
             error_log('Erreur lors du refus de la demande admin : ' . $e->getMessage());
             return false;
         }
@@ -127,6 +130,7 @@ trait AdminRequestManagementTrait
             \App\Core\App::audit()->log('admin_remove', 'admin:' . $email, 'Admin supprimé', $email);
             return true;
         } catch (\Exception $e) {
+            // @silent-ok: log-only, returns false caller handles it
             error_log('Erreur lors de la suppression d\'un admin : ' . $e->getMessage());
             return false;
         }

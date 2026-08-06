@@ -25,6 +25,7 @@ final readonly class WorkflowEngine
     public FormRepository $formRepository;
 
     private TokenValidationHandler $validationHandler;
+    private RecipientResolver $recipientResolver;
 
     public function __construct(
         private SettingsService $settingsService,
@@ -41,6 +42,11 @@ final readonly class WorkflowEngine
             $this->tokenRepository,
             $this->submissionRepository,
             $this->mailService,
+        );
+        $this->recipientResolver = new RecipientResolver(
+            $this->settingsService,
+            $this->submissionRepository,
+            $this->formRepository,
         );
     }
 
@@ -173,50 +179,14 @@ final readonly class WorkflowEngine
     /**
      * Resolve a dynamic recipient string (e.g. {{owner}}, {{field_name}}).
      *
+     * Délégué à RecipientResolver pour éliminer la duplication CPD.
+     *
      * @param array<string, mixed> $formData
      * @phpstan-ignore shipmonk.deadMethod (used by tests only)
      */
     public function resolveDynamicRecipient(string $recipient, mixed $formData, ?string $submissionId = null): string
     {
-        // Cas spécial : {{owner}}
-        if ($recipient === '{{owner}}') {
-            if ($submissionId !== null) {
-                $fid = $this->submissionRepository->findFormIdById($submissionId);
-                if ($fid !== null && $fid !== '') {
-                    $owners = $this->formRepository->findOwnersByFormId($fid);
-                    $firstOwnerEmail = $owners[0]['email'] ?? '';
-                    if ($owners !== [] && filter_var($firstOwnerEmail, FILTER_VALIDATE_EMAIL) !== false) {
-                        return $firstOwnerEmail;
-                    }
-                    $adminEmail = $this->settingsService->get('admin_email');
-                    if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL) !== false) {
-                        return $adminEmail;
-                    }
-                }
-            }
-            return $recipient;
-        }
-
-        if (preg_match('/^\{\{([a-z][a-z0-9_]*)\}\}$/', $recipient, $m) === 1) {
-            $fieldName = $m[1];
-            if (isset($formData[$fieldName]) && (bool)($formData[$fieldName])) {
-                $resolved = trim((string) $formData[$fieldName]);
-                if (filter_var($resolved, FILTER_VALIDATE_EMAIL) !== false) {
-                    return $resolved;
-                }
-            }
-            foreach ($formData as $key => $val) {
-                if (strtolower((string) $key) === $fieldName && $val !== '' && $val !== null && $val !== '0') {
-                    $resolved = trim((string) $val);
-                    if (filter_var($resolved, FILTER_VALIDATE_EMAIL) !== false) {
-                        return $resolved;
-                    }
-                }
-            }
-            return $recipient;
-        }
-
-        return $recipient;
+        return $this->recipientResolver->resolve($recipient, $formData, $submissionId);
     }
 
     public function advanceWorkflow(string $submissionId): void
@@ -227,7 +197,7 @@ final readonly class WorkflowEngine
             $this->mailService,
             $this->fieldService,
             $this->conditionEvaluator,
-            new RecipientResolver($this->settingsService, $this->submissionRepository, $this->formRepository),
+            $this->recipientResolver,
             $this->submissionRepository,
             $this->tokenRepository,
             $this->formRepository,

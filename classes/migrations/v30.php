@@ -129,6 +129,7 @@ function apply_migration_v30(PDO $pdo, int $current_version): int {
 
         return 30;
     } catch (\PDOException $e) {
+        // @silent-ok: log-only — la migration sera retentée au prochain appel
         error_log("Migration v30 failed: " . $e->getMessage());
         return $current_version;
     }

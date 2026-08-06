@@ -34,6 +34,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
         $pdo->exec("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
         $current_version = (int)_dbm_q($pdo, "SELECT MAX(version) FROM schema_version")->fetchColumn();
     } catch (PDOException $e) {
+        // @silent-ok: fallback — DB vierge, pas de schéma encore
         $current_version = 0;
     }
 
@@ -278,7 +279,7 @@ function apply_schema_initial(PDO $pdo, bool &$seed_needed = false): int {
             try {
                 $adminEmail = App::auth()->getAdminEmail();
             } catch (\Throwable $authEx) {
-                // App::auth() non disponible (tests précoces) — utiliser SETTINGS_DEFAULTS
+                // @silent-ok: fallback — auth non disponible en early bootstrap
                 $adminEmail = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : '';
             }
             if ($adminEmail !== '') {

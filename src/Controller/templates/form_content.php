@@ -1,3 +1,4 @@
+<?php /** @var \App\Render\FormRenderer $renderer */ ?>
 <h1><?= $h($tJargon($form['label'])) ?></h1>
 <?php if ($form['description']): ?><p class="agent-info"><?= $h($tJargon($form['description'])) ?></p><?php endif; ?>
 <p class="agent-info">Formulaire rempli par : <strong><?= $h($submitted_by) ?></strong></p>

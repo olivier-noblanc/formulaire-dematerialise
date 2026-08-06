@@ -105,6 +105,7 @@ final class CronService
                     $prevLastRun[$key] = $claim['prev_last_run'];
                     $due[] = $key;
                 } catch (\PDOException $e) {
+                    // @silent-ok: log-only for background cron task
                     if (str_contains($e->getMessage(), 'busy')) {
                         continue;
                     }
@@ -116,6 +117,7 @@ final class CronService
                 }
             }
         } catch (\Throwable $e) {
+            // @silent-ok: log-only for background cron task
             error_log('Lazy cron fatal (pass 1): ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
         }
 
@@ -134,6 +136,7 @@ final class CronService
                 ob_end_clean();
                 $GLOBALS['_lazy_cron_running'] = false;
             } catch (\Throwable $e) {
+                // @silent-ok: log-only for background cron callback failure
                 ob_end_clean();
                 $GLOBALS['_lazy_cron_running'] = false;
                 $callbackFailed = true;
@@ -156,6 +159,7 @@ final class CronService
                         $this->lazyCronRepository->updateLastRun($key, $prev);
                     }
                 } catch (\Throwable $revertErr) {
+                    // @silent-ok: log-only for background cron revert failure
                     error_log("Lazy cron revert error ({$key}): " . $revertErr->getMessage());
                 }
             }

@@ -54,6 +54,7 @@ final class PersonaController extends BaseController
                     );
                 }
             } catch (\Throwable $e) {
+                // @silent-ok: fallback shows error page (which exits)
                 new \App\Render\ErrorRenderer()->errorPage(500, 'Erreur DB', \App\Core\App::html()->escape($e->getMessage()), '');
             }
 

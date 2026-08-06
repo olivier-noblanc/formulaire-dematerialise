@@ -30,6 +30,7 @@ final class AdminFormsController extends BaseController
                 $editFieldId = validate_input($editFieldId, 'uuid');
             }
         } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback logs security event and shows error page (which exits)
             App::audit()->securityLog('invalid_admin_forms_id', 'form_id=' . substr((string) $formId, 0, 20) . ' edit_step=' . substr((string) $editStepId, 0, 20) . ' edit_field=' . substr($editFieldId, 0, 20));
             new \App\Render\ErrorRenderer()->errorPage(400, 'Paramètre invalide', 'Un des identifiants fournis est invalide.', 'Vérifiez l\'URL et réessayez.');
         }

@@ -31,8 +31,8 @@ function apply_migration_v13(PDO $pdo, int $current_version): int {
     if ($current_version < 13) {
         try {
             // A-13a : colonnes `filled_by` et `validator_step` dans form_fields
-            try { $pdo->exec("ALTER TABLE form_fields ADD COLUMN filled_by TEXT DEFAULT 'demandeur'"); } catch (PDOException $e) {}
-            try { $pdo->exec("ALTER TABLE form_fields ADD COLUMN validator_step TEXT DEFAULT ''"); } catch (PDOException $e) {}
+            try { $pdo->exec("ALTER TABLE form_fields ADD COLUMN filled_by TEXT DEFAULT 'demandeur'"); } catch (PDOException $e) { /* @silent-ok: fallback — colonne déjà existante */ }
+            try { $pdo->exec("ALTER TABLE form_fields ADD COLUMN validator_step TEXT DEFAULT ''"); } catch (PDOException $e) { /* @silent-ok: fallback — colonne déjà existante */ }
 
             // A-13b : table submission_validator_data
             $pdo->exec("
@@ -82,6 +82,7 @@ function apply_migration_v13(PDO $pdo, int $current_version): int {
                 error_log('[db_migrate] v13 FAILED: colonnes/form_fields ou table submission_validator_data manquantes, version NON marquée');
             }
         } catch (PDOException $e) {
+            // @silent-ok: log-only — la migration sera retentée au prochain appel
             // Ne PAS marquer la version à 13 — la migration sera retentée au prochain appel.
             error_log('[db_migrate] v13 FAILED: ' . $e->getMessage() . ' — retry au prochain appel');
         }

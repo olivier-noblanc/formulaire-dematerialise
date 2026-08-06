@@ -61,6 +61,7 @@ function apply_migration_v18(PDO $pdo, int $current_version): int {
             $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([18]);
             return 18;
         } catch (PDOException $e) {
+            // @silent-ok: log-only — la migration sera retentée au prochain appel
             error_log('[db_migrate] v18 FAILED: ' . $e->getMessage() . ' — retry au prochain appel');
         }
     }

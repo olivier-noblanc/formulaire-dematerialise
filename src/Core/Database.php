@@ -122,7 +122,7 @@ final class Database implements DatabaseInterface
                     $this->pdo->rollBack();
                 }
             } catch (\PDOException) {
-                // Ignorer
+                // @silent-ok: fallback cleanup on release — ignore rollback failure
             }
             $this->pdo = null;
         }
@@ -133,7 +133,7 @@ final class Database implements DatabaseInterface
                     $this->pdoTest->rollBack();
                 }
             } catch (\PDOException) {
-                // Ignorer
+                // @silent-ok: fallback cleanup on release — ignore rollback failure
             }
             $this->pdoTest = null;
         }

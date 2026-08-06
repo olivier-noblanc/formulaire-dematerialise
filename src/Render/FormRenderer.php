@@ -304,6 +304,7 @@ final class FormRenderer
         $tJargon = \App\Core\App::html()->tJargon(...);
 
         return $this->loadTemplate('form_content.php', [
+            'renderer'            => $this,
             'h'                   => $h,
             'tJargon'             => $tJargon,
             'form'                => $form,

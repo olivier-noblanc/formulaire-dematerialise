@@ -66,7 +66,7 @@ final class LazyCronRepository extends BaseRepository
             try {
                 $pdo->exec('ROLLBACK');
             } catch (\Throwable) {
-                // ignore rollback failures
+                // @silent-ok: fallback cleanup — ignore rollback failure, original exception re-thrown
             }
             throw $e;
         }

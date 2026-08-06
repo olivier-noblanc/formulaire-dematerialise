@@ -67,6 +67,7 @@ final class FormTrackingController extends BaseController
         try {
             $page = validate_input($page, 'int', ['min' => 1, 'max' => 10000]);
         } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback resets to safe default
             $page = 1;
         }
         $page = (int) $page;

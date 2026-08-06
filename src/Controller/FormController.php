@@ -26,6 +26,7 @@ final class FormController extends BaseController
             try {
                 $slug = validate_input($slug, 'slug', ['max_length' => 100]);
             } catch (\InvalidArgumentException) {
+                // @silent-ok: fallback shows error page (which exits)
                 new \App\Render\ErrorRenderer()->errorPage(
                     400,
                     'Paramètre invalide',

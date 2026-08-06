@@ -251,7 +251,7 @@ final class AuthService implements AuthInterface
                 return $email;
             }
         } catch (\Throwable) {
-            // DB pas encore prête (tôt dans le bootstrap)
+            // @silent-ok: fallback — DB not yet ready early in bootstrap
         }
 
         // Fallback : SettingsRepository direct puis SETTINGS_DEFAULTS
@@ -261,7 +261,7 @@ final class AuthService implements AuthInterface
                 return $val;
             }
         } catch (\Throwable) {
-            // DB pas encore prête
+            // @silent-ok: fallback — DB not yet ready
         }
 
         return defined('SETTINGS_DEFAULTS')

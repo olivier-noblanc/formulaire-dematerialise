@@ -24,6 +24,7 @@ final class DocsController extends BaseController
             $is_logged_in = $user_email !== '' && $user_email !== '0';
             $is_admin = $this->auth->isAdminEffective();
         } catch (\RuntimeException $e) {
+            // @silent-ok: log-only fallback for read-only display
             $is_logged_in = false;
             error_log('docs.php auth error: ' . $e->getMessage());
         }
@@ -32,6 +33,7 @@ final class DocsController extends BaseController
         try {
             $legal_mentions = $this->settings->get('legal_mentions', '');
         } catch (\Exception $e) {
+            // @silent-ok: log-only fallback for read-only display
             $legal_mentions = '';
             error_log('docs.php legal_mentions error: ' . $e->getMessage());
         }

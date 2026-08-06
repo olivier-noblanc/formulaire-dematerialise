@@ -17,15 +17,15 @@ Ce projet est un **petit site intranet DREETS BFC** avec une charge utilisateur 
 
 ## Outils disponibles (scoop shims)
 
-| Outil | Usage | Emplacement |
-|-------|-------|-------------|
-| **phive** | Installer des phars (phpstan, grumphp...) | `~/scoop/shims/phive.bat` |
-| **grumphp.phar** | Quality gate (lint, phpstan, phpunit, php-cs-fixer) | `~/scoop/shims/grumphp.phar` |
-| **phpstan** | Analyse statique level 8 | `~/scoop/shims/phpstan.phar` |
+| Outil | Usage | Commande |
+|-------|-------|----------|
+| **phive** | Installer des phars (phpstan, grumphp...) | `phive` (shim) |
+| **grumphp** | Quality gate (lint, phpstan, phpunit, php-cs-fixer) | `grumphp` (shim) |
+| **phpstan** | Analyse statique level 8 | `phpstan` (shim) |
 | **rector** | Modernisation PHP auto | `php -d memory_limit=10G vendor/bin/rector process src/ --no-progress-bar --memory-limit=10G` (jamais sans memory-limit, plante en RAM) |
 | **pwsh** | Scripts gate (check.ps1, update.ps1) | PATH |
 
-Usage : `php ~/scoop/shims/<outil>.phar <commande>` ou directement `<outil>` si dans le PATH.
+**Préférer la commande shim** (ex: `phpstan`) plutôt que le `.phar` (ex: `phpstan.phar`). Les `.phar` ne résolvent pas `~` et cassent les chemins relatifs. Si le shim n'existe pas, utiliser `vendor/bin/` en fallback.
 
 ---
 

@@ -19,6 +19,9 @@ parameters:
         - src/Controller/MyFormsController.php
         - src/Render/MySubmissionsRenderer.php
         - src/Render/InstallRenderer.php
+        - src/Workflow/TokenValidationHandler.php
+    bootstrapFiles:
+        - phpstan_inst_stubs.php
     tmpDir: /tmp/phpstan-no-inline
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:

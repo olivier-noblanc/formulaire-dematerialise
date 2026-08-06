@@ -61,6 +61,7 @@ function apply_migration_v25(PDO $pdo, int $current_version): int {
 
         return 25;
     } catch (PDOException $e) {
+        // @silent-ok: log-only — la migration sera retentée au prochain appel
         error_log("Migration v25 failed: " . $e->getMessage());
         return $current_version;
     }

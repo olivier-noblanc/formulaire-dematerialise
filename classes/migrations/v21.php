@@ -63,6 +63,7 @@ function apply_migration_v21(PDO $pdo, int $current_version): int {
             $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([21]);
             return 21;
         } catch (PDOException $e) {
+            // @silent-ok: log-only — la migration sera retentée au prochain appel
             error_log('[db_migrate] v21 FAILED: ' . $e->getMessage());
         }
     }

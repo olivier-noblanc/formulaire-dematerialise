@@ -31,7 +31,7 @@ final class SettingsService implements SettingsInterface
                 return $val;
             }
         } catch (\Throwable) {
-            // DB pas encore prête
+            // @silent-ok: fallback — DB not yet ready, use default
         }
 
         $defaults = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS : [];

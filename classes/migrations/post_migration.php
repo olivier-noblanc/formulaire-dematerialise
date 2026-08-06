@@ -48,6 +48,6 @@ function apply_post_migration_fixes(PDO $pdo, bool $seed_needed = false): void {
             }
         }
     } catch (PDOException $e) {
-        // Ignorer si déjà fait
+        // @silent-ok: fallback — migration idempotent, ignore si déjà fait
     }
 }

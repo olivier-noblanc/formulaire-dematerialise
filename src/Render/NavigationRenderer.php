@@ -67,6 +67,7 @@ final class NavigationRenderer
             $pending_count = App::tokenRepo()->countPendingForEmail($user);
             $my_en_cours_count = App::submissionRepo()->countEnCoursBySubmitter($user);
         } catch (\Throwable $e) {
+            // @silent-ok: log-only fallback for navigation display
             error_log('render_nav pending_count error: ' . $e->getMessage());
             $pending_count = -1;
             $my_en_cours_count = -1;
@@ -144,7 +145,7 @@ final class NavigationRenderer
         try {
             $owned_forms = App::auth()->getOwnedForms();
         } catch (\Throwable) {
-            // ignore — section non affichée
+            // @silent-ok: fallback — section not shown
         }
         if ($owned_forms !== []) {
             $nav_html .= '<div class="sidebar-section-title">Mes formulaires</div>';

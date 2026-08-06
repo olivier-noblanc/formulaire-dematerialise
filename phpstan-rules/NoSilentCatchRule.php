@@ -45,6 +45,7 @@ class NoSilentCatchRule implements Rule
 {
     private const string MARKER_PATTERN = '/@silent-ok:\s*\S/';
 
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function getNodeType(): string
     {
         return Catch_::class;
@@ -52,6 +53,7 @@ class NoSilentCatchRule implements Rule
 
     /**
      * @return list<\PHPStan\Rules\IdentifierRuleError>
+     * @phpstan-ignore shipmonk.deadMethod
      */
     public function processNode(Node $node, Scope $scope): array
     {
@@ -67,15 +69,12 @@ class NoSilentCatchRule implements Rule
             return [];
         }
 
+        $file = $scope->getFile();
+        $line = $node->getStartLine();
         return [
             RuleErrorBuilder::message(
-                "Ce catch n'a ni throw ni exit()/die() : il avale l'exception silencieusement. " .
-                "AGENTS.md règle 9 (\"Ne jamais avaler une exception sur un chemin critique\") : " .
-                "sur un chemin d'écriture, d'audit ou de conformité, l'échec doit remonter ou être " .
-                "surfacé de façon visible — jamais error_log() seul comme unique trace. Si c'est " .
-                "un cas légitime (nettoyage déjà relancé ailleurs, panne externe attendue retournée " .
-                "en valeur structurée, ou vraiment sans conséquence), ajouter un commentaire " .
-                "'// @silent-ok: <raison>' dans ce catch plutôt que de laisser planer le doute."
+                "{$file}:{$line} — Ce catch n'a ni throw ni exit()/die() : il avale l'exception " .
+                "silencieusement. AGENTS.md règle 9 : ajouter '// @silent-ok: <raison>' si légitime."
             )->identifier('noSilentCatch.swallowed')->build(),
         ];
     }

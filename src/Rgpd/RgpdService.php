@@ -128,6 +128,7 @@ final readonly class RgpdService
             App::audit()->log('rgpd_delete', 'user:' . $email, 'Données utilisateur supprimées (RGPD)', $email);
             return true;
         } catch (\Exception $e) {
+            // @silent-ok: log-only with audit trail and rollback, returns false
             if ($this->tokenRepository->inTransaction()) {
                 $this->tokenRepository->rollBack();
             }
@@ -165,6 +166,7 @@ final readonly class RgpdService
             }
             $this->tokenRepository->commit();
         } catch (\Exception $e) {
+            // @silent-ok: log-only background cleanup with rollback
             if ($this->tokenRepository->inTransaction()) {
                 $this->tokenRepository->rollBack();
             }

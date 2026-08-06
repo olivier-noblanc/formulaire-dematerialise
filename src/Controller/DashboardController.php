@@ -42,6 +42,7 @@ final class DashboardController extends BaseController
             }
             $page = validate_input($page, 'int', ['min' => 1, 'max' => 10000]);
         } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback resets to safe defaults on invalid input
             $filtre = 'tous';
             $form_f = '';
             $page   = 1;
@@ -82,6 +83,7 @@ final class DashboardController extends BaseController
             try {
                 $token_id = validate_input($token_id, 'uuid');
             } catch (\InvalidArgumentException) {
+                // @silent-ok: fallback sets user-facing error
                 $regen_msg = 'Identifiant de token invalide.';
                 $token_id  = '';
             }
@@ -104,6 +106,7 @@ final class DashboardController extends BaseController
             try {
                 $token_id = validate_input($token_id, 'uuid');
             } catch (\InvalidArgumentException) {
+                // @silent-ok: fallback sets user-facing error
                 $remind_msg = 'Identifiant de token invalide.';
                 $token_id   = '';
             }
@@ -122,6 +125,7 @@ final class DashboardController extends BaseController
             try {
                 $sub_id = validate_input($sub_id, 'uuid');
             } catch (\InvalidArgumentException) {
+                // @silent-ok: fallback sets user-facing error
                 $cancel_msg = 'Identifiant de soumission invalide.';
                 $sub_id     = '';
             }
@@ -266,6 +270,7 @@ final class DashboardController extends BaseController
                 }
             }
         } catch (\Exception) {
+            // @silent-ok: fallback uses placeholder on read failure
             $sys_last_backup = '—';
         }
 

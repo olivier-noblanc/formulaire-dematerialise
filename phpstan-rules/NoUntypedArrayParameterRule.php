@@ -63,6 +63,7 @@ class NoUntypedArrayParameterRule implements Rule
         'AdminSettingsRenderer.php',
     ];
 
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function getNodeType(): string
     {
         return FunctionLike::class;
@@ -71,6 +72,7 @@ class NoUntypedArrayParameterRule implements Rule
     /**
      * @param FunctionLike $node
      * @return list<\PHPStan\Rules\IdentifierRuleError>
+     * @phpstan-ignore shipmonk.deadMethod
      */
     public function processNode(Node $node, Scope $scope): array
     {

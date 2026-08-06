@@ -85,15 +85,17 @@ final class MonitoringController extends BaseController
             }
             usort($activeAlerts, fn(array $a, array $b): int|float => $a['days_remaining'] - $b['days_remaining']);
         } catch (\Exception) {
+            // @silent-ok: fallback uses empty array on read failure
             $activeAlerts = [];
         }
-
+ 
         // Query #6: Recent alerts (existing repo method)
         $recentAlerts = [];
         try {
             /** @var list<array{id: string, rule_id: string, submission_id: string, sent_at: string, message: string|null, form_label: string, rule_label: string|null}> $recentAlerts */
             $recentAlerts = $this->alertRepo->getLogsWithForm(20);
         } catch (\Exception) {
+            // @silent-ok: fallback uses empty array on read failure
             $recentAlerts = [];
         }
 

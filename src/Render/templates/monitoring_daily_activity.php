@@ -3,7 +3,7 @@ if ($daily_stats === []) {
     $body = '<p class="empty-state">Aucune soumission ces 7 derniers jours.</p>';
 } else {
     $column = array_column($daily_stats, 'cnt');
-    $max_daily = $column !== [] ? max($column) : 0;
+    $max_daily = (int) ($column !== [] ? max($column) : 0);
     $rows = '';
     foreach ($daily_stats as $daily_stat) {
         $cnt = (int) $daily_stat['cnt'];

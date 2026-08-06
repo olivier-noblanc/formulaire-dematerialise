@@ -147,6 +147,7 @@ final readonly class MailService implements MailInterface
             $this->logMailAttempt($to, $subject, $result);
             return $result;
         } catch (\Throwable) {
+            // @silent-ok: external SMTP failure — returns structured error result
             $smtpLog = implode("\n", $smtpLogBuf);
             $err = $phpMailer->ErrorInfo;
             error_log('Mail error: ' . $err);
@@ -185,6 +186,7 @@ final readonly class MailService implements MailInterface
                 $ip
             );
         } catch (\Throwable $e) {
+            // @silent-ok: log-only with structured context (B10 — mail log persist failure)
             // B10 : ne pas avaler silencieusement. error_log seul était insuffisant
             // car invisible côté applicatif. On ajoute un contexte structuré pour
             // que l'investigation soit possible (règle AGENTS.md #9).
@@ -211,6 +213,7 @@ final readonly class MailService implements MailInterface
             }
             return $this->mailRepository->getRecentLogs($limit);
         } catch (\Throwable $e) {
+            // @silent-ok: log-only fallback for read-only display
             error_log('getRecentLogs error: ' . $e->getMessage());
             return [];
         }

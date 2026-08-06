@@ -20,11 +20,13 @@ use PHPStan\Rules\RuleErrorBuilder;
  */
 class RequireBuildUrlForRedirectRule implements Rule
 {
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function getNodeType(): string
     {
         return MethodCall::class;
     }
 
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function processNode(Node $node, Scope $scope): array
     {
         if (!($node->name instanceof \PhpParser\Node\Identifier)) {

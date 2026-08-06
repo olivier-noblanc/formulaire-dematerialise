@@ -100,6 +100,7 @@ function apply_migration_v28(PDO $pdo, int $current_version): int {
 
         return 28;
     } catch (PDOException $e) {
+        // @silent-ok: log-only — la migration sera retentée au prochain appel
         error_log("Migration v28 failed: " . $e->getMessage());
         return $current_version;
     }

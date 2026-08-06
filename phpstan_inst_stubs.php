@@ -12,9 +12,18 @@ const INST_DEFAULT_DELAI_RELANCE  = 48;
 // Stub for PHPStan — config.php est ignoré par git, PHPStan infère le shape
 // depuis le define() réel qui manque admin_email/email_domain.
 // @phpstan-type SettingsDefaultsShape array{smtp_host: string, smtp_port: int, smtp_from: string, smtp_from_name: string, delai_relance_h: int, app_name: string, mail_dry_run: int, admin_email: string, email_domain: string}
-/** @var SettingsDefaultsShape */
 if (!defined('SETTINGS_DEFAULTS')) {
-    define('SETTINGS_DEFAULTS', []);
+    define('SETTINGS_DEFAULTS', [
+        'smtp_host' => '',
+        'smtp_port' => 0,
+        'smtp_from' => '',
+        'smtp_from_name' => '',
+        'delai_relance_h' => 0,
+        'app_name' => '',
+        'mail_dry_run' => 0,
+        'admin_email' => '',
+        'email_domain' => '',
+    ]);
 }
 
 if (!defined('DEFAULT_DB_PATH')) {

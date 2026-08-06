@@ -44,6 +44,7 @@ function apply_migration_v24(PDO $pdo, int $current_version): int {
         $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([24]);
         return 24;
     } catch (PDOException $e) {
+        // @silent-ok: log-only — la migration sera retentée au prochain appel
         error_log('[db_migrate] v24 FAILED: ' . $e->getMessage() . ' — retry au prochain appel');
     }
     return $current_version;

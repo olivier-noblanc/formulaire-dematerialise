@@ -6,6 +6,7 @@ use App\Rector\ReplaceMagicStringWithEnumRector;
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
+use Rector\Strict\Rector\Empty_\DisallowedEmptyRuleFixerRector;
 
 return RectorConfig::configure()
     ->withPaths([
@@ -17,10 +18,10 @@ return RectorConfig::configure()
         SetList::TYPE_DECLARATION,
         SetList::CODE_QUALITY,
         SetList::DEAD_CODE,
-        SetList::STRICT_BOOLEANS,
         SetList::EARLY_RETURN,
     ])
     ->withPhpSets(php85: true)
     ->withRules([
+        DisallowedEmptyRuleFixerRector::class,
         ReplaceMagicStringWithEnumRector::class,
     ]);

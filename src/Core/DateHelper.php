@@ -39,6 +39,7 @@ final class DateHelper
             try {
                 return new \DateTimeImmutable($date_str . ' 00:00:00', new \DateTimeZone('Europe/Paris'));
             } catch (\Exception) {
+                // @silent-ok: fallback returns null on invalid date
                 return null;
             }
         }
@@ -46,6 +47,7 @@ final class DateHelper
             try {
                 return new \DateTimeImmutable("{$m[3]}-{$m[2]}-{$m[1]} 00:00:00", new \DateTimeZone('Europe/Paris'));
             } catch (\Exception) {
+                // @silent-ok: fallback returns null on invalid date
                 return null;
             }
         }

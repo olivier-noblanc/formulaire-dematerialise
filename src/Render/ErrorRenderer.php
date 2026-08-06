@@ -56,6 +56,7 @@ final class ErrorRenderer
         try {
             $user = App::auth()->getUser();
         } catch (\Throwable $e) {
+            // @silent-ok: log-only fallback for error page display
             $user = '';
             error_log('render_error_page auth error: ' . $e->getMessage());
         }
@@ -177,6 +178,7 @@ final class ErrorRenderer
         try {
             $nonce = \App\Core\App::security()->getScriptNonce();
         } catch (\Throwable) {
+            // @silent-ok: fallback — DI container not available in very early context
             // Container DI non disponible (contexte très précoce) —
             // sans nonce, le <style> sera bloqué par CSP, mais c'est
             // un scénario de défaillance totale où le CSS n'est pas

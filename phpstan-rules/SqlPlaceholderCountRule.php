@@ -48,6 +48,7 @@ use PHPStan\Rules\RuleErrorBuilder;
  */
 class SqlPlaceholderCountRule implements Rule
 {
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function getNodeType(): string
     {
         return Node::class;
@@ -55,6 +56,7 @@ class SqlPlaceholderCountRule implements Rule
 
     /**
      * @return list<\PHPStan\Rules\IdentifierRuleError>
+     * @phpstan-ignore shipmonk.deadMethod
      */
     public function processNode(Node $node, Scope $scope): array
     {

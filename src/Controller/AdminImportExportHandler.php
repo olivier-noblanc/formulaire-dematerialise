@@ -244,6 +244,7 @@ final class AdminImportExportHandler
             App::audit()->log('form_import', 'form:' . $new_id, "Formulaire '$label' importé depuis JSON");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_id)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback with rollback cleanup
             if ($repo->pdo()->inTransaction()) {
                 $repo->pdo()->rollBack();
             }

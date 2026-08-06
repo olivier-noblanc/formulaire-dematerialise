@@ -99,6 +99,7 @@ final class AdminSettingsHandlers
                 $success_msg = 'Paramètres enregistrés avec succès.';
             }
         } catch (\Exception $e) {
+            // @silent-ok: fallback sets user-facing error with exception detail
             $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
         }
 
@@ -147,6 +148,7 @@ final class AdminSettingsHandlers
                 $success_msg = 'Paramètres de vérification email enregistrés avec succès.';
             }
         } catch (\Exception $e) {
+            // @silent-ok: fallback sets user-facing error with exception detail
             $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
         }
 

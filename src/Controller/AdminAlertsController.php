@@ -63,6 +63,7 @@ final class AdminAlertsController extends BaseController
                             App::audit()->log('alert_rule_create', 'form:' . $formId, 'Règle d\'alerte créée : ' . $label);
                             $successMsg = 'Règle d\'alerte créée avec succès.';
                         } catch (\Exception $e) {
+                            // @silent-ok: fallback sets user-facing error message
                             error_log('alert_rule_create error: ' . $e->getMessage());
                             $errorMsg = 'Une erreur technique est survenue.';
                         }
@@ -105,6 +106,7 @@ final class AdminAlertsController extends BaseController
                             App::audit()->log('alert_rule_update', 'rule:' . $ruleId, 'Règle d\'alerte modifiée : ' . $label);
                             $successMsg = 'Règle d\'alerte modifiée avec succès.';
                         } catch (\Exception $e) {
+                            // @silent-ok: fallback sets user-facing error message
                             error_log('alert_rule_update error: ' . $e->getMessage());
                             $errorMsg = 'Une erreur technique est survenue.';
                         }
@@ -117,6 +119,7 @@ final class AdminAlertsController extends BaseController
                     App::audit()->log('alert_rule_delete', 'rule:' . $ruleId, 'Règle d\'alerte supprimée');
                     $successMsg = 'Règle d\'alerte supprimée.';
                 } catch (\Exception $e) {
+                    // @silent-ok: fallback sets user-facing error message
                     error_log('alert_rule_delete error: ' . $e->getMessage());
                     $errorMsg = 'Une erreur technique est survenue.';
                 }
@@ -130,6 +133,7 @@ final class AdminAlertsController extends BaseController
                         App::audit()->log('deadline_field_update', 'form:' . $formId, 'Champ deadline mis à jour : ' . ($deadlineField !== '' ? $deadlineField : '(aucun)'));
                         $successMsg = 'Champ date limite mis à jour pour le formulaire.';
                     } catch (\Exception $e) {
+                        // @silent-ok: fallback sets user-facing error message
                         error_log('deadline_field_update error: ' . $e->getMessage());
                         $errorMsg = 'Une erreur technique est survenue.';
                     }
@@ -141,6 +145,7 @@ final class AdminAlertsController extends BaseController
                     App::audit()->log('alert_log_purge', 'alert_log', "Purge des logs d'alerte > {$retentionDays} jours");
                     $successMsg = "Anciens logs d'alerte purgés (plus de {$retentionDays} jours).";
                 } catch (\Exception $e) {
+                    // @silent-ok: fallback sets user-facing error message
                     error_log('alert_log_purge error: ' . $e->getMessage());
                     $errorMsg = 'Une erreur technique est survenue.';
                 }

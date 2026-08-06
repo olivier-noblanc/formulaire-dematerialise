@@ -105,11 +105,13 @@ class NoMagicStringRule implements Rule
         '\\tests\\',
     ];
 
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function getNodeType(): string
     {
         return String_::class;
     }
 
+    /** @phpstan-ignore shipmonk.deadMethod */
     public function processNode(Node $node, Scope $scope): array
     {
         $value = $node->value;

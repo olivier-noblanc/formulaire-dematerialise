@@ -31,6 +31,7 @@ final class AdminStepCrudHandler
             App::audit()->log('step_add', 'form:' . $form_id, "Étape '$label' ajoutée");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#step-' . urlencode($new_step_id)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleAddStep error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -81,6 +82,7 @@ final class AdminStepCrudHandler
             App::audit()->log('step_update', 'step:' . $step_id, "Étape '$label' mise à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#step-' . urlencode($step_id)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleUpdateStep error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -107,6 +109,7 @@ final class AdminStepCrudHandler
             $repo->deleteStep($step_id);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($get_form_id) . '#workflow'];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleDeleteStep error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }

@@ -68,6 +68,7 @@ class DocumentationService
         try {
             $legal_mentions = \App\Core\App::settings()->get('legal_mentions', '');
         } catch (\Exception $e) {
+            // @silent-ok: log-only fallback for read-only display
             $legal_mentions = '';
             error_log('DocumentationService::renderRgpd legal_mentions error: ' . $e->getMessage());
         }

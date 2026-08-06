@@ -29,7 +29,8 @@ function apply_migration_v10(PDO $pdo, int $current_version): int {
             $pdo->prepare("INSERT INTO schema_version (version) VALUES (?)")->execute([10]);
             return 10;
         } catch (PDOException $e) {
-            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([10]); } catch (PDOException $e2) {}
+            // @silent-ok: fallback — migration déjà appliquée, on marque la version
+            try { $pdo->prepare("INSERT OR IGNORE INTO schema_version (version) VALUES (?)")->execute([10]); } catch (PDOException $e2) { /* @silent-ok: fallback — ignore si déjà enregistré */ }
             return 10;
         }
     }

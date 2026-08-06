@@ -70,6 +70,7 @@ final class AdminFieldCrudHandler
             App::audit()->log('field_add', 'form:' . $data['form_id'], "Champ '{$data['label']}' ajouté");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($data['form_id']) . '#field-' . urlencode($new_field_id)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleAddField error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -99,6 +100,7 @@ final class AdminFieldCrudHandler
             App::audit()->log('field_update', 'field:' . $field_id, "Champ '{$data['label']}' mis à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($data['form_id']) . '#field-' . urlencode($field_id)];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleUpdateField error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -119,6 +121,7 @@ final class AdminFieldCrudHandler
             $repo->deleteField($field_id);
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id) . '#fields'];
         } catch (\PDOException $e) {
+            // @silent-ok: fallback returns user-facing error
             error_log('handleDeleteField error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }

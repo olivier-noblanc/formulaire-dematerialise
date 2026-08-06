@@ -77,6 +77,7 @@ function apply_migration_v32(PDO $pdo, int $current_version): int {
 
         return 32;
     } catch (PDOException $e) {
+        // @silent-ok: log-only — la migration sera retentée au prochain appel
         error_log("Migration v32 failed: " . $e->getMessage());
         return $current_version;
     }
