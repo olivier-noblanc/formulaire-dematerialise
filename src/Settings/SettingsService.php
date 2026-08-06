@@ -34,8 +34,10 @@ final class SettingsService implements SettingsInterface
             // @silent-ok: fallback — DB not yet ready, use default
         }
 
+        /** @var array<string, string>|string $defaults */
         $defaults = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS : [];
-        $result = (string) ($defaults[$key] ?? $default);
+        \assert(\is_array($defaults));
+        $result = $defaults[$key] ?? $default;
         self::$cache[$key] = $result;
         return $result;
     }

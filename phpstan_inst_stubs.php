@@ -15,12 +15,12 @@ const INST_DEFAULT_DELAI_RELANCE  = 48;
 if (!defined('SETTINGS_DEFAULTS')) {
     define('SETTINGS_DEFAULTS', [
         'smtp_host' => '',
-        'smtp_port' => 0,
+        'smtp_port' => '',
         'smtp_from' => '',
         'smtp_from_name' => '',
-        'delai_relance_h' => 0,
+        'delai_relance_h' => '',
         'app_name' => '',
-        'mail_dry_run' => 0,
+        'mail_dry_run' => '',
         'admin_email' => '',
         'email_domain' => '',
     ]);
