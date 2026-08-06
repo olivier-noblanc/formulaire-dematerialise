@@ -29,6 +29,36 @@ trait FormStepsTrait
     }
 
     /**
+     * Récupère les steps d'un formulaire avec leurs destinataires en objets
+     * (id + email) — format attendu par les templates admin
+     * (adminForms_workflowDiagramSection.php, adminForms_formFieldsSection.php).
+     *
+     * @return array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string, recipients: list<array{id: string, email: string}>}>
+     */
+    public function getStepsWithRecipientObjects(string $formId): array
+    {
+        $steps = $this->getSteps($formId);
+        if ($steps === []) {
+            return [];
+        }
+        $stepIds = array_column($steps, 'id');
+        $placeholders = implode(',', array_fill(0, count($stepIds), '?'));
+        $rows = $this->fetchAll(
+            "SELECT id, step_id, email FROM step_recipients WHERE step_id IN ($placeholders) ORDER BY email",
+            $stepIds
+        );
+        $recipientsByStep = [];
+        foreach ($rows as $row) {
+            // step_id est TEXT NOT NULL (schéma step_recipients) — cast factuel.
+            $recipientsByStep[(string) $row['step_id']][] = ['id' => (string) $row['id'], 'email' => (string) $row['email']];
+        }
+        foreach ($steps as $i => $step) {
+            $steps[$i]['recipients'] = $recipientsByStep[$step['id']] ?? [];
+        }
+        return $steps;
+    }
+
+    /**
      * @return array<int, array{id: string, form_id: string, label: string, ordre: int, actif: int, condition: string, recipient_emails: string|null}>
      */
     public function getStepsWithRecipients(string $formId): array

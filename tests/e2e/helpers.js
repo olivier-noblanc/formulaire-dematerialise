@@ -9,7 +9,7 @@
 //  - startTestServer()  : démarre un serveur PHP -S avec router_test_auth.php
 //                         (qui simule AUTH_USER IIS via un header HTTP) et
 //                         retourne une fonction stop() asynchrone
-//  - launchBrowser()    : raccourci firefox.launch headless
+//  - launchBrowser()    : raccourci chromium.launch({channel:'msedge'}) headless
 //  - newContext()       : nouveau context Playwright avec header AUTH_USER pré-injecté
 //  - getCsrfToken()     : GET une URL et extrait le csrf_token du <input hidden>
 //  - getPageHtml()      : GET une URL et retourne page.content()
@@ -24,7 +24,7 @@
 //
 // Compatible Node 18+ — async/await pur, pas de top-level await.
 
-const { firefox } = require('playwright');
+const { chromium } = require('playwright');
 const { spawn, execSync } = require('child_process');
 const http = require('http');
 const path = require('path');
@@ -300,7 +300,8 @@ function capturePhpErrors(marker, label = '') {
  * @returns {Promise<import('playwright').Browser>}
  */
 async function launchBrowser() {
-    return firefox.launch({ headless: true });
+    // MS Edge installé (channel msedge) — aucun binaire à télécharger.
+    return chromium.launch({ channel: 'msedge', headless: true });
 }
 
 /**

@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1415** (0 fail, 0 errors) |
-| Assertions | **4170** |
+| Tests | **1417** (0 fail, 0 errors) |
+| Assertions | **4160** |
 | `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,16 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.9 — Fix régression admin_forms (sections vides) + Playwright sur MS Edge
+| Tâche | Détail |
+|-------|--------|
+| Fix sections vides | `AdminFormsController` recharge steps/steps_by_ordre/form_fields/owners/existing_groups + `validation_html`/`preserved_json` du dispatch (régression 828a54f) |
+| Nouvelle méthode repo | `FormStepsTrait::getStepsWithRecipientObjects()` — steps + recipients en objets `{id, email}` (batch `IN`) |
+| Test unitaire | `FormRepositoryTest` : 2 tests recipients objects (2 steps/2 recipients + étape vide + form inexistant) |
+| Test e2e | `tests/test_e2e_admin_forms.js` : 11 assertions — pas de « Aucune étape/champ/propriétaire », 4 steps, 4 chips, 22 champs, 2 owners |
+| Playwright Edge | 4 fichiers JS migrés `firefox` → `chromium.launch({channel:'msedge'})` + AGENTS.md mis à jour |
+| Vérifs | PHPUnit 1417/0 fail, PHPStan level 8 OK fichiers modifiés, e2e admin_forms 11/11 + full_flow 5/5 |
 
 ### v10.42.8 — Purge PII complète (git filter-repo + force-push) + baseline PHPStan régénérée
 | Tâche | Détail |

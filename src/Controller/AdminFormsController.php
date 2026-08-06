@@ -44,6 +44,8 @@ final class AdminFormsController extends BaseController
 
         $errorMsg       = '';
         $successMsg     = '';
+        $validationHtml = '';
+        $preservedJson  = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action !== '') {
             $result = AdminFormsHandlers::dispatch($action, (string) $formId);
@@ -67,21 +69,54 @@ final class AdminFormsController extends BaseController
                 if (isset($result['form_id']) && is_string($result['form_id'])) {
                     $formId         = $result['form_id'];
                 }
+                if (isset($result['validation_html']) && is_string($result['validation_html'])) {
+                    $validationHtml = $result['validation_html'];
+                }
+                if (isset($result['preserved_json']) && is_string($result['preserved_json'])) {
+                    $preservedJson  = $result['preserved_json'];
+                }
             }
         }
 
+        $formRepo = App::getInstance()->get(\App\Repository\FormRepository::class);
         $selectedForm = null;
-        $allForms = App::getInstance()->get(\App\Repository\FormRepository::class)->findAll();
+        $allForms = $formRepo->findAll();
         if ($formId !== '' && $formId !== '0') {
-            $selectedForm = App::getInstance()->get(\App\Repository\FormRepository::class)->findById((string) $formId);
+            $selectedForm = $formRepo->findById((string) $formId);
+        }
+
+        // Données du formulaire sélectionné pour les sections steps / champs / owners.
+        $steps = [];
+        $steps_by_ordre = [];
+        $form_fields = [];
+        $owners = [];
+        $existing_groups = [];
+        if ($selectedForm !== null) {
+            $steps = $formRepo->getStepsWithRecipientObjects($selectedForm['id']);
+            foreach ($steps as $step) {
+                $steps_by_ordre[(int) $step['ordre']][] = $step;
+            }
+            ksort($steps_by_ordre);
+            $form_fields = App::validatorData()->getFormFields($selectedForm['id']);
+            $owners = $formRepo->findOwnersByFormId($selectedForm['id']);
+            $existing_groups = array_values(array_unique(array_column($form_fields, 'card_group')));
         }
 
         render_admin_forms_page([
-            'forms'      => $allForms,
-            'form_id'    => (string) $formId,
-            'form'       => $selectedForm,
-            'error_msg'  => $errorMsg,
-            'success_msg' => $successMsg,
+            'forms'          => $allForms,
+            'form_id'        => (string) $formId,
+            'form'           => $selectedForm,
+            'steps'          => $steps,
+            'steps_by_ordre' => $steps_by_ordre,
+            'form_fields'    => $form_fields,
+            'owners'         => $owners,
+            'edit_step_id'   => $editStepId,
+            'edit_field_id'  => $editFieldId,
+            'existing_groups' => $existing_groups,
+            'validation_html' => $validationHtml,
+            'preserved_json' => $preservedJson,
+            'error_msg'      => $errorMsg,
+            'success_msg'    => $successMsg,
         ]);
     }
 }

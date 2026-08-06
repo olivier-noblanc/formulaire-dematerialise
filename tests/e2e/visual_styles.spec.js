@@ -6,13 +6,13 @@
 // Ce test répond à la question utilisateur : "Ne peux-tu pas faire des tests ?"
 // sur le problème "tous en cours validés refusés est sans style".
 //
-// Approche : Playwright charge la page avec un vrai navigateur Chromium,
+// Approche : Playwright charge la page avec MS Edge (channel msedge),
 // puis utilise page.evaluate() + getComputedStyle() pour vérifier les
 // couleurs calculées des éléments .badge et .stat.
 //
 // Usage : node tests/e2e/visual_styles.spec.js
 
-const { firefox } = require('playwright');
+const { chromium } = require('playwright');
 const { execSync } = require('child_process');
 const path = require('path');
 const helpers = require('./helpers');
@@ -32,7 +32,7 @@ async function main() {
             stdio: 'inherit',
         });
 
-        const browser = await firefox.launch({ headless: true });
+        const browser = await chromium.launch({ channel: 'msedge', headless: true });
         // "testeur" (DREETS\testeur → testeur@{email_domain}) a des
         // soumissions en_cours/valide/refuse grâce au seed ci-dessus.
         const context = await browser.newContext({

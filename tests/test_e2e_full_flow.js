@@ -1,5 +1,7 @@
 // test_e2e_full_flow.js — Test Playwright de smoke test (rendu HTML réel).
 //
+// Navigateur : MS Edge installé (channel msedge) — aucun binaire à télécharger.
+//
 // LIMITES CONNUES :
 //  - Ce test ne couvre pas les pages admin (monitoring.php, admin_settings.php)
 //    car elles nécessitent une authentification via AUTH_USER (header IIS).
@@ -19,7 +21,7 @@
 //
 // Usage : node tests/test_e2e_full_flow.js
 
-const { firefox } = require('playwright');
+const { chromium } = require('playwright');
 const { spawn } = require('child_process');
 const http = require('http');
 const path = require('path');
@@ -126,8 +128,9 @@ async function main() {
     await startPhpServer();
     console.log(`  Serveur prêt sur ${BASE_URL}\n`);
 
-    // Lancer Firefox — bypass proxy système
-    const browser = await firefox.launch({
+    // Lancer MS Edge (channel msedge) — bypass proxy système
+    const browser = await chromium.launch({
+        channel: 'msedge',
         headless: true,
         proxy: _savedProxy ? { server: 'per-proxy', bypass: '127.0.0.1,localhost' } : undefined,
     });

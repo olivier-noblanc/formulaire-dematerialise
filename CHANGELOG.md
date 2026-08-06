@@ -1,5 +1,28 @@
 # Changelog — CircuitDémat
 
+## [10.42.9] — 2026-08-06
+_Résumé : Fix régression admin_forms (sections steps/champs/owners vides) + Playwright migré sur MS Edge (channel msedge)._
+
+### 🐛 Bug fix — page Gestion des formulaires : sections vides depuis le refactor 828a54f
+- **Problème** : `AdminFormsController::handle()` ne chargeait plus `steps`, `steps_by_ordre`, `form_fields`, `owners`, `edit_step_id`, `edit_field_id`, `existing_groups`, `validation_html`, `preserved_json` dans le contexte passé à `render_admin_forms_page()` → les templates affichaient « Aucune étape définie », « Aucun champ défini », « Aucun propriétaire défini » pour TOUS les formulaires, sans erreur JS.
+- **Fix** :
+  - `src/Controller/AdminFormsController.php` : rechargement complet des données après le dispatch POST (`getStepsWithRecipientObjects`, `steps_by_ordre` groupé + `ksort`, `getFormFields`, `findOwnersByFormId`, `existing_groups` déduits des champs) + propagation de `validation_html`/`preserved_json` du résultat dispatch vers le contexte.
+  - `src/Repository/FormStepsTrait.php` : nouvelle méthode `getStepsWithRecipientObjects()` — steps + recipients en objets `{id, email}` (format attendu par `adminForms_workflowDiagramSection.php` / `adminForms_formFieldsSection.php`). Une seule requête batch `IN` sur `step_recipients`.
+- **Tests de non-régression** :
+  - `tests/PHPUnit/Repository/FormRepositoryTest.php` : `testGetStepsWithRecipientObjectsReturnsRecipientObjects` (2 steps, 2 recipients, étape sans recipient → `[]`) + `testGetStepsWithRecipientObjectsReturnsEmptyForNonexistent`.
+  - `tests/test_e2e_admin_forms.js` (nouveau, port 8878, AUTH_USER `testeur@e2e.test`) : 11 assertions — page 200, form « Accueil agent » sélectionné, absence des 3 messages vides, 4 steps, 4 recipient chips, 22 lignes de champs, 2 owners.
+
+### 🧪 Playwright — migration Firefox → MS Edge (channel msedge)
+- `tests/test_e2e_admin_forms.js`, `tests/test_e2e_full_flow.js`, `tests/e2e/helpers.js`, `tests/e2e/visual_styles.spec.js` : `firefox.launch()` → `chromium.launch({ channel: 'msedge', headless: true })` — aucun binaire à télécharger, Edge présent sur tous les postes Windows.
+- `AGENTS.md` : section « Playwright — Firefox uniquement » remplacée par « Playwright — MS Edge (channel msedge) ».
+
+### 🧪 Vérifications
+- PHPUnit : **1417 tests, 0 failure** (3:40).
+- PHPStan level 8 : OK sur les fichiers modifiés.
+- e2e : admin_forms **11/11**, full_flow **5/5**.
+
+---
+
 ## [10.42.8] — 2026-08-06
 _Résumé : Purge PII complète (git filter-repo + force-push) + phpstan baseline régénérée._
 

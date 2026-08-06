@@ -252,9 +252,9 @@ Ce test invoque `FormController::handle()` dans un sous-processus PHP séparé. 
 
 Après avoir corrigé un test, TOUJOURS lancer `php tests/<fichier>.php` directement pour vérifier, puis la gate complète (`pwsh -NoProfile -File scripts/check.ps1`). Ne jamais claim "c'est fini" sans avoir lancé les tests.
 
-### Playwright — Firefox uniquement
+### Playwright — MS Edge (channel msedge)
 
-Toujours utiliser **Firefox** pour les tests Playwright, jamais Chromium. Installer avec `rtk playwright install firefox`.
+Utiliser **MS Edge installé** (`channel: 'msedge'`) pour les tests Playwright — aucun binaire à télécharger, Edge est présent sur tous les postes Windows. Ne jamais lancer `playwright install firefox` (binaire absent du cache local). Les tests qui ne passent pas par `tests/e2e/helpers.js` doivent lancer `chromium.launch({ channel: 'msedge', headless: true })`.
 
 ---
 
