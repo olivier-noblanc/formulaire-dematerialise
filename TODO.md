@@ -30,6 +30,16 @@
 
 ## ✅ Terminé (historique)
 
+### v10.42.6 — Fix CSS corrompu (filemtime warning) + tests durcis
+| Tâche | Détail |
+|-------|--------|
+| Bug | `assets.php` : `filemtime()` avant `is_file()` → warning PHP dans le corps CSS au 1er hit après déploiement (cache froid). Fix : `is_file()` d'abord |
+| Trous tests | test_assets_cache.php ne vérifiait que status+headers (jamais le corps) ; cache froid jamais garanti (pas de purge) ; display_errors=Off en CI masquait le warning |
+| test_assets_cache.php | Purge cache avant démarrage + `-d display_errors=1 -d error_reporting=E_ALL` + assertion « corps CSS pur » (début `/*`, aucun pattern erreur PHP) |
+| Nouveau e2e | `tests/e2e/assets_css_pure.spec.js` : corps pur + stderr sans erreur sur cache froid ET cache chaud — enregistré dans run_all.js |
+| helpers.js | `killExistingServer()` cross-platform (netstat+taskkill Windows) ; exit codes du kill volontaire non loggés comme crashs (flag `stopping`) |
+| Env dev | PHP scoop : mbstring/pdo_sqlite/sqlite3 activés dans php.ini principal (le `php -S` sans PHP_INI_SCAN_DIR n'avait pas les extensions → 500 health) ; doublons retirés de cli\php.ini. ⚠️ php.ini principal non persisté (perdu à l'update scoop) |
+
 ### v10.42.2 — Correction PHPStan massive (959 → 489 erreurs)
 | Tâche | Détail |
 |-------|--------|

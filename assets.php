@@ -134,8 +134,10 @@ else {
     if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
     $cacheFile = $cacheDir . '/assets_css_v' . $version . '.css';
 
-    $cacheMtime = filemtime($cacheFile);
-    if (is_file($cacheFile) && $cacheMtime !== false && $cacheMtime >= $maxMtime) {
+    // filemtime() émet un Warning si le fichier n'existe pas (1er hit après
+    // déploiement) — vérifier is_file() AVANT, sinon le warning pollue le CSS.
+    $cacheMtime = is_file($cacheFile) ? filemtime($cacheFile) : false;
+    if ($cacheMtime !== false && $cacheMtime >= $maxMtime) {
         readfile($cacheFile);
     } else {
         $compiled = '';

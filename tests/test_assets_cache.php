@@ -80,7 +80,20 @@ $phpBin = PHP_BINARY;
 exec('pkill -9 -f "php -S 127.0.0.1:8899" 2>/dev/null');
 sleep(1);
 
-$serverCmd = "$phpBin -S 127.0.0.1:8899 -t " . escapeshellarg($projectRoot) . " > /dev/null 2>&1 &";
+// Purger le cache CSS : reproduit le scénario "cache froid" (1er hit après
+// déploiement) où assets.php recompile — le chemin qui a hébergé le bug
+// filemtime() sur fichier absent. Sans cette purge, le test est non-déterministe
+// (si le cache existe déjà, la branche recompilation n'est jamais exécutée).
+foreach (glob($projectRoot . '/db/cache/assets_css_*.css') ?: [] as $cacheFile) {
+    @unlink($cacheFile);
+}
+
+// display_errors=1 explicite : le bug (Warning filemtime) n'est visible dans le
+// corps HTTP QUE si display_errors est On. En CI (php.ini production, Off par
+// défaut) le warning part dans les logs serveur et le test ne peut rien voir.
+// Avec display_errors=1, tout warning pollue le corps → l'assertion Test 2 le détecte.
+$serverCmd = "$phpBin -d display_errors=1 -d error_reporting=E_ALL -S 127.0.0.1:8899 -t "
+    . escapeshellarg($projectRoot) . " > /dev/null 2>&1 &";
 exec($serverCmd);
 sleep(2);
 
@@ -139,6 +152,20 @@ check("assets.php?type=css renvoie Cache-Control", $hasCacheControl);
 
 $hasLastModified = stripos($resp['headers'], 'last-modified:') !== false;
 check("assets.php?type=css renvoie Last-Modified", $hasLastModified);
+
+// Corps propre : le bug filemtime() (fichier cache absent) émettrait ici un
+// "<br /><b>Warning</b>: ..." EN TÊTE du CSS — status/headers resteraient bons,
+// seul le corps est corrompu. Vérifier que le corps est du CSS pur :
+//  1. il commence par un commentaire CSS /* (tous les style_*.css commencent par /*)
+//  2. il ne contient aucun pattern d'erreur PHP (display_errors=1 forcé par le test)
+//     Format réel : "<b>Warning</b>:  message" — le </b> fait partie du pattern.
+$hasPhpErrorInBody = preg_match('~<\s*b\s*>(?:Warning|Notice|Deprecated|Fatal error|Parse error)<\s*/b\s*>~i', $resp['body']) === 1;
+check("assets.php?type=css renvoie un corps CSS pur (aucun warning PHP)",
+    !$hasPhpErrorInBody,
+    $hasPhpErrorInBody ? 'Body: ' . substr($resp['body'], 0, 300) : '');
+
+check("assets.php?type=css renvoie un corps non vide", strlen($resp['body']) > 0,
+    strlen($resp['body']) > 0 ? '' : 'Body vide');
 
 // ── Test 3 : 304 Not Modified pour CSS ──
 echo "\n── Test 3 : 304 Not Modified pour CSS ──\n";

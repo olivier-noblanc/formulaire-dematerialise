@@ -106,15 +106,38 @@ class TestRun {
 let phpServer = null;
 let stderrBuffer = '';
 let stderrMarker = 0;
+// true quand stop() a été appelé : les exit codes du kill volontaire
+// (code 1 sur Windows) ne sont pas des crashs à logger.
+let stopping = false;
 
 /**
  * Tue tout serveur PHP existant sur le port configuré.
  * Appelé systématiquement au démarrage pour éviter les conflits de port
  * (un test précédent qui aurait planté sans killer son serveur).
+ *
+ * Cross-platform : pkill (Unix) / netstat + taskkill (Windows). Sur Windows,
+ * `pkill ... 2>/dev/null` émettait "Le chemin d'accès spécifié est introuvable"
+ * (cmd.exe ne comprend ni pkill ni la redirection Unix) à chaque démarrage.
  */
 function killExistingServer() {
     try {
-        execSync(`pkill -f "php -S 127.0.0.1:${PORT}" 2>/dev/null || true`);
+        if (process.platform === 'win32') {
+            const out = execSync(`netstat -ano | findstr "127.0.0.1:${PORT}"`, { encoding: 'utf8' });
+            const pids = new Set(
+                out.split('\n')
+                    .map((l) => l.trim().split(/\s+/).pop())
+                    .filter((p) => /^\d+$/.test(p))
+            );
+            for (const pid of pids) {
+                try {
+                    execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
+                } catch (_) {
+                    // process déjà mort — on ignore
+                }
+            }
+        } else {
+            execSync(`pkill -f "php -S 127.0.0.1:${PORT}" 2>/dev/null || true`);
+        }
     } catch (_) {
         // pkill retourne 1 si aucun process trouvé → on ignore
     }
@@ -173,6 +196,7 @@ async function startTestServer(userHeader = 'DREETS\\admin') {
     // Réinitialiser le buffer stderr et le marker
     stderrBuffer = '';
     stderrMarker = 0;
+    stopping = false;
 
     phpServer = spawn('php', ['-S', `127.0.0.1:${PORT}`, ROUTER_PATH], {
         cwd: PROJECT_ROOT,
@@ -196,8 +220,11 @@ async function startTestServer(userHeader = 'DREETS\\admin') {
 
     // Si le serveur crash au démarrage, on log l'erreur pour débug
     phpServer.on('exit', (code, signal) => {
-        // Log non bloquant — utile pour débugger
-        if (code !== null && code !== 0 && code !== 15 && signal !== 'SIGTERM' && signal !== 'SIGKILL') {
+        // Log non bloquant — utile pour débugger.
+        // Sur Windows, le kill volontaire (SIGTERM → TerminateProcess) fait
+        // sortir le process avec code 1 signal null : on ne log pas si
+        // stopping est posé (arrêt demandé par stop()).
+        if (!stopping && code !== null && code !== 0 && code !== 15 && signal !== 'SIGTERM' && signal !== 'SIGKILL') {
             console.error(`[PHP-S] Process exited with code ${code} signal ${signal}`);
         }
     });
@@ -212,6 +239,7 @@ async function startTestServer(userHeader = 'DREETS\\admin') {
     // stop() — kill propre via SIGTERM puis SIGKILL en fallback
     const stop = async () => {
         if (phpServer === null) return;
+        stopping = true;
         try {
             // Tuer tout le groupe ( detached:true → -pid = groupe )
             process.kill(-phpServer.pid, 'SIGTERM');

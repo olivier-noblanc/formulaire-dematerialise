@@ -1,5 +1,26 @@
 # Changelog — CircuitDémat
 
+## [10.42.6] — 2026-08-06
+_Résumé : Fix CSS corrompu par warning `filemtime()` au 1er hit après déploiement + durcissement des tests qui ne le détectaient pas._
+
+### 🐛 Bug fix
+- **`assets.php`** : `filemtime($cacheFile)` était appelé **avant** la vérification `is_file()`. Au 1er hit après déploiement (fichier cache absent → recompilation), PHP émettait `Warning: filemtime(): stat failed` dans le corps HTTP, **corrompant le CSS servi**. Fix : `is_file()` d'abord, `filemtime()` seulement si le fichier existe.
+
+### 🧪 Tests — pourquoi ils n'ont rien vu (3 trous cumulés)
+1. **`test_assets_cache.php`** ne vérifiait que status + headers (200, Content-Type, ETag, Cache-Control, 304) — **jamais le corps** : le warning est émis après les `header()`, il pollue le corps, pas les headers.
+2. **Scénario cache froid jamais garanti** : le cache n'était pas purgé avant le test → si le fichier existait déjà, la branche recompilation (celle du bug) n'était jamais exécutée.
+3. **`display_errors=Off` en CI** (php.ini production) : le warning partait dans les logs serveur, pas dans le corps → invisible même en regardant.
+
+### 🔧 Tests renforcés
+- **`test_assets_cache.php`** : purge du cache CSS avant démarrage (cache froid déterministe), serveur lancé avec `-d display_errors=1 -d error_reporting=E_ALL`, nouvelle assertion « corps CSS pur » (début `/*` + aucun pattern `<b>Warning</b>`/`<b>Notice</b>`… dans le body).
+- **Nouveau e2e `tests/e2e/assets_css_pure.spec.js`** : vérifie corps pur + stderr sans erreur PHP (`capturePhpErrors`) sur **cache froid** (purge avant 1er hit) **et cache chaud** — filet indépendant de display_errors (le warning part aussi dans stderr via log_errors). Enregistré dans `run_all.js` (2e spec, après smoke).
+- **`tests/e2e/helpers.js`** : `killExistingServer()` est désormais cross-platform (`netstat` + `taskkill` sur Windows au lieu de `pkill ... 2>/dev/null`, syntaxe Unix incomprise par cmd.exe) ; les exit codes du kill volontaire du serveur (code 1 sous Windows) ne sont plus loggés comme des crashs (`stopping` flag).
+
+### 🛠 Environnement dev (hors repo)
+- **PHP scoop** : `mbstring`, `pdo_sqlite` et `sqlite3` activés dans `php.ini` principal (lignes 927/935/946 décommentées) — les serveurs `php -S` lancés sans `PHP_INI_SCAN_DIR` (spawn sandbox) n'avaient pas ces extensions → `index.php` rendait un 500 « extensions PHP manquantes ». Doublons retirés de `cli\php.ini` (double chargement → warnings "already loaded"). ⚠️ `php.ini` principal n'est pas persisté par scoop (perdu à l'update), contrairement à `cli\php.ini` (persist).
+
+---
+
 ## [10.42.3] — 2026-08-05
 _Résumé : Correction PHPStan massive — 959 → 491 erreurs (~49% réduites)._
 

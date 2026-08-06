@@ -39,6 +39,7 @@ function getSpecs() {
 
     const allSpecs = [
         'smoke.spec.js',
+        'assets_css_pure.spec.js',
         'admin_pages.spec.js',
         'validation_flow.spec.js',
         'full_submission_flow.spec.js',
