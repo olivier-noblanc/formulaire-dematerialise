@@ -30,7 +30,16 @@
 
 ## ✅ Terminé (historique)
 
-### v10.42.12 — Fix warning PHP 8.5 + refactor extraction safe (helper SubmissionData)
+### v10.42.14 — Formulaire "Pense-bête" (self-reminder)
+| Tâche | Détail |
+|-------|--------|
+| Nouveau formulaire | "Pense-bête" — self-reminder avec date cible |
+| Champs | `note_objet_du_rappel` (Zone de texte, obligatoire), `date_cible` (Date, obligatoire) |
+| Circuit | Étape unique "Auto-validation" avec destinataire `{{owner}}` |
+| ID formulaire | `ea8f7387-1676-43a1-90ba-a61ea8824e8c` |
+| Création | Via UI admin (pas de code) — prévisualisation OK ✅ |
+
+### v10.42.13 — Enum `SubmissionField` pour éliminer les magic strings
 | Tâche | Détail |
 |-------|--------|
 | Bug PHP 8.5 | `MyValidationsRenderer.php` : accès directs `$data['prenom']`, `$data['affectation']`... sans garde-fou → warnings « Undefined array key » sur formulaires sans ces champs |

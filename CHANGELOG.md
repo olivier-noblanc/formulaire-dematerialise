@@ -1,5 +1,49 @@
 # Changelog — CircuitDémat
 
+## [10.42.14] — 2026-08-07
+_Résumé : Création du formulaire "Pense-bête" — self-reminder avec date cible pour les utilisateurs._
+
+### ✨ Nouveau formulaire — "Pense-bête" (self-reminder)
+- **Création via UI admin** : formulaire créé via l'interface d'administration (pas de code ajouté).
+- **Champs** :
+  - `note_objet_du_rappel` (Zone de texte, obligatoire) — objet du rappel à se fixer.
+  - `date_cible` (Date, obligatoire) — date cible du rappel.
+- **Circuit de validation** : étape unique "Auto-validation" avec destinataire `{{owner}}` (le créateur de la demande).
+- **Usage** : l'utilisateur crée un rappel pour lui-même, le valide lui-même, et reçoit un email de rappel à la date cible.
+- **ID formulaire** : `ea8f7387-1676-43a1-90ba-a61ea8824e8c`
+- **Slug** : `pense_bete`
+
+### 🧪 Vérifications
+- Prévisualisation du formulaire : OK ✅
+- Champs configurés : 2 (note + date) ✅
+- Destinataire étape : `{{owner}}` ✅
+
+---
+
+## [10.42.13] — 2026-08-07
+_Résumé : Enum `SubmissionField` pour éliminer les magic strings — maintenabilité et détection d'erreurs à la compilation._
+
+### 🛠 Refactor — enum pour les champs standards (règle AGENTS.md #12)
+- **Création** : `src/Enum/SubmissionField.php` — enum des champs standards (`PRENOM`, `NOM`, `AFFECTATION`, `VALIDATIONS`).
+- **Migration** : 18 fichiers refactorisés pour utiliser `SubmissionField::FIELD->value` au lieu de magic strings :
+  - `alert_check.php` — anonymisation RGPD
+  - `src/Controller/FormTrackingController.php`, `MonitoringController.php`, `RgpdController.php`, `SubmissionViewController.php`
+  - `src/Forms/SubmissionData.php` — helper d'extraction safe
+  - `src/Mail/MailService.php` — exclusion du champ `validations` dans les emails
+  - `src/Render/DashboardTableRenderer.php`, `FormRenderer.php`, `MySubmissionsRenderer.php`, `MyValidationsRenderer.php`, `SubmissionViewRenderer.php`, `ValidateRenderer.php`
+  - `src/Render/templates/renderFormData.php`, `renderValidationHistory.php`, `submission_detail.php`
+  - `src/Repository/SubmissionRepository.php` — requêtes JSON
+  - `src/Rgpd/RgpdService.php` — export RGPD
+  - `src/Token/TokenService.php`, `Workflow/TokenValidationHandler.php`
+- **Bénéfice** : détection d'erreurs à la compilation (IDE/PHPStan), source unique de vérité, plus de désynchronisation entre fichiers.
+
+### 🧪 Vérifications
+- PHPUnit : **1320 tests, 3859 assertions** ✅
+- PHPStan level 8 : OK ✅
+- `php -l` : 0 erreur sur les 18 fichiers ✅
+
+---
+
 ## [10.42.12] — 2026-08-07
 _Résumé : Fix warning PHP 8.5 "Undefined array key" + refactor extraction safe des données JSON (helper SubmissionData)._
 

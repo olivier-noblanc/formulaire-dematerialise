@@ -209,8 +209,15 @@
                                             <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
                                             <label class="u-col-dis-fon-mar-2">Courriel du destinataire <span class="req">*</span></label>
-                                            <input type="text" name="email" required placeholder="ex: prenom.nom@exemple.invalid ou {{nom_du_champ}}" list="ldap-recipient-suggestions" autocomplete="off" class="progress-fill-4">
-                                            <span class="hint u-col-dis-fon-mar">Email statique ou référence dynamique <code>{{champ}}</code>.</span>
+                                            <div class="flex-gap4" style="align-items: center;">
+                                                <input type="text" name="email" required placeholder="ex: prenom.nom@exemple.invalid" list="recipient-templates" autocomplete="off" class="progress-fill-4" style="flex: 1;">
+                                                <button type="button" class="btn btn-secondary btn-compact-4" data-insert-template="{{owner}}" title="Insérer {{owner}} (créateur du formulaire)">Propriétaire</button>
+                                            </div>
+                                            <span class="hint u-col-dis-fon-mar">Email statique ou référence dynamique : <code>{{owner}}</code> (créateur), <code>{{champ}}</code> (valeur d'un champ).</span>
+                                            <datalist id="recipient-templates">
+                                                <option value="{{owner}}">Propriétaire du formulaire (créateur)</option>
+                                                <option value="{{owner_email}}">Email du propriétaire</option>
+                                            </datalist>
                                             <div class="flex-gap4">
                                                 <button type="button" class="btn btn-secondary btn-compact-4" data-close-details="details">Annuler</button>
                                                 <button type="submit" class="btn btn-primary btn-compact-4">Ajouter</button>
@@ -230,3 +237,18 @@
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+// Insertion de templates de destinataires dynamiques
+document.addEventListener('click', function (e) {
+    if (e.target.matches('[data-insert-template]')) {
+        const template = e.target.getAttribute('data-insert-template');
+        const details = e.target.closest('details');
+        const input = details?.querySelector('input[name="email"]');
+        if (input) {
+            input.value = template;
+            input.focus();
+        }
+    }
+});
+</script>
