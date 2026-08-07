@@ -30,6 +30,6 @@ final class SubmissionData
     public static function has(array $data, SubmissionField $key): bool
     {
         $value = $data[$key->value] ?? null;
-        return $value !== null && $value !== '' && $value !== '0';
+        return !in_array($value, [null, '', '0'], true);
     }
 }
