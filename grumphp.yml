@@ -11,5 +11,8 @@ grumphp:
             configuration: phpstan.neon
             level: 8
             use_grumphp_paths: false
+        rector:
+            config: rector.php
+            triggered_by: ['php']
         deptrac:
             depfile: deptrac.php
