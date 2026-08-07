@@ -7,6 +7,7 @@ namespace App\Render;
 use App\Core\App;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
+use App\Forms\SubmissionData;
 
 /**
  * Rendu de la page « Mes validations » (dashboard validateur).
@@ -78,7 +79,9 @@ final class MyValidationsRenderer
             foreach ($pendingTokens as $pendingToken) {
                 $data = json_decode((string) ($pendingToken['data'] ?? '{}'), true) ?? [];
                 $expired = (bool)($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
-                $nomAgent = $htmlService->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
+                $nomAgent = $htmlService->escape(
+                    SubmissionData::get($data, 'prenom') . ' ' . SubmissionData::get($data, 'nom')
+                );
                 $allSteps = $allStepsBySub[$pendingToken['submission_id']] ?? [];
 
                 $cardClass = $expired ? 'expired' : 'pending';
@@ -88,8 +91,8 @@ final class MyValidationsRenderer
                 $html .= '      <div class="vc-title">' . $htmlService->escape($pendingToken['form_label']) . ' — Étape ' . (int) $pendingToken['ordre'] . ' : ' . $htmlService->escape($pendingToken['step_label']) . '</div>' . "\n";
                 $html .= '      <div class="vc-meta">' . "\n";
                 $html .= '        Agent : <strong>' . ($nomAgent ?? $htmlService->escape($pendingToken['data'] ? 'Inconnu' : '')) . '</strong>' . "\n";
-                if ((bool)($data['affectation'])) {
-                    $html .= ' — ' . $htmlService->escape($data['affectation']);
+                if (SubmissionData::has($data, 'affectation')) {
+                    $html .= ' — ' . $htmlService->escape(SubmissionData::get($data, 'affectation'));
                 }
                 $html .= '<br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($pendingToken['submitted_at'] ?? '')))) . "\n";
                 if ($pendingToken['relance_count'] > 0) {
@@ -168,17 +171,22 @@ final class MyValidationsRenderer
         } else {
             foreach ($doneTokens as $doneToken) {
                 $data = json_decode((string) ($doneToken['data'] ?? '{}'), true) ?? [];
-                $nomAgent = $htmlService->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
+                $nomAgent = $htmlService->escape(
+                    SubmissionData::get($data, 'prenom') . ' ' . SubmissionData::get($data, 'nom')
+                );
 
                 $actionLabel = 'Validé';
                 $actionCls = 'badge-ok';
                 if ($doneToken['sub_status'] === SubmissionStatus::Refuse->value) {
                     $refusedByMe = false;
-                    if (isset($data['validations'])) {
-                        foreach ($data['validations'] as $v) {
-                            if ($v['action'] === ValidationAction::Refuser->value && (string) ($v['email'] ?? '') === $user) {
-                                $refusedByMe = true;
-                                break;
+                    if (SubmissionData::has($data, 'validations')) {
+                        $validations = $data['validations'] ?? [];
+                        if (is_array($validations)) {
+                            foreach ($validations as $v) {
+                                if ($v['action'] === ValidationAction::Refuser->value && (string) ($v['email'] ?? '') === $user) {
+                                    $refusedByMe = true;
+                                    break;
+                                }
                             }
                         }
                     }

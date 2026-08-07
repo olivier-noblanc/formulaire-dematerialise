@@ -30,6 +30,16 @@
 
 ## ✅ Terminé (historique)
 
+### v10.42.12 — Fix warning PHP 8.5 + refactor extraction safe (helper SubmissionData)
+| Tâche | Détail |
+|-------|--------|
+| Bug PHP 8.5 | `MyValidationsRenderer.php` : accès directs `$data['prenom']`, `$data['affectation']`... sans garde-fou → warnings « Undefined array key » sur formulaires sans ces champs |
+| Fix initial | Accès null-safe `?? ''` (lignes 91-92) — appliqué manuellement |
+| Refactor | Helper `src/Forms/SubmissionData.php` (NOUVEAU) : `get()` (extraction chaîne safe) + `has()` (vérification existence + non-vide) |
+| Migration | `MyValidationsRenderer.php` : 4 accès remplacés (lignes 82, 92-93, 175, 182-191) vers le helper |
+| Tests | `--filter MyValidations` : 2 tests, 3 assertions ✅ ; PHPStan level 8 : No errors ✅ |
+| Leçon | Le fix initial était un travail @stagiaire (1 ligne, pattern mécanique) — à déléguer systématiquement |
+
 ### v10.42.11 — Cache-busting assets par version (enum AssetType) + persona JS externalisé
 | Tâche | Détail |
 |-------|--------|
@@ -320,6 +330,14 @@ Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 - **0 reste à corriger**
 - **1 faux positif** : #26 (JargonService) — le service est vivant (81 références via `t_jargon()` → `JargonService::translate()`), le TODO avait tort
 
+
+### Relance personnalisable (feature demandée 2026-08-07)
+
+Permettre de personnaliser **l'intervalle de rappel** et **le nombre de rappels** par formulaire/workflow (aujourd'hui globaux : `delai_relance_h` = 48h, `relance_max` = 3, settings admin).
+
+- Objectif : configurable par formulaire (ou par workflow), pas seulement global
+- **Contrainte : garder un cap** (large mais borné) — pas de relances illimitées
+- Contexte : self-reminder via formulaire « Demande de télétravail » (PoC admin_forms)
 
 ### CSP — zéro inline (décision 2026-07-30)
 

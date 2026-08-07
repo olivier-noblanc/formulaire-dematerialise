@@ -1,5 +1,25 @@
 # Changelog — CircuitDémat
 
+## [10.42.12] — 2026-08-07
+_Résumé : Fix warning PHP 8.5 "Undefined array key" + refactor extraction safe des données JSON (helper SubmissionData)._
+
+### 🐛 Bug fix — warnings PHP 8.5 sur les accès aux clés du JSON de soumission
+- **Problème** : `MyValidationsRenderer.php` accédait directement aux clés du JSON de soumission (`$data['prenom']`, `$data['affectation']`...) sans garde-fou → warnings PHP 8.5 « Undefined array key » sur les formulaires sans ces champs (ex. « Demande de télétravail » n'a pas de champ `affectation`).
+- **Fix initial** : accès null-safe avec `?? ''` (lignes 91-92).
+- **Refactor** : helper centralisé `src/Forms/SubmissionData.php` avec :
+  - `get(array $data, string $key, string $default = ''): string` — extrait une chaîne safe (évite `is_string` checks partout)
+  - `has(array $data, string $key): bool` — vérifie existence + valeur non-vide (pour les conditions booléennes)
+- **Migration** : `MyValidationsRenderer.php` migré vers le helper (4 accès remplacés : lignes 82, 92-93, 175, 182-191).
+- **Tests** :
+  - `tests/PHPUnit/ --filter MyValidations` : 2 tests, 3 assertions ✅
+  - PHPStan level 8 : No errors ✅
+
+### 🧪 Vérifications
+- PHPUnit : **1419 tests, 0 failure** (inchangé).
+- PHPStan level 8 : OK sur `src/Forms/SubmissionData.php` + `src/Render/MyValidationsRenderer.php`.
+
+---
+
 ## [10.42.11] — 2026-08-06
 _Résumé : Cache-busting des assets par version (enum `AssetType` de bout en bout) — corrige le CSS/JS périmé servi par le cache navigateur pendant 24 h._
 
