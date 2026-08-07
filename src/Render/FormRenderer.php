@@ -6,6 +6,7 @@ namespace App\Render;
 
 use App\Core\App;
 use App\Enum\FieldType;
+use App\Enum\SubmissionField;
 
 /**
  * Form & UI rendering helpers.
@@ -198,7 +199,7 @@ final class FormRenderer
      * @param string $format  Output format: 'p' (paragraph), 'inline', 'grid' (vc-data grid)
      * @return string HTML of formatted data
      */
-    public function submissionData(array $data, array $exclude = ['validations', 'csrf_token'], string $format = 'p'): string
+    public function submissionData(array $data, array $exclude = [SubmissionField::VALIDATIONS->value, 'csrf_token'], string $format = 'p'): string
     {
         $html = '';
         foreach ($data as $k => $v) {

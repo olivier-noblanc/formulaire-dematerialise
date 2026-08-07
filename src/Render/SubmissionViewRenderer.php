@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Render;
 
+use App\Enum\SubmissionField;
+
 /**
  * Renderer pour la page Détail d'une soumission (submission_view).
  *
@@ -207,7 +209,7 @@ final class SubmissionViewRenderer
         $html .= $this->renderDelegations($ctx->delegations);
 
         // Validation history
-        $html .= $this->renderValidationHistory(['validations' => $this->buildValidationHistory($ctx->all_tokens)]);
+        $html .= $this->renderValidationHistory([SubmissionField::VALIDATIONS->value => $this->buildValidationHistory($ctx->all_tokens)]);
 
         // Remind history
         $html .= $this->renderRemindHistory($ctx->submission_reminds);

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
+use App\Forms\SubmissionData;
 
 /**
  * Contrôleur de la page Surveillance (monitoring).
@@ -70,7 +72,7 @@ final class MonitoringController extends BaseController
                 $pendingCount = $pendingCounts[$alertSubmission['id']] ?? 0;
 
                 if ($daysRemaining <= 10) {
-                    $nomAgent = ($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '');
+                    $nomAgent = SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM);
                     $activeAlerts[] = [
                         'submission_id' => $alertSubmission['id'],
                         'form_label' => $alertSubmission['form_label'],

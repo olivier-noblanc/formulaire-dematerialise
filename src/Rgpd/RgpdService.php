@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Rgpd;
 
 use App\Core\App;
+use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
 use App\Repository\AdminRepository;
 use App\Repository\AlertRepository;
@@ -58,7 +59,7 @@ final readonly class RgpdService
             return ['email' => $email, 'error' => 'Accès refusé : vous ne pouvez exporter que vos propres données.'];
         }
 
-        $data = ['email' => $email, 'export_date' => gmdate('c'), 'submissions' => [], 'validations' => []];
+        $data = ['email' => $email, 'export_date' => gmdate('c'), 'submissions' => [], SubmissionField::VALIDATIONS->value => []];
 
         $rows = $this->submissionRepository->findForRgpdExportByEmail($email);
         foreach ($rows as $row) {
@@ -72,7 +73,7 @@ final readonly class RgpdService
             ];
         }
 
-        $data['validations'] = $this->tokenRepository->findDoneValidationsByEmail($email);
+        $data[SubmissionField::VALIDATIONS->value] = $this->tokenRepository->findDoneValidationsByEmail($email);
 
         return $data;
     }

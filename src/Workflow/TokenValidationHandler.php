@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workflow;
 
+use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Mail\MailService;
@@ -135,7 +136,7 @@ final readonly class TokenValidationHandler
         // ignoré — l'audit_log disait 'validated' mais la data JSON n'avait pas la nouvelle
         // validation. Maintenant on rollback et on informe l'appelant.
         $appended = $this->submissionRepository->appendToDataJson($t['submission_id'], function (array $data) use ($validationEntry): array {
-            $data['validations'][] = $validationEntry;
+            $data[SubmissionField::VALIDATIONS->value][] = $validationEntry;
             return $data;
         });
         if (!$appended) {

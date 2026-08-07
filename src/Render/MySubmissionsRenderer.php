@@ -7,6 +7,8 @@ namespace App\Render;
 use App\Core\App;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
+use App\Enum\SubmissionField;
+use App\Forms\SubmissionData;
 
 /**
  * Rendu HTML de la page "Mes demandes" pour l'agent connecté.
@@ -111,7 +113,7 @@ final class MySubmissionsRenderer
                 $subId       = urlencode((string) ($submission['id'] ?? ''));
                 $formLabel   = App::html()->escape(self::simplifyLabel($submission['form_label']));
                 $submittedAt = App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($submission['submitted_at'] ?? ''))));
-                $prenomNom   = App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? ''));
+                $prenomNom   = App::html()->escape(SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM));
                 $formSlug    = App::html()->escape($submission['form_slug']);
                 $maxPct      = max($pct, 3);
                 $widthCls    = 'ipw-' . (int) $maxPct;
@@ -166,8 +168,8 @@ final class MySubmissionsRenderer
                 $html .= "        </div>\n";
 
                 // Refusal box
-                if ($status === SubmissionStatus::Refuse->value && isset($data['validations'])) {
-                    foreach ($data['validations'] as $v) {
+                if ($status === SubmissionStatus::Refuse->value && SubmissionData::has($data, SubmissionField::VALIDATIONS)) {
+                    foreach ($data[SubmissionField::VALIDATIONS->value] as $v) {
                         if ($v['action'] === ValidationAction::Refuser->value) {
                             $refUser  = App::html()->displayUser($v['email']);
                             $refStep  = App::html()->escape($v['step_label']);
@@ -183,9 +185,9 @@ final class MySubmissionsRenderer
                     }
                 }
                 // Validation box
-                elseif ($status === SubmissionStatus::Valide->value && isset($data['validations'])) {
+                elseif ($status === SubmissionStatus::Valide->value && SubmissionData::has($data, SubmissionField::VALIDATIONS)) {
                     $lastValidator = null;
-                    foreach ($data['validations'] as $v) {
+                    foreach ($data[SubmissionField::VALIDATIONS->value] as $v) {
                         if ($v['action'] === ValidationAction::Valider->value) {
                             $lastValidator = $v;
                         }

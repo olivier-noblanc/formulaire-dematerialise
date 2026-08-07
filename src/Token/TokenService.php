@@ -7,6 +7,7 @@ namespace App\Token;
 use App\Audit\AuditLogService;
 use App\Auth\AuthService;
 use App\Core\App;
+use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Mail\MailService;
@@ -137,10 +138,10 @@ final readonly class TokenService
             $this->tokenRepository->invalidateActiveBySubmission($submissionId, $now);
 
             $appended = $this->submissionRepository->appendToDataJson($submissionId, function (array $data) use ($now, $cancelledBy): array {
-                if (!isset($data['validations'])) {
-                    $data['validations'] = [];
+                if (!isset($data[SubmissionField::VALIDATIONS->value])) {
+                    $data[SubmissionField::VALIDATIONS->value] = [];
                 }
-                $data['validations'][] = [
+                $data[SubmissionField::VALIDATIONS->value][] = [
                     'step_label' => 'Annulation',
                     'email' => $cancelledBy !== '' ? $cancelledBy : 'system',
                     'action' => ValidationAction::Annule->value,

@@ -6,6 +6,8 @@ namespace App\Controller;
 use App\Core\App;
 use App\Enum\FilledBy;
 use App\Enum\SubmissionStatus;
+use App\Enum\SubmissionField;
+use App\Forms\SubmissionData;
 
 /**
  * Contrôleur de la page Tableau de suivi propriétaire (form_tracking).
@@ -54,9 +56,13 @@ final class FormTrackingController extends BaseController
         foreach ($fields as $field) {
             $allFieldNames[$field['field_name']] = $field['label'];
             $fn = $field['field_name'];
-            if (in_array($fn, ['nom', 'prenom', 'email', 'service', 'type_sortie', 'nature_depense',
+            if (in_array($fn, [
+                SubmissionField::NOM->value,
+                SubmissionField::PRENOM->value,
+                'email', 'service', 'type_sortie', 'nature_depense',
                 'montant', 'date_depense', 'type_materiel', 'nature_besoin', 'date_prescription',
-                'urgence', 'date_sortie', 'heure_debut', 'heure_fin'], true)) {
+                'urgence', 'date_sortie', 'heure_debut', 'heure_fin'
+            ], true)) {
                 $keyFields[] = $field;
             }
         }
@@ -138,7 +144,7 @@ final class FormTrackingController extends BaseController
             ?>
           <tr>
             <td class="u-fs-sm-ws-nowrap"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($submission['submitted_at'] ?? ''))) ?></td>
-            <td><?= \App\Core\App::html()->escape(($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')) ?></td>
+            <td><?= \App\Core\App::html()->escape(SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM)) ?></td>
             <?php foreach ($keyFields as $keyField):
                 $val = $data[$keyField['field_name']] ?? '';
                 $valStr = is_array($val) ? implode(', ', $val) : (string) $val;

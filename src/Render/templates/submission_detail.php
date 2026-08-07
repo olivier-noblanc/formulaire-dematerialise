@@ -1,6 +1,6 @@
-<?php if (is_array($d) && isset($d['validations']) && is_array($d['validations'])): ?>
+<?php if (is_array($d) && isset($d[\App\Enum\SubmissionField::VALIDATIONS->value]) && is_array($d[\App\Enum\SubmissionField::VALIDATIONS->value])): ?>
       <h3 class="u-mt-0-mb-1">Historique des validations</h3>
-  <?php foreach ($d['validations'] as $validation):
+  <?php foreach ($d[\App\Enum\SubmissionField::VALIDATIONS->value] as $validation):
     $step_label = \App\Core\App::html()->escape((string) ($validation['step_label'] ?? ''));
     $email      = \App\Core\App::html()->escape((string) ($validation['email'] ?? ''));
     $action     = (string) ($validation['action'] ?? '');

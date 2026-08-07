@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\SubmissionField;
 
 /**
  * Contrôleur de la page RGPD (rgpd.php).
@@ -57,7 +58,7 @@ final class RgpdController extends BaseController
                     $data['validator_data_on_submissions'] = $this->submissionRepo->getValidatorDataOnSubmissionsByEmail($email);
 
                     if (($data['submissions'] ?? []) === []
-                        && ($data['validations'] ?? []) === []
+                        && ($data[SubmissionField::VALIDATIONS->value] ?? []) === []
                         && ($data['validator_data_filled'] ?? []) === []
                         && ($data['validator_data_on_submissions'] ?? []) === []) {
                         $infoMsg = 'Aucune donnée trouvée pour ' . \App\Core\App::html()->escape($email) . '.';

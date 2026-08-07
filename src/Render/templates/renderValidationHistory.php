@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-if (!isset($data['validations']) || !is_array($data['validations']) || !((bool)($data['validations']))) {
+if (!isset($data[\App\Enum\SubmissionField::VALIDATIONS->value]) || !is_array($data[\App\Enum\SubmissionField::VALIDATIONS->value]) || !((bool)($data[\App\Enum\SubmissionField::VALIDATIONS->value]))) {
     return '';
 }
 
 $items_html = '';
-foreach ($data['validations'] as $v) {
+foreach ($data[\App\Enum\SubmissionField::VALIDATIONS->value] as $v) {
     $action = (string) ($v['action'] ?? '');
     $is_valid = $action === \App\Enum\ValidationAction::Valider->value;
     $is_annule = $action === \App\Enum\ValidationAction::Annule->value;

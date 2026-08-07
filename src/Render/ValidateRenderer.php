@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\SubmissionField;
 use App\Enum\ValidationAction;
+use App\Forms\SubmissionData;
 
 /**
  * Rendu de la page Validation (accept/refuse de formulaires).
@@ -101,7 +103,7 @@ final class ValidateRenderer
         } elseif ($result['status'] === 'pending' || $result['status'] === 'ok') {
             $data = $result['data'] ?? [];
             $d   = json_decode($data['data'] ?? '{}', true);
-            $nom = $htmlService->escape(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
+            $nom = $htmlService->escape(SubmissionData::get($d, SubmissionField::PRENOM) . ' ' . SubmissionData::get($d, SubmissionField::NOM));
 
             $html .= '<a href="index.php?p=my_validations" class="back-link">← Mes validations</a>' . "\n";
             $html .= '<span class="badge">' . $htmlService->escape($data['step_label'] ?? '') . '</span>' . "\n";

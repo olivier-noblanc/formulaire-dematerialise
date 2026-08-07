@@ -1,4 +1,6 @@
 <?php
+use App\Enum\SubmissionField;
+
 /**
  * @var array<string, mixed>                                       $data
  * @var array<string, array{card_group?: string, label?: string}>  $field_info
@@ -6,7 +8,7 @@
 $items_html = '';
 $current_group = '';
 foreach ($data as $k => $v) {
-    if ($k === 'validations') {
+    if ($k === SubmissionField::VALIDATIONS->value) {
         continue;
     }
     if ($v === '') {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Enum\SubmissionStatus;
+use App\Enum\SubmissionField;
 
 final class SubmissionRepository extends BaseRepository
 {
@@ -267,8 +268,8 @@ final class SubmissionRepository extends BaseRepository
             "SELECT DISTINCT j.key
             FROM submissions s, json_each(s.data) j
             JOIN forms f ON f.id = s.form_id
-            WHERE $whereSql AND json_valid(s.data) AND j.key != 'validations'",
-            $params
+            WHERE $whereSql AND json_valid(s.data) AND j.key != :exclude_key",
+            [...$params, 'exclude_key' => SubmissionField::VALIDATIONS->value]
         );
         return array_values(array_map(static fn(array $r): string => (string) $r['key'], $rows));
     }

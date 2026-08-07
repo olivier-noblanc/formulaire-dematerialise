@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Contract\MailInterface;
+use App\Enum\SubmissionField;
 use App\Repository\MailRepository;
 use App\Settings\SettingsService;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -235,7 +236,7 @@ final readonly class MailService implements MailInterface
             if (in_array($v, ['', null, '0'], true)) {
                 continue;
             }
-            if ($k === 'validations') {
+            if ($k === SubmissionField::VALIDATIONS->value) {
                 continue;
             }
             if (is_array($v)) {

@@ -6,6 +6,8 @@ namespace App\Render;
 
 use App\Core\App;
 use App\Enum\SubmissionStatus;
+use App\Enum\SubmissionField;
+use App\Forms\SubmissionData;
 
 /**
  * Rendu du tableau des soumissions dans le tableau de bord.
@@ -57,7 +59,7 @@ final class DashboardTableRenderer
     public function submissionRow(int $i, array $row, array $tokens, ?array $vstatus = null): string
     {
         $d      = json_decode((string) ($row['data'] ?? ''), true);
-        $nom    = App::html()->escape(($d['prenom'] ?? '') . ' ' . ($d['nom'] ?? ''));
+        $nom    = App::html()->escape(SubmissionData::get($d, SubmissionField::PRENOM) . ' ' . SubmissionData::get($d, SubmissionField::NOM));
         $status = (string) ($row['status'] ?? SubmissionStatus::EnCours->value);
         $deadline_field = (string) ($row['deadline_field'] ?? '');
         $deadline_val   = $deadline_field !== '' && $deadline_field !== '0'
@@ -157,7 +159,7 @@ final class DashboardTableRenderer
     public function submissionDetail($d, string $status, array $tokens, array $row): string
     {
         $data_array = is_array($d) ? $d : [];
-        $form_data_html = new FormRenderer()->submissionData($data_array, ['validations', 'csrf_token'], 'inline');
+        $form_data_html = new FormRenderer()->submissionData($data_array, [SubmissionField::VALIDATIONS->value, 'csrf_token'], 'inline');
         $cancel_url = 'index.php?p=confirm_action&action=cancel_submission&submission_id='
             . urlencode((string) ($row['id'] ?? '')) . '&from=dashboard.phpfrom=index.php?p=dashboard';
 
