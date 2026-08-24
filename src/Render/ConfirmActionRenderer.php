@@ -9,7 +9,7 @@ use App\Core\App;
 final class ConfirmActionRenderer
 {
     /**
-     * @param array<string, mixed> $config
+     * @param array{label: string, description: string, params: list<string>, param_label: string, danger: bool} $config
      * @param array<string, string> $getParams
      */
     public static function content(

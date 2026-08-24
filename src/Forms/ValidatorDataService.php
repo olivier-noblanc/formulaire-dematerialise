@@ -150,7 +150,7 @@ final readonly class ValidatorDataService
      * Calcule l'état de complétion des champs validator pour un ensemble
      * de soumissions (batch — 2 requêtes SQL pour N soumissions).
      *
-     * @param array<int, array<string, mixed>> $submissions
+     * @param array<int, array{id?: string, form_id?: string}> $submissions
      * @return array<string, array{total: int, filled: int, complet: bool}>
      */
     public function getValidatorStatusBatch(array $submissions): array

@@ -55,20 +55,22 @@ final readonly class ExportService
     /**
      * Construit la clause WHERE et les paramètres à partir des options.
      *
-     * @param array<string, mixed> $options
-     * @return array{0: string, 1: array<int, mixed>}
+     * @param array{form_id?: string, status?: string} $options
+     * @return array{0: string, 1: list<string>}
      */
     public function buildWhereClause(array $options): array
     {
         $where = ['1=1'];
         $params = [];
-        if ((bool)($options['form_id'])) {
+        $formId = (string) ($options['form_id'] ?? '');
+        if ($formId !== '') {
             $where[] = 's.form_id = ?';
-            $params[] = $options['form_id'];
+            $params[] = $formId;
         }
-        if ((bool)($options['status'])) {
+        $statusFilter = (string) ($options['status'] ?? '');
+        if ($statusFilter !== '') {
             $where[] = 's.status = ?';
-            $params[] = $options['status'];
+            $params[] = $statusFilter;
         }
         return [implode(' AND ', $where), $params];
     }
@@ -78,7 +80,7 @@ final readonly class ExportService
      *
      * Utilisé par exportCsv() et testable directement.
      *
-     * @param array<string, mixed> $options Filtres optionnels ['form_id' => string, 'status' => string]
+     * @param array{form_id?: string, status?: string} $options Filtres optionnels ['form_id' => string, 'status' => string]
      */
     public function generateCsvString(array $options = []): string
     {
@@ -135,7 +137,7 @@ final readonly class ExportService
     /**
      * Exporte les soumissions au format CSV et force le téléchargement.
      *
-     * @param array<string, mixed> $options Filtres optionnels ['form_id' => string, 'status' => string]
+     * @param array{form_id?: string, status?: string} $options Filtres optionnels ['form_id' => string, 'status' => string]
      */
     public function exportCsv(array $options = []): void
     {

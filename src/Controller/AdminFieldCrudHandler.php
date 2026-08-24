@@ -48,7 +48,7 @@ final class AdminFieldCrudHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error: string}|array{redirect: string}
      */
     public static function handleAddField(): array
     {
@@ -77,7 +77,7 @@ final class AdminFieldCrudHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error: string}|array{redirect: string}
      */
     public static function handleUpdateField(): array
     {
@@ -107,7 +107,7 @@ final class AdminFieldCrudHandler
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{error: string}|array{redirect: string}|null
      */
     public static function handleDeleteField(): ?array
     {

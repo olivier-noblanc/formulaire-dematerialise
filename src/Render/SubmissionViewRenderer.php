@@ -82,7 +82,7 @@ final class SubmissionViewRenderer
     /**
      * Encart de délai / échéance.
      *
-     * @param array<string, mixed> $dlInfo
+     * @param array{urgency?: string} $dlInfo
      */
     public function renderDeadline(array $dlInfo, int $deadlineTs, int $daysRemaining, string $status): string
     {

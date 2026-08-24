@@ -11,13 +11,15 @@ use App\Enum\AssetType;
  *
  * Extracted from NavigationRenderer (H-01, 2026-08-05).
  * Handles page layout (DOCTYPE, head, body wrapper) and persona URL rewriting.
+ *
+ * @phpstan-type PageNavLink array{href: string, label: string, icon: string}
  */
 final class PageRenderer
 {
     /**
      * Generates a full HTML page (D1) — eliminates boilerplate duplication.
      *
-     * @param array<string, mixed> $options Page options
+     * @param array{container_class?: string, body_attr?: string, before_main?: string, after_main?: string, nav_extra?: array<string, PageNavLink>, raw_title?: bool} $options Page options
      */
     public function page(
         string $title,
@@ -34,7 +36,7 @@ final class PageRenderer
         $raw_title       = $options['raw_title'] ?? false;
 
         $page_body_class = 'page-' . preg_replace('/[^a-z0-9_-]/i', '', $nav_key);
-        if ($body_attr) {
+        if ($body_attr !== '') {
             if (preg_match('/class=["\']/', (string) $body_attr)) {
                 $body_attr = preg_replace('/class=["\']/', 'class="' . $page_body_class . ' ', (string) $body_attr, 1);
             } else {

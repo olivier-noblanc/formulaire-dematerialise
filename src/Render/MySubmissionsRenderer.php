@@ -18,7 +18,20 @@ final class MySubmissionsRenderer
     /**
      * Génère le HTML de la liste des soumissions de l'utilisateur.
      *
-     * @param array<int, array<string, mixed>> $submissions
+     * @param array<int, array{
+     *   id: string,
+     *   form_id: string,
+     *   data: string,
+     *   submitted_at: string|null,
+     *   status: string,
+     *   form_label: string,
+     *   form_slug: string,
+     *   deadline_field: string|null,
+     *   workflow_steps: array<int, array{step_id: string, step_label: string, step_status: string, step_detail: string}>,
+     *   progress_pct: int|float,
+     *   progress_done: int,
+     *   progress_total: int
+     * }> $submissions
      * @param array<int, array{slug: string, label: string}> $activeForms
      */
     public static function content(
@@ -91,7 +104,7 @@ final class MySubmissionsRenderer
                 };
 
                 $deadlineField = $submission['deadline_field'] ?? '';
-                $deadlineVal   = $deadlineField ? ($data[$deadlineField] ?? '') : '';
+                $deadlineVal   = $deadlineField !== '' ? ($data[$deadlineField] ?? '') : '';
                 $deadlineBadge = '';
                 if (!in_array($deadlineVal, ['', null, '0'], true) && $status === SubmissionStatus::EnCours->value) {
                     $dl     = calculate_deadline_urgency($deadlineVal, $status);

@@ -130,7 +130,7 @@ final class ErrorRenderer
     /**
      * Displays success/error/info/warning messages.
      *
-     * @param array<string, mixed> $messages
+     * @param array<string, string> $messages
      */
     public function messages(array $messages = []): string
     {

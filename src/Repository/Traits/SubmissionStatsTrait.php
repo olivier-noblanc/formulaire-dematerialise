@@ -9,8 +9,6 @@ namespace App\Repository\Traits;
  *
  * Utilisé par SubmissionRepository.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
  * @method bool execute(string $sql, array<int, mixed> $params = [])
  * @method \PDO pdo()
  */

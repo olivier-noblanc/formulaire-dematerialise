@@ -77,7 +77,7 @@ final class AdminFormsHandlers
      *
      * @param string $action      Valeur de $_POST['action'].
      * @param string $get_form_id form_id validé issu de $_GET.
-     * @return array<string,mixed>|null
+     * @return array{error?: string, redirect?: string, success?: string, form_id?: string, filename?: string, json_output?: string, validation_html?: string, preserved_json?: string}|null
      */
     public static function dispatch(string $action, string $get_form_id = ''): ?array
     {

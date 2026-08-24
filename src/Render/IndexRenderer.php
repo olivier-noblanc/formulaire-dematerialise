@@ -88,7 +88,7 @@ final class IndexRenderer
     /**
      * Empty-state guidé accueil agent (U-06 part 2).
      *
-     * @param array<int, array<string, mixed>> $welcome_forms
+     * @param array<int, array{slug: string, label: string, description?: string|null}> $welcome_forms
      */
     public static function welcomeState(array $welcome_forms): string
     {
@@ -129,7 +129,7 @@ final class IndexRenderer
     /**
      * Section « Nouvelle demande » : cartes des formulaires actifs.
      *
-     * @param array<int, array<string, mixed>> $active_forms
+     * @param array<int, array{slug: string, label: string, description?: string|null}> $active_forms
      */
     public static function formCards(array $active_forms): string
     {
@@ -161,7 +161,7 @@ final class IndexRenderer
     /**
      * Escape common form fields (slug, label, description).
      *
-     * @param array<string, mixed> $form
+     * @param array{slug: string, label: string, description?: string|null} $form
      * @return array{slug: string, label: string, desc: string}
      */
     private static function escapeFormField(array $form): array

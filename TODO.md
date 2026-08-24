@@ -6,7 +6,7 @@
 |----------|--------|
 | Tests | **1419** (0 fail, 0 errors) |
 | Assertions | **4164** |
-| `noUntypedArray` PHPStan | **157** (cible : 0 — DTOs en cours) |
+| `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **479** (level 8) — templates + règles shipmonk (régénéré après PII rewrite) |
@@ -29,6 +29,21 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.15 — Durcissement typage : `array<string, mixed>` → array shapes précises
+| Tâche | Détail |
+|-------|--------|
+| Contexte | PHPStan level 8 : règle `NoUntypedArrayParameterRule` flagge les `array<string, mixed>` trop vagues (clés indétectables) — voir AGENTS.md "array shapes" |
+| Triage | exp-3 : 101 occ / 43 fichiers, catégorie A=43 à corriger, B=JSON/tolérance légitime, C=frontière (à ne pas toucher) |
+| Verdict | ora-1 : shapes majoritaires + `@phpstan-type` aliases dans les fichiers sources (pas de src/Type/), DTO ponctuel uniquement si agrégat ≥2 sources ; pas de DTO pour rows SQL |
+| Correction | Export/Attachment/ValidatorData/FormJsonValidator + PageRenderer/FormRenderer/MySubmissionsRenderer/IndexRenderer/NavigationRenderer/ErrorRenderer/ConfirmActionRenderer/ValidateRenderer + 4 Admin handlers CRUD |
+| Leçon règle | `NoUntypedArrayParameterRule` utilise une regex qui ne matche PAS les shapes imbriqués inline ni les aliases sur param → utiliser un shape inline simple ou un alias au **class docblock** (ex. `FormFieldRow`) |
+| Résultat | phpstan niveau 8 projet complet : **0 erreur** ✅ — grep de contrôle : 59 `array<string, mixed>` restants, tous catégorie B/C/N-A, 0 fuite catégorie A |
+| Wave 3 (ValidateRenderer) | Le `@param` manuel à 8 clés (shape dupliquée, dérivante de l'alias canonique) remplacé par `@phpstan-import-type FormFieldRow` — **pas un bug de rendu** (appel L206 ordre correct, toutes les clés lues par `field()` présentes/typées) ; simple imprécision PHPDoc, alignement sur la source de vérité (règle AGENTS.md 1) |
+| `reportUnmatchedIgnoredErrors` | exp-2 : 46 ignores inline audités, tous légitimes → flag activé puis **laissé à `false`** sur `phpstan.neon` (l'activer remonterait 572 entrées baseline stale + 14 faux positifs `shipmonk.deadMethod`). `tests/phpstan.neon` : flag inchangé — bloc ignoreErrors massif non audité. Décision : nettoyer la baseline d'abord (voir Résidu) |
+| Hygiène | sta-1 : artefacts untracked nettoyés (5 `tmp-*.zip` + 4 dossiers cache Composer dans `vendor/composer/`) + `edenai-llm-cache-pricing.*` ajouté à `.gitignore` |
+| Résidu / à faire | `phpstan-baseline.neon` : 572 entrées stale (`@phpstan-ignore`/ignoreErrors ne matchant plus après cleanups Waves 1/2, dont 14 faux positifs `shipmonk.deadMethod`) → régénérer `phpstan --generate-baseline` puis seulement réévaluer `reportUnmatchedIgnoredErrors: true` |
+| Tests | PHPUnit 1419 tests / 4164 assertions / 0 failure (5W/3D préexistants) ✅ |
 
 ### v10.42.14 — Formulaire "Pense-bête" (self-reminder)
 | Tâche | Détail |

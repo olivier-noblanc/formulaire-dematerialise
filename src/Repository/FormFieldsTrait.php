@@ -10,19 +10,19 @@ use App\Enum\FilledBy;
 /**
  * @internal Trait utilisé par FormRepository pour limiter la taille du fichier principal.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
+ * @phpstan-type FormFieldRow array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}
+ *
  * @method bool execute(string $sql, array<int, mixed> $params = [])
  * @method string|null getStepLabel(string $stepId)  Défini dans FormStepsTrait
  */
 trait FormFieldsTrait
 {
     /**
-     * @return array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}>
+     * @return array<int, FormFieldRow>
      */
     public function getFields(string $formId): array
     {
-        /** @var array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
+        /** @var array<int, FormFieldRow> $result */
         $result = $this->fetchAll(
             'SELECT id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition FROM form_fields WHERE form_id = ? ORDER BY ordre',
             [$formId]
@@ -47,7 +47,7 @@ trait FormFieldsTrait
      * Récupère les champs d'un formulaire filtrés par filled_by (optionnel).
      * Variante de getFields() avec filtre filled_by — utilisée par FieldService::getFields().
      *
-     * @return list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}>
+     * @return list<FormFieldRow>
      */
     public function getFieldsByFilledBy(string $formId, ?string $filledBy = null): array
     {
@@ -58,13 +58,13 @@ trait FormFieldsTrait
             $params[] = $filledBy;
         }
         $sql .= ' ORDER BY ordre, id';
-        /** @var list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
+        /** @var list<FormFieldRow> $result */
         $result = $this->fetchAll($sql, $params);
         return $result;
     }
 
     /**
-     * @return array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}>
+     * @return array<int, FormFieldRow>
      */
     public function getValidatorFields(string $formId, ?string $stepId = null): array
     {
@@ -80,7 +80,7 @@ trait FormFieldsTrait
         }
 
         $sql .= ' ORDER BY ordre, id';
-        /** @var array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $result */
+        /** @var array<int, FormFieldRow> $result */
         $result = $this->fetchAll($sql, $params);
         return $result;
     }

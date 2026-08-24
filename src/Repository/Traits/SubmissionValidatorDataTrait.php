@@ -12,8 +12,6 @@ use App\Enum\FilledBy;
  * Utilisé par SubmissionRepository.
  *
  * @method \PDO pdo()
- * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
  * @method bool execute(string $sql, array<int, mixed> $params = [])
  */
 trait SubmissionValidatorDataTrait

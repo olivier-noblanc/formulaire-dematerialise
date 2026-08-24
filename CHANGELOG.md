@@ -1,5 +1,29 @@
 # Changelog — CircuitDémat
 
+## [10.42.15] — 2026-08-24
+_Résumé : Durcissement du typage — remplacement de `array<string, mixed>` par des array shapes précises (PHPDoc/PHPStan level 8)._
+
+### 🛠 Refactor — array shapes précises (règle AGENTS.md PHPDoc & PHPStan)
+- **`src/Export/ExportService.php`** : `generateCsvString()` prend `array{form_id?: string, status?: string}` ; filtres simplifiés (`(string) ?? ''` + comparaison stricte) au lieu de `!empty()`.
+- **`src/Attachment/AttachmentService.php`** : `getAttachments()` retourne `array<int, array{...}>` typé clé par clé.
+- **`src/Forms/ValidatorDataService.php`** : `@return` array shape complet (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition).
+- **`src/Forms/FormJsonValidator.php`** : shape inline `array{valid: bool, errors: array<string>, warnings: array<string>}` (l'alias `ValidationResult` a été abandonné — un alias sur param violait `NoUntypedArrayParameterRule`) ; `formatResults()` param inline shape.
+- **`src/Render/PageRenderer.php`** : `page()` `$options` typé via `@phpstan-type PageNavLink` déclaré au **class docblock** (déplacé du method docblock — fixe `class.notFound` en aval dans `NavigationRenderer` L67 + `BackupRenderer` L297), `body_attr` `!== ''`.
+- **`src/Render/FormRenderer.php`** : `$field` → shape précise à 6 clés avec `required: int` + comparaisons `=== 1` ; `$grouped` → `array<string, FormFieldRow[]>` (via l'alias `FormFieldRow` de `FormFieldsTrait`).
+- **`src/Render/ValidateRenderer.php`** : le `@param` manuel à 8 clés (`$validator_fields`) remplacé par l'alias canonique `@phpstan-import-type FormFieldRow` — la shape inline dupliquée dérivait de `FormFieldRow` (14 clés) à cause du runtime (`FieldService::getValidatorFields()` sélectionne les 14 colonnes) ; alignement sur la source de vérité (règle AGENTS.md "une seule source de vérité"). Zéro changement de comportement.
+- **`src/Render/MySubmissionsRenderer.php`** : shape `workflow_steps` + `progress_pct` ; `deadline_field` `!== ''` (au lieu de truthy / string en condition ternaire).
+- **`src/Render/NavigationRenderer.php`**, **`src/Render/ConfirmActionRenderer.php`**, **`src/Controller/AdminFormCrudHandler.php`**, **`src/Controller/AdminFormsHandlers.php`**, **`src/Controller/AdminFieldCrudHandler.php`**, **`src/Controller/AdminImportExportHandler.php`** : array shapes sur les params retour/méthodes.
+
+### 🧹 Hygiène repo
+- **Artefacts untracked nettoyés** : suppression de 5 `vendor/composer/tmp-*.zip` + 4 dossiers de cache Composer (`vendor/composer/<hash>`) ; ajout de `edenai-llm-cache-pricing.*` au `.gitignore`.
+- **`reportUnmatchedIgnoredErrors`** : **auditée (46 ignores inline, tous légitimes) puis laissée à `false`** — l'activer remonterait 572 entrées baseline stale (résidus des cleanups Wave 1/2, `phpstan-baseline.neon` jamais régénérée) + faux positifs `shipmonk.deadMethod`. Nettoyage baseline à prévoir séparément (voir TODO).
+
+### 🧪 Vérifications
+- `vendor/bin/phpstan` niveau 8 : 0 erreur sur l'ensemble du projet ✅ (contrôle grep : 59 `array<string, mixed>` restants, tous catégorie B/C/N-A — 0 fuite catégorie A)
+- `vendor/bin/phpunit` : 1419 tests, 4164 assertions, 0 failure (5 warnings / 3 dépréciations préexistants, confirmés hors périmètre par `git diff` — lignes runtime non touchées cette session) ✅
+
+---
+
 ## [10.42.14] — 2026-08-07
 _Résumé : Création du formulaire "Pense-bête" — self-reminder avec date cible pour les utilisateurs._
 

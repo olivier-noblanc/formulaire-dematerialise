@@ -286,7 +286,7 @@ final class AuthService implements AuthInterface
 
 
 
-    /** @return list<array<string, mixed>> */
+    /** @return list<array{id: string, label: string, slug: string, actif: int, description: string|null}> */
     public function getOwnedForms(?string $email = null): array
     {
         if ($email === null) {

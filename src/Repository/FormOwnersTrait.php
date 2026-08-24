@@ -7,8 +7,6 @@ namespace App\Repository;
 /**
  * @internal Trait utilisé par FormRepository pour limiter la taille du fichier principal.
  *
- * @method array<string, mixed>|null fetchOne(string $sql, array<int, mixed> $params = [])
- * @method array<int, array<string, mixed>> fetchAll(string $sql, array<int, mixed> $params = [])
  * @method bool execute(string $sql, array<int, mixed> $params = [])
  */
 trait FormOwnersTrait
@@ -67,13 +65,13 @@ trait FormOwnersTrait
      * Récupère les formulaires owned par un email (case-insensitive).
      * Utilisé par AuthService::getOwnedForms().
      *
-     * @return list<array{id: string, label: string, slug: string, actif: int}>
+     * @return list<array{id: string, label: string, slug: string, actif: int, description: string|null}>
      */
     public function findOwnedFormsByEmail(string $email): array
     {
-        /** @var list<array{id: string, label: string, slug: string, actif: int}> $result */
+        /** @var list<array{id: string, label: string, slug: string, actif: int, description: string|null}> $result */
         $result = $this->fetchAll(
-            'SELECT f.id, f.label, f.slug, f.actif
+            'SELECT f.id, f.label, f.slug, f.actif, f.description
             FROM forms f
             JOIN form_owners fo ON fo.form_id = f.id
             WHERE LOWER(fo.email) = LOWER(?)

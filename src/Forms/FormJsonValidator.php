@@ -13,7 +13,7 @@ final class FormJsonValidator
      * Valide la structure JSON d'un formulaire contre le schéma v1.0.
      *
      * @param array<string, mixed> $data
-     * @return array{valid:bool, errors:string[], warnings:string[]}
+     * @return array{valid: bool, errors: array<string>, warnings: array<string>}
      */
     public static function validate(array $data): array
     {
@@ -295,7 +295,7 @@ final class FormJsonValidator
     /**
      * Formate les résultats de validation en HTML avec bloc copiable pour LLM.
      *
-     * @param array<string, mixed> $result
+     * @param array{valid: bool, errors: array<string>, warnings: array<string>} $result
      */
     public static function formatResults(array $result): string
     {

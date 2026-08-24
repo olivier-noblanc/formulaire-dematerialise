@@ -13,6 +13,8 @@ use App\Repository\AttachmentRepository;
  * Extrait de lib/attachments.php — upload, stockage (BLOB), et récupération
  * des pièces jointes d'une soumission.
  * Les fonctions globales dans lib/attachments.php délèguent maintenant ici.
+ *
+ * @phpstan-import-type AttachmentRow from AttachmentRepository
  */
 final readonly class AttachmentService
 {
@@ -164,7 +166,7 @@ final readonly class AttachmentService
      * Récupère les pièces jointes d'une soumission.
      *
      * @param string $submissionId ID de la soumission
-     * @return array<int, array<string, mixed>> Liste des pièces jointes
+     * @return array<int, array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}> Liste des pièces jointes
      */
     public function getAttachments(string $submissionId): array
     {
@@ -175,7 +177,7 @@ final readonly class AttachmentService
      * Récupère une pièce jointe par son ID.
      *
      * @param string $attachmentId ID de la pièce jointe
-     * @return array{id: string, submission_id: string, field_name: string, original_name: string, stored_name: string, mime_type: string, file_size: int, file_data: string|null, uploaded_at: string}|null
+     * @return AttachmentRow|null
      */
     public function getAttachmentById(string $attachmentId): ?array
     {

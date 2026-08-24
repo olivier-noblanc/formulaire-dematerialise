@@ -41,7 +41,7 @@ final class NavigationRenderer
      * Alias of header() for backward compatibility.
      *
      * @param string $current_page  Current page identifier for active marking
-     * @param array<string, mixed>  $extra_admin_links Additional admin links
+     * @param array<string, array{href: string, label: string, icon: string}> $extra_admin_links Additional admin links
      * @return string HTML of the <nav>
      */
     public function nav(string $current_page = '', array $extra_admin_links = []): string
@@ -53,7 +53,7 @@ final class NavigationRenderer
      * Generates the complete header: sidebar + content opening.
      *
      * @param string $current_page  Current page identifier for active marking
-     * @param array<string, mixed>  $extra_admin_links Additional admin links
+     * @param array<string, array{href: string, label: string, icon: string}> $extra_admin_links Additional admin links
      * @return string HTML of the complete header
      */
     public function header(string $current_page = '', array $extra_admin_links = []): string

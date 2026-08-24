@@ -14,7 +14,7 @@ interface AuthInterface
     public function getAdminEmail(): string;
     public function getEmailDomain(): string;
     public function isFormOwner(string $formId, ?string $email = null): bool;
-    /** @return array<int, array<string, mixed>> */
+    /** @return list<array{id: string, label: string, slug: string, actif: int, description: string|null}> */
     public function getOwnedForms(?string $email = null): array;
     /** @return array{success: bool, reason: string} */
     public function processAdminRequest(string $email): array;

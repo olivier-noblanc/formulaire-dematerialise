@@ -12,7 +12,7 @@ use App\Core\App;
 final class AdminFormCrudHandler
 {
     /**
-     * @return array<string, mixed>
+     * @return array{error: string}|array{redirect: string}
      */
     public static function handleAddForm(): array
     {
@@ -36,7 +36,7 @@ final class AdminFormCrudHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error: string, form_id?: string}|array{redirect: string}
      */
     public static function handleUpdateForm(): array
     {
@@ -64,7 +64,7 @@ final class AdminFormCrudHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error: string, form_id?: string}|array{form_id: string}|array{redirect: string}
      */
     public static function handleDeleteForm(): array
     {
@@ -100,7 +100,7 @@ final class AdminFormCrudHandler
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{error: string}|array{redirect: string, success: string}
      */
     public static function handleDuplicateForm(): array
     {

@@ -7,18 +7,21 @@ namespace App\Render;
 use App\Core\App;
 use App\Enum\FieldType;
 use App\Enum\SubmissionField;
+use App\Repository\FormFieldsTrait;
 
 /**
  * Form & UI rendering helpers.
+ *
+ * @phpstan-import-type FormFieldRow from FormFieldsTrait
  */
 final class FormRenderer
 {
     /**
      * Renders a dynamic field as HTML with ARIA error support.
      *
-     * @param array<string, mixed>  $field        Field definition (from form_fields table)
+     * @param array{field_name: string, label: string, required: int, field_type: string, hint: string, options: string|null} $field Field definition
      * @param mixed  $posted_val   Posted value (or null)
-     * @param array<string, mixed>  $field_errors Validation errors by field_name
+     * @param array<string, string>  $field_errors Validation errors by field_name
      * @param string $datalist_id  LDAP autocompletion datalist ID
      * @param bool   $disabled     If true, field is disabled (preview mode)
      * @return string HTML of the field
@@ -27,8 +30,8 @@ final class FormRenderer
     {
         $name          = \App\Core\App::html()->escape($field['field_name']);
         $label         = \App\Core\App::html()->escape(t_jargon($field['label']));
-        $req_span      = $field['required'] ? ' <span class="req">*</span>' : '';
-        $required_attr = (!$disabled && $field['required']) ? ' required aria-required="true"' : '';
+        $req_span      = $field['required'] === 1 ? ' <span class="req">*</span>' : '';
+        $required_attr = (!$disabled && $field['required'] === 1) ? ' required aria-required="true"' : '';
         $error_class   = isset($field_errors[(string) $field['field_name']]) ? ' field-error' : '';
         $disabled_attr = $disabled ? ' disabled' : '';
 
@@ -166,7 +169,7 @@ final class FormRenderer
      * @param string $action_url    Form action URL
      * @param string $current_search Current search term
      * @param string $placeholder   Input placeholder text
-     * @param array<string, mixed>  $hidden_fields Additional hidden fields [name => value]
+     * @param array<string, string>  $hidden_fields Additional hidden fields [name => value]
      * @return string HTML of the search form
      */
     public function searchBar(string $action_url, string $current_search, string $placeholder = 'Rechercher...', array $hidden_fields = []): string
@@ -226,7 +229,7 @@ final class FormRenderer
      * Renders the progress indicator for multi-section forms (U-08).
      * Returns empty string if the form has only one section.
      *
-     * @param array<string, mixed> $grouped Grouped sections (key = section title, value = fields)
+     * @param array<string, FormFieldRow[]> $grouped Grouped sections (key = section title, value = fields)
      * @return string HTML of the indicator, or '' if single-section
      */
     public function formProgressIndicator(array $grouped): string
@@ -283,9 +286,9 @@ final class FormRenderer
      *
      * @param array{label: string, description: string|null}  $form
      * @param array{submitted_at: string|null, id: string}|null $existing_submission
-     * @param array<string, list<array<string, mixed>>>       $grouped  Clé=nom du groupe, valeur=liste des champs
+     * @param array<string, FormFieldRow[]>            $grouped  Clé=nom du groupe, valeur=liste des champs
      * @param array<string, string>                           $field_errors
-     * @param array<string, mixed>                            $file_errors  Erreurs spécifiques aux uploads
+     * @param array<string, string>                            $file_errors  Erreurs spécifiques aux uploads
      * @param array<string, string>                           $field_values
      */
     public function formContent(

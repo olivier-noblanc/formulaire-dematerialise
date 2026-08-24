@@ -96,3 +96,6 @@ monofichier_code_source.php
 agent-pulse/
 Usersolivier*
 .playwright-mcp/
+
+# Fichiers LLM cache
+edenai-llm-cache-pricing.*
