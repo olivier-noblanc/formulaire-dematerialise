@@ -45,6 +45,7 @@ function getSpecs() {
         'validation_flow.spec.js',
         'full_submission_flow.spec.js',
         'visual_styles.spec.js',
+        'cancel-submission.spec.js',
     ];
 
     // Filtrer celles qui existent réellement sur disque + ne sont pas exclues
