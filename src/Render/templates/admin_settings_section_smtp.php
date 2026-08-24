@@ -86,18 +86,13 @@
         <h2>Paramètres du workflow</h2>
 
         <div class="field">
-            <label>Délai de relance en heures <span class="info-tooltip" title="Délai en heures avant envoi d'un rappel (ex: 48 pour 2 jours)" aria-label="Aide technique : Délai en heures avant envoi d'un rappel (ex: 48 pour 2 jours)" tabindex="0" role="button">ℹ️</span></label>
-            <input type="number" name="delai_relance_h" value="<?= \App\Core\App::html()->escape($delai_relance_h) ?>" min="1">
-        </div>
-
-        <div class="field">
             <label>Expiration des tokens en jours <span class="info-tooltip" title="Durée de validité des liens de validation en jours (ex: 30)" aria-label="Aide technique : Durée de validité des liens de validation en jours (ex: 30)" tabindex="0" role="button">ℹ️</span></label>
             <input type="number" name="token_expire_days" value="<?= \App\Core\App::html()->escape($token_expire_days) ?>" min="1">
         </div>
 
         <div class="field">
-            <label>Nombre maximum de relances par token <span class="hint">(0 = illimité)</span></label>
-            <input type="number" name="relance_max" value="<?= \App\Core\App::html()->escape($relance_max) ?>" min="0">
+            <label>Relances automatiques</label>
+            <span class="hint">Délai de relance et nombre maximum de relances configurés par formulaire (paramètres de relance de chaque formulaire).</span>
         </div>
 
         <div class="field">

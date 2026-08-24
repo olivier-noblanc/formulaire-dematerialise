@@ -165,7 +165,7 @@ final class AdminFormsRenderer
         return $this->loadTemplate('adminForms_ownersSection.php', $ctx);
     }
 
-    // ── Workflow section ──────────────────────────────────────────
+// ── Workflow section ──────────────────────────────────────────
 
     /**
      * SECTION B : Circuit de validation (diagramme visuel + liste des étapes).
@@ -271,6 +271,8 @@ final class AdminFormsRenderer
             $edit_field_id   = $ctx->edit_field_id;
             $existing_groups = $ctx->existing_groups;
             $field_types     = $this->getFormFieldTypes();
+            $relance_delai_h = $form['relance_delai_h'] ?? 48;
+            $relance_max     = $form['relance_max']     ?? 3;
         }
 
         ob_start();

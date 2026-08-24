@@ -84,7 +84,7 @@ final class PendingAndBlockedTest extends Base
         $subId = $this->createSubmission($formId, status: 'en_cours');
         $tokenId = $this->createToken($subId, $stepId, sentAtOffset: '-100 hours');
 
-        $result = $this->repo->findBlocked(48);
+        $result = $this->repo->findBlocked();
 
         $ids = array_column($result, 'id');
         self::assertContains($tokenId, $ids);
@@ -96,7 +96,7 @@ final class PendingAndBlockedTest extends Base
         $subId = $this->createSubmission($formId, status: 'en_cours');
         $tokenId = $this->createToken($subId, $stepId, sentAtOffset: '-1 hour');
 
-        $result = $this->repo->findBlocked(48);
+        $result = $this->repo->findBlocked();
 
         $ids = array_column($result, 'id');
         self::assertNotContains($tokenId, $ids);
@@ -108,7 +108,7 @@ final class PendingAndBlockedTest extends Base
         $subId = $this->createSubmission($formId, status: 'en_cours');
         $tokenId = $this->createToken($subId, $stepId, doneAtOffset: '-1 hour', sentAtOffset: '-100 hours');
 
-        $result = $this->repo->findBlocked(48);
+        $result = $this->repo->findBlocked();
 
         $ids = array_column($result, 'id');
         self::assertNotContains($tokenId, $ids);

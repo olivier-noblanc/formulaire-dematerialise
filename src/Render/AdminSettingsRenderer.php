@@ -50,9 +50,7 @@ final class AdminSettingsRenderer
         $smtp_pass             = \App\Core\App::settings()->get('smtp_pass', '');
         $smtp_from             = \App\Core\App::settings()->get('smtp_from');
         $smtp_from_name        = \App\Core\App::settings()->get('smtp_from_name');
-        $delai_relance_h       = \App\Core\App::settings()->get('delai_relance_h');
         $token_expire_days     = \App\Core\App::settings()->get('token_expire_days', '30');
-        $relance_max           = \App\Core\App::settings()->get('relance_max', '3');
         $retention_months      = \App\Core\App::settings()->get('retention_months', '24');
         $mail_dry_run          = \App\Core\App::settings()->get('mail_dry_run', '1');
         $email_verify_mode     = \App\Core\App::settings()->get('email_verify_mode', 'none');
@@ -67,7 +65,7 @@ final class AdminSettingsRenderer
 
         $ldap_ext_available = function_exists('ldap_connect');
 
-        $vars = ['mail_dry_run' => $mail_dry_run, 'email_verify_mode' => $email_verify_mode, 'ldap_ext_available' => $ldap_ext_available, 'ldap_host' => $ldap_host, 'ldap_port' => $ldap_port, 'ldap_base_dn' => $ldap_base_dn, 'ldap_bind_dn' => $ldap_bind_dn, 'ldap_bind_pass' => $ldap_bind_pass, 'ldap_filter' => $ldap_filter, 'ldap_suggest_enabled' => $ldap_suggest_enabled, 'ldap_suggest_filter' => $ldap_suggest_filter, 'smtp_host' => $smtp_host, 'smtp_port' => $smtp_port, 'smtp_auth' => $smtp_auth, 'smtp_secure' => $smtp_secure, 'smtp_user' => $smtp_user, 'smtp_pass' => $smtp_pass, 'smtp_from' => $smtp_from, 'smtp_from_name' => $smtp_from_name, 'delai_relance_h' => $delai_relance_h, 'token_expire_days' => $token_expire_days, 'relance_max' => $relance_max, 'retention_months' => $retention_months];
+        $vars = ['mail_dry_run' => $mail_dry_run, 'email_verify_mode' => $email_verify_mode, 'ldap_ext_available' => $ldap_ext_available, 'ldap_host' => $ldap_host, 'ldap_port' => $ldap_port, 'ldap_base_dn' => $ldap_base_dn, 'ldap_bind_dn' => $ldap_bind_dn, 'ldap_bind_pass' => $ldap_bind_pass, 'ldap_filter' => $ldap_filter, 'ldap_suggest_enabled' => $ldap_suggest_enabled, 'ldap_suggest_filter' => $ldap_suggest_filter, 'smtp_host' => $smtp_host, 'smtp_port' => $smtp_port, 'smtp_auth' => $smtp_auth, 'smtp_secure' => $smtp_secure, 'smtp_user' => $smtp_user, 'smtp_pass' => $smtp_pass, 'smtp_from' => $smtp_from, 'smtp_from_name' => $smtp_from_name, 'token_expire_days' => $token_expire_days, 'retention_months' => $retention_months];
 
         ob_start();
         ?>

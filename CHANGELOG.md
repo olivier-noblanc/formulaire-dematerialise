@@ -1,5 +1,28 @@
 # Changelog — CircuitDémat
 
+## [10.42.17] — 2026-08-24
+_Résumé : Relance personnalisable par formulaire — migration des paramètres `delai_relance_h` et `relance_max` des settings globaux vers la table `forms`, avec CHECK constraints SQL._
+
+### 🛠 Feature — Relance personnalisable par formulaire
+- **`classes/migrations/v36.php`** : migration ajoutant `relance_delai_h` (1-720h) et `relance_max` (0-20) à `forms` + CHECK constraints + suppression settings globaux (`delai_relance_h`, `relance_max`)
+- **`src/Repository/FormRepository.php`** : colonnes ajoutées à SELECT/INSERT/UPDATE + méthode `getRelanceConfig()` (retourne `[delai, max]` avec fallback 48h/3)
+- **`src/Repository/TokenReadCheckTrait.php`** : `findBlocked()` utilise seuil per-form (`f.relance_delai_h * 2 * 3600`)
+- **`src/Token/TokenService.php`** : utilise `getRelanceConfig()` pour déterminer si relance possible
+- **`remind.php`** : lecture per-form via JOIN sur `forms` (fallback 48h/3 si NULL)
+- **`src/Controller/AdminFormCrudHandler.php`** : validation bornes (1-720h, 0-20) + defaults (48, 3) à la création
+- **Cleanup** : 10 fichiers modifiés pour retirer lecture/settings globaux (AdminSettingsHandlers, MonitoringController, install.php, etc.)
+- **Tests** : `PendingAndBlockedTest.php` adapté pour seuil per-form
+
+### 🧹 Code mort supprimé
+- **`src/Render/AdminFormsRenderer.php`** : section relance supprimée (paramètres déplacés dans crud form)
+
+### 🧪 Vérifications
+- `vendor/bin/phpstan` niveau 8 : 0 erreur ✅
+- `vendor/bin/phpunit` : 1419 tests, 0 failure ✅
+- GrumPHP (phpstan, rector, deptrac) : ✅
+
+---
+
 ## [10.42.16] — 2026-08-24
 _Résumé : Régénération de phpstan-baseline.neon — purge de 571 entrées stale._
 

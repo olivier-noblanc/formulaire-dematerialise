@@ -20,7 +20,7 @@ final readonly class MonitoringContext
      * @param float $taux_validation Percentage 0-100, rounded to 1 decimal (e.g. 67.5). Source: StatsService::getGlobalStats()['taux_validation']
      * @param float $avg_days Average processing time in days (rounded to 1 decimal)
      * @param float $avg_hours Average processing time in hours (rounded to 1 decimal)
-     * @param int $bloque_hours Threshold in hours for "blocked" tokens (delai_relance_h * 2)
+     * @param int $bloque_hours Threshold in hours for "blocked" tokens (fixed 96h; relance configured per-form)
      * @param list<array{id: string, email: string, sent_at: string|null, relance_count: int, expires_at: string|null, step_label: string, ordre: int, submission_id: string, submitted_by: string|null, submitted_at: string|null, form_label: string}> $tokens_bloques Source: TokenRepository::findBlocked()
      * @param list<array{submission_id: string, form_label: string, nom_agent: string, deadline: string, deadline_formatted: string, days_remaining: int, pending_steps: int, submitted_by: string}> $active_alerts Built by MonitoringController from findActiveWithDeadlineField()
      * @param list<array{id: string, rule_id: string, submission_id: string, sent_at: string, message: string|null, form_label: string, rule_label: string|null}> $recent_alerts Source: AlertRepository::getLogsWithForm()

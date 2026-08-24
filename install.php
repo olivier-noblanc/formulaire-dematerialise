@@ -55,7 +55,6 @@ const INST_DEFAULT_SMTP_FROM      = 'workflow@exemple.invalid';
 const INST_DEFAULT_SMTP_FROM_NAME = 'CircuitDémat';
 const INST_DEFAULT_APP_NAME       = 'CircuitDémat';
 const INST_DEFAULT_EMAIL_DOMAIN   = 'exemple.invalid';
-const INST_DEFAULT_DELAI_RELANCE  = 48;
 
 // ── Fonctions utilitaires internes (standalone) ──────────────
 
@@ -266,10 +265,8 @@ function inst_write_config(array $values): array {
         . "    'smtp_port'        => '" . (int)$values['smtp_port'] . "',\n"
         . "    'smtp_from'        => '" . addslashes($values['smtp_from']) . "',\n"
         . "    'smtp_from_name'   => '" . addslashes($values['smtp_from_name']) . "',\n"
-        . "    'delai_relance_h'  => '" . (int)$values['delai_relance_h'] . "',\n"
         . "    'admin_email'      => '" . addslashes($values['admin_email']) . "',\n"
         . "    'token_expire_days'=> '30',\n"
-        . "    'relance_max'      => '3',\n"
         . "    'mail_dry_run'     => '1',\n"
         . "    'app_name'         => '" . INST_DEFAULT_APP_NAME . "',\n"
         . "    'retention_months' => '24',\n"
@@ -357,7 +354,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $smtp_from    = trim($_POST['smtp_from'] ?? '');
             $smtp_from_name = trim($_POST['smtp_from_name'] ?? '');
             $admin_email  = trim($_POST['admin_email'] ?? '');
-            $delai_relance_h = trim($_POST['delai_relance_h'] ?? '48');
 
             // Validation
             $validation_errors = [];
@@ -381,9 +377,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($admin_email) || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
                 $validation_errors[] = 'L\'email administrateur est requis et doit être valide.';
             }
-            if (empty($delai_relance_h) || (int)$delai_relance_h < 1) {
-                $validation_errors[] = 'Le délai de relance doit être un nombre entier positif.';
-            }
 
             if (empty($validation_errors)) {
                 // Extraire le chemin depuis l'URL pour le format config.php
@@ -397,7 +390,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'smtp_from'       => $smtp_from,
                     'smtp_from_name'  => $smtp_from_name,
                     'admin_email'     => $admin_email,
-                    'delai_relance_h' => (int)$delai_relance_h,
                 ];
                 $step = 3;
             } else {
@@ -446,7 +438,6 @@ $default_smtp_port     = $saved_config['smtp_port'] ?? 25;
 $default_smtp_from     = $saved_config['smtp_from'] ?? INST_DEFAULT_SMTP_FROM;
 $default_smtp_from_name = $saved_config['smtp_from_name'] ?? INST_DEFAULT_SMTP_FROM_NAME;
 $default_admin_email   = $saved_config['admin_email'] ?? '';
-$default_delai_relance_h = $saved_config['delai_relance_h'] ?? INST_DEFAULT_DELAI_RELANCE;
 
 // Si on revient de l'étape 2 avec des valeurs POST, les utiliser
 if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -456,7 +447,6 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $default_smtp_from     = trim($_POST['smtp_from'] ?? $default_smtp_from);
     $default_smtp_from_name = trim($_POST['smtp_from_name'] ?? $default_smtp_from_name);
     $default_admin_email   = trim($_POST['admin_email'] ?? $default_admin_email);
-    $default_delai_relance_h = trim((string)($_POST['delai_relance_h'] ?? $default_delai_relance_h));
 }
 
 // ── Étape 1 : vérification des prérequis ────────────────────
@@ -488,6 +478,5 @@ $confirm_config = $_SESSION['inst_config'] ?? null;
         'smtp_from'       => $default_smtp_from,
         'smtp_from_name'  => $default_smtp_from_name,
         'admin_email'     => $default_admin_email,
-        'delai_relance_h' => $default_delai_relance_h,
     ],
 ]);

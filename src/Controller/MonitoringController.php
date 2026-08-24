@@ -31,10 +31,12 @@ final class MonitoringController extends BaseController
         $tauxValidation = $gstats['taux_validation']; // float, matches MonitoringContext::$taux_validation
 
         // Query #2: Blocked tokens
-        $delaiRelance = (int) App::settings()->get('delai_relance_h', '48');
-        $bloqueHours = $delaiRelance * 2;
+        // Seuil de "blocage" : 96h (4 jours) sans traitement. Le délai de relance
+        // étant configuré par formulaire, on utilise ici un seuil fixe de
+        // surveillance (ex-2× délai par défaut de 48h).
+        $bloqueHours = 96;
         /** @var list<array{id: string, email: string, sent_at: string|null, relance_count: int, expires_at: string|null, step_label: string, ordre: int, submission_id: string, submitted_by: string|null, submitted_at: string|null, form_label: string}> $tokensBloques */
-        $tokensBloques = $this->tokenRepo->findBlocked($bloqueHours);
+        $tokensBloques = $this->tokenRepo->findBlocked();
 
         // Query #3: Expired tokens
         $this->tokenRepo->countExpired();

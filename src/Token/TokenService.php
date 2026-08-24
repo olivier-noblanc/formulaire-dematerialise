@@ -12,6 +12,7 @@ use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Mail\MailService;
 use App\Repository\DelegationRepository;
+use App\Repository\FormRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
 use App\Settings\SettingsService;
@@ -30,6 +31,7 @@ final readonly class TokenService
 {
     public TokenRepository $tokenRepository;
     public DelegationRepository $delegationRepository;
+    public FormRepository $formRepository;
 
     public function __construct(
         private SettingsService $settingsService,
@@ -38,11 +40,13 @@ final readonly class TokenService
         private MailService $mailService,
         private SubmissionRepository $submissionRepository,
         ?TokenRepository $tokenRepository = null,
-        ?DelegationRepository $delegationRepository = null
+        ?DelegationRepository $delegationRepository = null,
+        ?FormRepository $formRepository = null
     ) {
         $app = App::getInstance();
         $this->tokenRepository = $tokenRepository ?? $app->get(TokenRepository::class);
         $this->delegationRepository = $delegationRepository ?? $app->get(DelegationRepository::class);
+        $this->formRepository = $formRepository ?? $app->get(FormRepository::class);
     }
 
     /**
@@ -204,7 +208,7 @@ final readonly class TokenService
 
         $stepLabel = $tok['step_label'] ?? 'Validation requise';
         $newCount = (int) $tok['relance_count'] + 1;
-        $relanceMax = (int) $this->settingsService->get('relance_max', '3');
+        $relanceMax = (int) ($this->formRepository->getRelanceConfig($tok['form_id'])['relance_max'] ?? 3);
 
         if ($newCount > $relanceMax) {
             return ['success' => false, 'message' => 'Maximum de rappels atteint (' . $relanceMax . ').'];

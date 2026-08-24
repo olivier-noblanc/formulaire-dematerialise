@@ -76,9 +76,7 @@ final class AdminSettingsHandlers
             'smtp_pass'         => trim($_POST['smtp_pass'] ?? ''),
             'smtp_from'         => trim($_POST['smtp_from'] ?? ''),
             'smtp_from_name'    => trim($_POST['smtp_from_name'] ?? ''),
-            'delai_relance_h'   => trim($_POST['delai_relance_h'] ?? '48'),
             'token_expire_days' => trim($_POST['token_expire_days'] ?? '30'),
-            'relance_max'       => trim($_POST['relance_max'] ?? '3'),
             'retention_months'  => trim($_POST['retention_months'] ?? '24'),
         ];
 

@@ -20,8 +20,7 @@ $pdo  = get_pdo();
 $now  = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 $nb   = 0;
 $blocked = 0;
-
-$relance_max = (int)\App\Core\App::settings()->get('relance_max', '3');
+$relance_max = 3; // défaut si aucun token traité
 
 // Récupérer les IDs des tokens à traiter (pas de fetchAll complet pour éviter les stale reads)
 $pendingIds = array_column(
@@ -40,7 +39,8 @@ foreach ($pendingIds as $tokenId) {
         $pdo->beginTransaction();
 
         $stmt = $pdo->prepare("
-            SELECT t.*, st.label as step_label, f.label as form_label, s.data
+            SELECT t.*, st.label as step_label, f.label as form_label, s.data,
+                   f.relance_delai_h, f.relance_max
             FROM tokens t
             JOIN steps st ON st.id = t.step_id
             JOIN submissions s ON s.id = t.submission_id
@@ -48,13 +48,17 @@ foreach ($pendingIds as $tokenId) {
             WHERE t.id = ? AND t.done_at IS NULL AND s.closed_at IS NULL
         ");
         $stmt->execute([$tokenId]);
-        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_label: string, data: string}|false $tok */
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_label: string, data: string, relance_delai_h: int|string|null, relance_max: int|string|null}|false $tok */
         $tok = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($tok === false) {
             $pdo->rollBack();
             continue;
         }
+
+        // Config de relance par formulaire (colonnes forms.relance_* pouvant être NULL → fallback 48/3)
+        $relance_max = (int) ($tok['relance_max'] ?? 3);
+        $relance_delai_h = (int) ($tok['relance_delai_h'] ?? 48);
 
         // Vérifier le plafond de relances
         $relance_count = (int)($tok['relance_count'] ?? 0);
@@ -69,7 +73,7 @@ foreach ($pendingIds as $tokenId) {
         $last_ref = $tok['relance_at'] !== null ? new DateTimeImmutable($tok['relance_at'], new DateTimeZone('UTC')) : $sent;
         $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
 
-        if ($depuis < (int)\App\Core\App::settings()->get('delai_relance_h', '48')) {
+        if ($depuis < $relance_delai_h) {
             $pdo->rollBack();
             continue;
         }

@@ -31,7 +31,6 @@
                 'SETTINGS_DEFAULTS → smtp_port'        => (string) $confirm_config['smtp_port'],
                 'SETTINGS_DEFAULTS → smtp_from'        => $confirm_config['smtp_from'],
                 'SETTINGS_DEFAULTS → smtp_from_name'   => $confirm_config['smtp_from_name'],
-                'SETTINGS_DEFAULTS → delai_relance_h'  => (string) $confirm_config['delai_relance_h'],
                 'SETTINGS_DEFAULTS → admin_email'      => $confirm_config['admin_email'],
             ];
         foreach ($config_lines as $key => $val):

@@ -37,9 +37,9 @@ if ($last_alert_check !== '' && $last_alert_check !== '0') {
     $alert_html = '<span class="health-dot health-unknown"></span><span class="badge badge-info">Jamais exécuté</span>';
 }
 
-$delai_relance    = \App\Core\App::html()->escape(\App\Core\App::settings()->get('delai_relance_h', '48'));
-$relance_max      = \App\Core\App::html()->escape(\App\Core\App::settings()->get('relance_max', '3'));
 $token_expire_days = \App\Core\App::html()->escape(\App\Core\App::settings()->get('token_expire_days', '30'));
+// Délai de relance et nombre max de relances : configurés par formulaire
+// (paramètres de relance de chaque formulaire), plus de réglage global.
 ?>
 <!-- Scripts automatises -->
 <div class="card">
@@ -54,8 +54,7 @@ $token_expire_days = \App\Core\App::html()->escape(\App\Core\App::settings()->ge
     <strong class="u-fon-4"><span aria-hidden="true">🔔</span> Script d'alerte (alert_check.php)</strong><br>
     <?= $alert_html ?>
     <p class="hint-text-3">
-      Délai relance : <strong><?= $delai_relance ?>h</strong> |
-      Max relances : <strong><?= $relance_max ?></strong> |
+      Délai et max relances : <strong>par formulaire</strong> |
       Expiration tokens : <strong><?= $token_expire_days ?>j</strong>
     </p>
   </div>

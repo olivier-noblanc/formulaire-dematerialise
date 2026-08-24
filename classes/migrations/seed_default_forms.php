@@ -96,9 +96,7 @@ function seed_default_forms(PDO $pdo): void {
             ['smtp_pass', ''],
             ['smtp_from', 'workflow@exemple.invalid'],
             ['smtp_from_name', 'CircuitDémat'],
-            ['delai_relance_h', '48'],
             ['token_expire_days', '30'],
-            ['relance_max', '3'],
             ['app_name', 'CircuitDémat'],
             ['app_favicon', ''],
             ['ldap_suggest_enabled', '0'],
@@ -108,13 +106,6 @@ function seed_default_forms(PDO $pdo): void {
         foreach ($defaults as $row) {
             $stmt->execute($row);
         }
-    }
-
-    // S'assurer que relance_max existe même si la table settings a déjà des entrés
-    try {
-        $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('relance_max', '3')")->execute();
-    } catch (PDOException $e) {
-        // @silent-ok: fallback — migration idempotent, ignore si déjà présent
     }
 
     // Seed formulaire onboarding s'il n'existe pas

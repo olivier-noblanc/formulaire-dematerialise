@@ -43,6 +43,20 @@
 | Vérifications | PHPStan level 8 : 0 erreur ✅, PHPUnit : 1419 tests ✅, GrumPHP (phpstan/rector/deptrac) ✅ |
 | Rector fix | Suppression règle dépréciée `DisallowedEmptyRuleFixerRector` (erreur CI) |
 
+### v10.42.17 — Relance personnalisable par formulaire
+| Tâche | Détail |
+|-------|--------|
+| Contexte | Paramètres de relance (`delai_relance_h`, `relance_max`) globaux dans `settings` — pas de personnalisation par formulaire |
+| Migration v36 | Colonnes `relance_delai_h` (1-720h) + `relance_max` (0-20) ajoutées à `forms` avec CHECK constraints + DELETE settings globaux + fallback 48h/3 pour formulaires existants |
+| FormRepository | SELECT/INSERT/UPDATE mis à jour + méthode `getRelanceConfig()` (retourne `[delai, max]` avec fallback) |
+| TokenReadCheckTrait | `findBlocked()` utilise seuil per-form (`f.relance_delai_h * 2 * 3600`) |
+| TokenService + remind.php | Lecture per-form via `getRelanceConfig()` / JOIN forms (fallback 48h/3) |
+| AdminFormCrudHandler | Validation bornes (1-720h, 0-20) + defaults (48, 3) à la création |
+| Cleanup | 10 fichiers modifiés pour retirer lecture/settings globaux (AdminSettingsHandlers, MonitoringController, install.php, etc.) |
+| Code mort | `src/Render/AdminFormsRenderer.php` : section relance supprimée |
+| Tests | `PendingAndBlockedTest.php` adapté pour seuil per-form |
+| Vérifications | PHPStan level 8 : 0 erreur ✅, PHPUnit : 1419 tests ✅, GrumPHP (phpstan/rector/deptrac) ✅ |
+
 ### v10.42.15 — Durcissement typage : `array<string, mixed>` → array shapes précises
 | Tâche | Détail |
 |-------|--------|

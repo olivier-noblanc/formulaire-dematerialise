@@ -24,7 +24,7 @@ final class AdminFormCrudHandler
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
             $slug = \generate_slug($label);
-            $newFormId = $repo->create(['label' => $label, 'slug' => $slug, 'description' => $description]);
+            $newFormId = $repo->create(['label' => $label, 'slug' => $slug, 'description' => $description, 'relance_delai_h' => 48, 'relance_max' => 3]);
             $repo->createOwnerById($newFormId, App::auth()->getUser());
             App::audit()->log('form_create', 'form:' . $newFormId, "Formulaire '$label' créé (slug auto: $slug)");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($newFormId)];
@@ -50,10 +50,30 @@ final class AdminFormCrudHandler
         if ($label === '' || $label === '0') {
             return ['error' => 'Le libellé est requis.'];
         }
+        // Paramètres de relance (section dédiée, séparée du formulaire d'infos) :
+        // ne sont validés que si présents dans le POST, pour ne pas casser la
+        // mise à jour des informations générales du formulaire.
+        $relance_delai_h = null;
+        $relance_max = null;
+        if (isset($_POST['relance_delai_h']) || isset($_POST['relance_max'])) {
+            $relance_delai_h = filter_var($_POST['relance_delai_h'] ?? null, FILTER_VALIDATE_INT);
+            if ($relance_delai_h === false || $relance_delai_h < 1 || $relance_delai_h > 720) {
+                return ['error' => 'Le délai de relance doit être entre 1 et 720 heures.', 'form_id' => $form_id];
+            }
+            $relance_max = filter_var($_POST['relance_max'] ?? null, FILTER_VALIDATE_INT);
+            if ($relance_max === false || $relance_max < 0 || $relance_max > 20) {
+                return ['error' => 'Le nombre de relances doit être entre 0 et 20.', 'form_id' => $form_id];
+            }
+        }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
             $slug = \generate_slug($label, $form_id);
-            $repo->update($form_id, ['slug' => $slug, 'label' => $label, 'description' => $description, 'actif' => $actif]);
+            $data = ['slug' => $slug, 'label' => $label, 'description' => $description, 'actif' => $actif];
+            if ($relance_delai_h !== null && $relance_max !== null) {
+                $data['relance_delai_h'] = $relance_delai_h;
+                $data['relance_max'] = $relance_max;
+            }
+            $repo->update($form_id, $data);
             App::audit()->log('form_update', 'form:' . $form_id, "Formulaire '$label' mis à jour");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($form_id)];
         } catch (\PDOException $e) {

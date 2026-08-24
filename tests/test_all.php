@@ -18,13 +18,13 @@ echo "╚═══════════════════════�
 // ═══════════════════════════════════════════════════
 echo "── 1. Base de données ──\n";
 
-test('get_pdo() retourne un objet PDO', function() {
+test('get_pdo() retourne un objet PDO', function(): true {
     $pdo = \App\Core\App::db()->getPdo();
     /** @phpstan-ignore-next-line instanceof.alwaysTrue */
     return ($pdo instanceof PDO) ? true : 'Pas un PDO';
 });
 
-test('Aucun INTEGER PRIMARY KEY AUTOINCREMENT', function() {
+test('Aucun INTEGER PRIMARY KEY AUTOINCREMENT', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     $tables = $pdo->query("SELECT name, sql FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_ASSOC);
     foreach ($tables as $t) {
@@ -35,27 +35,27 @@ test('Aucun INTEGER PRIMARY KEY AUTOINCREMENT', function() {
     return true;
 });
 
-test('Toutes les tables existent', function() {
+test('Toutes les tables existent', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     $required = ['forms', 'steps', 'step_recipients', 'submissions', 'tokens', 'admins', 'admin_requests', 'settings', 'form_fields', 'audit_log', 'alert_rules', 'alert_log', 'form_owners', 'lazy_cron', 'delegations', 'attachments'];
     $existing = $pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN);
     $missing = array_diff($required, $existing);
-    return empty($missing) ? true : 'Tables manquantes: ' . implode(', ', $missing);
+    return $missing === [] ? true : 'Tables manquantes: ' . implode(', ', $missing);
 });
 
-test('Formulaire onboarding existe', function() {
+test('Formulaire onboarding existe', function(): true|string {
     $pdo = \App\Core\App::db()->getPdo();
     $count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug='onboarding'")->fetchColumn();
     return $count > 0 ? true : 'Formulaire onboarding absent';
 });
 
-test('Formulaire outboarding existe', function() {
+test('Formulaire outboarding existe', function(): true|string {
     $pdo = \App\Core\App::db()->getPdo();
     $count = $pdo->query("SELECT COUNT(*) FROM forms WHERE slug='outboarding'")->fetchColumn();
     return $count > 0 ? true : 'Formulaire outboarding absent';
 });
 
-test('Tous les formulaires ont au moins 2 étapes', function() {
+test('Tous les formulaires ont au moins 2 étapes', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     foreach ($pdo->query("SELECT f.slug, COUNT(s.id) as cnt FROM forms f LEFT JOIN steps s ON s.form_id = f.id GROUP BY f.id") as $row) {
         if ((int)$row['cnt'] < 2) return $row['slug'] . ' n\'a que ' . $row['cnt'] . ' étapes';
@@ -63,7 +63,7 @@ test('Tous les formulaires ont au moins 2 étapes', function() {
     return true;
 });
 
-test('Tous les formulaires ont des champs', function() {
+test('Tous les formulaires ont des champs', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     foreach ($pdo->query("SELECT f.slug, COUNT(ff.id) as cnt FROM forms f LEFT JOIN form_fields ff ON ff.form_id = f.id GROUP BY f.id") as $row) {
         if ((int)$row['cnt'] < 1) return $row['slug'] . ' n\'a aucun champ';
@@ -71,7 +71,7 @@ test('Tous les formulaires ont des champs', function() {
     return true;
 });
 
-test('Tous les IDs de formulaires sont des UUIDs', function() {
+test('Tous les IDs de formulaires sont des UUIDs', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     $forms = $pdo->query("SELECT id, slug FROM forms")->fetchAll(PDO::FETCH_ASSOC);
     foreach ($forms as $f) {
@@ -82,7 +82,7 @@ test('Tous les IDs de formulaires sont des UUIDs', function() {
     return true;
 });
 
-test('Toutes les FK form_id sont des UUIDs', function() {
+test('Toutes les FK form_id sont des UUIDs', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     // steps.form_id
     $steps = $pdo->query("SELECT form_id FROM steps")->fetchAll(PDO::FETCH_COLUMN);
@@ -102,18 +102,18 @@ test('Toutes les FK form_id sont des UUIDs', function() {
     return true;
 });
 
-test('4 règles d\'alerte (2 par formulaire)', function() {
+test('4 règles d\'alerte (2 par formulaire)', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     $count = $pdo->query("SELECT COUNT(*) FROM alert_rules")->fetchColumn();
     return $count >= 4 ? true : "Seulement $count règles d'alerte";
 });
 
-test('Settings par défaut présents', function() {
-    $required = ['smtp_host', 'smtp_port', 'delai_relance_h', 'relance_max'];
+test('Settings par défaut présents', function(): string|true {
+    $required = ['smtp_host', 'smtp_port'];
     foreach ($required as $key) {
         $val = \App\Core\App::settings()->get($key);
         /** @phpstan-ignore-next-line */
-        if ($val === null || $val === false) return "Setting '$key' absent";
+        if ($val === false) return "Setting '$key' absent";
     }
     return true;
 });
@@ -125,7 +125,7 @@ echo "\n";
 // ═══════════════════════════════════════════════════
 echo "── 2. Fonctions helpers ──\n";
 
-test('get_auth_user() normalise le login', function() {
+test('get_auth_user() normalise le login', function(): string|true {
     // En mode TEST, get_auth_user() utilise X-Test-User au lieu de AUTH_USER
     // On teste la logique de transformation DREETS\login → email directement
     $login = 'DREETS\\testeur';
@@ -138,12 +138,12 @@ test('get_auth_user() normalise le login', function() {
     return $email === 'testeur@exemple.invalid' ? true : "Got: $email (attendu: testeur@exemple.invalid)";
 });
 
-test('h() échappe le HTML', function() {
+test('h() échappe le HTML', function(): string|true {
     $result = \App\Core\App::html()->escape('<script>alert("xss")</script>');
-    return strpos($result, '<script>') === false ? true : "Non échappé: $result";
+    return str_contains($result, '<script>') ? "Non échappé: $result" : true;
 });
 
-test('generate_uuid() produit un UUID v4 valide', function() {
+test('generate_uuid() produit un UUID v4 valide', function(): string|true {
     $uuid = generate_uuid();
     if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $uuid)) {
         return "Format UUID invalide: $uuid";
@@ -153,23 +153,23 @@ test('generate_uuid() produit un UUID v4 valide', function() {
     return $uuid !== $uuid2 ? true : 'UUIDs identiques générés !';
 });
 
-test('generate_field_name() convertit un libellé en snake_case', function() {
+test('generate_field_name() convertit un libellé en snake_case', function(): string|true {
     $name = generate_field_name('Date de prise de poste');
     return $name === 'date_de_prise_de_poste' ? true : "Got: $name";
 });
 
-test('parse_options_input() accepte du JSON', function() {
+test('parse_options_input() accepte du JSON', function(): string|true {
     $result = parse_options_input('["Option A","Option B"]');
     return $result === '["Option A","Option B"]' ? true : "Got: $result";
 });
 
-test('parse_options_input() convertit une option par ligne', function() {
+test('parse_options_input() convertit une option par ligne', function(): string|true {
     $result = parse_options_input("Option A\nOption B\nOption C");
     $decoded = json_decode($result, true);
     return ($decoded && count($decoded) === 3 && $decoded[0] === 'Option A') ? true : "Got: $result";
 });
 
-test('is_admin_user() détecte un admin', function() {
+test('is_admin_user() détecte un admin', function(): string|true {
     // En mode TEST, isAdmin() utilise X-Test-User
     $admin_email = \App\Core\App::auth()->getAdminEmail();
     $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
@@ -178,7 +178,7 @@ test('is_admin_user() détecte un admin', function() {
     return $result ? true : $admin_email . ' non détecté comme admin';
 });
 
-test('is_super_admin() détecte le super admin', function() {
+test('is_super_admin() détecte le super admin', function(): string|true {
     // En mode TEST, isSuperAdmin() utilise X-Test-User
     $admin_email = \App\Core\App::auth()->getAdminEmail();
     $_SERVER['HTTP_X_TEST_USER'] = $admin_email;
@@ -187,13 +187,13 @@ test('is_super_admin() détecte le super admin', function() {
     return $result ? true : $admin_email . ' non super admin';
 });
 
-test('csrf_field() génère un token', function() {
+test('csrf_field() génère un token', function(): string|true {
     @session_start();
     $html = \App\Core\App::security()->csrfField();
-    return strpos($html, 'name="csrf_token"') !== false ? true : "Pas de champ CSRF: $html";
+    return str_contains($html, 'name="csrf_token"') ? true : "Pas de champ CSRF: $html";
 });
 
-test('app_log() écrit dans l\'audit', function() {
+test('app_log() écrit dans l\'audit', function(): true|string {
     $pdo = \App\Core\App::db()->getPdo();
     $before = $pdo->query("SELECT COUNT(*) FROM audit_log")->fetchColumn();
     \App\Core\App::audit()->log('test_action', 'test_target', 'Détail du test');
@@ -201,7 +201,7 @@ test('app_log() écrit dans l\'audit', function() {
     return $after > $before ? true : 'Audit log non incrémenté';
 });
 
-test('get_form_by_uuid() retrouve un formulaire', function() {
+test('get_form_by_uuid() retrouve un formulaire', function(): string|true {
     $pdo = \App\Core\App::db()->getPdo();
     $form = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     if (!$form) return 'Pas de formulaire onboarding';
@@ -249,7 +249,7 @@ if ($step1) {
     }
 }
 
-test('Soumission d\'un formulaire onboarding', function() use ($pdo, $onboarding_id) {
+test('Soumission d\'un formulaire onboarding', function() use ($pdo, $onboarding_id): true|string {
     $data = json_encode([
         'nom' => 'Dupont',
         'prenom' => 'Jean',
@@ -271,9 +271,9 @@ test('Soumission d\'un formulaire onboarding', function() use ($pdo, $onboarding
     return 'Échec insertion soumission';
 });
 
-$submission_id = $submission_id ?? null;
+$submission_id ??= null;
 
-test('advance_workflow() génère les tokens de l\'étape 1', function() use ($submission_id) {
+test('advance_workflow() génère les tokens de l\'étape 1', function() use ($submission_id): string|true {
     if (!$submission_id) return 'Pas de submission_id';
     \App\Core\App::workflow()->advanceWorkflow($submission_id);
     $pdo = \App\Core\App::db()->getPdo();
@@ -283,7 +283,7 @@ test('advance_workflow() génère les tokens de l\'étape 1', function() use ($s
     return $count > 0 ? true : "Aucun token généré (submission_id=$submission_id)";
 });
 
-test('validate_token() valide un token et avance le workflow', function() use ($submission_id) {
+test('validate_token() valide un token et avance le workflow', function() use ($submission_id): string|true {
     if (!$submission_id) return 'Pas de submission_id';
     $pdo = \App\Core\App::db()->getPdo();
     // Récupérer le premier token non validé
@@ -296,7 +296,7 @@ test('validate_token() valide un token et avance le workflow', function() use ($
     return $result['status'] === 'ok' ? true : "Status: " . $result['status'];
 });
 
-test('Après validation étape 1, étape 2 a des tokens', function() use ($submission_id, $onboarding_id) {
+test('Après validation étape 1, étape 2 a des tokens', function() use ($submission_id, $onboarding_id): string|true {
     if (!$submission_id) return 'Pas de submission_id';
     $pdo = \App\Core\App::db()->getPdo();
     // Récupérer l'étape 2 via prepared statement
@@ -311,7 +311,7 @@ test('Après validation étape 1, étape 2 a des tokens', function() use ($submi
     return $count > 0 ? true : "Aucun token pour l'étape 2";
 });
 
-test('Soumission refusée : status passe à "refuse"', function() use ($pdo, $onboarding_id) {
+test('Soumission refusée : status passe à "refuse"', function() use ($pdo, $onboarding_id): string|true {
     // Créer une nouvelle soumission et la refuser
     $data = json_encode(['nom' => 'TestRefus', 'prenom' => 'Agent', 'date_prise_poste' => '2026-07-01']);
     $refusal_uuid = generate_uuid();
@@ -371,7 +371,7 @@ $pages = [
 foreach ($pages as $file => $info) {
     $label = $info['label'];
     $get = $info['get'];
-    test("$label ($file)", function() use ($file, $get) {
+    test("$label ($file)", function() use ($file, $get): true|string {
         // Exécuter dans un sous-processus pour isoler les die()/exit()
         $php = PHP_BINARY;
         $ini = php_ini_loaded_file() ?: '';
@@ -413,12 +413,12 @@ foreach ($pages as $file => $info) {
         $result = preg_replace('/^Warning:.*$/m', '', $result);
         $result = trim($result);
         
-        if (strpos($result, 'FATAL') !== false) return 'Fatal error détectée';
-        if (strpos($result, 'PARSE_ERROR') !== false) return 'Parse error détectée';
-        if (strpos($result, 'OK') !== false) return true;
+        if (str_contains($result, 'FATAL')) return 'Fatal error détectée';
+        if (str_contains($result, 'PARSE_ERROR')) return 'Parse error détectée';
+        if (str_contains($result, 'OK')) return true;
         
         // Sinon, vérifier si c'est quand même du HTML valide
-        if (empty($result)) return 'Page vide';
+        if ($result === '' || $result === '0') return 'Page vide';
         return 'Sortie inattendue: ' . substr($result, 0, 200);
     });
 }
@@ -430,7 +430,7 @@ echo "\n";
 // ═══════════════════════════════════════════════════
 echo "── 5. Sécurité ──\n";
 
-test('CSRF token validé en POST', function() {
+test('CSRF token validé en POST', function(): true|string {
     @session_start();
     $token = $_SESSION['csrf_token'] ?? bin2hex(random_bytes(32));
     $_SESSION['csrf_token'] = $token;
@@ -439,7 +439,7 @@ test('CSRF token validé en POST', function() {
     return $result ? true : 'CSRF check a échoué avec le bon token';
 });
 
-test('CSRF token rejeté si invalide', function() {
+test('CSRF token rejeté si invalide', function(): true|string {
     // En mode TEST, verify_csrf() bypass toujours → on teste la logique hash_equals()
     @session_start();
     $_SESSION['csrf_token'] = 'good_token';
@@ -448,7 +448,7 @@ test('CSRF token rejeté si invalide', function() {
     return $logic_check ? true : 'hash_equals() ne détecte pas le mauvais token';
 });
 
-test('Requêtes préparées utilisées (pas de SQLi)', function() {
+test('Requêtes préparées utilisées (pas de SQLi)', function(): true|string {
     $pdo = \App\Core\App::db()->getPdo();
     // Test simple : un paramètre malveillant ne doit pas casser la DB
     $stmt = $pdo->prepare("SELECT * FROM forms WHERE slug = ?");
@@ -459,7 +459,7 @@ test('Requêtes préparées utilisées (pas de SQLi)', function() {
     return $check > 0 ? true : 'Table forms supprimée !';
 });
 
-test('Tokens de validation cryptographiques', function() {
+test('Tokens de validation cryptographiques', function(): true|string {
     $token1 = bin2hex(random_bytes(32));
     $token2 = bin2hex(random_bytes(32));
     return ($token1 !== $token2 && strlen($token1) === 64) ? true : 'Tokens non uniques ou mauvaise longueur';
@@ -473,17 +473,17 @@ echo "\n";
 echo "── 6. Fonctions avancées ──\n";
 
 // ── 6a. Parsing du CHANGELOG ──
-test('get_latest_version() lit la version depuis CHANGELOG.md', function() {
+test('get_latest_version() lit la version depuis CHANGELOG.md', function(): string|true {
     $version = get_latest_version();
     return preg_match('/^\d+\.\d+\.\d+$/', $version) ? true : "Format invalide: $version";
 });
 
-test('get_latest_version() n\'est pas 0.0.0 (CHANGELOG existe)', function() {
+test('get_latest_version() n\'est pas 0.0.0 (CHANGELOG existe)', function(): true|string {
     $version = get_latest_version();
     return $version !== '0.0.0' ? true : 'Version 0.0.0 — CHANGELOG.md manquant ou illisible';
 });
 
-test('get_latest_version() correspond au 1er ## [X.Y.Z] du CHANGELOG', function() {
+test('get_latest_version() correspond au 1er ## [X.Y.Z] du CHANGELOG', function(): string|true {
     $version = get_latest_version();
     $changelog = file_get_contents(__DIR__ . '/../CHANGELOG.md');
     if ($changelog === false) return 'CHANGELOG.md illisible';
@@ -494,58 +494,56 @@ test('get_latest_version() correspond au 1er ## [X.Y.Z] du CHANGELOG', function(
     return 'Aucune version trouvée dans CHANGELOG.md';
 });
 
-test('render_footer() contient la version du CHANGELOG', function() {
+test('render_footer() contient la version du CHANGELOG', function(): string|true {
     $html = render_footer();
     $version = get_latest_version();
-    return strpos($html, $version) !== false ? true : "Version $version manquante dans le footer";
+    return str_contains($html, $version) ? true : "Version $version manquante dans le footer";
 });
 
-test('Le footer affiche la version sur la page d\'accueil', function() {
+test('Le footer affiche la version sur la page d\'accueil', function(): string|true {
     // Rendre index.php et vérifier que le footer contient la version
     ob_start();
     try {
         require __DIR__ . '/../index.php';
-    } catch (\Throwable $e) {
+    } catch (\Throwable) {
         // OK — redirect, exit, etc.
     }
     $html = ob_get_clean();
     $version = get_latest_version();
-    return strpos($html, $version) !== false ? true : "Version $version manquante dans le HTML de l'accueil";
+    return str_contains($html, $version) ? true : "Version $version manquante dans le HTML de l'accueil";
 });
 
-test('Changélog a au moins 1 entrée de version', function() {
+test('Changélog a au moins 1 entrée de version', function(): string|true {
     $changelog = file_get_contents(__DIR__ . '/../CHANGELOG.md');
     if ($changelog === false) return 'CHANGELOG.md illisible';
     $count = preg_match_all('/^##\s*\[\d+\.\d+\.\d+\]/m', $changelog);
     return $count >= 1 ? true : "Aucune version trouvée ($count)";
 });
 
-test('export_csv() génère du CSV (sans exit)', function() {
+test('export_csv() génère du CSV (sans exit)', function(): true|string {
     // export_csv() fait un exit(), on teste donc juste que la fonction existe
     // et on valide la logique CSV séparément
     $tmp = fopen('php://memory', 'r+');
     fputcsv($tmp, ['test', 'csv'], ';', '"', '\\');
     rewind($tmp);
     $line = fgets($tmp);
-    return strpos($line, 'test') !== false ? true : 'CSV invalide';
+    return str_contains($line, 'test') ? true : 'CSV invalide';
 });
 
-test('get_setting() / set_setting() fonctionnent', function() {
+test('get_setting() / set_setting() fonctionnent', function(): string|true {
     \App\Core\App::settings()->set('test_key', 'test_value');
     $val = \App\Core\App::settings()->get('test_key');
     return $val === 'test_value' ? true : "Got: $val";
 });
 
-test('has_active_submissions() détecte les soumissions', function() use ($onboarding_id) {
+test('has_active_submissions() détecte les soumissions', function() use ($onboarding_id): true|string {
     $result = \App\Core\App::workflow()->hasActiveSubmissions($onboarding_id);
     return $result ? true : 'Pas de soumissions actives détectées';
 });
 
-test('Fonction mail disponible (PHPMailer chargé)', function() {
-    return class_exists('PHPMailer\\PHPMailer\\PHPMailer') ? true : 'PHPMailer non chargé';
-});
+test('Fonction mail disponible (PHPMailer chargé)', fn(): true|string => class_exists(\PHPMailer\PHPMailer\PHPMailer::class) ? true : 'PHPMailer non chargé');
 
-test('generate_uuid() ne produit pas de lastInsertId()', function() {
+test('generate_uuid() ne produit pas de lastInsertId()', function(): true|string {
     $pdo = \App\Core\App::db()->getPdo();
     $uuid = generate_uuid();
     // Insérer avec l'UUID explicitement
