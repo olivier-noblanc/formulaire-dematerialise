@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-if (!isset($data[\App\Enum\SubmissionField::VALIDATIONS->value]) || !is_array($data[\App\Enum\SubmissionField::VALIDATIONS->value]) || !((bool)($data[\App\Enum\SubmissionField::VALIDATIONS->value]))) {
+if (!isset($data[\App\Enum\SubmissionField::VALIDATIONS->value]) || !is_array($data[\App\Enum\SubmissionField::VALIDATIONS->value]) || !((bool) ($data[\App\Enum\SubmissionField::VALIDATIONS->value]))) {
     return '';
 }
 
@@ -27,7 +28,7 @@ foreach ($data[\App\Enum\SubmissionField::VALIDATIONS->value] as $v) {
     }
 
     $comment_html = '';
-    if ((bool)($v['commentaire'])) {
+    if ((bool) ($v['commentaire'])) {
         $comment = \App\Core\App::html()->escape((string) $v['commentaire']);
         $comment_html = <<<HTML
                       <div class="val-comment"><span aria-hidden="true">💬</span> {$comment}</div>

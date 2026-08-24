@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Render;
 
-use App\Enum\FieldVisibility;
-use App\Enum\FilledBy;
 use App\Enum\FieldType;
 
 /**
@@ -90,9 +88,13 @@ final class AdminFormsRenderer
      */
     public function optionsToLines(?string $json): string
     {
-        if (!((bool)($json))) return '';
+        if (!((bool) ($json))) {
+            return '';
+        }
         $decoded = json_decode($json, true);
-        if (is_array($decoded)) return implode("\n", $decoded);
+        if (is_array($decoded)) {
+            return implode("\n", $decoded);
+        }
         return $json;
     }
 
@@ -137,7 +139,7 @@ final class AdminFormsRenderer
      */
     public function renderTopActionBar(AdminFormsContext $ctx): string
     {
-        if (!((bool)$ctx->form)) {
+        if (!((bool) $ctx->form)) {
             return '';
         }
         return $this->loadTemplate('adminForms_topActionBar.php', $ctx);
@@ -148,7 +150,7 @@ final class AdminFormsRenderer
      */
     public function renderFormInfoSection(AdminFormsContext $ctx): string
     {
-        if (!((bool)$ctx->form)) {
+        if (!((bool) $ctx->form)) {
             return '';
         }
         return $this->loadTemplate('adminForms_formInfoSection.php', $ctx);
@@ -159,13 +161,13 @@ final class AdminFormsRenderer
      */
     public function renderOwnersSection(AdminFormsContext $ctx): string
     {
-        if (!((bool)$ctx->form)) {
+        if (!((bool) $ctx->form)) {
             return '';
         }
         return $this->loadTemplate('adminForms_ownersSection.php', $ctx);
     }
 
-// ── Workflow section ──────────────────────────────────────────
+    // ── Workflow section ──────────────────────────────────────────
 
     /**
      * SECTION B : Circuit de validation (diagramme visuel + liste des étapes).
@@ -203,11 +205,11 @@ final class AdminFormsRenderer
         ?>
         <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
 
-        <?php if ((bool)($success_msg)): ?>
+        <?php if ((bool) ($success_msg)): ?>
             <div class="msg-success" role="status" aria-live="polite"><?= \App\Core\App::html()->escape($success_msg) ?></div>
         <?php endif; ?>
 
-        <?php if ((bool)($error_msg)): ?>
+        <?php if ((bool) ($error_msg)): ?>
             <div class="msg-error" role="alert" aria-live="assertive"><?= \App\Core\App::html()->escape($error_msg) ?></div>
         <?php endif; ?>
 
@@ -215,7 +217,7 @@ final class AdminFormsRenderer
         <?= $this->renderImportJsonPanel($ctx) ?>
         <?= $this->renderPromptIaPanel($ctx) ?>
 
-        <?php if (!((bool)($form_id))): ?>
+        <?php if (!((bool) ($form_id))): ?>
             <?= $this->renderNewFormPanel($ctx) ?>
         <?php else: ?>
             <?php if ($form): ?>

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * @var bool   $is_admin
  * @var string $action_msg
@@ -11,8 +13,8 @@ $msg_html = '';
 if ($action_msg !== '') {
     $msg_escaped = \App\Core\App::html()->escape($action_msg);
     $msg_html = <<<HTML
-      <div class="msg-info" role="status" aria-live="polite">{$msg_escaped}</div>
-    HTML;
+          <div class="msg-info" role="status" aria-live="polite">{$msg_escaped}</div>
+        HTML;
 }
 
 return $back_link . "\n" . $msg_html;

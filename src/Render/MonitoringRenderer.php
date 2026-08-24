@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Render;
 
-use App\Core\App;
-
 /**
  * Rendu de la page de surveillance / monitoring (monitoring.php).
  *

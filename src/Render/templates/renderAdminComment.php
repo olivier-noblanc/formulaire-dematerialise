@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * @var bool   $can_edit
  * @var string $admin_comment

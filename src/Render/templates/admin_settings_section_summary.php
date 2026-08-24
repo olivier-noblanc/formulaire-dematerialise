@@ -45,23 +45,23 @@
 
     <?php
     $security_score = 0;
-    $security_items = [];
-    if ($mail_dry_run === '1') {
-        $security_score++;
-        $security_items[] = 'Dry-Run activé';
-    }
-    if ($email_verify_mode !== 'none') {
-        $security_score++;
-        $security_items[] = 'Vérification destinataires';
-    }
-    /** @phpstan-ignore-next-line */
-    if (!method_exists(\PHPMailer\PHPMailer\PHPMailer::class, 'getSMTPInstance')) {
-        $security_score++;
-        $security_items[] = 'PHPMailer en mode stub';
-    }
-    $security_score++;
-    $security_items[] = 'Blocage CLI';
-    ?>
+            $security_items = [];
+            if ($mail_dry_run === '1') {
+                $security_score++;
+                $security_items[] = 'Dry-Run activé';
+            }
+            if ($email_verify_mode !== 'none') {
+                $security_score++;
+                $security_items[] = 'Vérification destinataires';
+            }
+            /** @phpstan-ignore-next-line */
+            if (!method_exists(\PHPMailer\PHPMailer\PHPMailer::class, 'getSMTPInstance')) {
+                $security_score++;
+                $security_items[] = 'PHPMailer en mode stub';
+            }
+            $security_score++;
+            $security_items[] = 'Blocage CLI';
+            ?>
     <div class="<?= $security_score >= 3 ? 'score-ok' : 'score-warn' ?>">
         <strong>Niveau de sécurité : <?= $security_score ?>/4</strong>
         <div class="hint-muted-3">

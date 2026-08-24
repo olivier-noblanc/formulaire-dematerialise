@@ -17,15 +17,15 @@ declare(strict_types=1);
 <div class="sidebar-section-title">Navigation</div>
 <?php foreach ($main_links as $key => $link): ?>
 <?php
-$active_cls = ($current_page === $key) ? ' active' : '';
-$badge = '';
-if ($key === 'mes_demandes' && $my_en_cours_count > 0) {
-    $badge = '<span class="sidebar-badge" aria-label="' . $my_en_cours_count . ' en cours">' . $my_en_cours_count . '</span>';
-}
-if ($key === 'mes_validations' && $pending_count > 0) {
-    $badge = '<span class="sidebar-badge" aria-label="' . $pending_count . ' en attente">' . $pending_count . '</span>';
-}
-?>
+    $active_cls = ($current_page === $key) ? ' active' : '';
+    $badge = '';
+    if ($key === 'mes_demandes' && $my_en_cours_count > 0) {
+        $badge = '<span class="sidebar-badge" aria-label="' . $my_en_cours_count . ' en cours">' . $my_en_cours_count . '</span>';
+    }
+    if ($key === 'mes_validations' && $pending_count > 0) {
+        $badge = '<span class="sidebar-badge" aria-label="' . $pending_count . ' en attente">' . $pending_count . '</span>';
+    }
+    ?>
 <a href="<?= $link['href'] ?>" class="sidebar-item<?= $active_cls ?>">
   <span class="sidebar-item-icon" aria-hidden="true"><?= $link['icon'] ?></span>
   <span class="sidebar-item-label"><?= $link['label'] ?></span>

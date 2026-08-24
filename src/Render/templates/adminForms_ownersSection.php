@@ -6,7 +6,7 @@
     <div class="section-card-body">
     <p class="hint mb-1">Les propriétaires peuvent accéder au tableau de suivi spécifique de ce formulaire via la page <a href="index.php?p=form_tracking&f=<?= \App\Core\App::html()->escape($form['id'] ?? '') ?>">Suivi propriétaire</a>.</p>
 
-    <?php if ((bool)($owners)): ?>
+    <?php if ((bool) ($owners)): ?>
         <table class="data-table mb-1">
             <thead>
                 <tr>
@@ -41,7 +41,7 @@
         </div>
     </form>
 
-    <?php if ((bool)($owners)): ?>
+    <?php if ((bool) ($owners)): ?>
         <div class="mt-1">
             <a href="index.php?p=form_tracking&f=<?= \App\Core\App::html()->escape($form['id'] ?? '') ?>" class="btn btn-secondary"><span aria-hidden="true">📊</span> Ouvrir le tableau de suivi</a>
         </div>

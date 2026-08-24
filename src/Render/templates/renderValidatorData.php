@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * @var list<array{field_name?: string, field_label?: string, value?: string, filled_by_email?: string, step_label?: string, filled_at?: string}>  $validator_data_rows
  * @var array<string, array{label?: string}>                                                                                                     $field_info

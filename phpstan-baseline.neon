@@ -649,12 +649,6 @@ parameters:
 			path: src/Render/templates/adminForms_ownersSection.php
 
 		-
-			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
-			identifier: equal.notAllowed
-			count: 1
-			path: src/Render/templates/adminForms_selectorPanel.php
-
-		-
 			message: '#^Variable \$form_id might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -779,18 +773,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/admin_settings_section_security.php
-
-		-
-			message: '#^Variable \$delai_relance_h might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Render/templates/admin_settings_section_smtp.php
-
-		-
-			message: '#^Variable \$relance_max might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Render/templates/admin_settings_section_smtp.php
 
 		-
 			message: '#^Variable \$retention_months might not be defined\.$#'

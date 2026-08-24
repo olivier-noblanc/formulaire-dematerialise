@@ -97,7 +97,7 @@ final class FormRenderer
                 break;
         }
 
-        $user_hint = (bool)($field['hint']) ? '<span class="hint">' . \App\Core\App::html()->escape(t_jargon($field['hint'])) . '</span>' : '';
+        $user_hint = (bool) ($field['hint']) ? '<span class="hint">' . \App\Core\App::html()->escape(t_jargon($field['hint'])) . '</span>' : '';
 
         $auto_hint_html = '';
         if ($auto_hint_text !== '') {
@@ -141,14 +141,14 @@ final class FormRenderer
             'auto_hint_html'  => $auto_hint_html,
             'user_hint'       => $user_hint,
             'error_html'      => $error_html,
-            'placeholder_attr'=> $placeholder_attr,
+            'placeholder_attr' => $placeholder_attr,
             'html5_type'      => $html5_type,
             'html5_extra'     => $html5_extra,
             'val'             => \App\Core\App::html()->escape($posted_val ?? ''),
             'maxlength'       => ' maxlength="500"',
             'list_attr'       => $datalist_id === '' || $datalist_id === '0' ? '' : ' list="' . \App\Core\App::html()->escape($datalist_id) . '"',
             'checked'         => in_array($posted_val, ['', null, '0'], true) ? '' : ' checked',
-            'options_html'    => (function() use ($field, $posted_val): string {
+            'options_html'    => (function () use ($field, $posted_val): string {
                 $opts_raw = $field['options'] ?? '[]';
                 $opts     = json_decode($opts_raw, true) ?? [];
                 $html     = '<option value="">— Sélectionner —</option>';

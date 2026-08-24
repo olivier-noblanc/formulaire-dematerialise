@@ -11,13 +11,13 @@ foreach ($recent_alerts as $recent_alert) {
     $message   = \App\Core\App::html()->escape((string) ($recent_alert['message'] ?? ''));
 
     $rows .= <<<HTML
-                <tr>
-                  <td class="u-fon-whi">{$date}</td>
-                  <td><span class="badge badge-info">{$rule_lbl}</span></td>
-                  <td class="u-fon-2">{$form_lbl}</td>
-                  <td class="u-fon">{$message}</td>
-                </tr>
-    HTML;
+                    <tr>
+                      <td class="u-fon-whi">{$date}</td>
+                      <td><span class="badge badge-info">{$rule_lbl}</span></td>
+                      <td class="u-fon-2">{$form_lbl}</td>
+                      <td class="u-fon">{$message}</td>
+                    </tr>
+        HTML;
 }
 ?>
 <!-- Dernieres alertes envoyees -->

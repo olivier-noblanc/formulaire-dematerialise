@@ -230,14 +230,14 @@ final class SubmissionViewRenderer
     {
         $history = [];
         foreach ($allTokens as $tk) {
-            if ((bool)($tk['done_at'])) {
+            if ((bool) ($tk['done_at'])) {
                 $entry = [
                     'action'     => (string) ($tk['action'] ?? 'valider'),
                     'step_label' => (string) ($tk['step_label'] ?? ''),
                     'email'      => (string) ($tk['email'] ?? ''),
                     'date'       => (string) ($tk['done_at'] ?? ''),
                 ];
-                if ((bool)($tk['filled_by'])) {
+                if ((bool) ($tk['filled_by'])) {
                     $entry['done_by'] = (string) $tk['filled_by'];
                 }
                 $history[] = $entry;
@@ -268,24 +268,24 @@ final class SubmissionViewRenderer
             $filledAt   = \App\Core\App::html()->escape((string) ($vd['filled_at'] ?? ''));
 
             $items .= <<<HTML
-                <tr>
-                  <td>{$fieldLabel}</td>
-                  <td>{$value}</td>
-                  <td>{$filledBy}</td>
-                  <td>{$filledAt}</td>
-                </tr>
-            HTML;
+                    <tr>
+                      <td>{$fieldLabel}</td>
+                      <td>{$value}</td>
+                      <td>{$filledBy}</td>
+                      <td>{$filledAt}</td>
+                    </tr>
+                HTML;
         }
 
         return <<<HTML
-            <div class="card">
-              <h2><span aria-hidden="true">✏️</span> Données validateur</h2>
-              <table>
-                <thead><tr><th>Champ</th><th>Valeur</th><th>Rempli par</th><th>Date</th></tr></thead>
-                <tbody>{$items}</tbody>
-              </table>
-            </div>
-        HTML;
+                <div class="card">
+                  <h2><span aria-hidden="true">✏️</span> Données validateur</h2>
+                  <table>
+                    <thead><tr><th>Champ</th><th>Valeur</th><th>Rempli par</th><th>Date</th></tr></thead>
+                    <tbody>{$items}</tbody>
+                  </table>
+                </div>
+            HTML;
     }
 
     /**
@@ -303,21 +303,21 @@ final class SubmissionViewRenderer
             $date   = \App\Core\App::html()->escape((string) ($r['created_at'] ?? ''));
             $actor  = \App\Core\App::html()->escape((string) ($r['actor'] ?? ''));
             $items .= <<<HTML
-                <div class="val-item">
-                  <div class="val-icon" aria-hidden="true">🔔</div>
-                  <div class="val-content">
-                    <div class="val-header">{$detail}</div>
-                    <div class="val-detail">{$date} par {$actor}</div>
-                  </div>
-                </div>
-            HTML;
+                    <div class="val-item">
+                      <div class="val-icon" aria-hidden="true">🔔</div>
+                      <div class="val-content">
+                        <div class="val-header">{$detail}</div>
+                        <div class="val-detail">{$date} par {$actor}</div>
+                      </div>
+                    </div>
+                HTML;
         }
 
         return <<<HTML
-            <div class="card">
-              <h2><span aria-hidden="true">🔔</span> Historique des relances</h2>
-              {$items}
-            </div>
-        HTML;
+                <div class="card">
+                  <h2><span aria-hidden="true">🔔</span> Historique des relances</h2>
+                  {$items}
+                </div>
+            HTML;
     }
 }

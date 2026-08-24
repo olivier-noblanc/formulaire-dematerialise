@@ -16,15 +16,15 @@ foreach ($active_alerts as $active_alert) {
     $pending_steps = (int) ($active_alert['pending_steps'] ?? 0);
 
     $rows .= <<<HTML
-                <tr class="alert-row {$row_cls}">
-                  <td><span class="days-remaining {$days_cls}">{$days_text}</span></td>
-                  <td><strong>{$form_label}</strong></td>
-                  <td>{$nom_agent}</td>
-                  <td class="u-whi">{$deadline_fmt}</td>
-                  <td><span class="days-remaining {$days_cls}">{$days_text}</span></td>
-                  <td><span class="badge badge-warn">{$pending_steps} en attente</span></td>
-                </tr>
-    HTML;
+                    <tr class="alert-row {$row_cls}">
+                      <td><span class="days-remaining {$days_cls}">{$days_text}</span></td>
+                      <td><strong>{$form_label}</strong></td>
+                      <td>{$nom_agent}</td>
+                      <td class="u-whi">{$deadline_fmt}</td>
+                      <td><span class="days-remaining {$days_cls}">{$days_text}</span></td>
+                      <td><span class="badge badge-warn">{$pending_steps} en attente</span></td>
+                    </tr>
+        HTML;
 }
 ?>
 <!-- Alertes actives : soumissions proches de la deadline -->

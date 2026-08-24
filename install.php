@@ -212,7 +212,7 @@ function inst_test_smtp(string $host, int $port, string $from, string $from_name
 </body></html>';
         $mail->send();
         return ['success' => true, 'message' => 'Email de test envoyé avec succès à ' . $to];
-    } catch (\PHPMailer\PHPMailer\Exception $e) {
+    } catch (\PHPMailer\PHPMailer\Exception) {
         return ['success' => false, 'message' => 'Échec de l\'envoi : ' . $mail->ErrorInfo];
     } catch (\Exception $e) {
         return ['success' => false, 'message' => 'Erreur : ' . $e->getMessage()];
@@ -305,13 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ── Action : Aller à l'étape 2 ──
         if ($action === 'to_step2') {
             $prereqs = inst_check_prerequisites();
-            $all_ok = true;
-            foreach ($prereqs as $check) {
-                if (!$check['ok']) {
-                    $all_ok = false;
-                    break;
-                }
-            }
+            $all_ok = array_all($prereqs, fn($check): mixed => $check['ok']);
             if ($all_ok) {
                 $step = 2;
             } else {
@@ -333,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $smtp_from_name = trim($_POST['smtp_from_name'] ?? INST_DEFAULT_SMTP_FROM_NAME);
             $admin_email  = trim($_POST['admin_email'] ?? '');
 
-            if (empty($admin_email) || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
+            if ($admin_email === '' || $admin_email === '0' || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
                 $error_messages[] = 'L\'email administrateur est requis et doit être valide pour tester l\'envoi.';
             } else {
                 $smtp_result = inst_test_smtp($smtp_host, $smtp_port, $smtp_from, $smtp_from_name, $admin_email);
@@ -357,28 +351,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Validation
             $validation_errors = [];
-            if (empty($base_url)) {
+            if ($base_url === '' || $base_url === '0') {
                 $validation_errors[] = 'L\'URL de base est requise.';
             } elseif (!filter_var($base_url, FILTER_VALIDATE_URL)) {
                 $validation_errors[] = 'L\'URL de base n\'est pas une URL valide.';
             }
-            if (empty($smtp_host)) {
+            if ($smtp_host === '' || $smtp_host === '0') {
                 $validation_errors[] = 'L\'hôte SMTP est requis.';
             }
-            if (empty($smtp_port) || (int)$smtp_port < 1 || (int)$smtp_port > 65535) {
+            if ($smtp_port === '' || $smtp_port === '0' || (int)$smtp_port < 1 || (int)$smtp_port > 65535) {
                 $validation_errors[] = 'Le port SMTP doit être un nombre entre 1 et 65535.';
             }
-            if (empty($smtp_from) || !filter_var($smtp_from, FILTER_VALIDATE_EMAIL)) {
+            if ($smtp_from === '' || $smtp_from === '0' || !filter_var($smtp_from, FILTER_VALIDATE_EMAIL)) {
                 $validation_errors[] = 'L\'email expéditeur est requis et doit être valide.';
             }
-            if (empty($smtp_from_name)) {
+            if ($smtp_from_name === '' || $smtp_from_name === '0') {
                 $validation_errors[] = 'Le nom d\'expéditeur est requis.';
             }
-            if (empty($admin_email) || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
+            if ($admin_email === '' || $admin_email === '0' || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
                 $validation_errors[] = 'L\'email administrateur est requis et doit être valide.';
             }
 
-            if (empty($validation_errors)) {
+            if ($validation_errors === []) {
                 // Extraire le chemin depuis l'URL pour le format config.php
                 $parsed = parse_url($base_url);
                 $base_url_path = $parsed['path'] ?? '/workflow';
@@ -412,10 +406,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Redirection vers index.php
                     header('Location: index.php');
                     exit;
-                } else {
-                    $error_messages[] = $write_result['message'];
-                    $step = 3;
                 }
+                $error_messages[] = $write_result['message'];
+                $step = 3;
             }
         }
 
@@ -451,19 +444,13 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ── Étape 1 : vérification des prérequis ────────────────────
 $prerequisites = inst_check_prerequisites();
-$all_prereqs_ok = true;
-foreach ($prerequisites as $check) {
-    if (!$check['ok']) {
-        $all_prereqs_ok = false;
-        break;
-    }
-}
+$all_prereqs_ok = array_all($prerequisites, fn($check): mixed => $check['ok']);
 
 // ── Étape 3 : config à confirmer ────────────────────────────
 $confirm_config = $_SESSION['inst_config'] ?? null;
 
 // ── Rendu de la page (délégué à App\Render\InstallRenderer) ──
-(new \App\Render\InstallRenderer())->renderPage([
+new \App\Render\InstallRenderer()->renderPage([
     'step'            => $step,
     'messages'        => $messages,
     'error_messages'  => $error_messages,

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
-use App\Enum\SubmissionStatus;
 use App\Enum\SubmissionField;
+use App\Enum\SubmissionStatus;
 use App\Forms\SubmissionData;
 
 /**
@@ -74,10 +74,10 @@ final class DashboardTableRenderer
         $view_url     = 'index.php?p=submission_view&id=' . urlencode((string) ($row['id'] ?? ''));
 
         $tokens_html = '';
-        $pending_ordres = array_column(array_filter($tokens, fn(array $x): bool => !(bool)($x['done_at'])), 'ordre');
+        $pending_ordres = array_column(array_filter($tokens, fn(array $x): bool => !(bool) ($x['done_at'])), 'ordre');
         $min_pending = $pending_ordres !== [] ? min($pending_ordres) : 0;
         foreach ($tokens as $token) {
-            if ((bool)($token['done_at'])) {
+            if ((bool) ($token['done_at'])) {
                 $cls = 'token-ok';
             } elseif ((int) ($token['ordre'] ?? 0) === (int) $min_pending) {
                 $cls = 'token-wait';
@@ -86,7 +86,7 @@ final class DashboardTableRenderer
             }
             $ordre = (int) ($token['ordre'] ?? 0);
             $label = App::html()->escape((string) ($token['label'] ?? ''));
-            $check = (bool)($token['done_at']) ? ' ✓' : '';
+            $check = (bool) ($token['done_at']) ? ' ✓' : '';
             $tokens_html .= "<span class=\"token-badge {$cls}\">"
                 . "<span class=\"ordre-label\">{$ordre}</span>{$label}{$check}"
                 . '</span>';
@@ -161,7 +161,7 @@ final class DashboardTableRenderer
         $data_array = is_array($d) ? $d : [];
         $form_data_html = new FormRenderer()->submissionData($data_array, [SubmissionField::VALIDATIONS->value, 'csrf_token'], 'inline');
         $cancel_url = 'index.php?p=confirm_action&action=cancel_submission&submission_id='
-            . urlencode((string) ($row['id'] ?? '')) . '&from=index.php?p=dashboard';
+            . urlencode((string) ($row['id'] ?? '')) . '&from=' . urlencode('index.php?p=dashboard');
 
         ob_start();
         require __DIR__ . '/templates/submission_detail.php';

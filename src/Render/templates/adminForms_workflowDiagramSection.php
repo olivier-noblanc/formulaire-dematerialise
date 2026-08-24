@@ -8,19 +8,19 @@
     <div class="section-card-body">
 
         <!-- ── Visual Workflow Diagram ─────────────────── -->
-        <?php if ((bool)($steps_by_ordre)): ?>
+        <?php if ((bool) ($steps_by_ordre)): ?>
             <div class="workflow-diagram">
                 <?php
                 $ordre_keys = array_keys($steps_by_ordre);
-                $last_key = end($ordre_keys);
-                ?>
+            $last_key = end($ordre_keys);
+            ?>
                 <?php foreach ($steps_by_ordre as $ordre => $ordre_steps): ?>
                     <div class="workflow-step-group">
                         <?php foreach ($ordre_steps as $idx => $wstep): ?>
                             <div class="workflow-box <?= $wstep['actif'] ? '' : 'inactive' ?> <?= count($ordre_steps) > 1 && $idx > 0 ? 'wf-gap' : '' ?>">
                                 <div class="wb-label"><?= \App\Core\App::html()->escape($wstep['label']) ?></div>
                                 <div class="wb-ordre">Étape <?= \App\Core\App::html()->escape((string) $ordre) ?></div>
-                                <?php if ((bool)($wstep['recipients'])): ?>
+                                <?php if ((bool) ($wstep['recipients'])): ?>
                                     <div class="wb-emails"><?= \App\Core\App::html()->escape(implode(', ', array_column($wstep['recipients'], 'email'))) ?></div>
                                 <?php else: ?>
                                     <div class="wb-emails u-fon-6">Aucun destinataire</div>
@@ -62,7 +62,7 @@
         </div>
 
         <!-- ── Step list ───────────────────────────────── -->
-        <?php if ((bool)($steps)): ?>
+        <?php if ((bool) ($steps)): ?>
             <div class="mt-125">
                 <?php foreach ($steps as $step): ?>
                     <?php if ($edit_step_id === $step['id']): ?>
@@ -91,22 +91,22 @@
                                     </div>
 
                                     <?php
-                                    $step_ordre_int = (int)($step['ordre'] ?? 0);
-                                    $can_have_condition = $step_ordre_int > 1;
+                                $step_ordre_int = (int) ($step['ordre'] ?? 0);
+                        $can_have_condition = $step_ordre_int > 1;
 
-                                    $existing_condition = ['field' => '', 'op' => '', 'value' => ''];
-                                    $raw_condition = (string)($step['condition'] ?? '');
-                                    if ($raw_condition !== '') {
-                                        $decoded = json_decode($raw_condition, true);
-                                        if (is_array($decoded)) {
-                                            $existing_condition['field'] = (string)($decoded['field'] ?? '');
-                                            $existing_condition['op']   = (string)($decoded['op'] ?? '');
-                                            $existing_condition['value'] = (string)($decoded['value'] ?? '');
-                                        }
-                                    }
+                        $existing_condition = ['field' => '', 'op' => '', 'value' => ''];
+                        $raw_condition = (string) ($step['condition'] ?? '');
+                        if ($raw_condition !== '') {
+                            $decoded = json_decode($raw_condition, true);
+                            if (is_array($decoded)) {
+                                $existing_condition['field'] = (string) ($decoded['field'] ?? '');
+                                $existing_condition['op']   = (string) ($decoded['op'] ?? '');
+                                $existing_condition['value'] = (string) ($decoded['value'] ?? '');
+                            }
+                        }
 
-                                    $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string) $form_id) : [];
-                                    ?>
+                        $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string) $form_id) : [];
+                        ?>
 
                                     <?php if ($can_have_condition): ?>
                                         <details class="u-bor-mar-pad">
@@ -117,9 +117,9 @@
                                                     <select name="condition_field">
                                                         <option value="">— Toujours exécuter (pas de condition) —</option>
                                                         <?php foreach ($validator_fields as $vf): ?>
-                                                            <?php $vf_name = (string)($vf['field_name'] ?? ''); ?>
+                                                            <?php $vf_name = (string) ($vf['field_name'] ?? ''); ?>
                                                             <option value="<?= \App\Core\App::html()->escape($vf_name) ?>" <?= $existing_condition['field'] === $vf_name ? 'selected' : '' ?>>
-                                                                <?= \App\Core\App::html()->escape((string)($vf['label'] ?? $vf_name)) ?> (<?= \App\Core\App::html()->escape($vf_name) ?>)
+                                                                <?= \App\Core\App::html()->escape((string) ($vf['label'] ?? $vf_name)) ?> (<?= \App\Core\App::html()->escape($vf_name) ?>)
                                                             </option>
                                                         <?php endforeach; ?>
                                                     </select>
@@ -128,15 +128,15 @@
                                                     <label>Opérateur</label>
                                                     <select name="condition_op">
                                                         <?php
-                                                        $ops = [
-                                                            'equals'     => 'Égal à',
-                                                            'not_equals' => 'Différent de',
-                                                            'contains'   => 'Contient',
-                                                            'not_empty'  => 'Non vide',
-                                                            'empty'      => 'Vide',
-                                                        ];
-                                                        foreach ($ops as $op_val => $op_label):
-                                                        ?>
+                                            $ops = [
+                                                'equals'     => 'Égal à',
+                                                'not_equals' => 'Différent de',
+                                                'contains'   => 'Contient',
+                                                'not_empty'  => 'Non vide',
+                                                'empty'      => 'Vide',
+                                            ];
+                                        foreach ($ops as $op_val => $op_label):
+                                            ?>
                                                             <option value="<?= \App\Core\App::html()->escape($op_val) ?>" <?= $existing_condition['op'] === $op_val ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($op_label) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
@@ -173,7 +173,7 @@
                                         <span class="badge u-bac-col">Inactif</span>
                                     <?php endif; ?>
                                 </div>
-                                <?php if ((bool)($step['recipients'])): ?>
+                                <?php if ((bool) ($step['recipients'])): ?>
                                     <div class="recipient-chips">
                                         <?php foreach ($step['recipients'] as $rcpt): ?>
                                             <span class="recipient-chip">
@@ -232,7 +232,7 @@
             </div>
         <?php endif; ?>
 
-        <?php if ((bool)($steps)): ?>
+        <?php if ((bool) ($steps)): ?>
             <?= new \App\Render\LdapRenderer()->datalist('ldap-recipient-suggestions', '', 300) ?>
         <?php endif; ?>
     </div>

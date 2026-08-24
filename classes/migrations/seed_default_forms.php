@@ -9,7 +9,6 @@ declare(strict_types=1);
  *
  * @package Migrations
  */
-
 /**
  * Insère les formulaires et paramètres par défaut (outboarding, onboarding,
  * sortie_hors_plages, remboursement_avance_frais, materiel_prescription,
@@ -20,7 +19,6 @@ declare(strict_types=1);
  * positionner $seed_needed = true et retenter après les migrations versionnées.
  *
  * @param PDO $pdo Connexion SQLite
- * @return void
  */
 function seed_default_forms(PDO $pdo): void {
     $ob_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'outboarding'")->fetchColumn();

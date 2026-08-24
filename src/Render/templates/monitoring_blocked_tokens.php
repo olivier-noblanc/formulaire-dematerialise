@@ -16,27 +16,27 @@ if ($tokens_bloques === []) {
         $submitted_by = \App\Core\App::html()->escape((string) $token_bloque['submitted_by']);
 
         $rows .= <<<HTML
-                  <tr>
-                    <td>{$form_label}</td>
-                    <td><span class="badge badge-info">Étape {$ordre} — {$step_label}</span></td>
-                    <td>{$email}</td>
-                    <td class="u-whi">{$sent_at}</td>
-                    <td>{$relance}</td>
-                    <td class="u-whi">{$expires}</td>
-                    <td>{$submitted_by}</td>
-                  </tr>
-        HTML;
+                      <tr>
+                        <td>{$form_label}</td>
+                        <td><span class="badge badge-info">Étape {$ordre} — {$step_label}</span></td>
+                        <td>{$email}</td>
+                        <td class="u-whi">{$sent_at}</td>
+                        <td>{$relance}</td>
+                        <td class="u-whi">{$expires}</td>
+                        <td>{$submitted_by}</td>
+                      </tr>
+            HTML;
     }
     $body = <<<HTML
-              <table>
-                <thead>
-                  <tr><th>Formulaire</th><th>Étape</th><th>Validateur</th><th>Envoyé le</th><th>Relances</th><th>Expire le</th><th>Agent</th></tr>
-                </thead>
-                <tbody>
-                {$rows}
-                </tbody>
-              </table>
-    HTML;
+                  <table>
+                    <thead>
+                      <tr><th>Formulaire</th><th>Étape</th><th>Validateur</th><th>Envoyé le</th><th>Relances</th><th>Expire le</th><th>Agent</th></tr>
+                    </thead>
+                    <tbody>
+                    {$rows}
+                    </tbody>
+                  </table>
+        HTML;
 }
 ?>
 <!-- Tokens bloqués -->

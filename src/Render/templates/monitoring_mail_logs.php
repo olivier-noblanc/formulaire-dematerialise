@@ -46,14 +46,14 @@ foreach ($mail_logs as $mail_log) {
     $date_fmt = $ts !== false ? \App\Core\App::html()->escape(date('d/m/Y H:i:s', $ts)) : $created_at;
 
     $rows .= <<<HTML
-                <tr>
-                  <td class="u-fon-whi-2">{$date_fmt}</td>
-                  <td class="u-fon-3">{$recipient}</td>
-                  <td class="u-fon-3">{$subject}</td>
-                  <td>{$badge_html}{$err_html}{$debug_html}</td>
-                  <td class="u-col-fon">{$actor}<br><span class="text-muted">{$ip}</span></td>
-                </tr>
-    HTML;
+                    <tr>
+                      <td class="u-fon-whi-2">{$date_fmt}</td>
+                      <td class="u-fon-3">{$recipient}</td>
+                      <td class="u-fon-3">{$subject}</td>
+                      <td>{$badge_html}{$err_html}{$debug_html}</td>
+                      <td class="u-col-fon">{$actor}<br><span class="text-muted">{$ip}</span></td>
+                    </tr>
+        HTML;
 }
 ?>
 <!-- Journal des emails -->

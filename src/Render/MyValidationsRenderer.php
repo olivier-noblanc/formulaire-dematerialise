@@ -9,6 +9,7 @@ use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
 use App\Forms\SubmissionData;
+
 use function Safe\json_decode;
 
 /**
@@ -80,7 +81,7 @@ final class MyValidationsRenderer
         } else {
             foreach ($pendingTokens as $pendingToken) {
                 $data = json_decode((string) ($pendingToken['data'] ?? '{}'), true) ?? [];
-                $expired = (bool)($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
+                $expired = (bool) ($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
                 $nomAgent = $htmlService->escape(
                     SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM)
                 );
@@ -226,7 +227,7 @@ final class MyValidationsRenderer
     {
         $doneTs = strtotime($doneAt);
         $sentTs = strtotime($sentAt);
-        if (!((bool)$doneTs) || !((bool)$sentTs)) {
+        if (!((bool) $doneTs) || !((bool) $sentTs)) {
             return '?';
         }
 

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 // phpstan_inst_stubs.php — Stub file for PHPStan bootstrap
 // Defines install.php functions and constants without executing session code
 
@@ -51,8 +53,7 @@ function inst_check_csrf(): bool {
 // send_mail(), build_mail_html(), render_email_template(), format_bytes() sont désormais de
 // vraies fonctions (src/mail_wrappers.php, chargé par helpers.php) — stubs retirés d'ici pour
 // éviter une redéclaration fatale (ce fichier est chargé APRÈS helpers.php par phpstan.neon).
-
-/** @deprecated Defined locally in MySubmissionsController — stub for PHPStan */
+#[\Deprecated(message: 'Defined locally in MySubmissionsController — stub for PHPStan')]
 function simplify_form_label(string $label): string {
     return $label;
 }

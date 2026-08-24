@@ -10,10 +10,10 @@ if ($last_remind !== '' && $last_remind !== '0') {
         ? '<br><span class="badge badge-ok mt-25"><span aria-hidden="true">✓</span> Actif</span>'
         : '<br><span class="badge badge-warn mt-25"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
     $remind_html = <<<HTML
-                  <span class="health-dot {$remind_dot_cls} mt-5"></span>
-                  Dernière exécution : <strong>{$remind_date}</strong>
-                  {$remind_badge}
-    HTML;
+                      <span class="health-dot {$remind_dot_cls} mt-5"></span>
+                      Dernière exécution : <strong>{$remind_date}</strong>
+                      {$remind_badge}
+        HTML;
 } else {
     $remind_html = '<span class="health-dot health-unknown"></span><span class="badge badge-info">Jamais exécuté</span>';
 }
@@ -29,10 +29,10 @@ if ($last_alert_check !== '' && $last_alert_check !== '0') {
         ? '<br><span class="badge badge-ok mt-25"><span aria-hidden="true">✓</span> Actif</span>'
         : '<br><span class="badge badge-warn mt-25"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
     $alert_html = <<<HTML
-                  <span class="health-dot {$alert_dot_cls} mt-5"></span>
-                  Dernière exécution : <strong>{$alert_date}</strong>
-                  {$alert_badge}
-    HTML;
+                      <span class="health-dot {$alert_dot_cls} mt-5"></span>
+                      Dernière exécution : <strong>{$alert_date}</strong>
+                      {$alert_badge}
+        HTML;
 } else {
     $alert_html = '<span class="health-dot health-unknown"></span><span class="badge badge-info">Jamais exécuté</span>';
 }

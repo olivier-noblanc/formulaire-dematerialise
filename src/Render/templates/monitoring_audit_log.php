@@ -32,26 +32,26 @@ if (in_array($audit_logs, ['', null, '0'], true)) {
         $detail = \App\Core\App::html()->escape((string) ($audit_log['detail'] ?? ''));
         $ip     = \App\Core\App::html()->escape((string) ($audit_log['ip'] ?? ''));
         $rows .= <<<HTML
-                  <tr>
-                    <td class="u-fon-whi">{$date}</td>
-                    <td><span class="badge badge-info">{$action}</span></td>
-                    <td class="u-fon">{$actor}</td>
-                    <td class="u-fon">{$target}</td>
-                    <td class="u-fon">{$detail}</td>
-                    <td class="u-col-fon-3">{$ip}</td>
-                  </tr>
-        HTML;
+                      <tr>
+                        <td class="u-fon-whi">{$date}</td>
+                        <td><span class="badge badge-info">{$action}</span></td>
+                        <td class="u-fon">{$actor}</td>
+                        <td class="u-fon">{$target}</td>
+                        <td class="u-fon">{$detail}</td>
+                        <td class="u-col-fon-3">{$ip}</td>
+                      </tr>
+            HTML;
     }
     $table_html = <<<HTML
-              <table>
-                <thead>
-                  <tr><th>Date</th><th>Action</th><th>Acteur</th><th>Cible</th><th>Détail</th><th>IP</th></tr>
-                </thead>
-                <tbody>
-                {$rows}
-                </tbody>
-              </table>
-    HTML;
+                  <table>
+                    <thead>
+                      <tr><th>Date</th><th>Action</th><th>Acteur</th><th>Cible</th><th>Détail</th><th>IP</th></tr>
+                    </thead>
+                    <tbody>
+                    {$rows}
+                    </tbody>
+                  </table>
+        HTML;
 }
 
 $pagination = '';
@@ -68,12 +68,12 @@ if ($audit_total_pages > 1) {
         $next_link = "<a href=\"{$next_url}\" class=\"btn btn-secondary u-fs-xs-p-075\">Suivant →</a>";
     }
     $pagination = <<<HTML
-                <div class="pagination flex-gap5-5">
-                  {$prev_link}
-                  {$page_info}
-                  {$next_link}
-                </div>
-    HTML;
+                    <div class="pagination flex-gap5-5">
+                      {$prev_link}
+                      {$page_info}
+                      {$next_link}
+                    </div>
+        HTML;
 }
 ?>
 <!-- Journal d'audit — S5-B / Action 1 : filtres avancés + pagination + export CSV -->

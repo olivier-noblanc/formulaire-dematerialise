@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /**
@@ -13,7 +14,7 @@ $form_label  = \App\Core\App::html()->escape((string) ($sub['form_label'] ?? '')
 $submitted_by = \App\Core\App::html()->escape((string) ($sub['submitted_by'] ?? ''));
 $submitted_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($sub['submitted_at'] ?? 'now'))));
 $closed_html = '';
-if ((bool)($sub['closed_at'])) {
+if ((bool) ($sub['closed_at'])) {
     $closed_at = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $sub['closed_at'])));
     $closed_html = "<br>Clôturé le : <strong>{$closed_at}</strong>";
 }

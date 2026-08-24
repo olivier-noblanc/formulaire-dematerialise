@@ -12,21 +12,21 @@ if ($daily_stats === []) {
         $pct_cls = 'mp-' . (int) $pct;
         \App\Core\App::css()->rule($pct_cls, "background:#003189;height:20px;border-radius:2px;width:{$pct}%;min-width:4px;");
         $rows .= <<<HTML
-                  <tr>
-                    <td class="u-whi">{$date}</td>
-                    <td><strong>{$cnt}</strong></td>
-                    <td class="progress-fill-2"><div class="{$pct_cls}"></div></td>
-                  </tr>
-        HTML;
+                      <tr>
+                        <td class="u-whi">{$date}</td>
+                        <td><strong>{$cnt}</strong></td>
+                        <td class="progress-fill-2"><div class="{$pct_cls}"></div></td>
+                      </tr>
+            HTML;
     }
     $body = <<<HTML
-              <table>
-                <thead><tr><th>Date</th><th>Soumissions</th><th>Barre</th></tr></thead>
-                <tbody>
-                {$rows}
-                </tbody>
-              </table>
-    HTML;
+                  <table>
+                    <thead><tr><th>Date</th><th>Soumissions</th><th>Barre</th></tr></thead>
+                    <tbody>
+                    {$rows}
+                    </tbody>
+                  </table>
+        HTML;
 }
 ?>
 <!-- Activité récente (7 jours) -->

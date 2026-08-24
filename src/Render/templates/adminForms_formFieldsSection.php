@@ -10,7 +10,7 @@
     <div class="section-card-body">
         <p class="caption-3">Ces champs définissent le formulaire que les agents rempliront. <span class="required-star">*</span> = champ obligatoire.</p>
 
-        <?php if ((bool)($form_fields)): ?>
+        <?php if ((bool) ($form_fields)): ?>
             <table class="fields-table">
                 <thead>
                     <tr>
@@ -58,7 +58,7 @@
                                             </div>
                                             <div class="field">
                                                 <label>Groupe (carte)</label>
-                                                <?php if ((bool)($existing_groups)): ?>
+                                                <?php if ((bool) ($existing_groups)): ?>
                                                     <select name="ff_card_group">
                                                         <?php foreach ($existing_groups as $g): ?>
                                                             <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $ff['card_group'] === $g ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>
@@ -137,17 +137,17 @@
                                 <td title="<?= \App\Core\App::html()->escape($ff['options'] ?? '') ?>" class="preformatted">
                                     <?php
                                     $opts = $ff['options'] ?? '';
-                                    if ((bool)($opts)) {
-                                        $decoded = json_decode($opts, true);
-                                        if (is_array($decoded)) {
-                                            echo \App\Core\App::html()->escape(implode(', ', $decoded));
-                                        } else {
-                                            echo \App\Core\App::html()->escape($opts);
-                                        }
-                                    } else {
-                                        echo '—';
-                                    }
-                                    ?>
+                        if ((bool) ($opts)) {
+                            $decoded = json_decode($opts, true);
+                            if (is_array($decoded)) {
+                                echo \App\Core\App::html()->escape(implode(', ', $decoded));
+                            } else {
+                                echo \App\Core\App::html()->escape($opts);
+                            }
+                        } else {
+                            echo '—';
+                        }
+                        ?>
                                 </td>
                                 <td class="actions">
                                     <a href="index.php?p=admin_forms&form_id=<?= $form_id ?>&edit_field=<?= $ff['id'] ?>#field-<?= $ff['id'] ?>" class="btn btn-secondary btn-compact-3">Modifier</a>
@@ -201,7 +201,7 @@
                     </div>
                     <div class="field">
                         <label>Groupe (carte)</label>
-                        <?php if ((bool)($existing_groups)): ?>
+                        <?php if ((bool) ($existing_groups)): ?>
                             <select name="ff_card_group">
                                 <?php foreach ($existing_groups as $g): ?>
                                     <option value="<?= \App\Core\App::html()->escape($g) ?>" <?= $g === 'Général' ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($g) ?></option>

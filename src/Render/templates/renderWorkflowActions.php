@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /**
@@ -13,7 +14,7 @@ if (!$is_admin || $status !== \App\Enum\SubmissionStatus::EnCours->value) {
 
 $forms_html = '';
 foreach ($all_tokens as $all_token) {
-    if ((bool)($all_token['done_at'])) {
+    if ((bool) ($all_token['done_at'])) {
         continue;
     }
     $tok_id  = \App\Core\App::html()->escape((string) ($all_token['id'] ?? ''));
