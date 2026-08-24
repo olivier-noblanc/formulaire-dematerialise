@@ -30,6 +30,19 @@
 
 ## ✅ Terminé (historique)
 
+### v10.42.16 — Régénération baseline PHPStan (nettoyage entrées stale)
+| Tâche | Détail |
+|-------|--------|
+| Contexte | Baseline `phpstan-baseline.neon` jamais régénérée après cleanups Waves 1/2 (v10.42.15) → 572 entrées ignoreErrors obsolètes (erreurs corrigées + faux positifs `shipmonk.deadMethod`) |
+| Action | `phpstan --generate-baseline --allow-empty-baseline` exécuté |
+| Avant | 933 entrées ignoreErrors (1727 erreurs comptabilisées) |
+| Après | 362 entrées ignoreErrors (463 erreurs réelles) |
+| Supprimé | 571 entrées stale (-78% du fichier) |
+| Erreurs restantes | `variable.undefined` (325, ~70% — templates), `missingType.noUntypedArray` (16), `offsetAccess.notFound` (14), `booleanNot.exprNotBoolean` (12), `shipmonk.arithmeticOnNonNumber` (12) |
+| Résidu traité | L'entrée v10.42.15 "Résidu / à faire" est maintenant **obsolète** — baseline propre |
+| Vérifications | PHPStan level 8 : 0 erreur ✅, PHPUnit : 1419 tests ✅, GrumPHP (phpstan/rector/deptrac) ✅ |
+| Rector fix | Suppression règle dépréciée `DisallowedEmptyRuleFixerRector` (erreur CI) |
+
 ### v10.42.15 — Durcissement typage : `array<string, mixed>` → array shapes précises
 | Tâche | Détail |
 |-------|--------|
