@@ -4,7 +4,7 @@
         <select name="form_id">
             <option value="">— Sélectionner un formulaire —</option>
             <?php foreach ($forms as $f): ?>
-                <option value="<?= $f['id'] ?>" <?= $form_id == $f['id'] ? 'selected' : '' ?>>
+                <option value="<?= $f['id'] ?>" <?= $form_id === $f['id'] ? 'selected' : '' ?>>
                     <?= \App\Core\App::html()->escape($f['label']) ?>
                 </option>
             <?php endforeach; ?>

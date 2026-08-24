@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\SubmissionStatus;
+
 /**
  * Trait contenant les méthodes READ de TokenRepository.
  * Regroupe les requêtes de lecture par email et les requêtes misc.
@@ -40,10 +42,10 @@ trait TokenReadQueriesTrait
                  JOIN steps st ON st.id = t.step_id
                  JOIN submissions s ON s.id = t.submission_id
                  JOIN forms f ON f.id = s.form_id
-                 WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = 'en_cours'
+                 WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = ?
                    AND (f.label LIKE ? OR s.data LIKE ?)
                  ORDER BY t.sent_at DESC",
-                [$email, '%' . $search . '%', '%' . $search . '%']
+                [$email, SubmissionStatus::EnCours->value, '%' . $search . '%', '%' . $search . '%']
             );
             return $result;
         }
@@ -58,9 +60,9 @@ trait TokenReadQueriesTrait
              JOIN steps st ON st.id = t.step_id
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
-             WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = 'en_cours'
+             WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = ?
              ORDER BY t.sent_at DESC",
-            [$email]
+              [$email, SubmissionStatus::EnCours->value]
         );
         return $result;
     }

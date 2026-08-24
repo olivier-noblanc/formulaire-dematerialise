@@ -255,6 +255,27 @@ final class AdminFormsRenderer
             throw new \RuntimeException("Template not found: {$filepath}");
         }
 
+        // Défauts sûrs : garantit que les variables sont toujours définies dans les
+        // templates (surchargées par le contexte ci-dessous quand il est présent).
+        // Évite les false-positives LSP « undefined variable ».
+        $form_id         = '';
+        $form            = null;
+        $forms           = [];
+        $error_msg       = '';
+        $success_msg     = '';
+        $preserved_json  = '';
+        $validation_html = '';
+        $owners          = [];
+        $steps           = [];
+        $steps_by_ordre  = [];
+        $edit_step_id    = '';
+        $form_fields     = [];
+        $edit_field_id   = '';
+        $existing_groups = [];
+        $field_types     = [];
+        $relance_delai_h = 48;
+        $relance_max     = 3;
+
         if ($ctx instanceof \App\Render\AdminFormsContext) {
             $form_id         = $ctx->form_id;
             $form            = $ctx->form;
