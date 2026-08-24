@@ -9,7 +9,7 @@
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
-| PHPStan erreurs baseline | **479** (level 8) — templates + règles shipmonk (régénéré après PII rewrite) |
+| PHPStan erreurs baseline | **463** (level 8, 362 entrées — régénéré 2026-08-24, v10.42.16, -571 entrées stale) |
 | Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
 | Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
 | Enums métier | **8** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, **AssetType**) |

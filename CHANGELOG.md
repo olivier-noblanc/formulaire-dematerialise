@@ -1,5 +1,27 @@
 # Changelog — CircuitDémat
 
+## [10.42.16] — 2026-08-24
+_Résumé : Régénération de phpstan-baseline.neon — purge de 571 entrées stale._
+
+### 🧹 Nettoyage baseline PHPStan
+- **`phpstan-baseline.neon`** : régénérée avec `phpstan --generate-baseline --allow-empty-baseline`
+- **Avant** : 933 entrées ignoreErrors (1727 erreurs comptabilisées)
+- **Après** : 362 entrées ignoreErrors (463 erreurs réelles)
+- **Supprimé** : 571 entrées stale (erreurs corrigées lors des cleanups Waves 1/2, faux positifs `shipmonk.deadMethod`)
+- **Profil des erreurs restantes** :
+  - `variable.undefined` : 325 (~70%) — concentré dans les templates (`form_content.php`, `form_field_*.php`)
+  - `missingType.noUntypedArray` : 16
+  - `offsetAccess.notFound` : 14
+  - `booleanNot.exprNotBoolean` : 12
+  - `shipmonk.arithmeticOnNonNumber` : 12
+- **Vérification** : `phpstan --no-progress` → 0 erreur ✅
+
+### 🧪 Vérifications
+- `vendor/bin/phpstan` niveau 8 : 0 erreur ✅
+- `vendor/bin/phpunit` : 1419 tests, 0 failure ✅
+
+---
+
 ## [10.42.15] — 2026-08-24
 _Résumé : Durcissement du typage — remplacement de `array<string, mixed>` par des array shapes précises (PHPDoc/PHPStan level 8)._
 

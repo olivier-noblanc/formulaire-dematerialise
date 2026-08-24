@@ -1,430 +1,10 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 8
-			path: src/Auth/AuthService.php
-
-		-
-			message: '#^Cannot access offset ''value'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Method App\\Cache\\CacheService\:\:getLatestVersion\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Cache/CacheService.php
-
-		-
-			message: '#^Parameter \#1 \$email of method App\\Auth\\AuthService\:\:approveAdminRequest\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminAccessController.php
-
-		-
-			message: '#^Parameter \#1 \$email of method App\\Auth\\AuthService\:\:rejectAdminRequest\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminAccessController.php
-
-		-
-			message: '#^Parameter \#1 \$email of method App\\Auth\\AuthService\:\:removeAdmin\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminAccessController.php
-
-		-
-			message: '#^Parameter \#1 \$token of method App\\Repository\\AdminRepository\:\:findByToken\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Controller/AdminAccessController.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 2
-			path: src/Controller/AdminAlertsController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 14
-			path: src/Controller/AdminAlertsController.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 12
-			path: src/Controller/AdminFieldCrudHandler.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Controller/AdminFormCrudHandler.php
-
-		-
-			message: '#^Binary operation "\." between ''Content\-Disposition…'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Controller/AdminFormsController.php
-
-		-
-			message: '#^Binary operation "\." between ''Location\: '' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Controller/AdminFormsController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Controller/AdminFormsController.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 1
-			path: src/Controller/AdminFormsController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 4
-			path: src/Controller/AdminFormsHandlers.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 3
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''actif'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''card_group'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''condition'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''deadline_field'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''description'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''field_name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''field_type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''fields'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''filled_by'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''form'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''hint'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''options'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''ordre'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''recipients'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''required'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''steps'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''validator_step'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot access offset ''visibility'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 4
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 4
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$data of method App\\Repository\\FormRepository\:\:create\(\) expects array\{label\: string, slug\: string, description\?\: string\|null, actif\?\: int, deadline_field\?\: string\}, array\{label\: mixed, slug\: string, description\: mixed, deadline_field\: mixed\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$data of method App\\Repository\\FormRepository\:\:createField\(\) expects array\{form_id\: string, label\: string, field_name\: string, field_type\?\: string, options\?\: string\|null, hint\?\: string, required\?\: int, ordre\?\: int, \.\.\.\}, array\{form_id\: string, label\: mixed, field_type\: mixed, field_name\: mixed, options\: non\-empty\-string\|null, required\: int, ordre\: int, card_group\: mixed, \.\.\.\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$data of method App\\Repository\\FormRepository\:\:createStep\(\) expects array\{form_id\: string, label\: string, ordre\?\: int, actif\?\: int, condition\?\: string\}, array\{form_id\: string, label\: mixed, ordre\: int, actif\: int, condition\: string\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\FormJsonValidator\:\:validate\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$label of function generate_field_name expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$label of function generate_slug expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#2 \$email of method App\\Repository\\FormRepository\:\:createRecipient\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Part \$label \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: src/Controller/AdminImportExportHandler.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 6
-			path: src/Controller/AdminRecipientHandler.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 23
-			path: src/Controller/AdminSettingsHandlers.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 2
-			path: src/Controller/AdminStepCrudHandler.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Controller/AdminStepCrudHandler.php
-
-		-
-			message: '#^Cannot access offset ''error'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Cannot access offset ''name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Cannot access offset ''tmp_name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 3
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Parameter \#1 \$from of function move_uploaded_file expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Parameter \#1 \$path of method App\\Controller\\BackupController\:\:isValidSqliteDb\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/BackupController.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Controller/BackupController.php
-
-		-
 			message: '#^Overwriting variable \$currentVersion while changing its type from non\-empty\-array\<string, array\<string, array\<int, string\>\>\|string\> to array\<string, array\{\}\|string\>$#'
 			identifier: shipmonk.variableTypeOverwritten
 			count: 1
 			path: src/Controller/ChangelogController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 7
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Parameter \#1 \$url of method App\\Controller\\ConfirmActionController\:\:safeRelativeUrl\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Parameter \#7 \$getParams of static method App\\Render\\ConfirmActionRenderer\:\:content\(\) expects array\<string, string\>, array\<mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/ConfirmActionController.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Controller/DashboardController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/DashboardController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Controller/DashboardController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Controller/DownloadController.php
 
 		-
 			message: '#^Parameter \#1 \$form_fields of static method App\\Controller\\FormValidationHandler\:\:validateFields\(\) expects list\<array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\>, array\<int, array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\> given\.$#'
@@ -439,136 +19,10 @@ parameters:
 			path: src/Controller/FormController.php
 
 		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
 			message: '#^Parameter \#2 \$form_fields of static method App\\Controller\\FormSubmissionHandler\:\:process\(\) expects list\<array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\>, array\<int, array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Controller/FormController.php
-
-		-
-			message: '#^Parameter \#8 \$file_errors of method App\\Render\\FormRenderer\:\:formContent\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Parameter \#9 \$field_values of method App\\Render\\FormRenderer\:\:formContent\(\) expects array\<string, string\>, array\<mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormController.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormPreviewController.php
-
-		-
-			message: '#^Cannot access offset ''error'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/FormSubmissionHandler.php
-
-		-
-			message: '#^Cannot access offset ''name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Controller/FormSubmissionHandler.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/FormSubmissionHandler.php
-
-		-
-			message: '#^Method App\\Controller\\FormSubmissionHandler\:\:process\(\) should return array\{success\: bool, submission_id\?\: string, data\?\: array\<string, string\>, file_errors\?\: array\<string, string\>\} but returns array\{success\: true, submission_id\: string, data\: array\<mixed\>\}\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Controller/FormSubmissionHandler.php
-
-		-
-			message: '#^Parameter \#1 \$file of method App\\Attachment\\AttachmentService\:\:handleFileUpload\(\) expects array\{name\: string, type\: string, tmp_name\: string, error\: int, size\: int, full_path\?\: string\}, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormSubmissionHandler.php
-
-		-
-			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormSubmissionHandler.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:get\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/FormTrackingController.php
-
-		-
-			message: '#^Cannot access offset ''name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/FormValidationHandler.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/FormValidationHandler.php
 
 		-
 			message: '#^Casting to string something that''s already string\.$#'
@@ -583,262 +37,10 @@ parameters:
 			path: src/Controller/MonitoringController.php
 
 		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
 			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:get\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Parameter \#1 \$dateStr of function parse_deadline_date expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Controller/MonitoringController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 3
-			path: src/Controller/MyFormsController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/MySubmissionsController.php
-
-		-
-			message: '#^Parameter \#2 \$statusFilter of static method App\\Render\\MySubmissionsRenderer\:\:content\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/MySubmissionsController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 4
-			path: src/Controller/MyValidationsController.php
-
-		-
-			message: '#^Parameter \#3 \$activeTab of static method App\\Render\\MyValidationsRenderer\:\:content\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/MyValidationsController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/PersonaController.php
-
-		-
-			message: '#^Parameter \#1 \$token of function persona_revoke expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/PersonaController.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Controller/RgpdController.php
-
-		-
-			message: '#^Parameter \#1 \$email of function validate_email expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Controller/RgpdController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/RgpdController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/ScreenshotController.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Parameter \#1 \$text of method App\\Render\\HtmlService\:\:tJargon\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/SubmissionViewController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Parameter \#12 \$existing_comment of static method App\\Render\\ValidateRenderer\:\:content\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Parameter \#13 \$existing_motif of static method App\\Render\\ValidateRenderer\:\:content\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/ValidateController.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Binary operation "\+" between mixed and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''condition'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''description'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''field_name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''field_type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''rgpd_consent'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''submitted_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 8
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Parameter \#1 \$field of method App\\Render\\FormRenderer\:\:field\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 10
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Parameter \#3 \$field_errors of method App\\Render\\FormRenderer\:\:field\(\) expects array\<string, mixed\>, \(array\|float\|int\) given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Controller/templates/form_content.php
-
-		-
-			message: '#^Trying to invoke mixed but it''s not a callable\.$#'
-			identifier: callable.nonCallable
-			count: 12
-			path: src/Controller/templates/form_content.php
 
 		-
 			message: '#^Using \+ over non\-number \(mixed \+ mixed\)$#'
@@ -931,34 +133,16 @@ parameters:
 			path: src/Controller/templates/form_content.php
 
 		-
-			message: '#^Binary operation "\." between ''sqlite\:'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Core/Database.php
-
-		-
 			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
 			identifier: if.condNotBoolean
 			count: 4
 			path: src/Core/DateHelper.php
 
 		-
-			message: '#^Method App\\Core\\TestModeService\:\:getTestMails\(\) should return array\<int, array\{to\: string, subject\: string, body\: string, time\: string\}\> but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Core/TestModeService.php
-
-		-
 			message: '#^Public property `lazyCronRepository` not marked as readonly\.$#'
 			identifier: shipmonk.publicPropertyNotReadonly
 			count: 1
 			path: src/Cron/CronService.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Docs/templates/renderRgpd_section.php
 
 		-
 			message: '#^Variable \$legal_mentions might not be defined\.$#'
@@ -985,56 +169,8 @@ parameters:
 			path: src/Email/EmailVerificationService.php
 
 		-
-			message: '#^Binary operation "\." between mixed and '' '' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Email/LdapVerifier.php
-
-		-
-			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Email/LdapVerifier.php
-
-		-
-			message: '#^Cannot access offset 0 on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 5
-			path: src/Email/LdapVerifier.php
-
-		-
-			message: '#^Method App\\Email\\LdapVerifier\:\:cacheSuggest\(\) should return array\<int, array\{email\: string, cn\: string\}\> but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Email/LdapVerifier.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Email/LdapVerifier.php
-
-		-
-			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Email/LdapVerifier.php
-
-		-
-			message: '#^Parameter \#1 \$string1 of function strcasecmp expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Email/LdapVerifier.php
-
-		-
-			message: '#^Parameter \#2 \$string2 of function strcasecmp expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Email/LdapVerifier.php
-
-		-
-			message: '#^Part \$cn \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
 			count: 1
 			path: src/Email/LdapVerifier.php
 
@@ -1051,58 +187,10 @@ parameters:
 			path: src/Email/SmtpVerifier.php
 
 		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Export/ExportService.php
-
-		-
 			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
 			identifier: booleanAnd.rightNotBoolean
 			count: 1
 			path: src/Export/ExportService.php
-
-		-
-			message: '#^Parameter \#2 \$fields of function fputcsv expects array\<int\|string, bool\|float\|int\|string\|null\>, list\<mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Export/ExportService.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Forms/FieldService.php
-
-		-
-			message: '#^Method App\\Forms\\FieldService\:\:getFields\(\) should return array\<int, array\{id\: string, form_id\: string, label\: string, field_type\: string, field_name\: string, options\: string\|null, hint\: string, required\: int, \.\.\.\}\> but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Forms/FieldService.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 5
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Binary operation "\." between ''schema_version \= "'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Forms/FormJsonValidator.php
 
 		-
 			message: '#^Cannot compare different types in float\|int\|string \< int\.$#'
@@ -1125,54 +213,6 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in an elseif condition, int\|false given\.$#'
 			identifier: elseif.condNotBoolean
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Parameter \#1 \$string of function strtolower expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Part \$e \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Part \$f\[''field_name''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Part \$f\[''field_type''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 2
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Part \$f\[''validator_step''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: src/Forms/FormJsonValidator.php
-
-		-
-			message: '#^Part \$w \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
 			count: 1
 			path: src/Forms/FormJsonValidator.php
 
@@ -1201,36 +241,6 @@ parameters:
 			path: src/Forms/SampleFormsService.php
 
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Forms/ValidatorDataService.php
-
-		-
-			message: '#^Paramètre ''\$submissions'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
-			identifier: noUntypedArray
-			count: 1
-			path: src/Forms/ValidatorDataService.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Mail/MailService.php
-
-		-
-			message: '#^Cannot access an offset on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Mail/MailService.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 4
-			path: src/Mail/MailService.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
@@ -1241,12 +251,6 @@ parameters:
 			identifier: shipmonk.variableTypeOverwritten
 			count: 1
 			path: src/Mail/MailService.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Persona/PersonaService.php
 
 		-
 			message: '#^Only booleans are allowed in a ternary operator condition, int given\.$#'
@@ -1277,12 +281,6 @@ parameters:
 			identifier: identical.alwaysFalse
 			count: 1
 			path: src/Render/AdminAlertsRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Render/AdminFormsContext.php
 
 		-
 			message: '#^Method App\\Render\\AdminFormsContext\:\:__construct\(\) has parameter \$form with no value type specified in iterable type array\.$#'
@@ -1321,48 +319,6 @@ parameters:
 			path: src/Render/AdminFormsContext.php
 
 		-
-			message: '#^Parameter \$existing_groups of class App\\Render\\AdminFormsContext constructor expects array\<int, string\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsContext.php
-
-		-
-			message: '#^Parameter \$form of class App\\Render\\AdminFormsContext constructor expects array\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsContext.php
-
-		-
-			message: '#^Parameter \$form_fields of class App\\Render\\AdminFormsContext constructor expects array\<int, array\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsContext.php
-
-		-
-			message: '#^Parameter \$forms of class App\\Render\\AdminFormsContext constructor expects array\<int, array\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsContext.php
-
-		-
-			message: '#^Parameter \$owners of class App\\Render\\AdminFormsContext constructor expects array\<int, array\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsContext.php
-
-		-
-			message: '#^Parameter \$steps of class App\\Render\\AdminFormsContext constructor expects array\<int, array\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsContext.php
-
-		-
-			message: '#^Parameter \$steps_by_ordre of class App\\Render\\AdminFormsContext constructor expects array\<int, array\<int, array\>\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsContext.php
-
-		-
 			message: '#^Only booleans are allowed in an if condition, array\|null given\.$#'
 			identifier: if.condNotBoolean
 			count: 2
@@ -1373,36 +329,6 @@ parameters:
 			identifier: shipmonk.variableTypeOverwritten
 			count: 1
 			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminFormsRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 3
-			path: src/Render/AdminSettingsContext.php
-
-		-
-			message: '#^Parameter \$verify_result of class App\\Render\\AdminSettingsContext constructor expects array\<string, mixed\>\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminSettingsContext.php
-
-		-
-			message: '#^Method App\\Render\\AdminSettingsRenderer\:\:getPageCss\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Render/AdminSettingsRenderer.php
-
-		-
-			message: '#^Parameter \#3 \$subject of function str_replace expects array\<string\>\|string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/AdminSettingsRenderer.php
 
 		-
 			message: '#^Offset ''error'' might not exist on array\{file_size\?\: int\|false, file_exists\: bool, file_size_readable\: string, file_modified\: string, row_counts\: array\<string, ''—''\|int\>, oldest_submission\?\: string, newest_submission\?\: string, page_size\?\: int, \.\.\.\}\.$#'
@@ -1417,82 +343,10 @@ parameters:
 			path: src/Render/BackupRenderer.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/ConfirmActionRenderer.php
-
-		-
-			message: '#^Array key must be integer or string, but mixed given\.$#'
-			identifier: shipmonk.unsafeArrayKey
-			count: 1
-			path: src/Render/ConfirmActionRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 4
-			path: src/Render/ConfirmActionRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$s of closure expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/ConfirmActionRenderer.php
-
-		-
-			message: '#^Possibly invalid array key type mixed\.$#'
-			identifier: offsetAccess.invalidOffset
-			count: 1
-			path: src/Render/ConfirmActionRenderer.php
-
-		-
-			message: '#^Method App\\Render\\DashboardRenderer\:\:pageCss\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Render/DashboardRenderer.php
-
-		-
 			message: '#^Paramètre ''\$tokens_by_submission'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
 			identifier: noUntypedArray
 			count: 1
 			path: src/Render/DashboardRenderer.php
-
-		-
-			message: '#^Cannot access offset ''date_depart'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/DashboardTableRenderer.php
-
-		-
-			message: '#^Cannot access offset ''date_prise_poste'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/DashboardTableRenderer.php
-
-		-
-			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/DashboardTableRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Render/DashboardTableRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$d of method App\\Render\\DashboardTableRenderer\:\:submissionDetail\(\) expects array\{validations\?\: array\<int, array\{step_label\: string, email\: string, action\: string, commentaire\?\: string, date\: string\}\>\}\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/DashboardTableRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:get\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/DashboardTableRenderer.php
 
 		-
 			message: '#^Paramètre ''\$d'' typé aucun type — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
@@ -1519,12 +373,6 @@ parameters:
 			path: src/Render/DashboardTableRenderer.php
 
 		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/ErrorRenderer.php
-
-		-
 			message: '#^Property App\\Render\\ErrorResponseException\:\:\$backUrl is never read$#'
 			identifier: shipmonk.deadProperty.neverRead
 			count: 1
@@ -1543,69 +391,9 @@ parameters:
 			path: src/Render/ErrorRenderer.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 2
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Binary operation "\." between ''form_field_'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Cannot access offset ''field_type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in &&, mixed given on the right side\.$#'
-			identifier: booleanAnd.rightNotBoolean
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
 			message: '#^Overwriting variable \$max_size_mo while changing its type from int to float$#'
 			identifier: shipmonk.variableTypeOverwritten
 			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$json of function json_decode expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$string of function mb_strtolower expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$text of function t_jargon expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 6
 			path: src/Render/FormRenderer.php
 
 		-
@@ -1615,46 +403,10 @@ parameters:
 			path: src/Render/FormRenderer.php
 
 		-
-			message: '#^Paramètre ''\$grouped'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
-			identifier: noUntypedArray
-			count: 1
-			path: src/Render/FormRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Render/HtmlService.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between string and false will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
 			path: src/Render/HtmlService.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 3
-			path: src/Render/IndexRenderer.php
-
-		-
-			message: '#^Method App\\Render\\IndexRenderer\:\:pageCss\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Render/IndexRenderer.php
-
-		-
-			message: '#^Paramètre ''\$active_forms'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
-			identifier: noUntypedArray
-			count: 1
-			path: src/Render/IndexRenderer.php
-
-		-
-			message: '#^Paramètre ''\$welcome_forms'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
-			identifier: noUntypedArray
-			count: 1
-			path: src/Render/IndexRenderer.php
 
 		-
 			message: '#^Paramètre ''\$confirm_config'' typé \?array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
@@ -1681,78 +433,6 @@ parameters:
 			path: src/Render/InstallRenderer.php
 
 		-
-			message: '#^Cannot cast mixed to float\.$#'
-			identifier: cast.double
-			count: 3
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 8
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$action_types of class App\\Render\\MonitoringContext constructor expects list\<string\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$active_alerts of class App\\Render\\MonitoringContext constructor expects list\<array\{submission_id\: string, form_label\: string, nom_agent\: string, deadline\: string, deadline_formatted\: string, days_remaining\: int, pending_steps\: int, submitted_by\: string\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$audit_filters of class App\\Render\\MonitoringContext constructor expects array\<string, string\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$audit_logs of class App\\Render\\MonitoringContext constructor expects list\<array\{id\: string, action\: string, target\: string\|null, detail\: string\|null, actor\: string, ip\: string\|null, created_at\: string\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$by_form_stats of class App\\Render\\MonitoringContext constructor expects list\<array\{label\: string, total\: int, en_cours\: int, valide\: int, refuse\: int\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$daily_stats of class App\\Render\\MonitoringContext constructor expects list\<array\{day\: string, cnt\: int\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$mail_logs of class App\\Render\\MonitoringContext constructor expects list\<array\{id\: string, created_at\: string, recipient\: string, subject\: string, status\: string, error_message\: string, smtp_log\: string, actor\: string, \.\.\.\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$recent_alerts of class App\\Render\\MonitoringContext constructor expects list\<array\{id\: string, rule_id\: string, submission_id\: string, sent_at\: string, message\: string\|null, form_label\: string, rule_label\: string\|null\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
-			message: '#^Parameter \$tokens_bloques of class App\\Render\\MonitoringContext constructor expects list\<array\{id\: string, email\: string, sent_at\: string\|null, relance_count\: int, expires_at\: string\|null, step_label\: string, ordre\: int, submission_id\: string, \.\.\.\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MonitoringContext.php
-
-		-
 			message: '#^Method App\\Render\\MonitoringRenderer\:\:loadTemplate\(\) has parameter \$vars with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1760,12 +440,6 @@ parameters:
 
 		-
 			message: '#^Method App\\Render\\MonitoringRenderer\:\:loadTemplate\(\) should return string but returns string\|false\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Render/MonitoringRenderer.php
-
-		-
-			message: '#^Method App\\Render\\MonitoringRenderer\:\:pageCss\(\) should return string but returns mixed\.$#'
 			identifier: return.type
 			count: 1
 			path: src/Render/MonitoringRenderer.php
@@ -1783,164 +457,14 @@ parameters:
 			path: src/Render/MonitoringRenderer.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 3
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Array key must be integer or string, but mixed~\(0\|0\.0\|''''\|''0''\|array\{\}\|false\|null\) given\.$#'
-			identifier: shipmonk.unsafeArrayKey
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''action'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''commentaire'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''step_detail'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''step_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''step_status'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''validations'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot access offset mixed on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 3
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:get\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:has\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$deadlineVal of function calculate_deadline_urgency expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$email of method App\\Render\\HtmlService\:\:displayUser\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$json of function json_decode expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$label of static method App\\Render\\MySubmissionsRenderer\:\:simplifyLabel\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 6
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
 			message: '#^Paramètre ''\$submissions'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
 			identifier: noUntypedArray
 			count: 1
 			path: src/Render/MySubmissionsRenderer.php
 
 		-
-			message: '#^Part \$ws\[''step_detail''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: src/Render/MySubmissionsRenderer.php
-
-		-
 			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
 			identifier: arrayFilter.strict
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''action'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Cannot access offset ''validations'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
 			count: 1
 			path: src/Render/MyValidationsRenderer.php
 
@@ -1957,18 +481,6 @@ parameters:
 			path: src/Render/MyValidationsRenderer.php
 
 		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:get\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Render/MyValidationsRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:has\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/MyValidationsRenderer.php
-
-		-
 			message: '#^Paramètre ''\$allStepsBySub'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
 			identifier: noUntypedArray
 			count: 2
@@ -1981,68 +493,8 @@ parameters:
 			path: src/Render/MyValidationsRenderer.php
 
 		-
-			message: '#^Binary operation "\." between ''\<a href\="'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Cannot access offset ''href'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Cannot access offset ''icon'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Method App\\Render\\NavigationRenderer\:\:getAppName\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Render/NavigationRenderer.php
-
-		-
-			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/PageRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 3
-			path: src/Render/PageRenderer.php
-
-		-
 			message: '#^Null value involved in binary operation\: string \. string\|null$#'
 			identifier: shipmonk.binaryOperationWithNull
-			count: 1
-			path: src/Render/PageRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
-			identifier: ternary.condNotBoolean
 			count: 1
 			path: src/Render/PageRenderer.php
 
@@ -2057,114 +509,6 @@ parameters:
 			identifier: if.condNotBoolean
 			count: 1
 			path: src/Render/PageRenderer.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: src/Render/PageRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/PageRenderer.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 2
-			path: src/Render/PageRenderer.php
-
-		-
-			message: '#^Parameter \#2 \$extra_admin_links of method App\\Render\\NavigationRenderer\:\:nav\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/PageRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 5
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 8
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$all_tokens of class App\\Render\\SubmissionViewContext constructor expects list\<array\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$attachments of class App\\Render\\SubmissionViewContext constructor expects list\<array\{id\?\: string, mime_type\?\: string, original_name\?\: string, file_size\?\: int, uploaded_at\?\: string\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$data of class App\\Render\\SubmissionViewContext constructor expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$deadline_ts of class App\\Render\\SubmissionViewContext constructor expects int\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$delegations of class App\\Render\\SubmissionViewContext constructor expects list\<array\{step_label\?\: string, from_email\?\: string, to_email\?\: string, delegated_at\?\: string, reason\?\: string\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$dl_info of class App\\Render\\SubmissionViewContext constructor expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$field_info of class App\\Render\\SubmissionViewContext constructor expects array\<string, array\{card_group\?\: string, label\?\: string\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$pending_with_relance of class App\\Render\\SubmissionViewContext constructor expects list\<array\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$sub of class App\\Render\\SubmissionViewContext constructor expects array\<int\|string, 0\|0\.0\|array\{\}\|string\|false\|null\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$submission_reminds of class App\\Render\\SubmissionViewContext constructor expects list\<array\{detail\?\: string, created_at\?\: string, actor\?\: string\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$validator_data_rows of class App\\Render\\SubmissionViewContext constructor expects list\<array\{field_name\: string, field_label\?\: string, value\: string, filled_by_email\?\: string, step_label\?\: string, filled_at\?\: string\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
-
-		-
-			message: '#^Parameter \$workflow_steps of class App\\Render\\SubmissionViewContext constructor expects list\<array\{step_status\: string, step_label\: string, ordre\: int, tokens\: list\<array\>\}\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewContext.php
 
 		-
 			message: '#^Property App\\Render\\SubmissionViewContext\:\:\$action_msg is never read$#'
@@ -2203,12 +547,6 @@ parameters:
 			path: src/Render/SubmissionViewRenderer.php
 
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 9
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
 			message: '#^Magic string ''valider'' detected → use ValidationAction\:\:Valider\-\>value instead\.$#'
 			identifier: noMagicString
 			count: 1
@@ -2216,12 +554,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#1 \$sub of method App\\Render\\SubmissionViewRenderer\:\:renderHeader\(\) expects array\{form_label\?\: string, submitted_by\?\: string, submitted_at\?\: string, closed_at\?\: string\|null\}, array\<int\|string, 0\|0\.0\|array\{\}\|string\|false\|null\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/SubmissionViewRenderer.php
-
-		-
-			message: '#^Parameter \#3 \$submittedBy of method App\\Render\\SubmissionViewRenderer\:\:renderActions\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Render/SubmissionViewRenderer.php
@@ -2249,222 +581,6 @@ parameters:
 			identifier: arrayFilter.strict
 			count: 2
 			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Cannot access offset ''data'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Cannot access offset ''done_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Cannot access offset ''form_id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Cannot access offset ''step_id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Cannot access offset ''step_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 3
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$data of method App\\Render\\FormRenderer\:\:submissionData\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$data of static method App\\Forms\\SubmissionData\:\:get\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$json of function json_decode expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$mimeType of method App\\Render\\HtmlService\:\:getFileIcon\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Paramètre ''\$visible_attachments'' typé array \(bare\) — trop vague\. Utiliser un array shape \(array\{id\: int, name\: string\}\) ou un DTO/ValueObject\.$#'
-			identifier: noUntypedArray
-			count: 1
-			path: src/Render/ValidateRenderer.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 7
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''card_group'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''field_name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''field_type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''filled_by'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''hint'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 8
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 5
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''options'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''ordre'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''required'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''validator_step'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot access offset ''visibility'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#1 \$json of function json_decode expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#1 \$json of method App\\Render\\AdminFormsRenderer\:\:optionsToLines\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#1 \$type of method App\\Render\\AdminFormsRenderer\:\:fieldTypeIcon\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#1 \$type of method App\\Render\\AdminFormsRenderer\:\:fieldTypeLabel\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 17
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 16
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
-
-		-
-			message: '#^Parameter \#2 \$haystack of function in_array expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_formFieldsSection.php
 
 		-
 			message: '#^Variable \$edit_field_id might not be defined\.$#'
@@ -2503,64 +619,10 @@ parameters:
 			path: src/Render/templates/adminForms_formFieldsSection.php
 
 		-
-			message: '#^Cannot access offset ''actif'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
-			message: '#^Cannot access offset ''description'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
-			message: '#^Cannot access offset ''slug'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 3
-			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
 			message: '#^Variable \$form might not be defined\.$#'
 			identifier: variable.undefined
 			count: 7
 			path: src/Render/templates/adminForms_formInfoSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_importJsonPanel.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 1
-			path: src/Render/templates/adminForms_importJsonPanel.php
 
 		-
 			message: '#^Variable \$preserved_json might not be defined\.$#'
@@ -2575,48 +637,6 @@ parameters:
 			path: src/Render/templates/adminForms_importJsonPanel.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/adminForms_ownersSection.php
-
-		-
-			message: '#^Cannot access offset ''added_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_ownersSection.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_ownersSection.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_ownersSection.php
-
-		-
-			message: '#^Parameter \#1 \$email of method App\\Render\\HtmlService\:\:displayUser\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_ownersSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Render/templates/adminForms_ownersSection.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 4
-			path: src/Render/templates/adminForms_ownersSection.php
-
-		-
 			message: '#^Variable \$form_id might not be defined\.$#'
 			identifier: variable.undefined
 			count: 3
@@ -2629,38 +649,8 @@ parameters:
 			path: src/Render/templates/adminForms_ownersSection.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/adminForms_selectorPanel.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/adminForms_selectorPanel.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_selectorPanel.php
-
-		-
 			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
 			identifier: equal.notAllowed
-			count: 1
-			path: src/Render/templates/adminForms_selectorPanel.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_selectorPanel.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
 			count: 1
 			path: src/Render/templates/adminForms_selectorPanel.php
 
@@ -2677,18 +667,6 @@ parameters:
 			path: src/Render/templates/adminForms_selectorPanel.php
 
 		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_topActionBar.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 2
-			path: src/Render/templates/adminForms_topActionBar.php
-
-		-
 			message: '#^Variable \$form might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -2701,116 +679,8 @@ parameters:
 			path: src/Render/templates/adminForms_topActionBar.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 4
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Binary operation "\+" between mixed and 1 results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot access offset ''actif'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot access offset ''condition'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 7
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot access offset ''ordre'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot access offset ''recipients'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
 			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
 			identifier: shipmonk.comparingNonComparableTypes
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#1 \$array of function array_column expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#1 \$email of method App\\Render\\HtmlService\:\:displayUser\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 13
-			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, list given\.$#'
-			identifier: argument.type
 			count: 1
 			path: src/Render/templates/adminForms_workflowDiagramSection.php
 
@@ -2843,12 +713,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/adminForms_workflowDiagramSection.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 6
-			path: src/Render/templates/admin_settings_section_security.php
 
 		-
 			message: '#^Variable \$email_verify_mode might not be defined\.$#'
@@ -2915,12 +779,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/admin_settings_section_security.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 9
-			path: src/Render/templates/admin_settings_section_smtp.php
 
 		-
 			message: '#^Variable \$delai_relance_h might not be defined\.$#'
@@ -2995,12 +853,6 @@ parameters:
 			path: src/Render/templates/admin_settings_section_smtp.php
 
 		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/admin_settings_section_summary.php
-
-		-
 			message: '#^Variable \$email_verify_mode might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -3031,76 +883,10 @@ parameters:
 			path: src/Render/templates/admin_settings_section_test_send.php
 
 		-
-			message: '#^Cannot access offset ''detail'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Cannot access offset ''format_valid'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Cannot access offset ''ldap'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Cannot access offset ''mode'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Cannot access offset ''ok'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Cannot access offset ''smtp'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Cannot access offset ''verify'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 5
-			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
 			message: '#^Variable \$verify_result might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/admin_settings_section_verify_test.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/form_confirm_duplicate.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 4
-			path: src/Render/templates/form_confirm_duplicate.php
-
-		-
-			message: '#^Trying to invoke mixed but it''s not a callable\.$#'
-			identifier: callable.nonCallable
-			count: 3
-			path: src/Render/templates/form_confirm_duplicate.php
 
 		-
 			message: '#^Variable \$confirmUrl might not be defined\.$#'
@@ -3137,114 +923,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/form_confirm_duplicate.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Binary operation "\+" between mixed and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''condition'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''description'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''field_name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''field_type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''rgpd_consent'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset ''submitted_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 8
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Parameter \#1 \$field of method App\\Render\\FormRenderer\:\:field\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Parameter \#1 \$grouped of method App\\Render\\FormRenderer\:\:formProgressIndicator\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 9
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Parameter \#3 \$field_errors of method App\\Render\\FormRenderer\:\:field\(\) expects array\<string, mixed\>, \(array\|float\|int\) given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Parameter \#4 \$datalist_id of method App\\Render\\FormRenderer\:\:field\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/templates/form_content.php
-
-		-
-			message: '#^Trying to invoke mixed but it''s not a callable\.$#'
-			identifier: callable.nonCallable
-			count: 12
-			path: src/Render/templates/form_content.php
 
 		-
 			message: '#^Using \+ over non\-number \(mixed \+ mixed\)$#'
@@ -3331,12 +1009,6 @@ parameters:
 			path: src/Render/templates/form_content.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 6
-			path: src/Render/templates/form_field_checkbox.php
-
-		-
 			message: '#^Variable \$checked might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -3371,12 +1043,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/form_field_checkbox.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 14
-			path: src/Render/templates/form_field_date.php
 
 		-
 			message: '#^Variable \$aria_attr might not be defined\.$#'
@@ -3449,12 +1115,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/form_field_date.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 17
-			path: src/Render/templates/form_field_default.php
 
 		-
 			message: '#^Variable \$aria_attr might not be defined\.$#'
@@ -3545,12 +1205,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/form_field_default.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 16
-			path: src/Render/templates/form_field_email.php
 
 		-
 			message: '#^Variable \$aria_attr might not be defined\.$#'
@@ -3637,12 +1291,6 @@ parameters:
 			path: src/Render/templates/form_field_email.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 13
-			path: src/Render/templates/form_field_file.php
-
-		-
 			message: '#^Variable \$accept might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -3709,12 +1357,6 @@ parameters:
 			path: src/Render/templates/form_field_file.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 12
-			path: src/Render/templates/form_field_select.php
-
-		-
 			message: '#^Variable \$aria_attr might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -3773,12 +1415,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/form_field_select.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 17
-			path: src/Render/templates/form_field_text.php
 
 		-
 			message: '#^Variable \$aria_attr might not be defined\.$#'
@@ -3871,12 +1507,6 @@ parameters:
 			path: src/Render/templates/form_field_text.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 15
-			path: src/Render/templates/form_field_textarea.php
-
-		-
 			message: '#^Variable \$aria_attr might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -3949,12 +1579,6 @@ parameters:
 			path: src/Render/templates/form_field_textarea.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 5
-			path: src/Render/templates/form_progress_indicator.php
-
-		-
 			message: '#^Variable \$section_count might not be defined\.$#'
 			identifier: variable.undefined
 			count: 2
@@ -3967,196 +1591,16 @@ parameters:
 			path: src/Render/templates/form_progress_indicator.php
 
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 4
-			path: src/Render/templates/install/render_step2.php
-
-		-
-			message: '#^Parameter \#1 \$val of function inst_h expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 10
-			path: src/Render/templates/install/render_step2.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Render/templates/install/render_step3.php
-
-		-
-			message: '#^Parameter \#1 \$val of function inst_h expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/install/render_step3.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/messages.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/messages.php
-
-		-
 			message: '#^Variable \$messages might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/messages.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Cannot access offset ''days_remaining'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Cannot access offset ''deadline_formatted'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Cannot access offset ''form_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Cannot access offset ''nom_agent'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Cannot access offset ''pending_steps'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 2
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 3
-			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
 			message: '#^Variable \$active_alerts might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/monitoring_active_alerts.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 2
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Binary operation "\+" between mixed and 1 results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Binary operation "\-" between mixed and 1 results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Binary operation "\." between mixed and ''&''\|''\?'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''action'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''actor'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''created_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''detail'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''ip'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''log_action'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''log_actor'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''log_date_debut'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''log_date_fin'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''log_target'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot access offset ''target'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 11
-			path: src/Render/templates/monitoring_audit_log.php
 
 		-
 			message: '#^Comparison mixed \< mixed contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
@@ -4168,30 +1612,6 @@ parameters:
 			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
 			identifier: shipmonk.comparingNonComparableTypes
 			count: 4
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Part \$audit_page \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: src/Render/templates/monitoring_audit_log.php
-
-		-
-			message: '#^Part \$audit_total_pages \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
 			path: src/Render/templates/monitoring_audit_log.php
 
 		-
@@ -4249,78 +1669,6 @@ parameters:
 			path: src/Render/templates/monitoring_audit_log.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''expires_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''form_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''ordre'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''relance_count'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''sent_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''step_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot access offset ''submitted_by'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 2
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 6
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 1
-			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
 			message: '#^Variable \$bloque_hours might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -4331,60 +1679,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/monitoring_blocked_tokens.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot access offset ''en_cours'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot access offset ''label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot access offset ''refuse'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot access offset ''total'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot access offset ''valide'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot access offset 0 on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 5
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
 
 		-
 			message: '#^Magic string ''en_cours'' detected → use SubmissionStatus\:\:EnCours\-\>value instead\.$#'
@@ -4405,52 +1699,10 @@ parameters:
 			path: src/Render/templates/monitoring_by_form.php
 
 		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/monitoring_by_form.php
-
-		-
 			message: '#^Variable \$by_form_stats might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/monitoring_by_form.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/monitoring_daily_activity.php
-
-		-
-			message: '#^Cannot access offset ''cnt'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_daily_activity.php
-
-		-
-			message: '#^Cannot access offset ''day'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_daily_activity.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 2
-			path: src/Render/templates/monitoring_daily_activity.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Render/templates/monitoring_daily_activity.php
-
-		-
-			message: '#^Parameter \#1 \$array of function array_column expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/monitoring_daily_activity.php
 
 		-
 			message: '#^Variable \$daily_stats might not be defined\.$#'
@@ -4459,136 +1711,16 @@ parameters:
 			path: src/Render/templates/monitoring_daily_activity.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''actor'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''created_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''error_message'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''ip'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''recipient'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''smtp_log'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''status'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot access offset ''subject'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 8
-			path: src/Render/templates/monitoring_mail_logs.php
-
-		-
 			message: '#^Variable \$mail_logs might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/monitoring_mail_logs.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/monitoring_recent_alerts.php
-
-		-
-			message: '#^Cannot access offset ''form_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_recent_alerts.php
-
-		-
-			message: '#^Cannot access offset ''message'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_recent_alerts.php
-
-		-
-			message: '#^Cannot access offset ''rule_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_recent_alerts.php
-
-		-
-			message: '#^Cannot access offset ''sent_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/monitoring_recent_alerts.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 4
-			path: src/Render/templates/monitoring_recent_alerts.php
-
-		-
 			message: '#^Variable \$recent_alerts might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/monitoring_recent_alerts.php
-
-		-
-			message: '#^Parameter \#1 \$total of method App\\Render\\HtmlService\:\:renderDonutChart\(\) expects int, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/monitoring_repartition.php
-
-		-
-			message: '#^Parameter \#2 \$valide of method App\\Render\\HtmlService\:\:renderDonutChart\(\) expects int, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/monitoring_repartition.php
-
-		-
-			message: '#^Parameter \#3 \$en_cours of method App\\Render\\HtmlService\:\:renderDonutChart\(\) expects int, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/monitoring_repartition.php
-
-		-
-			message: '#^Parameter \#4 \$refuse of method App\\Render\\HtmlService\:\:renderDonutChart\(\) expects int, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Render/templates/monitoring_repartition.php
 
 		-
 			message: '#^Variable \$en_cours_sub might not be defined\.$#'
@@ -4615,12 +1747,6 @@ parameters:
 			path: src/Render/templates/monitoring_repartition.php
 
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Render/templates/monitoring_scripts_card.php
-
-		-
 			message: '#^Variable \$last_alert_check might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -4631,12 +1757,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/monitoring_scripts_card.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Render/templates/monitoring_smtp_card.php
 
 		-
 			message: '#^Variable \$smtp_debug_log might not be defined\.$#'
@@ -4657,33 +1777,9 @@ parameters:
 			path: src/Render/templates/monitoring_smtp_card.php
 
 		-
-			message: '#^Binary operation "\." between mixed and '' h'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/templates/monitoring_stats.php
-
-		-
-			message: '#^Binary operation "\." between mixed and '' j'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Render/templates/monitoring_stats.php
-
-		-
 			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
 			identifier: shipmonk.comparingNonComparableTypes
 			count: 1
-			path: src/Render/templates/monitoring_stats.php
-
-		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Render/templates/monitoring_stats.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 3
 			path: src/Render/templates/monitoring_stats.php
 
 		-
@@ -4765,12 +1861,6 @@ parameters:
 			path: src/Render/templates/renderDelegations.php
 
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Render/templates/renderFormData.php
-
-		-
 			message: '#^Offset ''card_group'' might not exist on array\{card_group\?\: string, label\?\: string\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 1
@@ -4849,54 +1939,6 @@ parameters:
 			path: src/Render/templates/renderRemindHistory.php
 
 		-
-			message: '#^Cannot access offset ''action'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
-			message: '#^Cannot access offset ''commentaire'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
-			message: '#^Cannot access offset ''date'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
-			message: '#^Cannot access offset ''done_by'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
-			message: '#^Cannot access offset ''step_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
-			message: '#^Cannot access offset ''validations'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Render/templates/renderValidationHistory.php
-
-		-
 			message: '#^Offset ''label'' might not exist on array\{label\?\: string\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 1
@@ -4907,84 +1949,6 @@ parameters:
 			identifier: offsetAccess.notFound
 			count: 1
 			path: src/Render/templates/renderWorkflowActions.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 2
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''done_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''expires_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''ordre'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''relance_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''relance_count'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''sent_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''step_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''step_status'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot access offset ''tokens'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 2
-			path: src/Render/templates/renderWorkflowDiagram.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 8
-			path: src/Render/templates/renderWorkflowDiagram.php
 
 		-
 			message: '#^Comparison mixed \> int contains non\-comparable type, only int\|float\|string\|DateTimeInterface or comparable tuple is allowed\.$#'
@@ -5011,12 +1975,6 @@ parameters:
 			path: src/Render/templates/renderWorkflowDiagram.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 4
-			path: src/Render/templates/stats.php
-
-		-
 			message: '#^Variable \$en_cours might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -5039,66 +1997,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/stats.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot access offset ''action'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot access offset ''commentaire'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot access offset ''date'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot access offset ''done_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot access offset ''id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot access offset ''step_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 2
-			path: src/Render/templates/submission_detail.php
 
 		-
 			message: '#^Variable \$cancel_url might not be defined\.$#'
@@ -5129,12 +2027,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: src/Render/templates/submission_detail.php
-
-		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 12
-			path: src/Render/templates/submission_row.php
 
 		-
 			message: '#^Variable \$admin_comment_html might not be defined\.$#'
@@ -5209,12 +2101,6 @@ parameters:
 			path: src/Render/templates/submission_row.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 6
-			path: src/Render/templates/system_overview.php
-
-		-
 			message: '#^Variable \$en_cours might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
@@ -5251,12 +2137,6 @@ parameters:
 			path: src/Render/templates/system_overview.php
 
 		-
-			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
-			identifier: echo.nonString
-			count: 6
-			path: src/Render/templates/toolbar.php
-
-		-
 			message: '#^Variable \$filtre_h might not be defined\.$#'
 			identifier: variable.undefined
 			count: 2
@@ -5287,313 +2167,7 @@ parameters:
 			path: src/Render/templates/toolbar.php
 
 		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Repository/AuditRepository.php
-
-		-
-			message: '#^Method App\\Repository\\AuditRepository\:\:getClientIp\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Repository/AuditRepository.php
-
-		-
-			message: '#^Method App\\Repository\\AuditRepository\:\:getDistinctActionTypes\(\) should return array\<int, string\> but returns array\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Repository/AuditRepository.php
-
-		-
 			message: '#^Unused App\\Repository\\AuditRepository\:\:getLogs$#'
 			identifier: shipmonk.deadMethod
 			count: 1
 			path: src/Repository/AuditRepository.php
-
-		-
-			message: '#^Method App\\Repository\\BaseRepository\:\:fetchAll\(\) should return array\<int, array\<string, mixed\>\> but returns array\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Method App\\Repository\\BaseRepository\:\:fetchOne\(\) should return array\<string, mixed\>\|null but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Method App\\Repository\\BaseRepository\:\:getTableNames\(\) should return array\<int, string\> but returns array\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Repository/BaseRepository.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Repository/FormRepository.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Repository/MailRepository.php
-
-		-
-			message: '#^Method App\\Repository\\SettingsRepository\:\:get\(\) should return string\|null but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Repository/SettingsRepository.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/Repository/SubmissionRepository.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Repository/SubmissionRepository.php
-
-		-
-			message: '#^Parameter \#1 of callable callable\(array\<string, mixed\>\)\: array\<string, mixed\> expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Repository/SubmissionRepository.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Repository/TokenRepository.php
-
-		-
-			message: '#^Cannot access offset ''adresse''\|''email''\|''mobile''\|''nom''\|''prenom''\|''telephone'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Rgpd/RgpdService.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Security/SecurityService.php
-
-		-
-			message: '#^Method App\\Security\\SecurityService\:\:generateCsrfToken\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Security/SecurityService.php
-
-		-
-			message: '#^Parameter \#1 \$haystack of function str_contains expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Security/SecurityService.php
-
-		-
-			message: '#^Parameter \#1 \$known_string of function hash_equals expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Security/SecurityService.php
-
-		-
-			message: '#^Parameter \#2 \$user_string of function hash_equals expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Security/SecurityService.php
-
-		-
-			message: '#^Cannot access an offset on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Token/TokenService.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: src/Validation/ValidationService.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 7
-			path: src/Workflow/ConditionEvaluator.php
-
-		-
-			message: '#^Parameter \#1 \$conditionJson of method App\\Workflow\\ConditionEvaluator\:\:evaluate\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Workflow/ConditionEvaluator.php
-
-		-
-			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Workflow/ConditionEvaluator.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: src/Workflow/RecipientResolver.php
-
-		-
-			message: '#^Binary operation "\." between ''Demande refusée — '' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Binary operation "\." between ''submission\:'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Binary operation "\." between mixed and '' UTC'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access an offset on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''closed_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''done_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''email'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''expires_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''form_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''invalidated_at'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''step_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''submission_id'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Cannot access offset ''submitted_by'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Method App\\Workflow\\TokenValidationHandler\:\:validate\(\) should return array\{status\: string, data\?\: array\{id\: string, submission_id\: string, step_id\: string, email\: string, token\: string, sent_at\: string, done_at\: string\|null, relance_at\: string\|null, \.\.\.\}, message\?\: string\} but returns array\{status\: ''already_done'', data\: mixed\}\.$#'
-			identifier: return.type
-			count: 3
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Method App\\Workflow\\TokenValidationHandler\:\:validate\(\) should return array\{status\: string, data\?\: array\{id\: string, submission_id\: string, step_id\: string, email\: string, token\: string, sent_at\: string, done_at\: string\|null, relance_at\: string\|null, \.\.\.\}, message\?\: string\} but returns array\{status\: ''closed'', data\: mixed\}\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Method App\\Workflow\\TokenValidationHandler\:\:validate\(\) should return array\{status\: string, data\?\: array\{id\: string, submission_id\: string, step_id\: string, email\: string, token\: string, sent_at\: string, done_at\: string\|null, relance_at\: string\|null, \.\.\.\}, message\?\: string\} but returns array\{status\: ''data_conflict'', data\: mixed\}\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Method App\\Workflow\\TokenValidationHandler\:\:validate\(\) should return array\{status\: string, data\?\: array\{id\: string, submission_id\: string, step_id\: string, email\: string, token\: string, sent_at\: string, done_at\: string\|null, relance_at\: string\|null, \.\.\.\}, message\?\: string\} but returns array\{status\: ''expired'', data\: mixed\}\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Method App\\Workflow\\TokenValidationHandler\:\:validate\(\) should return array\{status\: string, data\?\: array\{id\: string, submission_id\: string, step_id\: string, email\: string, token\: string, sent_at\: string, done_at\: string\|null, relance_at\: string\|null, \.\.\.\}, message\?\: string\} but returns array\{status\: ''ok'', data\: mixed\}\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Parameter \#1 \$id of method App\\Repository\\SubmissionRepository\:\:closeWithStatus\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Parameter \#1 \$submissionId of method App\\Repository\\SubmissionRepository\:\:appendToDataJson\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Parameter \#1 \$to of method App\\Mail\\MailService\:\:send\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Parameter \#1 \$value of method App\\Render\\HtmlService\:\:escape\(\) expects string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Parameter \#1 of callable callable\(string\)\: void expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Workflow/TokenValidationHandler.php
-
-		-
-			message: '#^Parameter \#2 \$formData of method App\\Workflow\\RecipientResolver\:\:resolve\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Workflow/WorkflowAdvancer.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 1
-			path: src/lib_wrappers_cache.php
-
-		-
-			message: '#^Function get_latest_version\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/lib_wrappers_cache.php
