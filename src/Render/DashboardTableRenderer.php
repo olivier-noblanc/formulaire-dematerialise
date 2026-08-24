@@ -161,7 +161,7 @@ final class DashboardTableRenderer
         $data_array = is_array($d) ? $d : [];
         $form_data_html = new FormRenderer()->submissionData($data_array, [SubmissionField::VALIDATIONS->value, 'csrf_token'], 'inline');
         $cancel_url = 'index.php?p=confirm_action&action=cancel_submission&submission_id='
-            . urlencode((string) ($row['id'] ?? '')) . '&from=dashboard.phpfrom=index.php?p=dashboard';
+            . urlencode((string) ($row['id'] ?? '')) . '&from=index.php?p=dashboard';
 
         ob_start();
         require __DIR__ . '/templates/submission_detail.php';
