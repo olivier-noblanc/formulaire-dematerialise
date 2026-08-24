@@ -70,10 +70,10 @@ $scanFiles = [
 // Sécurité : ignorer les commentaires et les strings dans @see
 function isComment(string $line): bool {
     $t = ltrim($line);
-    return strncmp($t, '//', 2) === 0
-        || strncmp($t, '#', 1) === 0
-        || strncmp($t, '*', 1) === 0
-        || strncmp($t, '/**', 3) === 0;
+    return str_starts_with($t, '//')
+        || str_starts_with($t, '#')
+        || str_starts_with($t, '*')
+        || str_starts_with($t, '/**');
 }
 
 function isDocRef(string $line): bool {
@@ -102,7 +102,12 @@ function scanFiles(array $dirs, array $files, array $patterns, string $descripti
 
         foreach ($lines as $i => $line) {
             $ln = $i + 1;
-            if (isComment($line) || isDocRef($line)) continue;
+            if (isComment($line)) {
+                continue;
+            }
+            if (isDocRef($line)) {
+                continue;
+            }
 
             foreach ($patterns as $pattern) {
                 if (preg_match($pattern, $line, $m)) {
@@ -126,7 +131,7 @@ foreach ($movedPages as $p) {
     $patterns1[] = '/href="\/' . preg_quote($p, '/') . '\.php/';
 }
 $r1 = scanFiles($scanDirs, $scanFiles, $patterns1, 'href xxx.php');
-check('Aucun href="xxx.php" cassé', empty($r1), $r1);
+check('Aucun href="xxx.php" cassé', $r1 === [], $r1);
 
 // ── Test 2 : action="xxx.php" (sans index.php) ──
 echo "\n── Test 2 : action=\"xxx.php\" → doit être action=\"index.php?p=xxx\" ──\n";
@@ -135,7 +140,7 @@ foreach ($movedPages as $p) {
     $patterns2[] = '/action="' . preg_quote($p, '/') . '\.php/';
 }
 $r2 = scanFiles($scanDirs, $scanFiles, $patterns2, 'action xxx.php');
-check('Aucun action="xxx.php" cassé', empty($r2), $r2);
+check('Aucun action="xxx.php" cassé', $r2 === [], $r2);
 
 // ── Test 3 : header('Location: xxx.php') ──
 echo "\n── Test 3 : header Location vers xxx.php ──\n";
@@ -145,7 +150,7 @@ foreach ($movedPages as $p) {
     $patterns3[] = "/Location.*'" . preg_quote($p, '/') . "\\.php/";
 }
 $r3 = scanFiles($scanDirs, $scanFiles, $patterns3, 'Location xxx.php');
-check('Aucun header Location vers xxx.php', empty($r3), $r3);
+check('Aucun header Location vers xxx.php', $r3 === [], $r3);
 
 // ── Test 4 : resolve_base_url() . '/xxx.php' ──
 echo "\n── Test 4 : resolve_base_url() avec /xxx.php ──\n";
@@ -155,7 +160,7 @@ foreach ($movedPages as $p) {
     $patterns4[] = '/BASE_URL.*\/' . preg_quote($p, '/') . '\.php/';
 }
 $r4 = scanFiles($scanDirs, $scanFiles, $patterns4, 'resolve_base_url xxx.php');
-check('Aucun resolve_base_url() . /xxx.php', empty($r4), $r4);
+check('Aucun resolve_base_url() . /xxx.php', $r4 === [], $r4);
 
 // ── Test 5 : __DIR__ dans pages/ pointant vers la racine ──
 echo "\n── Test 5 : __DIR__ dans pages/ doit utiliser dirname(__DIR__) pour la racine ──\n";
@@ -175,7 +180,7 @@ if (is_dir($pagesDir)) {
         }
     }
 }
-check('Aucun __DIR__ cassé dans pages/', empty($r5), $r5);
+check('Aucun __DIR__ cassé dans pages/', $r5 === [], $r5);
 
 // ── Test 6 : 'xxx.php' dans les fonctions email (string concatenation) ──
 echo "\n── Test 6 : URLs .php dans fonctions email ──\n";
@@ -194,7 +199,12 @@ foreach ($emailFiles as $f) {
     $lines = file($f, FILE_IGNORE_NEW_LINES);
     $rel = str_replace(dirname(__DIR__, 2) . '/', '', $f);
     foreach ($lines as $i => $line) {
-        if (isComment($line) || isDocRef($line)) continue;
+        if (isComment($line)) {
+            continue;
+        }
+        if (isDocRef($line)) {
+            continue;
+        }
         $ln = $i + 1;
         foreach ($movedPages as $p) {
             // Chercher '/page.php' ou '/page.php?'
@@ -204,7 +214,7 @@ foreach ($emailFiles as $f) {
         }
     }
 }
-check('Aucune URL .php dans fonctions email', empty($r6), $r6);
+check('Aucune URL .php dans fonctions email', $r6 === [], $r6);
 
 // ── Test 7 : JS window.location / fetch vers xxx.php ──
 echo "\n── Test 7 : JS window.location / fetch vers xxx.php ──\n";
@@ -228,19 +238,19 @@ foreach ($jsFiles as $f) {
         }
     }
 }
-check('Aucun JS fetch/location vers xxx.php', empty($r7), $r7);
+check('Aucun JS fetch/location vers xxx.php', $r7 === [], $r7);
 
 // ── Test 8 : Liens href="?xxx" (relatifs qui perdent p=) ──
 echo "\n── Test 8 : Liens href=\"?xxx\" (relatifs qui perdent p=) ──\n";
 $patterns8 = ['/href="\?[a-z]/', "/href='\\?[a-z]/"];
 $r8 = scanFiles($scanDirs, $scanFiles, $patterns8, 'href ?xxx');
-check('Aucun href="?xxx" cassé', empty($r8), $r8);
+check('Aucun href="?xxx" cassé', $r8 === [], $r8);
 
 // ── Test 9 : index.php?p=xxx?yyy (? au lieu de &) ──
 echo "\n── Test 9 : index.php?p=xxx?yyy (? au lieu de &) ──\n";
 $patterns9 = ['/index\.php\?p=[a-z_]+\?[a-z]/'];
 $r9 = scanFiles($scanDirs, $scanFiles, $patterns9, '? au lieu de &');
-check('Aucun ? au lieu de & dans les URLs', empty($r9), $r9);
+check('Aucun ? au lieu de & dans les URLs', $r9 === [], $r9);
 
 // ── Test 10 (CRITIQUE) : Toute string 'xxx.php' dans du code PHP ──
 // Ce test détecte TOUTES les URLs cassées, pas seulement les href=/action=.
@@ -281,21 +291,13 @@ foreach ($r10 as $v) {
     if (preg_match('#__DIR__\s*\.\s*[\'"]/(lib|classes|vendor|tests|assets)/#', $codeLine)) {
         continue;  // chemin de fichier lib, pas URL
     }
-    // Vérifier que ce n'est pas un point d'entrée légitime
-    // (screenshot.php sert les images, download.php sert les pièces jointes, etc.)
-    $is_legit = false;
-    foreach ($legitEntryPoints as $legit) {
-        if (preg_match("/['\"]" . preg_quote($legit, '/') . "\\.php/", $codeLine)) {
-            $is_legit = true;
-            break;
-        }
-    }
+    $is_legit = array_any($legitEntryPoints, fn(string $legit): int|false => preg_match("/['\"]" . preg_quote($legit, '/') . "\\.php/", $codeLine));
     if ($is_legit) {
         continue;
     }
     $r10_filtered[] = $v;
 }
-check('Aucune string xxx.php cassée dans code PHP', empty($r10_filtered), $r10_filtered);
+check('Aucune string xxx.php cassée dans code PHP', $r10_filtered === [], $r10_filtered);
 
 // ── Test 11 : URLs dans HEREDOC/NOWDOC ──
 // Les <<<HTML ... HTML; blocks peuvent contenir des URLs xxx.php
@@ -311,7 +313,7 @@ foreach ($movedPages as $p) {
     $patterns11[] = "/redirect['\"]?\s*=>\s*['\"]" . preg_quote($p, '/') . "\\.php/";
 }
 $r11 = scanFiles($scanDirs, $scanFiles, $patterns11, 'heredoc/redirect');
-check('Aucune URL xxx.php dans HEREDOC/redirect', empty($r11), $r11);
+check('Aucune URL xxx.php dans HEREDOC/redirect', $r11 === [], $r11);
 
 // ── Test 12 (NOUVEAU) : Rendu réel — vérifie les URLs dans le HTML ──
 // Lance un sous-processus pour chaque page de la whitelist et vérifie
@@ -342,8 +344,8 @@ foreach ($routes_to_test as [$method, $path, $is_admin]) {
     $html = $r['html'] ?? '';
 
     // Détecter env dégradé (sans mbstring/pdo_sqlite — le rendu échoue)
-    $env_degraded = (strpos($html, 'Warning: session_start') !== false)
-                 || (strpos($html, 'extensions PHP manquantes') !== false);
+    $env_degraded = (str_contains($html, 'Warning: session_start'))
+                 || (str_contains($html, 'extensions PHP manquantes'));
     if ($env_degraded) {
         // Skip — l'env de test ne peut pas rendre la page
         continue;
@@ -369,12 +371,38 @@ if ($r12_pages_tested === 0) {
     echo "  ⚠️  Aucune page rendue (env dégradé) — test skip\n";
     $passed++;  // ne pas pénaliser
 } else {
-    check("Aucune URL xxx.php dans HTML rendu ($r12_pages_tested pages)", empty($r12), $r12);
+    check("Aucune URL xxx.php dans HTML rendu ($r12_pages_tested pages)", $r12 === [], $r12);
 }
+
+// ── Test 13 (CRITIQUE) : URL non encodée comme valeur de paramètre ──
+// Détecte le bug DashboardTableRenderer:164 : &from=index.php?p=dashboard
+// (le ? non encodé écrase $_GET['p']). Si une URL contenant ? est passée
+// comme valeur de paramètre, elle DOIT être urlencode()'d — auquel cas
+// le ? devient %3F et "index.php?p=" n'apparaît qu'une fois sur la ligne.
+// Exclut les balises <code> (documentation) et les commentaires.
+echo "\n── Test 13 (CRITIQUE) : URL non encodée comme valeur de paramètre ──\n";
+$patterns13 = ['/href=["\']index\.php\?p=[^\'"]*index\.php\?p=/i', '/location\s*=\s*["\']index\.php\?p=[^\'"]*index\.php\?p=/i', '/redirect\(["\']index\.php\?p=[^\'"]*index\.php\?p=/i'];
+$r13 = [];
+foreach ($scanFiles as $f) {
+    if (!str_contains($f, '.php')) continue;
+    $content = file_get_contents($f);
+    // Exclure les balises <code> et les commentaires
+    $content = preg_replace('/<code>.*?<\/code>/s', '', $content);
+    $content = preg_replace('/\/\/.*$/m', '', $content);
+    $content = preg_replace('/\/\*.*?\*\//s', '', $content);
+    foreach ($patterns13 as $pattern) {
+        if (preg_match($pattern, $content, $m, PREG_OFFSET_CAPTURE)) {
+            $line = substr_count(substr($content, 0, (int)$m[0][1]), "\n") + 1;
+            $rel = str_replace(__DIR__ . '/../', '', $f);
+            $r13[] = "$rel:$line → " . trim($m[0][0]);
+        }
+    }
+}
+check('Aucune URL non encodée comme valeur de paramètre', $r13 === [], $r13);
 
 // ── Résumé ──
 echo "\n═══════════════════════════════════════════════════\n";
-echo "  AUDIT EXHAUSTIF — " . (empty($violations) ? "✅ AUCUNE VIOLATION" : "❌ " . count($violations) . " violation(s)") . "\n";
+echo "  AUDIT EXHAUSTIF — " . ($violations === [] ? "✅ AUCUNE VIOLATION" : "❌ " . count($violations) . " violation(s)") . "\n";
 echo "  $passed test(s) réussi(s) / $failed échoué(s) / " . ($passed + $failed) . " total\n";
 echo "═══════════════════════════════════════════════════\n";
 exit($failed > 0 ? 1 : 0);
