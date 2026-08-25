@@ -9,6 +9,7 @@ use App\Enum\FieldType;
 use App\Enum\FieldVisibility;
 use App\Enum\FilledBy;
 use App\Enum\ValidationAction;
+use App\Enum\ValidationResultStatus;
 
 /**
  * Contrôleur de la page Validation (accept/refuse de formulaires).
@@ -20,7 +21,7 @@ final class ValidateController extends BaseController
 {
     public function handle(): void
     {
-        $result = ['status' => 'invalid', 'data' => null];
+        $result = ['status' => ValidationResultStatus::INVALID->value, 'data' => null];
         $token  = '';
 
         // ── POST — Exécute l'action ──
@@ -110,7 +111,7 @@ final class ValidateController extends BaseController
                             ]);
                         }
 
-                        if ($result['status'] === 'ok') {
+                        if ($result['status'] === ValidationResultStatus::OK->value) {
                             $success = true;
 
                             $token_ctx = $result['data'] ?? [];
@@ -144,10 +145,10 @@ final class ValidateController extends BaseController
                                 }
                             }
                         } else {
-                            $error = $result['status'] === 'invalid' ? 'Lien invalide ou expiré.'
-                                     : ($result['status'] === 'already_done' ? 'Cette tâche a déjà été traitée.'
-                                     : ($result['status'] === 'closed' ? 'Le workflow est déjà terminé.'
-                                     : ($result['status'] === 'expired' ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
+                            $error = $result['status'] === ValidationResultStatus::INVALID->value ? 'Lien invalide ou expiré.'
+                                     : ($result['status'] === ValidationResultStatus::ALREADY_DONE->value ? 'Cette tâche a déjà été traitée.'
+                                     : ($result['status'] === ValidationResultStatus::CLOSED->value ? 'Le workflow est déjà terminé.'
+                                     : ($result['status'] === ValidationResultStatus::EXPIRED->value ? 'Ce lien a expiré.' : 'Erreur inconnue.')));
                         }
                     }
                 } else {
@@ -166,31 +167,31 @@ final class ValidateController extends BaseController
 
             if ($token !== '' && $token !== '0') {
                 if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
-                    $result = ['status' => 'invalid'];
+                    $result = ['status' => ValidationResultStatus::INVALID->value];
                 } else {
                     $this->audit->log('token_view', 'token:' . substr($token, 0, 8) . '...', 'Consultation page de validation', '');
 
                     $data = App::workflow()->getTokenWithContext($token);
 
                     if (!((bool)$data)) {
-                        $result = ['status' => 'invalid'];
+                        $result = ['status' => ValidationResultStatus::INVALID->value];
                     } elseif (($data['done_at'] ?? '') !== '') {
-                        $result = ['status' => 'already_done', 'data' => $data];
+                        $result = ['status' => ValidationResultStatus::ALREADY_DONE->value, 'data' => $data];
                     } elseif (($data['closed_at'] ?? '') !== '') {
-                        $result = ['status' => 'closed', 'data' => $data];
+                        $result = ['status' => ValidationResultStatus::CLOSED->value, 'data' => $data];
                     } elseif ((bool)($data['expires_at'])) {
                         $exp_ts = strtotime($data['expires_at']);
                         if ($exp_ts !== false && $exp_ts < time()) {
-                            $result = ['status' => 'expired', 'data' => $data];
+                            $result = ['status' => ValidationResultStatus::EXPIRED->value, 'data' => $data];
                         } else {
-                            $result = ['status' => 'pending', 'data' => $data];
+                            $result = ['status' => ValidationResultStatus::PENDING->value, 'data' => $data];
                         }
                     } else {
-                        $result = ['status' => 'ok', 'data' => $data];
+                        $result = ['status' => ValidationResultStatus::OK->value, 'data' => $data];
                     }
                 }
             } else {
-                $result = ['status' => 'invalid'];
+                $result = ['status' => ValidationResultStatus::INVALID->value];
             }
 
             /** @phpstan-ignore-next-line booleanAnd.leftAlwaysTrue */
@@ -224,7 +225,7 @@ final class ValidateController extends BaseController
         $existing_comment = $_POST['comment'] ?? '';
         $existing_motif = $_POST['motif'] ?? '';
 
-        if ($result['status'] === 'pending' || $result['status'] === 'ok') {
+        if ($result['status'] === ValidationResultStatus::PENDING->value || $result['status'] === ValidationResultStatus::OK->value) {
             $rdata = $result['data'] ?? [];
             $form_id = (string) ($rdata['form_id'] ?? '');
             $step_id = $rdata['step_id'] ?? null;

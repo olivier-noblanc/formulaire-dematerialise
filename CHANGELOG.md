@@ -1,5 +1,37 @@
 # Changelog — CircuitDémat
 
+## [10.42.19] — 2026-08-25
+_Résumé : Audit CTO — corrections MEDIUM (magic strings, logs audit) + refactor FormRenderer._
+
+### 🛠 Feature — Enum `ValidationResultStatus` (M-RES-1)
+- **`src/Enum/ValidationResultStatus.php`** (NOUVEAU) : enum pour les 6 statuts de résultat de validation (`PENDING`, `OK`, `INVALID`, `EXPIRED`, `ALREADY_DONE`, `CLOSED`)
+- **`src/Controller/ValidateController.php`** : 16 magic strings remplacées par l'enum
+- **`src/Render/ValidateRenderer.php`** : 5 magic strings remplacées par l'enum
+- **Note** : `MyValidationsRenderer.php` non modifié — les onglets UI (`'pending'`/`'done'`) sont un concept différent des statuts de validation (règle "Pas de réutilisation d'un champ pour un nouveau sens")
+
+### 🛠 Audit trail — Logs dans catch blocks (M-RES-2)
+- **7 catch blocks `@silent-ok`** : ajout de `error_log("[AUDIT] ...")` pour traçabilité sans changer le comportement (pas de rethrow)
+- Fichiers modifiés :
+  - `AdminSettingsHandlers.php` : 2 logs (settings.save, settings.email_verify.save)
+  - `HealthController.php` : 3 logs (health.db.connection, health.db.schema, health.smtp.read)
+  - `PersonaController.php` : 1 log (persona.check_submitter)
+  - `AdminFormCrudHandler.php` : 1 log (form.duplicate.validate_uuid)
+
+### ♻️ Refactor — FormRenderer (L-RES-1, optionnel)
+- **`src/Render/FormRenderer.php`** : extraction de `resolveFieldPresentation()` (lignes 43-98 de `field()`) — sépare la dérivation HTML5/hint de l'assemblage du template
+- **Bénéfice** : méthode `field()` réduite de ~136 à ~70 lignes, logique de dérivation isolée et testable unitairement
+
+### 🔍 Input validation (M-01 à M-05)
+- **Audit complet** : le codebase est déjà durci (trim, filter_var, casts, prepared statements) — aucune modification nécessaire
+- **M-04** : `htmlspecialchars` au render (pas à l'INSERT) — bonne pratique, évite le double-encodage
+
+### 🧪 Vérifications
+- `vendor/bin/phpstan` niveau 8 : 0 erreur ✅
+- `vendor/bin/phpunit` : 1419 tests, 0 failure ✅
+- GrumPHP (phpstan, rector, deptrac) : ✅
+
+---
+
 ## [10.42.17] — 2026-08-24
 _Résumé : Relance personnalisable par formulaire — migration des paramètres `delai_relance_h` et `relance_max` des settings globaux vers la table `forms`, avec CHECK constraints SQL._
 

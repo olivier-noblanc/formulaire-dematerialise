@@ -36,66 +36,12 @@ final class FormRenderer
         $disabled_attr = $disabled ? ' disabled' : '';
 
         $auto_hint_id      = 'hint-' . $name;
-        $auto_hint_text    = '';
-        $placeholder       = '';
-        $textarea_maxlength = 5000;
-
-        $fn_lower    = mb_strtolower($field['field_name'], 'UTF-8');
-        $html5_type  = 'text';
-        $html5_extra = '';
-
-        if (str_contains($fn_lower, 'email') || str_contains($fn_lower, 'courriel') || str_contains($fn_lower, 'mel')) {
-            $html5_type  = 'email';
-            $html5_extra = ' pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"';
-        } elseif (str_contains($fn_lower, 'tel') || str_contains($fn_lower, 'telephone') || str_contains($fn_lower, 'portable') || str_contains($fn_lower, 'mobile')) {
-            $html5_type  = 'tel';
-            $html5_extra = ' pattern="[0-9+\s\-.]{6,20}"';
-        } elseif (str_contains($fn_lower, 'montant') || str_contains($fn_lower, 'cout') || str_contains($fn_lower, 'prix') || str_contains($fn_lower, 'salaire') || str_contains($fn_lower, 'nombre_jour') || str_contains($fn_lower, 'quantite')) {
-            $html5_type  = 'number';
-            $html5_extra = ' step="0.01" min="0"';
-        } elseif (str_contains($fn_lower, 'heure')) {
-            $html5_type = 'time';
-        } elseif (str_contains($fn_lower, 'url') || str_contains($fn_lower, 'lien') || str_contains($fn_lower, 'site')) {
-            $html5_type = 'url';
-        }
-
-        $max_size_mo = 0;
-        switch ($field['field_type']) {
-            case FieldType::Date->value:
-                $auto_hint_text = 'Format : jour/mois/année (JJ/MM/AAAA)';
-                $placeholder    = 'JJ/MM/AAAA';
-                break;
-            case FieldType::Email->value:
-                $auto_hint_text = 'Exemple : prenom.nom@exemple.invalid';
-                $placeholder    = 'prenom.nom@exemple.invalid';
-                break;
-            case FieldType::Textarea->value:
-                $auto_hint_text = 'Texte libre, maximum ' . $textarea_maxlength . ' caractères';
-                break;
-            case FieldType::File->value:
-                $max_size_mo    = round(App::attachment()->getMaxFileSize() / 1048576, 0);
-                $auto_hint_text = 'Formats acceptés : PDF, images, Office, ZIP — Max ' . $max_size_mo . ' Mo';
-                break;
-            case FieldType::Text->value:
-                if ($html5_type === 'email') {
-                    $auto_hint_text = 'Exemple : prenom.nom@exemple.invalid';
-                    $placeholder    = 'prenom.nom@exemple.invalid';
-                } elseif ($html5_type === 'tel') {
-                    $auto_hint_text = 'Format : 10 chiffres';
-                    $placeholder    = '01 23 45 67 89';
-                } elseif ($html5_type === 'number') {
-                    $auto_hint_text = (str_contains($html5_extra, 'step="0.01"'))
-                        ? 'Saisir un montant (décimal autorisé)'
-                        : 'Saisir un nombre entier';
-                } elseif ($html5_type === 'time') {
-                    $auto_hint_text = 'Format : HH:MM (24h)';
-                    $placeholder    = '14:30';
-                } elseif ($html5_type === 'url') {
-                    $auto_hint_text = 'Exemple : https://www.exemple.fr';
-                    $placeholder    = 'https://';
-                }
-                break;
-        }
+        $pres              = $this->resolveFieldPresentation($field);
+        $auto_hint_text    = $pres['auto_hint_text'];
+        $placeholder       = $pres['placeholder'];
+        $textarea_maxlength = $pres['textarea_maxlength'];
+        $html5_type        = $pres['html5_type'];
+        $html5_extra       = $pres['html5_extra'];
 
         $user_hint = (bool) ($field['hint']) ? '<span class="hint">' . \App\Core\App::html()->escape(t_jargon($field['hint'])) . '</span>' : '';
 
@@ -325,6 +271,88 @@ final class FormRenderer
             'ldap_datalist_html'  => $ldap_datalist_html,
             'slug'                => $slug,
         ]);
+    }
+
+    /**
+     * Dérive les attributs HTML5 et les textes d'aide à partir du nom et du type.
+     *
+     * @param array{field_name: string, field_type: string} $field
+     * @return array{html5_type: string, html5_extra: string, auto_hint_text: string, placeholder: string, max_size_mo: int, textarea_maxlength: int}
+     */
+    private function resolveFieldPresentation(array $field): array
+    {
+        $fn_lower    = mb_strtolower($field['field_name'], 'UTF-8');
+        /** @var string $html5_type */
+        $html5_type  = 'text';
+        /** @var string $html5_extra */
+        $html5_extra = '';
+
+        if (str_contains($fn_lower, 'email') || str_contains($fn_lower, 'courriel') || str_contains($fn_lower, 'mel')) {
+            $html5_type  = 'email';
+            $html5_extra = ' pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"';
+        } elseif (str_contains($fn_lower, 'tel') || str_contains($fn_lower, 'telephone') || str_contains($fn_lower, 'portable') || str_contains($fn_lower, 'mobile')) {
+            $html5_type  = 'tel';
+            $html5_extra = ' pattern="[0-9+\s\-.]{6,20}"';
+        } elseif (str_contains($fn_lower, 'montant') || str_contains($fn_lower, 'cout') || str_contains($fn_lower, 'prix') || str_contains($fn_lower, 'salaire') || str_contains($fn_lower, 'nombre_jour') || str_contains($fn_lower, 'quantite')) {
+            $html5_type  = 'number';
+            $html5_extra = ' step="0.01" min="0"';
+        } elseif (str_contains($fn_lower, 'heure')) {
+            $html5_type = 'time';
+        } elseif (str_contains($fn_lower, 'url') || str_contains($fn_lower, 'lien') || str_contains($fn_lower, 'site')) {
+            $html5_type = 'url';
+        }
+
+        $auto_hint_text     = '';
+        /** @var string $placeholder */
+        $placeholder        = '';
+        $textarea_maxlength = 5000;
+        $max_size_mo        = 0;
+
+        switch ($field['field_type']) {
+            case FieldType::Date->value:
+                $auto_hint_text = 'Format : jour/mois/année (JJ/MM/AAAA)';
+                $placeholder    = 'JJ/MM/AAAA';
+                break;
+            case FieldType::Email->value:
+                $auto_hint_text = 'Exemple : prenom.nom@exemple.invalid';
+                $placeholder    = 'prenom.nom@exemple.invalid';
+                break;
+            case FieldType::Textarea->value:
+                $auto_hint_text = 'Texte libre, maximum ' . $textarea_maxlength . ' caractères';
+                break;
+            case FieldType::File->value:
+                $max_size_mo    = (int) round(App::attachment()->getMaxFileSize() / 1048576, 0);
+                $auto_hint_text = 'Formats acceptés : PDF, images, Office, ZIP — Max ' . $max_size_mo . ' Mo';
+                break;
+            case FieldType::Text->value:
+                if ($html5_type === 'email') {
+                    $auto_hint_text = 'Exemple : prenom.nom@exemple.invalid';
+                    $placeholder    = 'prenom.nom@exemple.invalid';
+                } elseif ($html5_type === 'tel') {
+                    $auto_hint_text = 'Format : 10 chiffres';
+                    $placeholder    = '01 23 45 67 89';
+                } elseif ($html5_type === 'number') {
+                    $auto_hint_text = (str_contains($html5_extra, 'step="0.01"'))
+                        ? 'Saisir un montant (décimal autorisé)'
+                        : 'Saisir un nombre entier';
+                } elseif ($html5_type === 'time') {
+                    $auto_hint_text = 'Format : HH:MM (24h)';
+                    $placeholder    = '14:30';
+                } elseif ($html5_type === 'url') {
+                    $auto_hint_text = 'Exemple : https://www.exemple.fr';
+                    $placeholder    = 'https://';
+                }
+                break;
+        }
+
+        return [
+            'html5_type'         => $html5_type,
+            'html5_extra'        => $html5_extra,
+            'auto_hint_text'     => $auto_hint_text,
+            'placeholder'        => $placeholder,
+            'max_size_mo'        => $max_size_mo,
+            'textarea_maxlength' => $textarea_maxlength,
+        ];
     }
 
     /**

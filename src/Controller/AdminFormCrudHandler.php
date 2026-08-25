@@ -129,6 +129,7 @@ final class AdminFormCrudHandler
             $source_id = \validate_input($source_id, 'uuid');
         } catch (\InvalidArgumentException $e) {
             // @silent-ok: fallback returns user-facing validation error
+            error_log('[AUDIT] form.duplicate.validate_uuid: ' . $e->getMessage());
             return ['error' => 'Identifiant de formulaire source invalide.'];
         }
         if (in_array($source_id, ['', '0', 0], true)) {

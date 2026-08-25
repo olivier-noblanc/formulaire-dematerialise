@@ -7,6 +7,7 @@ namespace App\Render;
 use App\Core\App;
 use App\Enum\SubmissionField;
 use App\Enum\ValidationAction;
+use App\Enum\ValidationResultStatus;
 use App\Forms\SubmissionData;
 use App\Repository\AttachmentRepository;
 use App\Repository\FormFieldsTrait;
@@ -67,7 +68,7 @@ final class ValidateRenderer
             $html .= '</div>' . "\n";
 
             // ── Invalid ──
-        } elseif ($result['status'] === 'invalid') {
+        } elseif ($result['status'] === ValidationResultStatus::INVALID->value) {
             $html .= '<h1>Lien invalide</h1>' . "\n";
             $html .= '<p class="err">Ce lien est introuvable ou expiré.</p>' . "\n";
             $html .= '<div class="flex-gap5-mt-3">' . "\n";
@@ -76,7 +77,7 @@ final class ValidateRenderer
             $html .= '</div>' . "\n";
 
             // ── Already done ──
-        } elseif ($result['status'] === 'already_done') {
+        } elseif ($result['status'] === ValidationResultStatus::ALREADY_DONE->value) {
             $data = $result['data'] ?? [];
             $html .= '<span class="badge">' . $htmlService->escape($data['step_label'] ?? '') . '</span>' . "\n";
             $html .= '<h1>Déjà validé</h1>' . "\n";
@@ -87,7 +88,7 @@ final class ValidateRenderer
             $html .= '</div>' . "\n";
 
             // ── Closed ──
-        } elseif ($result['status'] === 'closed') {
+        } elseif ($result['status'] === ValidationResultStatus::CLOSED->value) {
             $html .= '<h1>Workflow terminé</h1>' . "\n";
             $html .= '<p class="info">Ce dossier est déjà clôturé.</p>' . "\n";
             $html .= '<div class="flex-gap5-mt-3">' . "\n";
@@ -96,7 +97,7 @@ final class ValidateRenderer
             $html .= '</div>' . "\n";
 
             // ── Expired ──
-        } elseif ($result['status'] === 'expired') {
+        } elseif ($result['status'] === ValidationResultStatus::EXPIRED->value) {
             $html .= '<h1>Lien expiré</h1>' . "\n";
             $html .= '<p class="err">Ce lien de validation a expiré. Veuillez contacter l\'expéditeur pour obtenir un nouveau lien.</p>' . "\n";
             $html .= '<div class="flex-gap5-mt-3">' . "\n";
@@ -105,7 +106,7 @@ final class ValidateRenderer
             $html .= '</div>' . "\n";
 
             // ── Pending / OK ──
-        } elseif ($result['status'] === 'pending' || $result['status'] === 'ok') {
+        } elseif ($result['status'] === ValidationResultStatus::PENDING->value || $result['status'] === ValidationResultStatus::OK->value) {
             $data = $result['data'] ?? [];
             $d   = json_decode($data['data'] ?? '{}', true);
             $nom = $htmlService->escape(SubmissionData::get($d, SubmissionField::PRENOM) . ' ' . SubmissionData::get($d, SubmissionField::NOM));

@@ -27,6 +27,7 @@ final class HealthController extends BaseController
             $dbDetail = 'Connexion SQLite OK';
         } catch (\Exception $e) {
             // @silent-ok: log-only for health check read
+            error_log('[AUDIT] health.db.connection: ' . $e->getMessage());
             $dbDetail = 'Erreur : ' . $e->getMessage();
         }
         if (!$dbOk) {
@@ -68,6 +69,7 @@ final class HealthController extends BaseController
             }
         } catch (\Exception $e) {
             // @silent-ok: log-only for health check read
+            error_log('[AUDIT] health.db.schema: ' . $e->getMessage());
             $schemaDetail = 'Erreur : ' . $e->getMessage();
         }
         if (!$schemaOk) {
@@ -82,8 +84,9 @@ final class HealthController extends BaseController
             $smtpHost = $this->settings->get('smtp_host', '');
             $smtpOk = $smtpHost !== '' && $smtpHost !== '0';
             $smtpDetail = $smtpOk ? 'Hôte SMTP configuré : ' . $smtpHost : 'Aucun hôte SMTP configuré';
-        } catch (\Exception) {
+        } catch (\Exception $e) {
             // @silent-ok: log-only for health check read
+            error_log('[AUDIT] health.smtp.read: ' . $e->getMessage());
             $smtpDetail = 'Erreur de lecture';
         }
         if (!$smtpOk) {

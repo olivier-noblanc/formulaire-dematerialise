@@ -12,7 +12,7 @@
 | PHPStan erreurs baseline | **463** (level 8, 362 entrées — régénéré 2026-08-24, v10.42.16, -571 entrées stale) |
 | Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
 | Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
-| Enums métier | **8** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, **AssetType**) |
+| Enums métier | **9** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, AssetType, **ValidationResultStatus**) |
 | Repositories | **10** |
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
 | CI | **GitHub Actions** (15 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
@@ -29,6 +29,25 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.19 — Audit CTO : corrections MEDIUM + refactor FormRenderer
+| Tâche | Détail |
+|-------|--------|
+| Enum `ValidationResultStatus` | Créé (6 cas) + 21 magic strings remplacées (`ValidateController`, `ValidateRenderer`) |
+| Logs audit dans catch blocks | 7 catch blocks `@silent-ok` modifiés avec `error_log("[AUDIT] ...")` pour traçabilité |
+| Refactor FormRenderer | Extraction de `resolveFieldPresentation()` (dérivation HTML5/hint isolée de `field()`) |
+| Input validation | Audit complet — codebase déjà durci (trim, filter_var, casts, prepared statements), 0 modif nécessaire |
+| Métriques | Enums métier : 8 → **9** (ajout `ValidationResultStatus`) |
+| Vérifications | PHPStan level 8 : 0 erreur ✅, PHPUnit : 1419 tests ✅ |
+
+### v10.42.18 — CS Fixer sur src/Render/ + régénération baseline PHPStan
+| Tâche | Détail |
+|-------|--------|
+| CS Fixer | 2 fichiers heredoc à réindenter résolus (AdminFormsRenderer, NavigationRenderer) + réindentation/fix style sur l'ensemble de `src/Render/` (49 fichiers, +378/-382) |
+| Baseline PHPStan | Régénérée — 18 entrées supprimées (faux positifs éliminés par la réindentation) |
+| Fichiers | `src/Render/` + templates + `install.php`, `DatabaseMigrations.php`, `seed_default_forms.php`, `phpstan_inst_stubs.php` |
+| Nettoyage | TODO.md reflète l'état réel (CS Fixer, relance personnalisable, baseline PHPStan marqués ✅) |
+| Vérifications | Baseline 463 erreurs (362 entrées), PHPUnit 1419 tests ✅ |
 
 ### v10.42.16 — Régénération baseline PHPStan (nettoyage entrées stale)
 | Tâche | Détail |
@@ -341,26 +360,26 @@ Décision projet non négociable : C-04 (display_errors=1) et C-05 (SMTPDebug=3)
 - ~~H-01 : 13 fichiers > 350 lignes~~ ✅ **TERMINÉ** — 0 fichier > 350 lignes !
   - Top 5 : FormJsonValidator (347), FormRenderer (345), TokenService (343), WorkflowAdvancer (340), AdminAlertsRenderer (334)
 - ~~H-08 : 45 markTestSkipped~~ ✅ **TERMINÉ** — 42 skips légitimes conservés, `SubmissionViewRenderer` créée
-- CS Fixer : 2 fichiers avec heredoc à réindenter (AdminFormsRenderer, NavigationRenderer)
+- ~~CS Fixer : 2 fichiers avec heredoc à réindenter (AdminFormsRenderer, NavigationRenderer)~~ ✅ **TERMINÉ** — v10.42.18
 - 17 MEDIUM + 15 LOW (cf. rapport complet)
 
-### Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)
+### ~~Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)~~ ✅ **TERMINÉ/À JOUR**
 
-Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs) ou des faux positifs shipmonk.
+~~Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs) ou des faux positifs shipmonk.~~
 
-Progrès : toutes les `empty()` dans `src/` remplacées (plus que 5 dans alert_check.php, hors scope).
-Baseline régénérée de 2 → 816 erreurs (intègre maintenant toutes les erreurs ignorées).
+~~Progrès : toutes les `empty()` dans `src/` remplacées (plus que 5 dans alert_check.php, hors scope).~~
+~~Baseline régénérée de 2 → 816 erreurs (intègre maintenant toutes les erreurs ignorées).~~
+
+**État actuel (v10.42.16/v10.42.18)** : baseline régénérée → **463 erreurs** (362 entrées ignoreErrors, -571 stale). `noUntypedArray` : **0** ✅ (Wave 2, v10.42.15). Progrès partiel sur les catégories restantes réalisé tout au long des Waves 1/2 et du cleanup CS Fixer.
 
 | Catégorie | Count |
 |-----------|-------|
-| `variable.undefined` | ~224 |
-| `noUntypedArray` | ~179 |
-| `booleanNot.exprNotBoolean` | ~62 |
-| `if.condNotBoolean` | ~37 |
-| `shipmonk.deadMethod` | ~36 |
-| `missingType.iterableValue` | ~27 |
-| `ternary.condNotBoolean` | ~26 |
-| Autres | ~225 |
+| `variable.undefined` | 325 (~70% — templates) |
+| `missingType.noUntypedArray` | 16 |
+| `offsetAccess.notFound` | 14 |
+| `booleanNot.exprNotBoolean` | 12 |
+| `shipmonk.arithmeticOnNonNumber` | 12 |
+| Autres | ~84 |
 
 ### DTOs Renderer — migration array $ctx → DTOs typés
 
@@ -382,13 +401,15 @@ Audit complet des 29 bugs fonctionnels identifiés lors de l'audit initial :
 - **1 faux positif** : #26 (JargonService) — le service est vivant (81 références via `t_jargon()` → `JargonService::translate()`), le TODO avait tort
 
 
-### Relance personnalisable (feature demandée 2026-08-07)
+### ~~Relance personnalisable (feature demandée 2026-08-07)~~ ✅ **TERMINÉ** — v10.42.17
 
-Permettre de personnaliser **l'intervalle de rappel** et **le nombre de rappels** par formulaire/workflow (aujourd'hui globaux : `delai_relance_h` = 48h, `relance_max` = 3, settings admin).
+~~Permettre de personnaliser **l'intervalle de rappel** et **le nombre de rappels** par formulaire/workflow (aujourd'hui globaux : `delai_relance_h` = 48h, `relance_max` = 3, settings admin).~~
 
-- Objectif : configurable par formulaire (ou par workflow), pas seulement global
-- **Contrainte : garder un cap** (large mais borné) — pas de relances illimitées
-- Contexte : self-reminder via formulaire « Demande de télétravail » (PoC admin_forms)
+~~- Objectif : configurable par formulaire (ou par workflow), pas seulement global~~
+~~- **Contrainte : garder un cap** (large mais borné) — pas de relances illimitées~~
+~~- Contexte : self-reminder via formulaire « Demande de télétravail » (PoC admin_forms)~~
+
+**Livré en v10.42.17** : colonnes `relance_delai_h` (1-720h) + `relance_max` (0-20) sur `forms` (migration v36, CHECK constraints) + `FormRepository::getRelanceConfig()` (fallback 48h/3) + seuil per-form dans `findBlocked()`/TokenService/remind.php. Voir entrée ✅ Terminé.
 
 ### CSP — zéro inline (décision 2026-07-30)
 
@@ -443,4 +464,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-08-05 (v10.38.2)_
+_Dernière mise à jour : 2026-08-25 (v10.42.18)_

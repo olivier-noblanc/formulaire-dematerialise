@@ -98,6 +98,7 @@ final class AdminSettingsHandlers
             }
         } catch (\Exception $e) {
             // @silent-ok: fallback sets user-facing error with exception detail
+            error_log('[AUDIT] settings.save: ' . $e->getMessage());
             $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
         }
 
@@ -147,6 +148,7 @@ final class AdminSettingsHandlers
             }
         } catch (\Exception $e) {
             // @silent-ok: fallback sets user-facing error with exception detail
+            error_log('[AUDIT] settings.email_verify.save: ' . $e->getMessage());
             $error_msg = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
         }
 
