@@ -89,7 +89,7 @@
 .input-filter-2 { padding:.3rem .5rem;font-size:.8rem;border:1px solid #aaa;border-radius:3px;width:180px; }
 .u-fon-fon-2 { font-weight:bold;font-size:1rem; }
 .u-ali-dis-fle-gap { display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap; }
-.flex-gap4 { display:flex;gap:.4rem;justify-content:flex-end; }
+.flex-gap4 { display:flex;gap:.4rem;justify-content:flex-end;align-items:center; }
 .btn-xs-2 { font-size:.75rem;padding:.3rem .6rem;text-decoration:none; }
 .hint-text-2 { font-size:.8rem;color:#c0392b;margin-top:.5rem; }
 .btn-sm-9 { padding:.3rem .8rem;font-size:.8rem; }

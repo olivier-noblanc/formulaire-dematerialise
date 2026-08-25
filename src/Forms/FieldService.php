@@ -7,7 +7,6 @@ namespace App\Forms;
 use App\Contract\FieldInterface;
 use App\Core\App;
 use App\Enum\FieldType;
-use App\Enum\FilledBy;
 use App\Repository\FormRepository;
 use App\Repository\SubmissionRepository;
 

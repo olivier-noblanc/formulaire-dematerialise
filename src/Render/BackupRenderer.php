@@ -56,7 +56,7 @@ final class BackupRenderer
     <div class="card">
         <h2><span aria-hidden="true">📊</span> Statistiques de la base de données</h2>
 
-        <?php if ((bool) ($db_stats['error'])): ?>
+        <?php if ((bool) ($db_stats['error'] ?? '')): ?>
             <div class="msg-error" role="alert" aria-live="assertive">Erreur lors de la lecture des statistiques : <?= \App\Core\App::html()->escape($db_stats['error']) ?></div>
         <?php else: ?>
 

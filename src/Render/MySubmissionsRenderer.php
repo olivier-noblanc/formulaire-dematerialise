@@ -172,7 +172,7 @@ final class MySubmissionsRenderer
                     $html .= "            <div class=\"tl-step {$cls}\">\n";
                     $html .= "              <span class=\"tl-icon\" aria-hidden=\"true\">{$icon}</span>\n";
                     $html .= "              <span class=\"tl-label\">{$stepLabel}</span>\n";
-                    if ((bool) ($ws['step_detail'])) {
+                    if ((bool) ($ws['step_detail'] ?? '')) {
                         $html .= "                <span class=\"tl-detail\">{$ws['step_detail']}</span>\n";
                     }
                     $html .= "            </div>\n";

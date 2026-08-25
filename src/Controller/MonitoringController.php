@@ -92,7 +92,7 @@ final class MonitoringController extends BaseController
             // @silent-ok: fallback uses empty array on read failure
             $activeAlerts = [];
         }
- 
+
         // Query #6: Recent alerts (existing repo method)
         $recentAlerts = [];
         try {

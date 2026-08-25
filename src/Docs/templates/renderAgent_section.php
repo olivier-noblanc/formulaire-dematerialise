@@ -227,4 +227,3 @@
       <li><strong>Durée de conservation</strong> — Vos données sont conservées pendant une durée limitée (par défaut 24 mois après la clôture de la demande), puis automatiquement supprimées.</li>
     </ul>
   </div>
-        

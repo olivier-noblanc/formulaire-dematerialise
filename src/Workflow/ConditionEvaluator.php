@@ -28,7 +28,7 @@ final class ConditionEvaluator implements ConditionInterface
         }
 
         $condition = json_decode($conditionJson, true);
-        if (!is_array($condition) || !((bool)($condition['field']))) {
+        if (!is_array($condition) || !((bool)($condition['field'] ?? ''))) {
             return true;
         }
 

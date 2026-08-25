@@ -6,7 +6,6 @@ namespace App\Rgpd;
 
 use App\Core\App;
 use App\Enum\SubmissionField;
-use App\Enum\SubmissionStatus;
 use App\Repository\AdminRepository;
 use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;

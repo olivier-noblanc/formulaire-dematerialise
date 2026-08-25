@@ -385,4 +385,3 @@
       Le super administrateur est défini par son adresse email dans la configuration. Il s'agit généralement du premier administrateur, qui ne peut pas être supprimé.
     </p>
   </div>
-        

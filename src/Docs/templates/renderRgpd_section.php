@@ -58,4 +58,3 @@
       La <strong>déclaration d'accessibilité</strong> détaille le niveau de conformité, les non-conformités connues et les voies de recours ; elle est disponible dans le fichier <code>docs/declaration-rgaa.md</code> livré avec l'application.
     </p>
   </div>
-        

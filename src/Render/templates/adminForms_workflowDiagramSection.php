@@ -209,8 +209,8 @@
                                             <input type="hidden" name="step_id" value="<?= $step['id'] ?>">
                                             <input type="hidden" name="form_id" value="<?= $form_id ?>">
                                             <label class="u-col-dis-fon-mar-2">Courriel du destinataire <span class="req">*</span></label>
-                                            <div class="flex-gap4" style="align-items: center;">
-                                                <input type="text" name="email" required placeholder="ex: prenom.nom@exemple.invalid" list="recipient-templates" autocomplete="off" class="progress-fill-4" style="flex: 1;">
+                                            <div class="flex-gap4">
+                                                <input type="text" name="email" required placeholder="ex: prenom.nom@exemple.invalid" list="recipient-templates" autocomplete="off" class="progress-fill-4 flex-1">
                                                 <button type="button" class="btn btn-secondary btn-compact-4" data-insert-template="{{owner}}" title="Insérer {{owner}} (créateur du formulaire)">Propriétaire</button>
                                             </div>
                                             <span class="hint u-col-dis-fon-mar">Email statique ou référence dynamique : <code>{{owner}}</code> (créateur), <code>{{champ}}</code> (valeur d'un champ).</span>

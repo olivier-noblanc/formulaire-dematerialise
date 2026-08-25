@@ -55,4 +55,3 @@
       <p>Pas de panique : le système s'occupe de tout. Vous n'avez qu'à remplir le formulaire, les emails partent automatiquement et les relances aussi !</p>
     </div>
   </div>
-        

@@ -28,8 +28,8 @@ foreach ($data[\App\Enum\SubmissionField::VALIDATIONS->value] as $v) {
     }
 
     $comment_html = '';
-    if ((bool) ($v['commentaire'])) {
-        $comment = \App\Core\App::html()->escape((string) $v['commentaire']);
+    if ((bool) ($v['commentaire'] ?? '')) {
+        $comment = \App\Core\App::html()->escape((string) ($v['commentaire'] ?? ''));
         $comment_html = <<<HTML
                       <div class="val-comment"><span aria-hidden="true">💬</span> {$comment}</div>
             HTML;

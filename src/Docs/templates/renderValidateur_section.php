@@ -171,4 +171,3 @@
     <img src="index.php?p=screenshot&f=06_my_validations.png" alt="Page Mes validations — demandes en attente et historique" class="screenshot">
     <p class="screenshot-caption">Page « Mes validations » — vue des demandes en attente et de l'historique de validation</p>
   </div>
-        

@@ -110,8 +110,6 @@ final readonly class CacheService implements CacheInterface
         return $this->cacheDir;
     }
 
-
-
     public function getLatestVersion(): string
     {
         static $version = null;

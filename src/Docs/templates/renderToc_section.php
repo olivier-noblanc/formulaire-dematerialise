@@ -16,4 +16,3 @@
       <li><a href="#technique">Architecture technique (équipe IT)</a></li>
     </ol>
   </nav>
-        

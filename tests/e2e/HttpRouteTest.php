@@ -66,7 +66,7 @@ final class HttpRouteTest extends TestCase
             // le remplace par un environnement totalement vide, ce qui rend PHP_BINARY vide dans
             // start_server.php (résolution interne dépendante de PATH) et fait échouer la commande
             // "$phpBin -S ..." avec "sh: -S: not found" (le process meurt immédiatement, exitcode 127).
-            self::$serverProcess = proc_open($cmd, $descriptors, $pipes, self::$docRoot, null);
+            self::$serverProcess = proc_open($cmd, $descriptors, $pipes, self::$docRoot);
             if (!is_resource(self::$serverProcess)) {
                 self::markTestSkipped('Failed to start PHP built-in server');
             }
@@ -152,7 +152,7 @@ final class HttpRouteTest extends TestCase
 
     // ── HTTP helper ───────────────────────────────────────────
 
-    private static function httpGet(string $path, array $headers = []): array
+    private function httpGet(string $path, array $headers = []): array
     {
         $url = self::$baseUrl . $path;
 
@@ -182,13 +182,14 @@ final class HttpRouteTest extends TestCase
         $status = 200;
         $location = '';
 
-        if (isset($http_response_header)) {
+        $lastHeaders = http_get_last_response_headers();
+        if (is_array($lastHeaders)) {
             // Parse status from response header
-            if (preg_match('#HTTP/\d\.\d\s+(\d+)#', $http_response_header[0] ?? '', $m)) {
+            if (preg_match('#HTTP/\d\.\d\s+(\d+)#', $lastHeaders[0] ?? '', $m)) {
                 $status = (int) $m[1];
             }
             // Parse Location header for redirects
-            foreach ($http_response_header as $header) {
+            foreach ($lastHeaders as $header) {
                 if (stripos($header, 'Location:') === 0) {
                     $location = trim(substr($header, 9));
                     break;
@@ -302,7 +303,7 @@ final class HttpRouteTest extends TestCase
     #[DataProvider('publicPageProvider')]
     public function testPublicPageReturns200(string $path, string $needle, array $htmlClasses): void
     {
-        [$status, $body] = self::httpGet($path);
+        [$status, $body] = $this->httpGet($path);
 
         self::assertSame(200, $status, "Page $path should return 200, got $status");
         self::assertStringContainsString($needle, $body, "Page $path should contain '$needle'");
@@ -326,20 +327,14 @@ final class HttpRouteTest extends TestCase
     #[DataProvider('adminPageProvider')]
     public function testAdminPageReturns200(string $path, string $needle, array $htmlClasses): void
     {
-        [$status, $body] = self::httpGet($path);
+        [$status, $body] = $this->httpGet($path);
 
         self::assertSame(200, $status, "Admin page $path should return 200, got $status");
         self::assertStringContainsString($needle, $body, "Admin page $path should contain '$needle'");
 
         // At least one of the expected CSS classes should be present
-        if (!empty($htmlClasses)) {
-            $found = false;
-            foreach ($htmlClasses as $class) {
-                if (preg_match('/class="[^"]*' . preg_quote($class, '/') . '[^"]*"/', $body)) {
-                    $found = true;
-                    break;
-                }
-            }
+        if ($htmlClasses !== []) {
+            $found = array_any($htmlClasses, fn($class): int|false => preg_match('/class="[^"]*' . preg_quote($class, '/') . '[^"]*"/', $body));
             self::assertTrue(
                 $found,
                 "Admin page $path should contain at least one of: " . implode(', ', $htmlClasses)
@@ -356,7 +351,7 @@ final class HttpRouteTest extends TestCase
     #[DataProvider('missingParamPageProvider')]
     public function testMissingParamReturnsError(string $path, int $expectedStatus): void
     {
-        [$status, $body] = self::httpGet($path);
+        [$status, $body] = $this->httpGet($path);
 
         // Pages without params should return the expected status
         // (may be 200 with error message, 302 redirect, or 400/404 error)
@@ -377,7 +372,7 @@ final class HttpRouteTest extends TestCase
     #[DataProvider('publicPageProvider')]
     public function testLayoutStructure(string $path, string $needle, array $htmlClasses): void
     {
-        [$status, $body] = self::httpGet($path);
+        [$status, $body] = $this->httpGet($path);
 
         if ($status !== 200) {
             self::markTestSkipped("Page $path returned $status, cannot check layout");
@@ -429,7 +424,7 @@ final class HttpRouteTest extends TestCase
     #[DataProvider('adminPageProvider')]
     public function testAdminSidebarLinks(string $path, string $needle, array $htmlClasses): void
     {
-        [$status, $body] = self::httpGet($path);
+        [$status, $body] = $this->httpGet($path);
 
         if ($status !== 200) {
             self::markTestSkipped("Admin page $path returned $status");
@@ -451,7 +446,7 @@ final class HttpRouteTest extends TestCase
 
     public function testPersonaStopRedirectsToIndex(): void
     {
-        [$status, $body, $location] = self::httpGet('/?p=persona&action=stop');
+        [$status, $body, $location] = $this->httpGet('/?p=persona&action=stop');
 
         // Persona stop should redirect to index (302) — no confirmation step
         self::assertSame(302, $status, 'Persona stop should redirect to index');
@@ -463,7 +458,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testAgentDoesNotSeeAdminLinks(): void
     {
-        [$status, $body] = self::httpGet('/', [
+        [$status, $body] = $this->httpGet('/', [
             'X-Test-User' => 'agent_' . uniqid() . '@test.com',
         ]);
 
@@ -502,7 +497,7 @@ final class HttpRouteTest extends TestCase
     {
         // Persona start with admin's own email → self-agent mode, direct activation
         $adminEmail = 'testeur@e2e.test';
-        [$status, $body, $location] = self::httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
+        [$status, $body, $location] = $this->httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
 
         // Should redirect to index with persona_token (302) — NOT to confirm_action
         self::assertSame(302, $status, 'Persona GET should redirect directly (no confirmation step)');
@@ -517,7 +512,7 @@ final class HttpRouteTest extends TestCase
     {
         // First activate a persona, then stop it
         $adminEmail = 'testeur@e2e.test';
-        [$startStatus, $startBody, $startLocation] = self::httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
+        [$startStatus, $startBody, $startLocation] = $this->httpGet('/?p=persona&action=start&email=' . urlencode($adminEmail));
         if ($startStatus !== 302) {
             self::markTestSkipped('Could not activate persona');
         }
@@ -529,7 +524,7 @@ final class HttpRouteTest extends TestCase
         $token = urldecode($m[1]);
 
         // Now stop persona — should redirect directly, not to confirm_action
-        [$status, $body, $location] = self::httpGet('/?p=persona&action=stop&persona_token=' . urlencode($token));
+        [$status, $body, $location] = $this->httpGet('/?p=persona&action=stop&persona_token=' . urlencode($token));
 
         self::assertSame(302, $status, 'Persona stop GET should redirect directly');
         self::assertStringNotContainsString('confirm_action', $location, 'Persona stop should NOT redirect to confirm_action');
@@ -537,7 +532,7 @@ final class HttpRouteTest extends TestCase
 
     public function testHealthPageShowsSystemChecks(): void
     {
-        [$status, $body] = self::httpGet('/?p=health');
+        [$status, $body] = $this->httpGet('/?p=health');
 
         self::assertSame(200, $status);
         self::assertStringContainsString('Santé du système', $body);
@@ -552,7 +547,7 @@ final class HttpRouteTest extends TestCase
 
     public function testAccueilHasFormCards(): void
     {
-        [$status, $body] = self::httpGet('/');
+        [$status, $body] = $this->httpGet('/');
 
         self::assertSame(200, $status);
         self::assertStringContainsString('CircuitDémat', $body);
@@ -568,7 +563,7 @@ final class HttpRouteTest extends TestCase
 
     public function testDocsPageHasFullDocumentation(): void
     {
-        [$status, $body] = self::httpGet('/?p=docs');
+        [$status, $body] = $this->httpGet('/?p=docs');
 
         self::assertSame(200, $status);
         self::assertStringContainsString('Aide et documentation', $body);
@@ -581,7 +576,7 @@ final class HttpRouteTest extends TestCase
 
     public function testChangelogPageHasVersionCards(): void
     {
-        [$status, $body] = self::httpGet('/?p=changelog');
+        [$status, $body] = $this->httpGet('/?p=changelog');
 
         self::assertSame(200, $status);
         self::assertStringContainsString('Journal des modifications', $body);
@@ -594,7 +589,7 @@ final class HttpRouteTest extends TestCase
 
     public function testMyValidationsHasTabBar(): void
     {
-        [$status, $body] = self::httpGet('/?p=my_validations');
+        [$status, $body] = $this->httpGet('/?p=my_validations');
 
         self::assertSame(200, $status);
         self::assertStringContainsString('Mes validations', $body);
@@ -613,7 +608,7 @@ final class HttpRouteTest extends TestCase
     #[DataProvider('allRoutesProvider')]
     public function testAllRoutesRespondCorrectly(string $path, int $status, string $needle): void
     {
-        [$actualStatus, $body] = self::httpGet($path);
+        [$actualStatus, $body] = $this->httpGet($path);
 
         self::assertSame(
             $status,
@@ -635,7 +630,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testUnknownPageReturns404(): void
     {
-        [$status, $body] = self::httpGet('/?p=nonexistent_page_xyz');
+        [$status, $body] = $this->httpGet('/?p=nonexistent_page_xyz');
 
         // Depuis le fix anti-récursion errorPage() (2026-08-01), errorPage(404)
         // en TEST_MODE web ne cascade plus en 500 via le handler global.
@@ -647,7 +642,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testXssInPageParameterIsSanitized(): void
     {
-        [$status, $body] = self::httpGet('/?p=<script>alert(1)</script>');
+        [$status, $body] = $this->httpGet('/?p=<script>alert(1)</script>');
 
         // Le paramètre est sanitizé via preg_replace('/[^a-z_]/', '', $page)
         // → devient '' → page 'accueil' (fallback) → 200. Mais peut aussi
@@ -662,7 +657,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testValidPageWithExtraParams(): void
     {
-        [$status, $body] = self::httpGet('/?p=docs&extra=value');
+        [$status, $body] = $this->httpGet('/?p=docs&extra=value');
 
         self::assertSame(200, $status, 'Valid page with extra params should still work');
         self::assertStringContainsString('Aide et documentation', $body);
@@ -685,8 +680,9 @@ final class HttpRouteTest extends TestCase
         @file_get_contents($url, false, $ctx);
 
         $contentType = '';
-        if (isset($http_response_header)) {
-            foreach ($http_response_header as $header) {
+        $lastHeaders = http_get_last_response_headers();
+        if (is_array($lastHeaders)) {
+            foreach ($lastHeaders as $header) {
                 if (stripos($header, 'content-type:') === 0) {
                     $contentType = trim(substr($header, 13));
                     break;
@@ -709,7 +705,7 @@ final class HttpRouteTest extends TestCase
         $routes = ['/', '/?p=health', '/?p=docs', '/?p=changelog'];
 
         foreach ($routes as $route) {
-            [$status, $body] = self::httpGet($route);
+            [$status, $body] = $this->httpGet($route);
             self::assertContains($status, [200, 302], "Rapid request to $route should not crash (got $status)");
         }
     }
@@ -730,9 +726,10 @@ final class HttpRouteTest extends TestCase
             ],
         ]);
 
-        $body = @file_get_contents($url, false, $ctx);
+        @file_get_contents($url, false, $ctx);
         $status = 200;
-        if (isset($http_response_header) && preg_match('#HTTP/\d\.\d\s+(\d+)#', $http_response_header[0] ?? '', $m)) {
+        $lastHeaders = http_get_last_response_headers();
+        if (is_array($lastHeaders) && preg_match('#HTTP/\d\.\d\s+(\d+)#', $lastHeaders[0] ?? '', $m)) {
             $status = (int) $m[1];
         }
 
@@ -745,7 +742,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testFormWithoutSlugShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=form');
+        [$status, $body] = $this->httpGet('/?p=form');
 
         // Pages without required params render normally (200) or show error (500 in TEST_MODE)
         self::assertContains($status, [200, 500], 'Form without slug should return 200 or 500');
@@ -756,7 +753,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testValidateWithoutTokenShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=validate');
+        [$status, $body] = $this->httpGet('/?p=validate');
 
         // Pages without required params render normally (200) or show error (500 in TEST_MODE)
         self::assertContains($status, [200, 500], 'Validate without token should return 200 or 500');
@@ -767,7 +764,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testSubmissionViewWithoutIdShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=submission_view');
+        [$status, $body] = $this->httpGet('/?p=submission_view');
 
         self::assertNotSame(200, $status, 'Submission view without id should not return 200');
     }
@@ -777,7 +774,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testFormTrackingWithoutIdShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=form_tracking');
+        [$status, $body] = $this->httpGet('/?p=form_tracking');
 
         self::assertNotSame(200, $status, 'Form tracking without id should not return 200');
     }
@@ -787,7 +784,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testFormPreviewWithoutIdShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=form_preview');
+        [$status, $body] = $this->httpGet('/?p=form_preview');
 
         self::assertNotSame(200, $status, 'Form preview without id should not return 200');
     }
@@ -797,7 +794,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testConfirmActionWithoutParamsShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=confirm_action');
+        [$status, $body] = $this->httpGet('/?p=confirm_action');
 
         self::assertNotSame(200, $status, 'Confirm action without params should not return 200');
     }
@@ -807,7 +804,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testDownloadWithoutIdShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=download');
+        [$status, $body] = $this->httpGet('/?p=download');
 
         self::assertNotSame(200, $status, 'Download without id should not return 200');
     }
@@ -817,7 +814,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testScreenshotWithoutParamsShowsError(): void
     {
-        [$status, $body] = self::httpGet('/?p=screenshot');
+        [$status, $body] = $this->httpGet('/?p=screenshot');
 
         self::assertNotSame(200, $status, 'Screenshot without params should not return 200');
     }
@@ -843,8 +840,9 @@ final class HttpRouteTest extends TestCase
 
         @file_get_contents($url, false, $ctx);
 
-        if (isset($http_response_header)) {
-            foreach ($http_response_header as $header) {
+        $lastHeaders = http_get_last_response_headers();
+        if (is_array($lastHeaders)) {
+            foreach ($lastHeaders as $header) {
                 self::assertStringNotContainsString(
                     'X-Powered-By',
                     $header,
@@ -859,7 +857,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testDirectoryTraversalIsBlocked(): void
     {
-        [$status, $body] = self::httpGet('/../config.php');
+        [$status, $body] = $this->httpGet('/../config.php');
         // Should get 403, 404, or serve index.php — but NOT the config file contents
         self::assertStringNotContainsString(
             'DB_PATH',
@@ -873,7 +871,7 @@ final class HttpRouteTest extends TestCase
      */
     public function testNullByteInUrlIsHandled(): void
     {
-        [$status, $body] = self::httpGet('/?p=health%00.php');
+        [$status, $body] = $this->httpGet('/?p=health%00.php');
         // Should not crash — either 404 or normal page
         self::assertContains($status, [200, 400, 404, 500], 'Null byte in URL should be handled safely');
     }
@@ -885,7 +883,7 @@ final class HttpRouteTest extends TestCase
     /** Accueil: form cards from DB loop. */
     public function testAccueilRendersFormCards(): void
     {
-        [$status, $body] = self::httpGet('/');
+        [$status, $body] = $this->httpGet('/');
         self::assertSame(200, $status);
         preg_match_all('/class="form-card"/', $body, $m);
         self::assertGreaterThanOrEqual(1, count($m[0]), 'Accueil should render at least 1 form card from DB');
@@ -899,7 +897,7 @@ final class HttpRouteTest extends TestCase
     /** Health: exactly 6 system checks. */
     public function testHealthRendersExactly6Checks(): void
     {
-        [$status, $body] = self::httpGet('/?p=health');
+        [$status, $body] = $this->httpGet('/?p=health');
         // 503 is valid (unhealthy), 200 is valid (healthy)
         self::assertContains($status, [200, 503], 'Health returns 200 or 503');
         preg_match_all('/class="check-item"/', $body, $m);
@@ -912,7 +910,7 @@ final class HttpRouteTest extends TestCase
     /** Docs: 3 start-cards, TOC entries, FAQ items. */
     public function testDocsRendersAllSections(): void
     {
-        [$status, $body] = self::httpGet('/?p=docs');
+        [$status, $body] = $this->httpGet('/?p=docs');
         self::assertSame(200, $status);
         preg_match_all('/class="start-card"/', $body, $m);
         self::assertSame(3, count($m[0]), 'Docs should have exactly 3 start-cards');
@@ -926,7 +924,7 @@ final class HttpRouteTest extends TestCase
     /** Changelog: version entries parsed from CHANGELOG.md. */
     public function testChangelogRenders7Versions(): void
     {
-        [$status, $body] = self::httpGet('/?p=changelog');
+        [$status, $body] = $this->httpGet('/?p=changelog');
         self::assertSame(200, $status);
         preg_match_all('/class="version-card"/', $body, $m);
         self::assertGreaterThanOrEqual(7, count($m[0]), 'Changelog should render at least 7 version cards');
@@ -939,7 +937,7 @@ final class HttpRouteTest extends TestCase
     /** Dashboard: 4 stat chips, system health, filter form with 8+ options, admin actions. */
     public function testDashboardRendersCompleteAdminView(): void
     {
-        [$status, $body] = self::httpGet('/?p=dashboard');
+        [$status, $body] = $this->httpGet('/?p=dashboard');
         self::assertSame(200, $status);
         self::assertStringContainsString('Tableau de bord', $body);
         self::assertStringContainsString('État du système', $body, 'Should show system health');
@@ -956,7 +954,7 @@ final class HttpRouteTest extends TestCase
     /** Admin forms: selector, new form panel, import JSON, prompt IA. */
     public function testAdminFormsRendersFormSelector(): void
     {
-        [$status, $body] = self::httpGet('/?p=admin_forms');
+        [$status, $body] = $this->httpGet('/?p=admin_forms');
         self::assertSame(200, $status);
         self::assertStringContainsString('Gestion des formulaires', $body);
         self::assertStringContainsString('Sélectionner un formulaire', $body);
@@ -974,7 +972,7 @@ final class HttpRouteTest extends TestCase
     /** Admin settings: 7 nav sections, SMTP config, security settings. */
     public function testAdminSettingsRendersAllSections(): void
     {
-        [$status, $body] = self::httpGet('/?p=admin_settings');
+        [$status, $body] = $this->httpGet('/?p=admin_settings');
         self::assertSame(200, $status);
         self::assertStringContainsString('Sécurité email', $body, 'Section: security');
         self::assertStringContainsString('SMTP', $body, 'Section: SMTP');
@@ -990,7 +988,7 @@ final class HttpRouteTest extends TestCase
     /** Stats: 3 period tabs, stat cards, performance table. */
     public function testStatsRendersChartsAndTables(): void
     {
-        [$status, $body] = self::httpGet('/?p=stats');
+        [$status, $body] = $this->httpGet('/?p=stats');
         self::assertSame(200, $status);
         self::assertStringContainsString('Par semaine', $body, 'Tab: week');
         self::assertStringContainsString('Par mois', $body, 'Tab: month');
@@ -1003,7 +1001,7 @@ final class HttpRouteTest extends TestCase
     /** My submissions: empty state or cards, form links. */
     public function testMySubmissionsShowsCorrectContent(): void
     {
-        [$status, $body] = self::httpGet('/?p=my_submissions');
+        [$status, $body] = $this->httpGet('/?p=my_submissions');
         self::assertSame(200, $status);
         self::assertStringContainsString('Mes demandes', $body);
         $hasEmpty = str_contains($body, 'encore soumis') || str_contains($body, 'Aucune');
@@ -1014,7 +1012,7 @@ final class HttpRouteTest extends TestCase
     /** My validations: 2 tabs, search bar, stats. */
     public function testMyValidationsRendersTabsAndSearch(): void
     {
-        [$status, $body] = self::httpGet('/?p=my_validations');
+        [$status, $body] = $this->httpGet('/?p=my_validations');
         self::assertSame(200, $status);
         self::assertStringContainsString('Mes validations', $body);
         self::assertStringContainsString('En attente', $body, 'Pending tab');
@@ -1026,7 +1024,7 @@ final class HttpRouteTest extends TestCase
     /** My forms: empty state or form cards. */
     public function testMyFormsShowsCorrectContent(): void
     {
-        [$status, $body] = self::httpGet('/?p=my_forms');
+        [$status, $body] = $this->httpGet('/?p=my_forms');
         self::assertSame(200, $status);
         self::assertStringContainsString('Mes formulaires', $body);
         $hasEmpty = str_contains($body, 'propriétaire') || str_contains($body, 'formulaire');
@@ -1037,7 +1035,7 @@ final class HttpRouteTest extends TestCase
     /** Monitoring: 6 stat cards, audit log, submission table. */
     public function testMonitoringRendersStatsAndAudit(): void
     {
-        [$status, $body] = self::httpGet('/?p=monitoring');
+        [$status, $body] = $this->httpGet('/?p=monitoring');
         self::assertSame(200, $status);
         self::assertStringContainsString('Surveillance', $body);
         self::assertStringContainsString('Soumissions totales', $body, 'Stat card');
@@ -1049,7 +1047,7 @@ final class HttpRouteTest extends TestCase
     /** Backup: 4 cards, DB stats table, danger zones. */
     public function testBackupRendersDbStatsAndActions(): void
     {
-        [$status, $body] = self::httpGet('/?p=backup');
+        [$status, $body] = $this->httpGet('/?p=backup');
         self::assertSame(200, $status);
         self::assertStringContainsString('Statistiques de la base', $body, 'DB stats card');
         self::assertStringContainsString('Télécharger', $body, 'Download button');
@@ -1064,7 +1062,7 @@ final class HttpRouteTest extends TestCase
     /** RGPD: 4 stat minis, 4 forms, legal mentions. */
     public function testRgpdRendersAllSections(): void
     {
-        [$status, $body] = self::httpGet('/?p=rgpd');
+        [$status, $body] = $this->httpGet('/?p=rgpd');
         self::assertSame(200, $status);
         self::assertStringContainsString('RGPD', $body);
         self::assertStringContainsString('Soumissions', $body, 'Stat: submissions');
@@ -1081,7 +1079,7 @@ final class HttpRouteTest extends TestCase
     /** Admin alerts: 4 rules, deadline configs for 8 forms. */
     public function testAdminAlertsRendersRulesAndConfigs(): void
     {
-        [$status, $body] = self::httpGet('/?p=admin_alerts');
+        [$status, $body] = $this->httpGet('/?p=admin_alerts');
         self::assertSame(200, $status);
         self::assertStringContainsString('Alertes', $body);
         self::assertStringContainsString('Script de vérification', $body, 'Script status');
@@ -1093,7 +1091,7 @@ final class HttpRouteTest extends TestCase
     /** Admin access: admin management for super admin. */
     public function testAdminAccessRendersAdminManagement(): void
     {
-        [$status, $body] = self::httpGet('/?p=admin_access');
+        [$status, $body] = $this->httpGet('/?p=admin_access');
         self::assertSame(200, $status);
         self::assertMatchesRegularExpression('/admin/i', $body, 'Admin access should mention admin');
     }
