@@ -30,6 +30,16 @@
 
 ## ✅ Terminé (historique)
 
+### v10.42.20 — LOW issues + warnings/déprécations PHPUnit
+| Tâche | Détail |
+|-------|--------|
+| LOW issues (L-01 à L-15) | Imports inutilisés (2), trailing whitespace (12 fichiers), lignes vides (2 fichiers), style inline → CSS (1 template) |
+| Warnings PHPUnit (5) | `Undefined array key` fixés avec `?? ''` (`ConditionEvaluator`, `BackupRenderer`, `renderValidationHistory`, `renderHeader`, `MySubmissionsRenderer`) |
+| Déprécations PHPUnit (3) | `$http_response_header` → `http_get_last_response_headers()` (`HttpRouteTest.php`, 4 occurrences) |
+| Rector | `self::` → `$this->` (méthodes non-statiques), `!empty()` → `!== []`, `foreach` → `array_any`, `proc_open` param `null` supprimé |
+| Métriques | **Warnings: 0**, **Déprécations: 0** (1419 tests, 4168 assertions) |
+| Vérifications | PHPStan level 8 : 0 erreur ✅, PHPUnit : 0 warning/0 dépréciation ✅, GrumPHP ✅ |
+
 ### v10.42.19 — Audit CTO : corrections MEDIUM + refactor FormRenderer
 | Tâche | Détail |
 |-------|--------|
@@ -358,10 +368,10 @@ Décision projet non négociable : C-04 (display_errors=1) et C-05 (SMTPDebug=3)
 
 **Reste à traiter (HIGH/MEDIUM/LOW) :**
 - ~~H-01 : 13 fichiers > 350 lignes~~ ✅ **TERMINÉ** — 0 fichier > 350 lignes !
-  - Top 5 : FormJsonValidator (347), FormRenderer (345), TokenService (343), WorkflowAdvancer (340), AdminAlertsRenderer (334)
 - ~~H-08 : 45 markTestSkipped~~ ✅ **TERMINÉ** — 42 skips légitimes conservés, `SubmissionViewRenderer` créée
 - ~~CS Fixer : 2 fichiers avec heredoc à réindenter (AdminFormsRenderer, NavigationRenderer)~~ ✅ **TERMINÉ** — v10.42.18
-- 17 MEDIUM + 15 LOW (cf. rapport complet)
+- ~~17 MEDIUM~~ ✅ **TERMINÉ** — v10.42.19 (enum `ValidationResultStatus`, 7 logs audit)
+- ~~15 LOW~~ ✅ **TERMINÉ** — v10.42.20 (imports, whitespace, styles inline, warnings, déprécations)
 
 ### ~~Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)~~ ✅ **TERMINÉ/À JOUR**
 
@@ -464,4 +474,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-08-25 (v10.42.18)_
+_Dernière mise à jour : 2026-08-25 (v10.42.20)_
