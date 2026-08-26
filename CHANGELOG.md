@@ -9,7 +9,8 @@ _Résumé : CI — ajout de dorny/test-reporter pour publier les résultats PHPU
   - Génération du rapport JUnit : `--log-junit junit.xml` dans la commande PHPUnit
   - Upload de l'artifact `junit.xml` (rétention 7 jours)
   - Publication via `dorny/test-reporter@v1` avec `if: always()`
-- **`AGENTS.md`** : documentation de la section "Monitoring CI — dorny/test-reporter"
+  - **Fix** : `reporter: phpunit-junit` (valeur correcte) au lieu de `phpunit`
+- **`AGENTS.md`** : documentation de la section "Monitoring CI — dorny/test-reporter" avec la valeur correcte du reporter
 - **Bénéfice** : les résultats des tests s'affichent dans l'onglet "Checks" des PR avec annotations contextuelles sur les tests échoués
 
 ### 🧪 Vérifications

@@ -192,7 +192,7 @@ Après l'exécution de PHPUnit, ajouter :
   with:
     name: PHPUnit Results
     path: junit.xml
-    reporter: phpunit
+    reporter: phpunit-junit
 ```
 
 ### Pourquoi l'utiliser
