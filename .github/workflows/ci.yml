@@ -7,6 +7,10 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  checks: write
+  pull-requests: write
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -200,7 +204,7 @@ jobs:
           echo "$CI_CONFIG" > config.php
           mkdir -p db
       - name: Run PHPUnit with coverage
-        run: php vendor/bin/phpunit --coverage-clover coverage.xml
+        run: php vendor/bin/phpunit --coverage-clover coverage.xml --log-junit junit.xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
@@ -212,6 +216,19 @@ jobs:
           name: php-coverage
           path: coverage.xml
           retention-days: 7
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        with:
+          name: phpunit-results
+          path: junit.xml
+          retention-days: 7
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: PHPUnit Results
+          path: junit.xml
+          reporter: phpunit
 
   # ── Mutation testing (Infection) ──────────────────────────────
   infection:

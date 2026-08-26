@@ -153,6 +153,66 @@ Après CHAQUE modification de code, TOUJOURS lancer les tests completset vérifi
 
 ---
 
+## Monitoring CI — dorny/test-reporter
+
+La CI GitHub utilise `dorny/test-reporter@v1` pour publier les résultats de tests PHPUnit directement dans les PR.
+
+### Configuration requise (`ci.yml`)
+
+Le job `phpunit` doit générer un rapport JUnit XML :
+
+```yaml
+- name: Run PHPUnit with coverage
+  run: php vendor/bin/phpunit --coverage-clover coverage.xml --log-junit junit.xml
+```
+
+Les permissions suivantes doivent être déclarées en haut du workflow :
+
+```yaml
+permissions:
+  checks: write
+  pull-requests: write
+```
+
+### Publication des résultats
+
+Après l'exécution de PHPUnit, ajouter :
+
+```yaml
+- name: Upload test results
+  uses: actions/upload-artifact@v7
+  with:
+    name: phpunit-results
+    path: junit.xml
+    retention-days: 7
+
+- name: Publish Test Results
+  uses: dorny/test-reporter@v1
+  if: always()
+  with:
+    name: PHPUnit Results
+    path: junit.xml
+    reporter: phpunit
+```
+
+### Pourquoi l'utiliser
+
+- **Visibilité immédiate** : les résultats s'affichent dans l'onglet "Checks" de la PR
+- **Annotations contextuelles** : chaque test échoué pointe vers le fichier et la ligne concernée
+- **Historique** : les artifacts `junit.xml` sont conservés 7 jours pour débogage offline
+- **`if: always()`** : publie les résultats même si les tests échouent (le rapport JUnit est généré dans les deux cas)
+
+### Règle
+
+**Toute modification de la CI qui touche aux tests PHPUnit doit préserver :**
+1. La génération du rapport JUnit (`--log-junit junit.xml`)
+2. L'upload de l'artifact (`actions/upload-artifact@v7`)
+3. La publication via `dorny/test-reporter@v1` avec `if: always()`
+
+Ne pas supprimer ces étapes pour "gagner du temps" — le coût CPU est négligeable, le gain en lisibilité est majeur.
+
+---
+
 ## PHPDoc & PHPStan — Typage strict obligatoire
 
 PHPStan est configuré au **niveau 8** (max) avec `treatPhpDocTypesAsCertain: false`.
