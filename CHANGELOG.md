@@ -1,5 +1,22 @@
 # Changelog — CircuitDémat
 
+## [10.42.20] — 2026-08-26
+_Résumé : CI — ajout de dorny/test-reporter pour publier les résultats PHPUnit dans les PR._
+
+### 🛠 CI — dorny/test-reporter
+- **`.github/workflows/ci.yml`** : 
+  - Ajout des permissions `checks: write` et `pull-requests: write`
+  - Génération du rapport JUnit : `--log-junit junit.xml` dans la commande PHPUnit
+  - Upload de l'artifact `junit.xml` (rétention 7 jours)
+  - Publication via `dorny/test-reporter@v1` avec `if: always()`
+- **`AGENTS.md`** : documentation de la section "Monitoring CI — dorny/test-reporter"
+- **Bénéfice** : les résultats des tests s'affichent dans l'onglet "Checks" des PR avec annotations contextuelles sur les tests échoués
+
+### 🧪 Vérifications
+- GrumPHP (phpstan, rector, deptrac) : ✅
+
+---
+
 ## [10.42.19] — 2026-08-25
 _Résumé : Audit CTO — corrections MEDIUM (magic strings, logs audit) + refactor FormRenderer._
 
