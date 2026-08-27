@@ -14,6 +14,5 @@
     "phpUnit": {
         "configDir": "."
     },
-    "timeout": 10,
-    "executionOrder": "default"
+    "timeout": 10
 }
