@@ -449,3 +449,15 @@ Pour toute nouvelle fonctionnalité impliquant un champ obligatoire, un import/e
 **Pourquoi** : `TokenRepository::create()` était mort en prod mais utilisé par 3 tests `appendToDataJson` qui dépendaient accidentellement de elle. La suppression a cassé ces tests pour une raison sans rapport avec `create()` elle-même — le fix a nécessité de réécrire les tests pour utiliser `createWithRgpd()` + lecture PDO directe.
 
 **Action** : `grep -rn "methodName(" tests/ --include='*.php'` AVANT de supprimer. Si des tests l'utilisent, les adapter à la méthode de remplacement plutôt que de les casser silencieusement.
+
+## Délégation — Règle d'or
+
+Quand tu délègues à un spécialiste (@fixer, @librarian, @explorer, @stagiaire) :
+
+| ✅ BON (objectif) | ❌ MAUVAIS (micro-management) |
+|---|---|
+| "Récupère les scores MSI/MCI du dernier run CI Infection" | "gh run download <id> --name infection-log --dir ." |
+| "Trouve tous les fichiers qui utilisent useState" | "grep -rn 'useState' src/ --include='*.tsx'" |
+| "Vérifie la doc de cette librairie" | "curl https://... | jq ..." |
+
+**Pourquoi :** Les spécialistes savent choisir la méthode optimale (GitHub MCP, grep, websearch, etc.). Donner l'objectif, pas la commande.
