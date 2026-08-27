@@ -228,7 +228,7 @@ jobs:
         with:
           name: PHPUnit Results
           path: junit.xml
-          reporter: phpunit-junit
+          reporter: phpunit
 
   # ── Mutation testing (Infection) ──────────────────────────────
   infection:
