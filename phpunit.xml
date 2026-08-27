@@ -4,7 +4,7 @@
          bootstrap="tests/phpunit_bootstrap.php"
          colors="true"
          stopOnFailure="false"
-         executionOrder="depends,defects">
+         executionOrder="default">
     <testsuites>
         <testsuite name="unit">
             <directory>tests/PHPUnit</directory>
