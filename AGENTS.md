@@ -155,7 +155,7 @@ Après CHAQUE modification de code, TOUJOURS lancer les tests completset vérifi
 
 ## Monitoring CI — dorny/test-reporter
 
-La CI GitHub utilise `dorny/test-reporter@v1` pour publier les résultats de tests PHPUnit directement dans les PR.
+La CI GitHub utilise `dorny/test-reporter@v3` pour publier les résultats de tests PHPUnit directement dans les PR.
 
 ### Configuration requise (`ci.yml`)
 
@@ -187,7 +187,7 @@ Après l'exécution de PHPUnit, ajouter :
     retention-days: 7
 
 - name: Publish Test Results
-  uses: dorny/test-reporter@v1
+  uses: dorny/test-reporter@v3
   if: always()
   with:
     name: PHPUnit Results
@@ -207,7 +207,7 @@ Après l'exécution de PHPUnit, ajouter :
 **Toute modification de la CI qui touche aux tests PHPUnit doit préserver :**
 1. La génération du rapport JUnit (`--log-junit junit.xml`)
 2. L'upload de l'artifact (`actions/upload-artifact@v7`)
-3. La publication via `dorny/test-reporter@v1` avec `if: always()`
+3. La publication via `dorny/test-reporter@v3` avec `if: always()`
 
 Ne pas supprimer ces étapes pour "gagner du temps" — le coût CPU est négligeable, le gain en lisibilité est majeur.
 
