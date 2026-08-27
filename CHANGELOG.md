@@ -1,5 +1,17 @@
 # Changelog — CircuitDémat
 
+## [10.42.21] — 2026-08-27
+_Résumé : CI — corrige dorny/test-reporter (mise à jour @v1 → @v3)._
+
+### 🛠 CI — dorny/test-reporter
+- **`.github/workflows/ci.yml`** :
+  - Le bug `Input variable 'reporter' is set to invalid value 'phpunit-junit'` venait de l'action épinglée à `@v1`, pas de la valeur du reporter
+  - Mise à jour `dorny/test-reporter@v1` → `@v3` (support de `phpunit-junit`)
+  - Revert du fix incorrect (5b1ca58) qui remplaçait `reporter: phpunit-junit` par `reporter: phpunit`
+- **Vérif CI** : job PHPUnit, étape "Publish Test Results" en succès avec `reporter: phpunit-junit`
+
+---
+
 ## [10.42.20] — 2026-08-26
 _Résumé : CI — ajout de dorny/test-reporter pour publier les résultats PHPUnit dans les PR._
 
