@@ -223,12 +223,12 @@ jobs:
           path: junit.xml
           retention-days: 7
       - name: Publish Test Results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: PHPUnit Results
           path: junit.xml
-          reporter: phpunit
+          reporter: phpunit-junit
 
   # ── Mutation testing (Infection) ──────────────────────────────
   infection:
