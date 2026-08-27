@@ -278,18 +278,14 @@ final class AuthService implements AuthInterface
 
     public function isFormOwner(string $formId, ?string $email = null): bool
     {
-        if ($email === null) {
-            $email = $this->getUser();
-        }
+        $email ??= $this->getUser();
         return $this->formRepository->isOwnerByEmail($formId, $email);
     }
 
     /** @return list<array{id: string, label: string, slug: string, actif: int, description: string|null}> */
     public function getOwnedForms(?string $email = null): array
     {
-        if ($email === null) {
-            $email = $this->getUser();
-        }
+        $email ??= $this->getUser();
         return $this->formRepository->findOwnedFormsByEmail($email);
     }
 

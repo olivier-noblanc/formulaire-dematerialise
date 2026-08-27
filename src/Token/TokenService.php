@@ -142,9 +142,7 @@ final readonly class TokenService
             $this->tokenRepository->invalidateActiveBySubmission($submissionId, $now);
 
             $appended = $this->submissionRepository->appendToDataJson($submissionId, function (array $data) use ($now, $cancelledBy): array {
-                if (!isset($data[SubmissionField::VALIDATIONS->value])) {
-                    $data[SubmissionField::VALIDATIONS->value] = [];
-                }
+                $data[SubmissionField::VALIDATIONS->value] ??= [];
                 $data[SubmissionField::VALIDATIONS->value][] = [
                     'step_label' => 'Annulation',
                     'email' => $cancelledBy !== '' ? $cancelledBy : 'system',

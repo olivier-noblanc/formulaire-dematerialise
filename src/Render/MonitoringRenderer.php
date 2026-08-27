@@ -23,9 +23,7 @@ final class MonitoringRenderer
     public static function pageCss(): string
     {
         static $css = null;
-        if ($css === null) {
-            $css = (string) file_get_contents(__DIR__ . '/../../lib/monitoring_page.css');
-        }
+        $css ??= (string) file_get_contents(__DIR__ . '/../../lib/monitoring_page.css');
         return $css;
     }
 
@@ -216,9 +214,7 @@ final class MonitoringRenderer
      */
     private static function loadTemplate(string $filename, array $vars = []): string
     {
-        if (self::$templatesDir === null) {
-            self::$templatesDir = __DIR__ . '/templates/';
-        }
+        self::$templatesDir ??= __DIR__ . '/templates/';
         $filepath = self::$templatesDir . $filename;
         if (!file_exists($filepath)) {
             throw new \RuntimeException("Template not found: {$filepath}");

@@ -18,9 +18,7 @@ final class IndexRenderer
     public static function pageCss(): string
     {
         static $css = null;
-        if ($css === null) {
-            $css = (string) file_get_contents(__DIR__ . '/../../lib/index_page.css');
-        }
+        $css ??= (string) file_get_contents(__DIR__ . '/../../lib/index_page.css');
         return $css;
     }
 

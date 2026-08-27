@@ -23,9 +23,7 @@ final class AdminSettingsRenderer
     public function getPageCss(): string
     {
         static $css = null;
-        if ($css === null) {
-            $css = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_page.css');
-        }
+        $css ??= (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_page.css');
         return $css;
     }
 
@@ -115,9 +113,7 @@ final class AdminSettingsRenderer
     public function renderAfterMain(): string
     {
         static $raw_scripts = null;
-        if ($raw_scripts === null) {
-            $raw_scripts = (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
-        }
+        $raw_scripts ??= (string) file_get_contents(dirname(__DIR__, 2) . '/lib/admin_settings_scripts.js');
         // Remplacer le placeholder par le nonce CSP À CHAQUE APPEL
         // (le nonce change à chaque requête — ne pas le cacher).
         return str_replace(

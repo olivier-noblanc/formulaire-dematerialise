@@ -25,9 +25,7 @@ final class SubmissionViewRenderer
      */
     private function loadTemplate(string $filename, array $vars = []): string
     {
-        if (self::$templatesDir === null) {
-            self::$templatesDir = __DIR__ . '/templates/';
-        }
+        self::$templatesDir ??= __DIR__ . '/templates/';
         $filepath = self::$templatesDir . $filename;
         if (!file_exists($filepath)) {
             throw new \RuntimeException("Template not found: {$filepath}");

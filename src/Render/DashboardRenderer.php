@@ -21,9 +21,7 @@ final class DashboardRenderer
     public static function pageCss(): string
     {
         static $css = null;
-        if ($css === null) {
-            $css = (string) file_get_contents(__DIR__ . '/../../lib/dashboard_page.css');
-        }
+        $css ??= (string) file_get_contents(__DIR__ . '/../../lib/dashboard_page.css');
         return $css;
     }
 
