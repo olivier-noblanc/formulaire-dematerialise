@@ -1,5 +1,20 @@
 # Changelog — CircuitDémat
 
+## [10.42.22] — 2026-08-27
+_Résumé : Corrections Infection — Rector, retrait d'une propriété de `executionOrder` invalide, job rendu bloquant._
+
+### Fixes
+- Rector : apply IfToNullCoalescingAssignRector sur 7 fichiers (AuthService, Renderers, TokenService)
+- Infection : retirer `executionOrder` de `infection.json` (propriété invalide, rejetée par le schéma)
+- CI : rendre le job Infection bloquant (retirer `|| true` et `continue-on-error`)
+
+### Notes
+- Le job Infection échouait à cause d'une propriété JSON invalide (`executionOrder` n'existe pas dans le schéma Infection)
+- La cause racine de l'exit 143 (SIGTERM à 4%) reste à investiguer (probable OOM ou timeout)
+- `phpunit.xml` contrôle déjà l'ordre des tests via `executionOrder="depends"`
+
+---
+
 ## [10.42.21] — 2026-08-27
 _Résumé : CI — corrige dorny/test-reporter (mise à jour @v1 → @v3)._
 
