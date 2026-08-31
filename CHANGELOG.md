@@ -1,5 +1,20 @@
 # Changelog — CircuitDémat
 
+## [10.42.23] — 2026-08-31
+_Résumé : Fix CI Infection — cause racine de l'exit 143 (SIGTERM) trouvée et corrigée._
+
+### Fixes
+- **Infection (CI)** : la cause racine de l'exit 143 (SIGTERM à ~4% du run initial) est **identifiée** : Infection 0.35.2 stoppe son run initial PHPUnit (SIGTERM → 143) dès la **1ʳᵉ ligne écrite sur STDERR** (`src/Process/Runner/InitialTestsRunner.php`)
+- Notre suite écrivait 33 lignes sur STDERR via `error_log()` pendant les tests (traces `[SECURITY]`, `[AUDIT]`, mails dry-run, audits...) — la 1ʳᵉ (`[SECURITY] test_event...` d'`AuditLogServiceTest` au ~61ᵉ test en ordre default) déclenchait le stop → run tué
+- **Correctif** : redirect `error_log()` vers un fichier temporaire (pas stderr) dans `tests/phpunit_bootstrap.php` — préserve toutes les traces d'audit/sécurité tout en libérant STDERR pour le run Infection. Vérifié : stderr passe de 33 lignes à 0, run initial 1419 tests OK
+- **Hygiène** : ajouter `/ .infection/` au `.gitignore` (tmpDir Infection régénéré à chaque run)
+
+### Notes
+- L'hypothèse OOM/timeout de [10.42.22] est **écartée** — le mécanisme réel est le stop-on-STDERR d'Infection
+- Reproduction locale : `php vendor/bin/phpunit` avec le config Infecté-équivalent → stderr séparé mesuré avant/après fix
+
+---
+
 ## [10.42.22] — 2026-08-27
 _Résumé : Corrections Infection — Rector, retrait d'une propriété de `executionOrder` invalide, job rendu bloquant._
 

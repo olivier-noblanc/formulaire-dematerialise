@@ -25,6 +25,7 @@
 # Fichiers temporaires et cache
 /tmp/
 /cache/
+/.infection/
 *.tmp
 *.log
 *.log.err

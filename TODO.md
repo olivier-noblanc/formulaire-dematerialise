@@ -5,7 +5,7 @@
 | Métrique | Valeur |
 |----------|--------|
 | Tests | **1419** (0 fail, 0 errors) |
-| Assertions | **4164** |
+| Assertions | **4168** |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |

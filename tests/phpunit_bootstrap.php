@@ -6,6 +6,13 @@
  * without hitting a real SMTP server or requiring CSRF tokens.
  */
 
+// Redirect error_log() to a file instead of STDERR. Infection 0.35.2 stops its
+// initial PHPUnit run (SIGTERM -> exit 143) on the FIRST STDERR line. Our suite
+// calls error_log() during tests (security/audit traces, dry-run mails, ...);
+// routing them to a file keeps every trace but frees STDERR so the Infection
+// initial run completes on CI.
+ini_set('error_log', sys_get_temp_dir() . '/phpunit-' . getmypid() . '.log');
+
 // Set test mode headers BEFORE any application code loads
 $_SERVER['HTTP_X_TEST_MODE'] = '1';
 $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
