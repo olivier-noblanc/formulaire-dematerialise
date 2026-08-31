@@ -242,7 +242,10 @@ jobs:
         with:
           php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
-          coverage: pcov # pcov est plus rapide que xdebug pour infection
+          # xdebug plutôt que pcov : les tests initiaux d'Infection se
+          # terminent par un SIGTERM (exit 143) déterministe sous pcov +
+          # PHP 8.5.x sur les runners Linux (voir CHANGELOG 2026-08-31).
+          coverage: xdebug
       - name: Cache composer
         uses: actions/cache@v6
         with:
