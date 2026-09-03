@@ -15,7 +15,7 @@ foreach ($delegations as $delegation) {
     $step_label = \App\Core\App::html()->escape((string) ($delegation['step_label'] ?? ''));
     $from       = \App\Core\App::html()->escape((string) ($delegation['from_email'] ?? ''));
     $to         = \App\Core\App::html()->escape((string) ($delegation['to_email'] ?? ''));
-    $date       = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($delegation['delegated_at'] ?? 'now'))));
+    $date       = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($delegation['delegated_at'] ?? 'now')));
 
     $reason_html = '';
     if ((bool) ($delegation['reason'])) {

@@ -25,7 +25,7 @@ if (in_array($audit_logs, ['', null, '0'], true)) {
 } else {
     $rows = '';
     foreach ($audit_logs as $audit_log) {
-        $date   = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string) ($audit_log['created_at'] ?? 'now'))));
+        $date   = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($audit_log['created_at'] ?? 'now')));
         $action = \App\Core\App::html()->escape((string) ($audit_log['action'] ?? ''));
         $actor  = \App\Core\App::html()->escape((string) ($audit_log['actor'] ?? ''));
         $target = \App\Core\App::html()->escape((string) ($audit_log['target'] ?? ''));

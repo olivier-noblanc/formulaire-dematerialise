@@ -120,9 +120,9 @@ final class SubmissionViewController extends BaseController
   <div class="card">
     <h2><?= \App\Core\App::html()->escape($sub['form_label']) ?></h2>
     <p class="u-c-muted-fs-sm">
-      Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime($sub['submitted_at'] ?? 'now'))) ?>
+      Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($sub['submitted_at'] ?? 'now'))) ?>
       <?php if ($sub['closed_at'] !== null && $sub['closed_at'] !== ''): ?>
-        — Clôturé le <?= \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime($sub['closed_at']))) ?>
+        — Clôturé le <?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $sub['closed_at'])) ?>
       <?php endif; ?>
     </p>
     <p><strong>Statut :</strong> <span class="badge <?= $status === SubmissionStatus::Valide->value ? 'badge-ok' : ($status === SubmissionStatus::Refuse->value ? 'badge-err' : ($status === SubmissionStatus::Annule->value ? 'badge-annule' : 'badge-warn')) ?>"><?= \App\Core\App::html()->escape($status) ?></span></p>
@@ -161,7 +161,7 @@ final class SubmissionViewController extends BaseController
         <tr>
           <td><?= \App\Core\App::html()->escape($att['original_name']) ?></td>
           <td><?= \App\Core\App::html()->escape(format_bytes((int) $att['file_size'])) ?></td>
-          <td><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($att['uploaded_at']))) ?></td>
+          <td><?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $att['uploaded_at'])) ?></td>
           <td>
             <a href="index.php?p=download&id=<?= urlencode((string) ($att['id'] ?? '')) ?>" class="btn btn-secondary u-fs-xxs-p-xxs">Télécharger</a>
           </td>

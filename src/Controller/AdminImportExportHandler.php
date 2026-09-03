@@ -39,6 +39,10 @@ final class AdminImportExportHandler
                 'description' => $form_data['description'] ?? '',
                 'actif' => (int) $form_data['actif'],
                 'deadline_field' => $form_data['deadline_field'] ?? '',
+                // B-FIX3a (2026-09-01) : config de relance per-form — sans elle
+                // l'export perdait la configuration (défauts 48 h / 3 à la relecture)
+                'relance_delai_h' => $form_data['relance_delai_h'] === null ? null : (int) $form_data['relance_delai_h'],
+                'relance_max' => $form_data['relance_max'] === null ? null : (int) $form_data['relance_max'],
             ],
             'fields' => [],
             'steps' => [],
@@ -116,7 +120,7 @@ final class AdminImportExportHandler
             $validation_html = '<div class="msg-success" role="status" aria-live="polite">✓ JSON valide (l\'import fonctionnera), mais avec des avertissements :</div>';
             $validation_html .= \App\Forms\FormJsonValidator::formatResults($result);
         } else {
-            $validation_html = '<div class="msg-error" role="alert" aria-live="assertive" class="u-mb-025">✗ JSON invalide — l\'import échouerait. Corrigez les erreurs ci-dessous :</div>';
+            $validation_html = '<div class="msg-error u-mb-025" role="alert" aria-live="assertive">✗ JSON invalide — l\'import échouerait. Corrigez les erreurs ci-dessous :</div>';
             $validation_html .= \App\Forms\FormJsonValidator::formatResults($result);
         }
         return ['validation_html' => $validation_html, 'preserved_json' => $json_input];
@@ -153,12 +157,17 @@ final class AdminImportExportHandler
             $slug = \generate_slug($label);
             $desc = $data['form']['description'] ?? '';
             $deadline = $data['form']['deadline_field'] ?? '';
+            // B-FIX3b (2026-09-01) : restaurer la config de relance si présente
+            $relance_delai = $data['form']['relance_delai_h'] ?? null;
+            $relance_max = $data['form']['relance_max'] ?? null;
 
             $new_id = $repo->create([
                 'label' => $label,
                 'slug' => $slug,
                 'description' => $desc,
                 'deadline_field' => $deadline,
+                'relance_delai_h' => (is_numeric($relance_delai) && (int) $relance_delai > 0) ? (int) $relance_delai : null,
+                'relance_max' => (is_numeric($relance_max) && (int) $relance_max >= 0) ? (int) $relance_max : null,
             ]);
 
             if (isset($data['fields']) && $data['fields'] !== []) {
@@ -208,10 +217,14 @@ final class AdminImportExportHandler
                         $op_imp = (string) ($raw_cond_import['op'] ?? '');
                         $valid_ops = \App\Workflow\ConditionEvaluator::VALID_OPS;
                         if (isset($raw_cond_import['field']) && $raw_cond_import['field'] !== '' && in_array($op_imp, $valid_ops, true)) {
+                            // B-FIX3c (2026-09-01) : l'op "in" peut porter une value tableau
+                            // (liste de valeurs) — la préserver telle quelle, sinon le cast
+                            // (string) produisait "Array" en base
+                            $raw_value_imp = $raw_cond_import['value'] ?? '';
                             $encoded = json_encode([
                                 'field' => (string) $raw_cond_import['field'],
                                 'op'    => $op_imp,
-                                'value' => (string) ($raw_cond_import['value'] ?? ''),
+                                'value' => is_array($raw_value_imp) ? $raw_value_imp : (string) $raw_value_imp,
                             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                             if ($encoded !== false) {
                                 $cond_db = $encoded;

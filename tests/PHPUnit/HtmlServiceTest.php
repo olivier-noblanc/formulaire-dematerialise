@@ -470,4 +470,51 @@ final class HtmlServiceTest extends TestCase
     {
         self::assertSame('🖼️', $this->service->getFileIcon('image/gif'));
     }
+
+    // ── formatDateTimeFr() — source unique du formatage des dates SQL ──
+
+    public function testFormatDateTimeFrNullReturnsEmpty(): void
+    {
+        self::assertSame('', $this->service->formatDateTimeFr(null));
+    }
+
+    public function testFormatDateTimeFrEmptyStringReturnsEmpty(): void
+    {
+        // Amélioration vs date('d/m/Y à H:i', (int) strtotime('')) qui
+        // affichait « 01/01/1970 à 01:00 » sur une date vide.
+        self::assertSame('', $this->service->formatDateTimeFr(''));
+    }
+
+    public function testFormatDateTimeFrSqlDatetimeFormatsFrench(): void
+    {
+        // Format SQLite datetime('now') : 'YYYY-MM-DD HH:MM:SS'
+        self::assertSame('15/01/2024 à 10:30', $this->service->formatDateTimeFr('2024-01-15 10:30:00'));
+    }
+
+    public function testFormatDateTimeFrSecondsLess(): void
+    {
+        self::assertSame('01/09/2026 à 08:45', $this->service->formatDateTimeFr('2026-09-01 08:45'));
+    }
+
+    // ── formatRelanceSuffix() ───────────────────────────────────
+
+    public function testFormatRelanceSuffixZeroReturnsEmpty(): void
+    {
+        self::assertSame('', $this->service->formatRelanceSuffix(0));
+    }
+
+    public function testFormatRelanceSuffixNegativeReturnsEmpty(): void
+    {
+        self::assertSame('', $this->service->formatRelanceSuffix(-1));
+    }
+
+    public function testFormatRelanceSuffixOneIsSingular(): void
+    {
+        self::assertSame(' — 1 rappel envoyé', $this->service->formatRelanceSuffix(1));
+    }
+
+    public function testFormatRelanceSuffixTwoIsPlural(): void
+    {
+        self::assertSame(' — 2 rappels envoyés', $this->service->formatRelanceSuffix(2));
+    }
 }

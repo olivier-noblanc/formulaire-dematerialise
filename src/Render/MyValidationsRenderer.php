@@ -97,7 +97,7 @@ final class MyValidationsRenderer
                 if (SubmissionData::has($data, SubmissionField::AFFECTATION)) {
                     $html .= ' — ' . $htmlService->escape(SubmissionData::get($data, SubmissionField::AFFECTATION));
                 }
-                $html .= '<br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($pendingToken['submitted_at'] ?? '')))) . "\n";
+                $html .= '<br>Soumis le ' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($pendingToken['submitted_at'] ?? ''))) . "\n";
                 if ($pendingToken['relance_count'] > 0) {
                     $html .= '<br><span class="text-warning">Relance(s) : ' . (int) $pendingToken['relance_count'] . '</span>' . "\n";
                 }
@@ -208,13 +208,13 @@ final class MyValidationsRenderer
                 $html .= '      <div class="vc-title">' . $htmlService->escape($doneToken['form_label']) . ' — ' . $htmlService->escape($doneToken['step_label']) . '</div>' . "\n";
                 $html .= '      <div class="vc-meta">' . "\n";
                 $html .= '        Agent : <strong>' . $nomAgent . '</strong>' . "\n";
-                $html .= '        <br>Soumis le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($doneToken['submitted_at'] ?? '')))) . "\n";
+                $html .= '        <br>Soumis le ' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($doneToken['submitted_at'] ?? ''))) . "\n";
                 $html .= '      </div>' . "\n";
                 $html .= '    </div>' . "\n";
                 $html .= '    <span class="badge ' . $actionCls . '">' . $actionLabel . '</span>' . "\n";
                 $html .= '  </div>' . "\n";
                 $html .= '  <div class="vc-body">' . "\n";
-                $html .= '    <div class="done-info">Traitée le <strong>' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($doneToken['done_at'] ?? '')))) . '</strong></div>' . "\n";
+                $html .= '    <div class="done-info">Traitée le <strong>' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($doneToken['done_at'] ?? ''))) . '</strong></div>' . "\n";
                 $html .= '    <div class="done-date">Délai de traitement : ' . self::formatDelay((string) ($doneToken['done_at'] ?? ''), (string) ($doneToken['sent_at'] ?? '')) . '</div>' . "\n";
                 $html .= '  </div>' . "\n";
                 $html .= '</div>' . "\n";

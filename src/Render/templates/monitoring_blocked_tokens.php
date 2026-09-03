@@ -8,7 +8,7 @@ if ($tokens_bloques === []) {
         $ordre        = (int) $token_bloque['ordre'];
         $step_label   = \App\Core\App::html()->escape((string) $token_bloque['step_label']);
         $email        = \App\Core\App::html()->escape((string) $token_bloque['email']);
-        $sent_at      = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string) $token_bloque['sent_at'])));
+        $sent_at      = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $token_bloque['sent_at']));
         $relance      = (int) $token_bloque['relance_count'];
         $expires      = $token_bloque['expires_at']
             ? \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $token_bloque['expires_at'])))

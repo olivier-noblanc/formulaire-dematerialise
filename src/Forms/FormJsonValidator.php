@@ -247,8 +247,19 @@ final class FormJsonValidator
                         if (!is_string($cond_op) || !in_array($cond_op, $valid_ops_json, true)) {
                             $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn(string $o): string => "\"$o\"", $valid_ops_json)) . '. Trouvé : ' . json_encode($cond_op);
                         }
-                        if (isset($raw_cond['value']) && !is_string($raw_cond['value'])) {
-                            $warnings[] = "$prefix.condition.value devrait être une chaîne. Trouvé : " . gettype($raw_cond['value']);
+                        if (isset($raw_cond['value'])) {
+                            // B-FIX3c (2026-09-01) : value chaîne OU tableau de scalaires
+                            // (l'op "in" supporte les deux — cf. ConditionEvaluator)
+                            if (is_array($raw_cond['value'])) {
+                                foreach ($raw_cond['value'] as $v) {
+                                    if (!is_string($v) && !is_numeric($v)) {
+                                        $warnings[] = "$prefix.condition.value doit être une chaîne ou un tableau de chaînes/scalaires (op \"in\"). Élément invalide : " . json_encode($v);
+                                        break;
+                                    }
+                                }
+                            } elseif (!is_string($raw_cond['value'])) {
+                                $warnings[] = "$prefix.condition.value devrait être une chaîne ou un tableau de chaînes (op \"in\"). Trouvé : " . gettype($raw_cond['value']);
+                            }
                         }
                     } elseif (is_string($raw_cond)) {
                         $decoded_cond = json_decode($raw_cond, true);
@@ -302,7 +313,7 @@ final class FormJsonValidator
         $html = '';
 
         if ($result['errors'] !== []) {
-            $html .= '<div class="msg-error" role="alert" aria-live="assertive" class="u-mb-05"><strong>' . count($result['errors']) . ' erreur(s)</strong> bloquante(s) :';
+            $html .= '<div class="msg-error u-mb-05" role="alert" aria-live="assertive"><strong>' . count($result['errors']) . ' erreur(s)</strong> bloquante(s) :';
             $html .= '<ul class="u-fs-sm-ml-12-mt-05">';
             foreach ($result['errors'] as $e) {
                 $html .= '<li>' . \App\Core\App::html()->escape($e) . '</li>';
@@ -311,7 +322,7 @@ final class FormJsonValidator
         }
 
         if ($result['warnings'] !== []) {
-            $html .= '<div class="msg-warning" role="status" aria-live="polite" class="u-mb-05-p-075-bg-warn"><strong>' . count($result['warnings']) . ' avertissement(s)</strong> (non bloquant) :';
+            $html .= '<div class="msg-warning u-mb-05-p-075-bg-warn" role="status" aria-live="polite"><strong>' . count($result['warnings']) . ' avertissement(s)</strong> (non bloquant) :';
             $html .= '<ul class="u-fs-sm-ml-12-mt-05">';
             foreach ($result['warnings'] as $w) {
                 $html .= '<li>' . \App\Core\App::html()->escape($w) . '</li>';

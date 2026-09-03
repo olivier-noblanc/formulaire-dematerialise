@@ -1,5 +1,44 @@
 # Changelog — CircuitDémat
 
+## [10.42.25] — 2026-09-01
+_Résumé : Fix gate étape 7 — fixtures de non-régression Bug01/Bug03 désynchronisées du domaine email réel (`dreets.gouv.fr`). Tests rendus idempotents et indépendants des données résiduelles. Aucune modification du code métier._
+
+### 🛠 Corrections tests de non-régression
+- **Bug01_EndifFormControllerTest** : identité de test dérivée de la configuration réelle (`AUTH_USER='DREETS\test-bug01'` → `AuthService::getUser()` → domaine `SETTINGS_DEFAULTS['email_domain']`) — l'hypothèse périmée `exemple.invalid` rendait le nettoyage inopérant (soumission résiduelle du 06/08/2026 → garde anti-doublon confirmDuplicate à chaque run). Nettoyage pré + post-exécution, enfants puis parent (`tokens`, `submission_validator_data`, `attachments`, puis `submissions`) ; scénario exécuté 2× pour prouver l'idempotence.
+- **Bug03_NestedFormsTest** : compte admin dérivé de la DB réelle (premier email de `admins`, `ORDER BY email LIMIT 1`) — plus d'`admin@ci.test` hardcodé (inexistant → « Accès refusé »). Fixture admin temporaire créée puis supprimée dans le sous-processus si la table est vide.
+
+### 🧪 Vérifications
+- `php tests/regression/run_all.php` : **17/17 PASS, exit 0** — deux exécutions consécutives (idempotence globale)
+- Résidu DB nettoyé : soumission orpheline `44b2baf6…` (test-bug01@dreets.gouv.fr) supprimée par le pré-clean, 0 résidu `test-bug01*`, table `admins` inchangée (2 admins)
+- Gate finale avant commit : PHPUnit **1455 tests / 4261 assertions OK** (0 fail, 0 error — 1453/4254 de [10.42.24] + 2 tests d'idempotence Bug01/Bug03), PHPStan level 8 **0 erreur** (`--memory-limit=512M`)
+
+## [10.42.24] — 2026-09-01
+_Résumé : Audit hors sécurité — corrections B-FIX1 à B-FIX5 (validation de soumission, import/export JSON, export CSV) + fix shipmonk.deadMethod ExportService. 29 fichiers suivis modifiés, non commités au moment de cette documentation (28 à la validation finale, ExportServiceMutationTest ajouté par le fix deadMethod)._
+
+### 🛠 Corrections d'audit (hors sécurité)
+- **B-FIX1 (`src/Controller/FormValidationHandler.php`)** : `'0'` est une valeur légitime pour un champ obligatoire (option de select, champ texte) — la validation required échoue uniquement sur valeur vide, clé POST absente ou whitespace seul
+- **B-FIX2 (`FormValidationHandler` + `src/Forms/FormJsonValidator.php`)** : les champs conditionnels masqués côté client ne sont pas soumis à required ; l'opérateur `in` accepte une value chaîne OU tableau de scalaires (liste préservée)
+- **B-FIX3a/b/c (`src/Controller/AdminImportExportHandler.php` + `src/Repository/FormRepository.php`)** : l'export JSON embarque la config de relance per-form (`relance_delai_h`, `relance_max`) et l'import la restaure (fallback 48h/3 si absente) ; import bloqué si opérateur de condition inconnu
+- **B-FIX4 (`src/Export/ExportService.php` + `FormRepository`)** : la conversion CSV `'1'→Oui` / `'0'/''→Non` ne s'applique qu'aux champs checkbox — nouvelle méthode `FormRepository::getCheckboxFieldNames()` ; les valeurs textes/select valant `'1'` ou `'0'` restent inchangées
+- **B-FIX5 (`ExportService`)** : export CSV en streaming réel — `csvChunks()` (générateur, batch de 500) consommé chunk par chunk dans `exportCsv()`, plus d'accumulation de l'export complet en mémoire
+
+### 🔧 Fix PHPStan shipmonk.deadMethod
+- **`src/Export/ExportService.php`** : suppression de `generateCsvString()` — morte en production depuis B-FIX5 (0 appelant : `exportCsv()` streame directement `csvChunks()`). `csvChunks()` passe en public (défaut `[]`) et devient l'API de l'export ; 27 sites de tests adaptés (`ExportServiceTest`, `ExportServiceMutationTest`) pour consommer le vrai flux streamé `implode('', iterator_to_array($service->csvChunks(...)))`
+- **Régression ajoutée** : `testCsvChunksIsPublicAndYieldsStringChunks` + `testCsvChunksYieldsBomThenHeaderChunksInOrder` (BOM en 1er chunk, en-tête en 2e, chunks strings) — cycle TDD vérifié (RED privé → GREEN public)
+
+### 🧪 Nouveaux tests (17)
+- `tests/PHPUnit/AdminImportExportTest.php` (NOUVEAU, 7 tests) : export/import round-trip avec relance per-form, valeur conditionnelle en tableau, import bloqué sur opérateur inconnu, defaults sans relance
+- `tests/PHPUnit/FormValidationHandlerTest.php` (NOUVEAU, 9 tests) : `'0'` passe required, vide/absent/whitespace échouent, champ conditionnel masqué skippé, filtre `in` list-preserving
+- `tests/PHPUnit/NoDuplicateHtmlAttributesTest.php` (NOUVEAU, 1 test) : pas d'attributs HTML dupliqués dans le rendu généré
+- Adaptés : `ExportServiceTest` (transformValue checkbox B-FIX4 + flux csvChunks), `HtmlServiceTest` (formatDateTimeFr/formatRelanceSuffix null/empty/singulier/pluriel), `tests/regression/Bug08_NoIsoDatesTest.php`
+
+### 🧪 Vérifications
+- PHPUnit (run complète locale 2026-09-01, après fix deadMethod) : **1453 tests / 4254 assertions, OK** (0 fail, 0 error) — état audit mesuré avant fix : 1451 tests / 4234 assertions
+- PHPStan level 8 (run complète) : **0 erreur** ✅ — `shipmonk.deadMethod ExportService::generateCsvString` résolu
+- État git : **29 fichiers suivis modifiés en attente de commit** (27 code/tests + CHANGELOG.md + TODO.md), 3 fichiers de tests non suivis (AdminImportExportTest, FormValidationHandlerTest, NoDuplicateHtmlAttributesTest), 1 fichier hors périmètre non suivi (`edenai-opencode-routing-options.md`)
+
+---
+
 ## [10.42.23] — 2026-08-31
 _Résumé : Fix CI Infection — cause racine de l'exit 143 (SIGTERM) trouvée et corrigée._
 

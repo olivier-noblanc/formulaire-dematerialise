@@ -130,7 +130,7 @@ final class AdminAccessController extends BaseController
   <div class="card">
     <h2><?= ($confirmAction ?? 'approve') === 'reject' ? 'Confirmer le refus' : 'Confirmer l\'approbation' ?></h2>
     <p><?= ($confirmAction ?? 'approve') === 'reject' ? 'Refuser' : 'Approuver' ?> la demande d'accès de <strong><?= \App\Core\App::html()->escape($confirmData['email']) ?></strong> ?</p>
-    <p class="u-c-muted-fs-sm">Demande créée le <?= \App\Core\App::html()->escape($confirmData['created_at']) ?></p>
+    <p class="u-c-muted-fs-sm">Demande créée le <?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $confirmData['created_at'])) ?></p>
     <div class="u-mt-1-d-flex-gap-05">
       <form method="POST">
         <?= $this->security->csrfField() ?>
@@ -171,7 +171,7 @@ final class AdminAccessController extends BaseController
     <div class="u-d-flex-jc-between-ai-center-p-075">
       <div>
         <strong><?= \App\Core\App::html()->escape($pendingRequest['email']) ?></strong>
-        <div class="u-c-muted-555-fs-xs">Demandé le <?= \App\Core\App::html()->escape($pendingRequest['requested_at']) ?></div>
+        <div class="u-c-muted-555-fs-xs">Demandé le <?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $pendingRequest['requested_at'])) ?></div>
       </div>
       <div class="u-d-flex-gap-05">
         <form method="POST" class="u-d-inline">

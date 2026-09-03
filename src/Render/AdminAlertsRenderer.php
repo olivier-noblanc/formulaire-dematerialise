@@ -48,10 +48,11 @@ final class AdminAlertsRenderer
             $checkTs = strtotime($lastAlertCheck);
             $checkAge = ($checkTs !== false) ? (time() - $checkTs) : 999999;
             $checkOk = $checkAge < 86400;
+            $lastCheckFormatted = \App\Core\App::html()->formatDateTimeFr($lastAlertCheck);
 
             $html .= '      <div class="script-status">' . "\n";
             $html .= '        <span class="health-dot ' . ($checkOk ? 'health-ok' : 'health-warn') . '"></span>' . "\n";
-            $html .= '        Dernière exécution : <strong>' . $h(date('d/m/Y à H:i', $checkTs !== false ? $checkTs : 0)) . '</strong>' . "\n";
+            $html .= '        Dernière exécution : <strong>' . $h($lastCheckFormatted !== '' ? $lastCheckFormatted : '—') . '</strong>' . "\n";
             if (!$checkOk) {
                 $html .= '          <span class="badge badge-warn u-mar"><span aria-hidden="true">⚠</span> Dernière exécution il y a plus de 24h</span>' . "\n";
             } else {
@@ -300,7 +301,7 @@ final class AdminAlertsRenderer
             $html .= '        <tbody>' . "\n";
             foreach ($alertLogs as $alertLog) {
                 $html .= '          <tr>' . "\n";
-                $html .= '            <td class="u-fon-whi">' . $h(date('d/m/Y H:i', (int) strtotime((string) ($alertLog['sent_at'] ?? '')))) . '</td>' . "\n";
+                $html .= '            <td class="u-fon-whi">' . $h(\App\Core\App::html()->formatDateTimeFr((string) ($alertLog['sent_at'] ?? ''))) . '</td>' . "\n";
                 $html .= '            <td><span class="badge badge-info">' . $h($alertLog['rule_label'] ?? 'Règle supprimée') . '</span></td>' . "\n";
                 $html .= '            <td>' . $h($alertLog['form_label']) . '</td>' . "\n";
                 $html .= '            <td class="u-fon">' . $h((string) ($alertLog['message'] ?? '')) . '</td>' . "\n";

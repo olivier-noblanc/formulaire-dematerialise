@@ -18,6 +18,15 @@ declare(strict_types=1);
  *
  * Fichier : tests/regression/Bug03_NestedFormsTest.php
  *
+ * Stratégie admin (mise à jour) :
+ *  - Le compte admin est DÉRIVÉ de la DB réelle au moment du run
+ *    (premier email de la table `admins`) — aucune identité personnelle
+ *    codée en dur. L'ancienne hypothèse « admin@ci.test » ne correspond
+ *    à aucun admin existant → page « Accès refusé » → test inopérant.
+ *  - Si la table `admins` est vide (environnement vierge), une fixture
+ *    temporaire est créée dans le sous-processus puis supprimée dans le
+ *    même run : le test reste autonome et sans effet de bord.
+ *
  * @package tests\regression
  */
 
@@ -29,10 +38,6 @@ require_once __DIR__ . '/_subprocess_helper.php';
  * @return bool True si succès, false si échec.
  */
 function run_bug03_test(): bool {
-    // Admin principal en DB : admin@ci.test
-    // (doit être admin pour passer require_admin() dans admin_settings.php)
-    $admin_email = 'admin@ci.test';
-
     // Corps du sous-processus : on inclut admin_settings.php comme le
     // ferait un require en tête de page, en capturant le HTML rendu.
     // Note : admin_settings.php fait `echo render_page(...)` — on capture
@@ -43,16 +48,34 @@ $_SERVER["REQUEST_METHOD"] = "GET";
 $_SERVER["REQUEST_URI"]    = "/index.php?p=admin_settings";
 $_SERVER["SCRIPT_NAME"]    = "/index.php?p=admin_settings";
 
+// ── Compte admin dérivé de la DB réelle (aucun hardcode) ──
+$pdo = get_pdo();
+$stmt = $pdo->query("SELECT email FROM admins ORDER BY email LIMIT 1");
+$admin_email = $stmt ? $stmt->fetchColumn() : false;
+$stmt = null;
+$temp_admin_created = false;
+if (!$admin_email) {
+    // Fixture temporaire : créée puis supprimée dans ce même sous-processus.
+    $admin_email = 'bug03-temp-admin@' . \App\Core\App::auth()->getEmailDomain();
+    $pdo->prepare("INSERT INTO admins (id, email, added_at) VALUES (?, ?, datetime('now'))")
+        ->execute([bin2hex(random_bytes(16)), $admin_email]);
+    $temp_admin_created = true;
+}
+$_SERVER["AUTH_USER"] = $admin_email;
+
 ob_start();
 try {
     // admin_settings.php migré vers AdminSettingsController — l'utilisateur
-    // courant doit être admin. On s'est arrangé pour que AUTH_USER pointe
-    // sur l'admin principal.
+    // courant doit être admin (AUTH_USER pointe sur un admin réel de la DB).
     $controller = new \App\Controller\AdminSettingsController();
     $controller->handle();
     $html = ob_get_clean();
 } catch (\Throwable $e) {
     $html = ob_get_clean() . "\n__EXCEPTION__:" . $e->getMessage() . "\n" . $e->getTraceAsString();
+}
+
+if ($temp_admin_created) {
+    $pdo->prepare("DELETE FROM admins WHERE email = ?")->execute([$admin_email]);
 }
 
 echo $html;
@@ -61,7 +84,6 @@ PHP;
     $r = run_regression_script(
         $script_body,
         [
-            'AUTH_USER'      => $admin_email,
             'REQUEST_METHOD' => 'GET',
         ]
     );
@@ -69,7 +91,7 @@ PHP;
     $html = $r['stdout'];
 
     // Vérifier qu'il n'y a pas d'exception
-    if (strpos($html, '__EXCEPTION__') !== false) {
+    if (str_contains($html, '__EXCEPTION__')) {
         echo "  ❌ Bug03 — Une exception a été levée pendant le rendu de admin_settings.php\n";
         echo "     " . substr($html, strpos($html, '__EXCEPTION__'), 1500) . "\n";
         if (!empty($r['stderr'])) {
@@ -79,7 +101,7 @@ PHP;
     }
 
     // Vérifier qu'on a bien atteint la page (au moins un <form>)
-    if (strpos($html, '<form') === false) {
+    if (!str_contains($html, '<form')) {
         echo "  ❌ Bug03 — Aucun <form> trouvé dans le HTML rendu. Probablement un accès refusé ou une erreur.\n";
         echo "     HTML (extrait) : " . substr($html, 0, 1000) . "\n";
         return false;

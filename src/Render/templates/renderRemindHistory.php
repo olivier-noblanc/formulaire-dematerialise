@@ -20,13 +20,13 @@ if ($pending_with_relance !== [] || ($status === \App\Enum\SubmissionStatus::EnC
 
             $sent_html = '';
             if ((bool) ($pending_token['sent_at'])) {
-                $sent_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['sent_at'])));
+                $sent_date = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $pending_token['sent_at']));
                 $sent_html = "<span class=\"u-c-muted-fs-xs\">Notifié le : {$sent_date}</span>";
             }
 
             $last_remind = '';
             if ((bool) ($pending_token['relance_at'])) {
-                $last_remind_date = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) $pending_token['relance_at'])));
+                $last_remind_date = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $pending_token['relance_at']));
                 $last_remind = "<span class=\"u-c-warning-fs-xs\">Dernière relance : {$last_remind_date}</span>";
             }
 
@@ -66,7 +66,7 @@ if ($submission_reminds !== []) {
     $rows = '';
     foreach ($submission_reminds as $submission_remind) {
         $detail = \App\Core\App::html()->escape((string) ($submission_remind['detail'] ?? ''));
-        $date   = \App\Core\App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($submission_remind['created_at'] ?? 'now'))));
+        $date   = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($submission_remind['created_at'] ?? 'now')));
         $actor  = \App\Core\App::html()->displayUser((string) ($submission_remind['actor'] ?? ''));
         $rows .= <<<HTML
                   <div class="val-item">

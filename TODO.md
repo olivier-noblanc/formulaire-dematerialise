@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1419** (0 fail, 0 errors) |
-| Assertions | **4168** |
+| Tests | **1455** (0 fail, 0 errors — gate finale avant commit) |
+| Assertions | **4261** |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,27 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.25 — Fix gate : fixtures régression Bug01/Bug03 (domaine email réel + idempotence)
+| Tâche | Détail |
+|-------|--------|
+| Bug01 fixture | Identité dérivée de la config réelle (`AuthService::getUser()`, domaine `SETTINGS_DEFAULTS['email_domain']`), cleanup pré+post enfants→parent (tokens, submission_validator_data, attachments, submissions), scénario ×2 (idempotence prouvée) |
+| Bug03 fixture | Admin dérivé de la DB (`SELECT email FROM admins ORDER BY email LIMIT 1`), fixture temporaire créée/supprimée si table vide, plus de compte hardcodé |
+| Résidu DB | Soumission orpheline `test-bug01@dreets.gouv.fr` (06/08/2026, causait la garde anti-doublon) supprimée par le pré-clean du test |
+| Vérifications | `run_all.php` : 17/17 PASS, exit 0, ×2 exécutions ; StructuralHtmlTest 15/15 (correctif `form_content.php` de v10.42.24 validé) ; PHPUnit 1453/4254 OK ; PHPStan level 8 : 0 erreur |
+
+### v10.42.24 — Audit hors sécurité : corrections B-FIX1..5 + fix shipmonk.deadMethod
+| Tâche | Détail |
+|-------|--------|
+| B-FIX1 | `FormValidationHandler` : `'0'` est une valeur légitime pour required (select/texte) — échec uniquement sur vide/absent/whitespace |
+| B-FIX2 | Champs conditionnels masqués non requis + op `in` acceptant value tableau (FormValidationHandler, FormJsonValidator) |
+| B-FIX3 | Relance per-form embarquée dans export/import JSON + import bloqué sur opérateur de condition inconnu (AdminImportExportHandler, FormRepository) |
+| B-FIX4 | Conversion CSV Oui/Non limitée aux champs checkbox (`FormRepository::getCheckboxFieldNames()`) — valeurs texte/select `'1'`/`'0'` inchangées |
+| B-FIX5 | Export CSV streaming réel : `csvChunks()` générateur (batch 500), plus d'accumulation mémoire |
+| Fix deadMethod | Suppression `ExportService::generateCsvString()` (morte en prod depuis B-FIX5), `csvChunks()` public, 27 sites de tests adaptés + 2 régressions (TDD RED→GREEN) |
+| Nouveaux tests | 17 (AdminImportExportTest 7, FormValidationHandlerTest 9, NoDuplicateHtmlAttributesTest 1) |
+| Fichiers | 29 suivis modifiés + 3 fichiers de tests non suivis |
+| Métriques | **1453 tests / 4254 assertions OK** (avant fix : 1451/4234), PHPStan level 8 : 0 erreur ✅ |
 
 ### v10.42.20 — LOW issues + warnings/déprécations PHPUnit
 | Tâche | Détail |
@@ -373,6 +394,20 @@ Décision projet non négociable : C-04 (display_errors=1) et C-05 (SMTPDebug=3)
 - ~~17 MEDIUM~~ ✅ **TERMINÉ** — v10.42.19 (enum `ValidationResultStatus`, 7 logs audit)
 - ~~15 LOW~~ ✅ **TERMINÉ** — v10.42.20 (imports, whitespace, styles inline, warnings, déprécations)
 
+### Audit hors sécurité (2026-09-01) — corrections B-FIX1 à B-FIX5
+
+Lane d'audit hors sécurité : corrections de bugs appliquées (B-FIX1 à B-FIX5, détail dans CHANGELOG [10.42.24]), fix `shipmonk.deadMethod` inclus. Findings détaillés restants (risques latents, zones non couvertes) **non retrouvés** dans le dépôt ni la mémoire de session après redémarrage du lane — à réinjecter ici lorsque disponibles. Rien n'a été supposé ni inventé.
+
+| Élément | État |
+|---|---|
+| PHPUnit | ✅ **1453 tests / 4254 assertions OK** (run complète locale 2026-09-01, après fix deadMethod) — état audit mesuré avant fix : 1451 / 4234 |
+| PHPStan | ✅ level 8, **0 erreur** (run complète) — `shipmonk.deadMethod ExportService::generateCsvString` résolu (suppression de la méthode morte en prod, `csvChunks()` public) |
+| Dépôt | **29 fichiers suivis modifiés en attente de commit** (27 code/tests + CHANGELOG.md + TODO.md) + 3 fichiers de tests non suivis (AdminImportExportTest, FormValidationHandlerTest, NoDuplicateHtmlAttributesTest) + `edenai-opencode-routing-options.md` (hors périmètre) |
+| Corrections d'audit | B-FIX1 (`'0'` = valeur légitime required), B-FIX2 (champs conditionnels + op `in` tableau), B-FIX3 (relance per-form dans export/import JSON), B-FIX4 (conversion Oui/Non checkbox seulement), B-FIX5 (export CSV streaming) — détail CHANGELOG [10.42.24] |
+| Bugs confirmés restants | ⚠️ À réinjecter (findings non retrouvés) |
+| Risques latents | ⚠️ À réinjecter |
+| Zones non couvertes | ⚠️ À réinjecter |
+
 ### ~~Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)~~ ✅ **TERMINÉ/À JOUR**
 
 ~~Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs) ou des faux positifs shipmonk.~~
@@ -474,4 +509,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-08-25 (v10.42.20)_
+_Dernière mise à jour : 2026-09-01 (v10.42.24 — audit hors sécurité, état après redémarrage)_

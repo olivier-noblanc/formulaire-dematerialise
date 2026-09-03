@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Enum\FilledBy;
+use App\Enum\FieldType;
 use App\Enum\SubmissionStatus;
 
 final class FormRepository extends BaseRepository
@@ -83,7 +84,7 @@ final class FormRepository extends BaseRepository
     }
 
     /**
-     * @param array{label: string, slug: string, description?: string|null, actif?: int, deadline_field?: string, relance_delai_h?: int, relance_max?: int} $data
+     * @param array{label: string, slug: string, description?: string|null, actif?: int, deadline_field?: string, relance_delai_h?: int|null, relance_max?: int|null} $data
      */
     public function create(array $data): string
     {
@@ -120,6 +121,32 @@ final class FormRepository extends BaseRepository
     public function setDeadlineField(string $formId, string $deadlineField): bool
     {
         return $this->execute('UPDATE forms SET deadline_field = ? WHERE id = ?', [$deadlineField, $formId]);
+    }
+
+    /**
+     * B-FIX4 (2026-09-01) : noms techniques des champs checkbox — utilisés par
+     * l'export CSV pour convertir '1'/'0' → 'Oui'/'Non' uniquement sur ces
+     * champs (les autres types de champs peuvent légitimement valoir '1'/'0').
+     *
+     * @param string|null $formId Limite au formulaire donné (null = tous les formulaires)
+     * @return list<string>
+     */
+    public function getCheckboxFieldNames(?string $formId = null): array
+    {
+        if ($formId !== null && $formId !== '') {
+            /** @var list<array{field_name: string}> $rows */
+            $rows = $this->fetchAll(
+                'SELECT DISTINCT field_name FROM form_fields WHERE form_id = ? AND field_type = ?',
+                [$formId, FieldType::Checkbox->value]
+            );
+        } else {
+            /** @var array<int, array{field_name: string}> $rows */
+            $rows = $this->fetchAll(
+                'SELECT DISTINCT field_name FROM form_fields WHERE field_type = ?',
+                [FieldType::Checkbox->value]
+            );
+        }
+        return array_values(array_map(static fn(array $r): string => (string) $r['field_name'], $rows));
     }
 
     /**

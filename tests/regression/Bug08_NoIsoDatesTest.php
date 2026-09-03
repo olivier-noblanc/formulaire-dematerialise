@@ -76,34 +76,38 @@ function run_bug08_test(): bool {
     $failures = [];
     $successes = [];
 
-    // ── 1. ValidateRenderer.php — « Tâche validée le » doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 1. ValidateRenderer.php — « Tâche validée le » doit utiliser formatDateTimeFr() ──
+    // v10.42.23 : centralisation — le formatage passe par HtmlService::formatDateTimeFr()
+    // (la règle métier reste : jamais de date ISO brute en sortie)
     $r = bug08_check_date_format(
         $root . '/src/Render/ValidateRenderer.php',
         'Tâche validée le',
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime/',
+        '/formatDateTimeFr\s*\(\s*\(string\)\s*\(\$data\[\'done_at\'\]|date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime/',
         '/h\s*\(\s*\$data\[\'done_at\'\]\s*\)/',
         'ValidateRenderer.php : Tâche validée le'
     );
     if ($r['ok']) $successes[] = 'ValidateRenderer.php (Tâche validée le)';
     else $failures[] = $r['msg'];
 
-    // ── 2. AdminAccessController.php — requested_at doit formater la date ──
+    // ── 2. AdminAccessController.php — requested_at doit être formaté (pas d'ISO brut) ──
+    // Bug08-class réel détecté 2026-09-01 : escape($row['requested_at']) affichait
+    // l'ISO brut de la DB. La sortie doit passer par formatDateTimeFr().
     $r = bug08_check_date_format(
         $root . '/src/Controller/AdminAccessController.php',
         "Demandé le",
-        '/escape\s*\(\s*\$pendingRequest\[\'requested_at\'\]/',
-        '',
+        '/formatDateTimeFr\s*\(\s*\(string\)\s*\$pendingRequest\[\'requested_at\'\]/',
+        '/escape\s*\(\s*\$pendingRequest\[\'requested_at\'\]\s*\)/',
         'AdminAccessController.php : demande d\'accès (requested_at)'
     );
     if ($r['ok']) $successes[] = 'AdminAccessController.php (requested_at)';
     else $failures[] = $r['msg'];
 
-    // ── 3. AdminAccessController.php — created_at doit formater la date ──
+    // ── 3. AdminAccessController.php — created_at doit être formaté (pas d'ISO brut) ──
     $r = bug08_check_date_format(
         $root . '/src/Controller/AdminAccessController.php',
         'Demande créée le',
-        '/escape\s*\(\s*\$confirmData\[\'created_at\'\]/',
-        '',
+        '/formatDateTimeFr\s*\(\s*\(string\)\s*\$confirmData\[\'created_at\'\]/',
+        '/escape\s*\(\s*\$confirmData\[\'created_at\'\]\s*\)/',
         'AdminAccessController.php : Date de création (created_at)'
     );
     if ($r['ok']) $successes[] = 'AdminAccessController.php (created_at)';
@@ -131,11 +135,11 @@ function run_bug08_test(): bool {
     if ($r['ok']) $successes[] = 'submission_detail.php (val_date_ts)';
     else $failures[] = $r['msg'];
 
-    // ── 6. MyValidationsRenderer.php — « Soumis le » doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 6. MyValidationsRenderer.php — « Soumis le » doit passer par formatDateTimeFr() ──
     $r = bug08_check_date_format(
         $root . '/src/Render/MyValidationsRenderer.php',
         'Soumis le',
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime/',
+        '/formatDateTimeFr\s*\(\s*\(string\)\s*\(\$pendingToken\[\'submitted_at\'\]|date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime/',
         '',
         'MyValidationsRenderer.php : Soumis le'
     );
@@ -154,11 +158,11 @@ function run_bug08_test(): bool {
     if ($r['ok']) $successes[] = 'MyValidationsRenderer.php (Délai de traitement)';
     else $failures[] = $r['msg'];
 
-    // ── 8. MyValidationsRenderer.php — « Traitée le » doit utiliser date('d/m/Y à H:i', ...) ──
+    // ── 8. MyValidationsRenderer.php — « Traitée le » doit passer par formatDateTimeFr() ──
     $r = bug08_check_date_format(
         $root . '/src/Render/MyValidationsRenderer.php',
         'Traitée le',
-        '/date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime\s*\(\s*\(string\)\s*\(\$doneToken\[\'done_at\'\]/',
+        '/formatDateTimeFr\s*\(\s*\(string\)\s*\(\$doneToken\[\'done_at\'\]|date\s*\(\s*[\'"]d\/m\/Y à H:i[\'"]\s*,\s*(?:\(int\)\s*)?strtotime\s*\(\s*\(string\)\s*\(\$doneToken\[\'done_at\'\]/',
         '',
         'MyValidationsRenderer.php : Traitée le'
     );

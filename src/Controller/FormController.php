@@ -84,9 +84,11 @@ final class FormController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->security->requireCsrf();
 
-            // Validation
-            $field_errors = FormValidationHandler::validateFields($form_fields);
-            $file_errors  = FormValidationHandler::validateFiles($form_fields);
+            // Validation — les champs masqués par une condition non satisfaite (cachés
+            // côté client via data-condition + JS) ne sont pas requis : B-FIX2
+            $visible_fields = FormValidationHandler::filterConditionallyHidden($form_fields, $_POST);
+            $field_errors = FormValidationHandler::validateFields($visible_fields);
+            $file_errors  = FormValidationHandler::validateFiles($visible_fields);
             $rgpd_error   = FormValidationHandler::validateRgpdConsent();
             if ($rgpd_error !== null) {
                 $field_errors['rgpd_consent'] = $rgpd_error;

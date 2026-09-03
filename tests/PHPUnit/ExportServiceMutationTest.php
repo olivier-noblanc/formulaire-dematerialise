@@ -87,13 +87,13 @@ final class ExportServiceMutationTest extends TestCase
      * Ce test insère 501 soumissions et vérifie que TOUTES sont présentes (et sans
      * doublon). Tue les mutants #2, #7, #8, #9.
      */
-    public function testGenerateCsvStringExportsAllRowsWhenMoreThanBatchSize(): void
+    public function testCsvChunksExportsAllRowsWhenMoreThanBatchSize(): void
     {
-        $pdo = $this->db->getPdo();
+        $this->db->getPdo();
         [$formId, $insertedIds] = $this->insertSubmissions(501);
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         // Vérifie que CHAQUE id inséré est présent dans le CSV
         foreach ($insertedIds as $id) {
@@ -106,7 +106,7 @@ final class ExportServiceMutationTest extends TestCase
 
         // Vérifie qu'aucun id n'est dupliqué (compte d'occurrences == 1)
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
         $dataLines = array_slice($lines, 1); // skip header
         $firstId = $insertedIds[0];
         $firstIdOccurrences = 0;
@@ -141,13 +141,13 @@ final class ExportServiceMutationTest extends TestCase
      * Ce test insère 1 soumission et vérifie qu'elle apparaît dans le CSV.
      * Sur code muté, 0 ligne de données → assertion échoue.
      */
-    public function testGenerateCsvStringExecutesLoopBodyAtLeastOnce(): void
+    public function testCsvChunksExecutesLoopBodyAtLeastOnce(): void
     {
-        $pdo = $this->db->getPdo();
+        $this->db->getPdo();
         [$formId, $insertedIds] = $this->insertSubmissions(1);
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         self::assertStringContainsString(
             $insertedIds[0],
@@ -169,19 +169,19 @@ final class ExportServiceMutationTest extends TestCase
      * détecter la duplication. Ce test insère 500 soumissions et vérifie
      * qu'aucune n'est dupliquée.
      */
-    public function testGenerateCsvStringNoDuplicateRowsWhenExactlyBatchSize(): void
+    public function testCsvChunksNoDuplicateRowsWhenExactlyBatchSize(): void
     {
-        $pdo = $this->db->getPdo();
+        $this->db->getPdo();
         [$formId, $insertedIds] = $this->insertSubmissions(500);
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         // Compte les occurrences d'un id unique inséré — doit être 1.
         // Sur code muté (offset=-1), la dernière soumission (500e) apparaîtrait 2 fois.
         $lastId = end($insertedIds);
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
 
         $occurrences = 0;
         foreach ($lines as $line) {
@@ -216,12 +216,12 @@ final class ExportServiceMutationTest extends TestCase
      * Ce test insère 499 soumissions et vérifie qu'elles sont toutes présentes.
      * Sur code muté, boucle infinie → timeout → test échoue.
      */
-    public function testGenerateCsvStringExportsAllRowsWhenLessThanBatchSize(): void
+    public function testCsvChunksExportsAllRowsWhenLessThanBatchSize(): void
     {
         [$formId, $insertedIds] = $this->insertSubmissions(499);
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         foreach ($insertedIds as $id) {
             self::assertStringContainsString(
@@ -233,7 +233,7 @@ final class ExportServiceMutationTest extends TestCase
 
         // Le CSV doit contenir exactement 499 lignes de données + 1 header
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
         self::assertCount(
             500,
             $lines,
@@ -252,7 +252,7 @@ final class ExportServiceMutationTest extends TestCase
      * valeur attendue (position + valeur). Sur code muté, le décalage fait
      * que les assertions sur les positions échouent.
      */
-    public function testGenerateCsvStringContainsAllSixFixedColumnsInDataRow(): void
+    public function testCsvChunksContainsAllSixFixedColumnsInDataRow(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'form-mutant5-' . uniqid();
@@ -267,11 +267,11 @@ final class ExportServiceMutationTest extends TestCase
         $this->createdSubmissionIds[] = $subId;
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         // Strip BOM + parse les lignes non vides
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
 
         self::assertGreaterThanOrEqual(2, count($lines), 'header + 1 data row attendus');
 
@@ -307,7 +307,7 @@ final class ExportServiceMutationTest extends TestCase
      * colonne 5 contient bien cette date (et n'est pas shiftée par un
      * ArrayItemRemoval qui retirerait une colonne).
      */
-    public function testGenerateCsvStringClosedAtColumnContainsDateWhenSet(): void
+    public function testCsvChunksClosedAtColumnContainsDateWhenSet(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'form-mutant5b-' . uniqid();
@@ -321,10 +321,10 @@ final class ExportServiceMutationTest extends TestCase
         $this->createdSubmissionIds[] = $subId;
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
         $dataRow = str_getcsv($lines[1], ';', '"', '\\');
 
         self::assertSame(
@@ -346,7 +346,7 @@ final class ExportServiceMutationTest extends TestCase
      * ce fait et vérifie au moins que la colonne closed_at est bien vide quand
      * closed_at IS NULL (assertion de comportement, pas de kill du mutant).
      */
-    public function testGenerateCsvStringHandlesNullClosedAtAsEmptyColumn(): void
+    public function testCsvChunksHandlesNullClosedAtAsEmptyColumn(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'form-mutant6-' . uniqid();
@@ -360,10 +360,10 @@ final class ExportServiceMutationTest extends TestCase
         $this->createdSubmissionIds[] = $subId;
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
         $dataRow = str_getcsv($lines[1], ';', '"', '\\');
 
         self::assertSame(
@@ -385,12 +385,12 @@ final class ExportServiceMutationTest extends TestCase
      * ce fait et sert de sanity check : avec 1000 soumissions, le CSV doit
      * contenir toutes les lignes, quelle que soit la valeur de batch_size.
      */
-    public function testGenerateCsvStringExportsAllRowsWhenMultipleBatches(): void
+    public function testCsvChunksExportsAllRowsWhenMultipleBatches(): void
     {
         [$formId, $insertedIds] = $this->insertSubmissions(1000);
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         // Vérifie qu'au moins les première et dernière lignes sont présentes
         self::assertStringContainsString($insertedIds[0], $csv, 'Première soumission présente');
@@ -398,7 +398,7 @@ final class ExportServiceMutationTest extends TestCase
 
         // Compte total de lignes de données — doit être >= 1000
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
         self::assertGreaterThanOrEqual(
             1000,
             count($lines) - 1, // -1 pour le header
@@ -414,17 +414,17 @@ final class ExportServiceMutationTest extends TestCase
      * (>500) en vérifiant explicitement que des IDs du 2e batch sont présents
      * ET uniques.
      */
-    public function testGenerateCsvStringSecondBatchRowsArePresentAndUnique(): void
+    public function testCsvChunksSecondBatchRowsArePresentAndUnique(): void
     {
         [$formId, $insertedIds] = $this->insertSubmissions(750);
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         // Le 501e id (premier du 2e batch) doit être présent exactement 1 fois
         $secondBatchFirstId = $insertedIds[500];
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
 
         $occurrences = 0;
         foreach ($lines as $line) {
@@ -451,19 +451,19 @@ final class ExportServiceMutationTest extends TestCase
      * Insère exactement 2 soumissions (largement sous batch_size), vérifie
      * que les 2 sont présentes et que la boucle do-while s'est exécutée.
      */
-    public function testGenerateCsvStringWithTwoSubmissionsAllExported(): void
+    public function testCsvChunksWithTwoSubmissionsAllExported(): void
     {
         [$formId, $insertedIds] = $this->insertSubmissions(2);
 
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => $formId]);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
 
         foreach ($insertedIds as $id) {
             self::assertStringContainsString($id, $csv);
         }
 
         $withoutBom = substr($csv, 3);
-        $lines = array_filter(explode("\n", $withoutBom), fn ($l) => trim($l) !== '');
+        $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
         self::assertCount(
             3,
             $lines,
