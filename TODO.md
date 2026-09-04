@@ -37,8 +37,9 @@
 | Bornes de temps | curl `--connect-timeout 5 --max-time 20` (hang constaté sans borne) + sondes de disponibilité 300 ms × 20 s (remplace `sleep(2)` muet) |
 | Filet anti-orphelin | Shutdown function : `proc_terminate()` + `kill_port()` ; contrat `_test_summary_printed` pour ne pas subir le filet anti-masquage du bootstrap en succès |
 | Fix dépendance d'ordre | `testRegenerateRefusesInvalidatedToken` : `admin@test.com` (ligne qui fuit de `PersonaServiceTest::setUp`, sans cleanup) → `testeur@e2e.test` (seedé `phpunit_bootstrap`) ; rector pre-commit appliqué sur 12 fichiers du lot |
+| Fix CI filet | Filet anti-masquage : tire uniquement si compteurs bootstrap engagés (`test_mail_escaping` tué après résumé vert 7/7 en CI) ; contrat B-HARNESS étendu à `test_email_urls`/`test_routing` (flag après résumé propre) |
 | Documentation | AGENTS.md : règles de test ciblées + section « Orchestration et validation » (rôles, owner unique, écritures séquencées) |
-| Vérifs | test_assets_cache **21/21, exit 0** sur l'arbre final (2026-09-04, après rector) ; run filtré 8 classes **91 tests / 184 assertions OK** ; selftest **3/3** ; `php -l` OK |
+| Vérifs | Job CI « Tests fonctionnels » rejoué localement : test_all 59/59, mail_escaping 7/7, email_urls 7/7, confirm_action_dispatch 8/8, assets_cache **21/21**, régressions **17/17**, selftest **3/3** ; run filtré 8 classes **91 tests / 184 assertions OK** ; `php -l` OK |
 
 ### v10.42.28 — Lot Oracle : fiabilisation du harnais test_all (hors sécurité)
 | Tâche | Détail |
@@ -405,6 +406,7 @@
 **À faire en premier :**
 - **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit 1527/4423 (v10.42.28), PHPStan ciblé 0, test_all 59/59 ×2, selftest 3/3, test_assets_cache 21/21 (re-vérifié 2026-09-04) ; gate locale du 2026-09-03 12:17 OK sur l'état d'alors (lint 38 fichiers, PHPStan, PHPUnit 1527/4427, suites fonctionnelles)
 - **Nettoyer la fuite `PersonaServiceTest::setUp`** : la ligne `admins` `admin@test.com` est insérée sans jamais être supprimée (pollution d'ordre pour tout test vérifiant `isAdmin()` derrière) — `testRegenerateRefusesInvalidatedToken` a été rendu insensible (v10.42.29), la cause racine reste à supprimer (cleanup tearDown) avec vérification qu'aucun autre test n'en dépend
+- **Moderniser `tests/test_routing.php`** (hors CI/gate, stalé depuis v10.1.14c) : le check « pas d'erreur fatale » matche le contenu légitime de la page changelog (`stripos 'Fatal error'` — texte d'entrée v10.21.0, page saine prouvée par test_all) ; attentes structurelles des pages admin stalées (`<link>` assets, `body class page-xxx`) — redéfinir les checks sur le layout actuel
 
 ### Audit CTO (rapport : download/CTO_AUDIT_REPORT.md)
 

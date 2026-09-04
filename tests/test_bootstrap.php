@@ -79,6 +79,17 @@ register_shutdown_function(static function (): void {
     $passed = (int) ($GLOBALS['passed'] ?? 0);
     $failed = (int) ($GLOBALS['failed'] ?? 0);
     $errors = is_array($GLOBALS['errors'] ?? null) ? $GLOBALS['errors'] : [];
+    // Le filet ne concerne que les runs qui ont ENGAGÉ les compteurs du
+    // bootstrap (test_all, test_http, test_v4, test_e2e, scénarios selftest).
+    // Les scripts standalone avec leurs propres compteurs et leur propre
+    // résumé (test_mail_escaping, test_email_urls, test_routing,
+    // test_phpmailer_warnings...) n'ont rien à masquer : s'ils meurent, leur
+    // propre code de sortie (fatal → 255) s'exprime seul. Sans cette garde,
+    // le filet forçait exit(1) après leur résumé nominal (run CI 33877387871,
+    // job « Tests fonctionnels », étape test_mail_escaping.php).
+    if ($passed === 0 && $failed === 0 && $errors === []) {
+        return;
+    }
     fwrite($out, "\n⚠️  TERMINAISON ANORMALE (exit()/fatal en cours de run) — RÉSULTATS partiels :\n");
     fwrite($out, "  $passed réussi(s) / $failed échoué(s) / " . ($passed + $failed) . " total\n");
     foreach ($errors as $e) {
