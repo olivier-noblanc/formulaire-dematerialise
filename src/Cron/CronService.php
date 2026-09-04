@@ -168,7 +168,13 @@ final class CronService
 
     /**
      * Parse une datetime SQLite (format 'Y-m-d H:i:s') en timestamp Unix.
-     * Contourne le bug PHP 8.4 où strtotime() retourne DateTimeImmutable.
+     *
+     * S4 fix (2026-09-03) : le commentaire historique invoquait à tort un
+     * « bug PHP 8.4 où strtotime() retourne DateTimeImmutable » — un tel bug
+     * n'existe pas (strtotime retourne int|false sur toutes les versions).
+     * Voir LazyCronRepository::parseDbDatetime() pour la vraie justification :
+     * interprétation UTC explicite des datetimes SQLite (strtotime() aurait
+     * utilisé le fuseau serveur, Europe/Paris en prod — décalage 1-2h).
      */
     public static function parseDbDatetime(string $datetime): ?int
     {

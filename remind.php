@@ -22,16 +22,14 @@ $nb   = 0;
 $blocked = 0;
 $relance_max = 3; // défaut si aucun token traité
 
-// Récupérer les IDs des tokens à traiter (pas de fetchAll complet pour éviter les stale reads)
-$pendingIds = array_column(
-    _dbm_q($pdo, "
-        SELECT t.id
-        FROM tokens t
-        JOIN submissions s ON s.id = t.submission_id
-        WHERE t.done_at IS NULL AND s.closed_at IS NULL
-    ")->fetchAll(PDO::FETCH_ASSOC),
-    'id'
-);
+// Récupérer les IDs des tokens à traiter (pas de fetchAll complet pour éviter les stale reads).
+// P0-3/P0-4 : exclusions déportées dans TokenRepository::findRemindableTokenIds() —
+// tokens invalidés (délégation/régénération/RGPD) et tokens expirés (lien mort)
+// ne doivent pas recevoir de relance.
+$nowUtc = $now->format('Y-m-d H:i:s');
+$pendingIds = App\Core\App::getInstance()
+    ->get(App\Repository\TokenRepository::class)
+    ->findRemindableTokenIds($nowUtc);
 
 foreach ($pendingIds as $tokenId) {
     // Transaction par token : SELECT + vérification atomique avant envoi
@@ -45,9 +43,10 @@ foreach ($pendingIds as $tokenId) {
             JOIN steps st ON st.id = t.step_id
             JOIN submissions s ON s.id = t.submission_id
             JOIN forms f ON f.id = s.form_id
-            WHERE t.id = ? AND t.done_at IS NULL AND s.closed_at IS NULL
+            WHERE t.id = ? AND t.done_at IS NULL AND t.invalidated_at IS NULL
+              AND (t.expires_at IS NULL OR t.expires_at > ?) AND s.closed_at IS NULL
         ");
-        $stmt->execute([$tokenId]);
+        $stmt->execute([$tokenId, $nowUtc]);
         /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_label: string, data: string, relance_delai_h: int|string|null, relance_max: int|string|null}|false $tok */
         $tok = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -81,7 +80,7 @@ foreach ($pendingIds as $tokenId) {
         $subject = '[RELANCE] ' . $tok['form_label'] . ' — ' . $tok['step_label'];
         if (send_mail($tok['email'], $subject, build_mail_html($tok, $tok['step_label'], $tok['token']))) {
             $new_count = $relance_count + 1;
-            $upd = $pdo->prepare("UPDATE tokens SET relance_at=?, relance_count=? WHERE id=? AND done_at IS NULL");
+            $upd = $pdo->prepare("UPDATE tokens SET relance_at=?, relance_count=? WHERE id=? AND done_at IS NULL AND invalidated_at IS NULL");
             $upd->execute([$now->format('Y-m-d H:i:s'), $new_count, $tokenId]);
             if ($upd->rowCount() === 0) {
                 // Token validé pendant l'envoi du mail — ne pas compter comme envoyé

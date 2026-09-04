@@ -5,7 +5,7 @@
 
 <?php if ($existing_submission && !$success): ?>
   <div class="warn-box">
-    <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $h(\App\Core\App::html()->formatDateTimeFr((string) ($existing_submission['submitted_at'] ?? ''))) ?>).</p>
+    <p><strong><span aria-hidden="true">⚠</span> Attention :</strong> Vous avez déjà une demande en cours pour ce formulaire (soumise le <?= $h(\App\Core\App::html()->formatDateTimeFr((string) ($existing_submission['submitted_at'] ?? ''), false)) ?>).</p>
     <p>Vous pouvez tout de même soumettre une nouvelle demande si nécessaire.</p>
     <p><a href="index.php?p=submission_view&id=<?= urlencode((string) ($existing_submission['id'] ?? '')) ?>" class="u-c-warning-fw-bold">Voir la demande existante →</a></p>
   </div>

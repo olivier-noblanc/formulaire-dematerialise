@@ -224,20 +224,25 @@ final class FormRepository extends BaseRepository
     // ── Duplicate ───────────────────────────────────────────────
 
     /**
-     * @param array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string} $srcForm
+     * @param array{id: string, slug: string, label: string, description: string|null, actif: int, created_at: string, deadline_field: string, relance_delai_h: int, relance_max: int} $srcForm
      */
     public function duplicate(string $sourceId, string $newId, string $newLabel, string $newSlug, array $srcForm): void
     {
+        // P0-5 (2026-09-03) : conserver relance_delai_h / relance_max — la
+        // copie repartait sinon sur les DEFAULT 48/3 au lieu de la config
+        // du formulaire source.
         $this->execute(
-            'INSERT INTO forms (id, slug, label, description, actif, deadline_field) VALUES (?, ?, ?, ?, 1, ?)',
-            [$newId, $newSlug, $newLabel, $srcForm['description'], $srcForm['deadline_field']]
+            'INSERT INTO forms (id, slug, label, description, actif, deadline_field, relance_delai_h, relance_max) VALUES (?, ?, ?, ?, 1, ?, ?, ?)',
+            [$newId, $newSlug, $newLabel, $srcForm['description'], $srcForm['deadline_field'], $srcForm['relance_delai_h'], $srcForm['relance_max']]
         );
 
         foreach ($this->getFields($sourceId) as $f) {
             $newFieldId = \generate_uuid();
+            // P0-5 : conserver `condition` — la copie perdait la logique
+            // d'affichage conditionnel des champs (colonne vide dans la copie).
             $this->execute(
-                'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? FilledBy::Demandeur->value, $f['validator_step'] ?? '', $f['visibility'] ?? 'all']
+                'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? FilledBy::Demandeur->value, $f['validator_step'] ?? '', $f['visibility'] ?? 'all', $f['condition'] ?? '']
             );
         }
 

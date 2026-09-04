@@ -97,7 +97,7 @@ final class MyValidationsRenderer
                 if (SubmissionData::has($data, SubmissionField::AFFECTATION)) {
                     $html .= ' — ' . $htmlService->escape(SubmissionData::get($data, SubmissionField::AFFECTATION));
                 }
-                $html .= '<br>Soumis le ' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($pendingToken['submitted_at'] ?? ''))) . "\n";
+                $html .= '<br>Soumis le ' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($pendingToken['submitted_at'] ?? ''), false)) . "\n";
                 if ($pendingToken['relance_count'] > 0) {
                     $html .= '<br><span class="text-warning">Relance(s) : ' . (int) $pendingToken['relance_count'] . '</span>' . "\n";
                 }
@@ -114,8 +114,15 @@ final class MyValidationsRenderer
                 $html .= '  <div class="vc-body">' . "\n";
                 $html .= '    <div class="workflow-mini">' . "\n";
                 foreach ($allSteps as $i => $as) {
-                    $dones = array_filter(explode('|', $as['dones'] ?? ''));
-                    $allDone = $dones !== [] && !in_array('', $dones, true) && !in_array(null, $dones, true);
+                    // Gardes "étape done" (D6) :
+                    // 1. dones agrège COALESCE(done_at, '') — chaque token actif
+                    //    contribue une entrée, vide pour un token en attente.
+                    //    Une entrée vide = étape partiellement validée → pas done.
+                    // 2. L'étape du token en attente du validateur lui-même n'est
+                    //    jamais rendue "done", quelle que soit la donnée source.
+                    $doneParts = explode('|', (string) ($as['dones'] ?? ''));
+                    $allDone = !in_array('', $doneParts, true)
+                        && (string) $as['id'] !== (string) ($pendingToken['step_id'] ?? '');
                     if ($allDone) {
                         $cls = 'wf-step-done';
                         $icon = '✓';
@@ -208,7 +215,7 @@ final class MyValidationsRenderer
                 $html .= '      <div class="vc-title">' . $htmlService->escape($doneToken['form_label']) . ' — ' . $htmlService->escape($doneToken['step_label']) . '</div>' . "\n";
                 $html .= '      <div class="vc-meta">' . "\n";
                 $html .= '        Agent : <strong>' . $nomAgent . '</strong>' . "\n";
-                $html .= '        <br>Soumis le ' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($doneToken['submitted_at'] ?? ''))) . "\n";
+                $html .= '        <br>Soumis le ' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($doneToken['submitted_at'] ?? ''), false)) . "\n";
                 $html .= '      </div>' . "\n";
                 $html .= '    </div>' . "\n";
                 $html .= '    <span class="badge ' . $actionCls . '">' . $actionLabel . '</span>' . "\n";

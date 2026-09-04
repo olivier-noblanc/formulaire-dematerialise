@@ -11,7 +11,7 @@ if ($tokens_bloques === []) {
         $sent_at      = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $token_bloque['sent_at']));
         $relance      = (int) $token_bloque['relance_count'];
         $expires      = $token_bloque['expires_at']
-            ? \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime((string) $token_bloque['expires_at'])))
+            ? \App\Core\App::html()->escape(date('d/m/Y', (int) strtotime($token_bloque['expires_at'] . ' UTC')))
             : '—';
         $submitted_by = \App\Core\App::html()->escape((string) $token_bloque['submitted_by']);
 

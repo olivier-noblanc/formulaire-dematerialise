@@ -24,16 +24,38 @@ trait TokenReadCheckTrait
     }
 
     /**
-     * Vérifie s'il existe un token pending (done_at IS NULL) pour le triplet
-     * (submission_id, step_id, email).
+     * Vérifie s'il existe un token pending (non traité, non invalidé) pour le
+     * triplet (submission_id, step_id, email).
      */
     public function hasPendingDuplicate(string $submissionId, string $stepId, string $email): bool
     {
         $result = $this->fetchOne(
-            'SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL',
+            'SELECT 1 FROM tokens WHERE submission_id = ? AND step_id = ? AND email = ? AND done_at IS NULL AND invalidated_at IS NULL',
             [$submissionId, $stepId, $email]
         );
         return $result !== null;
+    }
+
+    /**
+     * IDs des tokens relançables par le cron remind.php : non traités, non
+     * invalidés (délégation/régénération/RGPD), non expirés (lien mort), sur
+     * soumission non clôturée.
+     *
+     * @return list<string>
+     */
+    public function findRemindableTokenIds(string $nowUtc): array
+    {
+        /** @var list<array{id: string}> $rows */
+        $rows = $this->fetchAll(
+            "SELECT t.id
+             FROM tokens t
+             JOIN submissions s ON s.id = t.submission_id
+             WHERE t.done_at IS NULL AND t.invalidated_at IS NULL
+               AND (t.expires_at IS NULL OR t.expires_at > ?)
+               AND s.closed_at IS NULL",
+            [$nowUtc]
+        );
+        return array_column($rows, 'id');
     }
 
     public function countExpired(): int
@@ -51,7 +73,7 @@ trait TokenReadCheckTrait
     public function countPending(): int
     {
         /** @var array{cnt: int|string|null}|null $result */
-        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM tokens WHERE done_at IS NULL');
+        $result = $this->fetchOne('SELECT COUNT(*) as cnt FROM tokens WHERE done_at IS NULL AND invalidated_at IS NULL');
         return (int) ($result['cnt'] ?? 0);
     }
 
@@ -59,7 +81,7 @@ trait TokenReadCheckTrait
     {
         /** @var array{cnt: int|string|null}|null $result */
         $result = $this->fetchOne(
-            'SELECT COUNT(*) as cnt FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE t.step_id = ? AND t.done_at IS NULL AND s.status = ?',
+            'SELECT COUNT(*) as cnt FROM tokens t JOIN submissions s ON s.id = t.submission_id WHERE t.step_id = ? AND t.done_at IS NULL AND t.invalidated_at IS NULL AND s.status = ?',
             [$stepId, $submissionStatus]
         );
         return (int) ($result['cnt'] ?? 0);
@@ -92,7 +114,7 @@ trait TokenReadCheckTrait
              JOIN steps st ON st.id = t.step_id
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
-             WHERE t.done_at IS NULL AND s.status = '" . SubmissionStatus::EnCours->value . "'
+             WHERE t.done_at IS NULL AND t.invalidated_at IS NULL AND s.status = '" . SubmissionStatus::EnCours->value . "'
                AND CAST(strftime('%s', 'now') AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL) > f.relance_delai_h * 2 * 3600
              ORDER BY t.sent_at ASC
              LIMIT ?",

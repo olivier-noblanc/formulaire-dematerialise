@@ -42,7 +42,8 @@ foreach ($mail_logs as $mail_log) {
     }
 
     $date_fmt = '';
-    $ts = strtotime($created_at);
+    // created_at (mail_log) est en UTC (datetime('now')) — interprétation UTC explicite.
+    $ts = strtotime($created_at . ' UTC');
     $date_fmt = $ts !== false ? \App\Core\App::html()->escape(date('d/m/Y H:i:s', $ts)) : $created_at;
 
     $rows .= <<<HTML

@@ -141,4 +141,76 @@ final class FormValidationHandlerTest extends TestCase
         self::assertCount(1, $kept);
         self::assertSame('a', $kept[0]['field_name']);
     }
+
+    // ── FIX-C : validation du format des champs date ───────────
+
+    /**
+     * Oracle FIX-C (2026-09-03) : un champ field_type=date doit être validé
+     * côté serveur via DateHelper::parseDate (JJ/MM/AAAA ou AAAA-MM-JJ,
+     * calendrier réel). Un navigateur envoie AAAA-MM-JJ via <input type="date">,
+     * mais un POST forgé doit être rejeté avec une erreur explicite.
+     */
+
+    public function testDateFieldWithImpossibleCalendarDateIsRejected(): void
+    {
+        $_POST['d'] = '31/31/2026';
+        $fields = [$this->makeField('d', 'date', 1)];
+        self::assertSame(['d' => 'Date invalide (format attendu : JJ/MM/AAAA ou AAAA-MM-JJ)'], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testDateFieldWithInvalidIsoDateIsRejected(): void
+    {
+        $_POST['d'] = '2026-13-45';
+        $fields = [$this->makeField('d', 'date', 0)];
+        self::assertSame(['d' => 'Date invalide (format attendu : JJ/MM/AAAA ou AAAA-MM-JJ)'], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testDateFieldWithFreeTextIsRejected(): void
+    {
+        $_POST['d'] = 'bientôt';
+        $fields = [$this->makeField('d', 'date', 0)];
+        self::assertSame(['d' => 'Date invalide (format attendu : JJ/MM/AAAA ou AAAA-MM-JJ)'], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testDateFieldWithImpossibleFebruaryDateIsRejected(): void
+    {
+        $_POST['d'] = '30/02/2026';
+        $fields = [$this->makeField('d', 'date', 0)];
+        self::assertSame(['d' => 'Date invalide (format attendu : JJ/MM/AAAA ou AAAA-MM-JJ)'], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testDateFieldWithIsoFormatIsAccepted(): void
+    {
+        $_POST['d'] = '2026-09-03';
+        $fields = [$this->makeField('d', 'date', 1)];
+        self::assertSame([], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testDateFieldWithFrenchFormatIsAccepted(): void
+    {
+        $_POST['d'] = '03/09/2026';
+        $fields = [$this->makeField('d', 'date', 1)];
+        self::assertSame([], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testEmptyOptionalDateFieldIsAccepted(): void
+    {
+        $_POST['d'] = '';
+        $fields = [$this->makeField('d', 'date', 0)];
+        self::assertSame([], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testEmptyRequiredDateFieldStillBlocks(): void
+    {
+        $fields = [$this->makeField('d', 'date', 1)];
+        self::assertSame(['d' => 'Ce champ est obligatoire'], FormValidationHandler::validateFields($fields));
+    }
+
+    public function testNonDateFieldWithDateLikeValueIsNotDateValidated(): void
+    {
+        // la validation de format ne s'applique qu'aux champs field_type=date
+        $_POST['x'] = '31/31/2026';
+        $fields = [$this->makeField('x', 'text', 0)];
+        self::assertSame([], FormValidationHandler::validateFields($fields));
+    }
 }

@@ -180,7 +180,13 @@ final class ValidateController extends BaseController
                     } elseif (($data['closed_at'] ?? '') !== '') {
                         $result = ['status' => ValidationResultStatus::CLOSED->value, 'data' => $data];
                     } elseif ((bool)($data['expires_at'])) {
-                        $exp_ts = strtotime($data['expires_at']);
+                        // P0-1 (2026-09-03) : expires_at est stocké en UTC
+                        // (SQLite datetime('now')) — forcer l'interprétation UTC,
+                        // sinon strtotime() la lit avec le fuseau serveur
+                        // (Europe/Paris en prod) et le token paraît expiré
+                        // 1-2h trop tôt. Même idiome que Bug14
+                        // (TokenValidationHandler::validateToken).
+                        $exp_ts = strtotime($data['expires_at'] . ' UTC');
                         if ($exp_ts !== false && $exp_ts < time()) {
                             $result = ['status' => ValidationResultStatus::EXPIRED->value, 'data' => $data];
                         } else {

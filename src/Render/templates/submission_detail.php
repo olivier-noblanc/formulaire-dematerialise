@@ -13,7 +13,8 @@
           $c = \App\Core\App::html()->escape((string) $validation['commentaire']);
           $comment = "<br><em>Commentaire :</em> {$c}";
       }
-      $val_date_ts = strtotime((string) ($validation['date'] ?? ''));
+      // validations[].date est en UTC (gmdate) — interprétation UTC explicite.
+      $val_date_ts = strtotime(($validation['date'] ?? '') . ' UTC');
       $date = $val_date_ts !== false ? \App\Core\App::html()->escape(date('d/m/Y à H:i', $val_date_ts)) : '—';
       ?>
       <div class="validation-item">

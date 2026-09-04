@@ -84,7 +84,16 @@ final class LazyCronRepository extends BaseRepository
 
     /**
      * Parse une datetime SQLite (format 'Y-m-d H:i:s') en timestamp Unix.
-     * Contourne le bug PHP 8.4 où strtotime() retourne DateTimeImmutable.
+     *
+     * S4 fix (2026-09-03) : l'ancien commentaire invoquait à tort un « bug
+     * PHP 8.4 où strtotime() retourne DateTimeImmutable » — strtotime()
+     * retourne int|false sur toutes les versions supportées (vérifié : PHP
+     * 8.5.8 → integer), un tel bug n'existe pas. La vraie raison du helper :
+     * strtotime() interprète une chaîne sans fuseau avec le fuseau serveur
+     * (Europe/Paris en prod) alors que les datetimes SQLite sont en UTC
+     * (datetime('now')) — décalage de 1-2h. On parse explicitement en UTC
+     * et on retourne null si la chaîne est invalide (au lieu du false de
+     * strtotime, converti silencieusement en 0 par les casts int).
      */
     public static function parseDbDatetime(string $datetime): ?int
     {

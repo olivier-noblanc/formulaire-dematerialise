@@ -42,95 +42,20 @@ parameters:
 			count: 1
 			path: src/Controller/MonitoringController.php
 
-		-
-			message: '#^Using \+ over non\-number \(mixed \+ mixed\)$#'
-			identifier: shipmonk.arithmeticOnNonNumber
-			count: 2
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$csrf_field might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$existing_submission might not be defined\.$#'
-			identifier: variable.undefined
-			count: 2
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$field_errors might not be defined\.$#'
-			identifier: variable.undefined
-			count: 4
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$file_errors might not be defined\.$#'
-			identifier: variable.undefined
-			count: 2
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$form might not be defined\.$#'
-			identifier: variable.undefined
-			count: 3
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$grouped might not be defined\.$#'
-			identifier: variable.undefined
-			count: 2
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$h might not be defined\.$#'
-			identifier: variable.undefined
-			count: 8
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$legal_mentions might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$progress_html might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$slug might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$submission_id might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$submitted_by might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$success might not be defined\.$#'
-			identifier: variable.undefined
-			count: 2
-			path: src/Controller/templates/form_content.php
 
-		-
-			message: '#^Variable \$tJargon might not be defined\.$#'
-			identifier: variable.undefined
-			count: 4
-			path: src/Controller/templates/form_content.php
 
 		-
 			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'

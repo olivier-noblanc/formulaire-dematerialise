@@ -68,6 +68,9 @@ final readonly class TokenService
         if ($old['done_at'] !== null) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
+        if ($old['invalidated_at'] !== null) {
+            return ['success' => false, 'message' => 'Ce token a été invalidé (délégué ou annulé) et ne peut pas être régénéré.'];
+        }
         if ($old['sub_status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
@@ -82,7 +85,13 @@ final readonly class TokenService
 
         $this->tokenRepository->beginTransaction();
         try {
-            $this->tokenRepository->markDoneAndInvalidatedById($oldTokenId, gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s'));
+            // Protection race condition : l'UPDATE atomique échoue si le token
+            // a été traité/invalidé entre la lecture de $old et l'UPDATE.
+            $marked = $this->tokenRepository->markDoneAndInvalidatedById($oldTokenId, gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s'));
+            if (!$marked) {
+                $this->tokenRepository->rollBack();
+                return ['success' => false, 'message' => 'Ce token vient d\'être traité ou invalidé. La régénération n\'est plus possible.'];
+            }
 
             $this->tokenRepository->insertToken($newTokenRowId, $old['submission_id'], $old['step_id'], $old['email'], $newToken, $now, $expiresAt);
 
@@ -200,6 +209,17 @@ final readonly class TokenService
         if ($tok['done_at'] !== null) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
         }
+        if ($tok['invalidated_at'] !== null) {
+            return ['success' => false, 'message' => 'Ce token a été invalidé (délégué ou annulé).'];
+        }
+        if ($tok['expires_at'] !== null) {
+            // expires_at est stocké en UTC (gmdate) — comparaison UTC explicite.
+            $expires = new \DateTimeImmutable($tok['expires_at'], new \DateTimeZone('UTC'));
+            $nowUtc = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+            if ($expires < $nowUtc) {
+                return ['success' => false, 'message' => 'Ce token est expiré — demandez sa régénération à un administrateur.'];
+            }
+        }
         if ($tok['status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
@@ -261,6 +281,9 @@ final readonly class TokenService
         }
         if ($tok['done_at'] !== null) {
             return ['success' => false, 'message' => 'Ce token a déjà été traité.'];
+        }
+        if ($tok['invalidated_at'] !== null) {
+            return ['success' => false, 'message' => 'Ce token a été invalidé — la délégation n\'est plus possible.'];
         }
         if ($tok['status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];

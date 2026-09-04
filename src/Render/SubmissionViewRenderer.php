@@ -228,6 +228,14 @@ final class SubmissionViewRenderer
     {
         $history = [];
         foreach ($allTokens as $tk) {
+            // FIX-B (2026-09-03) : un token invalidé (délégation, régénération,
+            // RGPD) porte un done_at technique qui n'est pas une validation —
+            // il ne doit pas apparaître dans l'historique. Défense en profondeur :
+            // all_tokens est un list<array> publiquement affectable, la requête
+            // source (findDetailedWithStepsBySubmission) filtre déjà.
+            if (($tk['invalidated_at'] ?? null) !== null) {
+                continue;
+            }
             if ((bool) ($tk['done_at'])) {
                 $entry = [
                     'action'     => (string) ($tk['action'] ?? 'valider'),
@@ -235,7 +243,9 @@ final class SubmissionViewRenderer
                     'email'      => (string) ($tk['email'] ?? ''),
                     'date'       => (string) ($tk['done_at'] ?? ''),
                 ];
-                if ((bool) ($tk['filled_by'])) {
+                // filled_by n'est pas toujours présent (la requête source
+                // findDetailedWithStepsBySubmission ne le sélectionne pas).
+                if ((bool) ($tk['filled_by'] ?? null)) {
                     $entry['done_by'] = (string) $tk['filled_by'];
                 }
                 $history[] = $entry;

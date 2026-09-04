@@ -33,6 +33,10 @@ $rules = _dbm_q($pdo, "
     ORDER BY ar.days_before DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
+// S5 (2026-09-03) : borne de dédoublonnage = début du jour civil de Paris
+// converti en UTC. Calculée une seule fois pour toute la boucle.
+$paris_day_start_utc = \App\Core\DateHelper::parisDayStartUtc($now);
+
 if ($rules === []) {
     echo "[{$now->format('Y-m-d H:i:s')}] Aucune regle d'alerte active.\n";
     if (($GLOBALS['_lazy_cron_running'] ?? null) === null) {
@@ -93,14 +97,21 @@ foreach ($rules as $rule) {
             }
         }
 
-        // Verifier si une alerte a deja ete envoyee pour cette regle + soumission aujourd'hui
-        // Utiliser UTC pour la comparaison car alert_log.sent_at est en UTC (datetime('now'))
+        // Verifier si une alerte a deja ete envoyee pour cette regle + soumission
+        // aujourd'hui (jour civil de Paris).
+        // S5 fix (2026-09-03) : l'ancienne comparaison d'égalité des jours en UTC
+        // dédoublonnait sur le jour UTC — une alerte envoyée à 23:30 Paris
+        // (21:30 UTC) était encore vue « déjà envoyée aujourd'hui » à 00:30
+        // Paris le lendemain (22:30 UTC, même jour UTC), d'où une fenêtre de
+        // 1-2h sans alerte à chaque changement de jour. sent_at est stocké en
+        // UTC et monotone : `sent_at >= début du jour Paris (en UTC)` ⇔
+        // « envoyé aujourd'hui à Paris », DST-safe via DateHelper.
         $already = $pdo->prepare("
             SELECT COUNT(*) FROM alert_log
             WHERE rule_id = ? AND submission_id = ?
-              AND DATE(sent_at) = DATE(?)
+              AND sent_at >= ?
         ");
-        $already->execute([$rule['id'], $sub['id'], gmdate('Y-m-d H:i:s')]);
+        $already->execute([$rule['id'], $sub['id'], $paris_day_start_utc]);
         if ((int)$already->fetchColumn() > 0) {
             // Alerte deja envoyee aujourd'hui pour cette regle + soumission
             $nb_skipped++;
@@ -108,7 +119,11 @@ foreach ($rules as $rule) {
         }
 
         // Calculer les infos pour l'email
-        $days_remaining = (int)$now->diff($deadline)->format('%r%a');
+        // P0-2 (2026-09-03) : jours CALENDARIOS (J-1/J0/J+1) via DateHelper.
+        // L'ancien calcul DateInterval '%a' comptait des périodes de 24h
+        // pleines : deadline demain 00:00 vue à 15:00 donnait « J-0 », et le
+        // jour J donnait -1 (« EN RETARD ») — cf. DateHelperTest.
+        $days_remaining = \App\Core\DateHelper::calendarDaysUntil($deadline, $now);
         $nom_agent = SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM);
         $deadline_formatted = $deadline->format('d/m/Y');
 
@@ -117,7 +132,9 @@ foreach ($rules as $rule) {
 
         // Construire et envoyer l'email d'alerte
         foreach ($recipients as $recipient) {
-            $urgencyText = $days_remaining <= 0 ? 'EN RETARD de ' . abs($days_remaining) . ' jours' : 'J-' . $days_remaining . ' avant la date cible';
+            // P0-2 : branche retard strictement < 0 — J0 (deadline aujourd'hui)
+            // affiche « J-0 avant la date cible », pas « EN RETARD de 0 jours ».
+            $urgencyText = $days_remaining < 0 ? 'EN RETARD de ' . abs($days_remaining) . ' jours' : 'J-' . $days_remaining . ' avant la date cible';
             $subject = '[ALERTE] ' . $rule['form_label'] . ' — ' . $urgencyText;
             $body = build_alert_html($sub, $nom_agent, $deadline_formatted, $days_remaining, $rule, $data, $pdo);
             $sent = send_mail($recipient, $subject, $body);
@@ -172,12 +189,17 @@ echo "\n";
 
 /**
  * Verifie si une soumission a des etapes incompletes
+ *
+ * FIX-A (2026-09-03) : les tokens invalides (invalidated_at NOT NULL — RGPD,
+ * delegation, regeneration) sont exclus de tous les calculs : un token
+ * invalide n'a plus de validateur actif derriere lui, il ne compte ni comme
+ * pending ni comme ordre demarre.
  */
 function has_incomplete_steps(PDO $pdo, string $submission_id): bool {
-    // Compter les tokens non traites
+    // Compter les tokens non traites (tokens invalides exclus — FIX-A)
     $stmt = $pdo->prepare("
         SELECT COUNT(*) FROM tokens
-        WHERE submission_id = ? AND done_at IS NULL
+        WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL
     ");
     $stmt->execute([$submission_id]);
     $pending = (int)$stmt->fetchColumn();
@@ -193,10 +215,11 @@ function has_incomplete_steps(PDO $pdo, string $submission_id): bool {
     $total_steps->execute([$form_id]);
     $nb_ordres = (int)$total_steps->fetchColumn();
 
+    // FIX-A : un ordre dont le seul token est invalide n'est plus demarre
     $started_ordres = $pdo->prepare("
         SELECT COUNT(DISTINCT st.ordre) FROM tokens t
         JOIN steps st ON st.id = t.step_id
-        WHERE t.submission_id = ?
+        WHERE t.submission_id = ? AND t.invalidated_at IS NULL
     ");
     $started_ordres->execute([$submission_id]);
     $nb_started = (int)$started_ordres->fetchColumn();
@@ -229,7 +252,8 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
 
         case 'validators':
             // Les validateurs ayant des tokens en cours
-            $stmt = $pdo->prepare("SELECT DISTINCT email FROM tokens WHERE submission_id = ? AND done_at IS NULL");
+            // FIX-A : tokens invalides exclus (plus de validateur actif derriere)
+            $stmt = $pdo->prepare("SELECT DISTINCT email FROM tokens WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL");
             $stmt->execute([$submission['id']]);
             $validators = $stmt->fetchAll(PDO::FETCH_COLUMN);
             $recipients = array_merge($recipients, $validators);
@@ -248,7 +272,8 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
             // Admin + validateurs en cours
             $admins = _dbm_q($pdo, "SELECT email FROM admins")->fetchAll(PDO::FETCH_COLUMN);
             $recipients = array_merge($recipients, $admins);
-            $stmt = $pdo->prepare("SELECT DISTINCT email FROM tokens WHERE submission_id = ? AND done_at IS NULL");
+            // FIX-A : tokens invalides exclus (plus de validateur actif derriere)
+            $stmt = $pdo->prepare("SELECT DISTINCT email FROM tokens WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL");
             $stmt->execute([$submission['id']]);
             $validators = $stmt->fetchAll(PDO::FETCH_COLUMN);
             $recipients = array_merge($recipients, $validators);
@@ -263,7 +288,7 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
     }
 
     // Dedoublonner et filtrer les emails invalides
-    $recipients = array_values(array_unique(array_filter($recipients, fn(string $e) => filter_var($e, FILTER_VALIDATE_EMAIL) !== false)));
+    $recipients = array_values(array_unique(array_filter($recipients, fn(string $e): bool => filter_var($e, FILTER_VALIDATE_EMAIL) !== false)));
     return $recipients;
 }
 
@@ -276,11 +301,13 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
  */
 function build_alert_html(array $sub, string $nom_agent, string $deadline_formatted, int $days_remaining, array $rule, array $data, PDO $pdo): string {
     // Recuperer les etapes et leur statut
+    // FIX-A (2026-09-03) : tokens invalides exclus — l'avancement (X validee(s)
+    // / Y total) et le detail des etapes ne portent que sur les tokens actifs.
     $tokens = $pdo->prepare("
         SELECT t.email, t.done_at, st.label as step_label, st.ordre
         FROM tokens t
         JOIN steps st ON st.id = t.step_id
-        WHERE t.submission_id = ?
+        WHERE t.submission_id = ? AND t.invalidated_at IS NULL
         ORDER BY st.ordre, st.label
     ");
     $tokens->execute([$sub['id']]);
@@ -306,7 +333,8 @@ function build_alert_html(array $sub, string $nom_agent, string $deadline_format
     }
 
     $alert_color = $days_remaining <= 2 ? '#c0392b' : ($days_remaining <= 5 ? '#b45309' : '#003189');
-    $urgency = $days_remaining <= 0 ? "DATE D&Eacute;PAS&Eacute;E" : "J-{$days_remaining}";
+    // P0-2 : retard strictement < 0 — J0 reste « J-0 », pas « DATE DÉPASSÉE ».
+    $urgency = $days_remaining < 0 ? "DATE D&Eacute;PAS&Eacute;E" : "J-{$days_remaining}";
     $dashboard_url = resolve_base_url() . '/index.php?p=dashboard';
 
     $body_html = '<div style="background:' . $alert_color . ';color:#fff;padding:15px 20px;border-radius:4px 4px 0 0;text-align:center;">

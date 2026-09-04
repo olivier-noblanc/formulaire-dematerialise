@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1455** (0 fail, 0 errors — gate finale avant commit) |
-| Assertions | **4261** |
+| Tests | **1527** (0 fail, 0 errors — re-vérifié 2026-09-03 après fix harnais test_all, v10.42.28 ; validation finale déléguée à la CI sur la branche, cf. AGENTS.md « Orchestration et validation ») |
+| Assertions | **4423** |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,50 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.29 — Fiabilisation du harnais test_assets_cache + documentation AGENTS.md
+| Tâche | Détail |
+|-------|--------|
+| Serveur sans COM | `proc_open()` commande en tableau (Windows) — remplace `COM('WScript.Shell')` (com_dotnet absent hors `PHP_INI_SCAN_DIR`) ; Linux `shell_exec("... &")` inchangé ; jamais `proc_close()` sur un process vivant |
+| Bornes de temps | curl `--connect-timeout 5 --max-time 20` (hang constaté sans borne) + sondes de disponibilité 300 ms × 20 s (remplace `sleep(2)` muet) |
+| Filet anti-orphelin | Shutdown function : `proc_terminate()` + `kill_port()` ; contrat `_test_summary_printed` pour ne pas subir le filet anti-masquage du bootstrap en succès |
+| Fix dépendance d'ordre | `testRegenerateRefusesInvalidatedToken` : `admin@test.com` (ligne qui fuit de `PersonaServiceTest::setUp`, sans cleanup) → `testeur@e2e.test` (seedé `phpunit_bootstrap`) ; rector pre-commit appliqué sur 12 fichiers du lot |
+| Documentation | AGENTS.md : règles de test ciblées + section « Orchestration et validation » (rôles, owner unique, écritures séquencées) |
+| Vérifs | test_assets_cache **21/21, exit 0** sur l'arbre final (2026-09-04, après rector) ; run filtré 8 classes **91 tests / 184 assertions OK** ; selftest **3/3** ; `php -l` OK |
+
+### v10.42.28 — Lot Oracle : fiabilisation du harnais test_all (hors sécurité)
+| Tâche | Détail |
+|-------|--------|
+| Reset déterministe DB test | `reset_test_db_strict()` (test_bootstrap) : `workflow_test.db` + `-wal`/`-shm` supprimés avant bootstrap, recréés (schéma+seeds) à la 1ʳᵉ connexion PDO ; garde stricte (opt-in `TEST_ALL_DB_RESET`, CLI, basename verrouillé, échec unlink → exit 1) |
+| Exit footer supprimé | Test « footer version accueil » → sous-processus (`run_php_subprocess`) : `index.php:108` appelait `exit()` in-process, tuant test_all sans résumé (exit 0) et masquant les échecs |
+| Filet anti-masquage | Shutdown function test_bootstrap : résumé partiel + `exit(1)` forcés si terminaison anormale (résumé non imprimé) ; chemin nominal des 4 suites inchangé |
+| Pages réparées | Section 4 : le runner requérait `tests/index.php` (inexistant), `Error` avalée par le catch → 15 tests verts sans rendre aucune page ; désormais vrai `index.php` racine + X-Test-Mode (DB test, pas prod) + détection par exit code |
+| Régressions | `tests/test_harness_selftest.php` (3 scénarios sous-processus : fail_exit0 / fatal / nominal) + canary `test_db_reset_canary` (absente au run suivant = reset prouvé) |
+| Dé-vacuïsation | « Settings par défaut présents » : `get()` retourne `''` (pas `false`) — l'ancien test ne pouvait jamais échouer |
+| Vérifs | test_all ×2 consécutifs 59/59 exit 0 ; selftest 3/3 ; preuve canary (reset désactivé → ❌ exit 1) ; PHPUnit 1527/4423 OK ; test_e2e 89/95 (6 échecs identiques sur HEAD → préexistants) |
+
+### v10.42.27 — Lot Oracle FIX-A/B/C : tokens invalidés exclus + dates calendaires réelles
+| Tâche | Détail |
+|-------|--------|
+| FIX-A alert_check | 5 requêtes `invalidated_at IS NULL` : pending + ordres démarrés (`has_incomplete_steps`), destinataires `validators`/`admin+validators` (`resolve_recipients`), avancement HTML (`build_alert_html`) — un ordre dont le seul token est invalidé (RGPD) n'alerte plus à vie |
+| FIX-B lectures/vues | `TokenReadSubmissionTrait` (findWithStepsBySubmission, findDetailedWithStepsBySubmission, findBySubmissionIds) + `SubmissionViewRenderer` + templates `renderDelegationForm`/`renderRemindHistory`/`renderWorkflowActions` — `done_at` d'un token délégué/régénéré = marqueur technique, pas une validation ; token RGPD = ni validé ni pending |
+| FIX-B filet | Exclusions transverses remind/pendings/stats (TokenService + traits de lecture, déport exclusions P0-3/P0-4) couvertes par `TokenInvalidationRegressionTest` (21 tests) |
+| FIX-C dates | `DateHelper::parseDate()` + `checkdate()` (30/02 rejeté — DateTimeImmutable normalisait en silence) ; `FormValidationHandler` valide `field_type=date` côté serveur (JJ/MM/AAAA ou AAAA-MM-JJ) |
+| Nouveaux tests | 44 (AlertCheckInvalidatedTokensTest 5, TokenInvalidatedDisplayTest 9, TokenInvalidationRegressionTest 21, FormValidationHandlerTest +9) |
+| Métriques | **1527 tests / 4428 assertions OK** (0 fail, 0 error) — run complet 2026-09-03, **inclut déjà les tests FIX-A** (vérifié : 1527 tests / 0 defect dans le cache PHPUnit) |
+| ⚠️ Reste | **Gate complète (`scripts/check.ps1`) à relancer** avant commit — arbre non commité, travail concurrent actif (P0-3/P0-5, v36, templates) |
+
+### v10.42.26 — Lot Oracle P0-1/P0-2 : fuseau horaire affichage + jours calendaires
+| Tâche | Détail |
+|-------|--------|
+| P0-1 HtmlService | `formatDateTimeFr(?, bool $fromUtc = true)` : chaîne SQL UTC interprétée en UTC puis convertie Europe/Paris ; invalide → '' ; 9 call sites Paris (submitted_at ×8, last_alert_check) marqués `false` |
+| P0-1 ValidateController GET | `strtotime(expires_at . ' UTC')` (idiome Bug14) — token plus « expiré 1-2h trop tôt » en prod |
+| P0-1 sites frères | 5 strtotime-UTC corrigés (monitoring_blocked_tokens, renderRemindHistory, monitoring_mail_logs, renderValidatorData, submission_detail) — grep transversal |
+| P0-2 DateHelper | `calendarDaysUntil()` (minuit/minuit Paris, DST-safe, source unique) + `calculateDeadlineUrgency()` refondue (plus de floor/86400 ni %a) |
+| P0-2 alert_check.php | `calendarDaysUntil($deadline, $now)` + branches retard strictes `< 0` — J0 n'est plus « EN RETARD de 0 jours »/« DATE DÉPASSÉE » |
+| Tests TDD | +15 (DateHelperTest 8, HtmlServiceTest 2+2 màj, ValidateControllerTest 2, AlertCheckCalendarDaysTest 3 structurels) — RED 6E+9F constatés → GREEN |
+| Vérifications | PHPUnit complet 1504/4362 OK ; PHPStan level 8 ciblé 0 erreur |
+| Hors lot signalé | `SubmissionViewRenderer:266` affiche `filled_at` ISO brut (pas formatDateTimeFr) — à traiter séparément |
 
 ### v10.42.25 — Fix gate : fixtures régression Bug01/Bug03 (domaine email réel + idempotence)
 | Tâche | Détail |
@@ -358,6 +402,10 @@
 
 ## 🎯 Ce qui reste
 
+**À faire en premier :**
+- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit 1527/4423 (v10.42.28), PHPStan ciblé 0, test_all 59/59 ×2, selftest 3/3, test_assets_cache 21/21 (re-vérifié 2026-09-04) ; gate locale du 2026-09-03 12:17 OK sur l'état d'alors (lint 38 fichiers, PHPStan, PHPUnit 1527/4427, suites fonctionnelles)
+- **Nettoyer la fuite `PersonaServiceTest::setUp`** : la ligne `admins` `admin@test.com` est insérée sans jamais être supprimée (pollution d'ordre pour tout test vérifiant `isAdmin()` derrière) — `testRegenerateRefusesInvalidatedToken` a été rendu insensible (v10.42.29), la cause racine reste à supprimer (cleanup tearDown) avec vérification qu'aucun autre test n'en dépend
+
 ### Audit CTO (rapport : download/CTO_AUDIT_REPORT.md)
 
 55 problèmes identifiés (10 CRITICAL, 13 HIGH, 17 MEDIUM, 15 LOW).
@@ -509,4 +557,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-01 (v10.42.24 — audit hors sécurité, état après redémarrage)_
+_Dernière mise à jour : 2026-09-03 (v10.42.27 — lot FIX-A/B/C documenté, gate complète à relancer avant commit)_

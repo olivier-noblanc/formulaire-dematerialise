@@ -48,7 +48,9 @@ final class AdminAlertsRenderer
             $checkTs = strtotime($lastAlertCheck);
             $checkAge = ($checkTs !== false) ? (time() - $checkTs) : 999999;
             $checkOk = $checkAge < 86400;
-            $lastCheckFormatted = \App\Core\App::html()->formatDateTimeFr($lastAlertCheck);
+            // last_alert_check est écrit par alert_check.php via PHP date() :
+            // déjà en heure Paris (cas particulier documenté, P0-1) → fromUtc=false.
+            $lastCheckFormatted = \App\Core\App::html()->formatDateTimeFr($lastAlertCheck, false);
 
             $html .= '      <div class="script-status">' . "\n";
             $html .= '        <span class="health-dot ' . ($checkOk ? 'health-ok' : 'health-warn') . '"></span>' . "\n";

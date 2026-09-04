@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Core\DateHelper;
 use App\Enum\FieldType;
 
 /**
@@ -42,6 +43,15 @@ final class FormValidationHandler
             if ($value !== '' && $field_type === FieldType::Email->value
                 && filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
                 $errors[$field_name] = 'Adresse email invalide';
+            }
+            // FIX-C (2026-09-03) : validation du format des champs date côté
+            // serveur via DateHelper::parseDate (source unique de vérité) —
+            // JJ/MM/AAAA ou AAAA-MM-JJ, calendrier réel. Le navigateur envoie
+            // AAAA-MM-JJ via <input type="date">, mais un POST forgé doit être
+            // rejeté avec une erreur explicite.
+            if ($value !== '' && $field_type === FieldType::Date->value
+                && !DateHelper::parseDate($value) instanceof \DateTimeImmutable) {
+                $errors[$field_name] = 'Date invalide (format attendu : JJ/MM/AAAA ou AAAA-MM-JJ)';
             }
         }
         return $errors;

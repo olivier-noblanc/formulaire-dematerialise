@@ -120,7 +120,7 @@ final class SubmissionViewController extends BaseController
   <div class="card">
     <h2><?= \App\Core\App::html()->escape($sub['form_label']) ?></h2>
     <p class="u-c-muted-fs-sm">
-      Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($sub['submitted_at'] ?? 'now'))) ?>
+      Soumis par <strong><?= \App\Core\App::html()->escape($sub['submitted_by']) ?></strong> le <?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($sub['submitted_at'] ?? 'now'), false)) ?>
       <?php if ($sub['closed_at'] !== null && $sub['closed_at'] !== ''): ?>
         — Clôturé le <?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $sub['closed_at'])) ?>
       <?php endif; ?>

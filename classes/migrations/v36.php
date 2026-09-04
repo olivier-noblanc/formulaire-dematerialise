@@ -108,13 +108,17 @@ function apply_migration_v36(PDO $pdo, int $current_version): int {
         $fkStmt = $rebuild->query('PRAGMA foreign_key_check');
         $fkErrors = $fkStmt !== false ? $fkStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         $fkStmt = null;
-
-        $rebuild->exec("INSERT INTO schema_version (version, applied_at) VALUES (36, datetime('now'))");
         $rebuild = null;
 
+        // P0-7 (2026-09-03) : le marquage schema_version ne se fait qu'APRÈS
+        // validation FK. Avant : l'INSERT précèdait le throw — en cas de FK
+        // cassée, la version 36 était marquée puis la migration sautée au
+        // prochain run malgré l'état invalide (jamais rejouée).
         if ($fkErrors !== []) {
             throw new \RuntimeException('v36: FK integrity broken: ' . json_encode($fkErrors));
         }
+
+        $pdo->exec("INSERT INTO schema_version (version, applied_at) VALUES (36, datetime('now'))");
 
         return 36;
     } catch (\PDOException $e) {

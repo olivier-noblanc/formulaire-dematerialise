@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * @var bool                                                                                                    $is_admin
  * @var string                                                                                                  $status
- * @var list<array{id?: string, email?: string, done_at?: string|null}>                                         $all_tokens
+ * @var list<array{id?: string, email?: string, done_at?: string|null, invalidated_at?: string|null}>            $all_tokens
  */
 
 if (!$is_admin || $status !== \App\Enum\SubmissionStatus::EnCours->value) {
@@ -14,7 +14,10 @@ if (!$is_admin || $status !== \App\Enum\SubmissionStatus::EnCours->value) {
 
 $forms_html = '';
 foreach ($all_tokens as $all_token) {
-    if ((bool) ($all_token['done_at'])) {
+    // FIX-B (2026-09-03) : un token invalidé (délégation, régénération, RGPD)
+    // ne reçoit aucune action admin (relance/régénération) — son done_at
+    // éventuel est un marqueur technique, pas une validation.
+    if ((bool) ($all_token['done_at'] ?? null) || ($all_token['invalidated_at'] ?? null) !== null) {
         continue;
     }
     $tok_id  = \App\Core\App::html()->escape((string) ($all_token['id'] ?? ''));
