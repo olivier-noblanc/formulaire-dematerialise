@@ -53,16 +53,20 @@ trait TokenWriteQueriesTrait
     }
 
     /**
-     * Marque un token comme traité + invalidé (done_at + invalidated_at).
-     * Utilisé par TokenService::regenerate() et TokenService::delegate().
-     * Retourne le nombre de lignes affectées.
+     * Marque un token comme traité + invalidé (done_at + invalidated_at),
+     * uniquement s'il est encore actif (WHERE done_at IS NULL AND
+     * invalidated_at IS NULL) — même protection race-condition que
+     * tryInvalidateForDelegation(). Utilisé par TokenService::regenerate().
+     * Retourne true si le token a bien été marqué, false s'il était déjà
+     * traité/invalidé ou introuvable.
      */
     public function markDoneAndInvalidatedById(string $tokenId, string $doneAt, string $invalidatedAt): bool
     {
-        return $this->execute(
-            'UPDATE tokens SET done_at = ?, invalidated_at = ? WHERE id = ?',
-            [$doneAt, $invalidatedAt, $tokenId]
+        $stmt = $this->pdo()->prepare(
+            'UPDATE tokens SET done_at = ?, invalidated_at = ? WHERE id = ? AND done_at IS NULL AND invalidated_at IS NULL'
         );
+        $stmt->execute([$doneAt, $invalidatedAt, $tokenId]);
+        return $stmt->rowCount() > 0;
     }
 
     /**

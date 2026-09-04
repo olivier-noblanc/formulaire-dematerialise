@@ -91,13 +91,13 @@ final class ExportServiceTest extends TestCase
     public function testTransformValueOneReturnsOui(): void
     {
         $service = new ExportService($this->auth);
-        self::assertSame('Oui', $service->transformValue('1'));
+        self::assertSame('Oui', $service->transformValue('1', true));
     }
 
     public function testTransformValueZeroReturnsNon(): void
     {
         $service = new ExportService($this->auth);
-        self::assertSame('Non', $service->transformValue('0'));
+        self::assertSame('Non', $service->transformValue('0', true));
     }
 
     public function testTransformValueStringPassthrough(): void
@@ -221,6 +221,44 @@ final class ExportServiceTest extends TestCase
 
     // ── buildWhereClause() ────────────────────────────────────
 
+    // ── transformValue() — B-FIX4 : transformation checkbox seulement ──
+
+    public function testTransformValueRawWhenNotCheckbox(): void
+    {
+        $service = new ExportService($this->auth);
+        // B-FIX4 : hors contexte checkbox, '1'/'0' sont des données légitimes
+        // (texte, option de select) — pas de conversion
+        self::assertSame('1', $service->transformValue('1', false));
+        self::assertSame('0', $service->transformValue('0', false));
+    }
+
+    public function testTransformValueOuiWhenCheckbox(): void
+    {
+        $service = new ExportService($this->auth);
+        self::assertSame('Oui', $service->transformValue('1', true));
+    }
+
+    public function testTransformValueNonWhenCheckbox(): void
+    {
+        $service = new ExportService($this->auth);
+        self::assertSame('Non', $service->transformValue('0', true));
+    }
+
+    public function testTransformValueEmptyStringBecomesNonWhenCheckbox(): void
+    {
+        // checkbox décochée : clé absente de data → '' → 'Non' pour lisibilité
+        $service = new ExportService($this->auth);
+        self::assertSame('Non', $service->transformValue('', true));
+    }
+
+    public function testTransformValueInjectionNeutralizedEvenWhenCheckbox(): void
+    {
+        $service = new ExportService($this->auth);
+        self::assertSame("'=SUM(A1)", $service->transformValue('=SUM(A1)', true));
+    }
+
+    // ── buildWhereClause() ─────────────────────────────────────
+
     public function testBuildWhereClauseDefaultReturns1Eq1(): void
     {
         $service = new ExportService($this->auth);
@@ -269,29 +307,63 @@ final class ExportServiceTest extends TestCase
         self::assertSame([], $params);
     }
 
-    // ── generateCsvString() ────────────────────────────────────
+    // ── csvChunks() — flux d'export streamé (régression deadMethod) ──
 
-    public function testGenerateCsvStringEmptyDatabase(): void
+    public function testCsvChunksIsPublicAndYieldsStringChunks(): void
     {
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString();
+        // Régression : après suppression de generateCsvString() (morte en prod
+        // depuis B-FIX5), csvChunks() est l'API publique de l'export —
+        // consommée par exportCsv() et les tests.
+        self::assertTrue(method_exists($service, 'csvChunks'));
+        $reflection = new \ReflectionMethod($service, 'csvChunks');
+        self::assertTrue($reflection->isPublic(), 'csvChunks() doit être public');
+        $returnType = $reflection->getReturnType();
+        self::assertNotNull($returnType);
+        self::assertSame(\Generator::class, $returnType->getName());
+    }
+
+    public function testCsvChunksYieldsBomThenHeaderChunksInOrder(): void
+    {
+        $service = new ExportService($this->auth);
+        $chunks = iterator_to_array($service->csvChunks());
+        self::assertNotEmpty($chunks);
+        // 1er chunk : BOM UTF-8 seul
+        self::assertSame(chr(0xEF) . chr(0xBB) . chr(0xBF), $chunks[0]);
+        // 2e chunk : en-tête CSV avec les colonnes fixes
+        self::assertStringContainsString('ID', $chunks[1]);
+        self::assertStringContainsString('Formulaire', $chunks[1]);
+        self::assertStringContainsString('Agent', $chunks[1]);
+        self::assertStringContainsString('Statut', $chunks[1]);
+        self::assertStringContainsString('Soumis le', $chunks[1]);
+        self::assertStringContainsString('Clôturé le', $chunks[1]);
+        // Tous les chunks sont des strings (stream consommable chunk par chunk)
+        foreach ($chunks as $chunk) {
+            self::assertIsString($chunk);
+        }
+    }
+
+    public function testCsvChunksEmptyDatabase(): void
+    {
+        $service = new ExportService($this->auth);
+        $csv = implode('', iterator_to_array($service->csvChunks()));
         self::assertIsString($csv);
         // Should contain BOM + at least header row
         self::assertNotEmpty($csv);
     }
 
-    public function testGenerateCsvStringContainsBom(): void
+    public function testCsvChunksContainsBom(): void
     {
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString();
+        $csv = implode('', iterator_to_array($service->csvChunks()));
         // UTF-8 BOM: EF BB BF
         self::assertStringStartsWith(chr(0xEF) . chr(0xBB) . chr(0xBF), $csv);
     }
 
-    public function testGenerateCsvStringContainsHeaderRow(): void
+    public function testCsvChunksContainsHeaderRow(): void
     {
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString();
+        $csv = implode('', iterator_to_array($service->csvChunks()));
         // Remove BOM for easier parsing
         $withoutBom = substr($csv, 3);
         $lines = explode("\n", $withoutBom);
@@ -305,39 +377,39 @@ final class ExportServiceTest extends TestCase
         self::assertStringContainsString('Clôturé le', $lines[0]);
     }
 
-    public function testGenerateCsvStringUsesSemicolonDelimiter(): void
+    public function testCsvChunksUsesSemicolonDelimiter(): void
     {
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString();
+        $csv = implode('', iterator_to_array($service->csvChunks()));
         self::assertStringContainsString(';', $csv);
     }
 
-    public function testGenerateCsvStringWithFormIdFilter(): void
+    public function testCsvChunksWithFormIdFilter(): void
     {
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => 'nonexistent-form-id']);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => 'nonexistent-form-id'])));
         // Should still produce valid CSV (just empty)
         self::assertIsString($csv);
         self::assertNotEmpty($csv);
     }
 
-    public function testGenerateCsvStringWithStatusFilter(): void
+    public function testCsvChunksWithStatusFilter(): void
     {
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['status' => 'validated']);
+        $csv = implode('', iterator_to_array($service->csvChunks(['status' => 'validated'])));
         self::assertIsString($csv);
         self::assertNotEmpty($csv);
     }
 
-    public function testGenerateCsvStringWithBothFilters(): void
+    public function testCsvChunksWithBothFilters(): void
     {
         $service = new ExportService($this->auth);
-        $csv = $service->generateCsvString(['form_id' => 'nonexistent', 'status' => 'pending']);
+        $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => 'nonexistent', 'status' => 'pending'])));
         self::assertIsString($csv);
         self::assertNotEmpty($csv);
     }
 
-    public function testGenerateCsvStringWithSubmissionData(): void
+    public function testCsvChunksWithSubmissionData(): void
     {
         $pdo = $this->db->getPdo();
         // Insert a test form if not exists
@@ -353,11 +425,18 @@ final class ExportServiceTest extends TestCase
                         VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
             ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
 
+        // B-FIX4 : déclarer check_ok / check_no comme champs checkbox — la
+        // conversion Oui/Non ne s'applique qu'aux champs de ce type
+        $pdo->exec("INSERT INTO form_fields (id, form_id, label, field_type, field_name)
+                     VALUES ('ff-" . uniqid() . "', '$formId', 'OK', 'checkbox', 'check_ok')");
+        $pdo->exec("INSERT INTO form_fields (id, form_id, label, field_type, field_name)
+                     VALUES ('ff-" . uniqid() . "', '$formId', 'NO', 'checkbox', 'check_no')");
+
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             $withoutBom = substr($csv, 3);
-            $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
+            $lines = array_filter(explode("\n", $withoutBom), fn($l): bool => trim($l) !== '');
 
             // At least header + 1 data row
             self::assertGreaterThanOrEqual(2, count($lines));
@@ -370,16 +449,17 @@ final class ExportServiceTest extends TestCase
             $dataRow = $lines[1];
             self::assertStringContainsString('Dupont', $dataRow);
             self::assertStringContainsString('Jean', $dataRow);
-            // Boolean conversion: '1' → Oui, '0' → Non
+            // Boolean conversion (checkbox only): '1' → Oui, '0' → Non
             self::assertStringContainsString('Oui', $dataRow);
             self::assertStringContainsString('Non', $dataRow);
         } finally {
             $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+            $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$formId]);
             $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
         }
     }
 
-    public function testGenerateCsvStringExcludesValidationsKey(): void
+    public function testCsvChunksExcludesValidationsKey(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form2-' . uniqid();
@@ -395,9 +475,9 @@ final class ExportServiceTest extends TestCase
 
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             $withoutBom = substr($csv, 3);
-            $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
+            $lines = array_filter(explode("\n", $withoutBom), fn($l): bool => trim($l) !== '');
 
             // Header should NOT contain 'validations'
             self::assertStringNotContainsString('validations', $lines[0]);
@@ -409,7 +489,7 @@ final class ExportServiceTest extends TestCase
         }
     }
 
-    public function testGenerateCsvStringArrayValuesJsonEncoded(): void
+    public function testCsvChunksArrayValuesJsonEncoded(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form3-' . uniqid();
@@ -425,9 +505,9 @@ final class ExportServiceTest extends TestCase
 
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             $withoutBom = substr($csv, 3);
-            $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
+            $lines = array_filter(explode("\n", $withoutBom), fn($l): bool => trim($l) !== '');
 
             // Data row should contain JSON-encoded array
             self::assertGreaterThanOrEqual(2, count($lines));
@@ -439,7 +519,65 @@ final class ExportServiceTest extends TestCase
         }
     }
 
-    public function testGenerateCsvStringFormulaInjectionNeutralized(): void
+    public function testCsvChunksTextFieldOneNotMangled(): void
+    {
+        $pdo = $this->db->getPdo();
+        $formId = 'test-export-form-' . uniqid();
+        $slug = 'test-export-' . uniqid();
+        $pdo->exec("INSERT INTO forms (id, label, slug, description)
+                     VALUES ('$formId', 'Test Export Form', '$slug', 'Test')");
+        // form_fields : 'quantite' est un champ TEXTE, pas une checkbox
+        $pdo->exec("INSERT INTO form_fields (id, form_id, label, field_type, field_name)
+                     VALUES ('ff-" . uniqid() . "', '$formId', 'Quantité', 'text', 'quantite')");
+        $subId = 'test-sub-' . uniqid();
+        $data = json_encode(['quantite' => '1']);
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
+            ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
+
+        try {
+            $service = new ExportService($this->auth);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
+            self::assertStringContainsString('quantite', $csv);
+            self::assertStringNotContainsString('Oui', $csv, "B-FIX4 : la valeur texte '1' ne doit pas être convertie en 'Oui'");
+        } finally {
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+            $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$formId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+        }
+    }
+
+    public function testCsvChunksCheckboxValueConverted(): void
+    {
+        $pdo = $this->db->getPdo();
+        $formId = 'test-export-form-' . uniqid();
+        $slug = 'test-export-' . uniqid();
+        $pdo->exec("INSERT INTO forms (id, label, slug, description)
+                     VALUES ('$formId', 'Test Export Form', '$slug', 'Test')");
+        // form_fields : 'accord' est une checkbox
+        $pdo->exec("INSERT INTO form_fields (id, form_id, label, field_type, field_name)
+                     VALUES ('ff-" . uniqid() . "', '$formId', 'Accord', 'checkbox', 'accord')");
+        $subId = 'test-sub-' . uniqid();
+        $data = json_encode(['nom' => 'Dupont', 'accord' => '1']);
+        $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status)
+                        VALUES (?, ?, ?, ?, datetime('now'), 'en_cours')")
+            ->execute([$subId, $formId, $data, 'agent_' . uniqid() . '@test.com']);
+
+        try {
+            $service = new ExportService($this->auth);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
+            $dataRow = array_filter(explode("\n", substr($csv, 3)), fn($l): bool => str_contains($l, 'Dupont'));
+            $row = (string) (reset($dataRow) ?: '');
+            self::assertStringContainsString('Oui', $row, 'B-FIX4 : la valeur checkbox 1 doit être convertie en Oui');
+            self::assertStringContainsString('Dupont', $row);
+        } finally {
+            $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
+            $pdo->prepare("DELETE FROM form_fields WHERE form_id = ?")->execute([$formId]);
+            $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
+        }
+    }
+
+    public function testCsvChunksFormulaInjectionNeutralized(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form4-' . uniqid();
@@ -455,7 +593,7 @@ final class ExportServiceTest extends TestCase
 
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             // The formula should be prefixed with apostrophe
             self::assertStringContainsString("'=SUM(A1:A10)", $csv);
         } finally {
@@ -464,7 +602,7 @@ final class ExportServiceTest extends TestCase
         }
     }
 
-    public function testGenerateCsvStringOrderBySubmittedAtDesc(): void
+    public function testCsvChunksOrderBySubmittedAtDesc(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form5-' . uniqid();
@@ -486,9 +624,9 @@ final class ExportServiceTest extends TestCase
 
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             $withoutBom = substr($csv, 3);
-            $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
+            $lines = array_filter(explode("\n", $withoutBom), fn($l): bool => trim($l) !== '');
             self::assertGreaterThanOrEqual(3, count($lines));
 
             // Second submission (newer) should come first due to DESC order
@@ -500,7 +638,7 @@ final class ExportServiceTest extends TestCase
         }
     }
 
-    public function testGenerateCsvStringMultipleSubmissionsDifferentKeys(): void
+    public function testCsvChunksMultipleSubmissionsDifferentKeys(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form6-' . uniqid();
@@ -522,9 +660,9 @@ final class ExportServiceTest extends TestCase
 
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             $withoutBom = substr($csv, 3);
-            $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
+            $lines = array_filter(explode("\n", $withoutBom), fn($l): bool => trim($l) !== '');
 
             // Header should contain ALL keys from both submissions
             self::assertStringContainsString('nom', $lines[0]);
@@ -536,7 +674,7 @@ final class ExportServiceTest extends TestCase
         }
     }
 
-    public function testGenerateCsvStringMissingKeyInSubmission(): void
+    public function testCsvChunksMissingKeyInSubmission(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form7-' . uniqid();
@@ -559,9 +697,9 @@ final class ExportServiceTest extends TestCase
 
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             $withoutBom = substr($csv, 3);
-            $lines = array_filter(explode("\n", $withoutBom), fn($l) => trim($l) !== '');
+            $lines = array_filter(explode("\n", $withoutBom), fn($l): bool => trim($l) !== '');
 
             // Both keys in header
             self::assertStringContainsString('nom', $lines[0]);
@@ -572,7 +710,7 @@ final class ExportServiceTest extends TestCase
         }
     }
 
-    public function testGenerateCsvStringClosedAtEmptyString(): void
+    public function testCsvChunksClosedAtEmptyString(): void
     {
         $pdo = $this->db->getPdo();
         $formId = 'test-export-form8-' . uniqid();
@@ -588,7 +726,7 @@ final class ExportServiceTest extends TestCase
 
         try {
             $service = new ExportService($this->auth);
-            $csv = $service->generateCsvString(['form_id' => $formId]);
+            $csv = implode('', iterator_to_array($service->csvChunks(['form_id' => $formId])));
             self::assertIsString($csv);
             self::assertNotEmpty($csv);
         } finally {
@@ -638,16 +776,16 @@ final class ExportServiceTest extends TestCase
         self::assertTrue($reflection->isPublic());
     }
 
-    public function testGenerateCsvStringMethodExists(): void
+    public function testCsvChunksMethodExists(): void
     {
         $service = new ExportService($this->auth);
-        self::assertTrue(method_exists($service, 'generateCsvString'));
+        self::assertTrue(method_exists($service, 'csvChunks'));
     }
 
-    public function testGenerateCsvStringMethodIsPublic(): void
+    public function testCsvChunksMethodIsPublic(): void
     {
         $service = new ExportService($this->auth);
-        $reflection = new \ReflectionMethod($service, 'generateCsvString');
+        $reflection = new \ReflectionMethod($service, 'csvChunks');
         self::assertTrue($reflection->isPublic());
     }
 
@@ -660,13 +798,13 @@ final class ExportServiceTest extends TestCase
         self::assertSame('void', $returnType->getName());
     }
 
-    public function testGenerateCsvStringReturnTypeIsString(): void
+    public function testCsvChunksReturnTypeIsGenerator(): void
     {
         $service = new ExportService($this->auth);
-        $reflection = new \ReflectionMethod($service, 'generateCsvString');
+        $reflection = new \ReflectionMethod($service, 'csvChunks');
         $returnType = $reflection->getReturnType();
         self::assertNotNull($returnType);
-        self::assertSame('string', $returnType->getName());
+        self::assertSame(\Generator::class, $returnType->getName());
     }
 
     public function testTransformValueReturnTypeIsMixed(): void

@@ -15,7 +15,7 @@ foreach ($attachments as $attachment) {
     $name         = \App\Core\App::html()->escape((string) ($attachment['original_name'] ?? ''));
     $mime         = \App\Core\App::html()->escape((string) ($attachment['mime_type'] ?? ''));
     $size         = \App\Core\App::html()->formatFileSize((int) ($attachment['file_size'] ?? 0));
-    $date         = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string) ($attachment['uploaded_at'] ?? 'now'))));
+    $date         = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($attachment['uploaded_at'] ?? 'now')));
     $dl_url       = \App\Core\App::html()->escape('index.php?p=download&id=' . urlencode((string) ($attachment['id'] ?? '')));
 
     $rows .= <<<HTML

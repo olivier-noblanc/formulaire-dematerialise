@@ -46,12 +46,12 @@ $submission = [
 $html = \App\Core\App::mail()->buildMailHtml($submission, 'Étape test', 'abc123token');
 
 // Le lien doit contenir index.php?p=validate
-$hasGoodUrl = strpos($html, 'index.php?p=validate&token=abc123token') !== false;
+$hasGoodUrl = str_contains($html, 'index.php?p=validate&token=abc123token');
 check('Lien de validation utilise index.php?p=validate', $hasGoodUrl,
     $hasGoodUrl ? '' : 'URL trouvée: ' . (preg_match('/href="([^"]*validate[^"]*)"/', $html, $m) ? $m[1] : 'non trouvée'));
 
 // Le lien ne doit PAS contenir validate.php directement
-$hasBadUrl = strpos($html, '/validate.php') !== false;
+$hasBadUrl = str_contains($html, '/validate.php');
 check('Lien ne contient PAS /validate.php', !$hasBadUrl,
     $hasBadUrl ? 'Still using /validate.php' : '');
 
@@ -109,7 +109,7 @@ foreach ($filesToCheck as $file) {
     }
 }
 
-check('Aucune URL .php dans le code email (toutes utilisent index.php?p=)', empty($badUrls),
+check('Aucune URL .php dans le code email (toutes utilisent index.php?p=)', $badUrls === [],
     $badUrls ? implode('; ', array_slice($badUrls, 5)) : '');
 
 // ── Test 4 : URL de validation résolvable ──
@@ -119,9 +119,9 @@ preg_match('/href="([^"]*)"/', $html, $hrefMatch);
 if (!empty($hrefMatch[1])) {
     $url = $hrefMatch[1];
     // L'URL doit contenir index.php, p=validate, et token=
-    $hasIndex = strpos($url, 'index.php') !== false;
-    $hasP = strpos($url, 'p=validate') !== false;
-    $hasToken = strpos($url, 'token=abc123token') !== false;
+    $hasIndex = str_contains($url, 'index.php');
+    $hasP = str_contains($url, 'p=validate');
+    $hasToken = str_contains($url, 'token=abc123token');
     check('URL contient index.php', $hasIndex);
     check('URL contient p=validate', $hasP);
     check('URL contient token=abc123token', $hasToken);
@@ -133,4 +133,8 @@ if (!empty($hrefMatch[1])) {
 echo "\n═══════════════════════════════════════════════════\n";
 echo "  RÉSULTATS : $passed réussi(s) / $failed échoué(s) / " . ($passed + $failed) . " total\n";
 echo "═══════════════════════════════════════════════════\n";
+// Contrat B-HARNESS : ce script utilise les compteurs du bootstrap mais
+// imprime son propre résumé — poser le flag pour que le filet anti-masquage
+// ne force pas exit(1) après un run nominal.
+$GLOBALS['_test_summary_printed'] = true;
 exit($failed > 0 ? 1 : 0);

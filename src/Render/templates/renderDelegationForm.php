@@ -5,13 +5,15 @@ declare(strict_types=1);
  * @var string                                                                                                  $status
  * @var bool                                                                                                    $is_admin
  * @var string                                                                                                  $user
- * @var list<array{id?: string, ordre?: int, email?: string, done_at?: string|null}>                            $all_tokens
+ * @var list<array{id?: string, ordre?: int, email?: string, done_at?: string|null, invalidated_at?: string|null}>  $all_tokens
  */
 if ($status !== \App\Enum\SubmissionStatus::EnCours->value) {
     return '';
 }
 
-$my_pending = array_filter($all_tokens, fn(array $tok): bool => !($tok['done_at']) && ($is_admin || $tok['email'] === $user));
+// FIX-B (2026-09-03) : un token invalidé (délégation, régénération, RGPD)
+// n'est plus délégable — son done_at éventuel est un marqueur technique.
+$my_pending = array_filter($all_tokens, fn(array $tok): bool => ($tok['done_at'] ?? null) === null && ($tok['invalidated_at'] ?? null) === null && ($is_admin || ($tok['email'] ?? '') === $user));
 
 if ($my_pending === []) {
     return '';

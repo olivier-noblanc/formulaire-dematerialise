@@ -39,7 +39,12 @@ function http_get(string $url, array $headers = []): array {
     foreach ($headers as $h) $headerArgs[] = '-H';
     foreach ($headers as $h) $headerArgs[] = $h;
 
-    $cmd = array_merge(['curl', '-s', '--noproxy', 'localhost,127.0.0.1', '-D', '-', '-o', '-'], $headerArgs, [$url]);
+    // Timeouts bornés : shell_exec() attend la fin de curl — sans --max-time,
+    // une requête qui pend (serveur vivant mais bloqué : verrou SQLite, boucle
+    // côté PHP…) bloque le test INDÉFINIMENT. C'est la cause du hang constaté.
+    $cmd = array_merge(['curl', '-s', '--noproxy', 'localhost,127.0.0.1',
+        '--connect-timeout', '5', '--max-time', '20',
+        '-D', '-', '-o', '-'], $headerArgs, [$url]);
     $cmdStr = '';
     foreach ($cmd as $arg) {
         $cmdStr .= ' ' . escapeshellarg($arg);
@@ -57,7 +62,8 @@ function http_get(string $url, array $headers = []): array {
         return ['status' => 0, 'headers' => '', 'body' => $response, 'info' => []];
     }
     $headersRaw = substr($response, 0, $pos);
-    $body = substr($response, $pos + 4);  // +4 pour \r\n\r\n ou +2 pour \n\n (approximatif)
+    $sepLen = substr($response, $pos, 4) === "\r\n\r\n" ? 4 : 2;
+    $body = substr($response, $pos + $sepLen);
 
     // Extraire le status code
     $status = 0;
@@ -94,20 +100,85 @@ foreach (glob($projectRoot . '/db/cache/assets_css_*.css') ?: [] as $cacheFile) 
 // corps HTTP QUE si display_errors est On. En CI (php.ini production, Off par
 // défaut) le warning part dans les logs serveur et le test ne peut rien voir.
 // Avec display_errors=1, tout warning pollue le corps → l'assertion Test 2 le détecte.
-// Démarrage cross-platform (pattern tests/e2e/start_server.php : COM sur Windows,
-// background & sur Linux — shell_exec("... &") BLOQUE sous cmd.exe, ne jamais l'utiliser).
-$serverCmd = $phpBin . ' -d display_errors=1 -d error_reporting=E_ALL -S 127.0.0.1:' . $PORT
-    . ' -t ' . escapeshellarg($projectRoot)
-    . ' > ' . escapeshellarg(test_temp_dir() . '/php_server_assets.log') . ' 2>&1';
+// Démarrage cross-platform :
+//  - Windows : proc_open() avec commande en TABLEAU (PHP 7.4+, CreateProcess sans
+//    shell intermédiaire) — stdout/stderr redirigés vers le log temporaire via le
+//    descripteur ['file', ...], aucun quoting cmd.exe. Remplace COM/WScript.Shell
+//    qui dépend de l'extension com_dotnet (activée uniquement dans cli\php.ini :
+//    absente des contextes sans PHP_INI_SCAN_DIR → « Class "COM" not found »).
+//    Pas de proc_close() (il attendrait la fin du serveur) : le processus tourne
+//    en arrière-plan et survit à la fin du script ; il est arrêté par kill_port().
+//  - Linux : shell_exec("... &") — OK sous bash ; BLOQUE sous cmd.exe, ne jamais
+//    l'utiliser sur Windows.
+$serverProc = null; // handle proc_open du serveur (Windows) ; null sous Linux
+$logFile = test_temp_dir() . '/php_server_assets.log';
 if (PHP_OS_FAMILY === 'Windows') {
-    $wsh = new COM('WScript.Shell');
-    $wsh->Run('cmd /c ' . $serverCmd, 0, false);
+    $proc = proc_open(
+        [$phpBin, '-d', 'display_errors=1', '-d', 'error_reporting=E_ALL',
+            '-S', '127.0.0.1:' . $PORT, '-t', $projectRoot],
+        [0 => ['pipe', 'r'], 1 => ['file', $logFile, 'w'], 2 => ['file', $logFile, 'a']],
+        $pipes
+    );
+    if (!is_resource($proc)) {
+        fwrite(STDERR, "Impossible de démarrer le serveur PHP -S (proc_open) — log : $logFile\n");
+        exit(1);
+    }
+    // stdin inutilisé par php -S : refermer côté parent.
+    fclose($pipes[0]);
+    $serverProc = $proc;
 } else {
+    $serverCmd = $phpBin . ' -d display_errors=1 -d error_reporting=E_ALL -S 127.0.0.1:' . $PORT
+        . ' -t ' . escapeshellarg($projectRoot)
+        . ' > ' . escapeshellarg($logFile) . ' 2>&1';
     shell_exec($serverCmd . ' &');
 }
-sleep(2);
+// Arrêt propre et borné du serveur : proc_terminate() (non bloquant) puis
+// kill_port() en filet. JAMAIS proc_close() tant que le serveur peut être
+// vivant : il attendrait la fin du processus et bloquerait le test.
+$stopServer = static function (): void {
+    global $serverProc, $PORT;
+    if (is_resource($serverProc)) {
+        proc_terminate($serverProc);
+    }
+    kill_port($PORT);
+};
+// Filet anti-orphelin : si le test se termine sans passer par le nettoyage
+// final (exit anticipé), le serveur PHP -S ne doit pas rester orphelin sur
+// le port de test. NB : en cas de fatal, le filet anti-masquage de
+// test_bootstrap.php (enregistré AVANT celui-ci) appelle exit(1) dans sa
+// propre shutdown function, ce qui court-circuite celle-ci (comportement
+// vérifié empiriquement) — l'orphelin éventuel est alors nettoyé par le
+// kill_port() de tête du run suivant.
+register_shutdown_function(static function (): void {
+    global $stopServer;
+    $stopServer();
+});
 
 $baseUrl = 'http://127.0.0.1:' . $PORT;
+
+// Attente BORNÉE de la disponibilité du serveur — remplace le sleep(2) fixe,
+// insuffisant si le serveur est lent à démarrer et muet s'il ne démarre
+// jamais. Sonde curl toutes les 300 ms pendant 20 s max, chaque sonde étant
+// elle-même bornée (connect 1 s, total 3 s). Tout code HTTP (même 401/404)
+// prouve que le serveur écoute ; curl exit 0 = serveur joignable.
+$serverReady = false;
+$readinessDeadline = microtime(true) + 20.0;
+$probeTarget = escapeshellarg($baseUrl . '/health.php');
+$probeOut = escapeshellarg(test_temp_dir() . '/assets_probe.out');
+while (microtime(true) < $readinessDeadline) {
+    exec('curl -s --noproxy localhost,127.0.0.1 --connect-timeout 1 --max-time 3'
+        . ' -o ' . $probeOut . ' ' . $probeTarget, $probeOutLines, $probeCode);
+    if ($probeCode === 0) {
+        $serverReady = true;
+        break;
+    }
+    usleep(300000);
+}
+if (!$serverReady) {
+    fwrite(STDERR, "Serveur PHP -S injoignable sur 127.0.0.1:$PORT après 20 s — log : $logFile\n");
+    $stopServer();
+    exit(1);
+}
 
 // ── Test 1 : Aucun asset online dans le HTML ──
 echo "\n── Test 1 : Aucun asset online (CDN, Google Fonts, etc.) ──\n";
@@ -139,7 +210,7 @@ foreach ($pages as $page) {
     }
     check(
         "$page ne référence aucun asset online",
-        empty($found),
+        $found === [],
         $found ? 'Patterns trouvés : ' . implode(', ', $found) : ''
     );
 }
@@ -174,8 +245,8 @@ check("assets.php?type=css renvoie un corps CSS pur (aucun warning PHP)",
     !$hasPhpErrorInBody,
     $hasPhpErrorInBody ? 'Body: ' . substr($resp['body'], 0, 300) : '');
 
-check("assets.php?type=css renvoie un corps non vide", strlen($resp['body']) > 0,
-    strlen($resp['body']) > 0 ? '' : 'Body vide');
+check("assets.php?type=css renvoie un corps non vide", (string) $resp['body'] !== '',
+    (string) $resp['body'] !== '' ? '' : 'Body vide');
 
 // ── Test 3 : 304 Not Modified pour CSS ──
 echo "\n── Test 3 : 304 Not Modified pour CSS ──\n";
@@ -194,7 +265,7 @@ if ($etag !== '') {
     );
     check(
         "304 response body est vide (0 byte transféré)",
-        strlen($resp304['body']) === 0,
+        (string) $resp304['body'] === '',
         "size=" . strlen($resp304['body'])
     );
 }
@@ -239,9 +310,9 @@ check("index.php référence <link> vers assets.php?type=css&v=<version>", $hasL
 
 // Vérifier qu'il n'y a PLUS de <style> global (le gros bloc CSS inline)
 // On accepte les petits <style> pour le page_css spécifique, mais pas le gros bloc style.php
-$hasInlineGlobalStyle = strpos($indexHtml, '/* Design System') !== false
-    || strpos($indexHtml, '--c-primary:') !== false
-    || strpos($indexHtml, '.sidebar') !== false;
+$hasInlineGlobalStyle = str_contains($indexHtml, '/* Design System')
+    || str_contains($indexHtml, '--c-primary:')
+    || str_contains($indexHtml, '.sidebar');
 check(
     "index.php ne contient plus le gros <style> inline global (CSS maintenant externe)",
     !$hasInlineGlobalStyle,
@@ -259,15 +330,25 @@ $hasJsViaAssets = preg_match('/assets\.php\?type=js&file=form-progress&v=\d+\.\d
 check("form.php référence les JS via assets.php?type=js&v=<version>", $hasJsViaAssets);
 
 // Vérifier qu'il n'y a PLUS de références directes à assets/*.js
-$hasDirectJsRef = strpos($formHtml, 'src="assets/form-progress.js"') !== false
-    || strpos($formHtml, 'src="assets/form-conditions.js"') !== false;
+$hasDirectJsRef = str_contains($formHtml, 'src="assets/form-progress.js"')
+    || str_contains($formHtml, 'src="assets/form-conditions.js"');
 check("form.php ne référence plus assets/*.js directement", !$hasDirectJsRef);
 
 // ── Nettoyage ──
-kill_port($PORT);
+// proc_terminate() sur le handle proc_open puis kill_port() en filet —
+// ni l'un ni l'autre n'attendent (jamais proc_close() sur un process
+// potentiellement vivant).
+$stopServer();
 
 // ── Résumé ──
 echo "\n═══════════════════════════════════════════════════\n";
 echo "  RÉSULTATS : $tests_passed réussi(s) / $tests_failed échoué(s) / " . ($tests_passed + $tests_failed) . " total\n";
 echo "═══════════════════════════════════════════════════\n";
+
+// Contrat B-HARNESS (test_bootstrap.php) : le résumé étant imprimé ci-dessus,
+// marquer la fin nominale pour que le filet anti-masquage ne force pas
+// exit(1) — sinon ce test sort avec le code 1 MÊME EN CAS DE SUCCÈS TOTAL
+// (le filet réimprime des compteurs bootstrap 0/0 et redresse le code à 1).
+$GLOBALS['_test_summary_printed'] = true;
+
 exit($tests_failed > 0 ? 1 : 0);

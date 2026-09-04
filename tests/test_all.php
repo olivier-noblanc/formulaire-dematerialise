@@ -7,6 +7,12 @@
  * Compatible UUID : tous les IDs sont des TEXT (UUID v4), plus aucun INTEGER AUTOINCREMENT.
  */
 
+// B-HARNESS (Oracle) : opt-in du reset déterministe — test_bootstrap.php
+// supprimera db/workflow_test.db (+ -wal/-shm) AVANT le bootstrap si et
+// seulement si cette constante est définie à true (garde stricte, CLI,
+// chemin verrouillé sur workflow_test.db). Voir reset_test_db_strict().
+define('TEST_ALL_DB_RESET', true);
+
 require_once __DIR__ . '/test_bootstrap.php';
 
 echo "╔══════════════════════════════════════════════════╗\n";
@@ -22,6 +28,14 @@ test('get_pdo() retourne un objet PDO', function(): true {
     $pdo = \App\Core\App::db()->getPdo();
     /** @phpstan-ignore-next-line instanceof.alwaysTrue */
     return ($pdo instanceof PDO) ? true : 'Pas un PDO';
+});
+
+test('Reset déterministe : canary du run précédent absente', function(): string|true {
+    // B-HARNESS : la canary test_db_reset_canary est écrite en fin de run.
+    // Si elle est encore présente ici, la DB test n'a PAS été réinitialisée
+    // avant ce run (état résiduel non déterministe) — cf. TEST_ALL_DB_RESET.
+    $canary = \App\Core\App::settings()->get('test_db_reset_canary');
+    return $canary === '' ? true : 'Canary du run précédent encore présente — reset déterministe non effectué (TEST_ALL_DB_RESET ?)';
 });
 
 test('Aucun INTEGER PRIMARY KEY AUTOINCREMENT', function(): string|true {
@@ -111,9 +125,11 @@ test('4 règles d\'alerte (2 par formulaire)', function(): string|true {
 test('Settings par défaut présents', function(): string|true {
     $required = ['smtp_host', 'smtp_port'];
     foreach ($required as $key) {
+        // SettingsService::get() retourne '' quand la clé est absente
+        // (signature get(string $key, string $default = ''): string) —
+        // l'ancien test ($val === false) passait vacuoquement.
         $val = \App\Core\App::settings()->get($key);
-        /** @phpstan-ignore-next-line */
-        if ($val === false) return "Setting '$key' absent";
+        if ($val === '') return "Setting '$key' absent";
     }
     return true;
 });
@@ -372,16 +388,24 @@ foreach ($pages as $file => $info) {
     $label = $info['label'];
     $get = $info['get'];
     test("$label ($file)", function() use ($file, $get): true|string {
-        // Exécuter dans un sous-processus pour isoler les die()/exit()
-        $php = PHP_BINARY;
-        $ini = php_ini_loaded_file() ?: '';
-        $script = __DIR__ . "/test_page_runner.php";
-        
-        // Créer le runner temporaire
+        // B-HARNESS : exécuter dans un sous-processus pour isoler les die()/exit().
+        // Fix : l'ancien runner faisait `require __DIR__ . '/index.php'`
+        // (tests/index.php inexistant) — l'Error « Failed opening required »
+        // était avalée par le catch et la shutdown function écho 'OK' sur un
+        // buffer vide : les 15 tests passaient sans qu'aucune page ne soit
+        // rendue. Le require pointe désormais sur le vrai index.php racine.
+        $indexPath = var_export(dirname(__DIR__) . '/index.php', true);
+        $script = sys_get_temp_dir() . '/test_page_runner_' . getmypid() . '.php';
+
         $code = "<?php\n";
         $code .= "error_reporting(E_ALL & ~E_WARNING);\n";
         $code .= "ini_set('display_errors', 1);\n";
         $code .= "ini_set('session.save_path', sys_get_temp_dir() . '/php-sessions');\n";
+        // X-Test-Mode : sans ce header, le sous-processus CLI tournerait hors
+        // TEST_MODE et lirait la DB de PRODUCTION (workflow.db) au lieu de la
+        // DB test fraîchement réinitialisée.
+        $code .= "\$_SERVER['HTTP_X_TEST_MODE'] = '1';\n";
+        $code .= "\$_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';\n";
         $code .= "\$_SERVER['AUTH_USER'] = 'DREETS\\\\testeur';\n";
         $code .= "\$_SERVER['HTTP_HOST'] = 'localhost';\n";
         $code .= "\$_SERVER['HTTPS'] = '';\n";
@@ -394,32 +418,30 @@ foreach ($pages as $file => $info) {
         $code .= "session_start();\n";
         $code .= "\$_SESSION['is_admin'] = true;\n";
         $code .= "\$_SESSION['admin_email'] = 'testeur@exemple.invalid';\n";
+        // index.php appelle exit() après handle() (index.php:108) : le buffer
+        // est flushé automatiquement à la fin du run. Si un controller throw
+        // (redirection etc.), le catch laisse la main et on vide explicitement.
         $code .= "ob_start();\n";
-        $code .= "register_shutdown_function(function() { \$o = ob_get_clean(); if (strpos(\$o, 'Fatal error') !== false) { echo 'FATAL'; } elseif (strpos(\$o, 'Parse error') !== false) { echo 'PARSE_ERROR'; } else { echo 'OK'; } });\n";
-        $code .= "try { require __DIR__ . '/$file'; } catch (Throwable \$e) { /* OK - redirects etc */ }\n";
-        $code .= "\$output = ob_get_clean();\n";
-        $code .= "if (strpos(\$output, 'Fatal error') !== false) { echo 'FATAL'; exit(1); }\n";
-        $code .= "if (strpos(\$output, 'Parse error') !== false) { echo 'PARSE_ERROR'; exit(1); }\n";
-        $code .= "echo 'OK';\n";
-        
+        $code .= "try { require $indexPath; } catch (Throwable \$e) { /* redirects etc */ }\n";
+        $code .= "\$o = ob_get_clean();\n";
+        $code .= "echo (\$o === '' ? 'EMPTY_PAGE' : \$o);\n";
+
         file_put_contents($script, $code);
-        
-        $cmd = "$php -c " . escapeshellarg($ini) . " -d session.save_path=" . escapeshellarg(sys_get_temp_dir() . '/php-sessions') . " $script 2>&1";
-        $result = shell_exec($cmd);
-        @unlink($script);
-        
-        $result = trim($result ?? '');
+        try {
+            $r = run_php_subprocess($script, dirname(__DIR__));
+        } finally {
+            @unlink($script);
+        }
+
+        if ($r['code'] !== 0) {
+            return 'Exit code ' . $r['code'] . ' (fatal ?) — stderr: ' . substr(str_replace("\n", ' | ', trim($r['err'])), 0, 150);
+        }
         // Retirer les warnings du début
-        $result = preg_replace('/^Warning:.*$/m', '', $result);
-        $result = trim($result);
-        
-        if (str_contains($result, 'FATAL')) return 'Fatal error détectée';
-        if (str_contains($result, 'PARSE_ERROR')) return 'Parse error détectée';
-        if (str_contains($result, 'OK')) return true;
-        
-        // Sinon, vérifier si c'est quand même du HTML valide
-        if ($result === '' || $result === '0') return 'Page vide';
-        return 'Sortie inattendue: ' . substr($result, 0, 200);
+        $result = trim(preg_replace('/^Warning:.*$/m', '', trim($r['out'])) ?? '');
+        if (str_contains($result, 'Fatal error')) return 'Fatal error détectée';
+        if (str_contains($result, 'Parse error')) return 'Parse error détectée';
+        if ($result === '' || $result === 'EMPTY_PAGE') return 'Page vide';
+        return true;
     });
 }
 
@@ -501,16 +523,49 @@ test('render_footer() contient la version du CHANGELOG', function(): string|true
 });
 
 test('Le footer affiche la version sur la page d\'accueil', function(): string|true {
-    // Rendre index.php et vérifier que le footer contient la version
-    ob_start();
+    // B-HARNESS (Oracle) : rendu de l'accueil en SOUS-PROCESSUS.
+    // L'ancien `require index.php` in-process était mortel : index.php appelle
+    // exit() après handle() (index.php:108), ce qui tuait test_all.php avant
+    // le résumé (exit 0) et masquait tout échec antérieur. Le sous-processus
+    // isole l'exit, comme les tests de pages (section 4).
+    $indexPath = var_export(dirname(__DIR__) . '/index.php', true);
+    $script = sys_get_temp_dir() . '/test_home_runner_' . getmypid() . '.php';
+
+    $code = "<?php\n";
+    $code .= "error_reporting(E_ALL & ~E_WARNING);\n";
+    $code .= "ini_set('display_errors', 1);\n";
+    $code .= "ini_set('session.save_path', sys_get_temp_dir() . '/php-sessions');\n";
+    // X-Test-Mode : le rendu doit interroger la DB test, pas la DB de prod.
+    $code .= "\$_SERVER['HTTP_X_TEST_MODE'] = '1';\n";
+    $code .= "\$_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';\n";
+    $code .= "\$_SERVER['AUTH_USER'] = 'DREETS\\\\testeur';\n";
+    $code .= "\$_SERVER['HTTP_HOST'] = 'localhost';\n";
+    $code .= "\$_SERVER['HTTPS'] = '';\n";
+    $code .= "\$_SERVER['REQUEST_URI'] = '/index.php';\n";
+    $code .= "\$_SERVER['REQUEST_METHOD'] = 'GET';\n";
+    $code .= "session_start();\n";
+    $code .= "\$_SESSION['is_admin'] = true;\n";
+    $code .= "\$_SESSION['admin_email'] = 'testeur@exemple.invalid';\n";
+    $code .= "ob_start();\n";
+    $code .= "try { require $indexPath; } catch (Throwable \$e) { /* redirects etc */ }\n";
+    $code .= "\$o = ob_get_clean();\n";
+    $code .= "echo (\$o === '' ? 'EMPTY_PAGE' : \$o);\n";
+
+    file_put_contents($script, $code);
     try {
-        require __DIR__ . '/../index.php';
-    } catch (\Throwable) {
-        // OK — redirect, exit, etc.
+        $r = run_php_subprocess($script, dirname(__DIR__));
+    } finally {
+        @unlink($script);
     }
-    $html = ob_get_clean();
+
+    if ($r['code'] !== 0) {
+        return 'Exit code ' . $r['code'] . ' pendant le rendu — stderr: ' . substr(str_replace("\n", ' | ', trim($r['err'])), 0, 150);
+    }
+    $html = trim(preg_replace('/^Warning:.*$/m', '', trim($r['out'])) ?? '');
+    if ($html === '' || $html === 'EMPTY_PAGE') return 'Page d\'accueil vide (rendu sans sortie)';
+    if (str_contains($html, 'Fatal error') || str_contains($html, 'Parse error')) return 'Erreur fatale pendant le rendu';
     $version = get_latest_version();
-    return str_contains($html, $version) ? true : "Version $version manquante dans le HTML de l'accueil";
+    return str_contains($html, $version) ? true : "Version $version manquante dans le HTML de l'accueil — sortie: " . substr(strip_tags($html), 0, 150);
 });
 
 test('Changélog a au moins 1 entrée de version', function(): string|true {
@@ -558,6 +613,30 @@ test('generate_uuid() ne produit pas de lastInsertId()', function(): true|string
 echo "\n";
 
 // ═══════════════════════════════════════════════════
+// 7. HARNAIS DE TEST — filet anti-masquage (B-HARNESS)
+// ═══════════════════════════════════════════════════
+echo "── 7. Harnais de test (filet anti-masquage) ──\n";
+
+require_once __DIR__ . '/test_harness_selftest.php';
+
+test('Filet harnais : résumé garanti + exit non nul (3 scénarios)', function(): string|true {
+    // Chaque scénario tourne dans un sous-processus qui requiert le VRAI
+    // test_bootstrap.php : exit(0) prématuré, fatal, et chemin nominal.
+    // Régression du bug Oracle : un exit in-process tuait test_all.php sans
+    // résumé (exit 0) en masquant tous les échecs antérieurs.
+    $failures = harness_selftest_run_all();
+    return $failures === 0 ? true : "$failures vérification(s) harnais en échec (voir détail ci-dessus)";
+});
+
+echo "\n";
+
+// ═══════════════════════════════════════════════════
 // RÉSULTATS
 // ═══════════════════════════════════════════════════
+
+// B-HARNESS : canary de déterminisme — écrite en fin de run. Le run suivant
+// (section 1, test « Reset déterministe ») doit la trouver absente si le
+// reset déterministe de la DB test a bien eu lieu avant le bootstrap.
+\App\Core\App::settings()->set('test_db_reset_canary', (string) time(), 'test_harness');
+
 exit(print_test_summary('RÉSULTATS'));

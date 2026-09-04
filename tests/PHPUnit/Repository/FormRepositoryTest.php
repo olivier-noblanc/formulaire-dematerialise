@@ -140,4 +140,41 @@ final class FormRepositoryTest extends TestCase
         $result = $this->repo->getStepsWithRecipientObjects('nonexistent');
         self::assertSame([], $result);
     }
+
+    // ── duplicate() ─────────────────────────────────────────────
+
+    /**
+     * P0-5 (2026-09-03) : la copie d'un formulaire doit conserver la config
+     * de relance (relance_delai_h / relance_max — sinon elle repartait sur
+     * les DEFAULT 48/3) et la colonne `condition` des champs (sinon les
+     * champs conditionnels de la copie devenaient inconditionnels).
+     */
+    public function testDuplicatePreservesRelanceConfigAndFieldConditions(): void
+    {
+        $srcId = \generate_uuid();
+        $this->repo->execute(
+            "INSERT INTO forms (id, slug, label, description, actif, deadline_field, relance_delai_h, relance_max) VALUES (?, ?, ?, '', 1, 'date_limite', 72, 5)",
+            [$srcId, 'test-dup-src-' . uniqid(), 'Test Dup Source']
+        );
+        $this->createdFormIds[] = $srcId;
+        $this->repo->execute(
+            "INSERT INTO form_fields (id, form_id, label, field_type, field_name, ordre, condition) VALUES (?, ?, 'Décision', 'select', 'decision', 1, 'decision == Refusé')",
+            [\generate_uuid(), $srcId]
+        );
+
+        $newId = \generate_uuid();
+        $srcForm = $this->repo->findById($srcId);
+        self::assertNotNull($srcForm);
+        $this->repo->duplicate($srcId, $newId, 'Test Dup Copie', 'test-dup-copy-' . uniqid(), $srcForm);
+        $this->createdFormIds[] = $newId;
+
+        $copy = $this->repo->findById($newId);
+        self::assertNotNull($copy);
+        self::assertSame(72, (int) $copy['relance_delai_h'], 'P0-5 : relance_delai_h doit être conservé par la copie');
+        self::assertSame(5, (int) $copy['relance_max'], 'P0-5 : relance_max doit être conservé par la copie');
+
+        $fields = $this->repo->getFields($newId);
+        self::assertCount(1, $fields);
+        self::assertSame('decision == Refusé', $fields[0]['condition'], 'P0-5 : la condition du champ doit être conservée par la copie');
+    }
 }

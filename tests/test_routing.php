@@ -76,11 +76,11 @@ foreach ($routes as $page => $config) {
     check("$page → <title> non vide", $titleOk, $titleOk ? '' : 'titre vide');
 
     // <link> vers assets.php
-    $hasLink = strpos($html, 'assets.php?type=css') !== false;
+    $hasLink = str_contains($html, 'assets.php?type=css');
     check("$page → <link> vers assets.php", $hasLink);
 
     // body class page-xxx
-    $hasClass = strpos($html, 'class="page-') !== false;
+    $hasClass = str_contains($html, 'class="page-');
     check("$page → body class page-xxx", $hasClass);
 
     // Pas "Fatal" dans le HTML
@@ -93,32 +93,32 @@ echo "\n── Test 2 : Paramètres préservés dans les URLs ──\n";
 
 // my_validations&tab=pending → onglet pending actif
 $result = \HttpClient::renderRoute('GET', '/index.php?p=my_validations&tab=pending', [], false);
-$pendingActive = strpos($result['html'] ?? '', 'En attente') !== false
-              && strpos($result['html'] ?? '', 'stat warning active') !== false;
+$pendingActive = str_contains($result['html'] ?? '', 'En attente')
+              && str_contains($result['html'] ?? '', 'stat warning active');
 check('my_validations&tab=pending → "En attente" + stat active', $pendingActive);
 
 // my_validations&tab=done → onglet done
 $result = \HttpClient::renderRoute('GET', '/index.php?p=my_validations&tab=done', [], false);
-$doneActive = strpos($result['html'] ?? '', 'Historique') !== false;
+$doneActive = str_contains($result['html'] ?? '', 'Historique');
 check('my_validations&tab=done → "Historique" présent', $doneActive);
 
 // form&f=onboarding → formulaire
 $result = \HttpClient::renderRoute('GET', '/index.php?p=form&f=onboarding', [], false);
-$hasForm = strpos($result['html'] ?? '', 'id="form-main"') !== false;
+$hasForm = str_contains($result['html'] ?? '', 'id="form-main"');
 check('form&f=onboarding → <form id="form-main">', $hasForm);
 
-$hasRgpd = strpos($result['html'] ?? '', 'rgpd_consent') !== false;
+$hasRgpd = str_contains($result['html'] ?? '', 'rgpd_consent');
 check('form&f=onboarding → checkbox RGPD', $hasRgpd);
 
 // ── Test 3 : Pages inexistantes → 404 ──
 echo "\n── Test 3 : Pages inexistantes → 404 ──\n";
 
 $result = \HttpClient::renderRoute('GET', '/index.php?p=nonexistent', [], false);
-$has404 = strpos($result['html'] ?? '', 'Page introuvable') !== false;
+$has404 = str_contains($result['html'] ?? '', 'Page introuvable');
 check('?p=nonexistent → "Page introuvable"', $has404);
 
 $result = \HttpClient::renderRoute('GET', '/index.php?p=admin_secret', [], false);
-$has404Secret = strpos($result['html'] ?? '', 'Page introuvable') !== false;
+$has404Secret = str_contains($result['html'] ?? '', 'Page introuvable');
 check('?p=admin_secret → "Page introuvable" (pas dans whitelist)', $has404Secret);
 
 // ── Test 4 : Pas de liens cassés ──
@@ -165,12 +165,16 @@ check('Aucun lien cassé (href="xxx.php", href="?xxx", ou ? au lieu de &)', $bro
 echo "\n── Test 5 : index.php sans ?p= → accueil ──\n";
 
 $result = \HttpClient::renderRoute('GET', '/index.php', [], false);
-$hasAccueil = strpos($result['html'] ?? '', 'CircuitDémat') !== false
-           || strpos($result['html'] ?? '', 'Accueil') !== false;
+$hasAccueil = str_contains($result['html'] ?? '', 'CircuitDémat')
+           || str_contains($result['html'] ?? '', 'Accueil');
 check('index.php sans ?p= → page accueil', $hasAccueil);
 
 // ── Résumé ──
 echo "\n═══════════════════════════════════════════════════\n";
 echo "  RÉSULTATS : $passed réussi(s) / $failed échoué(s) / " . ($passed + $failed) . " total\n";
 echo "═══════════════════════════════════════════════════\n";
+// Contrat B-HARNESS : ce script utilise les compteurs du bootstrap mais
+// imprime son propre résumé — poser le flag pour que le filet anti-masquage
+// ne force pas exit(1) après un run nominal.
+$GLOBALS['_test_summary_printed'] = true;
 exit($failed > 0 ? 1 : 0);

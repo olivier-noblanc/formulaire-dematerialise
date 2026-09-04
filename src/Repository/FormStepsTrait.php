@@ -109,6 +109,13 @@ trait FormStepsTrait
     }
 
     /**
+     * Étapes actives d'un formulaire avec l'état des tokens d'une soumission.
+     *
+     * Les tokens invalidés (délégation, régénération, RGPD) sont exclus de la
+     * jointure : `dones` ne contient que les validations réellement effectuées
+     * et `emails` ne liste que les destinataires actifs — le consommateur
+     * (ValidateRenderer) compare count(dones) à count(emails) pour "étape done".
+     *
      * @return array<int, array{id: string, label: string, ordre: int, dones: string|null, emails: string|null}>
      */
     public function getWorkflowStepsWithTokens(string $formId, string $submissionId): array
@@ -119,7 +126,7 @@ trait FormStepsTrait
                     GROUP_CONCAT(t2.done_at, '|') as dones,
                     GROUP_CONCAT(t2.email, '|') as emails
              FROM steps st
-             LEFT JOIN tokens t2 ON t2.step_id = st.id AND t2.submission_id = ?
+             LEFT JOIN tokens t2 ON t2.step_id = st.id AND t2.submission_id = ? AND t2.invalidated_at IS NULL
              WHERE st.form_id = ? AND st.actif = 1
              GROUP BY st.id
              ORDER BY st.ordre, st.id",

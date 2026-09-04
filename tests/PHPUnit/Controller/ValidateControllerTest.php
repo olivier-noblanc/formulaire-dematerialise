@@ -57,7 +57,7 @@ final class ValidateControllerTest extends TestCase
             $fn();
         } catch (TestJsonCapturedException $e) {
             return $e->data;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // ErrorRenderer::ErrorResponseException ou autres
             return null;
         }
@@ -71,7 +71,7 @@ final class ValidateControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_GET = [];
 
-        $output = $this->captureJson(fn() => (new \App\Controller\ValidateController())->handle());
+        $output = $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
 
         // Sans token, le controller rend du HTML (pas de JSON) — on accepte les 2
         // ou retourne du JSON avec result.status='invalid' via test_json_response
@@ -87,7 +87,7 @@ final class ValidateControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_GET['token'] = 'toto';
 
-        $output = $this->captureJson(fn() => (new \App\Controller\ValidateController())->handle());
+        $output = $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
 
         if ($output !== null) {
             $status = $output['result']['status'] ?? ($output['result'] ?? null);
@@ -101,7 +101,7 @@ final class ValidateControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_GET['token'] = str_repeat('a', 64);
 
-        $output = $this->captureJson(fn() => (new \App\Controller\ValidateController())->handle());
+        $output = $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
 
         if ($output !== null) {
             $status = $output['result']['status'] ?? ($output['result'] ?? null);
@@ -117,13 +117,69 @@ final class ValidateControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_GET['token'] = $token;
 
-        $output = $this->captureJson(fn() => (new \App\Controller\ValidateController())->handle());
+        $output = $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
 
         // Soit JSON avec result.status='ok'/'pending', soit HTML rendu
         if ($output !== null) {
             self::assertArrayHasKey('result', $output);
         }
         self::assertTrue(true, 'Token valide ne doit pas crasher');
+    }
+
+    public function testHandleGetWithTokenExpiringInOneHourUtcIsPending(): void
+    {
+        // P0-1 : expires_at est stocké en UTC (SQLite datetime('now', ...)).
+        // L'ancien strtotime($data['expires_at']) interprétait la chaîne UTC
+        // avec le fuseau serveur (Europe/Paris en prod) → token expirant dans
+        // 1h réel apparaissait expiré 1-2h trop tôt (même cause que Bug14).
+        [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
+
+        $pdo = $this->db->getPdo();
+        $expiresSoonUtc = gmdate('Y-m-d H:i:s', time() + 3600); // expire dans 1h réel
+        $pdo->prepare('UPDATE tokens SET expires_at = ? WHERE token = ?')
+            ->execute([$expiresSoonUtc, $token]);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET['token'] = $token;
+
+        $originalTz = date_default_timezone_get();
+        try {
+            // Condition prod : serveur Europe/Paris — la chaîne UTC doit être
+            // interprétée comme UTC, pas comme une heure Paris.
+            date_default_timezone_set('Europe/Paris');
+            $output = $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
+        } finally {
+            date_default_timezone_set($originalTz);
+        }
+
+        self::assertNotNull($output, 'GET en TEST_MODE doit retourner du JSON');
+        $status = $output['result']['status'] ?? ($output['result'] ?? null);
+        self::assertSame('pending', $status, 'Token expirant dans 1h (UTC) doit être pending, pas expired');
+    }
+
+    public function testHandleGetWithTokenExpiredOneHourAgoUtcIsExpired(): void
+    {
+        [$formId, $stepId, $subId, $token] = $this->createFullSubmission();
+
+        $pdo = $this->db->getPdo();
+        $expiredUtc = gmdate('Y-m-d H:i:s', time() - 3600); // expiré depuis 1h réel
+        $pdo->prepare('UPDATE tokens SET expires_at = ? WHERE token = ?')
+            ->execute([$expiredUtc, $token]);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET['token'] = $token;
+
+        $originalTz = date_default_timezone_get();
+        try {
+            date_default_timezone_set('Europe/Paris');
+            $output = $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
+        } finally {
+            date_default_timezone_set($originalTz);
+        }
+
+        self::assertNotNull($output, 'GET en TEST_MODE doit retourner du JSON');
+        $status = $output['result']['status'] ?? ($output['result'] ?? null);
+        self::assertSame('expired', $status, 'Token expiré depuis 1h (UTC) doit être expired');
     }
 
     // ── POST ──────────────────────────────────────────────────────────────
@@ -141,7 +197,7 @@ final class ValidateControllerTest extends TestCase
             'comment' => '',
         ];
 
-        $output = $this->captureJson(fn() => (new \App\Controller\ValidateController())->handle());
+        $output = $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
 
         // Refuser sans motif : soit JSON error, soit HTML ré-affiché
         if ($output !== null) {
@@ -170,7 +226,7 @@ final class ValidateControllerTest extends TestCase
             'comment' => '',
         ];
 
-        $this->captureJson(fn() => (new \App\Controller\ValidateController())->handle());
+        $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
 
         // Le token doit être marqué done_at
         $pdo = $this->db->getPdo();
@@ -192,7 +248,7 @@ final class ValidateControllerTest extends TestCase
             'comment' => 'Commentaire test',
         ];
 
-        $this->captureJson(fn() => (new \App\Controller\ValidateController())->handle());
+        $this->captureJson(fn() => new \App\Controller\ValidateController()->handle());
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare('SELECT status FROM submissions WHERE id = ?');

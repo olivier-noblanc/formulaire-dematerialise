@@ -26,6 +26,10 @@ trait TokenReadQueriesTrait
     }
 
     /**
+     * Tokens "en attente" pour un validateur : non traités, non invalidés.
+     * Les tokens expirés restent listés — le renderer affiche l'état "Expiré"
+     * (badge + régénération par un administrateur) au lieu de les masquer.
+     *
      * @return array<int, array{token_id: string, token: string, sent_at: string|null, expires_at: string|null, relance_count: int, step_id: string, email: string, step_label: string, ordre: int, submission_id: string, data: string|null, submitted_at: string|null, sub_status: string, form_label: string, form_slug: string}>
      */
     public function findPendingByEmail(string $email, string $search = ''): array
@@ -42,7 +46,7 @@ trait TokenReadQueriesTrait
                  JOIN steps st ON st.id = t.step_id
                  JOIN submissions s ON s.id = t.submission_id
                  JOIN forms f ON f.id = s.form_id
-                 WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = ?
+                 WHERE t.email = ? AND t.done_at IS NULL AND t.invalidated_at IS NULL AND s.status = ?
                    AND (f.label LIKE ? OR s.data LIKE ?)
                  ORDER BY t.sent_at DESC",
                 [$email, SubmissionStatus::EnCours->value, '%' . $search . '%', '%' . $search . '%']
@@ -60,7 +64,7 @@ trait TokenReadQueriesTrait
              JOIN steps st ON st.id = t.step_id
              JOIN submissions s ON s.id = t.submission_id
              JOIN forms f ON f.id = s.form_id
-             WHERE t.email = ? AND t.done_at IS NULL AND t.expires_at > datetime('now') AND s.status = ?
+             WHERE t.email = ? AND t.done_at IS NULL AND t.invalidated_at IS NULL AND s.status = ?
              ORDER BY t.sent_at DESC",
               [$email, SubmissionStatus::EnCours->value]
         );
@@ -104,7 +108,8 @@ trait TokenReadQueriesTrait
     }
 
     /**
-     * Nombre de tokens en attente pour un utilisateur donné (pas encore traités, pas expirés).
+     * Nombre de tokens en attente pour un utilisateur donné : non traités,
+     * non invalidés, pas expirés.
      */
     public function countPendingForEmail(string $email): int
     {
@@ -112,7 +117,7 @@ trait TokenReadQueriesTrait
         $result = $this->fetchOne(
             "SELECT COUNT(*) as cnt FROM tokens t
              JOIN submissions s ON s.id = t.submission_id
-             WHERE t.email = ? AND t.done_at IS NULL
+             WHERE t.email = ? AND t.done_at IS NULL AND t.invalidated_at IS NULL
                AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))
                AND s.closed_at IS NULL",
             [$email]
@@ -130,13 +135,13 @@ trait TokenReadQueriesTrait
             "SELECT t.email,
                     COUNT(t.id) as total,
                     SUM(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL THEN 1 ELSE 0 END) as done,
-                    SUM(CASE WHEN t.done_at IS NULL THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN t.done_at IS NULL AND t.invalidated_at IS NULL THEN 1 ELSE 0 END) as pending,
                     AVG(CASE WHEN t.done_at IS NOT NULL AND t.invalidated_at IS NULL
                         THEN CAST(strftime('%s', t.done_at) AS REAL) - CAST(strftime('%s', t.sent_at) AS REAL)
                         ELSE NULL END) as avg_response_seconds
              FROM tokens t
              JOIN submissions s ON s.id = t.submission_id
-             WHERE s.status = ? OR (t.done_at IS NOT NULL AND t.invalidated_at IS NULL)
+             WHERE (s.status = ? AND t.invalidated_at IS NULL) OR (t.done_at IS NOT NULL AND t.invalidated_at IS NULL)
              GROUP BY t.email
              ORDER BY total DESC
              LIMIT 20",
@@ -219,14 +224,14 @@ trait TokenReadQueriesTrait
     }
 
     /**
-     * @return array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string, relance_count: int, sub_status: string}|null
+     * @return array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string, relance_count: int, invalidated_at: string|null, sub_status: string}|null
      */
     public function findForRegenerate(string $tokenId): ?array
     {
-        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string, relance_count: int, sub_status: string}|null $result */
+        /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string, relance_count: int, invalidated_at: string|null, sub_status: string}|null $result */
         $result = $this->fetchOne(
             'SELECT t.id, t.submission_id, t.step_id, t.email, t.token, t.sent_at,
-                    t.done_at, t.relance_at, t.expires_at, t.relance_count,
+                    t.done_at, t.relance_at, t.expires_at, t.relance_count, t.invalidated_at,
                     s.status as sub_status
              FROM tokens t
              JOIN submissions s ON s.id = t.submission_id

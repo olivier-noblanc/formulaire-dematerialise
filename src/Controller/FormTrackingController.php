@@ -143,7 +143,7 @@ final class FormTrackingController extends BaseController
             $statusLabel = $status === SubmissionStatus::Valide->value ? 'Validée' : ($status === SubmissionStatus::Refuse->value ? 'Refusée' : ($status === SubmissionStatus::Annule->value ? 'Annulée' : 'En cours'));
             ?>
           <tr>
-            <td class="u-fs-sm-ws-nowrap"><?= \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime($submission['submitted_at'] ?? ''))) ?></td>
+            <td class="u-fs-sm-ws-nowrap"><?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($submission['submitted_at'] ?? ''), false)) ?></td>
             <td><?= \App\Core\App::html()->escape(SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM)) ?></td>
             <?php foreach ($keyFields as $keyField):
                 $val = $data[$keyField['field_name']] ?? '';

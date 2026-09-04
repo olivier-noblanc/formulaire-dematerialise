@@ -68,45 +68,45 @@ function run_html_render_test(array $serverVars): array {
 
     // Encode les variables $_SERVER dans un format passe-partout
     $encoded = base64_encode(serialize($serverVars));
-    $script = <<<'PHP'
-<?php
-// Forcer TEST_MODE=false en neutralisant les déclencheurs
-putenv('APP_TEST_MODE=');          // pas de variable d'env
-unset($_SERVER['HTTP_X_TEST_MODE']); // pas de header
-unset($_SERVER['HTTP_X_TEST_USER']);
-$_SERVER['AUTH_USER'] = 'DREETS\testeur'; // simulé IIS/Kerberos
-$_SERVER['HTTP_HOST'] = 'localhost';
-$_SERVER['HTTPS'] = '';
-$_SERVER['REQUEST_URI'] = '/form.php';
-$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-
-// Restaurer les variables injectées
-$injected = unserialize(base64_decode($argv[1]));
-foreach ($injected as $k => $v) {
-    $_SERVER[$k] = $v;
-}
-
-// Peupler $_GET et $_POST à partir de QUERY_STRING / stdin
-// (en CLI, PHP ne remplit pas automatiquement $_GET)
-if (!empty($_SERVER['QUERY_STRING'])) {
-    parse_str($_SERVER['QUERY_STRING'], $_GET);
-}
-
-// Lire le chemin du projet depuis argv[2]
-require_once $argv[2] . '/helpers.php';
-
-// Capturer tout le rendu
-ob_start();
-try {
-    // Simuler form.php — invoque FormController
-    $controller = new App\Controller\FormController();
-    $controller->handle();
-    $html = ob_get_clean();
-} catch (\Throwable $e) {
-    $html = ob_get_clean() . "\n__EXCEPTION__:" . $e->getMessage() . "\n" . $e->getTraceAsString();
-}
-echo $html;
-PHP;
+    $script = <<<'PHP_WRAP'
+    <?php
+    // Forcer TEST_MODE=false en neutralisant les déclencheurs
+    putenv('APP_TEST_MODE=');          // pas de variable d'env
+    unset($_SERVER['HTTP_X_TEST_MODE']); // pas de header
+    unset($_SERVER['HTTP_X_TEST_USER']);
+    $_SERVER['AUTH_USER'] = 'DREETS\testeur'; // simulé IIS/Kerberos
+    $_SERVER['HTTP_HOST'] = 'localhost';
+    $_SERVER['HTTPS'] = '';
+    $_SERVER['REQUEST_URI'] = '/form.php';
+    $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+    
+    // Restaurer les variables injectées
+    $injected = unserialize(base64_decode($argv[1]));
+    foreach ($injected as $k => $v) {
+        $_SERVER[$k] = $v;
+    }
+    
+    // Peupler $_GET et $_POST à partir de QUERY_STRING / stdin
+    // (en CLI, PHP ne remplit pas automatiquement $_GET)
+    if (!empty($_SERVER['QUERY_STRING'])) {
+        parse_str($_SERVER['QUERY_STRING'], $_GET);
+    }
+    
+    // Lire le chemin du projet depuis argv[2]
+    require_once $argv[2] . '/helpers.php';
+    
+    // Capturer tout le rendu
+    ob_start();
+    try {
+        // Simuler form.php — invoque FormController
+        $controller = new App\Controller\FormController();
+        $controller->handle();
+        $html = ob_get_clean();
+    } catch (\Throwable $e) {
+        $html = ob_get_clean() . "\n__EXCEPTION__:" . $e->getMessage() . "\n" . $e->getTraceAsString();
+    }
+    echo $html;
+    PHP_WRAP;
 
     $tmp = tempnam(sys_get_temp_dir(), 'formtest_') . '.php';
     file_put_contents($tmp, $script);
@@ -125,26 +125,78 @@ PHP;
 // TESTS
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// IDEMPOTENCE — purge des soumissions résiduelles du compte de test
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Purge les soumissions résiduelles du compte de test (testeur@dreets.gouv.fr)
+ * sur le formulaire "onboarding" dans la DB locale de dev (db/workflow.db).
+ *
+ * Idempotence : le Test 3 (POST réussi) crée une vraie soumission — sans purge,
+ * tout run suivant tombe sur le palier de confirmation de doublon (v34) et le
+ * GET ne rend plus le formulaire (form-main/rgpd/CSRF absents en cascade).
+ *
+ * Enfants (alert_log, submission_validator_data, attachments, tokens) purgés
+ * d'abord, puis les soumissions — robuste que foreign_keys soit ON ou OFF.
+ * Ne touche qu'au compte de test sur le formulaire onboarding. Appelé en
+ * setup (résidus d'un run précédent) ET en teardown (laisser la DB propre).
+ *
+ * @return int Nombre de soumissions purgées (0 si DB absente/inaccessible)
+ */
+function cleanup_tester_submissions(): int {
+    $db_path = dirname(__DIR__) . '/db/workflow.db';
+    if (!is_file($db_path)) {
+        return 0;
+    }
+    try {
+        $pdo = new PDO('sqlite:' . $db_path);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch (\PDOException $e) {
+        echo "  ! Purge idempotence impossible (DB inaccessible) : " . $e->getMessage() . "\n";
+        return 0;
+    }
+    $form_filter = "form_id = (SELECT id FROM forms WHERE slug = 'onboarding')
+                    AND submitted_by LIKE '%testeur%'";
+    $purged = 0;
+    try {
+        $pdo->beginTransaction();
+        // Tables enfants d'abord (ordre requis si foreign_keys=ON)
+        foreach (['alert_log', 'submission_validator_data', 'attachments', 'tokens'] as $child) {
+            $pdo->exec("DELETE FROM {$child} WHERE submission_id IN (
+                            SELECT id FROM submissions WHERE {$form_filter})");
+        }
+        $purged = (int) $pdo->exec("DELETE FROM submissions WHERE {$form_filter}");
+        $pdo->commit();
+    } catch (\PDOException $e) {
+        $pdo->rollBack();
+        echo "  ! Purge idempotence échouée : " . $e->getMessage() . "\n";
+        $pdo = null;
+        return 0;
+    }
+    $pdo = null;
+    return $purged;
+}
+
+$purged_setup = cleanup_tester_submissions();
+if ($purged_setup > 0) {
+    echo "  Idempotence : {$purged_setup} soumission(s) de test résiduelle(s) purgée(s) (setup)\n";
+}
+
 echo bold("\n── Test 1 : GET form.php?f=onboarding — rendu HTML du formulaire ──\n");
 $r = run_html_render_test([
     'REQUEST_METHOD' => 'GET',
     'QUERY_STRING'   => 'f=onboarding',
 ]);
-test('Le rendu contient un <form id="form-main">', function() use ($r) {
-    return strpos($r['html'], 'id="form-main"') !== false
-        ? true
-        : 'Form tag absent. HTML: ' . substr($r['html'], 0, 500);
-});
-test('Le rendu contient la checkbox rgpd_consent', function() use ($r) {
-    return strpos($r['html'], 'name="rgpd_consent"') !== false
-        ? true
-        : 'rgpd_consent checkbox absente';
-});
-test('Le rendu contient le bouton "Envoyer ma demande"', function() use ($r) {
-    return strpos($r['html'], 'Envoyer ma demande') !== false
-        ? true
-        : 'Bouton submit absent';
-});
+test('Le rendu contient un <form id="form-main">', fn(): string|true => str_contains($r['html'], 'id="form-main"')
+    ? true
+    : 'Form tag absent. HTML: ' . substr($r['html'], 0, 500));
+test('Le rendu contient la checkbox rgpd_consent', fn(): true|string => str_contains($r['html'], 'name="rgpd_consent"')
+    ? true
+    : 'rgpd_consent checkbox absente');
+test('Le rendu contient le bouton "Envoyer ma demande"', fn(): true|string => str_contains($r['html'], 'Envoyer ma demande')
+    ? true
+    : 'Bouton submit absent');
 
 // ── Test 2 : POST réussi → plus de checkbox RGPD dans le rendu succès ──
 echo bold("\n── Test 2 : POST form.php?f=onboarding réussi — pas de fuite RGPD sur la page succès ──\n");
@@ -158,13 +210,12 @@ $r = run_html_render_test([
     // une erreur CSRF, qui ré-affiche le formulaire. On teste que dans ce cas
     // la checkbox RGPD est bien présente (ré-affichage).
 ]);
-test('POST sans CSRF → ré-affichage du formulaire (non succès)', function() use ($r) {
+test('POST sans CSRF → ré-affichage du formulaire (non succès)', 
     // Soit erreur CSRF (redirect ou message), soit ré-affichage.
     // Dans tous les cas, ne doit PAS contenir "Demande enregistrée".
-    return strpos($r['html'], 'Demande enregistrée') === false
-        ? true
-        : 'Le rendu affiche "Demande enregistrée" sans CSRF — anomalie';
-});
+    fn(): true|string => !str_contains($r['html'], 'Demande enregistrée')
+    ? true
+    : 'Le rendu affiche "Demande enregistrée" sans CSRF — anomalie');
 
 // ── Test 3 : Validation de la structure HTML après succès ──
 // Pour ce test, on doit simuler un succès complet. Comme on n'a pas de CSRF
@@ -180,9 +231,7 @@ $r_get = run_html_render_test([
 preg_match('/name="csrf_token" value="([a-f0-9]+)"/', $r_get['html'], $m);
 $csrf = $m[1] ?? '';
 
-test('CSRF token récupéré du GET initial', function() use ($csrf) {
-    return $csrf !== '' ? true : 'CSRF token non trouvé dans le HTML du GET';
-});
+test('CSRF token récupéré du GET initial', fn(): true|string => $csrf !== '' ? true : 'CSRF token non trouvé dans le HTML du GET');
 
 if ($csrf !== '') {
     // Soumettre avec le CSRF token
@@ -198,55 +247,55 @@ if ($csrf !== '') {
     //
     // SOLUTION : on désactive la vérif CSRF en patchant SecurityService
     // via une monkey-patch au runtime. On le fait dans le script subprocess.
-    $script = <<<'PHP'
-<?php
-// ── Configuration ──
-// TEST_MODE=false : on veut du HTML, pas du JSON.
-// CSRF : on gère via $_SESSION (la session CLI fonctionne).
-// Emails : MailService::send() tentera SMTP → on le mock via globals.
-putenv('APP_TEST_MODE=');
-unset($_SERVER['HTTP_X_TEST_MODE']);
-unset($_SERVER['HTTP_X_TEST_USER']);
-$_SERVER['AUTH_USER'] = 'DREETS\testeur';
-$_SERVER['HTTP_HOST'] = 'localhost';
-$_SERVER['HTTPS'] = '';
-$_SERVER['REQUEST_URI'] = '/form.php';
-$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-
-$injected = unserialize(base64_decode($argv[1]));
-foreach ($injected as $k => $v) {
-    $_SERVER[$k] = $v;
-}
-
-if (!empty($_SERVER['QUERY_STRING'])) {
-    parse_str($_SERVER['QUERY_STRING'], $_GET);
-}
-
-// Peupler $_POST si passé en argv[4]
-if (!empty($argv[4])) {
-    parse_str($argv[4], $_POST);
-}
-
-$project_root = $argv[3];
-require_once $project_root . '/helpers.php';
-
-// CSRF : pré-remplir $_SESSION avec le token qu'on poster
-if (session_status() === PHP_SESSION_NONE) session_start();
-$_SESSION['csrf_token'] = $_POST['csrf_token'] ?? '';
-
-// Activer mail_dry_run pour éviter SMTP (on teste le HTML, pas l'email)
-\App\Core\App::settings()->set('mail_dry_run', '1', 'test');
-
-ob_start();
-try {
-    $controller = new App\Controller\FormController();
-    $controller->handle();
-    $html = ob_get_clean();
-} catch (\Throwable $e) {
-    $html = ob_get_clean() . "\n__EXCEPTION__:" . $e->getMessage() . "\n" . $e->getTraceAsString();
-}
-echo $html;
-PHP;
+    $script = <<<'PHP_WRAP'
+    <?php
+    // ── Configuration ──
+    // TEST_MODE=false : on veut du HTML, pas du JSON.
+    // CSRF : on gère via $_SESSION (la session CLI fonctionne).
+    // Emails : MailService::send() tentera SMTP → on le mock via globals.
+    putenv('APP_TEST_MODE=');
+    unset($_SERVER['HTTP_X_TEST_MODE']);
+    unset($_SERVER['HTTP_X_TEST_USER']);
+    $_SERVER['AUTH_USER'] = 'DREETS\testeur';
+    $_SERVER['HTTP_HOST'] = 'localhost';
+    $_SERVER['HTTPS'] = '';
+    $_SERVER['REQUEST_URI'] = '/form.php';
+    $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+    
+    $injected = unserialize(base64_decode($argv[1]));
+    foreach ($injected as $k => $v) {
+        $_SERVER[$k] = $v;
+    }
+    
+    if (!empty($_SERVER['QUERY_STRING'])) {
+        parse_str($_SERVER['QUERY_STRING'], $_GET);
+    }
+    
+    // Peupler $_POST si passé en argv[4]
+    if (!empty($argv[4])) {
+        parse_str($argv[4], $_POST);
+    }
+    
+    $project_root = $argv[3];
+    require_once $project_root . '/helpers.php';
+    
+    // CSRF : pré-remplir $_SESSION avec le token qu'on poster
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $_SESSION['csrf_token'] = $_POST['csrf_token'] ?? '';
+    
+    // Activer mail_dry_run pour éviter SMTP (on teste le HTML, pas l'email)
+    \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
+    
+    ob_start();
+    try {
+        $controller = new App\Controller\FormController();
+        $controller->handle();
+        $html = ob_get_clean();
+    } catch (\Throwable $e) {
+        $html = ob_get_clean() . "\n__EXCEPTION__:" . $e->getMessage() . "\n" . $e->getTraceAsString();
+    }
+    echo $html;
+    PHP_WRAP;
 
     $tmp = tempnam(sys_get_temp_dir(), 'formtest_post_') . '.php';
     file_put_contents($tmp, $script);
@@ -279,26 +328,27 @@ PHP;
     @unlink($tmp);
     $post_html = implode("\n", $output);
 
-    test('POST réussi → page succès contient "Demande enregistrée"', function() use ($post_html) {
-        return strpos($post_html, 'Demande enregistrée') !== false
-            ? true
-            : 'Succès non détecté. HTML: ' . substr($post_html, 0, 800);
-    });
+    test('POST réussi → page succès contient "Demande enregistrée"', fn(): string|true => str_contains($post_html, 'Demande enregistrée')
+        ? true
+        : 'Succès non détecté. HTML: ' . substr($post_html, 0, 800));
 
-    test('POST réussi → page succès NE contient PAS la checkbox rgpd_consent (BUG HISTORIQUE)', function() use ($post_html) {
+    test('POST réussi → page succès NE contient PAS la checkbox rgpd_consent (BUG HISTORIQUE)', 
         // Le bug historique : après succès, le endif mal placé
         // faisait que la carte RGPD réapparaissait sous le message de succès.
         // On vérifie que ce n'est PLUS le cas.
-        return strpos($post_html, 'rgpd_consent') === false
-            ? true
-            : 'BUG : la checkbox rgpd_consent fuite sur la page succès ! HTML: ' . substr($post_html, 0, 1500);
-    });
+        fn(): string|true => !str_contains($post_html, 'rgpd_consent')
+        ? true
+        : 'BUG : la checkbox rgpd_consent fuite sur la page succès ! HTML: ' . substr($post_html, 0, 1500));
 
-    test('POST réussi → page succès NE contient PAS le bouton "Envoyer ma demande"', function() use ($post_html) {
-        return strpos($post_html, 'Envoyer ma demande') === false
-            ? true
-            : 'BUG : le bouton submit fuite sur la page succès !';
-    });
+    test('POST réussi → page succès NE contient PAS le bouton "Envoyer ma demande"', fn(): true|string => !str_contains($post_html, 'Envoyer ma demande')
+        ? true
+        : 'BUG : le bouton submit fuite sur la page succès !');
+}
+
+// ── Teardown idempotence : laisser la DB propre pour le prochain run ──
+$purged_teardown = cleanup_tester_submissions();
+if ($purged_teardown > 0) {
+    echo "  Idempotence : {$purged_teardown} soumission(s) de test purgée(s) (teardown)\n";
 }
 
 // ── Résumé ──

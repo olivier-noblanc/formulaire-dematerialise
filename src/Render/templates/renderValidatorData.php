@@ -33,7 +33,8 @@ foreach ($validator_data_rows as $validator_data_row) {
         $audit_parts[] = ' — étape : ' . \App\Core\App::html()->escape(t_jargon($step_lab));
     }
     if ($filled_at !== '') {
-        $ts = strtotime($filled_at);
+        // filled_at est en UTC (gmdate) — interprétation UTC explicite.
+        $ts = strtotime($filled_at . ' UTC');
         if ($ts !== false) {
             $audit_parts[] = ' le ' . \App\Core\App::html()->escape(date('d/m/Y à H:i', $ts));
         }

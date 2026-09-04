@@ -5,7 +5,7 @@ if ($recent_alerts === []) {
 
 $rows = '';
 foreach ($recent_alerts as $recent_alert) {
-    $date      = \App\Core\App::html()->escape(date('d/m/Y H:i', (int) strtotime((string) ($recent_alert['sent_at'] ?? 'now'))));
+    $date      = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($recent_alert['sent_at'] ?? 'now')));
     $rule_lbl  = \App\Core\App::html()->escape((string) ($recent_alert['rule_label'] ?? 'Règle supprimée'));
     $form_lbl  = \App\Core\App::html()->escape((string) ($recent_alert['form_label'] ?? ''));
     $message   = \App\Core\App::html()->escape((string) ($recent_alert['message'] ?? ''));

@@ -144,12 +144,37 @@ $stmt = null; // libère le lock avant le DDL
 
 ## Règles de test
 
-Après CHAQUE modification de code, TOUJOURS lancer les tests completset vérifier :
-1. `vendor/bin/phpunit` — 0 failures
+Après CHAQUE modification de code, lancer les tests ciblés sur la zone modifiée et vérifier :
+1. Tests ciblés (`vendor/bin/phpunit --filter <TestConcerné>` ou le fichier `tests/<fichier>.php` touché) — 0 failures
 2. Vérifier que `vendor/composer/autoload_psr4.php` contient les nouvelles classes
 3. Vérifier que aucun fichier supprimé n'est encore requis (grep)
 4. Si modification d'un service/controller : vérifier aussi les contrôleurs enfants
-5. Ne JAMAIS claim que c'est fini sans avoir lancé les tests
+5. Ne JAMAIS claim que c'est fini sans avoir lancé les tests ciblés
+
+La suite complète et la gate (`scripts/check.ps1`) ne sont PAS relancées systématiquement en local après chaque modification : elles s'exécutent prioritairement via la CI (pull request), ou une seule fois en local par l'unique owner de validation finale — voir « Orchestration et validation ».
+
+---
+
+## Orchestration et validation
+
+Cette section définit la répartition des rôles et la discipline de validation quand plusieurs agents collaborent sur une même tâche (orchestrateur + spécialistes).
+
+### Rôles
+
+| Rôle | Périmètre |
+|------|-----------|
+| **Oracle** | Analyse, diagnostic, arbitrage, plan d'action. Ne lance PAS de commandes lourdes (suite complète, gate, builds) et ne modifie AUCUN fichier. |
+| **Explorer** | Investigation et lecture du codebase (`grep`, `glob`, `read`, recherche GitHub). Ne modifie rien. |
+| **Fixer** | Implémentation bornée : modifications de code + tests ciblés sur la zone touchée. |
+
+### Principes
+
+- **Un seul owner de validation finale** : une seule entité (orchestrateur ou humain) déclare la tâche validée. Les spécialistes ne valident jamais seuls — ils rapportent leurs résultats à l'owner.
+- **Tests ciblés après modification** : chaque modification est suivie des tests qui couvrent la zone touchée (voir « Règles de test ») — pas la suite complète à chaque itération.
+- **Suite complète / gate via CI en priorité** : la suite complète et la gate (`scripts/check.ps1`) s'exécutent prioritairement dans la CI sur la pull request. En local, seul l'owner de validation finale les lance, une seule fois avant livraison. Les mentions de "gate complète" ailleurs dans ce document s'entendent dans ce cadre.
+- **Pas de relance inutile d'une commande lourde** : si le résultat d'un run reste valide et que l'arbre concerné n'a pas changé depuis (aucun `git status`/`git diff` sur les fichiers concernés), réutiliser le résultat au lieu de relancer.
+- **Sessions interrompues** : reprendre par l'état existant (`git status`, `git diff`, `CHANGELOG.md`, `TODO.md`, mémoire de session) pour identifier ce qui est déjà fait, plutôt que de ré-exécuter aveuglément des étapes déjà franchies.
+- **Interdiction des écritures concurrentes sur les mêmes fichiers** : un seul agent à la fois modifie un fichier donné. Paralléliser uniquement sur des fichiers disjoints ; les fichiers partagés (`AGENTS.md`, `CHANGELOG.md`, `TODO.md`, `src/bootstrap.php`...) sont séquencés.
 
 ---
 

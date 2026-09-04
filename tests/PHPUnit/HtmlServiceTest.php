@@ -470,4 +470,67 @@ final class HtmlServiceTest extends TestCase
     {
         self::assertSame('🖼️', $this->service->getFileIcon('image/gif'));
     }
+
+    // ── formatDateTimeFr() — source unique du formatage des dates SQL ──
+
+    public function testFormatDateTimeFrNullReturnsEmpty(): void
+    {
+        self::assertSame('', $this->service->formatDateTimeFr(null));
+    }
+
+    public function testFormatDateTimeFrEmptyStringReturnsEmpty(): void
+    {
+        // Amélioration vs date('d/m/Y à H:i', (int) strtotime('')) qui
+        // affichait « 01/01/1970 à 01:00 » sur une date vide.
+        self::assertSame('', $this->service->formatDateTimeFr(''));
+    }
+
+    public function testFormatDateTimeFrSqlDatetimeFormatsFrench(): void
+    {
+        // Format SQLite datetime('now') : 'YYYY-MM-DD HH:MM:SS' — stocké en UTC.
+        // P0-1 : la chaîne UTC doit être convertie en Europe/Paris pour l'affichage
+        // (janvier = UTC+1 : 10:30 UTC → 11:30 Paris).
+        self::assertSame('15/01/2024 à 11:30', $this->service->formatDateTimeFr('2024-01-15 10:30:00'));
+    }
+
+    public function testFormatDateTimeFrSecondsLess(): void
+    {
+        // P0-1 : septembre = UTC+2 (heure d'été) : 08:45 UTC → 10:45 Paris.
+        self::assertSame('01/09/2026 à 10:45', $this->service->formatDateTimeFr('2026-09-01 08:45'));
+    }
+
+    public function testFormatDateTimeFrParisInputNotConverted(): void
+    {
+        // P0-1 cas particulier : submissions.submitted_at est écrit par PHP date()
+        // (FormSubmissionHandler) donc déjà en heure Paris — ne pas convertir.
+        self::assertSame('01/09/2026 à 08:45', $this->service->formatDateTimeFr('2026-09-01 08:45', false));
+    }
+
+    public function testFormatDateTimeFrInvalidDateReturnsEmpty(): void
+    {
+        // Avant : (int) strtotime('garbage') → 0 → « 01/01/1970 à 01:00 ».
+        self::assertSame('', $this->service->formatDateTimeFr('not-a-date'));
+    }
+
+    // ── formatRelanceSuffix() ───────────────────────────────────
+
+    public function testFormatRelanceSuffixZeroReturnsEmpty(): void
+    {
+        self::assertSame('', $this->service->formatRelanceSuffix(0));
+    }
+
+    public function testFormatRelanceSuffixNegativeReturnsEmpty(): void
+    {
+        self::assertSame('', $this->service->formatRelanceSuffix(-1));
+    }
+
+    public function testFormatRelanceSuffixOneIsSingular(): void
+    {
+        self::assertSame(' — 1 rappel envoyé', $this->service->formatRelanceSuffix(1));
+    }
+
+    public function testFormatRelanceSuffixTwoIsPlural(): void
+    {
+        self::assertSame(' — 2 rappels envoyés', $this->service->formatRelanceSuffix(2));
+    }
 }

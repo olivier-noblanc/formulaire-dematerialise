@@ -76,17 +76,31 @@ final class HtmlService implements HtmlInterface
      *
      * Centralise le date(...)/strtotime(...) dupliqué dans plusieurs
      * renderers pour l'affichage du statut des tokens (sent_at, done_at,
-     * expires_at) — signalé 2026-07-30 (2 occurrences dans
-     * SubmissionViewRenderer seul, formatage à l'identique dans
-     * MonitoringRenderer/MyValidationsRenderer à migrer si l'occasion se
-     * présente).
+     * expires_at).
+     *
+     * P0-1 (2026-09-03) : les horodatages SQL viennent de SQLite
+     * datetime('now') donc en UTC — la chaîne est interprétée en UTC puis
+     * convertie en Europe/Paris pour l'affichage (avant : strtotime()
+     * interprétait la chaîne UTC avec le fuseau serveur, dates affichées
+     * 1-2h trop tôt en prod).
+     *
+     * Cas particulier documenté ($fromUtc = false) : colonnes écrites par
+     * PHP date() donc déjà en heure Paris — submissions.submitted_at
+     * (FormSubmissionHandler) et settings.last_alert_check (alert_check.php).
      */
-    public function formatDateTimeFr(?string $dateStr): string
+    public function formatDateTimeFr(?string $dateStr, bool $fromUtc = true): string
     {
         if ($dateStr === null || $dateStr === '') {
             return '';
         }
-        return date('d/m/Y à H:i', (int) strtotime($dateStr));
+        try {
+            $dt = new \DateTimeImmutable($dateStr, new \DateTimeZone($fromUtc ? 'UTC' : 'Europe/Paris'));
+        } catch (\Exception) {
+            // @silent-ok: entrée non-date → chaîne vide (l'ancien code
+            // affichait « 01/01/1970 à 01:00 » via (int) strtotime()).
+            return '';
+        }
+        return $dt->setTimezone(new \DateTimeZone('Europe/Paris'))->format('d/m/Y à H:i');
     }
 
     /**

@@ -33,14 +33,20 @@ final class PendingAndBlockedTest extends Base
         self::assertSame([], $this->repo->findPendingByEmail($email));
     }
 
-    public function testFindPendingByEmailExcludesExpiredTokens(): void
+    public function testFindPendingByEmailIncludesExpiredTokens(): void
     {
+        // P0-4/D6 : les tokens expirés restent listés dans "Mes validations" —
+        // le renderer affiche l'état "Expiré" (badge + régénération admin) au
+        // lieu de les masquer, sinon ils deviennent invisibles pour le validateur.
         [$formId, $stepId] = $this->createFormAndStep();
         $subId = $this->createSubmission($formId, status: 'en_cours');
         $email = 'expired-' . uniqid() . '@test.com';
         $this->createToken($subId, $stepId, $email, expiresInOffset: '-1 day');
 
-        self::assertSame([], $this->repo->findPendingByEmail($email));
+        $result = $this->repo->findPendingByEmail($email);
+
+        self::assertCount(1, $result);
+        self::assertSame($subId, $result[0]['submission_id']);
     }
 
     public function testFindPendingByEmailExcludesClosedSubmissions(): void

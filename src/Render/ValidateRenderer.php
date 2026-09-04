@@ -81,7 +81,7 @@ final class ValidateRenderer
             $data = $result['data'] ?? [];
             $html .= '<span class="badge">' . $htmlService->escape($data['step_label'] ?? '') . '</span>' . "\n";
             $html .= '<h1>Déjà validé</h1>' . "\n";
-            $html .= '<p class="info">Tâche validée le ' . $htmlService->escape(date('d/m/Y à H:i', (int) strtotime((string) ($data['done_at'] ?? 'now')))) . '</p>' . "\n";
+            $html .= '<p class="info">Tâche validée le ' . $htmlService->escape($htmlService->formatDateTimeFr((string) ($data['done_at'] ?? 'now'))) . '</p>' . "\n";
             $html .= '<div class="flex-gap5-mt-3">' . "\n";
             $html .= '  <a href="index.php?p=my_validations" class="btn btn-secondary">Mes validations</a>' . "\n";
             $html .= '  <a href="index.php" class="btn btn-secondary">Accueil</a>' . "\n";

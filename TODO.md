@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1419** (0 fail, 0 errors) |
-| Assertions | **4168** |
+| Tests | **1527** (0 fail, 0 errors — re-vérifié 2026-09-03 après fix harnais test_all, v10.42.28 ; validation finale déléguée à la CI sur la branche, cf. AGENTS.md « Orchestration et validation ») |
+| Assertions | **4423** |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,72 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.29 — Fiabilisation du harnais test_assets_cache + documentation AGENTS.md
+| Tâche | Détail |
+|-------|--------|
+| Serveur sans COM | `proc_open()` commande en tableau (Windows) — remplace `COM('WScript.Shell')` (com_dotnet absent hors `PHP_INI_SCAN_DIR`) ; Linux `shell_exec("... &")` inchangé ; jamais `proc_close()` sur un process vivant |
+| Bornes de temps | curl `--connect-timeout 5 --max-time 20` (hang constaté sans borne) + sondes de disponibilité 300 ms × 20 s (remplace `sleep(2)` muet) |
+| Filet anti-orphelin | Shutdown function : `proc_terminate()` + `kill_port()` ; contrat `_test_summary_printed` pour ne pas subir le filet anti-masquage du bootstrap en succès |
+| Fix dépendance d'ordre | `testRegenerateRefusesInvalidatedToken` : `admin@test.com` (ligne qui fuit de `PersonaServiceTest::setUp`, sans cleanup) → `testeur@e2e.test` (seedé `phpunit_bootstrap`) ; rector pre-commit appliqué sur 12 fichiers du lot |
+| Fix CI filet | Filet anti-masquage : tire uniquement si compteurs bootstrap engagés (`test_mail_escaping` tué après résumé vert 7/7 en CI) ; contrat B-HARNESS étendu à `test_email_urls`/`test_routing` (flag après résumé propre) |
+| Documentation | AGENTS.md : règles de test ciblées + section « Orchestration et validation » (rôles, owner unique, écritures séquencées) |
+| Vérifs | Job CI « Tests fonctionnels » rejoué localement : test_all 59/59, mail_escaping 7/7, email_urls 7/7, confirm_action_dispatch 8/8, assets_cache **21/21**, régressions **17/17**, selftest **3/3** ; run filtré 8 classes **91 tests / 184 assertions OK** ; `php -l` OK |
+
+### v10.42.28 — Lot Oracle : fiabilisation du harnais test_all (hors sécurité)
+| Tâche | Détail |
+|-------|--------|
+| Reset déterministe DB test | `reset_test_db_strict()` (test_bootstrap) : `workflow_test.db` + `-wal`/`-shm` supprimés avant bootstrap, recréés (schéma+seeds) à la 1ʳᵉ connexion PDO ; garde stricte (opt-in `TEST_ALL_DB_RESET`, CLI, basename verrouillé, échec unlink → exit 1) |
+| Exit footer supprimé | Test « footer version accueil » → sous-processus (`run_php_subprocess`) : `index.php:108` appelait `exit()` in-process, tuant test_all sans résumé (exit 0) et masquant les échecs |
+| Filet anti-masquage | Shutdown function test_bootstrap : résumé partiel + `exit(1)` forcés si terminaison anormale (résumé non imprimé) ; chemin nominal des 4 suites inchangé |
+| Pages réparées | Section 4 : le runner requérait `tests/index.php` (inexistant), `Error` avalée par le catch → 15 tests verts sans rendre aucune page ; désormais vrai `index.php` racine + X-Test-Mode (DB test, pas prod) + détection par exit code |
+| Régressions | `tests/test_harness_selftest.php` (3 scénarios sous-processus : fail_exit0 / fatal / nominal) + canary `test_db_reset_canary` (absente au run suivant = reset prouvé) |
+| Dé-vacuïsation | « Settings par défaut présents » : `get()` retourne `''` (pas `false`) — l'ancien test ne pouvait jamais échouer |
+| Vérifs | test_all ×2 consécutifs 59/59 exit 0 ; selftest 3/3 ; preuve canary (reset désactivé → ❌ exit 1) ; PHPUnit 1527/4423 OK ; test_e2e 89/95 (6 échecs identiques sur HEAD → préexistants) |
+
+### v10.42.27 — Lot Oracle FIX-A/B/C : tokens invalidés exclus + dates calendaires réelles
+| Tâche | Détail |
+|-------|--------|
+| FIX-A alert_check | 5 requêtes `invalidated_at IS NULL` : pending + ordres démarrés (`has_incomplete_steps`), destinataires `validators`/`admin+validators` (`resolve_recipients`), avancement HTML (`build_alert_html`) — un ordre dont le seul token est invalidé (RGPD) n'alerte plus à vie |
+| FIX-B lectures/vues | `TokenReadSubmissionTrait` (findWithStepsBySubmission, findDetailedWithStepsBySubmission, findBySubmissionIds) + `SubmissionViewRenderer` + templates `renderDelegationForm`/`renderRemindHistory`/`renderWorkflowActions` — `done_at` d'un token délégué/régénéré = marqueur technique, pas une validation ; token RGPD = ni validé ni pending |
+| FIX-B filet | Exclusions transverses remind/pendings/stats (TokenService + traits de lecture, déport exclusions P0-3/P0-4) couvertes par `TokenInvalidationRegressionTest` (21 tests) |
+| FIX-C dates | `DateHelper::parseDate()` + `checkdate()` (30/02 rejeté — DateTimeImmutable normalisait en silence) ; `FormValidationHandler` valide `field_type=date` côté serveur (JJ/MM/AAAA ou AAAA-MM-JJ) |
+| Nouveaux tests | 44 (AlertCheckInvalidatedTokensTest 5, TokenInvalidatedDisplayTest 9, TokenInvalidationRegressionTest 21, FormValidationHandlerTest +9) |
+| Métriques | **1527 tests / 4428 assertions OK** (0 fail, 0 error) — run complet 2026-09-03, **inclut déjà les tests FIX-A** (vérifié : 1527 tests / 0 defect dans le cache PHPUnit) |
+| ⚠️ Reste | **Gate complète (`scripts/check.ps1`) à relancer** avant commit — arbre non commité, travail concurrent actif (P0-3/P0-5, v36, templates) |
+
+### v10.42.26 — Lot Oracle P0-1/P0-2 : fuseau horaire affichage + jours calendaires
+| Tâche | Détail |
+|-------|--------|
+| P0-1 HtmlService | `formatDateTimeFr(?, bool $fromUtc = true)` : chaîne SQL UTC interprétée en UTC puis convertie Europe/Paris ; invalide → '' ; 9 call sites Paris (submitted_at ×8, last_alert_check) marqués `false` |
+| P0-1 ValidateController GET | `strtotime(expires_at . ' UTC')` (idiome Bug14) — token plus « expiré 1-2h trop tôt » en prod |
+| P0-1 sites frères | 5 strtotime-UTC corrigés (monitoring_blocked_tokens, renderRemindHistory, monitoring_mail_logs, renderValidatorData, submission_detail) — grep transversal |
+| P0-2 DateHelper | `calendarDaysUntil()` (minuit/minuit Paris, DST-safe, source unique) + `calculateDeadlineUrgency()` refondue (plus de floor/86400 ni %a) |
+| P0-2 alert_check.php | `calendarDaysUntil($deadline, $now)` + branches retard strictes `< 0` — J0 n'est plus « EN RETARD de 0 jours »/« DATE DÉPASSÉE » |
+| Tests TDD | +15 (DateHelperTest 8, HtmlServiceTest 2+2 màj, ValidateControllerTest 2, AlertCheckCalendarDaysTest 3 structurels) — RED 6E+9F constatés → GREEN |
+| Vérifications | PHPUnit complet 1504/4362 OK ; PHPStan level 8 ciblé 0 erreur |
+| Hors lot signalé | `SubmissionViewRenderer:266` affiche `filled_at` ISO brut (pas formatDateTimeFr) — à traiter séparément |
+
+### v10.42.25 — Fix gate : fixtures régression Bug01/Bug03 (domaine email réel + idempotence)
+| Tâche | Détail |
+|-------|--------|
+| Bug01 fixture | Identité dérivée de la config réelle (`AuthService::getUser()`, domaine `SETTINGS_DEFAULTS['email_domain']`), cleanup pré+post enfants→parent (tokens, submission_validator_data, attachments, submissions), scénario ×2 (idempotence prouvée) |
+| Bug03 fixture | Admin dérivé de la DB (`SELECT email FROM admins ORDER BY email LIMIT 1`), fixture temporaire créée/supprimée si table vide, plus de compte hardcodé |
+| Résidu DB | Soumission orpheline `test-bug01@dreets.gouv.fr` (06/08/2026, causait la garde anti-doublon) supprimée par le pré-clean du test |
+| Vérifications | `run_all.php` : 17/17 PASS, exit 0, ×2 exécutions ; StructuralHtmlTest 15/15 (correctif `form_content.php` de v10.42.24 validé) ; PHPUnit 1453/4254 OK ; PHPStan level 8 : 0 erreur |
+
+### v10.42.24 — Audit hors sécurité : corrections B-FIX1..5 + fix shipmonk.deadMethod
+| Tâche | Détail |
+|-------|--------|
+| B-FIX1 | `FormValidationHandler` : `'0'` est une valeur légitime pour required (select/texte) — échec uniquement sur vide/absent/whitespace |
+| B-FIX2 | Champs conditionnels masqués non requis + op `in` acceptant value tableau (FormValidationHandler, FormJsonValidator) |
+| B-FIX3 | Relance per-form embarquée dans export/import JSON + import bloqué sur opérateur de condition inconnu (AdminImportExportHandler, FormRepository) |
+| B-FIX4 | Conversion CSV Oui/Non limitée aux champs checkbox (`FormRepository::getCheckboxFieldNames()`) — valeurs texte/select `'1'`/`'0'` inchangées |
+| B-FIX5 | Export CSV streaming réel : `csvChunks()` générateur (batch 500), plus d'accumulation mémoire |
+| Fix deadMethod | Suppression `ExportService::generateCsvString()` (morte en prod depuis B-FIX5), `csvChunks()` public, 27 sites de tests adaptés + 2 régressions (TDD RED→GREEN) |
+| Nouveaux tests | 17 (AdminImportExportTest 7, FormValidationHandlerTest 9, NoDuplicateHtmlAttributesTest 1) |
+| Fichiers | 29 suivis modifiés + 3 fichiers de tests non suivis |
+| Métriques | **1453 tests / 4254 assertions OK** (avant fix : 1451/4234), PHPStan level 8 : 0 erreur ✅ |
 
 ### v10.42.20 — LOW issues + warnings/déprécations PHPUnit
 | Tâche | Détail |
@@ -337,6 +403,11 @@
 
 ## 🎯 Ce qui reste
 
+**À faire en premier :**
+- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit 1527/4423 (v10.42.28), PHPStan ciblé 0, test_all 59/59 ×2, selftest 3/3, test_assets_cache 21/21 (re-vérifié 2026-09-04) ; gate locale du 2026-09-03 12:17 OK sur l'état d'alors (lint 38 fichiers, PHPStan, PHPUnit 1527/4427, suites fonctionnelles)
+- **Nettoyer la fuite `PersonaServiceTest::setUp`** : la ligne `admins` `admin@test.com` est insérée sans jamais être supprimée (pollution d'ordre pour tout test vérifiant `isAdmin()` derrière) — `testRegenerateRefusesInvalidatedToken` a été rendu insensible (v10.42.29), la cause racine reste à supprimer (cleanup tearDown) avec vérification qu'aucun autre test n'en dépend
+- **Moderniser `tests/test_routing.php`** (hors CI/gate, stalé depuis v10.1.14c) : le check « pas d'erreur fatale » matche le contenu légitime de la page changelog (`stripos 'Fatal error'` — texte d'entrée v10.21.0, page saine prouvée par test_all) ; attentes structurelles des pages admin stalées (`<link>` assets, `body class page-xxx`) — redéfinir les checks sur le layout actuel
+
 ### Audit CTO (rapport : download/CTO_AUDIT_REPORT.md)
 
 55 problèmes identifiés (10 CRITICAL, 13 HIGH, 17 MEDIUM, 15 LOW).
@@ -372,6 +443,20 @@ Décision projet non négociable : C-04 (display_errors=1) et C-05 (SMTPDebug=3)
 - ~~CS Fixer : 2 fichiers avec heredoc à réindenter (AdminFormsRenderer, NavigationRenderer)~~ ✅ **TERMINÉ** — v10.42.18
 - ~~17 MEDIUM~~ ✅ **TERMINÉ** — v10.42.19 (enum `ValidationResultStatus`, 7 logs audit)
 - ~~15 LOW~~ ✅ **TERMINÉ** — v10.42.20 (imports, whitespace, styles inline, warnings, déprécations)
+
+### Audit hors sécurité (2026-09-01) — corrections B-FIX1 à B-FIX5
+
+Lane d'audit hors sécurité : corrections de bugs appliquées (B-FIX1 à B-FIX5, détail dans CHANGELOG [10.42.24]), fix `shipmonk.deadMethod` inclus. Findings détaillés restants (risques latents, zones non couvertes) **non retrouvés** dans le dépôt ni la mémoire de session après redémarrage du lane — à réinjecter ici lorsque disponibles. Rien n'a été supposé ni inventé.
+
+| Élément | État |
+|---|---|
+| PHPUnit | ✅ **1453 tests / 4254 assertions OK** (run complète locale 2026-09-01, après fix deadMethod) — état audit mesuré avant fix : 1451 / 4234 |
+| PHPStan | ✅ level 8, **0 erreur** (run complète) — `shipmonk.deadMethod ExportService::generateCsvString` résolu (suppression de la méthode morte en prod, `csvChunks()` public) |
+| Dépôt | **29 fichiers suivis modifiés en attente de commit** (27 code/tests + CHANGELOG.md + TODO.md) + 3 fichiers de tests non suivis (AdminImportExportTest, FormValidationHandlerTest, NoDuplicateHtmlAttributesTest) + `edenai-opencode-routing-options.md` (hors périmètre) |
+| Corrections d'audit | B-FIX1 (`'0'` = valeur légitime required), B-FIX2 (champs conditionnels + op `in` tableau), B-FIX3 (relance per-form dans export/import JSON), B-FIX4 (conversion Oui/Non checkbox seulement), B-FIX5 (export CSV streaming) — détail CHANGELOG [10.42.24] |
+| Bugs confirmés restants | ⚠️ À réinjecter (findings non retrouvés) |
+| Risques latents | ⚠️ À réinjecter |
+| Zones non couvertes | ⚠️ À réinjecter |
 
 ### ~~Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)~~ ✅ **TERMINÉ/À JOUR**
 
@@ -474,4 +559,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-08-25 (v10.42.20)_
+_Dernière mise à jour : 2026-09-03 (v10.42.27 — lot FIX-A/B/C documenté, gate complète à relancer avant commit)_

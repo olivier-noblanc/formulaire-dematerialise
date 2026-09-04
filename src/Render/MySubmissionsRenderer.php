@@ -125,7 +125,7 @@ final class MySubmissionsRenderer
 
                 $subId       = urlencode((string) ($submission['id'] ?? ''));
                 $formLabel   = App::html()->escape(self::simplifyLabel($submission['form_label']));
-                $submittedAt = App::html()->escape(date('d/m/Y à H:i', (int) strtotime((string) ($submission['submitted_at'] ?? ''))));
+                $submittedAt = App::html()->escape(App::html()->formatDateTimeFr((string) ($submission['submitted_at'] ?? ''), false));
                 $prenomNom   = App::html()->escape(SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM));
                 $formSlug    = App::html()->escape($submission['form_slug']);
                 $maxPct      = max($pct, 3);
