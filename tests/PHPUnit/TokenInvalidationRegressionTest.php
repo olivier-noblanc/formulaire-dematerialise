@@ -249,6 +249,21 @@ final class TokenInvalidationRegressionTest extends TestCase
         );
     }
 
+    // ── B1 : l'avancement de workflow ignore les tokens invalidés ─
+
+    public function testFindStepIdsAndDonesBySubmissionExcludesInvalidatedTokens(): void
+    {
+        $this->insertToken(invalidatedAt: $this->nowUtc());
+
+        $rows = $this->tokenRepo->findStepIdsAndDonesBySubmission($this->submissionId);
+
+        self::assertSame(
+            [],
+            $rows,
+            'Un token invalidé (RGPD) ne doit pas apparaître dans la lecture d\'avancement (sinon l\'étape reste bloquée à vie).'
+        );
+    }
+
     public function testCountPendingExcludesInvalidatedTokens(): void
     {
         $before = $this->tokenRepo->countPending();
@@ -477,5 +492,41 @@ final class TokenInvalidationRegressionTest extends TestCase
 
         self::assertStringContainsString('Valider / Refuser', $html, 'Un token actif doit proposer la validation.');
         self::assertStringNotContainsString('expired-badge', $html);
+    }
+
+    // ── B2 : expires_at / filled_at lus en UTC explicite ────────
+
+    public function testRendererExpiredFlagUsesUtcExpiry(): void
+    {
+        $previousTz = date_default_timezone_get();
+        date_default_timezone_set('Europe/Paris');
+        try {
+            // Expire dans 1h (UTC). Lu naïvement en Europe/Paris (UTC+1/+2),
+            // il paraîtrait déjà expiré → carte à tort "expired".
+            $expiresAt = gmdate('Y-m-d H:i:s', time() + 3600);
+            $html = $this->renderPending([], [$this->makePendingCard($expiresAt)]);
+            self::assertStringNotContainsString('validation-card expired', $html);
+        } finally {
+            date_default_timezone_set($previousTz);
+        }
+    }
+
+    public function testRendererFilledAtDisplaysUtcConvertedToLocal(): void
+    {
+        $previousTz = date_default_timezone_get();
+        date_default_timezone_set('Europe/Paris');
+        try {
+            $filledAt = '2026-01-15 10:00:00'; // UTC
+            $expected = date('d/m/Y H:i', strtotime($filledAt . ' UTC'));
+            $html = MyValidationsRenderer::content([], [], 'done', 0, 0, '', '', [], [[
+                'id' => 'vd1', 'submission_id' => 'sub-1', 'field_name' => 'f', 'field_label' => 'Champ',
+                'field_type' => 'text', 'value' => 'v', 'filled_by' => 'validator', 'filled_at' => $filledAt,
+                'step_id' => 's1', 'step_label' => 'Étape', 'filled_by_email' => 'me@test.com', 'token_id' => 't1',
+                'form_id' => 'f1', 'form_label' => 'Form',
+            ]], 'me@test.com');
+            self::assertStringContainsString($expected, $html);
+        } finally {
+            date_default_timezone_set($previousTz);
+        }
     }
 }

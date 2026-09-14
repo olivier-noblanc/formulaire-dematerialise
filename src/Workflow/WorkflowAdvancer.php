@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Workflow;
 
+use App\Contract\MailInterface;
 use App\Enum\SubmissionStatus;
 use App\Forms\FieldService;
-use App\Mail\MailService;
 use App\Repository\FormRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
@@ -20,9 +20,10 @@ use App\Settings\SettingsService;
  */
 final readonly class WorkflowAdvancer
 {
+    use WorkflowTokenCreationTrait;
     public function __construct(
         private SettingsService $settingsService,
-        private MailService $mailService,
+        private MailInterface $mailService,
         private FieldService $fieldService,
         private ConditionEvaluator $conditionEvaluator,
         private RecipientResolver $recipientResolver,
@@ -62,6 +63,10 @@ final readonly class WorkflowAdvancer
         // et empêcher les doublons entre requêtes concurrentes.
         // BaseRepository expose beginTransaction/commit/rollBack — les repos
         // partagent la même connexion PDO (Database singleton).
+        // B3 : les notifications sont accumulées puis envoyées APRÈS le commit
+        // (voir flushNotifications) pour ne pas tenir le verrou d'écriture
+        // SQLite pendant l'I/O SMTP.
+        $notifications = [];
         $this->tokenRepository->beginTransaction();
         $committed = false;
         try {
@@ -91,7 +96,8 @@ final readonly class WorkflowAdvancer
                         $submission,
                         $submissionId,
                         $now,
-                        $expiresAt
+                        $expiresAt,
+                        $notifications
                     );
                     $totalTokensCreated += $tokenCreated ? 1 : 0;
                     if ($tokenCreated) {
@@ -153,97 +159,16 @@ final readonly class WorkflowAdvancer
                 $this->tokenRepository->rollBack();
             }
             throw $e;
+        } finally {
+            // B3 : envoi SMTP hors transaction — le verrou d'écriture SQLite ne
+            // doit pas être tenu pendant l'I/O réseau.
+            if ($committed) {
+                $this->flushNotifications($notifications);
+            }
         }
     }
 
-    /**
-     * Crée les tokens manquants pour un groupe d'étapes parallèles.
-     *
-     * @param list<array{step_id: string, step_label: string, ordre: int, actif: int, condition: string, recipient_emails: string}> $groupe
-     * @param array<string, list<string|null>> $tokensByStep map step_id => [done_at values] (sera mutée in-place pour les nouveaux tokens)
-     * @param array{id: string, form_id: string, data: string, submitted_by: string, submitted_at: string|null, closed_at: string|null, status: string, admin_comment: string, rgpd_consent: int|null, form_label: string} $submission
-     */
-    private function createTokensForGroup(
-        mixed $groupe,
-        mixed &$tokensByStep,
-        mixed $submission,
-        string $submissionId,
-        string $now,
-        string $expiresAt
-    ): bool {
-        $formData = json_decode($submission['data'] ?? '{}', true) ?? [];
-        $validatorData = $this->getValidatorDataForEvaluation($submissionId);
-        $tokenCreated = false;
-
-        foreach ($groupe as $step) {
-            // Étape déjà démarrée (a au moins un token) → ne pas créer de doublon
-            if (isset($tokensByStep[$step['step_id']])) {
-                continue;
-            }
-
-            // Évaluer la condition
-            if (!$this->conditionEvaluator->evaluate(
-                $step['condition'] ?? '',
-                $validatorData
-            )) {
-                continue;
-            }
-
-            $rawEmails = explode('|', $step['recipient_emails'] ?? '');
-            $hasRecipient = false;
-            foreach ($rawEmails as $rawEmail) {
-                $rawEmail = trim($rawEmail);
-                if ($rawEmail === '') {
-                    continue;
-                }
-                if ($rawEmail === '0') {
-                    continue;
-                }
-
-                $rawEmail = $this->recipientResolver->resolve($rawEmail, $formData, $submissionId);
-                if (filter_var($rawEmail, FILTER_VALIDATE_EMAIL) === false) {
-                    error_log("WorkflowAdvancer: skipping invalid recipient '{$rawEmail}' for step {$step['step_id']}");
-                    continue;
-                }
-
-                $hasRecipient = true;
-
-                // Vérifier doublon
-                if ($this->tokenRepository->hasPendingDuplicate($submissionId, $step['step_id'], $rawEmail)) {
-                    continue;
-                }
-
-                $token = $this->generateToken();
-                $tokenRowId = $this->generateUuid();
-                try {
-                    $this->tokenRepository->insertToken($tokenRowId, $submissionId, $step['step_id'], $rawEmail, $token, $now, $expiresAt);
-                } catch (\PDOException $e) {
-                    if ($e->getCode() === '23000') {
-                        error_log("WorkflowAdvancer: duplicate token prevented for step {$step['step_id']}, email {$rawEmail}");
-                        continue;
-                    }
-                    throw $e;
-                }
-
-                $subject = '[Action requise] ' . ($submission['form_label'] ?? '') . ' — ' . $step['step_label'];
-                $mailSent = $this->mailService->send($rawEmail, $subject, $this->mailService->buildValidationEmail($submission, $step['step_label'], $token));
-                if (!$mailSent) {
-                    error_log("WorkflowAdvancer: mail failed for token $token to {$rawEmail}");
-                }
-                $tokenCreated = true;
-                $tokensByStep[$step['step_id']][] = null; // done_at IS NULL pour le nouveau token
-            }
-
-            // Étape sans recipients valides — logger et ignorer (misconfiguration)
-            if (!$hasRecipient && !in_array(trim($step['recipient_emails'] ?? ''), ['', '0'], true)) {
-                error_log("WorkflowAdvancer: step {$step['step_id']} has condition true but no valid recipients — skipping");
-            }
-        }
-
-        return $tokenCreated;
-    }
-
-    /**
+/**
      * Vérifie si toutes les étapes actives d'un groupe (ayant au moins un token)
      * sont validées (tous leurs tokens ont done_at IS NOT NULL).
      *

@@ -161,13 +161,16 @@ trait TokenReadSubmissionTrait
     }
 
     /**
-     * @return array<int, array{step_id: string, email: string, sent_at: string|null, done_at: string|null, expires_at: string|null}>
+     * Tokens d'une soumission pour l'export JSON (tous statuts, y compris
+     * invalidés — l'export doit rendre l'état discernable).
+     *
+     * @return array<int, array{step_id: string, email: string, sent_at: string|null, done_at: string|null, expires_at: string|null, invalidated_at: string|null}>
      */
     public function findForExport(string $submissionId): array
     {
-        /** @var array<int, array{step_id: string, email: string, sent_at: string|null, done_at: string|null, expires_at: string|null}> $result */
+        /** @var array<int, array{step_id: string, email: string, sent_at: string|null, done_at: string|null, expires_at: string|null, invalidated_at: string|null}> $result */
         $result = $this->fetchAll(
-            'SELECT step_id, email, sent_at, done_at, expires_at
+            'SELECT step_id, email, sent_at, done_at, expires_at, invalidated_at
              FROM tokens WHERE submission_id = ? ORDER BY sent_at',
             [$submissionId]
         );
@@ -175,13 +178,21 @@ trait TokenReadSubmissionTrait
     }
 
     /**
+     * Tokens d'une soumission (step_id + done_at) pour l'avancement du workflow.
+     *
+     * B1 (audit 2026-09-14) : les tokens invalidés sont exclus. Un token RGPD
+     * (invalidated_at NOT NULL, done_at NULL) restait compté comme « étape
+     * démarrée » mais l'étape n'était jamais complétée → soumission en_cours à
+     * vie et invisible. Exclus ici, l'étape est recréée par WorkflowAdvancer
+     * (nouveau token + renvoi d'email).
+     *
      * @return list<array{step_id: string, done_at: string|null}>
      */
     public function findStepIdsAndDonesBySubmission(string $submissionId): array
     {
         /** @var list<array{step_id: string, done_at: string|null}> $result */
         $result = $this->fetchAll(
-            'SELECT step_id, done_at FROM tokens WHERE submission_id = ?',
+            'SELECT step_id, done_at FROM tokens WHERE submission_id = ? AND invalidated_at IS NULL',
             [$submissionId]
         );
         return $result;

@@ -14,7 +14,7 @@ final class FindQueriesTest extends Base
 
     public function testFindWithStepsBySubmissionReturnsJoinedData(): void
     {
-        [$formId, $stepId] = $this->createFormAndStep(stepLabel: 'Étape 1', ordre: 1);
+        [$formId, $stepId] = $this->createFormAndStep(ordre: 1, stepLabel: 'Étape 1');
         $subId = $this->createSubmission($formId);
         $this->createToken($subId, $stepId, 'validator@test.com');
 
@@ -28,7 +28,7 @@ final class FindQueriesTest extends Base
 
     public function testFindWithStepsBySubmissionOrdersByStepOrdre(): void
     {
-        [$formId, $step1] = $this->createFormAndStep(stepLabel: 'Étape 1', ordre: 1);
+        [$formId, $step1] = $this->createFormAndStep(ordre: 1, stepLabel: 'Étape 1');
         $stepId2 = \generate_uuid();
         $this->pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, 'Étape 2', 2, 1, '')")
             ->execute([$stepId2, $formId]);
@@ -55,7 +55,7 @@ final class FindQueriesTest extends Base
 
     public function testFindDetailedWithStepsBySubmissionIncludesAllFields(): void
     {
-        [$formId, $stepId] = $this->createFormAndStep(stepLabel: 'Étape 1', ordre: 1);
+        [$formId, $stepId] = $this->createFormAndStep(ordre: 1, stepLabel: 'Étape 1');
         $subId = $this->createSubmission($formId);
         $this->createToken($subId, $stepId, 'validator@test.com', doneAtOffset: '-1 hour');
 
@@ -161,6 +161,20 @@ final class FindQueriesTest extends Base
         self::assertArrayHasKey('sent_at', $result[0]);
         self::assertArrayHasKey('done_at', $result[0]);
         self::assertArrayHasKey('expires_at', $result[0]);
+        self::assertArrayHasKey('invalidated_at', $result[0]);
+    }
+
+    public function testFindForExportIncludesInvalidatedTokens(): void
+    {
+        [$formId, $stepId] = $this->createFormAndStep();
+        $subId = $this->createSubmission($formId);
+        $tokenId = $this->createToken($subId, $stepId, 'export2@test.com');
+        $this->repo->pdo()->prepare("UPDATE tokens SET invalidated_at = datetime('now') WHERE id = ?")->execute([$tokenId]);
+
+        $result = $this->repo->findForExport($subId);
+
+        self::assertCount(1, $result);
+        self::assertNotNull($result[0]['invalidated_at']);
     }
 
     public function testFindForExportReturnsEmptyForUnknownSubmission(): void

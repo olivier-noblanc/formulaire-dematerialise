@@ -37,6 +37,21 @@ trait TokenReadCheckTrait
     }
 
     /**
+     * Compte les tokens invalidés d'une soumission pour une étape donnée.
+     *
+     * Utilisé par WorkflowAdvancer pour distinguer une création initiale d'une
+     * recréation après invalidation (délégation/régénération/RGPD).
+     */
+    public function countInvalidatedBySubmissionAndStep(string $submissionId, string $stepId): int
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) as cnt FROM tokens WHERE submission_id = ? AND step_id = ? AND invalidated_at IS NOT NULL',
+            [$submissionId, $stepId]
+        );
+        return (int) ($row['cnt'] ?? 0);
+    }
+
+    /**
      * IDs des tokens relançables par le cron remind.php : non traités, non
      * invalidés (délégation/régénération/RGPD), non expirés (lien mort), sur
      * soumission non clôturée.

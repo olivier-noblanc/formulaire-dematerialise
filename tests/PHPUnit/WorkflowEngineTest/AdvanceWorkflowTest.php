@@ -354,4 +354,37 @@ final class AdvanceWorkflowTest extends Base
         $countAfterSecond = (int) $pdo->query("SELECT COUNT(*) FROM tokens WHERE submission_id = '$subId'")->fetchColumn();
         self::assertGreaterThanOrEqual($countAfterFirst, $countAfterSecond);
     }
+
+    public function testAdvanceWorkflowRecreatesTokenAfterInvalidation(): void
+    {
+        [$formId, $stepId] = $this->createTestForm();
+        $subId = $this->createTestSubmission($formId);
+
+        // Token RGPD : invalidé, jamais validé (done_at NULL).
+        $pdo = $this->db->getPdo();
+        $invalidatedId = \generate_uuid();
+        $pdo->prepare(
+            "INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at, invalidated_at, expires_at)
+             VALUES (?, ?, ?, 'validator@test.com', ?, datetime('now'), NULL, datetime('now'), ?)"
+        )->execute([$invalidatedId, $subId, $stepId, bin2hex(random_bytes(32)), gmdate('Y-m-d H:i:s', strtotime('+30 days'))]);
+        $this->createdIds['tokens'][] = $invalidatedId;
+
+        $GLOBALS['_test_mails'] = [];
+        $this->workflow->advanceWorkflow($subId);
+
+        // Un token actif a été recréé.
+        $active = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ? AND done_at IS NULL AND invalidated_at IS NULL");
+        $active->execute([$subId, $stepId]);
+        self::assertGreaterThanOrEqual(1, (int) $active->fetchColumn(), 'Un nouveau token actif doit être recréé après invalidation.');
+
+        // L'email du nouveau lien a été (re)envoyé.
+        $mails = $GLOBALS['_test_mails'];
+        self::assertNotEmpty($mails, 'Le nouveau lien doit être renvoyé par email.');
+        self::assertSame('validator@test.com', $mails[count($mails) - 1]['to']);
+
+        // L'audit explicite de recréation est journalisé.
+        $audit = $pdo->prepare("SELECT COUNT(*) FROM audit_log WHERE action = 'workflow_step_recreated_after_invalidation' AND target = ?");
+        $audit->execute(['submission:' . $subId]);
+        self::assertGreaterThan(0, (int) $audit->fetchColumn(), 'La recréation doit être auditée explicitement.');
+    }
 }

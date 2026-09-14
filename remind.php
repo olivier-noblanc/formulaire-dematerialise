@@ -32,10 +32,11 @@ $pendingIds = App\Core\App::getInstance()
     ->findRemindableTokenIds($nowUtc);
 
 foreach ($pendingIds as $tokenId) {
-    // Transaction par token : SELECT + vérification atomique avant envoi
+    // B3 (audit 2026-09-14) : plus de transaction autour du SELECT — l'envoi
+    // SMTP ne doit pas tenir le verrou d'écriture SQLite pendant l'I/O réseau.
+    // La protection race lecture/écriture reste l'UPDATE conditionnel atomique
+    // (done_at IS NULL AND invalidated_at IS NULL) suivi de rowCount().
     try {
-        $pdo->beginTransaction();
-
         $stmt = $pdo->prepare("
             SELECT t.*, st.label as step_label, f.label as form_label, s.data,
                    f.relance_delai_h, f.relance_max
@@ -49,9 +50,10 @@ foreach ($pendingIds as $tokenId) {
         $stmt->execute([$tokenId, $nowUtc]);
         /** @var array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, invalidated_at: string|null, action: string|null, step_label: string, form_label: string, data: string, relance_delai_h: int|string|null, relance_max: int|string|null}|false $tok */
         $tok = $stmt->fetch(PDO::FETCH_ASSOC);
+        // CS-06 : libérer le statement avant les écritures suivantes.
+        $stmt = null;
 
         if ($tok === false) {
-            $pdo->rollBack();
             continue;
         }
 
@@ -62,7 +64,6 @@ foreach ($pendingIds as $tokenId) {
         // Vérifier le plafond de relances
         $relance_count = (int)($tok['relance_count'] ?? 0);
         if ($relance_count >= $relance_max) {
-            $pdo->rollBack();
             error_log("Max relances atteint pour token {$tok['token']} ({$relance_count}/{$relance_max})");
             $blocked++;
             continue;
@@ -73,7 +74,6 @@ foreach ($pendingIds as $tokenId) {
         $depuis   = ($now->getTimestamp() - $last_ref->getTimestamp()) / 3600;
 
         if ($depuis < $relance_delai_h) {
-            $pdo->rollBack();
             continue;
         }
 
@@ -84,19 +84,13 @@ foreach ($pendingIds as $tokenId) {
             $upd->execute([$now->format('Y-m-d H:i:s'), $new_count, $tokenId]);
             if ($upd->rowCount() === 0) {
                 // Token validé pendant l'envoi du mail — ne pas compter comme envoyé
-                $pdo->rollBack();
                 continue;
             }
-            $pdo->commit();
             echo "[{$now->format('Y-m-d H:i:s')}] Relance {$new_count}/{$relance_max} → {$tok['email']} ({$tok['step_label']})\n";
             $nb++;
-        } else {
-            $pdo->rollBack();
         }
     } catch (\Throwable $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
+        // Aucune transaction ouverte (B3) : rien à rollback.
         error_log("Erreur relance token {$tokenId}: " . $e->getMessage());
     }
 }
