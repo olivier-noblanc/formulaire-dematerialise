@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1527** (0 fail, 0 errors — re-vérifié 2026-09-03 après fix harnais test_all, v10.42.28 ; validation finale déléguée à la CI sur la branche, cf. AGENTS.md « Orchestration et validation ») |
-| Assertions | **4423** |
+| Tests | **1540** (0 fail, 0 errors — mesuré par la gate complète `scripts/check.ps1` du 2026-09-14, v10.42.30 ; avant : 1527 au 2026-09-03) |
+| Assertions | **4450** (v10.42.30 ; avant : 4423) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,23 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.30 — Lot correctifs B1→B8 (audit adversarial post-PR #23)
+| Tâche | Détail |
+|-------|--------|
+| B1 — tokens invalidés | `findStepIdsAndDonesBySubmission` exclut `invalidated_at` ; étape recréée + audit `workflow_step_recreated_after_invalidation` ; migration **v37** (index unique partiel `WHERE done_at IS NULL AND invalidated_at IS NULL`) |
+| B3 — SMTP hors transaction | `WorkflowAdvancer` accumule puis flush les notifications après `commit()` (`WorkflowTokenCreationTrait`) ; `remind.php` idem — plus de verrou d'écriture SQLite pendant l'I/O réseau |
+| B6 — export tokens | `findForExport` expose `invalidated_at` |
+| B4 — délégation expirée | `TokenService::delegate` refuse un token expiré (comparaison UTC explicite), miroir de `remind` |
+| B5 — succès partiel mail | `regenerate`/`delegate`/`cancel` signalent explicitement l'échec d'envoi quand l'action DB a réussi |
+| B2 — fuseau UTC renderer | `MyValidationsRenderer` : `expires_at`/`filled_at` parsés avec `. ' UTC'` |
+| B7 — badge CSS | `AdminAlertsRenderer` : `days_before=0` → classe `passed` |
+| B8 — JSON strict | `FormJsonValidator` refuse un objet pour `fields` (`array_is_list`) |
+| Seam mail | `TokenService` dépend de `App\Contract\MailInterface` (MailService implémente déjà l'interface — DI inchangée) |
+| Fix harnais | `test_no_broken_urls.php` + `test_form_render_html.php` posent `_test_summary_printed` (filet anti-masquage forçait exit 1 sur runs verts) |
+| Nouveaux tests | TokenServicePartialMailFailureTest (3), AdminAlertsRendererDaysBadgeTest (1), FormJsonValidatorTest (2) ; TokenServiceTest +1 |
+| Fix isolation test | `TokenServiceTest` : identité admin `admin@test.com` (fuite `PersonaServiceTest`, non nettoyée) → `testeur@e2e.test` seedé par `phpunit_bootstrap` ; passait par pollution d'ordre P→T, échouait en run isolé après reset — aligné sur v10.42.29 |
+| Vérifs | Gate complète `scripts/check.ps1` **SUCCÈS (14 étapes)** : PHPUnit **1540 tests / 4450 assertions, 0 échec**, PHPStan level 8 (full) **0 erreur**, lint OK, suites fonctionnelles + `run_all` + e2e Playwright OK |
 
 ### v10.42.29 — Fiabilisation du harnais test_assets_cache + documentation AGENTS.md
 | Tâche | Détail |
@@ -458,6 +475,56 @@ Lane d'audit hors sécurité : corrections de bugs appliquées (B-FIX1 à B-FIX5
 | Risques latents | ⚠️ À réinjecter |
 | Zones non couvertes | ⚠️ À réinjecter |
 
+### Audit adversarial post-PR #23 — lot B1→B8 ✅ **TERMINÉ** (2026-09-14)
+
+Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **corrigés et committés** (v10.42.30 ; Lane A = `7f49d04`, Lanes B/C incluses dans le commit final). Les risques R1–R7 et dettes D1–D7 ci-dessous restent **hors périmètre** et à instruire.
+
+**Validation finale :** gate complète `scripts/check.ps1` **SUCCÈS (14 étapes)** — PHPUnit **1540 tests / 4450 assertions, 0 échec**, PHPStan level 8 (full) 0 erreur, lint + suites fonctionnelles + `run_all` + e2e Playwright OK.
+
+#### Statut B1→B8 (livré)
+
+| Bug | Priorité | Correction livrée |
+|-----|----------|-------------------|
+| **B1** | haute | ✅ `invalidated_at` exclu de la lecture d’avancement + index unique partiel **v37** (`WHERE done_at IS NULL AND invalidated_at IS NULL`) + audit de recréation. |
+| **B3** | moyenne-haute | ✅ SMTP sorti des transactions SQLite (`WorkflowAdvancer` : notifications flushées après `commit()` ; `remind.php` idem). |
+| **B2** | moyenne | ✅ `MyValidationsRenderer` : `expires_at`/`filled_at` UTC parsés avec fuseau explicite. |
+| **B4** | moyenne | ✅ `TokenService::delegate` refuse un token expiré (miroir de `remind`). |
+| **B5** | moyenne-haute | ✅ `regenerate`/`delegate`/`cancel` : succès partiel explicite si le mail échoue. |
+| **B6** | moyenne | ✅ `findForExport` expose `invalidated_at`. |
+| **B7** | basse | ✅ `AdminAlertsRenderer` : `days_before=0` → classe CSS `passed`. |
+| **B8** | basse | ✅ `FormJsonValidator` refuse un objet JSON pour `fields` (`array_is_list`). |
+
+#### Ordre recommandé (historique — B1→B8 traités ; R1–R7 restants)
+
+1. ~~B1 — filtrage des tokens invalidés dans `WorkflowAdvancer`~~ ✅ traité.
+2. ~~B3 — SMTP dans les transactions SQLite (`WorkflowAdvancer`, `remind.php`)~~ ✅ traité.
+3. ~~B2/B4/B5/B6~~ ✅ traités.
+4. ~~B7/B8~~ ✅ traités.
+5. **R4 puis les autres risques** : trier les six échecs E2E annulation/BLOB, puis instruire R1, R2, R3, R5, R6 et R7 — **à faire**.
+
+#### Risques à trier
+
+| Élément | État | Détail |
+|---|---|---|
+| R1 | ⚠️ À trier | Rollback incomplet sur exception non-PDO pendant un import. |
+| R2 | ⚠️ À trier | Race potentielle des relances. |
+| R3 | ⚠️ À trier | `sub_status` lu hors transaction. |
+| R4 | ⚠️ À trier en priorité après B7/B8 | Six échecs E2E annulation/BLOB non triés. |
+| R5 | ⚠️ À trier | Absence de WAL aggravant `SQLITE_BUSY`. |
+| R6 | ⚠️ À trier | Validation asymétrique des conditions JSON. |
+| R7 | ⚠️ À trier | Résidus `nul`/`requireAdmin` non trackés. |
+
+#### Dettes non urgentes
+
+| Élément | État | Détail |
+|---|---|---|
+| D1 | ⚠️ Non urgent | `filled_at` affiché brut. |
+| D2 | ⚠️ Non urgent | Message `alert_log` avec un mauvais nombre de jours. |
+| D3 | ⚠️ Non urgent | `totalTokensCreated` mort. |
+| D4 | ⚠️ Non urgent | Magic strings `FieldVisibility`. |
+| D5 | ⚠️ Non urgent | Hint numérique vidé à l’import. |
+| D6/D7 | ⚠️ Non urgent | Tests historiques. |
+
 ### ~~Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)~~ ✅ **TERMINÉ/À JOUR**
 
 ~~Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs) ou des faux positifs shipmonk.~~
@@ -559,4 +626,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-03 (v10.42.27 — lot FIX-A/B/C documenté, gate complète à relancer avant commit)_
+_Dernière mise à jour : 2026-09-14 (v10.42.30 — lot B1→B8 terminé et committé ; gate complète SUCCÈS, PHPUnit 1540/4450 ; R1–R7 et D1–D7 hors périmètre)_

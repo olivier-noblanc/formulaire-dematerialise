@@ -405,4 +405,9 @@ echo "\n════════════════════════
 echo "  AUDIT EXHAUSTIF — " . ($violations === [] ? "✅ AUCUNE VIOLATION" : "❌ " . count($violations) . " violation(s)") . "\n";
 echo "  $passed test(s) réussi(s) / $failed échoué(s) / " . ($passed + $failed) . " total\n";
 echo "═══════════════════════════════════════════════════\n";
+// Contrat B-HARNESS : ce script utilise les compteurs du bootstrap mais
+// imprime son propre résumé — poser le flag pour que le filet anti-masquage
+// ne force pas exit(1) après un run nominal (même correctif que
+// test_email_urls.php / test_routing.php, v10.42.29).
+$GLOBALS['_test_summary_printed'] = true;
 exit($failed > 0 ? 1 : 0);

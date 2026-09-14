@@ -1,5 +1,33 @@
 # Changelog — CircuitDémat
 
+## [10.42.30] — 2026-09-14
+_Résumé : Lot correctifs B1→B8 (audit adversarial post-PR #23, hors sécurité) — avancement de workflow filtrant les tokens invalidés, I/O SMTP sortie des transactions SQLite, fuseau UTC explicite sur `expires_at`/`filled_at` des renderers, délégation/relance refusées sur token expiré, succès partiel explicite quand le mail échoue, export tokens exposant `invalidated_at`, badge CSS `passed` pour `days_before=0`, refus d'un objet JSON pour `fields`. Migration v37 (index unique partiel aligné sur les tokens actifs). Comprend aussi la réparation du contrat B-HARNESS sur 2 scripts standalone (le filet anti-masquage forçait `exit(1)` après un run pourtant vert)._
+
+###  Fixes — Lane A (B1/B3/B6, commitée séparément `7f49d04`)
+- **B1** — lecture d'avancement : `TokenReadSubmissionTrait::findStepIdsAndDonesBySubmission()` exclut désormais les tokens invalidés (`invalidated_at IS NULL`). Un token RGPD (invalidé, `done_at NULL`) n'est plus compté comme « étape démarrée » — l'étape est recréée par `WorkflowAdvancer` (nouveau token + renvoi d'email) au lieu de laisser la soumission `en_cours` à vie. Trace d'audit explicite `workflow_step_recreated_after_invalidation` (`TokenReadCheckTrait::countInvalidatedBySubmissionAndStep()`).
+- **B1 (index)** — migration **v37** : l'index unique partiel `idx_tokens_active_per_step_email` passe de `WHERE done_at IS NULL` à `WHERE done_at IS NULL AND invalidated_at IS NULL`, aligné sur la sémantique de `hasPendingDuplicate()` — sans quoi un token RGPD (done_at NULL) bloquait en contrainte 23000 la recréation d'un token actif.
+- **B3** — l'I/O SMTP sort des transactions SQLite : `WorkflowAdvancer` accumule les notifications et les envoie **après `commit()`** (`WorkflowTokenCreationTrait::flushNotifications`) ; `remind.php` sort également l'envoi de la transaction. Les gardes d'écriture/race (UPDATE conditionnel + `rowCount`) sont conservées.
+- **B6** — `TokenReadSubmissionTrait::findForExport()` expose `invalidated_at` : l'export JSON rend désormais les validations invalidées discernables.
+
+### 🛠 Fixes — Lane B (B4/B5)
+- **B4** — `TokenService::delegate()` refuse un token expiré (`expires_at` comparé en UTC explicite), miroir de `remind()` : plus de contournement de la régénération administrateur par un lien mort.
+- **B5** — `regenerate()`, `delegate()` et `cancel()` renvoient un **succès partiel explicite** lorsque l'action DB réussit mais que `MailInterface::send()` échoue (au lieu d'un succès trompeur).
+- **Seam mail** — `TokenService` dépend désormais de `App\Contract\MailInterface` (au lieu de `MailService`, `final readonly`) ; `MailService` implémente déjà l'interface, aucun câblage DI modifié.
+
+### 🛠 Fixes — Lane C (B2/B7/B8)
+- **B2** — `MyValidationsRenderer` parse `expires_at` et `filled_at` (stockés en UTC par SQLite/`gmdate()`) avec fuseau explicite (`. ' UTC'`), cohérent avec le backend.
+- **B7** — `AdminAlertsRenderer` : une règle `days_before === 0` porte la classe CSS `passed` (branche auparavant inatteignable car `<= 2` captait `0`).
+- **B8** — `FormJsonValidator` refuse un objet JSON pour `fields` via `array_is_list()` (un objet décodé en tableau associatif faisait planter la boucle `$i + 1` sur clé chaîne).
+
+### 🛠 Fix harnais (contrat B-HARNESS)
+- **`tests/test_no_broken_urls.php`** et **`tests/test_form_render_html.php`** : scripts standalone utilisant les compteurs du bootstrap mais imprimant leur propre résumé — ils posent désormais `$GLOBALS['_test_summary_printed'] = true` avant `exit()` (même correctif que `test_email_urls.php`/`test_routing.php`, v10.42.29). Sans cela, le filet anti-masquage du bootstrap forçait `exit(1)` après un run pourtant vert → étapes 4f et 5 de la gate bloquées. Bugs de harnais **indépendants** des correctifs B1→B8 (mise en évidence par la gate, corrigés selon la règle « pas d'échec laissé dans la gate »).
+
+###  Tests
+- **Nouveaux** : `TokenServicePartialMailFailureTest` (B5, 3 tests — double `MailInterface` qui échoue), `AdminAlertsRendererDaysBadgeTest` (B7, 1), `FormJsonValidatorTest` (B8, 2).
+- **Enrichis** : `TokenServiceTest` (+1 test B4 `testDelegateRefusesExpiredToken`), `TokenInvalidationRegressionTest` (couvre B1/B2/P0-3/P0-4/S2/D6).
+- **Fix isolation** : `TokenServiceTest` utilisait `admin@test.com` comme identité admin — ligne présente dans `admins` uniquement par la fuite non nettoyée de `PersonaServiceTest::setUp()` ; le fichier ne passait qu’en pollution d’ordre (P→T) et échouait en run isolé après un reset de la base (`test_all`). Bascule vers `testeur@e2e.test`, seedé déterministiquement par `tests/phpunit_bootstrap.php` (même classe de correctif que `TokenInvalidationRegressionTest`, v10.42.29). Rector (hook pre-commit) a également modernisé le fichier (`array_any`).
+- **Vérifications** : gate complète `scripts/check.ps1` — **SUCCÈS (14 étapes OK)** : PHPUnit **1540 tests / 4450 assertions, 0 échec** ; PHPStan level 8 (run complet) **0 erreur** ; lint PHP fichiers modifiés OK ; `test_all` OK ; `test_no_broken_urls` 13/13 ; `test_form_render_html` 8/8 ; `StructuralHtmlTest` OK ; régressions `run_all.php` OK ; e2e Playwright 5/5. Tests ciblés préalables : TokenService/PartialMail 85, TokenInvalidationRegression 24, Lane A (WorkflowAdvancerMailTransaction, FindQueries, AdvanceWorkflow) 41 — tous verts.
+
 ## [10.42.29] — 2026-09-04
 _Résumé : Fiabilisation du harnais `tests/test_assets_cache.php` (hors sécurité) — démarrage serveur cross-platform sans COM, requêtes et attente de disponibilité bornées, filet anti-orphelin, intégration au contrat anti-masquage de `test_bootstrap.php`. Documentation AGENTS.md (orchestration + tests ciblés). Complète le lot harnais [10.42.28] ; committé avec les lots [10.42.26] à [10.42.28]._
 

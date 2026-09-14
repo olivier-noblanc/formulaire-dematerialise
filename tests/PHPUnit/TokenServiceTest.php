@@ -41,7 +41,7 @@ final class TokenServiceTest extends TestCase
         $mailer = new MailService(new \App\Repository\MailRepository($this->db), $settings);
         $fields = new FieldService();
         $conditions = new ConditionEvaluator();
-        $workflow = new WorkflowEngine($settings, $mailer, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
+        new WorkflowEngine($settings, $mailer, $fields, $conditions, new \App\Repository\SubmissionRepository($this->db));
 
         $this->tokenService = new TokenService(
             $settings,
@@ -52,6 +52,13 @@ final class TokenServiceTest extends TestCase
         );
 
         $this->originalUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
+
+        // Identité admin déterministe : `testeur@e2e.test` est seedé comme admin
+        // par tests/phpunit_bootstrap.php (INSERT OR IGNORE). NE PAS utiliser
+        // `admin@test.com`, qui n'existe qu'en `admins` par fuite non nettoyée de
+        // PersonaServiceTest::setUp() — le test échouerait en run isolé après un
+        // reset de la base (même correctif que TokenInvalidationRegressionTest,
+        // v10.42.29).
 
         // Seed test data
         $this->seedTestData();
@@ -154,7 +161,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateReturnsErrorForNonexistentToken(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $result = $this->tokenService->regenerate('nonexistent-token-id');
         self::assertFalse($result['success']);
@@ -163,7 +170,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateReturnsErrorForAlreadyDoneToken(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $result = $this->tokenService->regenerate($this->testDoneTokenId);
         self::assertFalse($result['success']);
@@ -172,7 +179,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateReturnsErrorForClosedSubmission(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $result = $this->tokenService->regenerate($this->testClosedTokenId);
         self::assertFalse($result['success']);
@@ -181,7 +188,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateSuccessAsAdmin(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
         self::assertTrue($result['success']);
@@ -201,7 +208,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateCreatesNewTokenWithCorrectEmail(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
         self::assertTrue($result['success']);
@@ -225,7 +232,7 @@ final class TokenServiceTest extends TestCase
 
     public function testCancelReturnsErrorForNonEnCoursSubmission(): void
     {
-        $result = $this->tokenService->cancel($this->testClosedSubmissionId, 'admin@test.com');
+        $result = $this->tokenService->cancel($this->testClosedSubmissionId, 'testeur@e2e.test');
         self::assertFalse($result['success']);
         self::assertStringContainsString('en cours', $result['message']);
     }
@@ -295,7 +302,7 @@ final class TokenServiceTest extends TestCase
 
     public function testCancelSuccessAsAdmin(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         // Re-create the submission since it may have been cancelled by another test
         $pdo = $this->db->getPdo();
@@ -303,7 +310,7 @@ final class TokenServiceTest extends TestCase
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', ?, datetime('now'), 'en_cours', 1)")
             ->execute([$newSubId, $this->testFormId, 'other_owner@test.com']);
 
-        $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
+        $result = $this->tokenService->cancel($newSubId, 'testeur@e2e.test');
         self::assertTrue($result['success']);
 
         // Cleanup
@@ -410,6 +417,29 @@ final class TokenServiceTest extends TestCase
         self::assertStringContainsString("n'est plus en cours", $result['message']);
     }
 
+    public function testDelegateRefusesExpiredToken(): void
+    {
+        // B4 : un token expiré ne peut plus être délégué (miroir de remind()).
+        $pdo = $this->db->getPdo();
+        $expiredId = generate_uuid();
+        $pdo->prepare(
+            "INSERT INTO tokens (id, submission_id, step_id, email, token, sent_at, done_at, invalidated_at, expires_at)
+             VALUES (?, ?, ?, ?, ?, datetime('now'), NULL, NULL, ?)"
+        )->execute([
+            $expiredId,
+            $this->testSubmissionId,
+            $this->testStepId,
+            'expired-delegate@test.com',
+            generate_token(),
+            gmdate('Y-m-d H:i:s', time() - 3600),
+        ]);
+
+        $result = $this->tokenService->delegate($expiredId, 'delegue-' . uniqid() . '@test.com');
+
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('expiré', $result['message']);
+    }
+
     public function testDelegateSuccess(): void
     {
         $toEmail = 'delegate_target_' . uniqid() . '@test.com';
@@ -505,13 +535,7 @@ final class TokenServiceTest extends TestCase
         // findDoneByEmail should NOT return the invalidated token
         $tokenRepo = new \App\Repository\TokenRepository($this->db);
         $doneTokens = $tokenRepo->findDoneByEmail('validator@test.com');
-        $foundInvalidated = false;
-        foreach ($doneTokens as $t) {
-            if ($t['token_id'] === $expiredTokenId) {
-                $foundInvalidated = true;
-                break;
-            }
-        }
+        $foundInvalidated = array_any($doneTokens, fn(array $t): bool => $t['token_id'] === $expiredTokenId);
         self::assertFalse($foundInvalidated, 'findDoneByEmail must not return invalidated tokens');
     }
 
@@ -563,13 +587,7 @@ final class TokenServiceTest extends TestCase
         // findDoneByEmail should NOT return the delegated token
         $tokenRepo = new \App\Repository\TokenRepository($this->db);
         $doneTokens = $tokenRepo->findDoneByEmail('validator@test.com');
-        $foundDelegated = false;
-        foreach ($doneTokens as $t) {
-            if ($t['token_id'] === $tokenId) {
-                $foundDelegated = true;
-                break;
-            }
-        }
+        $foundDelegated = array_any($doneTokens, fn(array $t): bool => $t['token_id'] === $tokenId);
         self::assertFalse($foundDelegated, 'findDoneByEmail must not return delegated tokens');
     }
 
@@ -577,7 +595,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateSubjectContainsFormLabel(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
         self::assertTrue($result['success']);
@@ -591,7 +609,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateSubjectContainsStepLabel(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $this->tokenService->regenerate($this->testPendingTokenId);
 
@@ -630,7 +648,7 @@ final class TokenServiceTest extends TestCase
      */
     public function testRegenerateSendsEmailWithExactSubject(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         $GLOBALS['_test_mails'] = [];
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
@@ -765,7 +783,7 @@ final class TokenServiceTest extends TestCase
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', '', datetime('now'), 'en_cours', 1)")
             ->execute([$newSubId, $this->testFormId]);
 
-        $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
+        $result = $this->tokenService->cancel($newSubId, 'testeur@e2e.test');
         if (!$result['success']) {
             self::markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
         }
@@ -781,7 +799,7 @@ final class TokenServiceTest extends TestCase
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', 'not-an-email', datetime('now'), 'en_cours', 1)")
             ->execute([$newSubId, $this->testFormId]);
 
-        $result = $this->tokenService->cancel($newSubId, 'admin@test.com');
+        $result = $this->tokenService->cancel($newSubId, 'testeur@e2e.test');
         if (!$result['success']) {
             self::markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
         }
@@ -803,7 +821,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateInvalidatedAtIsSet(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
 
         $this->tokenService->regenerate($this->testPendingTokenId);
@@ -829,7 +847,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateNewTokenHasExpiresAt(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
 
         $this->tokenService->regenerate($this->testPendingTokenId);
@@ -858,7 +876,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateEmailBodyContainsNewTokenLink(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
 
         $this->tokenService->regenerate($this->testPendingTokenId);
@@ -927,7 +945,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateAuditLogEntryCreated(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         \App\Core\App::settings()->set('mail_dry_run', '1', 'test');
 
         $this->tokenService->regenerate($this->testPendingTokenId);
@@ -1043,7 +1061,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateSuccessMessageContainsEmail(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $result = $this->tokenService->regenerate($this->testPendingTokenId);
         self::assertTrue($result['success']);
@@ -1052,7 +1070,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateAuditLogDetailContainsEmailAndAction(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $this->tokenService->regenerate($this->testPendingTokenId);
 
@@ -1066,7 +1084,7 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateNewTokenExpiresAtIsValidDate(): void
     {
-        $_SERVER['HTTP_X_TEST_USER'] = 'admin@test.com';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
 
         $this->tokenService->regenerate($this->testPendingTokenId);
 

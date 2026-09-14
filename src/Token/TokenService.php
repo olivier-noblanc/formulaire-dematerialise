@@ -6,11 +6,11 @@ namespace App\Token;
 
 use App\Audit\AuditLogService;
 use App\Auth\AuthService;
+use App\Contract\MailInterface;
 use App\Core\App;
 use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
-use App\Mail\MailService;
 use App\Repository\DelegationRepository;
 use App\Repository\FormRepository;
 use App\Repository\SubmissionRepository;
@@ -37,7 +37,7 @@ final readonly class TokenService
         private SettingsService $settingsService,
         private AuthService $authService,
         private AuditLogService $auditLogService,
-        private MailService $mailService,
+        private MailInterface $mailService,
         private SubmissionRepository $submissionRepository,
         ?TokenRepository $tokenRepository = null,
         ?DelegationRepository $delegationRepository = null,
@@ -106,16 +106,19 @@ final readonly class TokenService
 
         $stepLabel = $this->tokenRepository->findStepLabelByStepId($old['step_id']);
 
+        $mailSent = false;
         if ($submission !== null && $stepLabel !== null) {
             $subject = '[Renvoi] ' . ($submission['form_label'] ?? '') . ' — ' . $stepLabel;
-            $this->mailService->send($old['email'], $subject, App::mail()->buildMailHtml($submission, $stepLabel, $newToken));
+            $mailSent = $this->mailService->send($old['email'], $subject, App::mail()->buildMailHtml($submission, $stepLabel, $newToken));
         }
 
         $this->auditLogService->log('token_regenerate', 'token:' . $oldTokenId, 'Token régénéré pour ' . $old['email'] . ', nouveau token créé');
 
         return [
             'success' => true,
-            'message' => 'Nouveau lien de validation envoyé à ' . $old['email'],
+            'message' => $mailSent
+                ? 'Nouveau lien de validation envoyé à ' . $old['email']
+                : 'Nouveau lien de validation créé pour ' . $old['email'] . ', mais l\'email n\'a pas pu être envoyé. Vérifiez la configuration SMTP ou transmettez le nouveau lien manuellement.',
         ];
     }
 
@@ -182,17 +185,23 @@ final readonly class TokenService
         }
 
         // Notifier l'agent
+        $mailSent = false;
         $agentEmail = $submission['submitted_by'] ?? '';
         if ($agentEmail !== '' && $agentEmail !== '0' && filter_var($agentEmail, FILTER_VALIDATE_EMAIL) !== false) {
             $subject = 'Demande annulée — ' . ($submission['form_label'] ?? \App\Render\NavigationRenderer::getAppName());
             $bodyHtml = '<h2 style="color:#b45309;">Demande annulée</h2>'
                 . '<p>Votre demande <strong>' . \App\Core\App::html()->escape($submission['form_label'] ?? '') . '</strong> a été annulée.</p>';
-            $this->mailService->send($agentEmail, $subject, App::mail()->renderEmailTemplate('Demande annulée', $bodyHtml));
+            $mailSent = $this->mailService->send($agentEmail, $subject, App::mail()->renderEmailTemplate('Demande annulée', $bodyHtml));
         }
 
         $this->auditLogService->log('submission_cancel', 'submission:' . $submissionId, 'Soumission annulée', $cancelledBy);
 
-        return ['success' => true, 'message' => 'Soumission annulée avec succès.'];
+        return [
+            'success' => true,
+            'message' => $mailSent
+                ? 'Soumission annulée avec succès.'
+                : 'Soumission annulée avec succès, mais l\'email de notification à l\'agent n\'a pas pu être envoyé.',
+        ];
     }
 
     /**
@@ -285,6 +294,14 @@ final readonly class TokenService
         if ($tok['invalidated_at'] !== null) {
             return ['success' => false, 'message' => 'Ce token a été invalidé — la délégation n\'est plus possible.'];
         }
+        if ($tok['expires_at'] !== null) {
+            // B4 : expires_at est stocké en UTC (gmdate) — comparaison UTC explicite.
+            $expires = new \DateTimeImmutable($tok['expires_at'], new \DateTimeZone('UTC'));
+            $nowUtc = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+            if ($expires < $nowUtc) {
+                return ['success' => false, 'message' => 'Ce token est expiré — la délégation n\'est plus possible. Demandez sa régénération à un administrateur.'];
+            }
+        }
         if ($tok['status'] !== SubmissionStatus::EnCours->value) {
             return ['success' => false, 'message' => 'La soumission n\'est plus en cours.'];
         }
@@ -353,16 +370,21 @@ final readonly class TokenService
         </div>';
         $mailBody = str_replace('<h2 style="color:#003189;">', $delegationNotice . '<h2 style="color:#003189;">', $mailBody);
 
-        $this->mailService->send($toEmail, $subject, $mailBody);
+        $primarySent = $this->mailService->send($toEmail, $subject, $mailBody);
 
         $confirmSubject = 'Délégation confirmée — ' . $tok['form_label'];
         $confirmBodyHtml = '<h2 style="color:#003189;">Délégation confirmée</h2>'
             . '<p>Votre validation pour <strong>' . \App\Core\App::html()->escape($tok['form_label']) . '</strong> (étape ' . \App\Core\App::html()->escape($stepLabel) . ') a été déléguée à <strong>' . App::html()->displayUser($toEmail) . '</strong>.</p>'
             . '<p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>';
-        $this->mailService->send($tok['email'], $confirmSubject, App::mail()->renderEmailTemplate('Délégation confirmée', $confirmBodyHtml));
+        $confirmSent = $this->mailService->send($tok['email'], $confirmSubject, App::mail()->renderEmailTemplate('Délégation confirmée', $confirmBodyHtml));
 
         $this->auditLogService->log('token_delegate', 'token:' . $tokenId, 'Token délégué de ' . $tok['email'] . ' à ' . $toEmail . ($reason !== '' && $reason !== '0' ? ' — Motif : ' . $reason : ''));
 
-        return ['success' => true, 'message' => 'Validation déléguée à ' . $toEmail . '. Un email lui a été envoyé.'];
+        $message = 'Validation déléguée à ' . $toEmail . '.';
+        $message .= ($primarySent && $confirmSent)
+            ? ' Un email lui a été envoyé.'
+            : ' Un des emails de notification n\'a pas pu être envoyé.';
+
+        return ['success' => true, 'message' => $message];
     }
 }

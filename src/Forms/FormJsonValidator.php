@@ -50,8 +50,10 @@ final class FormJsonValidator
         $seen_validator_field_names = [];
         if (!isset($data['fields'])) {
             $errors[] = 'Propriété "fields" manquante. Le JSON doit contenir un tableau "fields" (même vide) avec la définition des champs du formulaire.';
-        } elseif (!is_array($data['fields'])) {
-            $errors[] = '"fields" doit être un tableau. Trouvé : ' . gettype($data['fields']);
+        } elseif (!is_array($data['fields']) || !array_is_list($data['fields'])) {
+            // B8 (audit 2026-09-14) : un objet JSON décode en tableau associatif
+            // et ferait planter la boucle ($i + 1 sur clé chaîne) → exiger une liste.
+            $errors[] = '"fields" doit être un tableau (liste) d\'objets. Un objet JSON "{...}" n\'est pas accepté (utilisez "[...]").';
         } else {
             if (count($data['fields']) === 0) {
                 $warnings[] = 'Le tableau "fields" est vide. Le formulaire n\'aura aucun champ — l\'utilisateur ne pourra rien saisir.';

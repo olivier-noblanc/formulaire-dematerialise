@@ -137,7 +137,8 @@ final class AdminAlertsRenderer
         } else {
             foreach ($rules as $rule) {
                 $isInactive = !((bool) ($rule['actif']));
-                $daysCls = $rule['days_before'] <= 2 ? 'urgent' : ($rule['days_before'] === 0 ? 'passed' : '');
+                // B7 (audit 2026-09-14) : days_before=0 doit porter "passed" (branche auparavant inatteignable car <= 2 captait 0).
+                $daysCls = $rule['days_before'] === 0 ? 'passed' : ($rule['days_before'] <= 2 ? 'urgent' : '');
 
                 $html .= '        <div class="rule-card ' . ($isInactive ? 'inactive' : '') . '">' . "\n";
                 $html .= '          <div class="rule-header">' . "\n";

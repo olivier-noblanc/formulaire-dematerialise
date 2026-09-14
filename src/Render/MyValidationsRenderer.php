@@ -81,7 +81,8 @@ final class MyValidationsRenderer
         } else {
             foreach ($pendingTokens as $pendingToken) {
                 $data = json_decode((string) ($pendingToken['data'] ?? '{}'), true) ?? [];
-                $expired = (bool) ($pendingToken['expires_at']) && strtotime($pendingToken['expires_at']) < time();
+                // B2 (audit 2026-09-14) : expires_at est stocké en UTC → parse explicite.
+                $expired = (bool) ($pendingToken['expires_at']) && strtotime($pendingToken['expires_at'] . ' UTC') < time();
                 $nomAgent = $htmlService->escape(
                     SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM)
                 );
@@ -288,7 +289,8 @@ final class MyValidationsRenderer
             $rFieldLbl  = $myVdRow['field_label'] ?? '';
             $rFieldName = $myVdRow['field_name'] ?? '';
             $rValue     = $myVdRow['value'] ?? '';
-            $ts = $rFilledAt !== '' ? strtotime($rFilledAt) : false;
+            // B2 (audit 2026-09-14) : filled_at est stocké en UTC → parse explicite.
+            $ts = $rFilledAt !== '' ? strtotime($rFilledAt . ' UTC') : false;
             $rValueShort = mb_strimwidth($rValue, 0, 80, '…', 'UTF-8');
 
             $html .= '        <tr>' . "\n";
