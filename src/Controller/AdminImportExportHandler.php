@@ -256,11 +256,19 @@ final class AdminImportExportHandler
             $repo->pdo()->commit();
             App::audit()->log('form_import', 'form:' . $new_id, "Formulaire '$label' importé depuis JSON");
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_id)];
-        } catch (\PDOException $e) {
-            // @silent-ok: fallback with rollback cleanup
+        } catch (\Throwable $e) {
+            // R1 (audit 2026-09-14) : toute exception survenue après
+            // beginTransaction() doit fermer la transaction — pas seulement
+            // PDOException. AGENTS.md règle 9, catégorie 1 : rollback puis
+            // relance pour une exception non-PDO, jamais avalée (elle remonte
+            // au handler global qui la journalise et affiche la page d'erreur).
             if ($repo->pdo()->inTransaction()) {
                 $repo->pdo()->rollBack();
             }
+            if (!$e instanceof \PDOException) {
+                throw $e;
+            }
+            // Catégorie 2 : panne DB attendue → réponse structurée au call site.
             error_log('handleImportForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }

@@ -264,4 +264,96 @@ final class AdminImportExportTest extends TestCase
             $this->deleteForm($newId);
         }
     }
+
+    // ── R1 : rollback sur exception non-PDO ───────────────────
+
+    /**
+     * R1 (audit 2026-09-14) : une exception non-PDO levée après
+     * beginTransaction() doit (1) être propagée — jamais avalée — et
+     * (2) laisser la transaction rollbackée, sans écriture partielle.
+     *
+     * Reproduction : la connexion SQLite partagée (Database::$pdoTest) est
+     * remplacée par un double \PDO dont commit() lève une \RuntimeException
+     * (non-PDO). L'import a déjà inséré le formulaire dans la transaction
+     * ouverte ; sans rollback garanti, l'écriture resterait persistée.
+     */
+    public function testNonPdoExceptionDuringImportRollsBackAndPropagates(): void
+    {
+        $container = App::getInstance();
+        $db = $container->get(Database::class);
+        $realPdo = $db->getPdo(); // force l'init de la connexion test
+
+        $pdoTestProp = new \ReflectionProperty(Database::class, 'pdoTest');
+        $originalPdo = $pdoTestProp->getValue($db);
+        self::assertInstanceOf(\PDO::class, $originalPdo);
+
+        $testDbPath = (string) ($GLOBALS['_test_db_path'] ?? dirname(__DIR__, 2) . '/db/workflow_test.db');
+        $label = 'Test RI non-PDO ' . uniqid();
+
+        $throwingPdo = new class ('sqlite:' . $testDbPath) extends \PDO {
+            public int $rowsVisibleAtCommit = 0;
+
+            public function __construct(string $dsn)
+            {
+                parent::__construct($dsn);
+                $this->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+                $this->exec('PRAGMA foreign_keys = ON');
+                $this->exec('PRAGMA busy_timeout = 5000');
+            }
+
+            public function commit(): bool
+            {
+                // Preuve que l'import a bien écrit dans la transaction avant
+                // l'échec (sinon le test de rollback serait vide).
+                $stmt = $this->query('SELECT COUNT(*) FROM forms');
+                $this->rowsVisibleAtCommit = $stmt !== false ? (int) $stmt->fetchColumn() : 0;
+                throw new \RuntimeException('Panne non-PDO simulée au commit de l\'import');
+            }
+        };
+        $throwingPdo->exec('DELETE FROM forms WHERE label = ' . $throwingPdo->quote($label));
+
+        $pdoTestProp->setValue($db, $throwingPdo);
+        $_POST['json_data'] = json_encode([
+            'form' => ['label' => $label],
+            'fields' => [],
+            'steps' => [],
+        ]);
+
+        try {
+            $thrown = null;
+            try {
+                AdminImportExportHandler::handleImportForm();
+            } catch (\RuntimeException $e) {
+                $thrown = $e;
+            }
+
+            self::assertInstanceOf(
+                \RuntimeException::class,
+                $thrown,
+                'R1 : une exception non-PDO doit être propagée (surfacée), jamais avalée'
+            );
+            self::assertSame('Panne non-PDO simulée au commit de l\'import', $thrown->getMessage());
+            self::assertGreaterThan(
+                0,
+                $throwingPdo->rowsVisibleAtCommit,
+                'Prémisse : l\'import doit avoir écrit dans la transaction avant l\'échec du commit'
+            );
+            self::assertFalse(
+                $throwingPdo->inTransaction(),
+                'R1 : la transaction doit être rollbackée après l\'exception non-PDO'
+            );
+        } finally {
+            // Filet anti-pollution (si le correctif R1 était absent/cassé) puis
+            // restauration de la connexion d'origine.
+            if ($throwingPdo->inTransaction()) {
+                $throwingPdo->rollBack();
+            }
+            $pdoTestProp->setValue($db, $originalPdo);
+        }
+
+        // Vérification sur la connexion d'origine : aucune écriture partielle.
+        $stmt = $realPdo->prepare('SELECT COUNT(*) FROM forms WHERE label = ?');
+        $stmt->execute([$label]);
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'R1 : l\'import ne doit pas persister d\'écriture partielle');
+    }
 }
