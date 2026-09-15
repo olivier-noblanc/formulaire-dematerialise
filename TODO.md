@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1540** (0 fail, 0 errors — mesuré par la gate complète `scripts/check.ps1` du 2026-09-14, v10.42.30 ; avant : 1527 au 2026-09-03) |
-| Assertions | **4450** (v10.42.30 ; avant : 4423) |
+| Tests | **1569** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-15, v10.42.31 ; avant : 1540 au 2026-09-14) |
+| Assertions | **4545** (v10.42.31 ; avant : 4450) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -421,7 +421,7 @@
 ## 🎯 Ce qui reste
 
 **À faire en premier :**
-- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit 1527/4423 (v10.42.28), PHPStan ciblé 0, test_all 59/59 ×2, selftest 3/3, test_assets_cache 21/21 (re-vérifié 2026-09-04) ; gate locale du 2026-09-03 12:17 OK sur l'état d'alors (lint 38 fichiers, PHPStan, PHPUnit 1527/4427, suites fonctionnelles)
+- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit **1569/4545** (v10.42.31), PHPStan level 8 0 erreur, régressions **17/17**, e2e **5/5** ; gate locale du **2026-09-15 SUCCÈS (14 étapes)** — reste à confirmer via CI sur la branche pushée
 - **Nettoyer la fuite `PersonaServiceTest::setUp`** : la ligne `admins` `admin@test.com` est insérée sans jamais être supprimée (pollution d'ordre pour tout test vérifiant `isAdmin()` derrière) — `testRegenerateRefusesInvalidatedToken` a été rendu insensible (v10.42.29), la cause racine reste à supprimer (cleanup tearDown) avec vérification qu'aucun autre test n'en dépend
 - **Moderniser `tests/test_routing.php`** (hors CI/gate, stalé depuis v10.1.14c) : le check « pas d'erreur fatale » matche le contenu légitime de la page changelog (`stripos 'Fatal error'` — texte d'entrée v10.21.0, page saine prouvée par test_all) ; attentes structurelles des pages admin stalées (`<link>` assets, `body class page-xxx`) — redéfinir les checks sur le layout actuel
 
@@ -477,7 +477,7 @@ Lane d'audit hors sécurité : corrections de bugs appliquées (B-FIX1 à B-FIX5
 
 ### Audit adversarial post-PR #23 — lot B1→B8 ✅ **TERMINÉ** (2026-09-14)
 
-Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **corrigés et committés** (v10.42.30 ; Lane A = `7f49d04`, Lanes B/C incluses dans le commit final). Les risques R1–R7 et dettes D1–D7 ci-dessous restent **hors périmètre** et à instruire.
+Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **corrigés et committés** (v10.42.30 ; Lane A = `7f49d04`, Lanes B/C incluses dans le commit final). Les **risques R1–R7 sont tous traités** (R1 `820e13e`, R7 `183bac7`, R6 `c24808b`, R5 `c2582ae`, R4 `b666f2c`, R2/R3 `2a2ae2f`) ; les dettes D1–D7 ci-dessous restent **hors périmètre** et à instruire.
 
 **Validation finale :** gate complète `scripts/check.ps1` **SUCCÈS (14 étapes)** — PHPUnit **1540 tests / 4450 assertions, 0 échec**, PHPStan level 8 (full) 0 erreur, lint + suites fonctionnelles + `run_all` + e2e Playwright OK.
 
@@ -494,24 +494,24 @@ Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **c
 | **B7** | basse | ✅ `AdminAlertsRenderer` : `days_before=0` → classe CSS `passed`. |
 | **B8** | basse | ✅ `FormJsonValidator` refuse un objet JSON pour `fields` (`array_is_list`). |
 
-#### Ordre recommandé (historique — B1→B8 traités ; R1–R7 restants)
+#### Ordre recommandé (historique — B1→B8 et R1–R7 traités)
 
 1. ~~B1 — filtrage des tokens invalidés dans `WorkflowAdvancer`~~ ✅ traité.
 2. ~~B3 — SMTP dans les transactions SQLite (`WorkflowAdvancer`, `remind.php`)~~ ✅ traité.
 3. ~~B2/B4/B5/B6~~ ✅ traités.
 4. ~~B7/B8~~ ✅ traités.
-5. ~~R4~~ ✅ traité : six échecs E2E annulation/BLOB triés et corrigés (harnais **95/95, 0 échec**) ; reste à instruire R1, R2, R3, R5, R6 et R7 — **à faire**.
+5. ~~R1, R2, R3, R4, R5, R6, R7~~ ✅ tous traités : R4 `b666f2c` (six échecs E2E annulation/BLOB, harnais **95/95, 0 échec**) ; R1 `820e13e` (rollback import sur exception non-PDO) ; R5 `c2582ae` (WAL garanti à la connexion) ; R6 `c24808b` (validation symétrique des conditions JSON, import fail-closed) ; R7 `183bac7` (résidus racine `nul`/`requireAdmin`) ; R2/R3 `2a2ae2f` (revendication CAS des relances + gardes atomiques `sub_status`).
 
-#### Risques à trier
+#### Risques (R1–R7 tous traités)
 
 | Élément | État | Détail |
 |---|---|---|
-| R1 | ⚠️ À trier | Rollback incomplet sur exception non-PDO pendant un import. |
-| R2 | ⚠️ À trier | Race potentielle des relances. |
-| R3 | ⚠️ À trier | `sub_status` lu hors transaction. |
+| R1 | ✅ Traitée | `AdminImportExportHandler::handleImportForm` ne catchait que `PDOException` — passage à `catch (Throwable)` : `rollBack()` si `inTransaction()` puis relance de l'exception non-PDO (jamais avalée, AGENTS.md règle 9 cat. 1) ; contrat d'erreur `PDOException` conservé. Test `testNonPdoExceptionDuringImportRollsBackAndPropagates` (double PDO dont `commit()` lève une `RuntimeException`) — rouge sans le correctif. Commit `820e13e`. |
+| R2 | ✅ Traitée | Revendication atomique (**CAS**) du créneau de relance **avant** l'envoi SMTP : `TokenRepository::tryClaimRelance()` (`relance_count = COALESCE(relance_count,0)+1` sous `AND COALESCE(relance_count,0) = <valeur lue> AND done_at IS NULL AND invalidated_at IS NULL`), `releaseRelanceClaim()` libère le créneau si l'envoi échoue (CAS inverse, ne rabote pas une relance ultérieure). Appliqué à `remind.php` (cron) et `TokenService::remind()` (rappel manuel) : deux workers lisant le même `relance_count` → un seul gagne (plus de doublon ni de plafond `relance_max` contourné). Commit `2a2ae2f`. |
+| R3 | ✅ Traitée | Gardes atomiques (**CAS**) sur le statut de la soumission : `SubmissionRepository::closeWithStatus()` ne clôt que si `status = en_cours AND closed_at IS NULL` (retourne `bool`, **premier commit gagne**) ; `markDoneByTokenValue()` / `markDoneAndInvalidatedById()` / `tryInvalidateForDelegation()` exigent une soumission `en_cours`. Les appelants (annulation `TokenService::cancel`, refus `TokenValidationHandler`, clôture `WorkflowAdvancer`) rollback et remontent un conflit explicite / statut `closed` au lieu d'écraser un dossier déjà clôturé. Commit `2a2ae2f`. |
 | R4 | ✅ Traitée | Six échecs E2E annulation/BLOB triés et corrigés : `cancel()` appelé avec le demandeur (`submitted_by`) et `$result['success']` au lieu de la truthiness, statut attendu `SubmissionStatus::Annule`, chemin BLOB `__DIR__ . '/test_e2e.php'`, défaut latent `delegate()` truthiness durci. Harnais E2E **95/95, 0 échec** → le verdict « harnais obsolète » est levé. |
-| R5 | ⚠️ À trier | Absence de WAL aggravant `SQLITE_BUSY`. |
-| R6 | ⚠️ À trier | Validation asymétrique des conditions JSON. |
+| R5 | ✅ Traitée | `Database.php` applique `PRAGMA journal_mode=WAL` à **chaque** connexion (prod et test) via `applyConnectionPragmas()`, au lieu de dépendre uniquement de `apply_schema_initial()` — couvre les connexions ouvertes sans `db_migrate()` et limite les `SQLITE_BUSY` sous accès concurrent. Tests `DatabaseTest` (base SQLite fraîche → WAL ; base de test en WAL). Commit `c2582ae`. |
+| R6 | ✅ Traitée | Validation **symétrique** des conditions JSON : `FormJsonValidator` décode puis valide une condition fournie en chaîne JSON exactement comme un objet (`field`/`op`/`value`) au lieu de se contenter du décodage. Un opérateur inconnu passait la validation, était stocké verbatim puis évalué silencieusement à `false` au runtime → import **fail-closed**. Tests `AdminImportExportTest` / `FormJsonValidatorTest`. Commit `c24808b`. |
 | R7 | ✅ Traitée | Résidus `nul`/`requireAdmin` supprimés. |
 
 #### Dettes non urgentes
@@ -626,4 +626,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-15 (R4 résolu — six échecs E2E annulation/BLOB corrigés, harnais 95/95 ; lot B1→B8 committé, gate complète SUCCÈS, PHPUnit 1540/4450 ; R1–R3/R5–R7 et D1–D7 hors périmètre)_
+_Dernière mise à jour : 2026-09-15 (R2/R3 résolus — CAS relances + gardes atomiques `sub_status` ; R1/R4/R5/R6/R7 résolus ; lot B1→B8 committé ; gate complète SUCCÈS, PHPUnit 1569/4545 ; D1–D7 hors périmètre)_
