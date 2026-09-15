@@ -86,7 +86,7 @@ set_exception_handler(function (\Throwable $e): never {
     // le handler global — elle ne doit pas re-throw ErrorResponseException.
     $GLOBALS['_in_exception_handler'] = true;
     if (class_exists(\App\Render\ErrorRenderer::class)) {
-        (new \App\Render\ErrorRenderer())->errorPage($httpCode, 'Erreur interne', $msg);
+        new \App\Render\ErrorRenderer()->errorPage($httpCode, 'Erreur interne', $msg);
     } else {
         echo '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Erreur ' . $httpCode . '</title></head>'
            . '<body style="font-family:Arial,sans-serif;max-width:900px;margin:2rem auto;color:#222;">'
@@ -147,7 +147,7 @@ if (TEST_MODE) {
 // pour le fonctionnement de l'application. L'extension sqlite3 n'est utilisée nulle part
 // dans le code métier (tout passe par PDO).
 $required_extensions = ['mbstring', 'pdo_sqlite', 'json', 'session', 'pcre'];
-$missing_extensions = array_filter($required_extensions, fn(string $ext) => !extension_loaded($ext));
+$missing_extensions = array_filter($required_extensions, fn(string $ext): bool => !extension_loaded($ext));
 if ($missing_extensions !== []) {
     // health.php peut quand même tourner pour signaler le problème
     $script = basename($_SERVER['SCRIPT_NAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? '');
@@ -190,14 +190,12 @@ use PHPMailer\PHPMailer\PHPMailer;
 //   - Phase 1 (S3 — cette version) : fonctions autonomes peu couplées.
 //     Modules livrés : lib_uuid, lib_date, lib_html, lib_validation,
 //     lib_security (CSRF uniquement). 17 fonctions extraites.
-//     Note : send_security_headers() et security_log() restent ici car des
-//     tests de test_unit.php (§12.12, §12.13) inspectent le code source de
-//     helpers.php pour vérifier la présence de la définition de security_log
-//     et le corps de la définition de send_security_headers. Les déplacer
-//     en Phase 1 aurait cassé ces 11 tests — violation de la contrainte
-//     « 0 breaking change / ne pas modifier les tests ». Leur extraction
-//     est donc reportée en Phase 2, après refactoring de ces tests
-//     d'inspection source pour qu'ils parcourent l'ensemble des lib_*.php.
+//     Note : send_security_headers() et security_log() restent ici ; leur
+//     extraction est reportée en Phase 2. Historiquement, la suite
+//     test_unit.php (§12.12/§12.13) inspectait le code source de helpers.php
+//     pour vérifier la présence de la définition de security_log et le corps
+//     de send_security_headers ; cette suite a été retirée (D6/D7,
+//     2026-09-15), la contrainte de non-régression associée n'existe plus.
 //   - Phase 2 (S4) : fonctions medium-coupling (workflow, mail, LDAP, RGPD)
 //     + extraction différée de send_security_headers() et security_log().
 //   - Phase 3 (S5+) : fonctions à couplage fort (DB, cache, settings).

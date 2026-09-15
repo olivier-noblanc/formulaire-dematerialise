@@ -208,7 +208,6 @@ src/
 # Tests (PHPUnit + PHP + Playwright)
 tests/
 ├── PHPUnit/            1249 tests unitaires
-├── test_unit.php       Suite CLI legacy
 ├── test_e2e.php        Tests end-to-end PHP
 ├── test_bootstrap.php  Bootstrapper commun
 ├── playwright_test.js  Playwright (Firefox)

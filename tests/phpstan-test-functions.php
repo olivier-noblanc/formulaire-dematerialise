@@ -4,9 +4,8 @@ declare(strict_types=1);
 /**
  * phpstan-test-functions.php — Stub pour l'analyse statique de tests/.
  *
- * Déclare les fonctions procédurales appelées par des scripts de test
- * historiques (tests/test_advanced_*.php, test_unit_wave*.php,
- * test_unit_*.php, test_persona_token.php...) mais dont les vraies
+ * Déclare les fonctions procédurales appelées par les scripts de test
+ * historiques restants (tests/test_advanced_*.php) mais dont les vraies
  * définitions n'existent plus dans le code actuel — supprimées lors de
  * migrations antérieures (wrappers procéduraux vers DI, refactor des
  * fonctions render_xxx / save_draft / build_url vers des classes
@@ -42,22 +41,14 @@ if (!function_exists('kill_port')) { function kill_port(int $port): void {} }
 // ── Fonctions render_*/draft_*/url_* disparues (refactor OOP antérieur,
 //    présence confirmée nulle part dans src/lib/classes/helpers.php le
 //    2026-07-29). Appelées par des scripts sans lien avec aucun job CI. ──
-if (!function_exists('render_page')) { function render_page(...$args): string { return ''; } }
+// D6/D7 (2026-09-15) : seul render_field() conserve un appelant dans
+// tests/ — test_advanced_edge_email_stats.php. Les 18 autres stubs
+// (render_page, render_messages, render_nav, render_form_progress_indicator,
+// render_breadcrumb, render_favicon, render_search_bar, render_status_filter,
+// render_submission_data, save_draft, get_draft, delete_draft, list_drafts,
+// cleanup_old_drafts, build_url, get_app_name, parse_changelog,
+// persona_rewrite_urls) ont été élagués : leurs seuls appelants
+// (test_unit_render_data.php, test_unit_nav_utils.php, test_unit_wave6.php,
+// test_unit_wave8_9.php, test_coverage_gaps.php, test_persona_token.php)
+// font partie des fichiers supprimés par D6/D7.
 if (!function_exists('render_field')) { function render_field(...$args): string { return ''; } }
-if (!function_exists('render_messages')) { function render_messages(...$args): string { return ''; } }
-if (!function_exists('render_nav')) { function render_nav(...$args): string { return ''; } }
-if (!function_exists('render_form_progress_indicator')) { function render_form_progress_indicator(...$args): string { return ''; } }
-if (!function_exists('render_breadcrumb')) { function render_breadcrumb(...$args): string { return ''; } }
-if (!function_exists('render_favicon')) { function render_favicon(...$args): string { return ''; } }
-if (!function_exists('render_search_bar')) { function render_search_bar(...$args): string { return ''; } }
-if (!function_exists('render_status_filter')) { function render_status_filter(...$args): string { return ''; } }
-if (!function_exists('render_submission_data')) { function render_submission_data(...$args): string { return ''; } }
-if (!function_exists('save_draft')) { function save_draft(...$args): void {} }
-if (!function_exists('get_draft')) { function get_draft(...$args): ?array { return null; } }
-if (!function_exists('delete_draft')) { function delete_draft(...$args): void {} }
-if (!function_exists('list_drafts')) { function list_drafts(...$args): array { return []; } }
-if (!function_exists('cleanup_old_drafts')) { function cleanup_old_drafts(...$args): void {} }
-if (!function_exists('build_url')) { function build_url(...$args): string { return ''; } }
-if (!function_exists('get_app_name')) { function get_app_name(...$args): string { return ''; } }
-if (!function_exists('parse_changelog')) { function parse_changelog(...$args): array { return []; } }
-if (!function_exists('persona_rewrite_urls')) { function persona_rewrite_urls(...$args): string { return ''; } }

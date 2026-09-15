@@ -80,7 +80,7 @@ register_shutdown_function(static function (): void {
     $failed = (int) ($GLOBALS['failed'] ?? 0);
     $errors = is_array($GLOBALS['errors'] ?? null) ? $GLOBALS['errors'] : [];
     // Le filet ne concerne que les runs qui ont ENGAGÉ les compteurs du
-    // bootstrap (test_all, test_http, test_v4, test_e2e, scénarios selftest).
+    // bootstrap (test_all, test_http, test_e2e, scénarios selftest).
     // Les scripts standalone avec leurs propres compteurs et leur propre
     // résumé (test_mail_escaping, test_email_urls, test_routing,
     // test_phpmailer_warnings...) n'ont rien à masquer : s'ils meurent, leur
@@ -139,7 +139,7 @@ function test(string $name, callable $fn): void {
 
 /**
  * Assert a boolean condition with optional failure message.
- * Used by test_http.php and test_v4.php.
+ * Used by test_http.php.
  */
 function assert_test(string $name, bool $condition, string $fail_msg = ''): void {
     global $passed, $failed, $errors;
@@ -278,7 +278,7 @@ function run_php_subprocess(string $scriptPath, ?string $cwd = null): array {
  */
 function reset_test_db_strict(): void {
     if (!defined('TEST_ALL_DB_RESET') || !TEST_ALL_DB_RESET) {
-        return; // opt-in : les autres suites (test_http, test_v4...) ne sont pas affectées
+        return; // opt-in : les autres suites (test_http...) ne sont pas affectées
     }
     if (PHP_SAPI !== 'cli') {
         fwrite(STDERR, "[test_bootstrap] reset_test_db_strict() refusé hors CLI\n");

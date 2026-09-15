@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
  * Tests comportementaux : alert_check.php est exécuté en subprocess
  * (APP_TEST_MODE=1 → TEST_MODE → DB de test) via un runner temporaire qui
  * dump les mails capturés ($GLOBALS['_test_mails'], cf. MailService::sendDetailed).
- * Pattern subprocess : tests/test_unit_wave5.php §13.3.
+ * Pattern subprocess : runner PHP temporaire (alert_check.php exécuté hors process).
  */
 final class AlertCheckInvalidatedTokensTest extends TestCase
 {

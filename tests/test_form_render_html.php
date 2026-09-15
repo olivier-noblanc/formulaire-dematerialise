@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * test_form_render_html.php — Test de RENDU HTML du FormController.
  *
- * PROBLÈME : les tests existants (test_all.php, test_v4_compliance.php, etc.)
+ * PROBLÈME : les tests existants (test_all.php, etc.)
  * utilisent TEST_MODE=true qui intercepte les réponses en JSON via
  * test_json_response() AVANT que le rendu HTML ne soit fait. Donc aucun test
  * ne vérifie réellement le HTML produit par FormController::renderContent().
