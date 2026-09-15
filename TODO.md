@@ -512,7 +512,7 @@ Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **c
 | R4 | ⚠️ À trier en priorité après B7/B8 | Six échecs E2E annulation/BLOB non triés. |
 | R5 | ⚠️ À trier | Absence de WAL aggravant `SQLITE_BUSY`. |
 | R6 | ⚠️ À trier | Validation asymétrique des conditions JSON. |
-| R7 | ⚠️ À trier | Résidus `nul`/`requireAdmin` non trackés. |
+| R7 | ✅ Traitée | Résidus `nul`/`requireAdmin` supprimés. |
 
 #### Dettes non urgentes
 
