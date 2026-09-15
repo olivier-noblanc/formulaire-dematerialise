@@ -76,13 +76,21 @@ trait SubmissionPurgeTrait
 
     /**
      * Clôture une soumission avec un statut donné (Valide/Refuse/Annule).
+     *
+     * R3 (audit 2026-09-14) — CAS : la clôture n'est appliquée que si la
+     * soumission est encore en_cours et non clôturée (status = en_cours AND
+     * closed_at IS NULL). Un premier commit gagne ; toute action concurrente
+     * (annulation/validation/refus simultanés) obtient false au lieu d'écraser
+     * un statut déjà posé. Retourne true si la clôture a effectivement eu lieu.
      */
     public function closeWithStatus(string $id, string $now, string $status): bool
     {
-        return $this->execute(
-            'UPDATE submissions SET closed_at = ?, status = ? WHERE id = ?',
-            [$now, $status, $id]
+        $stmt = $this->pdo()->prepare(
+            'UPDATE submissions SET closed_at = ?, status = ?
+             WHERE id = ? AND status = ? AND closed_at IS NULL'
         );
+        $stmt->execute([$now, $status, $id, \App\Enum\SubmissionStatus::EnCours->value]);
+        return $stmt->rowCount() > 0;
     }
 
     /**

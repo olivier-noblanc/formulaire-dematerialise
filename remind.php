@@ -27,15 +27,14 @@ $relance_max = 3; // défaut si aucun token traité
 // tokens invalidés (délégation/régénération/RGPD) et tokens expirés (lien mort)
 // ne doivent pas recevoir de relance.
 $nowUtc = $now->format('Y-m-d H:i:s');
-$pendingIds = App\Core\App::getInstance()
-    ->get(App\Repository\TokenRepository::class)
-    ->findRemindableTokenIds($nowUtc);
+$tokenRepository = App\Core\App::getInstance()->get(App\Repository\TokenRepository::class);
+$pendingIds = $tokenRepository->findRemindableTokenIds($nowUtc);
 
 foreach ($pendingIds as $tokenId) {
     // B3 (audit 2026-09-14) : plus de transaction autour du SELECT — l'envoi
     // SMTP ne doit pas tenir le verrou d'écriture SQLite pendant l'I/O réseau.
-    // La protection race lecture/écriture reste l'UPDATE conditionnel atomique
-    // (done_at IS NULL AND invalidated_at IS NULL) suivi de rowCount().
+    // La protection race lecture/écriture est la revendication CAS atomique
+    // (tryClaimRelance) faite avant l'envoi, suivie de rowCount().
     try {
         $stmt = $pdo->prepare("
             SELECT t.*, st.label as step_label, f.label as form_label, s.data,
@@ -78,14 +77,32 @@ foreach ($pendingIds as $tokenId) {
         }
 
         $subject = '[RELANCE] ' . $tok['form_label'] . ' — ' . $tok['step_label'];
-        if (send_mail($tok['email'], $subject, build_mail_html($tok, $tok['step_label'], $tok['token']))) {
-            $new_count = $relance_count + 1;
-            $upd = $pdo->prepare("UPDATE tokens SET relance_at=?, relance_count=? WHERE id=? AND done_at IS NULL AND invalidated_at IS NULL");
-            $upd->execute([$now->format('Y-m-d H:i:s'), $new_count, $tokenId]);
-            if ($upd->rowCount() === 0) {
-                // Token validé pendant l'envoi du mail — ne pas compter comme envoyé
-                continue;
+
+        // R2 (audit 2026-09-14) — revendication atomique (CAS) du créneau de
+        // relance AVANT l'envoi SMTP. Deux exécutions concurrentes de remind.php
+        // peuvent lire le même relance_count ; seule celle qui remporte le CAS
+        // envoie, l'autre s'abstient (aucun doublon, plafond respecté). Le filtre
+        // invalidated_at empêche de revendiquer un token invalidé entre la
+        // lecture et la revendication (délégation/régénération/RGPD concurrents).
+        // Pas de flock : le CAS suffit (SQLite sérialise les writers).
+        $new_count = $relance_count + 1;
+        if ($tokenRepository->tryClaimRelance($tokenId, $relance_count, $nowUtc) === 0) {
+            // Course perdue (autre worker) ou token traité/invalidé entre-temps.
+            continue;
+        }
+
+        $sentOk = false;
+        try {
+            $sentOk = send_mail($tok['email'], $subject, build_mail_html($tok, $tok['step_label'], $tok['token']));
+        } finally {
+            if (!$sentOk) {
+                // Envoi échoué (ou exception) : libérer le créneau revendiqué
+                // pour ne pas compter une relance non envoyée ni bloquer la suivante.
+                $tokenRepository->releaseRelanceClaim($tokenId, $new_count, $relance_count, $tok['relance_at']);
             }
+        }
+
+        if ($sentOk) {
             echo "[{$now->format('Y-m-d H:i:s')}] Relance {$new_count}/{$relance_max} → {$tok['email']} ({$tok['step_label']})\n";
             $nb++;
         }

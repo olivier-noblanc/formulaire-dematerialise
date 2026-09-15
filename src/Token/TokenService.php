@@ -90,7 +90,7 @@ final readonly class TokenService
             $marked = $this->tokenRepository->markDoneAndInvalidatedById($oldTokenId, gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s'));
             if (!$marked) {
                 $this->tokenRepository->rollBack();
-                return ['success' => false, 'message' => 'Ce token vient d\'être traité ou invalidé. La régénération n\'est plus possible.'];
+                return ['success' => false, 'message' => 'Ce token vient d\'être traité ou invalidé, ou la soumission n\'est plus en cours. La régénération n\'est plus possible.'];
             }
 
             $this->tokenRepository->insertToken($newTokenRowId, $old['submission_id'], $old['step_id'], $old['email'], $newToken, $now, $expiresAt);
@@ -149,7 +149,21 @@ final readonly class TokenService
 
         $this->tokenRepository->beginTransaction();
         try {
-            $this->submissionRepository->closeWithStatus($submissionId, $now, SubmissionStatus::Annule->value);
+            // R3 (audit 2026-09-14) — CAS : closeWithStatus ne clôture que si la
+            // soumission est encore en_cours et non clôturée. Un premier commit
+            // gagne ; si une action concurrente (annulation/validation) a déjà
+            // clôturé la soumission entre le check initial et l'UPDATE, on
+            // rollback et on remonte un conflit explicite (pas de double clôture).
+            if (!$this->submissionRepository->closeWithStatus($submissionId, $now, SubmissionStatus::Annule->value)) {
+                $this->tokenRepository->rollBack();
+                $this->auditLogService->log(
+                    'cancel_conflict',
+                    'submission:' . $submissionId,
+                    'Annulation refusée : soumission déjà clôturée ou plus en cours (course concurrente)',
+                    $cancelledBy
+                );
+                return ['success' => false, 'message' => 'Cette soumission vient d\'être clôturée par une autre action. Annulation impossible.'];
+            }
 
             $this->tokenRepository->invalidateActiveBySubmission($submissionId, $now);
 
@@ -234,11 +248,25 @@ final readonly class TokenService
         }
 
         $stepLabel = $tok['step_label'] ?? 'Validation requise';
-        $newCount = (int) $tok['relance_count'] + 1;
+        $previousCount = (int) $tok['relance_count'];
+        $newCount = $previousCount + 1;
         $relanceMax = (int) ($this->formRepository->getRelanceConfig($tok['form_id'])['relance_max'] ?? 3);
 
         if ($newCount > $relanceMax) {
             return ['success' => false, 'message' => 'Maximum de rappels atteint (' . $relanceMax . ').'];
+        }
+
+        // R2 (audit 2026-09-14) — revendication atomique (CAS) du créneau de
+        // rappel AVANT l'envoi SMTP : deux rappels manuels concurrents
+        // (double-clic admin, deux onglets) lisaient le même relance_count,
+        // envoyaient chacun un mail et écrasaient le compteur (plafond
+        // relance_max contourné, rappel fantôme). Seul le gagnant du CAS
+        // envoie ; le perdant s'abstient avec un message de conflit.
+        // tryClaimRelance filtre aussi done_at/invalidated_at : un token traité
+        // ou invalidé entre la lecture et la revendication n'est pas relancé.
+        $now = gmdate('Y-m-d H:i:s');
+        if ($this->tokenRepository->tryClaimRelance($tokenId, $previousCount, $now) === 0) {
+            return ['success' => false, 'message' => 'Ce token vient d\'être traité, invalidé, ou un rappel est déjà en cours.'];
         }
 
         $submission = [
@@ -259,22 +287,16 @@ final readonly class TokenService
 
         $mailSent = $this->mailService->send($tok['email'], $subject, $mailBody);
 
-        if ($mailSent) {
-            // B7 fix : ajouter WHERE done_at IS NULL pour ne pas incrémenter
-            // relance_count sur un token qui aurait été traité entre-temps (race
-            // condition entre la lecture de $tok et l'UPDATE). Vérifier rowCount()
-            // pour ne pas logger un rappel qui n'a pas réellement mis à jour la DB.
-            $rowCount = $this->tokenRepository->updateRelanceCountIfPending($tokenId, $newCount, gmdate('Y-m-d H:i:s'));
-            if ($rowCount === 0) {
-                // Token traité entre-temps (validation/refus concurrent). On ne log
-                // pas un rappel fantôme — l'email a été envoyé mais l'état a changé.
-                return ['success' => false, 'message' => 'Ce token vient d\'être traité. Le rappel n\'est plus pertinent.'];
-            }
-            $this->auditLogService->log('manual_remind', 'token:' . $tokenId, 'Rappel manuel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')');
-            return ['success' => true, 'message' => 'Rappel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')'];
+        if (!$mailSent) {
+            // Envoi échoué : libérer le créneau revendiqué (CAS inverse) pour
+            // ne pas compter un rappel non envoyé ni bloquer le suivant. Le CAS
+            // sur relance_count évite de raboter un rappel ultérieur.
+            $this->tokenRepository->releaseRelanceClaim($tokenId, $newCount, $previousCount, $tok['relance_at']);
+            return ['success' => false, 'message' => 'Erreur lors de l\'envoi de l\'email à ' . $tok['email'] . '. Vérifiez la configuration SMTP.'];
         }
 
-        return ['success' => false, 'message' => 'Erreur lors de l\'envoi de l\'email à ' . $tok['email'] . '. Vérifiez la configuration SMTP.'];
+        $this->auditLogService->log('manual_remind', 'token:' . $tokenId, 'Rappel manuel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')');
+        return ['success' => true, 'message' => 'Rappel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')'];
     }
 
     /**
@@ -337,7 +359,7 @@ final readonly class TokenService
                 // Token traité ou invalidé entre-temps (validation/refus/régénération
                 // concurrent). On rollback et informe l'utilisateur.
                 $this->tokenRepository->rollBack();
-                return ['success' => false, 'message' => 'Ce token vient d\'être traité ou invalidé. La délégation n\'est plus possible.'];
+                return ['success' => false, 'message' => 'Ce token vient d\'être traité ou invalidé, ou la soumission n\'est plus en cours. La délégation n\'est plus possible.'];
             }
 
             $this->tokenRepository->insertToken($newTokenRowId, $tok['submission_id'], $tok['step_id'], $toEmail, $newToken, $now, $expiresAt);

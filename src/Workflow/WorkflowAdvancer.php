@@ -146,8 +146,15 @@ final readonly class WorkflowAdvancer
                 return;
             }
 
-            // Toutes les étapes sont validées → clôturer
-            $this->submissionRepository->closeWithStatus($submissionId, $now, SubmissionStatus::Valide->value);
+            // Toutes les étapes sont validées → clôturer.
+            // R3 (audit 2026-09-14) : closeWithStatus est un CAS (en_cours +
+            // closed_at NULL). Si elle échoue, une exécution concurrente de
+            // advance() a déjà clôturé la soumission — premier commit gagne,
+            // on rollback et on sort sans notifier (pas de double email).
+            if (!$this->submissionRepository->closeWithStatus($submissionId, $now, SubmissionStatus::Valide->value)) {
+                $this->tokenRepository->rollBack();
+                return;
+            }
 
             $this->tokenRepository->commit();
             $committed = true;

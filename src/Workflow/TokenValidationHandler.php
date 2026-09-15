@@ -113,7 +113,15 @@ final readonly class TokenValidationHandler
                 return ['status' => 'already_done', 'data' => $t];
             }
 
-            $this->submissionRepository->closeWithStatus($t['submission_id'], gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value);
+            // R3 (audit 2026-09-14) : closeWithStatus est un CAS (en_cours +
+            // closed_at NULL). Si elle échoue, une action concurrente a déjà
+            // clôturé la soumission — on rollback et on remonte 'closed' plutôt
+            // que de laisser un refus sur un dossier déjà terminé.
+            $closed = $this->submissionRepository->closeWithStatus($t['submission_id'], gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value);
+            if (!$closed) {
+                $this->tokenRepository->rollBack();
+                return ['status' => 'closed', 'data' => $t];
+            }
         } else {
             $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
             if ($rowCount === 0) {
