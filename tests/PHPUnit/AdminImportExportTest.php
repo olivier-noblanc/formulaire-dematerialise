@@ -39,7 +39,7 @@ final class AdminImportExportTest extends TestCase
      * 1 champ validateur (cible des conditions), 2 steps (condition eq +
      * condition in avec value tableau), 1 destinataire chacun.
      */
-    private function createSourceForm(): string
+    private function createSourceForm(string $hint = ''): string
     {
         $id = $this->repo->create([
             'label' => 'Test RI Export ' . uniqid(),
@@ -53,6 +53,7 @@ final class AdminImportExportTest extends TestCase
             'label' => 'Nom du demandeur',
             'field_type' => 'text',
             'field_name' => 'nom',
+            'hint' => $hint,
             'required' => 1,
             'ordre' => 1,
         ]);
@@ -218,7 +219,39 @@ final class AdminImportExportTest extends TestCase
         }
     }
 
-    // ── Garde-fous (comportement conservé) ────────────────────
+    /**
+     * D5 — un hint purement numérique doit survivre au round-trip
+     * export → import (il était vidé à l'import, et FormJsonValidator le
+     * rejetait comme erreur bloquante : perte de donnée à la réimportation).
+     */
+    public function testRoundTripPreservesNumericHint(): void
+    {
+        $sourceId = $this->createSourceForm('2');
+        $_POST['form_id'] = $sourceId;
+        $exported = AdminImportExportHandler::handleExportForm();
+        self::assertIsString($exported['json_output']);
+        $json = json_decode($exported['json_output'], true);
+        self::assertIsArray($json);
+        self::assertSame('2', $json['fields'][0]['hint'], 'D5 : le hint numérique doit être exporté intact');
+        $this->deleteForm($sourceId);
+
+        $_POST['json_data'] = $exported['json_output'];
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        try {
+            $fields = $this->repo->getFields($newId);
+            self::assertSame(
+                '2',
+                $fields[0]['hint'],
+                'D5 : le hint numérique ne doit pas être vidé à l\'import'
+            );
+        } finally {
+            $this->deleteForm($newId);
+        }
+    }
+
+    // ── Garde-fous (comportement conservé) ─────────────────────
 
     public function testImportOfConditionWithUnknownOpIsBlocked(): void
     {

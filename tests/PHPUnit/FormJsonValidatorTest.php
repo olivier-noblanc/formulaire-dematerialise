@@ -64,6 +64,23 @@ final class FormJsonValidatorTest extends TestCase
         ];
     }
 
+    /**
+     * D5 — un hint purement numérique reste une chaîne valide : il ne doit
+     * plus bloquer la validation d'import (il était rejeté comme erreur).
+     */
+    public function testAcceptsNumericHint(): void
+    {
+        $payload = $this->validConditionPayload();
+        $payload['fields'][0]['hint'] = '2';
+
+        $result = FormJsonValidator::validate($payload);
+
+        self::assertTrue(
+            $result['valid'],
+            'D5 : un hint numérique doit être accepté (préservé à l\'import) : ' . implode(' | ', $result['errors'])
+        );
+    }
+
     public function testRejectsStringConditionWithUnknownOp(): void
     {
         $payload = $this->validConditionPayload();

@@ -206,10 +206,11 @@ final class AdminImportExportHandler
                     if (!is_string($visibility) || !in_array($visibility, [FieldVisibility::All->value, FieldVisibility::OwnerOnly->value], true)) {
                         $visibility = FieldVisibility::All->value;
                     }
+                    // D5 (2026-09-15) : le hint est conservé tel quel (trim seul).
+                    // Il n'est plus vidé quand il est purement numérique — un
+                    // chiffre est une valeur de hint légitime, préservée au
+                    // round-trip export → import.
                     $raw_hint = trim((string) ($f['hint'] ?? ''));
-                    if (preg_match('/^\d+$/', $raw_hint) === 1) {
-                        $raw_hint = '';
-                    }
                     $repo->createField([
                         'form_id' => $new_id,
                         'label' => $f['label'] ?? 'Champ',
