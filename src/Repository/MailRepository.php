@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\MailStatus;
+
 /**
- * Repository pour la table mail_log (journal des envois email).
+ * Repository pour la table mail_log (journal des envois email + outbox write-ahead).
  */
 final class MailRepository extends BaseRepository
 {
@@ -24,6 +26,42 @@ final class MailRepository extends BaseRepository
             'INSERT INTO mail_log (id, created_at, recipient, subject, status, error_message, smtp_log, actor, ip)
              VALUES (?, datetime(\'now\'), ?, ?, ?, ?, ?, ?, ?)',
             [$id, $to, $subject, $result['status'], $result['error'], $result['smtp_log'], $actor, $ip]
+        );
+    }
+
+    /**
+     * Write-ahead : insère la ligne `pending` AVANT toute tentative SMTP, avec
+     * le corps HTML complet. Retourne true si la ligne est bien persistée.
+     */
+    public function insertPending(
+        string $id,
+        string $to,
+        string $subject,
+        string $bodyHtml,
+        string $actor,
+        string $ip
+    ): bool {
+        return $this->execute(
+            "INSERT INTO mail_log (id, created_at, recipient, subject, body_html, status, error_message, smtp_log, attempts, next_retry_at, actor, ip)
+             VALUES (?, datetime('now'), ?, ?, ?, ?, '', '', 0, NULL, ?, ?)",
+            [$id, $to, $subject, $bodyHtml, MailStatus::Pending->value, $actor, $ip]
+        );
+    }
+
+    /**
+     * Met à jour la ligne d'outbox avec le résultat final d'une tentative.
+     */
+    public function finalize(
+        string $id,
+        MailStatus $status,
+        string $error,
+        string $smtpLog,
+        int $attempts,
+        ?string $nextRetryAt
+    ): bool {
+        return $this->execute(
+            'UPDATE mail_log SET status = ?, error_message = ?, smtp_log = ?, attempts = ?, next_retry_at = ? WHERE id = ?',
+            [$status->value, $error, $smtpLog, $attempts, $nextRetryAt, $id]
         );
     }
 

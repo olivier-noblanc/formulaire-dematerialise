@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Contract\MailInterface;
+use App\Enum\MailStatus;
 use App\Enum\SubmissionField;
 use App\Repository\MailRepository;
 use App\Settings\SettingsService;
@@ -51,64 +52,105 @@ final readonly class MailService implements MailInterface
     /**
      * Variante détaillée de send() retournant un tableau de diagnostic.
      *
+     * Outbox SMTP write-ahead durable : en mode réel, la ligne `pending` (avec
+     * le corps HTML complet) est écrite dans mail_log AVANT toute tentative SMTP.
+     * Si cette écriture échoue, l'envoi est ANNULÉ (sinon le mail partirait sans
+     * trace rejouable) et un échec structuré est retourné. Après la tentative,
+     * la ligne est mise à jour (sent / error / blocked / dry_run). Un échec SMTP
+     * est planifié pour rejeu (next_retry_at), repris ultérieurement par le cron.
+     *
+     * TEST_MODE est préservé à l'identique : les envois valides sont interceptés
+     * dans $GLOBALS['_test_mails'] sans écriture DB.
+     *
      * @return array{success:bool,error:string,smtp_log:string,status:string}
      */
     public function sendDetailed(string $to, string $subject, string $body): array
     {
-        $result = ['success' => false, 'error' => '', 'smtp_log' => '', 'status' => 'error'];
         $to = strtolower(trim($to));
-
-        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-            $msg = "Adresse destinataire invalide : $to";
-            error_log("send_mail() BLOQUÉ — $msg");
-            $result['error'] = $msg;
-            $result['status'] = 'blocked';
-            $this->logMailAttempt($to, $subject, $result);
-            return $result;
-        }
+        $invalidAddress = filter_var($to, FILTER_VALIDATE_EMAIL) === false;
 
         /** @phpstan-ignore-next-line if.alwaysTrue */
         if (defined('TEST_MODE') && TEST_MODE) {
+            if ($invalidAddress) {
+                $result = ['success' => false, 'error' => "Adresse destinataire invalide : $to", 'smtp_log' => '', 'status' => MailStatus::Blocked->value];
+                error_log("send_mail() BLOQUÉ — {$result['error']}");
+                $this->logMailAttempt($to, $subject, $result);
+                return $result;
+            }
             $GLOBALS['_test_mails'][] = [
                 'to' => $to,
                 'subject' => $subject,
                 'body' => $body,
                 'time' => gmdate('Y-m-d H:i:s'),
             ];
-            return ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => 'dry_run'];
+            return ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => MailStatus::DryRun->value];
         }
 
-        $dryRun = $this->settingsService->get('mail_dry_run', '0') === '1';
-        if ($dryRun) {
-            error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
-            $result = ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => 'dry_run'];
-            $this->logMailAttempt($to, $subject, $result);
+        // ── Write-ahead : persister la ligne AVANT tout envoi ──
+        $logId = \generate_uuid();
+        $pendingError = $this->insertPending($logId, $to, $subject, $body);
+        if ($pendingError !== '') {
+            // A2 : si l'écriture durable échoue, on n'envoie PAS — un mail
+            // parti sans ligne d'outbox ne serait ni traçable ni rejouable.
+            // L'échec n'est jamais avalé : il est remonté, structuré, à
+            // l'appelant, qui doit faire intervenir un technicien.
+            error_log(sprintf('[MAIL_OUTBOX_INSERT_FAIL] to=%s error=%s', $to, $pendingError));
+            return [
+                'success' => false,
+                'error' => 'Journal des emails indisponible — envoi annulé pour préserver la traçabilité '
+                    . "(write-ahead). Intervention d'un technicien requise. Détail : " . $pendingError,
+                'smtp_log' => '',
+                'status' => MailStatus::Error->value,
+            ];
+        }
+
+        if ($invalidAddress) {
+            $result = ['success' => false, 'error' => "Adresse destinataire invalide : $to", 'smtp_log' => '', 'status' => MailStatus::Blocked->value];
+            error_log("send_mail() BLOQUÉ — {$result['error']}");
+            $this->finalizeLog($logId, $result, false);
             return $result;
         }
 
+        if ($this->settingsService->get('mail_dry_run', '0') === '1') {
+            error_log("send_mail() DRY-RUN — destinataire: $to, sujet: $subject");
+            $result = ['success' => true, 'error' => '', 'smtp_log' => '', 'status' => MailStatus::DryRun->value];
+            $this->finalizeLog($logId, $result, false);
+            return $result;
+        }
+
+        $result = $this->transmit($to, $subject, $body);
+        // Un échec SMTP réessayable est planifié (failed = épuisement côté worker).
+        $this->finalizeLog($logId, $result, $result['status'] === MailStatus::Error->value);
+        return $result;
+    }
+
+    /**
+     * Envoi SMTP bas niveau — sans aucune persistance ni gestion d'outbox.
+     *
+     * Utilisé par sendDetailed() après le write-ahead. Exposé pour permettre à
+     * un rejeu ultérieur de renvoyer le corps d'une ligne d'outbox existante.
+     *
+     * @return array{success:bool,error:string,smtp_log:string,status:string}
+     */
+    public function transmit(string $to, string $subject, string $body): array
+    {
+        $to = strtolower(trim($to));
         $smtpHost = $this->settingsService->get('smtp_host');
+        $smtpFrom = $this->settingsService->get('smtp_from');
+
+        if ($smtpHost === '' || $smtpHost === '0') {
+            return ['success' => false, 'error' => 'Aucun hôte SMTP configuré', 'smtp_log' => '', 'status' => MailStatus::Blocked->value];
+        }
+        if ($smtpFrom === '' || $smtpFrom === '0') {
+            return ['success' => false, 'error' => 'Aucune adresse From configurée', 'smtp_log' => '', 'status' => MailStatus::Blocked->value];
+        }
+
         $smtpPort = (int) $this->settingsService->get('smtp_port', '25');
         $smtpAuth = $this->settingsService->get('smtp_auth', '0') === '1';
         $smtpUser = $this->settingsService->get('smtp_user', '');
         $smtpPass = $this->settingsService->get('smtp_pass', '');
         $smtpSecure = $this->settingsService->get('smtp_secure', '');
-        $smtpFrom = $this->settingsService->get('smtp_from');
         $smtpFromName = $this->settingsService->get('smtp_from_name', 'CircuitDémat');
-
-        if ($smtpHost === '' || $smtpHost === '0') {
-            $msg = 'Aucun hôte SMTP configuré';
-            $result['error'] = $msg;
-            $result['status'] = 'blocked';
-            $this->logMailAttempt($to, $subject, $result);
-            return $result;
-        }
-        if ($smtpFrom === '' || $smtpFrom === '0') {
-            $msg = 'Aucune adresse From configurée';
-            $result['error'] = $msg;
-            $result['status'] = 'blocked';
-            $this->logMailAttempt($to, $subject, $result);
-            return $result;
-        }
 
         $smtpLogBuf = [];
         $phpMailer = new PHPMailer(true);
@@ -143,18 +185,60 @@ final readonly class MailService implements MailInterface
             $phpMailer->Body = $body;
             $phpMailer->send();
 
-            $smtpLog = implode("\n", $smtpLogBuf);
-            $result = ['success' => true, 'error' => '', 'smtp_log' => $smtpLog, 'status' => 'sent'];
-            $this->logMailAttempt($to, $subject, $result);
-            return $result;
+            return ['success' => true, 'error' => '', 'smtp_log' => implode("\n", $smtpLogBuf), 'status' => MailStatus::Sent->value];
         } catch (\Throwable) {
             // @silent-ok: external SMTP failure — returns structured error result
-            $smtpLog = implode("\n", $smtpLogBuf);
             $err = $phpMailer->ErrorInfo;
             error_log('Mail error: ' . $err);
-            $result = ['success' => false, 'error' => $err, 'smtp_log' => $smtpLog, 'status' => 'error'];
-            $this->logMailAttempt($to, $subject, $result);
-            return $result;
+            return ['success' => false, 'error' => $err, 'smtp_log' => implode("\n", $smtpLogBuf), 'status' => MailStatus::Error->value];
+        }
+    }
+
+    /**
+     * Insère la ligne d'outbox `pending` (write-ahead).
+     *
+     * @return string Message d'erreur si l'écriture échoue, '' en cas de succès.
+     *                L'appelant NE DOIT alors PAS envoyer le mail. L'erreur est
+     *                remontée telle quelle (jamais avalée) pour permettre le
+     *                diagnostic — règle AGENTS.md #9.
+     */
+    private function insertPending(string $logId, string $to, string $subject, string $body): string
+    {
+        try {
+            $actor = \App\Core\App::auth()->getUser();
+            if ($actor === '') {
+                $actor = 'system';
+            }
+            $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'CLI');
+            if (!$this->mailRepository->insertPending($logId, $to, $subject, $body, $actor, $ip)) {
+                return 'insertPending() a retourné false';
+            }
+            return '';
+        } catch (\Throwable $e) {
+            // @silent-ok: l'erreur n'est pas avalée — elle est remontée à
+            // l'appelant sous forme structurée, qui bloque l'envoi et
+            // déclenche l'intervention d'un technicien.
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Finalise la ligne d'outbox. `$scheduleRetry` planifie un rejeu (échec SMTP).
+     *
+     * @param array{success:bool,error:string,smtp_log:string,status:string} $result
+     */
+    private function finalizeLog(string $logId, array $result, bool $scheduleRetry): void
+    {
+        $status = MailStatus::tryFrom($result['status']) ?? MailStatus::Error;
+        $nextRetryAt = $scheduleRetry
+            ? gmdate('Y-m-d H:i:s', time() + MailOutbox::BACKOFF_SECONDS)
+            : null;
+        try {
+            $this->mailRepository->finalize($logId, $status, $result['error'], $result['smtp_log'], 1, $nextRetryAt);
+        } catch (\Throwable $e) {
+            // @silent-ok: log-only with structured context (AGENTS.md #9) — la
+            // ligne reste `pending` et sera reprise par le rejeu (write-ahead).
+            error_log(sprintf('[MAIL_LOG_FINALIZE_FAIL] id=%s status=%s error=%s', $logId, $status->value, $e->getMessage()));
         }
     }
 
