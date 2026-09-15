@@ -82,7 +82,6 @@ final readonly class WorkflowAdvancer
             // 'valide'. C'est un bug métier : une soumission sans aucune validation ne
             // devrait pas être marquée validée. On lève une exception (rollback auto via
             // le catch en bas) et on log pour diagnose.
-            $totalTokensCreated = 0;
             foreach ($byOrder as $groupe) {
                 $stepIds = array_column($groupe, 'step_id');
                 $allStarted = count(array_intersect($stepIds, array_keys($tokensByStep))) === count($groupe);
@@ -99,7 +98,6 @@ final readonly class WorkflowAdvancer
                         $expiresAt,
                         $notifications
                     );
-                    $totalTokensCreated += $tokenCreated ? 1 : 0;
                     if ($tokenCreated) {
                         $this->tokenRepository->commit();
                         $committed = true;
@@ -129,10 +127,8 @@ final readonly class WorkflowAdvancer
             }
 
             // B-W1 : on n'arrive ici QUE si tous les groupes sont déjà validés
-            // (tokens créés et done_at set pour tous). Si $totalTokensCreated === 0
-            // et qu'on est ici, c'est que la boucle n'a créé aucun token ET tous les
-            // groupes sont "complete" — ce qui est impossible sauf si la soumission
-            // n'avait aucune étape active. On ne clôture QUE si des tokens existent.
+            // (tokens créés et done_at set pour tous). On ne clôture QUE si des
+            // tokens existent — sinon la soumission n'avait aucune étape active.
             if ($tokensByStep === []) {
                 // Aucune étape active dans le formulaire → on ne clôture PAS
                 $this->tokenRepository->commit();
