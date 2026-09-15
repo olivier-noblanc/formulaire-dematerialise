@@ -273,7 +273,7 @@ final class SubmissionViewRenderer
             $fieldLabel = \App\Core\App::html()->escape((string) ($vd['field_label'] ?? $vd['field_name'] ?? ''));
             $value      = \App\Core\App::html()->escape((string) ($vd['value'] ?? ''));
             $filledBy   = \App\Core\App::html()->escape((string) ($vd['filled_by_email'] ?? ''));
-            $filledAt   = \App\Core\App::html()->escape((string) ($vd['filled_at'] ?? ''));
+            $filledAt   = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($vd['filled_at'] ?? '')));
 
             $items .= <<<HTML
                     <tr>

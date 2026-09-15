@@ -95,6 +95,24 @@ final class DateHelper
     }
 
     /**
+     * Libellé court du nombre de jours restants pour les alertes :
+     * « J-N » (N >= 0, y compris J-0 le jour même) ou
+     * « EN RETARD de N jours » (deadline dépassée).
+     *
+     * D2 (audit 2026-09-15) : source unique utilisée par alert_check.php pour
+     * le sujet et le message journalisé dans alert_log — les deux dérivent du
+     * même $days_remaining (calendarDaysUntil). Avant, le message utilisait
+     * $rule['days_before'] (seuil de la règle) : faux dès que le cron
+     * s'exécute ailleurs qu'au jour pile du seuil, et « J-N » même en retard.
+     */
+    public static function alertDaysLabel(int $daysRemaining): string
+    {
+        return $daysRemaining < 0
+            ? 'EN RETARD de ' . abs($daysRemaining) . ' jours'
+            : 'J-' . $daysRemaining;
+    }
+
+    /**
      * Calculate deadline urgency.
      * @return array{days_left: ?int, urgency: string, style: string}
      */

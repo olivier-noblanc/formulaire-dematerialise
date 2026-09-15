@@ -169,6 +169,31 @@ function run_bug08_test(): bool {
     if ($r['ok']) $successes[] = 'MyValidationsRenderer.php (Traitée le)';
     else $failures[] = $r['msg'];
 
+    // ── 9. SubmissionViewRenderer.php — filled_at doit passer par formatDateTimeFr() ──
+    // D1 (audit 2026-09-15) : filled_at (UTC) était affiché brut dans le
+    // tableau « Données validateur ».
+    $r = bug08_check_date_format(
+        $root . '/src/Render/SubmissionViewRenderer.php',
+        "\$vd['filled_at']",
+        '/formatDateTimeFr\s*\(/',
+        '/escape\s*\(\s*\(string\)\s*\(\s*\$vd\[\'filled_at\'\]/',
+        'SubmissionViewRenderer.php : filled_at'
+    );
+    if ($r['ok']) $successes[] = 'SubmissionViewRenderer.php (filled_at)';
+    else $failures[] = $r['msg'];
+
+    // ── 10. SubmissionViewController.php — filled_at doit passer par formatDateTimeFr() ──
+    // D1 (audit 2026-09-15) : même tableau inline côté contrôleur.
+    $r = bug08_check_date_format(
+        $root . '/src/Controller/SubmissionViewController.php',
+        "\$vd['filled_at']",
+        '/formatDateTimeFr\s*\(/',
+        '/escape\s*\(\s*\$vd\[\'filled_at\'\]/',
+        'SubmissionViewController.php : filled_at'
+    );
+    if ($r['ok']) $successes[] = 'SubmissionViewController.php (filled_at)';
+    else $failures[] = $r['msg'];
+
     if (!empty($failures)) {
         echo "  ❌ Bug08 — " . count($failures) . " vérification(s) échouée(s) sur " . (count($failures) + count($successes)) . " :\n";
         foreach ($failures as $f) {

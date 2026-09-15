@@ -135,7 +135,27 @@ final class AlertCheckInvalidatedTokensTest extends TestCase
         }
     }
 
-    // ── Fixtures ───────────────────────────────────────────────────
+    // ─ D2 : le message alert_log reflète les jours réels, pas days_before ──
+
+    public function testAlertLogMessageUsesActualDaysRemainingNotRuleThreshold(): void
+    {
+        // Fixture : règle days_before=4 mais deadline à J+3 → le log doit
+        // afficher J-3 (jours réellement restants) et non J-4 (seuil de la
+        // règle), sinon le relevé est faux dès que le cron s'exécute ailleurs
+        // qu'au jour pile du seuil.
+        $this->seedFixture('validators', [
+            ['email' => $this->newEmail('actif'), 'done' => false, 'invalidated' => false],
+        ]);
+
+        $this->runAlertCheck();
+
+        $message = $this->alertLogMessage();
+        self::assertNotSame('', $message, 'L\'alerte doit être journalisée dans alert_log.');
+        self::assertStringContainsString('J-3', $message, 'Le message doit refléter les jours réellement restants (J-3).');
+        self::assertStringNotContainsString('J-4', $message, 'Le message ne doit plus utiliser le seuil days_before de la règle.');
+    }
+
+    // ── Fixtures ────────────────────────────────────────────────────
 
     /**
      * @param list<array{email: string, done?: bool, invalidated?: bool}> $tokens
@@ -282,5 +302,17 @@ echo "\n' . self::MARKER . '" . json_encode($GLOBALS["_test_mails"] ?? [], JSON_
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM alert_log WHERE rule_id = ?');
         $stmt->execute([$this->ruleId]);
         return (int) $stmt->fetchColumn();
+    }
+
+    private function alertLogMessage(): string
+    {
+        if ($this->ruleId === null) {
+            return '';
+        }
+        $pdo = \App\Core\App::db()->getPdo();
+        $stmt = $pdo->prepare('SELECT message FROM alert_log WHERE rule_id = ? LIMIT 1');
+        $stmt->execute([$this->ruleId]);
+        $message = $stmt->fetchColumn();
+        return is_string($message) ? $message : '';
     }
 }

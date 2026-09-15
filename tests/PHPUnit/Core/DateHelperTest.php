@@ -182,4 +182,24 @@ final class DateHelperTest extends TestCase
         $now = new \DateTimeImmutable('2026-10-25 12:00:00', new \DateTimeZone('Europe/Paris'));
         self::assertSame('2026-10-24 22:00:00', DateHelper::parisDayStartUtc($now));
     }
+
+    // ── alertDaysLabel — D2 : libellé partagé sujet + log alert_log ──
+
+    public function testAlertDaysLabelPositiveBranch(): void
+    {
+        // Deadline future : J-N (N jours calendaires restants).
+        self::assertSame('J-3', DateHelper::alertDaysLabel(3));
+    }
+
+    public function testAlertDaysLabelZeroBranch(): void
+    {
+        // Deadline le jour même : J-0 (ce n'est PAS un retard).
+        self::assertSame('J-0', DateHelper::alertDaysLabel(0));
+    }
+
+    public function testAlertDaysLabelNegativeBranch(): void
+    {
+        // Deadline dépassée : EN RETARD de N jours (valeur absolue).
+        self::assertSame('EN RETARD de 2 jours', DateHelper::alertDaysLabel(-2));
+    }
 }

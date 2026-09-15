@@ -500,4 +500,50 @@ final class SubmissionViewRendererTest extends TestCase
         self::assertStringContainsString('1 rappel', $html);
         self::assertStringContainsString('18/06/2025', $html);
     }
+
+    // ── D1 : filled_at affiché formaté (UTC → Paris), pas l'ISO brut ──
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function renderValidatorData(array $rows): string
+    {
+        // ReflectionMethod::setAccessible() no-op depuis PHP 8.1
+        $m = new \ReflectionMethod(SubmissionViewRenderer::class, 'renderValidatorData');
+        /** @var string $html */
+        $html = $m->invoke(new SubmissionViewRenderer(), $rows);
+        return $html;
+    }
+
+    public function testRenderValidatorDataFormatsFilledAtUtcToParis(): void
+    {
+        $previousTz = date_default_timezone_get();
+        // Fuseau serveur volontairement non-Paris : la conversion doit venir du
+        // helper (UTC explicite → Europe/Paris), pas du fuseau par défaut.
+        date_default_timezone_set('UTC');
+        try {
+            $rows = [[
+                'field_name'      => 'champ',
+                'field_label'     => 'Champ',
+                'value'           => 'valeur',
+                'filled_by_email' => 'validateur@test.fr',
+                'filled_at'       => '2024-01-15 10:30:00', // UTC
+            ]];
+
+            $html = $this->renderValidatorData($rows);
+
+            self::assertStringContainsString(
+                '15/01/2024 à 11:30',
+                $html,
+                'filled_at UTC doit être affiché en heure de Paris via formatDateTimeFr().'
+            );
+            self::assertStringNotContainsString(
+                '2024-01-15 10:30:00',
+                $html,
+                'L\'ISO brut de filled_at ne doit jamais être affiché.'
+            );
+        } finally {
+            date_default_timezone_set($previousTz);
+        }
+    }
 }

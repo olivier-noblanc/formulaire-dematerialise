@@ -127,21 +127,28 @@ foreach ($rules as $rule) {
         $nom_agent = SubmissionData::get($data, SubmissionField::PRENOM) . ' ' . SubmissionData::get($data, SubmissionField::NOM);
         $deadline_formatted = $deadline->format('d/m/Y');
 
+        // D2 (audit 2026-09-15) : libellé dérivé du même calcul que le statut
+        // métier ($days_remaining), partagé par le sujet, le message journalisé
+        // dans alert_log et la sortie console. L'ancien message utilisait
+        // $rule['days_before'] (seuil de la règle) → faux dès que le cron
+        // s'exécute ailleurs qu'au jour pile du seuil.
+        $daysLabel = \App\Core\DateHelper::alertDaysLabel($days_remaining);
+        // P0-2 : branche retard strictement < 0 — J0 (deadline aujourd'hui)
+        // affiche « J-0 avant la date cible », pas « EN RETARD de 0 jours ».
+        $urgencyText = $days_remaining < 0 ? $daysLabel : $daysLabel . ' avant la date cible';
+
         // Determiner les destinataires
         $recipients = resolve_recipients($pdo, $rule['notify_who'], $sub);
 
         // Construire et envoyer l'email d'alerte
         foreach ($recipients as $recipient) {
-            // P0-2 : branche retard strictement < 0 — J0 (deadline aujourd'hui)
-            // affiche « J-0 avant la date cible », pas « EN RETARD de 0 jours ».
-            $urgencyText = $days_remaining < 0 ? 'EN RETARD de ' . abs($days_remaining) . ' jours' : 'J-' . $days_remaining . ' avant la date cible';
             $subject = '[ALERTE] ' . $rule['form_label'] . ' — ' . $urgencyText;
             $body = build_alert_html($sub, $nom_agent, $deadline_formatted, $days_remaining, $rule, $data, $pdo);
             $sent = send_mail($recipient, $subject, $body);
 
             if ($sent) {
                 // Logger l'alerte
-                $message = "Alerte J-{$rule['days_before']} envoyee a {$recipient} pour {$nom_agent}";
+                $message = "Alerte {$daysLabel} envoyee a {$recipient} pour {$nom_agent}";
                 // T-01/P-01/O-02 : générer l'UUID côté PHP (generate_uuid est une
                 // fonction PHP, pas SQLite). Binding via paramètre ?.
                 $alert_log_id = generate_uuid();
@@ -165,7 +172,7 @@ foreach ($rules as $rule) {
                         $logErr->getMessage()
                     ));
                 }
-                echo "[{$now->format('Y-m-d H:i:s')}] Alerte J-{$rule['days_before']} -> {$recipient} | {$nom_agent} | Deadline: {$deadline_formatted}\n";
+                echo "[{$now->format('Y-m-d H:i:s')}] Alerte {$daysLabel} -> {$recipient} | {$nom_agent} | Deadline: {$deadline_formatted}\n";
             } else {
                 echo "[{$now->format('Y-m-d H:i:s')}] ERREUR envoi alerte a {$recipient} pour soumission #{$sub['id']}\n";
             }

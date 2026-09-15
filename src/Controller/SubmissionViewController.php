@@ -184,7 +184,7 @@ final class SubmissionViewController extends BaseController
           <td><?= \App\Core\App::html()->escape($vd['field_label'] ?? $vd['field_name']) ?></td>
           <td><?= \App\Core\App::html()->escape($vd['value']) ?></td>
           <td><?= \App\Core\App::html()->escape($vd['filled_by_email'] ?? '') ?></td>
-          <td><?= \App\Core\App::html()->escape($vd['filled_at'] ?? '') ?></td>
+          <td><?= \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) ($vd['filled_at'] ?? ''))) ?></td>
         </tr>
       <?php endforeach; ?>
       </tbody>
