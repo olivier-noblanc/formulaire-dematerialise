@@ -271,7 +271,7 @@ final class ValidateController extends BaseController
                 $owner_only_fields = [];
                 $form_fields = App::validatorData()->getFormFields($form_id);
                 foreach ($form_fields as $form_field) {
-                    if (($form_field['field_type'] ?? '') === FieldType::File->value && ($form_field['visibility'] ?? 'all') === FieldVisibility::OwnerOnly->value) {
+                    if (($form_field['field_type'] ?? '') === FieldType::File->value && ($form_field['visibility'] ?? FieldVisibility::All->value) === FieldVisibility::OwnerOnly->value) {
                         $owner_only_fields[] = $form_field['field_name'];
                     }
                 }

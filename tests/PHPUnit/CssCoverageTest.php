@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
+use App\Enum\FieldVisibility;
 use App\Render\SubmissionViewRenderer;
 use App\Render\DashboardRenderer;
 use App\Render\MonitoringRenderer;
@@ -100,14 +101,7 @@ final class CssCoverageTest extends TestCase
      */
     private function filterByPrefixes(array $classes, array $prefixes): array
     {
-        return array_values(array_filter($classes, function (string $cls) use ($prefixes): bool {
-            foreach ($prefixes as $prefix) {
-                if (str_starts_with($cls, $prefix)) {
-                    return true;
-                }
-            }
-            return false;
-        }));
+        return array_values(array_filter($classes, fn(string $cls): bool => array_any($prefixes, fn(string $prefix): bool => str_starts_with($cls, $prefix))));
     }
 
     /**
@@ -120,14 +114,7 @@ final class CssCoverageTest extends TestCase
         $relevantHtmlClasses = $this->filterByPrefixes($htmlClasses, $prefixes);
         // Exclure les classes dynamiques générées par DynamicCssService (bar-w-N, seg-val-N, etc.)
         $dynamicPrefixes = ['bar-w-', 'seg-val-', 'seg-enc-', 'seg-ref-', 'pw-', 'ipw-', 'mp-', 'donut-'];
-        $relevantHtmlClasses = array_filter($relevantHtmlClasses, function ($cls) use ($dynamicPrefixes) {
-            foreach ($dynamicPrefixes as $dp) {
-                if (str_starts_with($cls, $dp)) {
-                    return false;
-                }
-            }
-            return true;
-        });
+        $relevantHtmlClasses = array_filter($relevantHtmlClasses, fn(string $cls): bool => array_all($dynamicPrefixes, fn(string $dp): bool => !str_starts_with($cls, $dp)));
         $missing = array_diff($relevantHtmlClasses, self::$allCssClasses);
 
         self::assertEmpty(
@@ -145,14 +132,7 @@ final class CssCoverageTest extends TestCase
         $relevantHtmlClasses = $this->filterByPrefixes($htmlClasses, $prefixes);
         // Exclure les classes dynamiques
         $dynamicPrefixes = ['bar-w-', 'seg-val-', 'seg-enc-', 'seg-ref-', 'pw-', 'ipw-', 'mp-', 'donut-'];
-        $relevantHtmlClasses = array_filter($relevantHtmlClasses, function ($cls) use ($dynamicPrefixes) {
-            foreach ($dynamicPrefixes as $dp) {
-                if (str_starts_with($cls, $dp)) {
-                    return false;
-                }
-            }
-            return true;
-        });
+        $relevantHtmlClasses = array_filter($relevantHtmlClasses, fn(string $cls): bool => array_all($dynamicPrefixes, fn(string $dp): bool => !str_starts_with($cls, $dp)));
         $missing = array_diff($relevantHtmlClasses, $cssClasses);
 
         self::assertEmpty(
@@ -444,7 +424,7 @@ final class CssCoverageTest extends TestCase
             form_fields: [['id' => 'ff1', 'label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom',
                 'options' => null, 'hint' => '', 'required' => 1, 'ordre' => 1,
                 'card_group' => 'Général', 'filled_by' => 'demandeur', 'validator_step' => '',
-                'visibility' => 'all']],
+                'visibility' => FieldVisibility::All->value]],
             edit_field_id: '',
             existing_groups: ['Général'],
         );

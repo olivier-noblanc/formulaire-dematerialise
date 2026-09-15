@@ -181,11 +181,11 @@ final class FormJsonValidator
                 if (isset($f['visibility'])) {
                     if (!is_string($f['visibility'])) {
                         $errors[] = "$prefix.visibility doit être une chaîne.";
-                    } elseif (!in_array($f['visibility'], ['all', \App\Enum\FieldVisibility::OwnerOnly->value], true)) {
+                    } elseif (!in_array($f['visibility'], [\App\Enum\FieldVisibility::All->value, \App\Enum\FieldVisibility::OwnerOnly->value], true)) {
                         $errors[] = "$prefix.visibility = \"{$f['visibility']}\" n'est pas valide. Valeurs attendues : \"all\" ou \"owner_only\".";
                     }
                 }
-                if (($f['visibility'] ?? 'all') === \App\Enum\FieldVisibility::OwnerOnly->value && ($f['field_type'] ?? '') !== \App\Enum\FieldType::File->value) {
+                if (($f['visibility'] ?? \App\Enum\FieldVisibility::All->value) === \App\Enum\FieldVisibility::OwnerOnly->value && ($f['field_type'] ?? '') !== \App\Enum\FieldType::File->value) {
                     $warnings[] = "$prefix : visibility = \"owner_only\" mais field_type n'est pas \"file\". visibility sera ignoré.";
                 }
             }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Enum\FieldType;
+use App\Enum\FieldVisibility;
 use App\Enum\FilledBy;
 
 /**
@@ -93,7 +94,7 @@ trait FormFieldsTrait
         $id = \generate_uuid();
         $this->execute(
             'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? FieldType::Text->value, $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $data['required'] ?? 0, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? FilledBy::Demandeur->value, $data['validator_step'] ?? '', $data['visibility'] ?? 'all']
+            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? FieldType::Text->value, $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $data['required'] ?? 0, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? FilledBy::Demandeur->value, $data['validator_step'] ?? '', $data['visibility'] ?? FieldVisibility::All->value]
         );
         return $id;
     }

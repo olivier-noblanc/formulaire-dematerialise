@@ -6,6 +6,7 @@ namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
 use App\Controller\FormValidationHandler;
+use App\Enum\FieldVisibility;
 
 /**
  * Tests régression FormValidationHandler.
@@ -46,7 +47,7 @@ final class FormValidationHandlerTest extends TestCase
             'card_group' => 'Général',
             'filled_by' => 'demandeur',
             'validator_step' => '',
-            'visibility' => 'all',
+            'visibility' => FieldVisibility::All->value,
             'condition' => $condition,
         ];
     }

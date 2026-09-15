@@ -6,6 +6,7 @@ namespace App\Tests;
 
 use App\Core\App;
 use App\Core\Database;
+use App\Enum\FieldVisibility;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -195,7 +196,8 @@ final class EnumConstraintTest extends TestCase
         $pdo = $this->db->getPdo();
         $formId = $this->createTestForm($pdo);
 
-        foreach (['all', 'owner_only'] as $visibility) {
+        foreach (FieldVisibility::cases() as $visibilityCase) {
+            $visibility = $visibilityCase->value;
             $fieldId = $this->createTestFormField($pdo, $formId, visibility: $visibility);
             $fetched = $pdo->prepare("SELECT visibility FROM form_fields WHERE id = ?");
             $fetched->execute([$fieldId]);
@@ -264,7 +266,7 @@ final class EnumConstraintTest extends TestCase
         $crashDb = new \PDO('sqlite:' . $tmpDb);
         $crashDb->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-        $versionBefore = $crashDb->query('SELECT MAX(version) FROM schema_version')->fetchColumn();
+        $crashDb->query('SELECT MAX(version) FROM schema_version')->fetchColumn();
         $ffCount = $crashDb->query('SELECT COUNT(*) FROM form_fields')->fetchColumn();
         self::assertGreaterThan(0, $ffCount, 'form_fields doit avoir des données avant le test');
 
@@ -344,7 +346,7 @@ final class EnumConstraintTest extends TestCase
         return $id;
     }
 
-    private function createTestFormField(\PDO $pdo, string $formId, string $filledBy = 'demandeur', string $visibility = 'all'): string
+    private function createTestFormField(\PDO $pdo, string $formId, string $filledBy = 'demandeur', string $visibility = FieldVisibility::All->value): string
     {
         $id = \generate_uuid();
         $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, filled_by, visibility) VALUES (?, ?, 'Test', 'text', 'test_field', ?, ?)")

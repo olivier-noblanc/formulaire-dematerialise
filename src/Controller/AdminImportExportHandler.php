@@ -61,7 +61,7 @@ final class AdminImportExportHandler
                 'hint' => $f['hint'] ?? '',
                 'filled_by' => $f['filled_by'] ?? FilledBy::Demandeur->value,
                 'validator_step' => $f['validator_step'] ?? '',
-                'visibility' => $f['visibility'] ?? 'all',
+                'visibility' => $f['visibility'] ?? FieldVisibility::All->value,
             ];
         }
 
@@ -202,9 +202,9 @@ final class AdminImportExportHandler
                     if (!in_array($filled_by, [FilledBy::Demandeur->value, FilledBy::Validator->value], true)) {
                         $filled_by = FilledBy::Demandeur->value;
                     }
-                    $visibility = $f['visibility'] ?? 'all';
-                    if (!is_string($visibility) || !in_array($visibility, ['all', FieldVisibility::OwnerOnly->value], true)) {
-                        $visibility = 'all';
+                    $visibility = $f['visibility'] ?? FieldVisibility::All->value;
+                    if (!is_string($visibility) || !in_array($visibility, [FieldVisibility::All->value, FieldVisibility::OwnerOnly->value], true)) {
+                        $visibility = FieldVisibility::All->value;
                     }
                     $raw_hint = trim((string) ($f['hint'] ?? ''));
                     if (preg_match('/^\d+$/', $raw_hint) === 1) {

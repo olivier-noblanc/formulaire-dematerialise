@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Enum\FilledBy;
 use App\Enum\FieldType;
+use App\Enum\FieldVisibility;
+use App\Enum\FilledBy;
 use App\Enum\SubmissionStatus;
 
 final class FormRepository extends BaseRepository
@@ -242,7 +243,7 @@ final class FormRepository extends BaseRepository
             // d'affichage conditionnel des champs (colonne vide dans la copie).
             $this->execute(
                 'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? FilledBy::Demandeur->value, $f['validator_step'] ?? '', $f['visibility'] ?? 'all', $f['condition'] ?? '']
+                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? FilledBy::Demandeur->value, $f['validator_step'] ?? '', $f['visibility'] ?? FieldVisibility::All->value, $f['condition'] ?? '']
             );
         }
 

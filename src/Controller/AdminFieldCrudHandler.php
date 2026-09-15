@@ -32,9 +32,9 @@ final class AdminFieldCrudHandler
             $ff_filled_by = FilledBy::Demandeur->value;
         }
         $ff_validator_step = trim($_POST['ff_validator_step'] ?? '');
-        $ff_visibility = trim($_POST['ff_visibility'] ?? 'all');
-        if (!in_array($ff_visibility, ['all', FieldVisibility::OwnerOnly->value], true)) {
-            $ff_visibility = 'all';
+        $ff_visibility = trim($_POST['ff_visibility'] ?? FieldVisibility::All->value);
+        if (!in_array($ff_visibility, [FieldVisibility::All->value, FieldVisibility::OwnerOnly->value], true)) {
+            $ff_visibility = FieldVisibility::All->value;
         }
         if (($ff_field_name === '' || $ff_field_name === '0') && ($ff_label !== '' && $ff_label !== '0')) {
             $ff_field_name = \generate_field_name($ff_label);

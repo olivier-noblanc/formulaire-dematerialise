@@ -100,8 +100,8 @@
                                             <div class="field ff-visibility-field">
                                                 <label>Visibilité <span class="hint">(uniquement pour les pièces jointes)</span></label>
                                                 <select name="ff_visibility">
-                                                    <option value="all" <?= (($ff['visibility'] ?? 'all') === \App\Enum\FieldVisibility::All->value) ? 'selected' : '' ?>>Tous (validateurs + owner)</option>
-                                                    <option value="owner_only" <?= (($ff['visibility'] ?? 'all') === \App\Enum\FieldVisibility::OwnerOnly->value) ? 'selected' : '' ?>>Owner uniquement (caché des validateurs)</option>
+                                                    <option value="<?= \App\Enum\FieldVisibility::All->value ?>" <?= (($ff['visibility'] ?? \App\Enum\FieldVisibility::All->value) === \App\Enum\FieldVisibility::All->value) ? 'selected' : '' ?>>Tous (validateurs + owner)</option>
+                                                    <option value="<?= \App\Enum\FieldVisibility::OwnerOnly->value ?>" <?= (($ff['visibility'] ?? \App\Enum\FieldVisibility::All->value) === \App\Enum\FieldVisibility::OwnerOnly->value) ? 'selected' : '' ?>>Owner uniquement (caché des validateurs)</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -242,8 +242,8 @@
                     <div class="field ff-visibility-field">
                         <label>Visibilité <span class="hint">(uniquement pour les pièces jointes)</span></label>
                         <select name="ff_visibility">
-                            <option value="all" selected>Tous (validateurs + owner)</option>
-                            <option value="owner_only">Owner uniquement (caché des validateurs)</option>
+                            <option value="<?= \App\Enum\FieldVisibility::All->value ?>" selected>Tous (validateurs + owner)</option>
+                            <option value="<?= \App\Enum\FieldVisibility::OwnerOnly->value ?>">Owner uniquement (caché des validateurs)</option>
                         </select>
                     </div>
                 </div>
