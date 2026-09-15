@@ -400,12 +400,35 @@ final readonly class TokenService
             . '<p>Vous n\'avez plus besoin d\'effectuer cette validation.</p>';
         $confirmSent = $this->mailService->send($tok['email'], $confirmSubject, App::mail()->renderEmailTemplate('Délégation confirmée', $confirmBodyHtml));
 
-        $this->auditLogService->log('token_delegate', 'token:' . $tokenId, 'Token délégué de ' . $tok['email'] . ' à ' . $toEmail . ($reason !== '' && $reason !== '0' ? ' — Motif : ' . $reason : ''));
+        // Audit métier : tracer le sort réel des DEUX notifications, distinctement.
+        // `mail_sent` = mail principal au délégataire (le lien, critique : sans lui
+        // la validation déléguée est impossible) ; `confirm_mail_sent` = mail de
+        // confirmation au validateur d'origine (informatif).
+        $this->auditLogService->log(
+            'token_delegate',
+            'token:' . $tokenId,
+            'Token délégué de ' . $tok['email'] . ' à ' . $toEmail
+                . ($reason !== '' && $reason !== '0' ? ' — Motif : ' . $reason : '')
+                . ' — mail_sent=' . ($primarySent ? '1' : '0')
+                . ' confirm_mail_sent=' . ($confirmSent ? '1' : '0')
+        );
 
+        // La délégation DB est déjà commitée (ci-dessus) : on ne rapporte jamais
+        // un échec global, uniquement le statut réel de chaque envoi. L'échec du
+        // mail principal (délégataire) est signalé explicitement — le message doit
+        // dire clairement que le délégataire n'a pas reçu le lien.
         $message = 'Validation déléguée à ' . $toEmail . '.';
-        $message .= ($primarySent && $confirmSent)
-            ? ' Un email lui a été envoyé.'
-            : ' Un des emails de notification n\'a pas pu être envoyé.';
+        if ($primarySent && $confirmSent) {
+            $message .= ' Un email lui a été envoyé.';
+        } elseif (!$primarySent) {
+            $message .= ' Attention : le lien n\'a pas pu être envoyé au délégataire — il ne l\'a pas reçu. Transmettez-le-lui manuellement ou demandez une régénération à un administrateur.';
+            $message .= $confirmSent
+                ? ' Le validateur d\'origine a bien été informé de la délégation.'
+                : ' L\'email de confirmation au validateur d\'origine n\'a pas pu être envoyé non plus.';
+        } else {
+            // Le lien au délégataire est parti ; seule la confirmation a échoué.
+            $message .= ' Un email lui a été envoyé. L\'email de confirmation au validateur d\'origine n\'a pas pu être envoyé.';
+        }
 
         return ['success' => true, 'message' => $message];
     }

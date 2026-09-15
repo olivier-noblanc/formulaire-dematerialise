@@ -16,8 +16,45 @@ use App\Auth\AuthService;
 use App\Audit\AuditLogService;
 
 /**
+ * Double de test mail configurable : enregistre les envois réellement effectués
+ * et permet de faire échouer soit tous les envois (`failAll`), soit un
+ * destinataire précis (`failTo`). Sert à distinguer l'échec du mail principal
+ * au délégataire de l'échec du mail de confirmation.
+ */
+final class TokenServicePartialMailFailureStub implements MailInterface
+{
+    public bool $failAll = true;
+    public ?string $failTo = null;
+
+    /** @var list<array{to: string, subject: string}> */
+    public array $sent = [];
+
+    public function send(string $to, string $subject, string $body): bool
+    {
+        if ($this->failAll || ($this->failTo !== null && strtolower($to) === strtolower($this->failTo))) {
+            return false;
+        }
+        $this->sent[] = ['to' => $to, 'subject' => $subject];
+        return true;
+    }
+
+    /** @param array<string, mixed> $submission */
+    public function buildValidationEmail(array $submission, string $stepLabel, string $token): string
+    {
+        return '';
+    }
+
+    public function renderEmailTemplate(string $title, string $bodyHtml): string
+    {
+        return $bodyHtml;
+    }
+}
+
+/**
  * B5 — quand l'action DB réussit mais que le mail échoue, le service doit
  * renvoyer un succès PARTIEL explicite (jamais un succès trompeur).
+ * Audit Oracle : l'échec du mail principal (délégataire) et celui du mail de
+ * confirmation (validateur d'origine) doivent être distingués explicitement.
  */
 final class TokenServicePartialMailFailureTest extends TestCase
 {
@@ -29,28 +66,7 @@ final class TokenServicePartialMailFailureTest extends TestCase
     private string $tokenId = '';
     private string $originalUser = '';
     private bool $seededAdmin = false;
-
-    /** Double de test dont send() échoue toujours. */
-    private function makeFailingMailer(): MailInterface
-    {
-        return new class implements MailInterface {
-            public function send(string $to, string $subject, string $body): bool
-            {
-                return false;
-            }
-
-            /** @param array<string, mixed> $submission */
-            public function buildValidationEmail(array $submission, string $stepLabel, string $token): string
-            {
-                return '';
-            }
-
-            public function renderEmailTemplate(string $title, string $bodyHtml): string
-            {
-                return $bodyHtml;
-            }
-        };
-    }
+    private TokenServicePartialMailFailureStub $mailer;
 
     protected function setUp(): void
     {
@@ -73,11 +89,15 @@ final class TokenServicePartialMailFailureTest extends TestCase
         $auth = new AuthService($this->db);
         $audit = new AuditLogService(new \App\Repository\AuditRepository($this->db));
 
+        // Par défaut tous les envois échouent (comportement B5). Les tests de
+        // délégation désactivent `failAll` et ciblent éventuellement `failTo`.
+        $this->mailer = new TokenServicePartialMailFailureStub();
+
         $this->tokenService = new TokenService(
             $settings,
             $auth,
             $audit,
-            $this->makeFailingMailer(),
+            $this->mailer,
             new SubmissionRepository($this->db),
             new TokenRepository($this->db),
             new DelegationRepository($this->db)
@@ -127,9 +147,89 @@ final class TokenServicePartialMailFailureTest extends TestCase
 
     public function testDelegateReturnsPartialSuccessWhenMailFails(): void
     {
-        $result = $this->tokenService->delegate($this->tokenId, 'delegue-' . uniqid() . '@test.com');
+        // Tous les envois échouent : la délégation DB reste faite et l'échec du
+        // mail principal (délégataire) est signalé explicitement.
+        $delegatee = 'delegue-' . uniqid() . '@test.com';
+        $result = $this->tokenService->delegate($this->tokenId, $delegatee);
         self::assertTrue($result['success'], 'L\'action DB (délégation) a réussi.');
+        self::assertStringContainsString('délégataire', $result['message']);
         self::assertStringContainsString("n'a pas pu être envoyé", $result['message']);
+
+        $detail = $this->lastDelegateAuditDetail();
+        self::assertStringContainsString('mail_sent=0', $detail);
+        self::assertStringContainsString('confirm_mail_sent=0', $detail);
+    }
+
+    public function testDelegatePrimaryMailFailureSignalsDelegateeNotNotified(): void
+    {
+        // Seul le mail principal (délégataire) échoue ; la confirmation part.
+        $delegatee = 'delegue-' . uniqid() . '@test.com';
+        $this->mailer->failAll = false;
+        $this->mailer->failTo = $delegatee;
+
+        $result = $this->tokenService->delegate($this->tokenId, $delegatee);
+
+        self::assertTrue($result['success'], 'La délégation DB est commitée : pas d\'échec global.');
+        self::assertStringContainsString('délégataire', $result['message']);
+        self::assertStringContainsString("il ne l'a pas reçu", $result['message']);
+        self::assertStringContainsString("n'a pas pu être envoyé", $result['message']);
+
+        // Le délégataire n'a rien reçu, le validateur d'origine a été confirmé.
+        self::assertEmpty($this->recipientsFor($delegatee));
+        self::assertNotEmpty($this->recipientsFor('validator@test.com'));
+
+        $this->assertDelegationCommitted($this->tokenId, $delegatee);
+
+        $detail = $this->lastDelegateAuditDetail();
+        self::assertStringContainsString('mail_sent=0', $detail);
+        self::assertStringContainsString('confirm_mail_sent=1', $detail);
+    }
+
+    public function testDelegateConfirmationMailFailureSignalsOriginalValidatorNotNotified(): void
+    {
+        // Le lien part au délégataire, seule la confirmation échoue.
+        $delegatee = 'delegue-' . uniqid() . '@test.com';
+        $this->mailer->failAll = false;
+        $this->mailer->failTo = 'validator@test.com';
+
+        $result = $this->tokenService->delegate($this->tokenId, $delegatee);
+
+        self::assertTrue($result['success'], 'La délégation DB est commitée : pas d\'échec global.');
+        self::assertStringContainsString('Un email lui a été envoyé', $result['message']);
+        self::assertStringContainsString('confirmation', $result['message']);
+        self::assertStringContainsString("n'a pas pu être envoyé", $result['message']);
+
+        self::assertNotEmpty($this->recipientsFor($delegatee));
+        self::assertEmpty($this->recipientsFor('validator@test.com'));
+
+        $this->assertDelegationCommitted($this->tokenId, $delegatee);
+
+        $detail = $this->lastDelegateAuditDetail();
+        self::assertStringContainsString('mail_sent=1', $detail);
+        self::assertStringContainsString('confirm_mail_sent=0', $detail);
+    }
+
+    public function testDelegateNominalSuccessNotifiesBothParties(): void
+    {
+        // Succès nominal : les deux emails partent.
+        $delegatee = 'delegue-' . uniqid() . '@test.com';
+        $this->mailer->failAll = false;
+
+        $result = $this->tokenService->delegate($this->tokenId, $delegatee);
+
+        self::assertTrue($result['success']);
+        self::assertStringContainsString('Un email lui a été envoyé', $result['message']);
+        self::assertStringNotContainsString("n'a pas pu être envoyé", $result['message']);
+        self::assertStringNotContainsString('Attention', $result['message']);
+
+        self::assertNotEmpty($this->recipientsFor($delegatee));
+        self::assertNotEmpty($this->recipientsFor('validator@test.com'));
+
+        $this->assertDelegationCommitted($this->tokenId, $delegatee);
+
+        $detail = $this->lastDelegateAuditDetail();
+        self::assertStringContainsString('mail_sent=1', $detail);
+        self::assertStringContainsString('confirm_mail_sent=1', $detail);
     }
 
     public function testCancelReturnsPartialSuccessWhenMailFails(): void
@@ -137,5 +237,38 @@ final class TokenServicePartialMailFailureTest extends TestCase
         $result = $this->tokenService->cancel($this->submissionId, 'admin@test.com');
         self::assertTrue($result['success'], 'L\'action DB (annulation) a réussi.');
         self::assertStringContainsString("n'a pas pu être envoyé", $result['message']);
+    }
+
+    /**
+     * Envois réellement effectués (non échoués) vers un destinataire donné.
+     *
+     * @return list<string>
+     */
+    private function recipientsFor(string $email): array
+    {
+        $recipients = [];
+        foreach ($this->mailer->sent as $m) {
+            if (strtolower($m['to']) === strtolower($email)) {
+                $recipients[] = strtolower($m['to']);
+            }
+        }
+        return $recipients;
+    }
+
+    private function assertDelegationCommitted(string $tokenId, string $delegatee): void
+    {
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM delegations WHERE token_id = ? AND to_email = ?");
+        $stmt->execute([$tokenId, $delegatee]);
+        self::assertSame(1, (int) $stmt->fetchColumn(), 'La délégation DB doit rester commitée même si un mail échoue.');
+    }
+
+    /** Dernier détail d'audit `token_delegate` écrit (vérifie mail_sent=0/1). */
+    private function lastDelegateAuditDetail(): string
+    {
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->query("SELECT detail FROM audit_log WHERE action = 'token_delegate' ORDER BY rowid DESC LIMIT 1");
+        $detail = $stmt !== false ? $stmt->fetchColumn() : false;
+        return is_string($detail) ? $detail : '';
     }
 }
