@@ -234,42 +234,53 @@ final class FormJsonValidator
                 }
 
                 // v19 — Condition d'exécution (branches conditionnelles)
+                // R6 (audit 2026-09-15) : une condition fournie sous forme de
+                // chaîne JSON doit être validée EXACTEMENT comme un objet — sinon
+                // un opérateur inconnu passait la validation (asymétrie), était
+                // stocké verbatim puis évalué silencieusement à false au runtime.
                 $raw_cond = $s['condition'] ?? null;
                 $valid_ops_json = \App\Workflow\ConditionEvaluator::VALID_OPS;
                 if ($raw_cond !== null && $raw_cond !== '') {
+                    $cond_obj = null;
                     if (is_array($raw_cond)) {
-                        if (!isset($raw_cond['field']) || $raw_cond['field'] === '' || !is_string($raw_cond['field'])) {
-                            $errors[] = "$prefix.condition.field est requis et doit être une chaîne (nom technique du champ validateur).";
-                        } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $raw_cond['field'])) {
-                            $warnings[] = "$prefix.condition.field = \"{$raw_cond['field']}\" n'est pas en snake_case valide. Format attendu : minuscules, chiffres et underscores, commençant par une lettre.";
-                        } elseif (!in_array(strtolower($raw_cond['field']), $seen_validator_field_names, true)) {
-                            $errors[] = "$prefix.condition.field = \"{$raw_cond['field']}\" ne correspond à aucun champ validateur (filled_by=\"validator\") de ce formulaire. Les conditions ne peuvent porter que sur des champs remplis par un validateur, pas sur un champ demandeur. Le champ référencé serait ignoré silencieusement par le moteur de workflow.";
+                        $cond_obj = $raw_cond;
+                    } elseif (is_string($raw_cond)) {
+                        $decoded_cond = json_decode($raw_cond, true);
+                        if (!is_array($decoded_cond)) {
+                            $errors[] = "$prefix.condition est une chaîne mais n'est pas un JSON valide. Utilisez un objet {field, op, value} ou supprimez la propriété.";
+                        } else {
+                            $cond_obj = $decoded_cond;
                         }
-                        $cond_op = $raw_cond['op'] ?? '';
+                    } else {
+                        $errors[] = "$prefix.condition doit être un objet {field, op, value}, une chaîne JSON valide, ou null/absent.";
+                    }
+
+                    if ($cond_obj !== null) {
+                        if (!isset($cond_obj['field']) || $cond_obj['field'] === '' || !is_string($cond_obj['field'])) {
+                            $errors[] = "$prefix.condition.field est requis et doit être une chaîne (nom technique du champ validateur).";
+                        } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $cond_obj['field'])) {
+                            $warnings[] = "$prefix.condition.field = \"{$cond_obj['field']}\" n'est pas en snake_case valide. Format attendu : minuscules, chiffres et underscores, commençant par une lettre.";
+                        } elseif (!in_array(strtolower($cond_obj['field']), $seen_validator_field_names, true)) {
+                            $errors[] = "$prefix.condition.field = \"{$cond_obj['field']}\" ne correspond à aucun champ validateur (filled_by=\"validator\") de ce formulaire. Les conditions ne peuvent porter que sur des champs remplis par un validateur, pas sur un champ demandeur. Le champ référencé serait ignoré silencieusement par le moteur de workflow.";
+                        }
+                        $cond_op = $cond_obj['op'] ?? '';
                         if (!is_string($cond_op) || !in_array($cond_op, $valid_ops_json, true)) {
                             $errors[] = "$prefix.condition.op doit être l'une des valeurs : " . implode(', ', array_map(fn(string $o): string => "\"$o\"", $valid_ops_json)) . '. Trouvé : ' . json_encode($cond_op);
                         }
-                        if (isset($raw_cond['value'])) {
+                        if (isset($cond_obj['value'])) {
                             // B-FIX3c (2026-09-01) : value chaîne OU tableau de scalaires
                             // (l'op "in" supporte les deux — cf. ConditionEvaluator)
-                            if (is_array($raw_cond['value'])) {
-                                foreach ($raw_cond['value'] as $v) {
+                            if (is_array($cond_obj['value'])) {
+                                foreach ($cond_obj['value'] as $v) {
                                     if (!is_string($v) && !is_numeric($v)) {
                                         $warnings[] = "$prefix.condition.value doit être une chaîne ou un tableau de chaînes/scalaires (op \"in\"). Élément invalide : " . json_encode($v);
                                         break;
                                     }
                                 }
-                            } elseif (!is_string($raw_cond['value'])) {
-                                $warnings[] = "$prefix.condition.value devrait être une chaîne ou un tableau de chaînes (op \"in\"). Trouvé : " . gettype($raw_cond['value']);
+                            } elseif (!is_string($cond_obj['value'])) {
+                                $warnings[] = "$prefix.condition.value devrait être une chaîne ou un tableau de chaînes (op \"in\"). Trouvé : " . gettype($cond_obj['value']);
                             }
                         }
-                    } elseif (is_string($raw_cond)) {
-                        $decoded_cond = json_decode($raw_cond, true);
-                        if (!is_array($decoded_cond)) {
-                            $errors[] = "$prefix.condition est une chaîne mais n'est pas un JSON valide. Utilisez un objet {field, op, value} ou supprimez la propriété.";
-                        }
-                    } else {
-                        $errors[] = "$prefix.condition doit être un objet {field, op, value}, une chaîne JSON valide, ou null/absent.";
                     }
 
                     $s_ordre = $s['ordre'] ?? null;

@@ -9,6 +9,7 @@ use App\Enum\FieldType;
 use App\Enum\FieldVisibility;
 use App\Enum\FilledBy;
 use App\Repository\FormRepository;
+use App\Workflow\ConditionEvaluator;
 
 /**
  * Handlers pour l'export et l'import de formulaires en JSON.
@@ -149,6 +150,24 @@ final class AdminImportExportHandler
             ];
         }
 
+        // R6 (audit 2026-09-15) — fail-closed : une condition fournie mais mal
+        // formée (opérateur inconnu, champ absent, JSON non-objet) ne doit
+        // jamais être stockée verbatim ni silencieusement transformée en étape
+        // inconditionnelle. FormJsonValidator bloque déjà ces cas ; ce garde-fou
+        // rend l'import sûr indépendamment de l'ordre des appels.
+        foreach ($data['steps'] ?? [] as $s) {
+            if (!is_array($s)) {
+                continue;
+            }
+            $parsed_condition = self::parseStepCondition($s['condition'] ?? '');
+            if ($parsed_condition['provided'] && !$parsed_condition['valid']) {
+                return [
+                    'error' => 'Le JSON contient une condition d\'étape invalide (opérateur inconnu ou structure incorrecte). L\'import a été bloqué.',
+                    'preserved_json' => $json_input,
+                ];
+            }
+        }
+
         $repo = App::getInstance()->get(FormRepository::class);
         try {
             $repo->pdo()->beginTransaction();
@@ -211,29 +230,23 @@ final class AdminImportExportHandler
 
             if (isset($data['steps']) && $data['steps'] !== []) {
                 foreach ($data['steps'] as $s) {
-                    $raw_cond_import = $s['condition'] ?? '';
+                    // R6 : objet ET chaîne JSON passent par la même
+                    // normalisation — plus de stockage verbatim d'une chaîne.
+                    $parsed_cond = self::parseStepCondition($s['condition'] ?? '');
                     $cond_db = '';
-                    if (is_array($raw_cond_import)) {
-                        $op_imp = (string) ($raw_cond_import['op'] ?? '');
-                        $valid_ops = \App\Workflow\ConditionEvaluator::VALID_OPS;
-                        if (isset($raw_cond_import['field']) && $raw_cond_import['field'] !== '' && in_array($op_imp, $valid_ops, true)) {
-                            // B-FIX3c (2026-09-01) : l'op "in" peut porter une value tableau
-                            // (liste de valeurs) — la préserver telle quelle, sinon le cast
-                            // (string) produisait "Array" en base
-                            $raw_value_imp = $raw_cond_import['value'] ?? '';
-                            $encoded = json_encode([
-                                'field' => (string) $raw_cond_import['field'],
-                                'op'    => $op_imp,
-                                'value' => is_array($raw_value_imp) ? $raw_value_imp : (string) $raw_value_imp,
-                            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                            if ($encoded !== false) {
-                                $cond_db = $encoded;
-                            }
-                        }
-                    } elseif (is_string($raw_cond_import) && $raw_cond_import !== '') {
-                        $decoded = json_decode($raw_cond_import, true);
-                        if (is_array($decoded)) {
-                            $cond_db = $raw_cond_import;
+                    if ($parsed_cond['provided'] && $parsed_cond['valid']) {
+                        $cond_obj = $parsed_cond['condition'];
+                        // B-FIX3c (2026-09-01) : l'op "in" peut porter une value
+                        // tableau (liste de valeurs) — la préserver telle quelle,
+                        // sinon le cast (string) produisait "Array" en base.
+                        $raw_value_imp = $cond_obj['value'] ?? '';
+                        $encoded = json_encode([
+                            'field' => (string) $cond_obj['field'],
+                            'op'    => (string) $cond_obj['op'],
+                            'value' => is_array($raw_value_imp) ? $raw_value_imp : (string) $raw_value_imp,
+                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                        if ($encoded !== false) {
+                            $cond_db = $encoded;
                         }
                     }
 
@@ -272,5 +285,38 @@ final class AdminImportExportHandler
             error_log('handleImportForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
+    }
+
+    /**
+     * Décode et valide une condition d'étape (objet ou chaîne JSON).
+     *
+     * R6 (audit 2026-09-15) — fail-closed : une condition fournie mais mal
+     * formée (champ absent, opérateur inconnu, JSON non-objet) est signalée
+     * invalide. Elle n'est donc jamais stockée verbatim ni silencieusement
+     * transformée en étape inconditionnelle.
+     *
+     * @return array{provided: bool, valid: bool, condition: array<string, mixed>}
+     */
+    private static function parseStepCondition(mixed $raw): array
+    {
+        if ($raw === null || $raw === '') {
+            return ['provided' => false, 'valid' => true, 'condition' => []];
+        }
+
+        $cond = $raw;
+        if (is_string($raw)) {
+            $cond = json_decode($raw, true);
+        }
+        if (!is_array($cond)) {
+            return ['provided' => true, 'valid' => false, 'condition' => []];
+        }
+
+        $field = $cond['field'] ?? null;
+        $op = $cond['op'] ?? null;
+        if (!is_string($field) || $field === '' || !is_string($op) || !in_array($op, ConditionEvaluator::VALID_OPS, true)) {
+            return ['provided' => true, 'valid' => false, 'condition' => []];
+        }
+
+        return ['provided' => true, 'valid' => true, 'condition' => $cond];
     }
 }

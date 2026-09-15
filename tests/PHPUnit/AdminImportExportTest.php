@@ -246,6 +246,93 @@ final class AdminImportExportTest extends TestCase
         }
     }
 
+    /**
+     * R6 — une condition fournie sous forme de chaîne JSON avec un opérateur
+     * inconnu doit être rejetée comme son équivalent objet (asymétrie corrigée).
+     */
+    public function testImportOfStringConditionWithUnknownOpIsBlocked(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'form' => ['label' => 'Test RI bad op string ' . uniqid()],
+            'fields' => [
+                ['label' => 'Type de demande', 'field_type' => 'text', 'field_name' => 'type_demande', 'filled_by' => 'validator'],
+            ],
+            'steps' => [
+                [
+                    'label' => 'Étape X',
+                    'ordre' => 1,
+                    'actif' => 1,
+                    'recipients' => ['manager@exemple.invalid'],
+                    'condition' => '{"field":"type_demande","op":"bogus_op","value":"A"}',
+                ],
+            ],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('error', $imported, 'Une condition chaîne JSON avec op inconnu doit bloquer l\'import');
+        self::assertArrayNotHasKey('redirect', $imported, 'Aucun formulaire ne doit être créé');
+        self::assertStringContainsString('bogus_op', (string) ($imported['preserved_json'] ?? ''));
+    }
+
+    /**
+     * R6 — un opérateur valide sous forme de chaîne JSON reste accepté et la
+     * value tableau de l'op "in" est préservée (pas de régression B-FIX3c).
+     */
+    public function testImportStringConditionWithValidOpPreservesArrayValue(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'form' => ['label' => 'Test RI string op in ' . uniqid()],
+            'fields' => [
+                ['label' => 'Type de demande', 'field_type' => 'text', 'field_name' => 'type_demande', 'filled_by' => 'validator'],
+            ],
+            'steps' => [
+                [
+                    'label' => 'Étape Y',
+                    'ordre' => 1,
+                    'actif' => 1,
+                    'recipients' => ['manager@exemple.invalid'],
+                    'condition' => '{"field":"type_demande","op":"in","value":["A","B","C"]}',
+                ],
+            ],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        try {
+            $steps = $this->repo->getSteps($newId);
+            self::assertCount(1, $steps);
+            $cond = json_decode($steps[0]['condition'], true);
+            self::assertSame('in', $cond['op']);
+            self::assertSame(['A', 'B', 'C'], $cond['value'], 'La value tableau doit rester un tableau en base');
+        } finally {
+            $this->deleteForm($newId);
+        }
+    }
+
+    /**
+     * R6 — round-trip saboté : la condition d'étape (objet légitime à l'export)
+     * est remplacée par une chaîne JSON à op inconnu. L'import doit être rejeté
+     * proprement (erreur, pas de formulaire créé, JSON préservé pour correction).
+     */
+    public function testRoundTripImportRejectsTamperedStringCondition(): void
+    {
+        $sourceId = $this->createSourceForm();
+        $_POST['form_id'] = $sourceId;
+        $exported = AdminImportExportHandler::handleExportForm();
+        self::assertIsString($exported['json_output']);
+        $this->deleteForm($sourceId);
+
+        $json = json_decode($exported['json_output'], true);
+        self::assertIsArray($json);
+        $json['steps'][0]['condition'] = '{"field":"type_demande","op":"bogus_op","value":"A"}';
+
+        $_POST['json_data'] = json_encode($json);
+        $imported = AdminImportExportHandler::handleImportForm();
+
+        self::assertArrayHasKey('error', $imported, 'Un op inconnu sous forme de chaîne JSON doit bloquer l\'import');
+        self::assertArrayNotHasKey('redirect', $imported, 'Aucun formulaire ne doit être créé (pas de drop silencieux)');
+        self::assertStringContainsString('bogus_op', (string) ($imported['preserved_json'] ?? ''));
+    }
+
     public function testImportWithoutRelanceKeepsDefaults(): void
     {
         $_POST['json_data'] = json_encode([
