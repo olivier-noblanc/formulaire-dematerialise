@@ -500,7 +500,7 @@ Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **c
 2. ~~B3 — SMTP dans les transactions SQLite (`WorkflowAdvancer`, `remind.php`)~~ ✅ traité.
 3. ~~B2/B4/B5/B6~~ ✅ traités.
 4. ~~B7/B8~~ ✅ traités.
-5. **R4 puis les autres risques** : trier les six échecs E2E annulation/BLOB, puis instruire R1, R2, R3, R5, R6 et R7 — **à faire**.
+5. ~~R4~~ ✅ traité : six échecs E2E annulation/BLOB triés et corrigés (harnais **95/95, 0 échec**) ; reste à instruire R1, R2, R3, R5, R6 et R7 — **à faire**.
 
 #### Risques à trier
 
@@ -509,7 +509,7 @@ Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **c
 | R1 | ⚠️ À trier | Rollback incomplet sur exception non-PDO pendant un import. |
 | R2 | ⚠️ À trier | Race potentielle des relances. |
 | R3 | ⚠️ À trier | `sub_status` lu hors transaction. |
-| R4 | ⚠️ À trier en priorité après B7/B8 | Six échecs E2E annulation/BLOB non triés. |
+| R4 | ✅ Traitée | Six échecs E2E annulation/BLOB triés et corrigés : `cancel()` appelé avec le demandeur (`submitted_by`) et `$result['success']` au lieu de la truthiness, statut attendu `SubmissionStatus::Annule`, chemin BLOB `__DIR__ . '/test_e2e.php'`, défaut latent `delegate()` truthiness durci. Harnais E2E **95/95, 0 échec** → le verdict « harnais obsolète » est levé. |
 | R5 | ⚠️ À trier | Absence de WAL aggravant `SQLITE_BUSY`. |
 | R6 | ⚠️ À trier | Validation asymétrique des conditions JSON. |
 | R7 | ✅ Traitée | Résidus `nul`/`requireAdmin` supprimés. |
@@ -626,4 +626,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-14 (v10.42.30 — lot B1→B8 terminé et committé ; gate complète SUCCÈS, PHPUnit 1540/4450 ; R1–R7 et D1–D7 hors périmètre)_
+_Dernière mise à jour : 2026-09-15 (R4 résolu — six échecs E2E annulation/BLOB corrigés, harnais 95/95 ; lot B1→B8 committé, gate complète SUCCÈS, PHPUnit 1540/4450 ; R1–R3/R5–R7 et D1–D7 hors périmètre)_

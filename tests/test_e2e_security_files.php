@@ -21,18 +21,18 @@ function run_tests_e2e_security(): void {
 
     echo "── 8. Cas limites et sécurité ──\n";
 
-    test('Token invalide rejeté', function() {
+    test('Token invalide rejeté', function(): string|true {
         $result = \App\Core\App::workflow()->validateToken('token_inexistant_1234567890abcdef');
         return $result['status'] === 'invalid' ? true : 'Status: ' . $result['status'] . ' (attendu: invalid)';
     });
 
-    test('Token déjà utilisé rejeté', function() use ($first_token) {
+    test('Token déjà utilisé rejeté', function() use ($first_token): string|true {
         if (!$first_token) return 'Pas de token déjà validé';
         $result = \App\Core\App::workflow()->validateToken($first_token);
         return $result['status'] === 'already_done' ? true : 'Status: ' . $result['status'] . ' (attendu: already_done)';
     });
 
-    test('Soumission déjà fermée rejetée', function() use ($pdo, $full_workflow_uuid) {
+    test('Soumission déjà fermée rejetée', function() use ($pdo, $full_workflow_uuid): true|string {
         // Le workflow complet a déjà été clôturé, essayer de valider un token restant
         $stmt = $pdo->prepare("SELECT token FROM tokens WHERE submission_id = ? AND done_at IS NOT NULL LIMIT 1");
         $stmt->execute([$full_workflow_uuid]);
@@ -43,17 +43,17 @@ function run_tests_e2e_security(): void {
         return in_array($result['status'], ['already_done', 'closed']) ? true : 'Status: ' . $result['status'];
     });
 
-    test('Double soumission impossible (UUID unique)', function() use ($pdo, $submission_uuid, $onboarding_id, $data_json, $agent_email) {
+    test('Double soumission impossible (UUID unique)', function() use ($pdo, $submission_uuid, $onboarding_id, $data_json, $agent_email): string|true {
         try {
             $stmt = $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))");
             $stmt->execute([$submission_uuid, $onboarding_id, $data_json, $agent_email]);
             return 'Double insertion acceptée ! UUID non unique';
         } catch (PDOException $e) {
-            return strpos($e->getMessage(), 'UNIQUE') !== false ? true : 'Erreur inattendue: ' . $e->getMessage();
+            return str_contains($e->getMessage(), 'UNIQUE') ? true : 'Erreur inattendue: ' . $e->getMessage();
         }
     });
 
-    test('Injection SQL dans les champs de formulaire', function() use ($pdo, $onboarding_id) {
+    test('Injection SQL dans les champs de formulaire', function() use ($pdo, $onboarding_id): true|string {
         $malicious_data = json_encode([
             'nom' => "'; DROP TABLE submissions; --",
             'prenom' => '" OR 1=1 --',
@@ -71,13 +71,13 @@ function run_tests_e2e_security(): void {
         return $check !== false ? true : 'Table submissions détruite !';
     });
 
-    test('XSS dans les données stockées (h() échappe)', function() {
+    test('XSS dans les données stockées (h() échappe)', function(): string|true {
         $xss_payload = '<script>alert("XSS")</script>';
         $escaped = \App\Core\App::html()->escape($xss_payload);
-        return strpos($escaped, '<script>') === false ? true : 'XSS non échappé: ' . $escaped;
+        return !str_contains($escaped, '<script>') ? true : 'XSS non échappé: ' . $escaped;
     });
 
-    test('CSRF token vérifié (session vs POST)', function() {
+    test('CSRF token vérifié (session vs POST)', function(): true|string {
         // En mode TEST, verify_csrf() retourne toujours true (bypass).
         // On vérifie donc la logique directement via hash_equals()
         @session_start();
@@ -93,7 +93,7 @@ function run_tests_e2e_security(): void {
 
         // Test 3 : csrfField() génère un champ caché
         $html = \App\Core\App::security()->csrfField();
-        $has_field = strpos($html, 'name="csrf_token"') !== false && strpos($html, 'type="hidden"') !== false;
+        $has_field = str_contains($html, 'name="csrf_token"') && str_contains($html, 'type="hidden"');
 
         return ($ok_valid && $ok_invalid && $has_field) ? true : 'CSRF logique défaillante';
     });
@@ -109,9 +109,9 @@ function run_tests_e2e_files(): void {
 
     echo "── 9. Upload de fichiers (simulation BLOB) ──\n";
 
-    test('Attachment stocké en BLOB', function() use ($pdo, $submission_uuid) {
+    test('Attachment stocké en BLOB', function() use ($pdo, $submission_uuid): true|string {
         // Simuler un fichier uploadé
-        $file_content = file_get_contents(__DIR__ . '/../test_e2e.php'); // Utiliser ce fichier comme exemple
+        $file_content = file_get_contents(__DIR__ . '/test_e2e.php'); // Utiliser le runner principal comme exemple (même dossier)
         $attachment_uuid = generate_uuid();
 
         $stmt = $pdo->prepare("INSERT INTO attachments (id, submission_id, field_name, original_name, stored_name, mime_type, file_size, file_data, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))");
@@ -128,7 +128,7 @@ function run_tests_e2e_files(): void {
         return $result ? true : 'Échec insertion pièce jointe';
     });
 
-    test('Attachment récupérable depuis la DB', function() use ($pdo, $submission_uuid) {
+    test('Attachment récupérable depuis la DB', function() use ($pdo, $submission_uuid): string|true {
         $stmt = $pdo->prepare("SELECT original_name, mime_type, file_size FROM attachments WHERE submission_id = ? LIMIT 1");
         $stmt->execute([$submission_uuid]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -138,11 +138,11 @@ function run_tests_e2e_files(): void {
         return true;
     });
 
-    test('Contenu BLOB est intact', function() use ($pdo, $submission_uuid) {
+    test('Contenu BLOB est intact', function() use ($pdo, $submission_uuid): true|string {
         $stmt = $pdo->prepare("SELECT file_data FROM attachments WHERE submission_id = ? LIMIT 1");
         $stmt->execute([$submission_uuid]);
         $data = $stmt->fetchColumn();
-        return strlen($data) > 0 ? true : 'BLOB vide';
+        return (string) $data !== '' ? true : 'BLOB vide';
     });
 
     echo "\n";
@@ -164,13 +164,13 @@ function run_tests_e2e_outboarding(): void {
         'motif_depart' => 'Démission',
     ], JSON_UNESCAPED_UNICODE);
 
-    test('Soumission outboarding', function() use ($pdo, $outboarding_uuid, $outboarding_id, $outboarding_data) {
+    test('Soumission outboarding', function() use ($pdo, $outboarding_uuid, $outboarding_id, $outboarding_data): string|true {
         if (!$outboarding_id) return 'Formulaire outboarding introuvable';
         $stmt = $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at, rgpd_consent) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'), 1)");
         return $stmt->execute([$outboarding_uuid, $outboarding_id, $outboarding_data, 'marie.durand@e2e.test']) ? true : 'Échec';
     });
 
-    test('Workflow outboarding démarre correctement', function() use ($outboarding_uuid, $outboarding_id, $pdo) {
+    test('Workflow outboarding démarre correctement', function() use ($outboarding_uuid, $outboarding_id, $pdo): string|true {
         if (!$outboarding_id) return 'Formulaire outboarding introuvable';
 
         // S'assurer que les étapes outboarding ont des destinataires
