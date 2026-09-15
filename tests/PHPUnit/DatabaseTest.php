@@ -103,4 +103,63 @@ final class DatabaseTest extends TestCase
         // Should work fine after release
         self::assertInstanceOf(\PDO::class, $this->database->getPdo());
     }
+
+    // ── R5 — mode WAL garanti au niveau de la connexion ─────────
+
+    /**
+     * R5 : sur une base SQLite de test fraîche (mode par défaut « delete »),
+     * l'application des PRAGMA de connexion doit activer le mode WAL.
+     */
+    public function testApplyConnectionPragmasEnablesWalOnFreshTestDb(): void
+    {
+        $tmpFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'wal_test_' . getmypid() . '_' . uniqid() . '.db';
+        $pdo = new \PDO('sqlite:' . $tmpFile);
+
+        try {
+            $before = $pdo->query('PRAGMA journal_mode');
+            self::assertNotFalse($before);
+            $modeBefore = strtolower((string) $before->fetchColumn());
+            // Libérer le statement : un SELECT non finalisé maintient une
+            // transaction de lecture implicite qui empêche le passage en WAL.
+            $before = null;
+
+            self::assertNotSame(
+                'wal',
+                $modeBefore,
+                'Pré-condition : une base SQLite fraîche n\'est pas en WAL par défaut.'
+            );
+
+            $this->database->applyConnectionPragmas($pdo);
+
+            $after = $pdo->query('PRAGMA journal_mode');
+            self::assertNotFalse($after);
+            self::assertSame(
+                'wal',
+                strtolower((string) $after->fetchColumn()),
+                'R5 : applyConnectionPragmas() doit activer le mode WAL.'
+            );
+        } finally {
+            $pdo = null;
+            foreach ([$tmpFile, $tmpFile . '-wal', $tmpFile . '-shm'] as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+        }
+    }
+
+    /**
+     * R5 : la connexion SQLite de la base de test doit être en mode WAL.
+     */
+    public function testTestDatabaseConnectionUsesWal(): void
+    {
+        $pdo = $this->database->getPdo();
+        $stmt = $pdo->query('PRAGMA journal_mode');
+        self::assertNotFalse($stmt);
+        self::assertSame(
+            'wal',
+            strtolower((string) $stmt->fetchColumn()),
+            'R5 : la connexion SQLite (base de test) doit être en mode WAL.'
+        );
+    }
 }

@@ -23,10 +23,9 @@ final class Database implements DatabaseInterface
         }
 
         if (!$this->pdo instanceof \PDO) {
-            $this->pdo = new \PDO('sqlite:' . DB_PATH);
-            $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            $this->pdo->exec('PRAGMA foreign_keys = ON');
-            $this->pdo->exec('PRAGMA busy_timeout = 5000');
+            $pdo = new \PDO('sqlite:' . DB_PATH);
+            $this->applyConnectionPragmas($pdo);
+            $this->pdo = $pdo;
 
             // Migrations
             if (function_exists('db_migrate')) {
@@ -48,10 +47,9 @@ final class Database implements DatabaseInterface
     {
         if (!$this->pdoTest instanceof \PDO) {
             $testDbPath = $GLOBALS['_test_db_path'] ?? dirname(__DIR__, 2) . '/db/workflow_test.db';
-            $this->pdoTest = new \PDO('sqlite:' . $testDbPath);
-            $this->pdoTest->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            $this->pdoTest->exec('PRAGMA foreign_keys = ON');
-            $this->pdoTest->exec('PRAGMA busy_timeout = 5000');
+            $pdo = new \PDO('sqlite:' . $testDbPath);
+            $this->applyConnectionPragmas($pdo);
+            $this->pdoTest = $pdo;
 
             if (function_exists('db_migrate')) {
                 db_migrate($this->pdoTest);
@@ -62,6 +60,27 @@ final class Database implements DatabaseInterface
     }
 
     // ── SQLite admin operations ──────────────────────────────────
+
+    /**
+     * Applique les PRAGMA de connexion communs à toute connexion SQLite.
+     *
+     * R5 (audit 2026-09-14) : le mode WAL est garanti au niveau de la connexion,
+     * et plus seulement par la migration `apply_schema_initial()`. Le PRAGMA
+     * `journal_mode=WAL` est persistant sur le fichier, mais le garantir ici
+     * couvre les connexions ouvertes sans passer par `db_migrate()` (et limite
+     * les `SQLITE_BUSY` en cas d'accès concurrent). WAL est supporté nativement
+     * par SQLite sous Windows/NTFS.
+     *
+     * Méthode publique pour pouvoir configurer toute connexion SQLite ad-hoc
+     * (notamment les bases de test).
+     */
+    public function applyConnectionPragmas(\PDO $pdo): void
+    {
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->exec('PRAGMA foreign_keys = ON');
+        $pdo->exec('PRAGMA busy_timeout = 5000');
+        $pdo->exec('PRAGMA journal_mode = WAL');
+    }
 
     /**
      * Re-enable foreign key enforcement (session-scoped in SQLite).
