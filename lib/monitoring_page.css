@@ -3,6 +3,10 @@
     .grid-2 { gap: 1.5rem; margin-bottom: 2rem; }
 
     /* Page-specific */
+    /* A4 — bannière rouge : emails en échec définitif dans l'outbox SMTP. */
+    body.page-monitoring .outbox-alert { background: #fde8e8; border-left: 4px solid #c0392b; color: #7a1f16; padding: 1rem 1.25rem; border-radius: var(--r-sm); margin-bottom: 1.5rem; }
+    body.page-monitoring .outbox-alert strong { display: block; margin-bottom: .25rem; }
+
     body.page-monitoring .alert-row.urgent { background: #fde8e8 !important; }
     .alert-row.warning { background: #fff3e0 !important; }
     body.page-monitoring .alert-row.ok { background: #e8f5e9 !important; }

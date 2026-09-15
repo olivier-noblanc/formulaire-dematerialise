@@ -10,6 +10,7 @@ use App\Repository\AdminRepository;
 use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;
 use App\Repository\DelegationRepository;
+use App\Repository\MailRepository;
 use App\Repository\SubmissionRepository;
 use App\Repository\TokenRepository;
 
@@ -26,6 +27,7 @@ final readonly class RgpdService
     public AlertRepository $alertRepository;
     public AdminRepository $adminRepository;
     public DelegationRepository $delegationRepository;
+    public MailRepository $mailRepository;
 
     public function __construct(
         ?SubmissionRepository $submissionRepository = null,
@@ -33,7 +35,8 @@ final readonly class RgpdService
         ?AttachmentRepository $attachmentRepository = null,
         ?AlertRepository $alertRepository = null,
         ?AdminRepository $adminRepository = null,
-        ?DelegationRepository $delegationRepository = null
+        ?DelegationRepository $delegationRepository = null,
+        ?MailRepository $mailRepository = null
     ) {
         $app = App::getInstance();
         $this->submissionRepository = $submissionRepository ?? $app->get(SubmissionRepository::class);
@@ -42,12 +45,13 @@ final readonly class RgpdService
         $this->alertRepository = $alertRepository ?? $app->get(AlertRepository::class);
         $this->adminRepository = $adminRepository ?? $app->get(AdminRepository::class);
         $this->delegationRepository = $delegationRepository ?? $app->get(DelegationRepository::class);
+        $this->mailRepository = $mailRepository ?? $app->get(MailRepository::class);
     }
 
     /**
      * Exporte toutes les données d'un agent au format JSON (droit d'accès RGPD)
      *
-     * @return array{email: string, export_date?: string, submissions?: array<int, array{id: string, form: string, status: string, submitted_at: string|null, closed_at: string|null, data: mixed}>, validations?: array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}>, error?: string}
+     * @return array{email: string, export_date?: string, submissions?: array<int, array{id: string, form: string, status: string, submitted_at: string|null, closed_at: string|null, data: mixed}>, validations?: array<int, array{id: string, submission_id: string, step_id: string, email: string, token: string, sent_at: string, done_at: string|null, relance_at: string|null, expires_at: string|null, relance_count: int, step_label: string, form_label: string}>, emails?: list<array{id: string, created_at: string, subject: string, status: string, attempts: int}>, error?: string}
      */
     public function exportUserData(string $email): array
     {
@@ -58,7 +62,7 @@ final readonly class RgpdService
             return ['email' => $email, 'error' => 'Accès refusé : vous ne pouvez exporter que vos propres données.'];
         }
 
-        $data = ['email' => $email, 'export_date' => gmdate('c'), 'submissions' => [], SubmissionField::VALIDATIONS->value => []];
+        $data = ['email' => $email, 'export_date' => gmdate('c'), 'submissions' => [], SubmissionField::VALIDATIONS->value => [], 'emails' => []];
 
         $rows = $this->submissionRepository->findForRgpdExportByEmail($email);
         foreach ($rows as $row) {
@@ -73,6 +77,8 @@ final readonly class RgpdService
         }
 
         $data[SubmissionField::VALIDATIONS->value] = $this->tokenRepository->findDoneValidationsByEmail($email);
+        // A5 : métadonnées des emails adressés à l'agent (sans le corps HTML).
+        $data['emails'] = $this->mailRepository->findByRecipient($email);
 
         return $data;
     }
@@ -120,6 +126,8 @@ final readonly class RgpdService
             $this->tokenRepository->updateEmailByOldEmail($email, '[supprimé]');
             $this->delegationRepository->anonymizeFromEmail($email, '[supprimé]');
             $this->delegationRepository->anonymizeToEmail($email, '[supprimé]');
+            // A5 : anonymiser les emails sortants (destinataire + corps purgé).
+            $this->mailRepository->anonymizeByRecipient($email, '[supprimé]');
             $this->adminRepository->deleteAdminRequestsByEmail($email);
             // Utiliser AuthService::removeAdmin() qui inclut le garde-fou anti-auto-suppression du super-admin
             App::auth()->removeAdmin($email);
@@ -150,6 +158,7 @@ final readonly class RgpdService
         $oldIds = $this->submissionRepository->findIdsPurgeableByCutoffForRgpd($cutoff);
 
         $count = 0;
+        $mailsPurged = 0;
         $this->tokenRepository->beginTransaction();
         try {
             foreach ($oldIds as $oldId) {
@@ -164,6 +173,8 @@ final readonly class RgpdService
                 $this->submissionRepository->deleteById($oldId);
                 $count++;
             }
+            // A5 : purger les emails sortants trop anciens (conservation limitée).
+            $mailsPurged = $this->mailRepository->purgeOlderThan($cutoff);
             $this->tokenRepository->commit();
         } catch (\Exception $e) {
             // @silent-ok: log-only background cleanup with rollback
@@ -174,8 +185,8 @@ final readonly class RgpdService
             return 0;
         }
 
-        if ($count > 0) {
-            App::audit()->log('rgpd_purge', '', "Purge RGPD : {$count} soumissions de plus de {$months} mois supprimées", '');
+        if ($count > 0 || $mailsPurged > 0) {
+            App::audit()->log('rgpd_purge', '', "Purge RGPD : {$count} soumissions et {$mailsPurged} emails de plus de {$months} mois supprimés", '');
         }
 
         return $count;

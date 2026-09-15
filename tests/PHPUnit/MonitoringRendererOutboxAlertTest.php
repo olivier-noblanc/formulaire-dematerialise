@@ -1,0 +1,49 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Tests;
+
+use App\Render\MonitoringContext;
+use App\Render\MonitoringRenderer;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * A4 — bannière admin rouge signalant les emails en échec définitif.
+ *
+ * Fichier : tests/PHPUnit/MonitoringRendererOutboxAlertTest.php
+ */
+final class MonitoringRendererOutboxAlertTest extends TestCase
+{
+    public function testOutboxAlertIsEmptyWhenNoFailure(): void
+    {
+        self::assertSame('', MonitoringRenderer::outboxAlert(0));
+        self::assertSame('', MonitoringRenderer::outboxAlert(-1));
+    }
+
+    public function testOutboxAlertRendersRedBannerWithCount(): void
+    {
+        $html = MonitoringRenderer::outboxAlert(3);
+
+        self::assertStringContainsString('outbox-alert', $html);
+        self::assertStringContainsString('3', $html);
+        self::assertStringContainsString('définitivement', $html);
+    }
+
+    public function testContentIncludesBannerWhenFailuresPresent(): void
+    {
+        $ctx = MonitoringContext::fromLegacyArray(['outbox_failed' => 2]);
+        self::assertSame(2, $ctx->outbox_failed);
+
+        $html = MonitoringRenderer::content($ctx);
+        self::assertStringContainsString('outbox-alert', $html);
+    }
+
+    public function testContentOmitsBannerWhenNoFailure(): void
+    {
+        $ctx = MonitoringContext::fromLegacyArray([]);
+        self::assertSame(0, $ctx->outbox_failed);
+
+        $html = MonitoringRenderer::content($ctx);
+        self::assertStringNotContainsString('outbox-alert', $html);
+    }
+}

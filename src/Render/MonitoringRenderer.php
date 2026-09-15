@@ -143,6 +143,20 @@ final class MonitoringRenderer
         return self::loadTemplate('monitoring_mail_logs.php', ['mail_logs' => $mail_logs]);
     }
 
+/**
+     * Bannière d'alerte admin (rouge) : emails en échec définitif dans l'outbox.
+     *
+     * Retourne une chaîne vide si aucun échec — l'appelant peut donc toujours
+     * l'insérer sans condition.
+     */
+    public static function outboxAlert(int $failedCount): string
+    {
+        if ($failedCount <= 0) {
+            return '';
+        }
+        return self::loadTemplate('monitoring_outbox_alert.php', ['failed_count' => $failedCount]);
+    }
+
     /**
      * Compose l'ensemble du contenu HTML de la page Surveillance.
      */
@@ -159,9 +173,12 @@ final class MonitoringRenderer
         $blocked_html       = self::blockedTokens($ctx->tokens_bloques, $ctx->bloque_hours);
         $mail_logs_html     = self::mailLogs($ctx->mail_logs);
         $audit_html         = self::auditLog($ctx);
+        $outbox_html        = self::outboxAlert($ctx->outbox_failed);
 
         return <<<HTML
               <h1><span aria-hidden="true">🖥</span> Surveillance et diagnostic</h1>
+
+            {$outbox_html}
 
             {$stats_html}
 

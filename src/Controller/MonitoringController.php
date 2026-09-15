@@ -129,6 +129,8 @@ final class MonitoringController extends BaseController
 
         /** @var list<array{id: string, created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}> $mailLogs */
         $mailLogs = App::mail()->getRecentLogs(20);
+        // A4 : bannière admin rouge si des emails sont en échec définitif.
+        $outboxFailed = App::mail()->getOutboxFailureCount();
         $lastRemind = App::settings()->get('last_remind_run', '');
         $lastAlertCheck = App::settings()->get('last_alert_check', '');
 
@@ -239,6 +241,7 @@ final class MonitoringController extends BaseController
             action_types: $actionTypes,
             audit_base_url: $auditBaseUrl,
             audit_base_qs: $auditBaseQs,
+            outbox_failed: $outboxFailed,
         );
 
         $pageCss    = \App\Render\MonitoringRenderer::pageCss();

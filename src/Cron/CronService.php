@@ -60,6 +60,11 @@ final class CronService
             'rgpd_purge'  => ['interval' => 86400, 'callback' => function (): void {
                 \App\Core\App::getInstance()->get(\App\Rgpd\RgpdService::class)->autoPurge();
             }],
+            'mail_outbox' => ['interval' => 300, 'callback' => function (): void {
+                // A3 : rejeu des envois SMTP en échec (worker local, sans service
+                // externe). Le backoff de 15 min est porté par next_retry_at.
+                \App\Core\App::getInstance()->get(\App\Mail\MailService::class)->replayOutbox();
+            }],
         ];
 
         $due = [];

@@ -25,7 +25,7 @@ final class CronServiceTest extends TestCase
         $pdo->exec("DELETE FROM lazy_cron");
     }
 
-    private static function resetRunningGuard(): void
+    private function resetRunningGuard(): void
     {
         $ref = new \ReflectionProperty(CronService::class, 'running');
         $ref->setValue(null, false);
@@ -137,6 +137,7 @@ final class CronServiceTest extends TestCase
         self::assertContains('remind', $keys);
         self::assertContains('alert_check', $keys);
         self::assertContains('rgpd_purge', $keys);
+        self::assertContains('mail_outbox', $keys);
     }
 
     public function testRunLazyCronSkipsTasksWithinInterval(): void
@@ -147,7 +148,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        self::resetRunningGuard();
+        $this->resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -168,7 +169,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        self::resetRunningGuard();
+        $this->resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -211,7 +212,7 @@ final class CronServiceTest extends TestCase
         self::assertLessThanOrEqual($after, $lastRun);
     }
 
-    public function testRunLazyCronCreatesAllThreeTaskKeys(): void
+    public function testRunLazyCronCreatesAllTaskKeys(): void
     {
         $this->cron->runLazyCron();
 
@@ -219,10 +220,33 @@ final class CronServiceTest extends TestCase
         $stmt = $pdo->query("SELECT task_key FROM lazy_cron ORDER BY task_key");
         $keys = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
-        self::assertCount(3, $keys);
+        self::assertCount(4, $keys);
         self::assertContains('alert_check', $keys);
         self::assertContains('remind', $keys);
         self::assertContains('rgpd_purge', $keys);
+        self::assertContains('mail_outbox', $keys);
+    }
+
+    public function testRunLazyCronHandlesMailOutboxInterval(): void
+    {
+        $this->cron->runLazyCron();
+
+        $pdo = $this->db->getPdo();
+        // mail_outbox interval = 300s : reculer last_run de 10 min pour qu'il soit dû.
+        $tenMinAgo = gmdate('Y-m-d H:i:s', time() - 600);
+        $pdo->prepare("UPDATE lazy_cron SET last_run = ? WHERE task_key = 'mail_outbox'")
+            ->execute([$tenMinAgo]);
+
+        $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'mail_outbox'");
+        $count1 = (int) $stmt1->fetchColumn();
+
+        $this->resetRunningGuard();
+        $this->cron->runLazyCron();
+
+        $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'mail_outbox'");
+        $count2 = (int) $stmt2->fetchColumn();
+
+        self::assertGreaterThan($count1, $count2);
     }
 
     public function testRunLazyCronHandlesAlertCheckInterval(): void
@@ -238,7 +262,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'alert_check'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        self::resetRunningGuard();
+        $this->resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'alert_check'");
@@ -259,7 +283,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'rgpd_purge'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        self::resetRunningGuard();
+        $this->resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'rgpd_purge'");
@@ -281,7 +305,7 @@ final class CronServiceTest extends TestCase
         $stmt1 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
         $count1 = (int)$stmt1->fetchColumn();
 
-        self::resetRunningGuard();
+        $this->resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt2 = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -315,7 +339,7 @@ final class CronServiceTest extends TestCase
         $count1 = (int) $stmt->fetchColumn();
 
         // Run again immediately — all tasks within interval
-        self::resetRunningGuard();
+        $this->resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
@@ -334,7 +358,7 @@ final class CronServiceTest extends TestCase
         $pdo->prepare("UPDATE lazy_cron SET last_run = ? WHERE task_key = 'remind'")
             ->execute([$oldTimestamp]);
 
-        self::resetRunningGuard();
+        $this->resetRunningGuard();
         $this->cron->runLazyCron();
 
         $stmt = $pdo->query("SELECT COUNT(*) FROM lazy_cron WHERE task_key = 'remind'");

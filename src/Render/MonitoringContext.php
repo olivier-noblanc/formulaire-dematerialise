@@ -40,6 +40,7 @@ final readonly class MonitoringContext
      * @param list<string> $action_types Distinct action types from AuditRepository::getDistinctActionTypes()
      * @param string $audit_base_url Base URL for audit pagination links (includes filters as query string)
      * @param string $audit_base_qs Raw query string of active filters (for hidden inputs)
+     * @param int $outbox_failed Nombre d'emails en échec définitif dans l'outbox (0 = sain)
      */
     public function __construct(
         public int $total_sub,
@@ -69,6 +70,7 @@ final readonly class MonitoringContext
         public array $action_types,
         public string $audit_base_url,
         public string $audit_base_qs,
+        public int $outbox_failed = 0,
     ) {}
 
     /**
@@ -106,6 +108,7 @@ final readonly class MonitoringContext
             action_types: $ctx['action_types'] ?? [],
             audit_base_url: (string) ($ctx['audit_base_url'] ?? 'index.php?p=monitoring'),
             audit_base_qs: (string) ($ctx['audit_base_qs'] ?? ''),
+            outbox_failed: (int) ($ctx['outbox_failed'] ?? 0),
         );
     }
 }

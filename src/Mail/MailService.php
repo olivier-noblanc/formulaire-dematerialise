@@ -243,6 +243,92 @@ final readonly class MailService implements MailInterface
     }
 
     /**
+     * Rejoue les envois en échec de l'outbox (worker sans service externe).
+     *
+     * Revendique atomiquement les lignes réessayables (claim CAS + bail), tente
+     * l'envoi SMTP via transmit(), puis finalise :
+     *   - sent    : le message est parti ;
+     *   - blocked : impossible sans intervention (config SMTP absente) ;
+     *   - error   : nouvel échec réessayable → next_retry_at = now + backoff ;
+     *   - failed  : échec définitif après MAX_ATTEMPTS (plus de rejeu).
+     * Une ligne dont le corps a été purgé (RGPD) ne peut plus être rejouée :
+     * elle est marquée failed sans contacter le SMTP.
+     *
+     * @return array{processed: int, sent: int, failed: int, error: int, blocked: int}
+     */
+    public function replayOutbox(int $limit = 20): array
+    {
+        $stats = ['processed' => 0, 'sent' => 0, 'failed' => 0, 'error' => 0, 'blocked' => 0];
+        if (!$this->mailRepository->tableExists()) {
+            return $stats;
+        }
+
+        $leaseUntil = gmdate('Y-m-d H:i:s', time() + MailOutbox::LEASE_SECONDS);
+        $rows = $this->mailRepository->claimRetryable(
+            MailOutbox::MAX_ATTEMPTS,
+            $limit,
+            $leaseUntil,
+            MailOutbox::STALE_PENDING_SECONDS
+        );
+
+        foreach ($rows as $row) {
+            $stats['processed']++;
+            $body = (string) ($row['body_html'] ?? '');
+
+            if ($body === '') {
+                // Corps purgé (RGPD) : plus rien à envoyer, échec définitif.
+                $this->mailRepository->finalize(
+                    $row['id'],
+                    MailStatus::Failed,
+                    'Corps du message absent (purge RGPD ?) — rejeu impossible',
+                    '',
+                    $row['attempts'],
+                    null
+                );
+                $stats['failed']++;
+                continue;
+            }
+
+            $result = $this->transmit($row['recipient'], $row['subject'], $body);
+            $status = MailStatus::tryFrom($result['status']) ?? MailStatus::Error;
+
+            if ($status === MailStatus::Sent) {
+                $this->mailRepository->finalize($row['id'], MailStatus::Sent, $result['error'], $result['smtp_log'], $row['attempts'], null);
+                $stats['sent']++;
+            } elseif ($status === MailStatus::Blocked) {
+                $this->mailRepository->finalize($row['id'], MailStatus::Blocked, $result['error'], $result['smtp_log'], $row['attempts'], null);
+                $stats['blocked']++;
+            } elseif ($row['attempts'] >= MailOutbox::MAX_ATTEMPTS) {
+                $this->mailRepository->finalize($row['id'], MailStatus::Failed, $result['error'], $result['smtp_log'], $row['attempts'], null);
+                $stats['failed']++;
+            } else {
+                $nextRetryAt = gmdate('Y-m-d H:i:s', time() + MailOutbox::BACKOFF_SECONDS);
+                $this->mailRepository->finalize($row['id'], MailStatus::Error, $result['error'], $result['smtp_log'], $row['attempts'], $nextRetryAt);
+                $stats['error']++;
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Nombre de messages en échec définitif dans l'outbox (signal opérateur).
+     */
+    public function getOutboxFailureCount(): int
+    {
+        try {
+            if (!$this->mailRepository->tableExists()) {
+                return 0;
+            }
+            return $this->mailRepository->countByStatus(MailStatus::Failed);
+        } catch (\Throwable $e) {
+            // @silent-ok: log-only fallback for read-only display
+            error_log('getOutboxFailureCount error: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
      * Persiste une tentative d'envoi dans mail_log (visible sur la page monitoring).
      * Ne journalise pas les envois TEST_MODE (interceptés dans $GLOBALS['_test_mails'],
      * mail_log reflète l'activité réelle, pas le harnais de test).
