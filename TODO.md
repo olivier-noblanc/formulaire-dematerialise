@@ -525,6 +525,20 @@ Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **c
 | D5 | ⚠️ Non urgent | Hint numérique vidé à l’import. |
 | D6/D7 | ⚠️ Non urgent | Tests historiques. |
 
+### Outbox SMTP write-ahead — A1→A5 ✅ **TERMINÉ** (2026-09-15)
+
+`mail_log` devient une véritable file d'attente durable (write-ahead) : le corps HTML est persisté AVANT l'appel SMTP, ce qui rend l'envoi traçable et rejouable.
+
+| Lot | Livrable |
+|---|---|
+| A1 | Migration **v38** (rebuild `mail_log` : `body_html`, `attempts`, `next_retry_at`, CHECK élargi) + enum `MailStatus` (`pending/sent/error/failed/blocked/dry_run`). Commit `17fea81`. |
+| A2 | Ligne `pending` (corps complet) persistée AVANT l'appel SMTP (`MailRepository::insertPending/finalize`) ; envoi **annulé** + échec structuré si l'écriture durable échoue. Commit `72bf87a`. |
+| A3 | Worker `MailService::replayOutbox()` : revendication **atomique** (`claimRetryable()` — `BEGIN EXCLUSIVE` + CAS `status/attempts`, bail `next_retry_at`), backoff **15 min**, **échec définitif après 5 tentatives**, reprise des `pending` orphelins (> 15 min). Cron lazy `mail_outbox` (300 s). |
+| A4 | `HealthController` : contrôle « File d'envoi des emails » → **503** si échec définitif, **sans fuite de détails** (compte seul ; hôte SMTP et messages d'exception retirés de l'endpoint public). Bannière admin **rouge** sur la page Surveillance. |
+| A5 | RGPD minimal : `deleteUserData()` anonymise le destinataire + purge `body_html` ; `exportUserData()` expose les métadonnées d'emails (sans corps) ; `autoPurge()` supprime les emails au-delà de la rétention. |
+
+**Validation locale :** suite unitaire PHPUnit **1513 tests / 4442 assertions, 0 échec** ; PHPStan level 8 (fichiers touchés) **0 erreur** ; Rector dry-run **clean** ; Deptrac **0 violation** ; lint PHP OK. La gate complète (`scripts/check.ps1`) reste à lancer par l'owner de validation finale.
+
 ### ~~Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)~~ ✅ **TERMINÉ/À JOUR**
 
 ~~Toutes les erreurs restantes sont des règles strictes de `phpstan-strict-rules` (style, pas des bugs) ou des faux positifs shipmonk.~~
@@ -626,4 +640,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-15 (R2/R3 résolus — CAS relances + gardes atomiques `sub_status` ; R1/R4/R5/R6/R7 résolus ; lot B1→B8 committé ; gate complète SUCCÈS, PHPUnit 1569/4545 ; D1–D7 hors périmètre)_
+_Dernière mise à jour : 2026-09-15 (outbox SMTP A1→A5 terminé — worker/rejeu avec claim atomique, backoff 15 min, failed après 5 tentatives ; santé 503 + bannière admin rouge ; RGPD delete/export/purge ; R2/R3 résolus ; lot B1→B8 committé ; suite unitaire 1513 tests/4442 assertions 0 échec ; D5/D6-D7 hors périmètre)_

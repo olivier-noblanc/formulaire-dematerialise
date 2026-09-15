@@ -1,5 +1,20 @@
 # Changelog — CircuitDémat
 
+## [10.42.32] — 2026-09-15
+_Résumé : Outbox SMTP write-ahead — file d'attente durable des emails (A1→A5). `mail_log` persiste le corps HTML AVANT l'appel SMTP ; un worker local rejoue les échecs avec revendication atomique, backoff 15 min et échec définitif après 5 tentatives ; santé 503 + bannière admin rouge sur échec définitif (sans fuite de détails) ; RGPD (anonymisation à l'effacement, export des métadonnées, purge à la rétention). Migration v38._
+
+### ✨ Features — Outbox SMTP (A1→A5)
+- **A1 — `mail_log` durable + `MailStatus`** (commit `17fea81`) : migration **v38** (rebuild de table : `body_html`, `attempts`, `next_retry_at`, CHECK élargi à `pending|sent|error|failed|blocked|dry_run`) + enum `App\Enum\MailStatus` (source de vérité unique des statuts).
+- **A2 — write-ahead** (commit `72bf87a`) : `MailRepository::insertPending()/finalize()` ; `MailService::sendDetailed()` écrit la ligne `pending` (corps HTML complet) **avant** toute tentative SMTP. Si l'écriture durable échoue, l'envoi est **annulé** et un échec structuré « intervention technicien » est retourné (jamais avalé).
+- **A3 — worker de rejeu** : `MailService::replayOutbox()` + `MailRepository::claimRetryable()` (revendication **atomique** `BEGIN EXCLUSIVE` + CAS `status/attempts`, bail `next_retry_at`), backoff **15 min** (`MailOutbox::BACKOFF_SECONDS`), **échec définitif après 5 tentatives** (`MailOutbox::MAX_ATTEMPTS`), reprise des `pending` orphelins (> 15 min), corps purgé → `failed`. Tâche cron lazy `mail_outbox` (300 s).
+- **A4 — opérabilité** : `HealthController` expose un contrôle « File d'envoi des emails » → **503** dès qu'un email est en échec définitif ; l'endpoint public **ne fuit plus de détails** (hôte SMTP et messages d'exception retirés, seul le compte est exposé). Bannière admin rouge sur la page Surveillance (`MonitoringRenderer::outboxAlert`).
+- **A5 — RGPD minimal** : `deleteUserData()` anonymise le destinataire et purge `body_html` ; `exportUserData()` expose les métadonnées d'emails (sans corps) ; `autoPurge()` supprime les emails au-delà de la rétention.
+
+### 🧪 Tests
+- **Nouveaux** : `MailOutboxReplayTest` (11 — claim atomique, backoff, `failed` après 5, pending orphelin non doublé, envoi réel contre faux SMTP local), `MonitoringRendererOutboxAlertTest` (4), `HealthOutboxCheckTest` (4 — 503 + absence de fuite), `RgpdMailLogTest` (4 — anonymisation/export/purge).
+- **Adaptés** : `CronServiceTest` (3 → 4 tâches : ajout `mail_outbox`).
+- **Vérifications locales** : suite unitaire PHPUnit **1513 tests / 4442 assertions, 0 échec** ; PHPStan level 8 (fichiers touchés) **0 erreur** ; Rector dry-run **clean** ; Deptrac **0 violation** ; lint PHP OK.
+
 ## [10.42.30] — 2026-09-14
 _Résumé : Lot correctifs B1→B8 (audit adversarial post-PR #23, hors sécurité) — avancement de workflow filtrant les tokens invalidés, I/O SMTP sortie des transactions SQLite, fuseau UTC explicite sur `expires_at`/`filled_at` des renderers, délégation/relance refusées sur token expiré, succès partiel explicite quand le mail échoue, export tokens exposant `invalidated_at`, badge CSS `passed` pour `days_before=0`, refus d'un objet JSON pour `fields`. Migration v37 (index unique partiel aligné sur les tokens actifs). Comprend aussi la réparation du contrat B-HARNESS sur 2 scripts standalone (le filet anti-masquage forçait `exit(1)` après un run pourtant vert)._
 
