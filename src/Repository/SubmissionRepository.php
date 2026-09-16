@@ -228,7 +228,7 @@ final class SubmissionRepository extends BaseRepository
                    f.label as form_label, f.deadline_field
              FROM submissions s
              JOIN forms f ON f.id = s.form_id
-             WHERE s.status = '" . SubmissionStatus::EnCours->value . "' AND f.deadline_field !== ''"
+             WHERE s.status = '" . SubmissionStatus::EnCours->value . "' AND f.deadline_field <> ''"
         );
         return $result;
     }

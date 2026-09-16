@@ -189,4 +189,56 @@ final class SubmissionRepositoryTest extends TestCase
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$subId]);
         $pdo->prepare("DELETE FROM forms WHERE id = ?")->execute([$formId]);
     }
+
+    // ── findActiveWithDeadlineField() ──────────────────────────
+
+    /**
+     * The query must actually run against SQLite and filter on deadline_field:
+     * rows from forms with an empty deadline field are excluded, rows from
+     * forms with a deadline field are returned. The legacy `!==` operator made
+     * SQLite fail with "near \"=\": syntax error", so calling this method alone
+     * guards against the regression.
+     */
+    public function testFindActiveWithDeadlineFieldFiltersOnDeadlineField(): void
+    {
+        $pdo = $this->repo->pdo();
+
+        $formWithDeadline = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at, deadline_field) VALUES (?, ?, ?, ?, 1, datetime('now'), ?)")
+            ->execute([$formWithDeadline, 'test-deadline-' . $formWithDeadline, 'Test Deadline', '', 'date_limite']);
+
+        $formWithoutDeadline = \generate_uuid();
+        $pdo->prepare("INSERT INTO forms (id, slug, label, description, actif, created_at, deadline_field) VALUES (?, ?, ?, ?, 1, datetime('now'), ?)")
+            ->execute([$formWithoutDeadline, 'test-no-deadline-' . $formWithoutDeadline, 'Test No Deadline', '', '']);
+
+        $subWithDeadline = $this->repo->createWithRgpd([
+            'form_id' => $formWithDeadline,
+            'data' => json_encode(['date_limite' => '2026-12-31']),
+            'submitted_by' => 'deadline@test.com',
+            'submitted_at' => gmdate('Y-m-d H:i:s'),
+            'rgpd_consent' => 1,
+        ]);
+
+        $subWithoutDeadline = $this->repo->createWithRgpd([
+            'form_id' => $formWithoutDeadline,
+            'data' => json_encode([]),
+            'submitted_by' => 'no-deadline@test.com',
+            'submitted_at' => gmdate('Y-m-d H:i:s'),
+            'rgpd_consent' => 1,
+        ]);
+
+        $rows = $this->repo->findActiveWithDeadlineField();
+        $ids = array_column($rows, 'id');
+
+        self::assertContains($subWithDeadline, $ids, 'Active submission whose form has a deadline field must be returned');
+        self::assertNotContains($subWithoutDeadline, $ids, 'Active submission whose form has an empty deadline field must be excluded');
+        $row = array_find($rows, fn($candidate): bool => $candidate['id'] === $subWithDeadline);
+        self::assertNotNull($row);
+        self::assertSame('date_limite', $row['deadline_field']);
+        self::assertSame('Test Deadline', $row['form_label']);
+
+        // Cleanup
+        $pdo->prepare("DELETE FROM submissions WHERE id IN (?, ?)")->execute([$subWithDeadline, $subWithoutDeadline]);
+        $pdo->prepare("DELETE FROM forms WHERE id IN (?, ?)")->execute([$formWithDeadline, $formWithoutDeadline]);
+    }
 }
