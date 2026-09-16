@@ -76,9 +76,16 @@ final class MailRepository extends BaseRepository
      *
      * Candidates :
      *   - status `error` dû (`next_retry_at` NULL ou <= now) ;
-     *   - status `pending` orphelin (`created_at` <= now - staleSeconds) — le
-     *     process qui a écrit la ligne est mort avant la finalisation.
+     *   - status `pending` orphelin (`created_at` <= now - staleSeconds) dont
+     *     le bail est échu (`next_retry_at` NULL ou <= now) — le process qui a
+     *     écrit la ligne (ou l'a revendiquée) est mort avant la finalisation.
      * Dans les deux cas : `attempts` < $maxAttempts (sinon échec définitif).
+     *
+     * Revendiquer un `pending` NE change PAS son statut : il reste `pending`,
+     * seuls `attempts` et le bail `next_retry_at` évoluent (le worker le
+     * finalisera en sent/error/blocked/failed). Le bail `next_retry_at` protège
+     * un `pending` déjà revendiqué d'une reprise concurrente tant qu'il n'a pas
+     * expiré — un `pending` sous bail n'est donc PAS reclaimé.
      *
      * @return list<array{id: string, recipient: string, subject: string, body_html: string|null, attempts: int}>
      */
@@ -96,7 +103,8 @@ final class MailRepository extends BaseRepository
                   WHERE attempts < ?
                     AND (
                         (status = ? AND (next_retry_at IS NULL OR next_retry_at <= datetime('now')))
-                        OR (status = ? AND created_at <= datetime('now', ?))
+                        OR (status = ? AND created_at <= datetime('now', ?)
+                            AND (next_retry_at IS NULL OR next_retry_at <= datetime('now')))
                     )
                   ORDER BY created_at ASC
                   LIMIT ?"

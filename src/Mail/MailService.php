@@ -398,18 +398,26 @@ final readonly class MailService implements MailInterface
 
     /**
      * Nombre de messages en échec définitif dans l'outbox (signal opérateur).
+     *
+     * Retourne `null` quand le compteur ne peut PAS être lu (table absente ou
+     * erreur d'accès) : l'appelant affiche alors « état inconnu » et le health
+     * check passe en 503, au lieu de rapporter 0 (faux sain). `0` signifie
+     * réellement « aucun échec définitif ».
+     *
+     * @api Point d'entrée outbox consommé par le health check et la surveillance.
      */
-    public function getOutboxFailureCount(): int
+    public function getOutboxFailureCount(): ?int
     {
         try {
             if (!$this->mailRepository->tableExists()) {
-                return 0;
+                return null;
             }
             return $this->mailRepository->countByStatus(MailStatus::Failed);
         } catch (\Throwable $e) {
-            // @silent-ok: log-only fallback for read-only display
+            // @silent-ok: log-only fallback for read-only display — l'absence de
+            // compteur est surfacée à l'appelant par `null` (état inconnu).
             error_log('getOutboxFailureCount error: ' . $e->getMessage());
-            return 0;
+            return null;
         }
     }
 

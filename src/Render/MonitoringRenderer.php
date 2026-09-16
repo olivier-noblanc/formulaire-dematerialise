@@ -144,13 +144,17 @@ final class MonitoringRenderer
     }
 
 /**
-     * Bannière d'alerte admin (rouge) : emails en échec définitif dans l'outbox.
+     * Bannière d'alerte admin — emails en échec définitif dans l'outbox.
      *
-     * Retourne une chaîne vide si aucun échec — l'appelant peut donc toujours
-     * l'insérer sans condition.
+     * `null` = compteur illisible (F6) → bannière « état inconnu » : on ne peut
+     * pas confirmer que la file est saine. 0 (ou négatif) = sain → aucune
+     * bannière. L'appelant peut donc toujours insérer la valeur de retour.
      */
-    public static function outboxAlert(int $failedCount): string
+    public static function outboxAlert(?int $failedCount): string
     {
+        if ($failedCount === null) {
+            return self::loadTemplate('monitoring_outbox_unknown.php');
+        }
         if ($failedCount <= 0) {
             return '';
         }

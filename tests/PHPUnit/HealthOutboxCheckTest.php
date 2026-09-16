@@ -105,6 +105,43 @@ final class HealthOutboxCheckTest extends TestCase
         self::assertSame($baseline === 0, $check['ok']);
     }
 
+    public function testOutboxCountReadErrorTriggersGenericUnhealthy503(): void
+    {
+        // F6 : compteur illisible (null) → on ne peut PAS affirmer que la file
+        // est saine : contrôle KO, 503, libellé GÉNÉRIQUE (aucun détail interne).
+        $app = \App\Core\App::getInstance();
+        $original = $app->get(\App\Mail\MailService::class);
+        $savedDbPath = $GLOBALS['_test_db_path'] ?? null;
+        $GLOBALS['_test_db_path'] = sys_get_temp_dir() . DIRECTORY_SEPARATOR
+            . 'health_no_dir_' . bin2hex(random_bytes(4)) . DIRECTORY_SEPARATOR . 'x.db';
+        $brokenDb = new \App\Core\Database();
+        $app->set(
+            \App\Mail\MailService::class,
+            new \App\Mail\MailService(new \App\Repository\MailRepository($brokenDb), \App\Core\App::settings())
+        );
+
+        try {
+            $result = new HealthController()->evaluate();
+        } finally {
+            $app->set(\App\Mail\MailService::class, $original);
+            if ($savedDbPath === null) {
+                unset($GLOBALS['_test_db_path']);
+            } else {
+                $GLOBALS['_test_db_path'] = $savedDbPath;
+            }
+        }
+
+        $check = $this->findCheck($result['checks'], 'emails');
+        self::assertNotNull($check, 'le contrôle outbox doit exister');
+        self::assertFalse($check['ok'], 'un compteur illisible doit rendre le contrôle KO');
+        self::assertSame('État de la file d\'envoi indisponible', $check['detail']);
+        self::assertSame(503, $result['http_status']);
+        self::assertFalse($result['healthy']);
+        // Aucun détail interne ne fuit (chemin Windows, message d'exception).
+        self::assertStringNotContainsString('\\', $check['detail']);
+        self::assertStringNotContainsString('unable to open', $check['detail']);
+    }
+
     public function testHealthDetailsDoNotLeakExceptionMessages(): void
     {
         $result = new HealthController()->evaluate();

@@ -6,6 +6,8 @@
     /* A4 — bannière rouge : emails en échec définitif dans l'outbox SMTP. */
     body.page-monitoring .outbox-alert { background: #fde8e8; border-left: 4px solid #c0392b; color: #7a1f16; padding: 1rem 1.25rem; border-radius: var(--r-sm); margin-bottom: 1.5rem; }
     body.page-monitoring .outbox-alert strong { display: block; margin-bottom: .25rem; }
+    /* F6 — bannière orange : état du compteur d'échecs INCONNU (lecture impossible). */
+    body.page-monitoring .outbox-alert--unknown { background: #fff3e0; border-left-color: #b45309; color: #7a3e02; }
 
     body.page-monitoring .alert-row.urgent { background: #fde8e8 !important; }
     .alert-row.warning { background: #fff3e0 !important; }

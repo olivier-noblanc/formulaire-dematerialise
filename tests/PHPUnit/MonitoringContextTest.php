@@ -50,6 +50,8 @@ final class MonitoringContextTest extends TestCase
         self::assertSame(1, $ctx->audit_total_pages);
         self::assertSame([], $ctx->tokens_bloques);
         self::assertSame(0.0, $ctx->taux_validation);
+        // F6 : sans compteur fourni, l'état est « inconnu » (pas « sain »).
+        self::assertNull($ctx->outbox_failed);
     }
 
     public function testWithRealisticData(): void

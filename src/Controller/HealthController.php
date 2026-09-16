@@ -175,10 +175,16 @@ final class HealthController extends BaseController
         // 7. Outbox SMTP — échec définitif d'envoi (A4)
         // Détail = nombre seulement : ni destinataire, ni sujet, ni erreur SMTP
         // (l'endpoint est public, la confidentialité prime).
+        // F6 : un compteur illisible (`null`) rend le contrôle KO → 503 avec un
+        // libellé générique : on ne peut PAS affirmer que la file est saine.
         $outboxOk = true;
         $outboxDetail = 'Aucun échec d\'envoi définitif';
         $failed = App::mail()->getOutboxFailureCount();
-        if ($failed > 0) {
+        if ($failed === null) {
+            $outboxOk = false;
+            $outboxDetail = 'État de la file d\'envoi indisponible';
+            error_log('[AUDIT] health.outbox: compteur d\'échecs illisible');
+        } elseif ($failed > 0) {
             $outboxOk = false;
             $outboxDetail = $failed . ' email(s) en échec définitif — intervention requise';
             error_log('[AUDIT] health.outbox: ' . $failed . ' mail(s) failed');

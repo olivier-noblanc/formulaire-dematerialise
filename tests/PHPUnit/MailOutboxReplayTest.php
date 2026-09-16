@@ -160,6 +160,44 @@ final class MailOutboxReplayTest extends TestCase
         self::assertNotContains($fresh, $ids, 'un pending récent ne doit pas être doublé');
     }
 
+    public function testClaimRetryableSkipsStalePendingUnderLease(): void
+    {
+        // F2 : pending orphelin MAIS sous bail (next_retry_at dans le futur) —
+        // déjà revendiqué par un worker vivant → ne doit PAS être reclaimé.
+        $id = $this->seed([
+            'status' => MailStatus::Pending->value,
+            'attempts' => 0,
+            'created_at' => gmdate('Y-m-d H:i:s', time() - MailOutbox::STALE_PENDING_SECONDS - 60),
+            'next_retry_at' => gmdate('Y-m-d H:i:s', time() + MailOutbox::LEASE_SECONDS),
+        ]);
+
+        $claimed = $this->repo->claimRetryable(MailOutbox::MAX_ATTEMPTS, 20, gmdate('Y-m-d H:i:s', time() + 900), MailOutbox::STALE_PENDING_SECONDS);
+
+        self::assertNotContains($id, array_column($claimed, 'id'), 'un pending sous bail ne doit pas être repris');
+        $row = $this->readRow($id);
+        self::assertSame(MailStatus::Pending->value, $row['status'], 'la revendication d\'un pending ne change pas son statut');
+        self::assertSame(0, (int) $row['attempts'], 'un pending non repris ne voit pas ses attempts incrémentés');
+    }
+
+    public function testClaimRetryableReclaimsStalePendingAfterLeaseExpires(): void
+    {
+        // F2 : pending orphelin dont le bail est ÉCHU (next_retry_at dans le
+        // passé) → reclaimable, et le statut doit rester `pending`.
+        $id = $this->seed([
+            'status' => MailStatus::Pending->value,
+            'attempts' => 0,
+            'created_at' => gmdate('Y-m-d H:i:s', time() - MailOutbox::STALE_PENDING_SECONDS - 60),
+            'next_retry_at' => gmdate('Y-m-d H:i:s', time() - 60),
+        ]);
+
+        $claimed = $this->repo->claimRetryable(MailOutbox::MAX_ATTEMPTS, 20, gmdate('Y-m-d H:i:s', time() + 900), MailOutbox::STALE_PENDING_SECONDS);
+
+        self::assertContains($id, array_column($claimed, 'id'), 'un pending dont le bail est échu doit être repris');
+        $row = $this->readRow($id);
+        self::assertSame(MailStatus::Pending->value, $row['status'], 'la revendication ne change pas le statut pending');
+        self::assertSame(1, (int) $row['attempts'], 'attempts incrémenté à la revendication');
+    }
+
     public function testCountByStatusReturnsExactCount(): void
     {
         $this->seed(['status' => MailStatus::Failed->value, 'attempts' => 5]);
