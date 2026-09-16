@@ -162,4 +162,59 @@ final class DatabaseTest extends TestCase
             'R5 : la connexion SQLite (base de test) doit être en mode WAL.'
         );
     }
+
+    // ── F1 — handler de shutdown : cron différé protégé de la coupure ──
+
+    /**
+     * F1 : le handler de shutdown doit appeler ignore_user_abort(true) avant de
+     * lancer le cron différé, pour que le travail de fond ne soit pas tué avec la
+     * réponse. En CLI, fastcgi_finish_request() est absent : le chemin de repli
+     * (pas d'appel) doit s'exécuter sans erreur.
+     */
+    public function testRunDeferredCronEnablesIgnoreUserAbort(): void
+    {
+        $wasIgnoring = (bool) ignore_user_abort();
+        ignore_user_abort(false); // état de départ connu → l'assertion prouve l'appel
+
+        // En TEST_MODE, getPdo() renvoie la connexion de test sans renseigner
+        // $pdo (chemin « vraie connexion » uniquement). On simule ce chemin.
+        $pdoProperty = new \ReflectionProperty($this->database, 'pdo');
+        $pdoProperty->setValue($this->database, $this->database->getPdo());
+
+        try {
+            new \ReflectionMethod($this->database, 'runDeferredCron')->invoke($this->database);
+
+            self::assertTrue(
+                (bool) ignore_user_abort(),
+                'F1 : le handler doit activer ignore_user_abort(true) avant le cron'
+            );
+        } finally {
+            ignore_user_abort($wasIgnoring);
+            $pdoProperty->setValue($this->database, null);
+        }
+    }
+
+    /**
+     * F1 : sans connexion réelle, le handler est un no-op (garde préservée) —
+     * ignore_user_abort n'est pas modifié.
+     */
+    public function testRunDeferredCronIsNoOpWithoutRealConnection(): void
+    {
+        $wasIgnoring = (bool) ignore_user_abort();
+        ignore_user_abort(false);
+
+        $pdoProperty = new \ReflectionProperty($this->database, 'pdo');
+        $pdoProperty->setValue($this->database, null);
+
+        try {
+            new \ReflectionMethod($this->database, 'runDeferredCron')->invoke($this->database);
+
+            self::assertFalse(
+                (bool) ignore_user_abort(),
+                'F1 : sans connexion réelle, le handler ne doit rien activer'
+            );
+        } finally {
+            ignore_user_abort($wasIgnoring);
+        }
+    }
 }

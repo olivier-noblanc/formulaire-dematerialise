@@ -34,13 +34,43 @@ final class Database implements DatabaseInterface
 
             // Lazy cron (différé)
             register_shutdown_function(function (): void {
-                if ($this->pdo instanceof \PDO && App::getInstance()->has(\App\Cron\CronService::class)) {
-                    App::cron()->runLazyCron();
-                }
+                $this->runDeferredCron();
             });
         }
 
         return $this->pdo;
+    }
+
+    /**
+     * Handler de shutdown : exécute le cron différé après l'envoi de la réponse.
+     *
+     * F1 (audit 2026-09-16) : sans protection, PHP-FPM/IIS tue le script dès que
+     * la réponse HTTP est envoyée (ou si le client coupe la connexion), ce qui
+     * peut interrompre le cron en pleine exécution. On force donc, juste avant
+     * le travail de fond :
+     *   - ignore_user_abort(true) : continuer même si le client a coupé ;
+     *   - fastcgi_finish_request() si disponible : flusher la réponse au client
+     *     avant le cron (PHP-FPM). La fonction est absente en CLI et sous IIS
+     *     FastCGI (php-cgi) — le script se termine alors normalement (fallback sûr).
+     *
+     * Le garde statique de CronService::runLazyCron() (réentrance) n'est pas modifié.
+     */
+    private function runDeferredCron(): void
+    {
+        if (!$this->pdo instanceof \PDO) {
+            return;
+        }
+
+        if (!App::getInstance()->has(\App\Cron\CronService::class)) {
+            return;
+        }
+
+        ignore_user_abort(true);
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+
+        App::cron()->runLazyCron();
     }
 
     private function getTestPdo(): \PDO

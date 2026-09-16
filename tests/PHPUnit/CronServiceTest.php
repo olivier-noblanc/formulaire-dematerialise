@@ -188,6 +188,75 @@ final class CronServiceTest extends TestCase
         self::assertGreaterThanOrEqual(1, (int)$stmt->fetchColumn());
     }
 
+    /**
+     * F1 : la garde statique doit bloquer toute réentrance dans le même process,
+     * indépendamment de l'intervalle (ici remind est bien dû, mais la 2e entrée
+     * est ignorée).
+     */
+    public function testRunLazyCronGuardBlocksReentryEvenWhenTaskIsDue(): void
+    {
+        $this->cron->runLazyCron();
+
+        $pdo = $this->db->getPdo();
+        $twoHoursAgo = gmdate('Y-m-d H:i:s', time() - 7200);
+        $pdo->prepare("UPDATE lazy_cron SET last_run = ? WHERE task_key = 'remind'")
+            ->execute([$twoHoursAgo]);
+
+        $stmt = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
+        $countBefore = (int) $stmt->fetchColumn();
+        $stmt = null;
+
+        // Réentrée SANS reset du garde : ignorée même si la tâche est due.
+        $this->cron->runLazyCron();
+
+        $stmt = $pdo->query("SELECT run_count FROM lazy_cron WHERE task_key = 'remind'");
+        $countAfter = (int) $stmt->fetchColumn();
+
+        self::assertSame(
+            $countBefore,
+            $countAfter,
+            'F1 : la garde statique doit bloquer la réentrée même quand une tâche est due'
+        );
+    }
+
+    /**
+     * F1 : une exception dans un callback de tâche est contenue (B9 : last_run
+     * revert) et NE libère PAS la garde — la réentrée reste bloquée pour ce process.
+     */
+    public function testRunLazyCronCallbackExceptionDoesNotReleaseGuard(): void
+    {
+        $app = \App\Core\App::getInstance();
+        $original = $app->get(\App\Rgpd\RgpdService::class);
+
+        $throwing = new class {
+            public function autoPurge(): never
+            {
+                throw new \RuntimeException('boom rgpd_purge');
+            }
+        };
+        $app->set(\App\Rgpd\RgpdService::class, $throwing);
+
+        try {
+            // L'exception doit être contenue par le service (pas de propagation).
+            $this->cron->runLazyCron();
+        } finally {
+            $app->set(\App\Rgpd\RgpdService::class, $original);
+        }
+
+        $ref = new \ReflectionProperty(CronService::class, 'running');
+        self::assertTrue(
+            (bool) $ref->getValue(),
+            'F1 : une exception de callback ne doit pas libérer la garde statique'
+        );
+
+        // B9 : première exécution en échec → la ligne rgpd_purge est supprimée
+        // (elle redevient due au prochain process).
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->query("SELECT COUNT(*) FROM lazy_cron WHERE task_key = 'rgpd_purge'");
+        $count = (int) $stmt->fetchColumn();
+        self::assertSame(0, $count, 'B9 : rgpd_purge doit être revert (ligne supprimée) après échec');
+    }
+
     public function testRunLazyCronIncrementsRunCount(): void
     {
         $this->cron->runLazyCron();
