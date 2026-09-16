@@ -69,97 +69,111 @@ final readonly class TokenValidationHandler
 
         $this->tokenRepository->beginTransaction();
 
-        $t = $getTokenWithContext($token);
-        if ($t === null) {
-            $this->tokenRepository->rollBack();
-            return ['status' => 'invalid'];
-        }
-        // B-V1 fix (audit fonctionnel 2026-07-26) : un token invalidé (par cancel,
-        // regenerate ou delegate) ne doit pas pouvoir être validé même si done_at
-        // est NULL. Avant, le check seul `(bool)($t['done_at'])` laissait passer
-        // les tokens invalidés — l'utilisateur voyait une page de validation
-        // fonctionnelle alors que le token était mort.
-        if ((bool)($t['done_at']) || (bool)($t['invalidated_at'])) {
-            $this->tokenRepository->rollBack();
-            return ['status' => 'already_done', 'data' => $t];
-        }
-        if ((bool)($t['closed_at'])) {
-            $this->tokenRepository->rollBack();
-            return ['status' => 'closed', 'data' => $t];
-        }
-
-        if ((bool)($t['expires_at'])) {
-            // B1 fix (audit 2026-07-26) : les dates sont stockées en UTC (soit via
-            // SQLite datetime('now'), soit via PHP gmdate()). strtotime() sans
-            // fuseau explicite interprète la chaîne avec le fuseau serveur
-            // (Europe/Paris en prod), causant un décalage de 1-2h : tokens
-            // marqués expirés trop tôt. On force l'interprétation UTC en suffixant
-            // la chaîne avec ' UTC' (notation reconnue par strtotime).
-            // Même pattern que les fixes historiques #12 (alert_check.php) et
-            // v10.22.0 (remind.php) — n'avait pas été appliqué ici.
-            $expTs = strtotime($t['expires_at'] . ' UTC');
-            if ($expTs !== false && $expTs < time()) {
+        try {
+            $t = $getTokenWithContext($token);
+            if ($t === null) {
                 $this->tokenRepository->rollBack();
-                return ['status' => 'expired', 'data' => $t];
+                return ['status' => 'invalid'];
             }
-        }
-
-        $comment = mb_substr($comment, 0, 1000);
-
-        if ($action === ValidationAction::Refuser->value) {
-            $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
-            if ($rowCount === 0) {
+            // B-V1 fix (audit fonctionnel 2026-07-26) : un token invalidé (par cancel,
+            // regenerate ou delegate) ne doit pas pouvoir être validé même si done_at
+            // est NULL. Avant, le check seul `(bool)($t['done_at'])` laissait passer
+            // les tokens invalidés — l'utilisateur voyait une page de validation
+            // fonctionnelle alors que le token était mort.
+            if ((bool)($t['done_at']) || (bool)($t['invalidated_at'])) {
                 $this->tokenRepository->rollBack();
                 return ['status' => 'already_done', 'data' => $t];
             }
-
-            // R3 (audit 2026-09-14) : closeWithStatus est un CAS (en_cours +
-            // closed_at NULL). Si elle échoue, une action concurrente a déjà
-            // clôturé la soumission — on rollback et on remonte 'closed' plutôt
-            // que de laisser un refus sur un dossier déjà terminé.
-            $closed = $this->submissionRepository->closeWithStatus($t['submission_id'], gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value);
-            if (!$closed) {
+            if ((bool)($t['closed_at'])) {
                 $this->tokenRepository->rollBack();
                 return ['status' => 'closed', 'data' => $t];
             }
-        } else {
-            $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
-            if ($rowCount === 0) {
-                $this->tokenRepository->rollBack();
-                return ['status' => 'already_done', 'data' => $t];
+
+            if ((bool)($t['expires_at'])) {
+                // B1 fix (audit 2026-07-26) : les dates sont stockées en UTC (soit via
+                // SQLite datetime('now'), soit via PHP gmdate()). strtotime() sans
+                // fuseau explicite interprète la chaîne avec le fuseau serveur
+                // (Europe/Paris en prod), causant un décalage de 1-2h : tokens
+                // marqués expirés trop tôt. On force l'interprétation UTC en suffixant
+                // la chaîne avec ' UTC' (notation reconnue par strtotime).
+                // Même pattern que les fixes historiques #12 (alert_check.php) et
+                // v10.22.0 (remind.php) — n'avait pas été appliqué ici.
+                $expTs = strtotime($t['expires_at'] . ' UTC');
+                if ($expTs !== false && $expTs < time()) {
+                    $this->tokenRepository->rollBack();
+                    return ['status' => 'expired', 'data' => $t];
+                }
             }
+
+            $comment = mb_substr($comment, 0, 1000);
+
+            if ($action === ValidationAction::Refuser->value) {
+                $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
+                if ($rowCount === 0) {
+                    $this->tokenRepository->rollBack();
+                    return ['status' => 'already_done', 'data' => $t];
+                }
+
+                // R3 (audit 2026-09-14) : closeWithStatus est un CAS (en_cours +
+                // closed_at NULL). Si elle échoue, une action concurrente a déjà
+                // clôturé la soumission — on rollback et on remonte 'closed' plutôt
+                // que de laisser un refus sur un dossier déjà terminé.
+                $closed = $this->submissionRepository->closeWithStatus($t['submission_id'], gmdate('Y-m-d H:i:s'), SubmissionStatus::Refuse->value);
+                if (!$closed) {
+                    $this->tokenRepository->rollBack();
+                    return ['status' => 'closed', 'data' => $t];
+                }
+            } else {
+                $rowCount = $this->tokenRepository->markDoneByTokenValue($token, gmdate('Y-m-d H:i:s'));
+                if ($rowCount === 0) {
+                    $this->tokenRepository->rollBack();
+                    return ['status' => 'already_done', 'data' => $t];
+                }
+            }
+
+            $validationEntry = [
+                'step_label' => $t['step_label'],
+                'email' => $t['email'],
+                'done_by' => $doneBy,
+                'action' => $action,
+                'commentaire' => $comment,
+                'date' => gmdate('Y-m-d H:i:s'),
+            ];
+
+            // B8 fix : appendToDataJson() fait de l'optimistic locking (WHERE data = old_json)
+            // et peut retourner false si 3 conflits successifs. Avant, ce retour était
+            // ignoré — l'audit_log disait 'validated' mais la data JSON n'avait pas la nouvelle
+            // validation. Maintenant on rollback et on informe l'appelant.
+            $appended = $this->submissionRepository->appendToDataJson($t['submission_id'], function (array $data) use ($validationEntry): array {
+                $data[SubmissionField::VALIDATIONS->value][] = $validationEntry;
+                return $data;
+            });
+            if (!$appended) {
+                $this->tokenRepository->rollBack();
+                // Audit l'échec pour diagnose (règle AGENTS.md #9 : ne pas avaler silencieusement)
+                \App\Core\App::audit()->log(
+                    'validation_data_append_failed',
+                    'submission:' . $t['submission_id'],
+                    'Échec appendToDataJson (conflit optimistic locking 3x) pour token ' . $token,
+                    $doneBy
+                );
+                return ['status' => 'data_conflict', 'data' => $t];
+            }
+
+            $this->tokenRepository->commit();
+        } catch (\Throwable $e) {
+            // BUG3 fix (audit 2026-09) : une exception Throwable remontant entre
+            // beginTransaction() et commit() (appendToDataJson, DDL, etc.) laissait
+            // la transaction ouverte — la connexion PDO restait avec une transaction
+            // active, inutilisable pour le cron différé et les opérations suivantes
+            // ("cannot start a transaction within a transaction" / SQLITE_LOCKED).
+            // On rollback sous inTransaction() (les rollbacks métier ont pu déjà
+            // fermer la transaction) puis on rethrow pour ne pas avaler l'erreur.
+            if ($this->tokenRepository->inTransaction()) {
+                $this->tokenRepository->rollBack();
+            }
+            throw $e;
         }
-
-        $validationEntry = [
-            'step_label' => $t['step_label'],
-            'email' => $t['email'],
-            'done_by' => $doneBy,
-            'action' => $action,
-            'commentaire' => $comment,
-            'date' => gmdate('Y-m-d H:i:s'),
-        ];
-
-        // B8 fix : appendToDataJson() fait de l'optimistic locking (WHERE data = old_json)
-        // et peut retourner false si 3 conflits successifs. Avant, ce retour était
-        // ignoré — l'audit_log disait 'validated' mais la data JSON n'avait pas la nouvelle
-        // validation. Maintenant on rollback et on informe l'appelant.
-        $appended = $this->submissionRepository->appendToDataJson($t['submission_id'], function (array $data) use ($validationEntry): array {
-            $data[SubmissionField::VALIDATIONS->value][] = $validationEntry;
-            return $data;
-        });
-        if (!$appended) {
-            $this->tokenRepository->rollBack();
-            // Audit l'échec pour diagnose (règle AGENTS.md #9 : ne pas avaler silencieusement)
-            \App\Core\App::audit()->log(
-                'validation_data_append_failed',
-                'submission:' . $t['submission_id'],
-                'Échec appendToDataJson (conflit optimistic locking 3x) pour token ' . $token,
-                $doneBy
-            );
-            return ['status' => 'data_conflict', 'data' => $t];
-        }
-
-        $this->tokenRepository->commit();
 
         // Emails et advanceWorkflow APRES le commit (side effects hors transaction)
         if ($action === ValidationAction::Refuser->value) {
