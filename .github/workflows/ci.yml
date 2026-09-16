@@ -82,8 +82,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - run: php vendor/bin/phpstan analyse --memory-limit=512M --no-progress
@@ -123,8 +131,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - run: php vendor/bin/phpstan analyse -c tests/phpstan.neon --memory-limit=512M --no-progress
@@ -162,8 +178,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - run: php vendor/bin/phpstan analyse -c phpstan-no-inline.neon --memory-limit=512M --no-progress
 
   # ── PHPStan : décalages placeholders '?' / arguments execute() ──
@@ -201,8 +225,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - run: php vendor/bin/phpstan analyse -c phpstan-sql-placeholder.neon --memory-limit=512M --no-progress
 
   # ── PHPStan : catch qui avale une exception silencieusement ─────
@@ -237,8 +269,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - run: php vendor/bin/phpstan analyse -c phpstan-no-silent-catch.neon --memory-limit=512M --no-progress
 
   # ── Tests unitaires + e2e + couverture ─────────────────────────
@@ -269,8 +309,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php
@@ -335,8 +383,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php
@@ -382,8 +438,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Check code style (dry-run)
         # 31/33 fichiers corrigés. Reste : AdminFormsRenderer (CSS heredoc) +
         # NavigationRenderer (JS heredoc) — réindentation heredoc trop risquée
@@ -418,8 +482,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - name: Check with Rector (dry-run)
@@ -457,8 +529,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Audit dependencies for vulnerabilities
         run: composer audit --no-dev
 
@@ -490,8 +570,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php
         run: echo "$CI_CONFIG" > config.php
       - name: Deptrac (architecture layers)
@@ -548,8 +636,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php + db dir + session dir
         run: |
           echo "$CI_CONFIG" > config.php
@@ -602,8 +698,16 @@ jobs:
         # l'autoload régénéré les référence → "require .../functions.php" absent.
         # composer install (pas update) respecte composer.lock → reproductible.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php) ainsi que
+          # par tests/phpstan.neon (bootstrapFiles). Composer ne le restaure pas à
+          # ce chemin : l'install-path du lock est vendor/phpmailer/phpmailer
+          # (minuscules, chemin distinct sous Linux). On le met de côté avant la
+          # purge de vendor/ puis on le restaure tel quel après composer install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
       - name: Create config.php + db dir
         run: |
           echo "$CI_CONFIG" > config.php

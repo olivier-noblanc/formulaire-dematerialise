@@ -31,6 +31,7 @@ final class MonitoringController extends BaseController
             try {
                 $mailLogId = (string) App::validation()->validate($_POST['mail_log_id'] ?? '', 'uuid');
             } catch (\InvalidArgumentException) {
+                // @silent-ok: identifiant admin invalide converti en notice affichée à l'utilisateur + audit mail_replay_denied (feedback visible, aucun échec interne avalé)
                 $mailReplayNotice = 'Rejeu refusé : identifiant de message invalide.';
                 App::audit()->log('mail_replay_denied', 'mail_log', 'Rejeu manuel refusé : identifiant de message invalide');
             }

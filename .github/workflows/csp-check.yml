@@ -102,8 +102,15 @@ jobs:
         # obligatoire, sinon Composer ne re-télécharge pas les paquets manquants
         # (amphp/*) référencés par l'autoload. install (pas update) = lock respecté.
         run: |
+          # vendor/PHPMailer est versionné (copie offline prod IIS) et requis par
+          # lib/core_bootstrap.php:175-177 (vendor/PHPMailer/src/*.php). Composer
+          # ne le restaure pas à ce chemin : l'install-path du lock est
+          # vendor/phpmailer/phpmailer (minuscules, distinct sous Linux). On le met
+          # de côté avant la purge de vendor/ puis on le restaure après install.
+          mv vendor/PHPMailer "$RUNNER_TEMP/vendor-PHPMailer-versioned"
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-scripts
+          mv "$RUNNER_TEMP/vendor-PHPMailer-versioned" vendor/PHPMailer
 
       - name: Create config.php + db dir
         run: |

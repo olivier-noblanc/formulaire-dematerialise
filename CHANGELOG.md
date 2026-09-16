@@ -1,5 +1,21 @@
 # Changelog — CircuitDémat
 
+## [10.42.35] — 2026-09-16
+_Résumé : Correctifs CI — `vendor/PHPMailer` versionné restauré après la purge `vendor/` (PHPUnit, PHPStan level 8, PHPStan tests et CSP échouaient sur `vendor/PHPMailer/src/Exception.php` absent), et marqueur `@silent-ok` sur le catch de `MonitoringController` (règle 9)._
+
+### 🔧 CI — `vendor/PHPMailer` préservé à travers la purge
+- **Cause** : `rm -rf vendor` supprimait la copie versionnée `vendor/PHPMailer/src/*.php` requise par `lib/core_bootstrap.php:175-177` et par `tests/phpstan.neon` (`bootstrapFiles`). `composer install` ne la restaure **pas** à ce chemin : l'`install-path` du lock est `vendor/phpmailer/phpmailer` (minuscules), chemin distinct sous Linux.
+- **Fix** (`ci.yml` ×13 jobs + `csp-check.yml`) : le dossier `vendor/PHPMailer` est déplacé vers `$RUNNER_TEMP` avant `rm -rf vendor`, puis restauré tel quel après `composer install` — purge `vendor/`, `composer.lock` et cache downloads inchangés.
+
+###  Fix — règle 9 (`MonitoringController`)
+- Marqueur `// @silent-ok:` sur le catch `\InvalidArgumentException` du rejeu manuel d'outbox : l'exception est volontairement convertie en notice utilisateur (`mail_replay_notice`) **et** audit `mail_replay_denied` — feedback visible, aucun échec interne avalé. Conforme à `NoSilentCatchRule`.
+
+###  Vérifications
+- YAML `ci.yml` + `csp-check.yml` valide ; bloc shell `bash -n` OK.
+- `php -l src/Controller/MonitoringController.php` OK.
+- `php vendor/bin/phpstan analyse -c phpstan-no-silent-catch.neon` → **0 erreur** (`MonitoringController` plus signalé).
+- `php vendor/bin/phpunit --filter MonitoringControllerTest` → **6 tests / 25 assertions, 0 échec** (le refus UUID invalide couvre la branche `@silent-ok`).
+
 ## [10.42.34] — 2026-09-16
 _Résumé : Rejeu manuel de l'outbox SMTP (lanes A/B/C) + correctifs d'audit F1→F6 (cron différé protégé du shutdown FastCGI, bail respecté sur `pending`, sauvegarde WAL cohérente, sidecars purgés au restore, cutoffs UTC, compteur d'échecs nullable) + CI Composer reproductible. Migration **v39** (`mail_log.manual_replay_count`)._
 

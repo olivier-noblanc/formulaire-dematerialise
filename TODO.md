@@ -30,6 +30,13 @@
 
 ## ✅ Terminé (historique)
 
+### v10.42.35 — Correctifs CI : `vendor/PHPMailer` restauré après purge + `@silent-ok` MonitoringController (2026-09-16)
+| Tâche | Détail |
+|-------|--------|
+| CI — purge `vendor` | `mv vendor/PHPMailer "$RUNNER_TEMP/..."` avant `rm -rf vendor`, restauré après `composer install` (13 jobs `ci.yml` + `csp-check.yml`). `vendor/PHPMailer/src/*.php` (requis par `lib/core_bootstrap.php:175-177` et `tests/phpstan.neon`) n'est pas restauré par Composer (install-path lowercase `vendor/phpmailer/phpmailer`). Purge `vendor/`, `composer.lock` et cache downloads préservés. |
+| Fix règle 9 | `MonitoringController` : `// @silent-ok:` sur le catch `\InvalidArgumentException` (notice utilisateur + audit `mail_replay_denied`, pas d'échec interne avalé) |
+| Vérifs | YAML + `bash -n` OK ; `php -l` OK ; `phpstan -c phpstan-no-silent-catch.neon` **0 erreur** ; `phpunit --filter MonitoringControllerTest` **6/6, 25 assertions** |
+
 ### v10.42.34 — Rejeu manuel outbox SMTP (A/B/C) + correctifs audit F1→F6 + CI Composer (2026-09-16)
 | Tâche | Détail |
 |-------|--------|
