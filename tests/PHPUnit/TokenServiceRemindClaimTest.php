@@ -7,6 +7,7 @@ use App\Audit\AuditLogService;
 use App\Auth\AuthService;
 use App\Contract\MailInterface;
 use App\Core\Database;
+use App\Enum\MailStatus;
 use App\Repository\AuditRepository;
 use App\Repository\DelegationRepository;
 use App\Repository\SettingsRepository;
@@ -17,13 +18,14 @@ use App\Token\TokenService;
 use PHPUnit\Framework\TestCase;
 
 /**
- * R2 (audit 2026-09-14) — chemin manuel TokenService::remind().
+ * R2 (audit 2026-09-14) + BUG2 (outbox) — chemin manuel TokenService::remind().
  *
- * Vérifie la sémantique claim-first introduite pour tuer la race des rappels :
- * le créneau (relance_count) est revendiqué atomiquement AVANT l'envoi SMTP.
- *   - un rappel réussi a déjà incrémenté relance_count au moment de l'envoi ;
- *   - un envoi échoué libère le créneau revendiqué (relance_count restauré),
- *     pour ne pas compter un rappel non envoyé ni bloquer le suivant.
+ * Vérifie la sémantique claim-first du rappel :
+ *   - le créneau (relance_count) est revendiqué atomiquement AVANT l'envoi ;
+ *   - succès ET échec réessayable/write-ahead CONSERVENT le créneau : l'outbox
+ *     rejouera l'email, donc rabattre relance_count contournerait relance_max ;
+ *   - seul un refus DÉFINITIF (`blocked` : adresse invalide ou config SMTP/From
+ *     absente) libère le créneau — l'outbox ne le rejouera jamais.
  *
  * La perte de claim "stale count" (deux workers lisant le même relance_count)
  * est couverte au niveau repository par RelanceClaimTest.
@@ -136,37 +138,120 @@ final class TokenServiceRemindClaimTest extends TestCase
         self::assertSame(2, $this->readRelanceState()['relance_count']);
     }
 
-    public function testRemindReleasesClaimWhenMailSendFails(): void
+    /**
+     * BUG2 — un échec RÉESSAYABLE (SMTP injoignable/timeout) est persisté dans
+     * l'outbox (write-ahead) et rejoué par le worker : le créneau doit rester
+     * revendiqué, sinon relance_count est rabattu alors que l'email partira.
+     */
+    public function testRemindKeepsClaimWhenSendFailsRetryably(): void
     {
-        $this->mailer->fail = true;
+        $this->mailer->status = MailStatus::Error->value;
+        $this->mailer->error = 'SMTP connect() failed';
 
         $result = $this->tokenService->remind($this->tokenId);
 
         self::assertFalse($result['success']);
-        self::assertStringContainsString("Erreur lors de l'envoi", $result['message']);
+        self::assertStringContainsString('mis en file d\'attente', $result['message']);
 
         // Le créneau a bien été revendiqué (count=1 lors de l'envoi)...
         self::assertCount(1, $this->mailer->observed);
         self::assertSame(1, $this->mailer->observed[0]['relance_count']);
 
+        // ... et CONSERVÉ : la relance comptée ne peut pas être contournée par
+        // le rejeu outbox.
+        $state = $this->readRelanceState();
+        self::assertSame(1, $state['relance_count'], 'une relance réessayable doit rester comptée (rejeu outbox)');
+        self::assertNotNull($state['relance_at'], 'relance_at doit rester positionné sur échec réessayable');
+    }
+
+    /**
+     * BUG2 — l'échec du write-ahead (`error` : journal des emails indisponible,
+     * intervention technicien) ne doit pas non plus rabattre le créneau : la
+     * relance est comptée et bloque toute relance supplémentaire jusqu'à
+     * résolution, plutôt que de permettre un dépassement de relance_max.
+     */
+    public function testRemindKeepsClaimWhenWriteAheadFails(): void
+    {
+        $this->mailer->status = MailStatus::Error->value;
+        $this->mailer->error = 'Journal des emails indisponible — envoi annulé pour préserver la traçabilité (write-ahead).';
+
+        $result = $this->tokenService->remind($this->tokenId);
+
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('mis en file d\'attente', $result['message']);
+
+        $state = $this->readRelanceState();
+        self::assertSame(1, $state['relance_count'], 'un échec write-ahead doit conserver le créneau');
+        self::assertNotNull($state['relance_at']);
+    }
+
+    /**
+     * BUG2 — seul un refus DÉFINITIF (`blocked`) libère le créneau : l'outbox
+     * ne le rejouera jamais, donc comptabiliser la relance bloquerait à tort
+     * les suivantes.
+     */
+    public function testRemindReleasesClaimWhenSendBlocked(): void
+    {
+        $this->mailer->status = MailStatus::Blocked->value;
+        $this->mailer->error = 'Adresse destinataire invalide : validator@test.com';
+
+        $result = $this->tokenService->remind($this->tokenId);
+
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('Rappel non envoyé', $result['message']);
+
+        // Le créneau a été revendiqué...
+        self::assertCount(1, $this->mailer->observed);
+        self::assertSame(1, $this->mailer->observed[0]['relance_count']);
+
         // ... puis libéré : relance_count restauré à 0, relance_at remis à NULL.
         $state = $this->readRelanceState();
-        self::assertSame(0, $state['relance_count'], 'un rappel non envoyé ne doit pas être compté');
-        self::assertNull($state['relance_at'], 'relance_at doit être restauré sur échec d\'envoi');
+        self::assertSame(0, $state['relance_count'], 'un refus définitif ne doit pas être compté');
+        self::assertNull($state['relance_at'], 'relance_at doit être restauré sur refus définitif');
+    }
+
+    /**
+     * Croisement relance + outbox : un échec réessayable (que l'outbox rejouera)
+     * doit consommer le plafond. Trois relances « mises en file d'attente »
+     * atteignent relance_max ; la quatrième est refusée sans revendication.
+     */
+    public function testOutboxReplayErrorDoesNotBypassRelanceMax(): void
+    {
+        $this->mailer->status = MailStatus::Error->value;
+        $this->mailer->error = 'SMTP connect() failed';
+
+        for ($i = 0; $i < 3; $i++) {
+            $result = $this->tokenService->remind($this->tokenId);
+            self::assertFalse($result['success']);
+            self::assertStringContainsString('mis en file d\'attente', $result['message']);
+        }
+        self::assertSame(3, $this->readRelanceState()['relance_count'], 'chaque échec réessayable consomme le plafond');
+
+        // 4e tentative (relance_max = 3 par défaut pour ce formulaire) : refusée.
+        $blocked = $this->tokenService->remind($this->tokenId);
+        self::assertFalse($blocked['success']);
+        self::assertStringContainsString('Maximum de rappels atteint', $blocked['message']);
+        self::assertCount(3, $this->mailer->observed, 'aucun envoi supplémentaire au-delà du plafond');
+        self::assertSame(3, $this->readRelanceState()['relance_count']);
     }
 }
 
 /**
- * Double de test qui, à chaque send(), capture l'état relance du token tel
+ * Double de test qui, à chaque envoi, capture l'état relance du token tel
  * qu'il est en base au moment de l'envoi — preuve que la revendication CAS a
- * lieu AVANT l'I/O mail. Peut forcer l'échec d'envoi.
+ * lieu AVANT l'I/O mail. Expose `sendDetailed()` (contrat réel MailService)
+ * pour piloter le statut outbox renvoyé (sent/error/blocked/dry_run).
  */
 final class RemindClaimProbeMailer implements MailInterface
 {
     /** @var list<array{relance_count: int|null, relance_at: string|null}> */
     public array $observed = [];
 
-    public bool $fail = false;
+    /** Statut renvoyé par sendDetailed (valeur MailStatus). */
+    public string $status = MailStatus::Sent->value;
+
+    /** Message d'erreur associé au statut (si non-succès). */
+    public string $error = '';
 
     public function __construct(
         private readonly \PDO $pdo,
@@ -174,6 +259,12 @@ final class RemindClaimProbeMailer implements MailInterface
     ) {}
 
     public function send(string $to, string $subject, string $body): bool
+    {
+        return $this->sendDetailed($to, $subject, $body)['success'];
+    }
+
+    /** @return array{success: bool, error: string, smtp_log: string, status: string} */
+    public function sendDetailed(string $to, string $subject, string $body): array
     {
         $stmt = $this->pdo->prepare('SELECT relance_count, relance_at FROM tokens WHERE id = ?');
         $stmt->execute([$this->tokenId]);
@@ -186,7 +277,14 @@ final class RemindClaimProbeMailer implements MailInterface
             'relance_count' => $row['relance_count'] !== null ? (int) $row['relance_count'] : null,
             'relance_at' => $row['relance_at'],
         ];
-        return !$this->fail;
+
+        $success = $this->status === MailStatus::Sent->value || $this->status === MailStatus::DryRun->value;
+        return [
+            'success' => $success,
+            'error' => $success ? '' : ($this->error !== '' ? $this->error : 'échec simulé'),
+            'smtp_log' => '',
+            'status' => $this->status,
+        ];
     }
 
     /** @param array<string, mixed> $submission */

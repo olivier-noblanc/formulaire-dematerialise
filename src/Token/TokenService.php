@@ -8,6 +8,7 @@ use App\Audit\AuditLogService;
 use App\Auth\AuthService;
 use App\Contract\MailInterface;
 use App\Core\App;
+use App\Enum\MailStatus;
 use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
 use App\Enum\ValidationAction;
@@ -285,18 +286,75 @@ final readonly class TokenService
         </div>';
         $mailBody = str_replace('<h2 style="color:#003189;">', $rappelNotice . '<h2 style="color:#003189;">', $mailBody);
 
-        $mailSent = $this->mailService->send($tok['email'], $subject, $mailBody);
+        $sendResult = $this->sendRelanceMail($tok['email'], $subject, $mailBody);
 
-        if (!$mailSent) {
-            // Envoi échoué : libérer le créneau revendiqué (CAS inverse) pour
-            // ne pas compter un rappel non envoyé ni bloquer le suivant. Le CAS
-            // sur relance_count évite de raboter un rappel ultérieur.
+        // BUG2 — seul un refus DÉFINITIF (`blocked` : adresse destinataire
+        // invalide, config SMTP/From absente) n'est jamais rejoué par l'outbox :
+        // on libère alors le créneau revendiqué (CAS inverse) pour ne pas
+        // compter un rappel impossible ni bloquer le suivant. Le CAS sur
+        // relance_count évite de raboter une relance ultérieure.
+        //
+        // Tout autre échec (`error` : SMTP injoignable/timeout, write-ahead
+        // indisponible) est persisté ou rejouable par le worker d'outbox : le
+        // créneau DOIT rester revendiqué, sinon le rejeu enverrait l'email alors
+        // que relance_count a été rabattu — contournement du plafond relance_max.
+        if ($sendResult['status'] === MailStatus::Blocked) {
             $this->tokenRepository->releaseRelanceClaim($tokenId, $newCount, $previousCount, $tok['relance_at']);
-            return ['success' => false, 'message' => 'Erreur lors de l\'envoi de l\'email à ' . $tok['email'] . '. Vérifiez la configuration SMTP.'];
+            return [
+                'success' => false,
+                'message' => 'Rappel non envoyé à ' . $tok['email'] . ' : ' . $sendResult['error'],
+            ];
+        }
+
+        if (!$sendResult['success']) {
+            // Erreur réessayable / write-ahead : l'envoi est (ou sera) repris
+            // par l'outbox. Le créneau reste revendiqué et la relance comptée.
+            $this->auditLogService->log(
+                'manual_remind',
+                'token:' . $tokenId,
+                'Rappel mis en file d\'attente pour ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ') — ' . $sendResult['error']
+            );
+            return [
+                'success' => false,
+                'message' => 'Rappel mis en file d\'attente pour ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ') : l\'envoi sera retenté automatiquement.',
+            ];
         }
 
         $this->auditLogService->log('manual_remind', 'token:' . $tokenId, 'Rappel manuel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')');
         return ['success' => true, 'message' => 'Rappel envoyé à ' . $tok['email'] . ' (relance ' . $newCount . '/' . $relanceMax . ')'];
+    }
+
+    /**
+     * Envoie l'email de rappel en privilégiant le contrat détaillé de
+     * MailService (`sendDetailed`) pour connaître le STATUT outbox (write-ahead).
+     *
+     * Repli sur `send()` pour les implémentations de MailInterface qui
+     * n'exposent pas `sendDetailed` (doubles de test) : un booléen ne
+     * distinguant pas un refus définitif d'un échec réessayable, un échec y est
+     * classé `error` (claim conservé) — défaut conservateur qui empêche un
+     * rejeu de contourner `relance_max`.
+     *
+     * @return array{success: bool, error: string, status: MailStatus}
+     */
+    private function sendRelanceMail(string $to, string $subject, string $body): array
+    {
+        $mailer = $this->mailService;
+        if (method_exists($mailer, 'sendDetailed')) {
+            /** @var array{success: bool, error: string, smtp_log: string, status: string} $detailed */
+            $detailed = $mailer->sendDetailed($to, $subject, $body);
+            return [
+                'success' => $detailed['success'],
+                'error' => $detailed['error'],
+                'status' => MailStatus::tryFrom($detailed['status']) ?? MailStatus::Error,
+            ];
+        }
+
+        $sent = $mailer->send($to, $subject, $body);
+        return [
+            'success' => $sent,
+            'error' => $sent ? '' : 'Échec d\'envoi (statut indisponible)',
+            'status' => $sent ? MailStatus::Sent : MailStatus::Error,
+        ];
     }
 
     /**
