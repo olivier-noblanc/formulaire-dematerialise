@@ -86,15 +86,24 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Cache composer
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer downloads
         uses: actions/cache@v6
         with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.json') }}
-          restore-keys: composer-
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
 
       - name: Install PHP dependencies
-        run: composer update --no-interaction --prefer-dist --no-scripts
+        # vendor/ partiellement versionné + installed.json en état dev : purge
+        # obligatoire, sinon Composer ne re-télécharge pas les paquets manquants
+        # (amphp/*) référencés par l'autoload. install (pas update) = lock respecté.
+        run: |
+          rm -rf vendor
+          composer install --no-interaction --prefer-dist --no-scripts
 
       - name: Create config.php + db dir
         run: |
