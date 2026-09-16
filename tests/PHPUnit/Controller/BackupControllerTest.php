@@ -574,7 +574,7 @@ final class BackupControllerTest extends TestCase
      */
     public function testRestoreBackupRemovesOrphanWalSidecars(): void
     {
-        $original = (string) \file_get_contents($this->dbPath);
+        $original = $this->captureDbSnapshot();
 
         // Base "uploadée" (restaurée) avec une table témoin.
         $uploaded = sys_get_temp_dir() . '/bc_restore_' . uniqid() . '.db';
@@ -636,7 +636,18 @@ final class BackupControllerTest extends TestCase
      */
     public function testRestoreBackupRollbackRemovesWalSidecars(): void
     {
-        $original = (string) \file_get_contents($this->dbPath);
+        $original = $this->captureDbSnapshot();
+
+        // Marqueur inséré AVANT la restauration : la copie pré-restauration
+        // (VACUUM INTO) doit le contenir, et le rollback doit le rétablir. Rendre
+        // l'assertion déterministe plutôt que de compter les tables d'une base
+        // dont l'état initial dépend d'autres tests (l'échec CI Linux venait d'un
+        // « 0 table » après qu'un test voisin ait vidé db/workflow.db).
+        $seed = new \PDO('sqlite:' . $this->dbPath);
+        $seed->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $seed->exec('CREATE TABLE IF NOT EXISTS bc_rollback_marker (v TEXT)');
+        $seed->prepare('INSERT INTO bc_rollback_marker (v) VALUES (?)')->execute(['RESTORED']);
+        $seed = null;
 
         // Header SQLite valide (passe isValidSqliteDb) mais contenu illisible :
         // la requête sqlite_master échoue → déclenche le rollback.
@@ -667,12 +678,14 @@ final class BackupControllerTest extends TestCase
             self::assertFileDoesNotExist($this->dbPath . '-wal');
             self::assertFileDoesNotExist($this->dbPath . '-shm');
 
-            // La sauvegarde d'origine (instantané pré-restauration) est en place.
+            // La sauvegarde d'origine (instantané pré-restauration) est en place,
+            // avec le marqueur inséré juste avant la restauration.
             $check = new \PDO('sqlite:' . $this->dbPath);
             $check->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            self::assertGreaterThanOrEqual(
-                1,
-                (int) $check->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn()
+            self::assertSame(
+                'RESTORED',
+                (string) $check->query('SELECT v FROM bc_rollback_marker ORDER BY rowid DESC LIMIT 1')->fetchColumn(),
+                'le rollback doit rétablir la base d\'origine (marqueur présent avant la restauration)'
             );
             $check = null;
         } finally {
@@ -843,11 +856,36 @@ final class BackupControllerTest extends TestCase
     }
 
     /**
-     * Restaure le contenu d'origine de db/workflow.db et purge ses sidecars.
+     * Capture un instantané cohérent de db/workflow.db (WAL inclus) via
+     * VACUUM INTO. Un simple file_get_contents() du fichier principal perdrait
+     * les pages non checkpointées : en mode WAL, les tables créées vivent dans
+     * le journal -wal et le fichier .db peut ne contenir que l'en-tête (0 table).
+     *
+     * @return string Chemin du snapshot (jamais null — échec = test en erreur).
      */
-    private function restoreDbFile(string $original): void
+    private function captureDbSnapshot(): string
     {
-        \file_put_contents($this->dbPath, $original);
+        $snapshot = BackupController::createConsistentSnapshot($this->dbPath);
+        if ($snapshot === null) {
+            self::fail('Impossible de capturer un instantané cohérent de db/workflow.db');
+        }
+        return $snapshot;
+    }
+
+    /**
+     * Restaure db/workflow.db depuis un instantané cohérent et purge ses sidecars.
+     *
+     * Remplace l'ancienne recopie du seul fichier principal (file_get_contents +
+     * file_put_contents) qui perdait le -wal non checkpointé et laissait la base
+     * partagée sans aucune table pour les tests suivants (échec CI Linux).
+     */
+    private function restoreDbFile(string $snapshot): void
+    {
+        $this->db->release();
+        if (\file_exists($snapshot)) {
+            @\copy($snapshot, $this->dbPath);
+            @\unlink($snapshot);
+        }
         $this->removeSidecars($this->dbPath . '-wal', $this->dbPath . '-shm');
     }
 

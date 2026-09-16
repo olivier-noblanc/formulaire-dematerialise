@@ -5,7 +5,7 @@
 | Métrique | Valeur |
 |----------|--------|
 | Tests | **1669** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-16, v10.42.36 ; avant : 1663) |
-| Assertions | **5028** (v10.42.36 ; avant : 4994) |
+| Assertions | **5025** (v10.42.36 ; avant : 4994) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -37,8 +37,9 @@
 | BUG2 — claim relance | `TokenService::remind()` : claim conservé sur échec réessayable/outbox (seul `MailStatus::Blocked` libère le créneau) via `sendRelanceMail()`/`sendDetailed()` — plus de contournement du plafond `relance_max` — commit `8fcf22d` |
 | BUG3 — rollback | `TokenValidationHandler::validate()` : `try`/`catch (\Throwable)` → rollback sous `inTransaction()` + rethrow → plus de transaction PDO laissée ouverte — commit `2a4d54a` |
 | CI — `vendor/PHPMailer` | Restauration vérifiée sur les 13 jobs `ci.yml` + `csp-check.yml` (13 purge / 13 restore, 0 purge sans restauration) ; YAML OK (`ci.yml` 15 jobs) — v10.42.35 |
-| Tests | +6 (1663→1669) / +34 assertions (4994→5028) : BUG1 `SubmissionRepositoryTest` (+1), BUG3 `TokenValidationHandlerTransactionTest` (2), BUG2 `TokenServiceRemindClaimTest` (+3 net) |
-| Vérifs | PHPUnit **1669/5028, 0 échec** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; PHPStan projet + tests **0 erreur** ; gate `scripts/check.ps1` **SUCCÈS (15 étapes)** ; newline final `TokenValidationHandler.php` restauré |
+| CI — test restauration WAL | `BackupControllerTest::testRestoreBackupRollbackRemovesWalSidecars` échouait en CI Linux (base partagée vidée par `file_get_contents` seul fichier principal + suppression `-wal`) ; helper capture/restaure un instantané cohérent (VACUUM INTO) + marqueur `bc_rollback_marker` (assertion déterministe) — reproduit puis corrigé |
+| Tests | +6 (1663→1669) / +31 assertions (4994→5025) : BUG1 `SubmissionRepositoryTest` (+1), BUG3 `TokenValidationHandlerTransactionTest` (2), BUG2 `TokenServiceRemindClaimTest` (+3 net) |
+| Vérifs | PHPUnit **1669/5025, 0 échec** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; PHPStan projet + tests **0 erreur** ; gate `scripts/check.ps1` **SUCCÈS (15 étapes)** ; newline final `TokenValidationHandler.php` restauré |
 
 ### v10.42.35 — Correctifs CI : `vendor/PHPMailer` restauré après purge + `@silent-ok` MonitoringController (2026-09-16)
 | Tâche | Détail |
@@ -467,7 +468,7 @@
 ## 🎯 Ce qui reste
 
 **À faire en premier :**
-- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit **1669/5028** (v10.42.36), PHPStan level 8 0 erreur, régressions **17/17**, e2e OK ; gate locale du **2026-09-16 SUCCÈS (15 étapes, e2e Playwright inclus)** — poussée vers GitHub Actions pour confirmation
+- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit **1669/5025** (v10.42.36), PHPStan level 8 0 erreur, régressions **17/17**, e2e OK ; gate locale du **2026-09-16 SUCCÈS (15 étapes, e2e Playwright inclus)** — 1er run CI rouge (test restauration WAL, corrigé), repoussé pour confirmation
 - **Nettoyer la fuite `PersonaServiceTest::setUp`** : la ligne `admins` `admin@test.com` est insérée sans jamais être supprimée (pollution d'ordre pour tout test vérifiant `isAdmin()` derrière) — `testRegenerateRefusesInvalidatedToken` a été rendu insensible (v10.42.29), la cause racine reste à supprimer (cleanup tearDown) avec vérification qu'aucun autre test n'en dépend
 - **Moderniser `tests/test_routing.php`** (hors CI/gate, stalé depuis v10.1.14c) : le check « pas d'erreur fatale » matche le contenu légitime de la page changelog (`stripos 'Fatal error'` — texte d'entrée v10.21.0, page saine prouvée par test_all) ; attentes structurelles des pages admin stalées (`<link>` assets, `body class page-xxx`) — redéfinir les checks sur le layout actuel
 
@@ -686,4 +687,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-16 (correctifs BUG1→BUG3 + validation CI complète — SQL `<> ''` `findActiveWithDeadlineField`, claim relance conservé sur échec réessayable/outbox, rollback `Throwable` `TokenValidationHandler` ; restauration `vendor/PHPMailer` vérifiée sur 13 jobs `ci.yml` + `csp-check.yml` ; suite unitaire 1669 tests/5028 assertions 0 échec ; PHPStan projet + tests 0 erreur ; tests/run_all.php SUCCÈS 5 étapes/17-17 ; gate scripts/check.ps1 SUCCÈS 15 étapes)_
+_Dernière mise à jour : 2026-09-16 (correctifs BUG1→BUG3 + validation CI — SQL `<> ''` `findActiveWithDeadlineField`, claim relance conservé sur échec réessayable/outbox, rollback `Throwable` `TokenValidationHandler` ; restauration `vendor/PHPMailer` vérifiée sur 13 jobs `ci.yml` + `csp-check.yml` ; test restauration WAL rendu déterministe (instantané VACUUM INTO + marqueur) après échec CI Linux ; suite unitaire 1669 tests/5025 assertions 0 échec ; PHPStan projet + tests 0 erreur ; tests/run_all.php SUCCÈS 5 étapes/17-17 ; gate scripts/check.ps1 SUCCÈS 15 étapes)_

@@ -11,11 +11,15 @@ _Résumé : Correctifs BUG1→BUG3 (SQL `!==` invalide dans `findActiveWithDeadl
 ### 🔧 CI — restauration `vendor/PHPMailer` vérifiée (v10.42.35)
 - Les **13 jobs** de `ci.yml` qui purgent `vendor/` (+ le job `csp-check.yml`) déplacent `vendor/PHPMailer` vers `$RUNNER_TEMP` avant `rm -rf vendor` et le restaurent après `composer install` — vérifié par comptage : `composer install` ×39, `rm -rf vendor` ×13, `mv` sortie ×13, restauration ×13 → **0 job avec purge sans restauration** ; YAML parsé OK (`ci.yml` 15 jobs, `csp-check.yml` 1 job).
 
+### 🔧 CI — test de restauration WAL rendu déterministe (échec CI Linux)
+- **Cause** : `BackupControllerTest::testRestoreBackupRollbackRemovesWalSidecars` échouait en CI (« 0 is equal to 1 or greater ») — le test voisin `testRestoreBackupRemovesOrphanWalSidecars` recopiait `db/workflow.db` via `file_get_contents()` du seul fichier principal **puis supprimait le `-wal`** : en mode WAL, les pages non checkpointées (dont le schéma) disparaissaient, laissant la base partagée sans table pour le test suivant. Reproduit localement (base vidée → échec identique ligne 673).
+- **Fix** : le helper de test capture/restaure désormais un **instantané cohérent** (`BackupController::createConsistentSnapshot`, VACUUM INTO) au lieu d'une copie brute du fichier principal ; le test de rollback insère un marqueur (`bc_rollback_marker`) avant la restauration et vérifie sa présence après rollback (assertion déterministe, indépendante de l'état initial de la base).
+
 ### 🧪 Tests
-- **+6 tests / +34 assertions (1663→1669 / 4994→5028)** : `SubmissionRepositoryTest` (+1 — BUG1), `TokenValidationHandlerTransactionTest` (nouveau, 2 — exception `appendToDataJson` + `Throwable` générique : transaction fermée, opération suivante possible), `TokenServiceRemindClaimTest` (+3 net, 1 test renommé — succès / `error` réessayable / write-ahead / `blocked` et croisement relance+outbox : plafond `relance_max` non contourné).
+- **+6 tests (1663→1669) / +31 assertions (4994→5025)** : `SubmissionRepositoryTest` (+1 — BUG1), `TokenValidationHandlerTransactionTest` (nouveau, 2 — exception `appendToDataJson` + `Throwable` générique : transaction fermée, opération suivante possible), `TokenServiceRemindClaimTest` (+3 net, 1 test renommé — succès / `error` réessayable / write-ahead / `blocked` et croisement relance+outbox : plafond `relance_max` non contourné).
 
 ### 🧪 Vérifications (2026-09-16)
-- **PHPUnit complet** : `php vendor/bin/phpunit` → **1669 tests / 5028 assertions, 0 échec, 0 erreur**.
+- **PHPUnit complet** : `php vendor/bin/phpunit` → **1669 tests / 5025 assertions, 0 échec, 0 erreur**.
 - **`tests/run_all.php`** : **SUCCÈS** (5 étapes OK, non-régression **17/17**, 0 warning PHP).
 - **PHPStan level 8** : config projet (`phpstan.neon`) **0 erreur** ; config tests (`tests/phpstan.neon`) **0 erreur** (relancé avec `-d memory_limit=4G` — la limite CLI par défaut 128 M fait planter le worker parallèle ; la gate utilise `--memory-limit=512M`).
 - **Gate** : `pwsh -NoProfile -File scripts/check.ps1` → **SUCCÈS (15 étapes, e2e Playwright inclus)**.
