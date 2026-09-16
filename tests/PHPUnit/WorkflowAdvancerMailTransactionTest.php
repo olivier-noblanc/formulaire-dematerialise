@@ -17,6 +17,35 @@ use App\Workflow\RecipientResolver;
 use App\Workflow\WorkflowAdvancer;
 
 /**
+ * Double de test : enregistre si une transaction était active au moment du send().
+ */
+final class MailTransactionProbe implements MailInterface
+{
+    public bool $sendCalled = false;
+    public ?bool $inTransactionAtSend = null;
+
+    public function __construct(private readonly \PDO $pdo) {}
+
+    public function send(string $to, string $subject, string $body): bool
+    {
+        $this->sendCalled = true;
+        $this->inTransactionAtSend = $this->pdo->inTransaction();
+        return true;
+    }
+
+    /** @param array<string, mixed> $submission */
+    public function buildValidationEmail(array $submission, string $stepLabel, string $token): string
+    {
+        return 'body';
+    }
+
+    public function renderEmailTemplate(string $title, string $bodyHtml): string
+    {
+        return $bodyHtml;
+    }
+}
+
+/**
  * B3 — l'envoi SMTP doit avoir lieu APRÈS le commit de la transaction.
  */
 final class WorkflowAdvancerMailTransactionTest extends TestCase
@@ -60,27 +89,9 @@ final class WorkflowAdvancerMailTransactionTest extends TestCase
     /**
      * Double de test : enregistre si une transaction était active au moment du send().
      */
-    private function makeProbe(\PDO $pdo): MailInterface
+    private function makeProbe(\PDO $pdo): MailTransactionProbe
     {
-        return new class($pdo) implements MailInterface {
-            public bool $sendCalled = false;
-            public ?bool $inTransactionAtSend = null;
-            public function __construct(private readonly \PDO $pdo) {}
-            public function send(string $to, string $subject, string $body): bool
-            {
-                $this->sendCalled = true;
-                $this->inTransactionAtSend = $this->pdo->inTransaction();
-                return true;
-            }
-            public function buildValidationEmail(array $submission, string $stepLabel, string $token): string
-            {
-                return 'body';
-            }
-            public function renderEmailTemplate(string $title, string $bodyHtml): string
-            {
-                return $bodyHtml;
-            }
-        };
+        return new MailTransactionProbe($pdo);
     }
 
     public function testTokenEmailIsSentAfterCommit(): void

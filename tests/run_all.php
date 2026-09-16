@@ -48,7 +48,7 @@ chdir($projectRoot);
 // En utilisant `php`, on hérite du même environnement que l'appelant.
 $phpBin = 'php';
 $smokeTest = shell_exec(escapeshellarg($phpBin) . ' -v 2>&1');
-if ($smokeTest === null || strpos($smokeTest, 'PHP') === false) {
+if ($smokeTest === null || !str_contains($smokeTest, 'PHP')) {
     // Fallback sur PHP_BINARY si `php` n'est pas dans le PATH
     $phpBin = PHP_BINARY;
 }
@@ -178,13 +178,15 @@ $it = new RecursiveIteratorIterator(
 foreach ($it as $f) {
     if (!$f->isFile() || $f->getExtension() !== 'php') continue;
     $p = $f->getPathname();
-    // Exclusions cohérentes avec scripts/audit_undefined.php :
-    //  - /vendor/    : dépendances Composer (PHPMailer)
-    //  - /node_modules/ : dépendances JS
-    //  - /tests/     : fichiers de test (validés par les étapes 2-5, pas par le lint)
-    if (preg_match('#/vendor/#', $p) || preg_match('#\\\\vendor\\\\#', $p)) continue;
-    if (preg_match('#/node_modules/#', $p)) continue;
-    if (preg_match('#/tests/#', $p) || preg_match('#\\\\tests\\\\#', $p)) continue;
+    // Exclusions (chemin normalisé en `/` → portable Windows/Linux) :
+    //  - vendor/       : dépendances Composer (PHPMailer)
+    //  - node_modules/ : dépendances JS
+    //  - tests/        : fichiers de test (validés par les étapes 2-5, pas par le lint)
+    //  - .git/, caches PHPStan (.phpstan-cache*, tmp/) et artefacts non-code
+    //    (db, cache, download, PHPMailer) : sans quoi le phar PHPStan extrait
+    //    des milliers de fichiers .php qui sont lintés un par un (run > 15 min).
+    $norm = str_replace('\\', '/', $p);
+    if (preg_match('#(^|/)(vendor|node_modules|tests|\.git|\.phpstan-cache|tmp|db|cache|download|PHPMailer)(/|$)#', $norm)) continue;
     $phpFiles[] = $p;
 }
 sort($phpFiles);
@@ -196,7 +198,7 @@ $lintStart = microtime(true);
 $lintStderr = '';
 foreach ($phpFiles as $f) {
     $out = shell_exec(escapeshellarg($phpBin) . ' -l ' . escapeshellarg($f) . ' 2>&1');
-    if ($out === null || strpos($out, 'No syntax errors') === false) {
+    if ($out === null || !str_contains($out, 'No syntax errors')) {
         err("Lint échoué sur : $f");
         fwrite(STDERR, $out . "\n");
         $lintErrors++;

@@ -17,7 +17,6 @@
 #  11. Tests structurels HTML (StructuralHtmlTest.php)
 #  12. Tests de non-régression (Bug01-Bug11)
 #  13. Audit épuration UI (pas de topbar/breadcrumb)
-#  14. Tests unitaires wave (test_unit_wave*)
 #
 # ── Configuration du runner ─────────────────────────────────────
 # Utilise les runners PUBLICS de Codeberg (https://codeberg.org/actions/meta).
@@ -152,29 +151,6 @@ jobs:
       - name: Audit épuration UI
         run: php tests/test_no_topbar_breadcrumb.php
 
-      # ── 15. Tests unitaires wave (si présents) ──────────────
-      - name: Tests unitaires wave
-        run: |
-          set +e
-          wave_count=0
-          for f in tests/test_unit_wave*.php; do
-            if [ -f "$f" ]; then
-              echo "--- Running $f ---"
-              php "$f"
-              rc=$?
-              if [ $rc -ne 0 ]; then
-                echo "FAIL: $f (exit code $rc)"
-                exit 1
-              fi
-              wave_count=$((wave_count + 1))
-            fi
-          done
-          set -e
-          if [ $wave_count -eq 0 ]; then
-            echo "SKIP: no test_unit_wave*.php files found"
-          else
-            echo "OK: $wave_count wave test file(s) passed"
-          fi
 
       # ── 16. Tests cache service ───────────────────────────────
       - name: Tests cache service

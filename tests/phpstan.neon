@@ -33,7 +33,12 @@ parameters:
         - test_api.php
         - test_http.php
         - test_e2e.php
-    tmpDir: /tmp/phpstan
+    # Pas de `tmpDir` explicite : sur Windows, `/tmp/phpstan` n'était pas
+    # reconnu comme absolu et était résolu en `tests/tmp/phpstan` (dans le
+    # scope `paths: .`) → PHPStan analysait son propre conteneur Nette généré
+    # (~650 faux positifs class.prefixed + shipmonk.deadMethod). On s'en remet
+    # au défaut PHPStan (sys_get_temp_dir()/phpstan), hors de l'arbre projet —
+    # voir AGENTS.md §4 (chemins temporaires portables, jamais /tmp en dur).
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         - '#^Call to static method PHPUnit\\Framework\\Assert::assertTrue\(\) with true will always evaluate to true\.$#'
@@ -91,6 +96,13 @@ parameters:
         - '#^Only booleans are allowed in a negated boolean, array\|null given\.#'
         - '#^Only booleans are allowed in an if condition, array\|null given\.#'
         - '#^Casting to string something that.s already string\.#'
+        # Doubles de test implémentant MailInterface : leurs méthodes d'interface
+        # sont appelées depuis src/ (hors scope de cette config tests/), shipmonk
+        # les voit donc comme mortes — même classe de faux positif que le root
+        # phpstan.neon (qui ignore shipmonk.deadMethod par path).
+        - '#^Unused App\\Tests\\TokenServicePartialMailFailureStub::#'
+        - '#^Unused App\\Tests\\RemindClaimProbeMailer::#'
+        - '#^Unused App\\Tests\\MailTransactionProbe::#'
     bootstrapFiles:
         - ../helpers.php
         - phpstan-test-functions.php

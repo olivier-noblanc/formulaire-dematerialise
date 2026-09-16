@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1569** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-15, v10.42.31 ; avant : 1540 au 2026-09-14) |
-| Assertions | **4545** (v10.42.31 ; avant : 4450) |
+| Tests | **1614** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-16, v10.42.33 ; avant : 1569 au 2026-09-15) |
+| Assertions | **4753** (v10.42.33 ; avant : 4545) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,19 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.33 — Dettes D1→D7 soldées + outillage de test portable (2026-09-16)
+| Tâche | Détail |
+|-------|--------|
+| D1/D2 | `filled_at` formaté (renderers) ; message `alert_log` avec les jours réels — commit `0e2ce77` |
+| D3 | Variable morte `totalTokensCreated` supprimée — commit `c261eea` |
+| D4 | Magic strings `FieldVisibility` → enum `App\Enum\FieldVisibility` — commit `370c18d` |
+| D5 | Hint numérique préservé au round-trip import/export — commit `488d10e` |
+| D6/D7 | 20 suites CLI legacy supprimées (supplantées par PHPUnit) + références nettoyées ; suites conservées intactes (`test_e2e`, `test_routing`, `test_http`/`test_api`, `test_refactor`, `test_no_topbar_breadcrumb`, `test_filled_by`, `test_no_deprecated_session`, `test_no_undefined_vars`, cluster `test_advanced*`) — commit `c2899a5` |
+| PHPStan tests portable | `tests/phpstan.neon` : `tmpDir: /tmp/phpstan` résolu en `tests/tmp/phpstan` sous Windows → PHPStan analysait son propre conteneur (~650 faux positifs). `tmpDir` supprimé (défaut hors arbre) + 3 `ignoreErrors` justifiés (doubles `MailInterface`) |
+| run_all lint | `tests/run_all.php` : exclusions normalisées (`\`→`/`) — `.git`, caches PHPStan, `tmp/`, artefacts ; lint 5319 → ~290 fichiers (> 15 min → 93 s) |
+| Test health e2e | `HttpRouteTest` : 6 → 7 contrôles (`check-item`), aligné sur A4 |
+| Vérifs | PHPUnit **1614 tests / 4753 assertions, 0 échec** ; PHPStan `tests/phpstan.neon` **0 erreur** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17 régressions) ; gate `scripts/check.ps1` **SUCCÈS (14 étapes)** |
 
 ### v10.42.30 — Lot correctifs B1→B8 (audit adversarial post-PR #23)
 | Tâche | Détail |
@@ -421,7 +434,7 @@
 ## 🎯 Ce qui reste
 
 **À faire en premier :**
-- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit **1569/4545** (v10.42.31), PHPStan level 8 0 erreur, régressions **17/17**, e2e **5/5** ; gate locale du **2026-09-15 SUCCÈS (14 étapes)** — reste à confirmer via CI sur la branche pushée
+- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit **1614/4753** (v10.42.33), PHPStan level 8 0 erreur, régressions **17/17**, e2e **5/5** ; gate locale du **2026-09-16 SUCCÈS (14 étapes)** — reste à confirmer via CI sur la branche pushée
 - **Nettoyer la fuite `PersonaServiceTest::setUp`** : la ligne `admins` `admin@test.com` est insérée sans jamais être supprimée (pollution d'ordre pour tout test vérifiant `isAdmin()` derrière) — `testRegenerateRefusesInvalidatedToken` a été rendu insensible (v10.42.29), la cause racine reste à supprimer (cleanup tearDown) avec vérification qu'aucun autre test n'en dépend
 - **Moderniser `tests/test_routing.php`** (hors CI/gate, stalé depuis v10.1.14c) : le check « pas d'erreur fatale » matche le contenu légitime de la page changelog (`stripos 'Fatal error'` — texte d'entrée v10.21.0, page saine prouvée par test_all) ; attentes structurelles des pages admin stalées (`<link>` assets, `body class page-xxx`) — redéfinir les checks sur le layout actuel
 
@@ -477,7 +490,7 @@ Lane d'audit hors sécurité : corrections de bugs appliquées (B-FIX1 à B-FIX5
 
 ### Audit adversarial post-PR #23 — lot B1→B8 ✅ **TERMINÉ** (2026-09-14)
 
-Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **corrigés et committés** (v10.42.30 ; Lane A = `7f49d04`, Lanes B/C incluses dans le commit final). Les **risques R1–R7 sont tous traités** (R1 `820e13e`, R7 `183bac7`, R6 `c24808b`, R5 `c2582ae`, R4 `b666f2c`, R2/R3 `2a2ae2f`) ; les dettes D1–D7 ci-dessous restent **hors périmètre** et à instruire.
+Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **corrigés et committés** (v10.42.30 ; Lane A = `7f49d04`, Lanes B/C incluses dans le commit final). Les **risques R1–R7 sont tous traités** (R1 `820e13e`, R7 `183bac7`, R6 `c24808b`, R5 `c2582ae`, R4 `b666f2c`, R2/R3 `2a2ae2f`) ; les dettes D1–D7 ci-dessous sont **soldées** (2026-09-16 — voir table et CHANGELOG [10.42.33]).
 
 **Validation finale :** gate complète `scripts/check.ps1` **SUCCÈS (14 étapes)** — PHPUnit **1540 tests / 4450 assertions, 0 échec**, PHPStan level 8 (full) 0 erreur, lint + suites fonctionnelles + `run_all` + e2e Playwright OK.
 
@@ -518,12 +531,12 @@ Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **c
 
 | Élément | État | Détail |
 |---|---|---|
-| D1 | ⚠️ Non urgent | `filled_at` affiché brut. |
-| D2 | ⚠️ Non urgent | Message `alert_log` avec un mauvais nombre de jours. |
-| D3 | ⚠️ Non urgent | `totalTokensCreated` mort. |
-| D4 | ⚠️ Non urgent | Magic strings `FieldVisibility`. |
-| D5 | ⚠️ Non urgent | Hint numérique vidé à l’import. |
-| D6/D7 | ⚠️ Non urgent | Tests historiques. |
+| D1 | ✅ Soldée | `filled_at` formaté via `HtmlService::formatDateTimeFr` (renderers) — commit `0e2ce77`. |
+| D2 | ✅ Soldée | Message `alert_log` avec le nombre de jours réel — commit `0e2ce77`. |
+| D3 | ✅ Soldée | Variable morte `totalTokensCreated` supprimée — commit `c261eea`. |
+| D4 | ✅ Soldée | Magic strings remplacées par l'enum `FieldVisibility` — commit `370c18d`. |
+| D5 | ✅ Soldée | Hint numérique préservé au round-trip import/export — commit `488d10e`. |
+| D6/D7 | ✅ Soldée | 20 suites CLI legacy supprimées (supplantées par PHPUnit) — commit `c2899a5`. |
 
 ### Outbox SMTP write-ahead — A1→A5 ✅ **TERMINÉ** (2026-09-15)
 
@@ -537,7 +550,7 @@ Les **8 bugs confirmés** B1→B8 identifiés par l’audit adversarial sont **c
 | A4 | `HealthController` : contrôle « File d'envoi des emails » → **503** si échec définitif, **sans fuite de détails** (compte seul ; hôte SMTP et messages d'exception retirés de l'endpoint public). Bannière admin **rouge** sur la page Surveillance. |
 | A5 | RGPD minimal : `deleteUserData()` anonymise le destinataire + purge `body_html` ; `exportUserData()` expose les métadonnées d'emails (sans corps) ; `autoPurge()` supprime les emails au-delà de la rétention. |
 
-**Validation locale :** suite unitaire PHPUnit **1513 tests / 4442 assertions, 0 échec** ; PHPStan level 8 (fichiers touchés) **0 erreur** ; Rector dry-run **clean** ; Deptrac **0 violation** ; lint PHP OK. La gate complète (`scripts/check.ps1`) reste à lancer par l'owner de validation finale.
+**Validation :** gate complète `scripts/check.ps1` **SUCCÈS (14 étapes)** — PHPUnit **1614 tests / 4753 assertions, 0 échec** ; PHPStan level 8 **0 erreur** ; lint + suites fonctionnelles + `run_all` + e2e Playwright OK (2026-09-16).
 
 ### ~~Baseline PHPStan (816 erreurs — toutes LOW, baseline regenerée)~~ ✅ **TERMINÉ/À JOUR**
 
@@ -640,4 +653,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-15 (outbox SMTP A1→A5 terminé — worker/rejeu avec claim atomique, backoff 15 min, failed après 5 tentatives ; santé 503 + bannière admin rouge ; RGPD delete/export/purge ; R2/R3 résolus ; lot B1→B8 committé ; suite unitaire 1513 tests/4442 assertions 0 échec ; D5/D6-D7 hors périmètre)_
+_Dernière mise à jour : 2026-09-16 (dettes D1→D7 soldées ; outillage de test portable — PHPStan tests 0 erreur, run_all lint 5319→~290 fichiers ; test health e2e aligné sur 7 contrôles ; outbox SMTP A1→A5 ; R1–R7 + B1→B8 committés ; suite unitaire 1614 tests/4753 assertions 0 échec ; gate scripts/check.ps1 SUCCÈS 14 étapes)_

@@ -894,17 +894,18 @@ final class HttpRouteTest extends TestCase
         self::assertStringContainsString('f=mutation', $body, 'Should link to mutation form');
     }
 
-    /** Health: exactly 6 system checks. */
-    public function testHealthRendersExactly6Checks(): void
+    /** Health: exactly 7 system checks (dont la file d'envoi des emails — A4). */
+    public function testHealthRendersExactly7Checks(): void
     {
         [$status, $body] = $this->httpGet('/?p=health');
         // 503 is valid (unhealthy), 200 is valid (healthy)
         self::assertContains($status, [200, 503], 'Health returns 200 or 503');
         preg_match_all('/class="check-item"/', $body, $m);
-        self::assertSame(6, count($m[0]), 'Health should render exactly 6 check items');
+        self::assertSame(7, count($m[0]), 'Health should render exactly 7 check items');
         self::assertStringContainsString('Base de données SQLite', $body, 'Check: DB');
         self::assertStringContainsString('Version PHP', $body, 'Check: PHP version');
         self::assertStringContainsString('Extensions PHP', $body, 'Check: extensions');
+        self::assertStringContainsString('envoi des emails', $body, 'Check: mail outbox (A4)');
     }
 
     /** Docs: 3 start-cards, TOC entries, FAQ items. */
