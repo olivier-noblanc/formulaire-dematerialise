@@ -40,4 +40,26 @@ final class MailOutbox
      * pour qu'aucun autre worker ne la reprenne pendant l'envoi.
      */
     public const int LEASE_SECONDS = 900;
+
+    /**
+     * Plafond de rejeux MANUELS opérateur par ligne, en plus du rejeu
+     * automatique. Au-delà, `claimFailedForManualReplay()` refuse la
+     * revendication : un message bloqué ne peut plus être relancé à la main
+     * sans intervention (protection contre le harcèlement du destinataire).
+     */
+    public const int MANUAL_REPLAY_MAX = 3;
+
+    /**
+     * Rétention (jours) du corps HTML des envois en SUCCÈS avant purge RGPD.
+     * Seul le corps est purgé (`body_html = NULL`) ; la ligne `mail_log` est
+     * CONSERVÉE pour la traçabilité d'envoi.
+     */
+    public const int BODY_KEEP_SENT_DAYS = 7;
+
+    /**
+     * Rétention (jours) du corps HTML des échecs TERMINAUX (`error`, `failed`,
+     * `blocked`) avant purge RGPD. Marge plus longue que les succès pour
+     * laisser à l'opérateur le temps de diagnostiquer puis rejouer le message.
+     */
+    public const int BODY_KEEP_TERMINAL_DAYS = 30;
 }

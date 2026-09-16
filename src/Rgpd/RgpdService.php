@@ -6,6 +6,7 @@ namespace App\Rgpd;
 
 use App\Core\App;
 use App\Enum\SubmissionField;
+use App\Mail\MailOutbox;
 use App\Repository\AdminRepository;
 use App\Repository\AlertRepository;
 use App\Repository\AttachmentRepository;
@@ -155,10 +156,17 @@ final readonly class RgpdService
         $cutoff_ts = strtotime("-{$months} months");
         $cutoff = gmdate('Y-m-d H:i:s', $cutoff_ts !== false ? $cutoff_ts : time());
 
+        // Rétention courte du corps HTML de l'outbox (en UTC) : succès après
+        // BODY_KEEP_SENT_DAYS, échecs terminaux après BODY_KEEP_TERMINAL_DAYS.
+        // Seul le corps est purgé ; la ligne `mail_log` est conservée (traçabilité).
+        $successCutoff = gmdate('Y-m-d H:i:s', time() - MailOutbox::BODY_KEEP_SENT_DAYS * 86400);
+        $terminalCutoff = gmdate('Y-m-d H:i:s', time() - MailOutbox::BODY_KEEP_TERMINAL_DAYS * 86400);
+
         $oldIds = $this->submissionRepository->findIdsPurgeableByCutoffForRgpd($cutoff);
 
         $count = 0;
         $mailsPurged = 0;
+        $bodiesPurged = 0;
         $this->tokenRepository->beginTransaction();
         try {
             foreach ($oldIds as $oldId) {
@@ -175,6 +183,9 @@ final readonly class RgpdService
             }
             // A5 : purger les emails sortants trop anciens (conservation limitée).
             $mailsPurged = $this->mailRepository->purgeOlderThan($cutoff);
+            // Lane B : purger les CORPS des emails trop anciens (rétention courte,
+            // lignes conservées) — `pending` jamais purgé (nécessaire au rejeu).
+            $bodiesPurged = $this->mailRepository->purgeOutboxBodies($successCutoff, $terminalCutoff);
             $this->tokenRepository->commit();
         } catch (\Exception $e) {
             // @silent-ok: log-only background cleanup with rollback
@@ -185,8 +196,16 @@ final readonly class RgpdService
             return 0;
         }
 
-        if ($count > 0 || $mailsPurged > 0) {
-            App::audit()->log('rgpd_purge', '', "Purge RGPD : {$count} soumissions et {$mailsPurged} emails de plus de {$months} mois supprimés", '');
+        if ($count > 0 || $mailsPurged > 0 || $bodiesPurged > 0) {
+            App::audit()->log(
+                'rgpd_purge',
+                '',
+                "Purge RGPD : {$count} soumissions et {$mailsPurged} emails de plus de {$months} mois supprimés ; "
+                    . "{$bodiesPurged} corps d'emails purgés (rétention "
+                    . MailOutbox::BODY_KEEP_SENT_DAYS . 'j succès / '
+                    . MailOutbox::BODY_KEEP_TERMINAL_DAYS . "j échecs)",
+                ''
+            );
         }
 
         return $count;

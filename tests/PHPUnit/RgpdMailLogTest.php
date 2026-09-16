@@ -42,14 +42,14 @@ final class RgpdMailLogTest extends TestCase
         $this->createdIds = [];
     }
 
-    private function seedMail(string $recipient, string $createdAt, ?string $body = '<p>Données personnelles</p>'): string
+    private function seedMail(string $recipient, string $createdAt, ?string $body = '<p>Données personnelles</p>', string $status = MailStatus::Sent->value): string
     {
         $id = 'rgpd-mail-' . bin2hex(random_bytes(8));
         $this->createdIds[] = $id;
         $this->db->getPdo()->prepare(
             "INSERT INTO mail_log (id, created_at, recipient, subject, body_html, status, error_message, smtp_log, attempts, next_retry_at, actor, ip)
              VALUES (?, ?, ?, 'Sujet RGPD', ?, ?, '', '', 1, NULL, 'system', 'CLI')"
-        )->execute([$id, $createdAt, $recipient, $body, MailStatus::Sent->value]);
+        )->execute([$id, $createdAt, $recipient, $body, $status]);
         return $id;
     }
 
@@ -62,6 +62,20 @@ final class RgpdMailLogTest extends TestCase
         self::assertIsArray($row);
         /** @var array{recipient: mixed, body_html: mixed} $row */
         return $row;
+    }
+
+    private function bodyOf(string $id): string|null|false
+    {
+        $stmt = $this->db->getPdo()->prepare('SELECT body_html FROM mail_log WHERE id = ?');
+        $stmt->execute([$id]);
+        return $stmt->fetchColumn();
+    }
+
+    private function mailExists(string $id): bool
+    {
+        $stmt = $this->db->getPdo()->prepare('SELECT COUNT(*) FROM mail_log WHERE id = ?');
+        $stmt->execute([$id]);
+        return (int) $stmt->fetchColumn() === 1;
     }
 
     public function testDeleteUserDataAnonymizesRecipientAndPurgesBody(): void
@@ -108,6 +122,34 @@ final class RgpdMailLogTest extends TestCase
         self::assertSame(0, (int) $check->fetchColumn(), 'un email de plus de 24 mois doit être purgé');
         $check->execute([$recent]);
         self::assertSame(1, (int) $check->fetchColumn(), 'un email récent doit être conservé');
+    }
+
+    public function testAutoPurgePurgesOldBodiesWithRetentionWindowsAndAuditsCount(): void
+    {
+        $sentOld = $this->seedMail('body-sent-old@test.local', gmdate('Y-m-d H:i:s', time() - 8 * 86400));
+        $sentFresh = $this->seedMail('body-sent-fresh@test.local', gmdate('Y-m-d H:i:s', time() - 86400));
+        $failedWithin = $this->seedMail('body-failed-within@test.local', gmdate('Y-m-d H:i:s', time() - 25 * 86400), '<p>Données personnelles</p>', MailStatus::Failed->value);
+        $failedOld = $this->seedMail('body-failed-old@test.local', gmdate('Y-m-d H:i:s', time() - 31 * 86400), '<p>Données personnelles</p>', MailStatus::Failed->value);
+        $pendingOld = $this->seedMail('body-pending-old@test.local', gmdate('Y-m-d H:i:s', time() - 100 * 86400), '<p>Données personnelles</p>', MailStatus::Pending->value);
+
+        $this->service->autoPurge(24);
+
+        self::assertNull($this->bodyOf($sentOld), 'un succès de plus de 7 jours est purgé');
+        self::assertSame('<p>Données personnelles</p>', $this->bodyOf($sentFresh), 'un succès récent est conservé');
+        self::assertSame('<p>Données personnelles</p>', $this->bodyOf($failedWithin), 'un échec terminal de moins de 30 jours est conservé');
+        self::assertNull($this->bodyOf($failedOld), 'un échec terminal de plus de 30 jours est purgé');
+        self::assertSame('<p>Données personnelles</p>', $this->bodyOf($pendingOld), 'un pending n\'est jamais purgé');
+
+        // Les lignes restent présentes (seul le corps est purgé).
+        foreach ([$sentOld, $sentFresh, $failedWithin, $failedOld, $pendingOld] as $id) {
+            self::assertTrue($this->mailExists($id), 'la ligne mail_log doit être conservée');
+        }
+
+        // Audit : le compteur de corps purgés est journalisé.
+        $stmt = $this->db->getPdo()->query("SELECT detail FROM audit_log WHERE action = 'rgpd_purge' ORDER BY rowid DESC LIMIT 1");
+        self::assertNotFalse($stmt);
+        $detail = (string) $stmt->fetchColumn();
+        self::assertStringContainsString("corps d'emails purgés", $detail);
     }
 
     public function testFindByRecipientReturnsMetadataWithoutBody(): void

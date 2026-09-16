@@ -312,6 +312,91 @@ final readonly class MailService implements MailInterface
     }
 
     /**
+     * Rejoue MANUELLEMENT une ligne `failed` de l'outbox (action opérateur).
+     *
+     * Séquence : revendication atomique (`claimFailedForManualReplay`, plafond
+     * `MailOutbox::MANUAL_REPLAY_MAX`) → envoi SMTP synchrone (`transmit`) →
+     * finalisation. La revendication place la ligne en `error` avec un bail
+     * (`next_retry_at = now + LEASE_SECONDS`) AVANT l'envoi : si le process meurt
+     * entre la revendication et la finalisation, la ligne reste reprise par le
+     * worker automatique — crash-safe, aucun message perdu.
+     *
+     * Refus (retour sans contact SMTP) quand la revendication échoue : ligne
+     * introuvable, statut ≠ `failed` (déjà rejouée/reprise par un autre clic),
+     * corps purgé (RGPD) ou plafond de rejeux manuels atteint. Un corps vide est
+     * également refusé sans contacter le SMTP.
+     *
+     * @api Point d'entrée consommé par le rejeu manuel opérateur (contrôleur).
+     *
+     * @return array{success:bool,error:string,smtp_log:string,status:string}
+     */
+    public function replayFailed(string $id): array
+    {
+        if (!$this->mailRepository->tableExists()) {
+            return [
+                'success' => false,
+                'error' => 'Journal des emails absent — rejeu impossible',
+                'smtp_log' => '',
+                'status' => MailStatus::Failed->value,
+            ];
+        }
+
+        $leaseUntil = gmdate('Y-m-d H:i:s', time() + MailOutbox::LEASE_SECONDS);
+        $claimed = $this->mailRepository->claimFailedForManualReplay($id, $leaseUntil, MailOutbox::MANUAL_REPLAY_MAX);
+        if ($claimed === null) {
+            return [
+                'success' => false,
+                'error' => 'Rejeu refusé : message introuvable, déjà rejoué, corps purgé (RGPD) '
+                    . 'ou plafond de ' . MailOutbox::MANUAL_REPLAY_MAX . ' rejeux manuels atteint',
+                'smtp_log' => '',
+                'status' => MailStatus::Failed->value,
+            ];
+        }
+
+        // Corps absent (défense en profondeur : le claim refuse déjà `body_html
+        // IS NULL`) : refus SANS contacter le SMTP, échec définitif.
+        $body = $claimed['body_html'];
+        if ($body === '') {
+            $this->mailRepository->finalize(
+                $claimed['id'],
+                MailStatus::Failed,
+                'Corps du message absent (purge RGPD ?) — rejeu manuel impossible',
+                '',
+                0,
+                null
+            );
+            return [
+                'success' => false,
+                'error' => 'Corps du message absent (purge RGPD ?) — rejeu impossible',
+                'smtp_log' => '',
+                'status' => MailStatus::Failed->value,
+            ];
+        }
+
+        try {
+            $result = $this->transmit($claimed['recipient'], $claimed['subject'], $body);
+        } catch (\Throwable $e) {
+            // @silent-ok: converti en résultat structuré réessayable (jamais avalé).
+            $result = [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'smtp_log' => '',
+                'status' => MailStatus::Error->value,
+            ];
+        }
+
+        $status = MailStatus::tryFrom($result['status']) ?? MailStatus::Error;
+        // Un échec réessayable repart dans la file automatique (backoff) ; les
+        // statuts terminaux (sent / blocked) coupent le rejeu.
+        $nextRetryAt = $status === MailStatus::Error
+            ? gmdate('Y-m-d H:i:s', time() + MailOutbox::BACKOFF_SECONDS)
+            : null;
+        $this->mailRepository->finalize($claimed['id'], $status, $result['error'], $result['smtp_log'], 1, $nextRetryAt);
+
+        return $result;
+    }
+
+    /**
      * Nombre de messages en échec définitif dans l'outbox (signal opérateur).
      */
     public function getOutboxFailureCount(): int
