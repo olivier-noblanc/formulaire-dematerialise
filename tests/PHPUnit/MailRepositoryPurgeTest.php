@@ -30,9 +30,6 @@ final class MailRepositoryPurgeTest extends TestCase
     private Database $db;
     private MailRepository $repo;
 
-    /** @var list<string> */
-    private array $ids = [];
-
     protected function setUp(): void
     {
         $this->savedTestDbPath = $GLOBALS['_test_db_path'] ?? null;
@@ -44,7 +41,6 @@ final class MailRepositoryPurgeTest extends TestCase
         $this->repo = new MailRepository($this->db);
         // Force l'ouverture → db_migrate() construit le schéma complet (v39 inclus).
         self::assertInstanceOf(\PDO::class, $this->db->getPdo());
-        $this->ids = [];
     }
 
     protected function tearDown(): void
@@ -65,7 +61,6 @@ final class MailRepositoryPurgeTest extends TestCase
     private function seed(string $status, int $ageDays): string
     {
         $id = 'purge-' . bin2hex(random_bytes(8));
-        $this->ids[] = $id;
         $this->db->getPdo()->prepare(
             "INSERT INTO mail_log (id, created_at, recipient, subject, body_html, status, error_message, smtp_log, attempts, next_retry_at, manual_replay_count, actor, ip)
              VALUES (?, ?, 'dest@test.local', 'Sujet purge', '<p>Corps purge</p>', ?, '', '', 1, NULL, 0, 'testeur', '127.0.0.1')"
