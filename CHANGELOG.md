@@ -1,5 +1,26 @@
 # Changelog — CircuitDémat
 
+## [10.42.36] — 2026-09-16
+_Résumé : Correctifs BUG1→BUG3 (SQL `!==` invalide dans `findActiveWithDeadlineField`, claim de relance conservé sur échec SMTP réessayable/outbox, rollback transaction sur `Throwable` dans `TokenValidationHandler`) + validation complète CI (restauration `vendor/PHPMailer` à travers la purge `vendor/` vérifiée sur les 13 jobs `ci.yml` + `csp-check.yml`)._
+
+### 🐛 Fixes — BUG1→BUG3
+- **BUG1 — SQL invalide `findActiveWithDeadlineField()`** (commit `a4a37c8`) : la requête utilisait l'opérateur `!==` (`f.deadline_field !== ''`) que SQLite rejette (`near "=": syntax error`) — l'appel échouait systématiquement. Corrigé en `<> ''`. Test `testFindActiveWithDeadlineFieldFiltersOnDeadlineField` : exécute réellement la requête (formulaire avec `deadline_field` renseigné retourné, `deadline_field` vide exclu).
+- **BUG2 — claim de relance conservé sur échec réessayable/outbox** (commit `8fcf22d`) : `TokenService::remind()` libérait le créneau (`relance_count`) dès que `send()`/`sendDetailed()` échouait, y compris pour un échec SMTP réessayable déjà persisté en outbox (write-ahead) — le rejeu réexpédiait alors l'email avec `relance_count` rabattu (contournement du plafond `relance_max`, relance fantôme). Désormais `sendRelanceMail()` privilégie `sendDetailed()` (contrat `MailService`/`MailStatus`) : seul `MailStatus::Blocked` (adresse destinataire invalide / config SMTP/From absente) libère le créneau ; un échec `error`/write-ahead conserve le claim, message « mis en file d'attente » + audit `manual_remind`. Repli `send()` → `error` (claim conservé, défaut conservateur) pour les doubles de test sans `sendDetailed()`.
+- **BUG3 — rollback transaction sur `Throwable`** (commit `2a4d54a`) : `TokenValidationHandler::validate()` laissait la connexion PDO avec une transaction active si une exception remontait entre `beginTransaction()` et `commit()` (`appendToDataJson`, DDL…), la rendant inutilisable pour le cron différé et les opérations suivantes (`cannot start a transaction within a transaction` / `SQLITE_LOCKED`). Le chemin transactionnel est encapsulé dans un `try`/`catch (\Throwable)` qui rollback sous `inTransaction()` puis rethrow ; les rollbacks métier et les side effects post-commit (emails, `advanceWorkflow`) sont préservés. Newline final du fichier restauré.
+
+### 🔧 CI — restauration `vendor/PHPMailer` vérifiée (v10.42.35)
+- Les **13 jobs** de `ci.yml` qui purgent `vendor/` (+ le job `csp-check.yml`) déplacent `vendor/PHPMailer` vers `$RUNNER_TEMP` avant `rm -rf vendor` et le restaurent après `composer install` — vérifié par comptage : `composer install` ×39, `rm -rf vendor` ×13, `mv` sortie ×13, restauration ×13 → **0 job avec purge sans restauration** ; YAML parsé OK (`ci.yml` 15 jobs, `csp-check.yml` 1 job).
+
+### 🧪 Tests
+- **+6 tests / +34 assertions (1663→1669 / 4994→5028)** : `SubmissionRepositoryTest` (+1 — BUG1), `TokenValidationHandlerTransactionTest` (nouveau, 2 — exception `appendToDataJson` + `Throwable` générique : transaction fermée, opération suivante possible), `TokenServiceRemindClaimTest` (+3 net, 1 test renommé — succès / `error` réessayable / write-ahead / `blocked` et croisement relance+outbox : plafond `relance_max` non contourné).
+
+### 🧪 Vérifications (2026-09-16)
+- **PHPUnit complet** : `php vendor/bin/phpunit` → **1669 tests / 5028 assertions, 0 échec, 0 erreur**.
+- **`tests/run_all.php`** : **SUCCÈS** (5 étapes OK, non-régression **17/17**, 0 warning PHP).
+- **PHPStan level 8** : config projet (`phpstan.neon`) **0 erreur** ; config tests (`tests/phpstan.neon`) **0 erreur** (relancé avec `-d memory_limit=4G` — la limite CLI par défaut 128 M fait planter le worker parallèle ; la gate utilise `--memory-limit=512M`).
+- **Gate** : `pwsh -NoProfile -File scripts/check.ps1` → **SUCCÈS (15 étapes, e2e Playwright inclus)**.
+- **php-cs-fixer** : nouveau diff limité au newline final restauré (`dry-run` non bloquant en CI, `|| true` ; les 135 fichiers signalés restants sont pré-existants).
+
 ## [10.42.35] — 2026-09-16
 _Résumé : Correctifs CI — `vendor/PHPMailer` versionné restauré après la purge `vendor/` (PHPUnit, PHPStan level 8, PHPStan tests et CSP échouaient sur `vendor/PHPMailer/src/Exception.php` absent), et marqueur `@silent-ok` sur le catch de `MonitoringController` (règle 9)._
 
