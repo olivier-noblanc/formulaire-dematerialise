@@ -34,6 +34,26 @@ namespace App\Controller {
         }
         return \filesize($filename);
     }
+
+    /**
+     * Override move_uploaded_file for BackupController tests. In CLI there is no
+     * real HTTP upload, so the built-in always returns false. When the global
+     * flag $_test_force_move_uploaded is set, perform a real rename to simulate
+     * a successful upload. At that exact instant (right after the swap), plant a
+     * valid -wal coming from $_test_plant_foreign_wal — SQLite would silently
+     * apply that foreign journal over the restored DB if it is not removed.
+     */
+    function move_uploaded_file(string $from, string $to): bool
+    {
+        if (empty($GLOBALS['_test_force_move_uploaded'])) {
+            return \move_uploaded_file($from, $to);
+        }
+        $ok = \rename($from, $to);
+        if ($ok && !empty($GLOBALS['_test_plant_foreign_wal'])) {
+            \file_put_contents($to . '-wal', $GLOBALS['_test_plant_foreign_wal']);
+        }
+        return $ok;
+    }
 }
 
 namespace App\Tests\Controller {
@@ -100,6 +120,8 @@ final class BackupControllerTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $GLOBALS['_test_captured_json'] = null;
         $GLOBALS['_test_force_db_missing'] = false;
+        $GLOBALS['_test_force_move_uploaded'] = false;
+        $GLOBALS['_test_plant_foreign_wal'] = '';
 
         // S'assurer que db/workflow.db existe (pour la plupart des tests)
         if (!\file_exists($this->dbPath)) {
@@ -141,6 +163,8 @@ final class BackupControllerTest extends TestCase
         $this->createdSubmissionIds = [];
         $this->createdFormIds = [];
         $GLOBALS['_test_force_db_missing'] = false;
+        $GLOBALS['_test_force_move_uploaded'] = false;
+        $GLOBALS['_test_plant_foreign_wal'] = '';
         $GLOBALS['_test_mails'] = [];
         $GLOBALS['_test_captured_json'] = null;
     }
@@ -157,7 +181,7 @@ final class BackupControllerTest extends TestCase
      */
     public function testHandleGetRendersBackupPageWithAllSections(): void
     {
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Sauvegarde et restauration', $output);
         self::assertStringContainsString('Statistiques de la base de données', $output);
@@ -184,7 +208,7 @@ final class BackupControllerTest extends TestCase
         // Insérer quelques forms pour que les stats soient non triviales
         $this->createTestForm('test-bc-stats');
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Nombre d\'enregistrements par table', $output);
         self::assertStringContainsString('class="u-fon-fon-3">forms', $output);
@@ -213,8 +237,7 @@ final class BackupControllerTest extends TestCase
         $_POST = ['action' => 'download_backup', 'csrf_token' => 'test'];
 
         $this->captureOutput(
-            fn() => (new BackupController())->handle(),
-            expectJsonCapture: true
+            fn() => new BackupController()->handle()
         );
 
         self::assertNotNull($GLOBALS['_test_captured_json'], 'requireAdmin doit appeler test_json_response');
@@ -234,7 +257,7 @@ final class BackupControllerTest extends TestCase
         $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
         // Pas de $_FILES
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Sauvegarde et restauration', $output);
         // Le message d'erreur est HTML-escaped (apostrophe → &apos;)
@@ -259,7 +282,7 @@ final class BackupControllerTest extends TestCase
             ],
         ];
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Seuls les fichiers .db sont acceptés', $output);
         self::assertStringContainsString('malicious.exe', $output);
@@ -289,7 +312,7 @@ final class BackupControllerTest extends TestCase
         ];
 
         try {
-            $output = $this->captureOutput(fn() => (new BackupController())->handle());
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
             // HTML-escaped : « n'est » → « n&apos;est »
             self::assertStringContainsString('n&apos;est pas une base de données SQLite valide', $output);
         } finally {
@@ -327,7 +350,7 @@ final class BackupControllerTest extends TestCase
         ];
 
         try {
-            $output = $this->captureOutput(fn() => (new BackupController())->handle());
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
             // Le controller doit soit dire "Impossible de remplacer" (move_uploaded_file = false en CLI),
             // soit restaurer avec succès si l'environnement simule l'upload. On accepte les deux.
             self::assertTrue(
@@ -351,7 +374,7 @@ final class BackupControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'purge_count', 'csrf_token' => 'test', 'purge_months' => '999'];
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Valeur de mois invalide', $output);
     }
@@ -368,7 +391,7 @@ final class BackupControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'purge_count', 'csrf_token' => 'test', 'purge_months' => '12'];
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Récapitulatif de la purge', $output);
         self::assertStringContainsString('données clôturées depuis plus de 12 mois', $output);
@@ -391,7 +414,7 @@ final class BackupControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'purge_count', 'csrf_token' => 'test', 'purge_months' => '6'];
 
-        $this->captureOutput(fn() => (new BackupController())->handle());
+        $this->captureOutput(fn() => new BackupController()->handle());
 
         $pdo = $this->db->getPdo();
         $count = (int) $pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'purge_data'")->fetchColumn();
@@ -409,7 +432,7 @@ final class BackupControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'purge_confirm', 'csrf_token' => 'test', 'purge_months' => '12'];
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Aucune soumission à purger pour la période de 12 mois', $output);
     }
@@ -429,7 +452,7 @@ final class BackupControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'purge_confirm', 'csrf_token' => 'test', 'purge_months' => '12'];
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Purge effectuée avec succès', $output);
         // Le successMsg contient <strong>N</strong> pour chaque compteur, mais
@@ -470,7 +493,7 @@ final class BackupControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'download_backup', 'csrf_token' => 'test'];
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Le fichier de base de données est introuvable', $output);
     }
@@ -484,12 +507,264 @@ final class BackupControllerTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'unknown_action', 'csrf_token' => 'test'];
 
-        $output = $this->captureOutput(fn() => (new BackupController())->handle());
+        $output = $this->captureOutput(fn() => new BackupController()->handle());
 
         self::assertStringContainsString('Sauvegarde et restauration', $output);
         // Ni message de succès, ni message d'erreur
         self::assertStringNotContainsString('msg-success', $output);
         self::assertStringNotContainsString('msg-error', $output);
+    }
+
+    // ── Tests F3 : instantané cohérent WAL (VACUUM INTO) ─────
+
+    /**
+     * F3 — un commit encore présent dans le WAL non checkpointé doit se
+     * retrouver dans l'instantané de sauvegarde (VACUUM INTO), même s'il est
+     * absent du fichier .db principal. Reproduit le défaut d'un readfile()/
+     * copy() brut qui perdrait cette transaction.
+     */
+    public function testCreateConsistentSnapshotIncludesUncheckpointedWalCommit(): void
+    {
+        $scratchDb = sys_get_temp_dir() . '/bc_wal_' . uniqid() . '.db';
+        $sentinel = 'WAL_ONLY_' . uniqid();
+        $writer = null;
+        $snapshot = null;
+        try {
+            $writer = new \PDO('sqlite:' . $scratchDb);
+            $writer->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $writer->exec('PRAGMA journal_mode = WAL');
+            $writer->exec('PRAGMA wal_autocheckpoint = 0');
+            $writer->exec('CREATE TABLE marker (val TEXT)');
+            $writer->prepare('INSERT INTO marker (val) VALUES (?)')->execute([$sentinel]);
+
+            // Précondition : la transaction n'a pas été checkpointée → le
+            // sentinel est absent du fichier principal tant que le WAL existe.
+            self::assertFalse(
+                str_contains((string) \file_get_contents($scratchDb), $sentinel),
+                'précondition : le commit doit être uniquement dans le WAL'
+            );
+
+            $snapshot = BackupController::createConsistentSnapshot($scratchDb);
+            self::assertNotNull($snapshot, 'VACUUM INTO doit produire un instantané');
+            self::assertFileExists($snapshot);
+
+            $reader = new \PDO('sqlite:' . $snapshot);
+            self::assertSame(
+                1,
+                (int) $reader->query('SELECT COUNT(*) FROM marker')->fetchColumn(),
+                'le commit non checkpointé doit être présent dans l\'instantané'
+            );
+            $reader = null;
+        } finally {
+            $writer = null;
+            if ($snapshot !== null) {
+                @unlink($snapshot);
+            }
+            $this->removeSidecars($scratchDb, $scratchDb . '-wal', $scratchDb . '-shm');
+        }
+    }
+
+    // ── Tests F3/F4 : restauration + sidecars WAL ─────────────
+
+    /**
+     * F3 + F4 — la restauration doit supprimer un -wal (valide) orphelin de
+     * l'ancienne base après le remplacement du fichier. Sans F4, SQLite
+     * applique ce journal étranger par-dessus la base restaurée : la table
+     * restaurée disparaît, remplacée par celle de l'ancienne base.
+     */
+    public function testRestoreBackupRemovesOrphanWalSidecars(): void
+    {
+        $original = (string) \file_get_contents($this->dbPath);
+
+        // Base "uploadée" (restaurée) avec une table témoin.
+        $uploaded = sys_get_temp_dir() . '/bc_restore_' . uniqid() . '.db';
+        $uploadPdo = new \PDO('sqlite:' . $uploaded);
+        $uploadPdo->exec('CREATE TABLE restored_marker (v TEXT)');
+        $uploadPdo->prepare('INSERT INTO restored_marker (v) VALUES (?)')->execute(['RESTORED']);
+        $uploadPdo = null;
+
+        // WAL valide issu d'une AUTRE base (écrit mais non checkpointé).
+        $foreign = $this->startForeignWalDb('restore');
+
+        $GLOBALS['_test_force_move_uploaded'] = true;
+        $GLOBALS['_test_plant_foreign_wal'] = $foreign['wal'];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
+        $_FILES = [
+            'backup_file' => [
+                'name'     => 'restore.db',
+                'type'     => 'application/x-sqlite3',
+                'tmp_name' => $uploaded,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($uploaded),
+            ],
+        ];
+
+        try {
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+
+            self::assertStringContainsString('a été restaurée avec succès', $output);
+
+            // La base restaurée est intacte : le WAL orphelin n'a pas été appliqué.
+            $check = new \PDO('sqlite:' . $this->dbPath);
+            self::assertSame(
+                1,
+                (int) $check->query("SELECT COUNT(*) FROM sqlite_master WHERE name = 'restored_marker'")->fetchColumn(),
+                'la table restaurée doit être conservée'
+            );
+            self::assertSame(
+                0,
+                (int) $check->query("SELECT COUNT(*) FROM sqlite_master WHERE name = 'foreign_tbl'")->fetchColumn(),
+                'le WAL orphelin ne doit pas remplacer la base restaurée'
+            );
+            $check = null;
+        } finally {
+            $GLOBALS['_test_force_move_uploaded'] = false;
+            $GLOBALS['_test_plant_foreign_wal'] = '';
+            $this->disposeForeignWalDb($foreign);
+            $this->restoreDbFile($original);
+            $this->cleanupPreRestoreBackups();
+            @unlink($uploaded);
+        }
+    }
+
+    /**
+     * F4 — si la base restaurée est corrompue, le rollback doit retirer le
+     * -wal orphelin avant de recopier la sauvegarde d'origine. Sans F4, SQLite
+     * récupérerait le journal étranger et « réparerait » la base corrompue
+     * (donc pas de rollback : la base restaurée serait en réalité l'ancienne).
+     */
+    public function testRestoreBackupRollbackRemovesWalSidecars(): void
+    {
+        $original = (string) \file_get_contents($this->dbPath);
+
+        // Header SQLite valide (passe isValidSqliteDb) mais contenu illisible :
+        // la requête sqlite_master échoue → déclenche le rollback.
+        $corrupt = sys_get_temp_dir() . '/bc_corrupt_' . uniqid() . '.db';
+        \file_put_contents($corrupt, "SQLite format 3\0" . str_repeat('X', 256));
+
+        $foreign = $this->startForeignWalDb('rollback');
+
+        $GLOBALS['_test_force_move_uploaded'] = true;
+        $GLOBALS['_test_plant_foreign_wal'] = $foreign['wal'];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
+        $_FILES = [
+            'backup_file' => [
+                'name'     => 'corrupt_restore.db',
+                'type'     => 'application/x-sqlite3',
+                'tmp_name' => $corrupt,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($corrupt),
+            ],
+        ];
+
+        try {
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+
+            self::assertStringContainsString('semble corrompue', $output);
+            self::assertStringContainsString('a été rétablie', $output);
+            self::assertFileDoesNotExist($this->dbPath . '-wal');
+            self::assertFileDoesNotExist($this->dbPath . '-shm');
+
+            // La sauvegarde d'origine (instantané pré-restauration) est en place.
+            $check = new \PDO('sqlite:' . $this->dbPath);
+            $check->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            self::assertGreaterThanOrEqual(
+                1,
+                (int) $check->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn()
+            );
+            $check = null;
+        } finally {
+            $GLOBALS['_test_force_move_uploaded'] = false;
+            $GLOBALS['_test_plant_foreign_wal'] = '';
+            $this->disposeForeignWalDb($foreign);
+            $this->restoreDbFile($original);
+            $this->cleanupPreRestoreBackups();
+            @unlink($corrupt);
+        }
+    }
+
+    // ── Tests F5 : cutoffs de purge en UTC (gmdate) ───────────
+
+    /**
+     * F5 — le cutoff de purge doit être rendu en UTC, pas dans le fuseau
+     * serveur (Europe/Paris en prod), sinon la fenêtre glisse de 1-2h.
+     */
+    public function testPurgeCutoffUtcIgnoresServerTimezone(): void
+    {
+        $previousTz = date_default_timezone_get();
+        date_default_timezone_set('Pacific/Kiritimati'); // UTC+14, sans DST
+        try {
+            $cutoffUtc = BackupController::purgeCutoffUtc(12);
+            $sameInstant = strtotime('-12 months');
+            $localRendering = date('Y-m-d H:i:s', $sameInstant);
+        } finally {
+            date_default_timezone_set($previousTz);
+        }
+
+        $cutoffTs = strtotime($cutoffUtc . ' UTC');
+        self::assertNotFalse($cutoffTs, 'cutoff non parsable : ' . $cutoffUtc);
+        self::assertLessThanOrEqual(
+            5,
+            abs($cutoffTs - $sameInstant),
+            'le cutoff doit correspondre à maintenant - 12 mois'
+        );
+        self::assertNotSame(
+            $localRendering,
+            $cutoffUtc,
+            'le cutoff ne doit pas être rendu dans le fuseau serveur (UTC+14)'
+        );
+    }
+
+    /**
+     * F5 — purge_count sous un fuseau serveur UTC+14 ne doit PAS compter une
+     * soumission clôturée 7h après le cutoff UTC. Avec l'ancien date(), le
+     * cutoff glissait de +14h et la rendait purgeable à tort.
+     */
+    public function testPurgeCountUsesUtcCutoffUnderServerTimezone(): void
+    {
+        $previousTz = date_default_timezone_get();
+        date_default_timezone_set('Pacific/Kiritimati');
+        try {
+            // 7h après le cutoff UTC → non purgeable en UTC, purgeable si le
+            // cutoff est décalé de +14h (bug date()).
+            $this->createClosedSubmissionAt(gmdate('Y-m-d H:i:s', strtotime('-12 months') + 7 * 3600));
+
+            $_SERVER['REQUEST_METHOD'] = 'POST';
+            $_POST = ['action' => 'purge_count', 'csrf_token' => 'test', 'purge_months' => '12'];
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+        } finally {
+            date_default_timezone_set($previousTz);
+        }
+
+        self::assertStringContainsString('Aucune donnée à purger pour cette période', $output);
+    }
+
+    /**
+     * F5 — purge_confirm sous un fuseau serveur UTC+14 ne doit PAS supprimer
+     * une soumission clôturée 7h après le cutoff UTC.
+     */
+    public function testPurgeConfirmUsesUtcCutoffUnderServerTimezone(): void
+    {
+        $previousTz = date_default_timezone_get();
+        date_default_timezone_set('Pacific/Kiritimati');
+        try {
+            $subId = $this->createClosedSubmissionAt(gmdate('Y-m-d H:i:s', strtotime('-12 months') + 7 * 3600));
+
+            $_SERVER['REQUEST_METHOD'] = 'POST';
+            $_POST = ['action' => 'purge_confirm', 'csrf_token' => 'test', 'purge_months' => '12'];
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+        } finally {
+            date_default_timezone_set($previousTz);
+        }
+
+        self::assertStringContainsString('Aucune soumission à purger pour la période de 12 mois', $output);
+
+        $pdo = $this->db->getPdo();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM submissions WHERE id = ?');
+        $stmt->execute([$subId]);
+        self::assertSame(1, (int) $stmt->fetchColumn(), 'la soumission post-cutoff UTC ne doit pas être purgée');
     }
 
     // ── Helpers ───────────────────────────────────────────────
@@ -538,17 +813,100 @@ final class BackupControllerTest extends TestCase
     }
 
     /**
+     * Crée une soumission clôturée à un instant UTC explicite (status=valide).
+     */
+    private function createClosedSubmissionAt(string $closedAt): string
+    {
+        $pdo = $this->db->getPdo();
+        $formId = $this->createTestForm('test-bc-boundary-' . uniqid());
+
+        $subId = \generate_uuid();
+        $submittedAt = gmdate('Y-m-d H:i:s', strtotime('-13 months'));
+        $pdo->prepare(
+            "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, closed_at, status, rgpd_consent) "
+            . "VALUES (?, ?, '{}', 'test-bc-agent@e2e.test', ?, ?, 'valide', 1)"
+        )->execute([$subId, $formId, $submittedAt, $closedAt]);
+        $this->createdSubmissionIds[] = $subId;
+        return $subId;
+    }
+
+    /**
+     * Supprime les fichiers SQLite annexes (base, -wal, -shm) s'ils existent.
+     */
+    private function removeSidecars(string ...$paths): void
+    {
+        foreach ($paths as $path) {
+            if (\file_exists($path)) {
+                @\unlink($path);
+            }
+        }
+    }
+
+    /**
+     * Restaure le contenu d'origine de db/workflow.db et purge ses sidecars.
+     */
+    private function restoreDbFile(string $original): void
+    {
+        \file_put_contents($this->dbPath, $original);
+        $this->removeSidecars($this->dbPath . '-wal', $this->dbPath . '-shm');
+    }
+
+    /**
+     * Supprime les copies pré-restauration (workflow.db.before_restore_*) créées
+     * par les tests de restauration.
+     */
+    private function cleanupPreRestoreBackups(): void
+    {
+        foreach (\glob($this->dbPath . '.before_restore_*') ?: [] as $backup) {
+            @\unlink($backup);
+        }
+    }
+
+    /**
+     * Crée une base « étrangère » en WAL et retourne son journal -wal (valide)
+     * ainsi que la connexion à garder ouverte (un checkpoint au close viderait
+     * le WAL). Sert à reproduire un -wal orphelin de l'ancienne base.
+     *
+     * @return array{writer: \PDO, wal: string, db: string}
+     */
+    private function startForeignWalDb(string $tag): array
+    {
+        $db = sys_get_temp_dir() . '/bc_foreign_' . $tag . '_' . uniqid() . '.db';
+        $writer = new \PDO('sqlite:' . $db);
+        $writer->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $writer->exec('PRAGMA journal_mode = WAL');
+        $writer->exec('PRAGMA wal_autocheckpoint = 0');
+        $writer->exec('CREATE TABLE foreign_tbl (v TEXT)');
+        $writer->prepare('INSERT INTO foreign_tbl (v) VALUES (?)')->execute(['FOREIGN']);
+        $wal = (string) \file_get_contents($db . '-wal');
+
+        return ['writer' => $writer, 'wal' => $wal, 'db' => $db];
+    }
+
+    /**
+     * Ferme la connexion « étrangère » puis supprime ses fichiers.
+     *
+     * @param array{writer: \PDO|null, wal: string, db: string} $foreign
+     */
+    private function disposeForeignWalDb(array &$foreign): void
+    {
+        // Fermer AVANT de supprimer : sous Windows le handle ouvert bloque unlink.
+        $foreign['writer'] = null;
+        $this->removeSidecars($foreign['db'], $foreign['db'] . '-wal', $foreign['db'] . '-shm');
+    }
+
+    /**
      * Exécute un callable en capturant stdout. Attrape TestJsonCapturedException
      * levée par notre override de test_json_response.
      *
      * @param callable(): void $callable
      */
-    private function captureOutput(callable $callable, bool $expectJsonCapture = false): string
+    private function captureOutput(callable $callable): string
     {
         ob_start();
         try {
             $callable();
-        } catch (TestJsonCapturedException $e) {
+        } catch (TestJsonCapturedException) {
             // JSON capturé — on continue
         } finally {
             $output = ob_get_clean();
