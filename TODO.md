@@ -4,15 +4,15 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1614** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-16, v10.42.33 ; avant : 1569 au 2026-09-15) |
-| Assertions | **4753** (v10.42.33 ; avant : 4545) |
+| Tests | **1663** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-16, v10.42.34 ; avant : 1614) |
+| Assertions | **4994** (v10.42.34 ; avant : 4753) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **463** (level 8, 362 entrées — régénéré 2026-08-24, v10.42.16, -571 entrées stale) |
 | Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
 | Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
-| Enums métier | **9** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, AssetType, **ValidationResultStatus**) |
+| Enums métier | **11** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, AssetType, ValidationResultStatus, SubmissionField, MailStatus) |
 | Repositories | **10** |
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
 | CI | **GitHub Actions** (15 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
@@ -29,6 +29,22 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.34 — Rejeu manuel outbox SMTP (A/B/C) + correctifs audit F1→F6 + CI Composer (2026-09-16)
+| Tâche | Détail |
+|-------|--------|
+| A — CAS + purge corps | Migration **v39** (`mail_log.manual_replay_count`, idempotente/self-healing) ; `MailRepository::claimFailedForManualReplay` (CAS `status=failed` + plafond + `body_html IS NOT NULL`) ; `purgeOutboxBodies` (succès 7 j / terminaux 30 j, `pending` jamais purgé, lignes conservées) — commit `b5a5338` |
+| B — service replay + RGPD | `MailOutbox` seuils `MANUAL_REPLAY_MAX=3`/`BODY_KEEP_SENT_DAYS=7`/`BODY_KEEP_TERMINAL_DAYS=30` ; `MailService::replayFailed(id)` (claim atomique plafond 3, envoi synchrone, crash-safe) ; `RgpdService::autoPurge` cutoffs UTC + audit `rgpd_purge` — commit `860013e` |
+| C — bouton monitoring | POST admin-only `?p=monitoring` (CSRF + UUID, 1 message/requête) → `replayFailed()` + audit `mail_replay`/`mail_replay_denied` ; journal emails : libellés `pending`/`failed`, bouton replay sur échec définitif, notice via `MonitoringContext`, corps jamais exposé — commit `c8b4ae5` |
+| F1 — cron différé | `Database::runDeferredCron()` : `ignore_user_abort(true)` + `fastcgi_finish_request()` si dispo (fallback sûr CLI/IIS) — commit `b8e100a` |
+| F2 — bail `pending` | `claimRetryable()` exige un bail échu (`next_retry_at NULL or <= now`) pour `pending` — plus de re-claim/double envoi sous bail — commit `8206632` |
+| F6 — compteur nullable | `MailService::getOutboxFailureCount(): ?int` (`null` si lecture impossible) ; health `null` → 503 générique ; `MonitoringContext::$outbox_failed` nullable + bannière « état inconnu » — commit `8206632` |
+| F3 — sauvegarde WAL | Instantané cohérent `VACUUM INTO` (WAL inclus) avant download / copie pré-restore — commit `1293937` |
+| F4 — sidecars | `removeWalSidecars()` : `-wal`/`-shm` purgés après restore et rollback — commit `1293937` |
+| F5 — cutoffs UTC | `gmdate` dans `purge_count`/`purge_confirm` (aligné sur `closed_at` UTC) — commit `1293937` |
+| CI — Composer | `composer install` (au lieu d'`update`) dans 13 jobs + purge `vendor` + cache-files-dir, clé `composer.lock`+os ; `vendor/composer` & `vendor/PHPMailer` versionnés — commit `0683960` |
+| Tests | +49 (31 nouveaux fichiers + 18 ajoutés) ; fix PHPStan tests : propriété morte `$ids` (`MailRepositoryPurgeTest`) supprimée |
+| Vérifs | PHPUnit **1663 tests / 4994 assertions, 0 échec** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; PHPStan projet + tests **0 erreur** ; gate `scripts/check.ps1` **SUCCÈS (14 étapes)** |
 
 ### v10.42.33 — Dettes D1→D7 soldées + outillage de test portable (2026-09-16)
 | Tâche | Détail |
@@ -653,4 +669,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-16 (dettes D1→D7 soldées ; outillage de test portable — PHPStan tests 0 erreur, run_all lint 5319→~290 fichiers ; test health e2e aligné sur 7 contrôles ; outbox SMTP A1→A5 ; R1–R7 + B1→B8 committés ; suite unitaire 1614 tests/4753 assertions 0 échec ; gate scripts/check.ps1 SUCCÈS 14 étapes)_
+_Dernière mise à jour : 2026-09-16 (rejeu manuel outbox SMTP lanes A/B/C + correctifs audit F1→F6 + CI Composer reproductible, migration v39 ; dettes D1→D7 soldées ; outillage de test portable — PHPStan tests 0 erreur ; outbox SMTP A1→A5 ; R1–R7 + B1→B8 committés ; suite unitaire 1663 tests/4994 assertions 0 échec ; PHPStan projet + tests 0 erreur ; tests/run_all.php SUCCÈS 5 étapes/17-17 ; gate scripts/check.ps1 SUCCÈS 14 étapes)_
