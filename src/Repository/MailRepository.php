@@ -153,6 +153,140 @@ final class MailRepository extends BaseRepository
     }
 
     /**
+     * Revendique atomiquement UNE ligne `failed` pour un rejeu manuel opérateur.
+     *
+     * CAS sur `manual_replay_count` : la valeur lue est réinjectée dans le WHERE
+     * (compensée par `BEGIN EXCLUSIVE`), et le statut doit être `failed`. La
+     * revendication fait repasser la ligne dans la file réessayable :
+     * `status = error`, `attempts = 0`, `next_retry_at = $leaseUntil`, et
+     * incrémente `manual_replay_count`.
+     *
+     * Refusée si : statut ≠ `failed` (une ligne déjà revendiquée passe en
+     * `error`, ce qui rejette deux clics concurrents), corps absent
+     * (`body_html IS NULL`, purge RGPD) ou plafond `$maxManual` atteint.
+     *
+     * @api Point d'entrée outbox consommé par le rejeu manuel opérateur.
+     *
+     * @return array{id: string, recipient: string, subject: string, body_html: string, manual_replay_count: int}|null
+     */
+    public function claimFailedForManualReplay(string $id, string $leaseUntil, int $maxManual): ?array
+    {
+        $pdo = $this->pdo();
+        $ownTransaction = !$pdo->inTransaction();
+        if ($ownTransaction) {
+            $pdo->exec('BEGIN EXCLUSIVE');
+        }
+        try {
+            $select = $pdo->prepare(
+                'SELECT id, recipient, subject, body_html, manual_replay_count, status FROM mail_log WHERE id = ?'
+            );
+            $select->execute([$id]);
+            /** @var array{id: string, recipient: string, subject: string, body_html: string|null, manual_replay_count: int|string, status: string}|false $row */
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            // Libérer le statement avant l'UPDATE (règle SQLITE_LOCKED intra-processus).
+            $select = null;
+
+            $claimed = null;
+            if ($row !== false) {
+                $manualReplayCount = (int) $row['manual_replay_count'];
+                $body = $row['body_html'];
+                if (
+                    $row['status'] === MailStatus::Failed->value
+                    && $body !== null
+                    && $manualReplayCount < $maxManual
+                ) {
+                    $update = $pdo->prepare(
+                        "UPDATE mail_log
+                            SET status = ?, attempts = 0, next_retry_at = ?, manual_replay_count = manual_replay_count + 1
+                          WHERE id = ?
+                            AND status = ?
+                            AND manual_replay_count = ?
+                            AND manual_replay_count < ?
+                            AND body_html IS NOT NULL"
+                    );
+                    $update->execute([
+                        MailStatus::Error->value,
+                        $leaseUntil,
+                        $id,
+                        MailStatus::Failed->value,
+                        $manualReplayCount,
+                        $maxManual,
+                    ]);
+                    // CAS : seule une ligne encore exactement dans l'état lu est revendiquée.
+                    $won = $update->rowCount() === 1;
+                    $update = null;
+
+                    if ($won) {
+                        $claimed = [
+                            'id' => $row['id'],
+                            'recipient' => $row['recipient'],
+                            'subject' => $row['subject'],
+                            'body_html' => $body,
+                            'manual_replay_count' => $manualReplayCount + 1,
+                        ];
+                    }
+                }
+            }
+
+            if ($ownTransaction) {
+                $pdo->exec('COMMIT');
+            }
+            return $claimed;
+        } catch (\Throwable $e) {
+            if ($ownTransaction) {
+                try {
+                    $pdo->exec('ROLLBACK');
+                } catch (\Throwable) {
+                    // @silent-ok: cleanup fallback — l'exception d'origine est relancée
+                }
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Purge le corps HTML (→ NULL) des lignes de l'outbox assez anciennes, en
+     * CONSERVANT la ligne (traçabilité d'envoi / conformité RGPD).
+     *
+     * Matrice de rétention :
+     *   - statuts de succès (`sent`, `dry_run`) : corps purgé après $successCutoff ;
+     *   - statuts terminaux (`error`, `failed`, `blocked`) : corps purgé après
+     *     $terminalCutoff ;
+     *   - `pending` : jamais purgé — le message n'a pas encore été remis, le corps
+     *     est nécessaire au rejeu (write-ahead).
+     *
+     * Seules les lignes dont le corps est encore présent sont comptées/affectées
+     * (`body_html IS NOT NULL`), donc un second appel est idempotent (retour 0).
+     *
+     * @api Point d'entrée outbox consommé par la purge RGPD / rétention.
+     *
+     * @param string $successCutoff  Date UTC (Y-m-d H:i:s) : corps des succès antérieurs purgé.
+     * @param string $terminalCutoff Date UTC (Y-m-d H:i:s) : corps des échecs terminaux antérieurs purgé.
+     * @return int Nombre de lignes dont le corps a effectivement été purgé.
+     */
+    public function purgeOutboxBodies(string $successCutoff, string $terminalCutoff): int
+    {
+        $successStatuses = [MailStatus::Sent->value, MailStatus::DryRun->value];
+        $terminalStatuses = [MailStatus::Error->value, MailStatus::Failed->value, MailStatus::Blocked->value];
+
+        $stmt = $this->pdo()->prepare(
+            'UPDATE mail_log SET body_html = NULL
+              WHERE body_html IS NOT NULL
+                AND (
+                    (status IN (?, ?) AND created_at < ?)
+                    OR (status IN (?, ?, ?) AND created_at < ?)
+                )'
+        );
+        $stmt->execute([
+            ...$successStatuses,
+            $successCutoff,
+            ...$terminalStatuses,
+            $terminalCutoff,
+        ]);
+        return $stmt->rowCount();
+    }
+
+    /**
      * Compte les lignes de mail_log dans un statut donné.
      */
     public function countByStatus(MailStatus $status): int
