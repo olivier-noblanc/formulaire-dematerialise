@@ -1,9 +1,23 @@
 <?php
+// Lane C — notice de rejeu manuel. Défauts sûrs si le template est inclus sans
+// les variables (le renderer les fournit toujours) : aucun corps n'est exposé.
+$mail_replay_notice ??= '';
+$mail_replay_ok ??= false;
+
+$replay_notice_html = '';
+if ($mail_replay_notice !== '') {
+    $notice_cls = $mail_replay_ok ? 'success-box' : 'warning-box';
+    $replay_notice_html = '<div class="' . $notice_cls . ' mb-1">'
+        . \App\Core\App::html()->escape($mail_replay_notice)
+        . '</div>';
+}
+
 if ($mail_logs === []) {
     ?>
 <!-- Journal des emails (vide) -->
 <div class="card">
   <h2><span aria-hidden="true">📬</span> Journal des emails</h2>
+  <?= $replay_notice_html ?>
   <p class="empty-state">Aucune tentative d'envoi d'email journalisée pour le moment.
   Cliquez sur « Tester SMTP » ci-dessus pour générer une première entrée.</p>
 </div>
@@ -23,10 +37,12 @@ foreach ($mail_logs as $mail_log) {
     $ip         = \App\Core\App::html()->escape((string) ($mail_log['ip'] ?? ''));
 
     $status_labels = [
-        'sent'         => ['label' => 'Envoyé',     'cls' => 'badge-ok'],
-        'error'        => ['label' => 'Échec',      'cls' => 'badge-err'],
-        'blocked'      => ['label' => 'Bloqué',     'cls' => 'badge-warn'],
-        'dry_run'      => ['label' => 'Dry-run',    'cls' => 'badge-info'],
+        \App\Enum\MailStatus::Pending->value => ['label' => 'En attente',      'cls' => 'badge-info'],
+        'sent'                               => ['label' => 'Envoyé',          'cls' => 'badge-ok'],
+        'error'                              => ['label' => 'Échec',           'cls' => 'badge-err'],
+        \App\Enum\MailStatus::Failed->value  => ['label' => 'Échec définitif', 'cls' => 'badge-err'],
+        'blocked'                            => ['label' => 'Bloqué',          'cls' => 'badge-warn'],
+        'dry_run'                            => ['label' => 'Dry-run',         'cls' => 'badge-info'],
     ];
     $badge_info = $status_labels[$status] ?? ['label' => $status, 'cls' => 'badge-info'];
     $badge_html = '<span class="badge ' . $badge_info['cls'] . '">' . $badge_info['label'] . '</span>';
@@ -41,6 +57,19 @@ foreach ($mail_logs as $mail_log) {
             . '</details>';
     }
 
+    // Rejeu manuel : uniquement un email en échec définitif, un message par
+    // formulaire POST (pas de rejeu en masse). Le corps n'est jamais transmis.
+    $replay_html = '';
+    if ($status === \App\Enum\MailStatus::Failed->value) {
+        $mail_log_id = \App\Core\App::html()->escape((string) ($mail_log['id'] ?? ''));
+        $replay_html = '<form method="POST" class="mt-4">'
+            . \App\Core\App::security()->csrfField()
+            . '<input type="hidden" name="action" value="mail_replay">'
+            . '<input type="hidden" name="mail_log_id" value="' . $mail_log_id . '">'
+            . '<button type="submit" class="btn btn-secondary"><span aria-hidden="true">↻</span> Rejouer l\'envoi</button>'
+            . '</form>';
+    }
+
     $date_fmt = '';
     // created_at (mail_log) est en UTC (datetime('now')) — interprétation UTC explicite.
     $ts = strtotime($created_at . ' UTC');
@@ -51,7 +80,7 @@ foreach ($mail_logs as $mail_log) {
                       <td class="u-fon-whi-2">{$date_fmt}</td>
                       <td class="u-fon-3">{$recipient}</td>
                       <td class="u-fon-3">{$subject}</td>
-                      <td>{$badge_html}{$err_html}{$debug_html}</td>
+                      <td>{$badge_html}{$err_html}{$debug_html}{$replay_html}</td>
                       <td class="u-col-fon">{$actor}<br><span class="text-muted">{$ip}</span></td>
                     </tr>
         HTML;
@@ -60,9 +89,11 @@ foreach ($mail_logs as $mail_log) {
 <!-- Journal des emails -->
 <div class="card">
   <h2><span aria-hidden="true">📬</span> Journal des emails (20 derniers)</h2>
+  <?= $replay_notice_html ?>
   <p class="caption-10">
     Toutes les tentatives d'envoi d'email (succès, échecs, blocages) sont journalisées ici.
-    Cliquez sur « Voir la conversation SMTP » pour diagnostiquer les erreurs.
+    Cliquez sur « Voir la conversation SMTP » pour diagnostiquer les erreurs. Un email en
+    « Échec définitif » peut être relancé manuellement avec « Rejouer l'envoi ».
   </p>
   <table>
     <thead>

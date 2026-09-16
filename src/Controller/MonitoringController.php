@@ -18,6 +18,40 @@ final class MonitoringController extends BaseController
     {
         App::auth()->requireAdminEffective();
 
+        // Lane C — rejeu manuel d'un email en échec définitif (POST admin-only).
+        // Un seul message par requête (jamais de rejeu en masse). Le corps du
+        // message n'est ni lu ni exposé : seul le message d'erreur du service
+        // remonte dans la notice (échappé par le template).
+        $mailReplayNotice = '';
+        $mailReplayOk = false;
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'mail_replay') {
+            $this->security->requireCsrf();
+
+            $mailLogId = '';
+            try {
+                $mailLogId = (string) App::validation()->validate($_POST['mail_log_id'] ?? '', 'uuid');
+            } catch (\InvalidArgumentException) {
+                $mailReplayNotice = 'Rejeu refusé : identifiant de message invalide.';
+                App::audit()->log('mail_replay_denied', 'mail_log', 'Rejeu manuel refusé : identifiant de message invalide');
+            }
+
+            if ($mailLogId !== '') {
+                $replayResult = App::mail()->replayFailed($mailLogId);
+                if ($replayResult['success']) {
+                    $mailReplayNotice = 'Message rejoué et envoyé avec succès.';
+                    $mailReplayOk = true;
+                    App::audit()->log('mail_replay', 'mail_log', 'Rejeu manuel réussi : ' . $mailLogId);
+                } else {
+                    $mailReplayNotice = 'Rejeu refusé ou échoué : ' . $replayResult['error'];
+                    App::audit()->log(
+                        'mail_replay_denied',
+                        'mail_log',
+                        'Rejeu manuel refusé/échoué : ' . $mailLogId . ' — ' . $replayResult['error']
+                    );
+                }
+            }
+        }
+
         // Query #1: Average processing time
         $avgSeconds = $this->submissionRepo->getAvgProcessingTime();
         $avgHours = round($avgSeconds / 3600, 1);
@@ -242,6 +276,8 @@ final class MonitoringController extends BaseController
             audit_base_url: $auditBaseUrl,
             audit_base_qs: $auditBaseQs,
             outbox_failed: $outboxFailed,
+            mail_replay_notice: $mailReplayNotice,
+            mail_replay_ok: $mailReplayOk,
         );
 
         $pageCss    = \App\Render\MonitoringRenderer::pageCss();

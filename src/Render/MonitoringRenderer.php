@@ -137,10 +137,16 @@ final class MonitoringRenderer
      * Carte "Journal des emails".
      *
      * @param array<int, array{created_at: string, recipient: string, subject: string, status: string, error_message: string, smtp_log: string, actor: string, ip: string}> $mail_logs
+     * @param string $mail_replay_notice Message de retour du rejeu manuel ('' = aucun)
+     * @param bool   $mail_replay_ok     true si le rejeu manuel a réussi
      */
-    public static function mailLogs(array $mail_logs): string
+    public static function mailLogs(array $mail_logs, string $mail_replay_notice = '', bool $mail_replay_ok = false): string
     {
-        return self::loadTemplate('monitoring_mail_logs.php', ['mail_logs' => $mail_logs]);
+        return self::loadTemplate('monitoring_mail_logs.php', [
+            'mail_logs'          => $mail_logs,
+            'mail_replay_notice' => $mail_replay_notice,
+            'mail_replay_ok'     => $mail_replay_ok,
+        ]);
     }
 
 /**
@@ -175,7 +181,7 @@ final class MonitoringRenderer
         $by_form_html       = self::byForm($ctx->by_form_stats);
         $daily_html         = self::dailyActivity($ctx->daily_stats);
         $blocked_html       = self::blockedTokens($ctx->tokens_bloques, $ctx->bloque_hours);
-        $mail_logs_html     = self::mailLogs($ctx->mail_logs);
+        $mail_logs_html     = self::mailLogs($ctx->mail_logs, $ctx->mail_replay_notice, $ctx->mail_replay_ok);
         $audit_html         = self::auditLog($ctx);
         $outbox_html        = self::outboxAlert($ctx->outbox_failed);
 

@@ -42,6 +42,9 @@ final readonly class MonitoringContext
      * @param string $audit_base_qs Raw query string of active filters (for hidden inputs)
      * @param int|null $outbox_failed Nombre d'emails en échec définitif dans l'outbox
      *                                (0 = sain, null = état inconnu / compteur illisible)
+     * @param string $mail_replay_notice Message de retour du rejeu manuel d'un email
+     *                                   ('' = aucun rejeu tenté sur cette requête)
+     * @param bool $mail_replay_ok true si le dernier rejeu manuel a réussi (envoi SMTP accepté)
      */
     public function __construct(
         public int $total_sub,
@@ -72,6 +75,8 @@ final readonly class MonitoringContext
         public string $audit_base_url,
         public string $audit_base_qs,
         public ?int $outbox_failed = null,
+        public string $mail_replay_notice = '',
+        public bool $mail_replay_ok = false,
     ) {}
 
     /**
@@ -110,6 +115,8 @@ final readonly class MonitoringContext
             audit_base_url: (string) ($ctx['audit_base_url'] ?? 'index.php?p=monitoring'),
             audit_base_qs: (string) ($ctx['audit_base_qs'] ?? ''),
             outbox_failed: isset($ctx['outbox_failed']) ? (int) $ctx['outbox_failed'] : null,
+            mail_replay_notice: (string) ($ctx['mail_replay_notice'] ?? ''),
+            mail_replay_ok: (bool) ($ctx['mail_replay_ok'] ?? false),
         );
     }
 }

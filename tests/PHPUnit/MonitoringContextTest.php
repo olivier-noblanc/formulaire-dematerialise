@@ -52,6 +52,23 @@ final class MonitoringContextTest extends TestCase
         self::assertSame(0.0, $ctx->taux_validation);
         // F6 : sans compteur fourni, l'état est « inconnu » (pas « sain »).
         self::assertNull($ctx->outbox_failed);
+        // Lane C : aucun rejeu manuel tenté sur une requête GET.
+        self::assertSame('', $ctx->mail_replay_notice);
+        self::assertFalse($ctx->mail_replay_ok);
+    }
+
+    public function testLegacyArrayMapsMailReplayFeedback(): void
+    {
+        $ok = MonitoringContext::fromLegacyArray([
+            'mail_replay_notice' => 'Message rejoué et envoyé avec succès.',
+            'mail_replay_ok' => true,
+        ]);
+        self::assertSame('Message rejoué et envoyé avec succès.', $ok->mail_replay_notice);
+        self::assertTrue($ok->mail_replay_ok);
+
+        $default = MonitoringContext::fromLegacyArray([]);
+        self::assertSame('', $default->mail_replay_notice);
+        self::assertFalse($default->mail_replay_ok);
     }
 
     public function testWithRealisticData(): void
