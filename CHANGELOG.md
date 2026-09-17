@@ -24,6 +24,7 @@ _Résumé : Correctifs BUG1→BUG3 (SQL `!==` invalide dans `findActiveWithDeadl
 - **PHPStan level 8** : config projet (`phpstan.neon`) **0 erreur** ; config tests (`tests/phpstan.neon`) **0 erreur** (relancé avec `-d memory_limit=4G` — la limite CLI par défaut 128 M fait planter le worker parallèle ; la gate utilise `--memory-limit=512M`).
 - **Gate** : `pwsh -NoProfile -File scripts/check.ps1` → **SUCCÈS (15 étapes, e2e Playwright inclus)**.
 - **php-cs-fixer** : nouveau diff limité au newline final restauré (`dry-run` non bloquant en CI, `|| true` ; les 135 fichiers signalés restants sont pré-existants).
+- **CI GitHub Actions** : run `35117202626` (commit `04ca603`) → **15/15 jobs verts** (PHPUnit, Infection, Tests fonctionnels, E2E Playwright, PHPStan ×5, CSP via `csp-check.yml` sur le commit `5308f32`).
 
 ## [10.42.35] — 2026-09-16
 _Résumé : Correctifs CI — `vendor/PHPMailer` versionné restauré après la purge `vendor/` (PHPUnit, PHPStan level 8, PHPStan tests et CSP échouaient sur `vendor/PHPMailer/src/Exception.php` absent), et marqueur `@silent-ok` sur le catch de `MonitoringController` (règle 9)._

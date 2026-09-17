@@ -468,7 +468,7 @@
 ## 🎯 Ce qui reste
 
 **À faire en premier :**
-- **Validation via CI** sur la branche pushée (remplace la gate locale, cf. AGENTS.md « Orchestration et validation ») — état final documenté : PHPUnit **1669/5025** (v10.42.36), PHPStan level 8 0 erreur, régressions **17/17**, e2e OK ; gate locale du **2026-09-16 SUCCÈS (15 étapes, e2e Playwright inclus)** — 1er run CI rouge (test restauration WAL, corrigé), repoussé pour confirmation
+- ✅ **Validation via CI** : run GitHub Actions **`35117202626`** (commit `04ca603`) → **15/15 jobs verts** (PHPUnit, Infection, Tests fonctionnels, E2E Playwright, PHPStan ×5). CSP Check vert sur `5308f32` (`csp-check.yml` filtré par `paths:` — non re-déclenché sur le commit docs/test). État : PHPUnit **1669/5025** (v10.42.36), PHPStan level 8 0 erreur, régressions **17/17** ; gate locale **SUCCÈS (15 étapes, e2e Playwright inclus)**.
 - **Nettoyer la fuite `PersonaServiceTest::setUp`** : la ligne `admins` `admin@test.com` est insérée sans jamais être supprimée (pollution d'ordre pour tout test vérifiant `isAdmin()` derrière) — `testRegenerateRefusesInvalidatedToken` a été rendu insensible (v10.42.29), la cause racine reste à supprimer (cleanup tearDown) avec vérification qu'aucun autre test n'en dépend
 - **Moderniser `tests/test_routing.php`** (hors CI/gate, stalé depuis v10.1.14c) : le check « pas d'erreur fatale » matche le contenu légitime de la page changelog (`stripos 'Fatal error'` — texte d'entrée v10.21.0, page saine prouvée par test_all) ; attentes structurelles des pages admin stalées (`<link>` assets, `body class page-xxx`) — redéfinir les checks sur le layout actuel
 
@@ -687,4 +687,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-16 (correctifs BUG1→BUG3 + validation CI — SQL `<> ''` `findActiveWithDeadlineField`, claim relance conservé sur échec réessayable/outbox, rollback `Throwable` `TokenValidationHandler` ; restauration `vendor/PHPMailer` vérifiée sur 13 jobs `ci.yml` + `csp-check.yml` ; test restauration WAL rendu déterministe (instantané VACUUM INTO + marqueur) après échec CI Linux ; suite unitaire 1669 tests/5025 assertions 0 échec ; PHPStan projet + tests 0 erreur ; tests/run_all.php SUCCÈS 5 étapes/17-17 ; gate scripts/check.ps1 SUCCÈS 15 étapes)_
+_Dernière mise à jour : 2026-09-16 (correctifs BUG1→BUG3 + validation CI — SQL `<> ''` `findActiveWithDeadlineField`, claim relance conservé sur échec réessayable/outbox, rollback `Throwable` `TokenValidationHandler` ; restauration `vendor/PHPMailer` vérifiée sur 13 jobs `ci.yml` + `csp-check.yml` ; test restauration WAL rendu déterministe (instantané VACUUM INTO + marqueur) après échec CI Linux ; suite unitaire 1669 tests/5025 assertions 0 échec ; PHPStan projet + tests 0 erreur ; tests/run_all.php SUCCÈS 5 étapes/17-17 ; gate scripts/check.ps1 SUCCÈS 15 étapes ; CI GitHub Actions run 35117202626 15/15 jobs verts)_
