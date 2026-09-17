@@ -33,6 +33,11 @@
 /.phpstan-cache/
 /download/claude_cache.json
 
+# Artefacts d'analyse transitoires (dumps PHPStan / cache cs-fixer — jamais versionnés)
+.php-cs-fixer.cache
+phpstan_*.txt
+phpstan-final-*.txt
+
 # Backups (générés par update.ps1)
 /backups/
 /backup-*.zip

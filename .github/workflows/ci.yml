@@ -727,3 +727,49 @@ jobs:
         # chromium-XXXX, cherché dans ms-playwright/chromium_headless_shell-XXXX)
         # qui forçait continue-on-error + `|| true` jusqu'ici.
         run: node tests/e2e/run_all.js
+
+  # ── Garde : vendor versionné autonome (contrat prod IIS offline) ─
+  # La prod IIS n'a ni réseau ni `composer install` : elle ne reçoit que les
+  # fichiers versionnés (vendor/autoload.php, vendor/composer/, vendor/PHPMailer/).
+  # Ce job reconstitue un « export frais » (git archive = fichiers trackés
+  # uniquement) et vérifie que vendor/autoload.php s'inclut sans aucune
+  # dépendance dev. L'autoload versionné DOIT être généré en --no-dev
+  # (`composer dump-autoload --no-dev`) : régénéré en mode dev, il référence
+  # des paquets absents de l'export (amphp/*, phpstan/*…) et fait échouer le
+  # `require .../functions.php` d'autoload_real.php.
+  vendor-offline-export:
+    name: Vendor offline (export frais)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - name: Reconstituer un export frais (fichiers versionnés uniquement)
+        run: |
+          mkdir -p "$RUNNER_TEMP/export"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/export"
+      - name: Require vendor/autoload.php depuis l'export frais
+        working-directory: ${{ runner.temp }}/export
+        run: php -r "require 'vendor/autoload.php'; echo 'vendor/autoload.php OK (no-dev)', PHP_EOL;"
+      - name: Vérifier qu'aucun chemin dev n'est référencé par l'autoload
+        working-directory: ${{ runner.temp }}/export
+        run: |
+          php -r '
+            $missing = [];
+            foreach (["autoload_psr4.php", "autoload_namespaces.php", "autoload_files.php", "autoload_classmap.php"] as $f) {
+                $path = "vendor/composer/$f";
+                if (!is_file($path)) { continue; }
+                foreach ((array) (require $path) as $value) {
+                    foreach ((array) $value as $entry) {
+                        if (is_string($entry) && !file_exists($entry)) { $missing[] = "$f -> $entry"; }
+                    }
+                }
+            }
+            if ($missing !== []) {
+                fwrite(STDERR, "Chemins introuvables (autoload non généré en --no-dev ?) :\n" . implode("\n", $missing) . "\n");
+                exit(1);
+            }
+            echo "Autoload : tous les chemins référencés existent dans l\x27export.", PHP_EOL;
+          '
