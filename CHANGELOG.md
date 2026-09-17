@@ -28,7 +28,7 @@ _Résumé : Second lot de correctifs d'audit **BUG1→BUG6** — créneau de rel
 - **`tests/run_all.php`** : **SUCCÈS** (5 étapes, non-régression **17/17**, 0 warning PHP).
 - **Gate Windows** : `pwsh -NoProfile -File scripts/check.ps1` → **SUCCÈS (14 étapes, e2e Playwright 5/5)**.
 - **Garde vendor** : export frais reconstitué localement → `require vendor/autoload.php` OK et tous les chemins de l'autoload présents.
-- **CI GitHub Actions** : vérification post-push (16 jobs `ci.yml` + `csp-check.yml`).
+- **CI GitHub Actions** : run **`35218459226`** (commit `720cd9b`) → **16/16 jobs verts** — dont le nouveau job `Vendor offline (export frais)` (8 s : `require vendor/autoload.php` OK + tous les chemins de l'autoload présents) ; CSP `csp-check.yml` run **`35218459246`** vert.
 
 ## [10.42.36] — 2026-09-16
 _Résumé : Correctifs BUG1→BUG3 (SQL `!==` invalide dans `findActiveWithDeadlineField`, claim de relance conservé sur échec SMTP réessayable/outbox, rollback transaction sur `Throwable` dans `TokenValidationHandler`) + validation complète CI (restauration `vendor/PHPMailer` à travers la purge `vendor/` vérifiée sur les 13 jobs `ci.yml` + `csp-check.yml`)._

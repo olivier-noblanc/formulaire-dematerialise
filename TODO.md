@@ -45,7 +45,7 @@
 | Owner final — garde PSR-4 PHPMailer | Job `vendor-offline-export` : normalise le préfixe `PHPMailer\PHPMailer\` (`vendor/phpmailer/phpmailer/src`, install-path absent de l'export) vers `vendor/PHPMailer/src` avant le contrôle d'existence → garde vert sous Linux, autoload inchangé (produit fidèle de `composer dump-autoload --no-dev`) |
 | Fix PHPStan tests | `MonitoringDeadlineDaysTest` : propriétés mortes `$createdFormIds`/`$createdSubmissionIds` supprimées (`shipmonk.deadProperty.neverRead`) |
 | Tests | +17 (1669→1686) / +89 assertions (5025→5114) : `MonitoringDeadlineDaysTest` (7), `BaseRepositoryImmediateTransactionTest`, `BackupPurgeConfirmTransactionTest`, `RemindOutboxClaimPathTest` (+ sonde), `BackupControllerTest`/`MailOutboxReplayTest`/`MailServiceReplayFailedTest` enrichis |
-| Vérifs | PHPUnit **1686/5114, 0 échec** ; PHPStan projet + tests **0 erreur** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; gate `scripts/check.ps1` **SUCCÈS (14 étapes, e2e 5/5)** ; garde vendor reproduite en export frais |
+| Vérifs | PHPUnit **1686/5114, 0 échec** ; PHPStan projet + tests **0 erreur** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; gate `scripts/check.ps1` **SUCCÈS (14 étapes, e2e 5/5)** ; garde vendor reproduite en export frais ; CI run **`35218459226`** **16/16 verts** + CSP **`35218459246`** vert (commit `720cd9b`) |
 
 ### v10.42.36 — Correctifs BUG1→BUG3 + validation CI complète (2026-09-16)
 | Tâche | Détail |
