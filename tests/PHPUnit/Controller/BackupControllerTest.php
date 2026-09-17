@@ -39,9 +39,14 @@ namespace App\Controller {
      * Override move_uploaded_file for BackupController tests. In CLI there is no
      * real HTTP upload, so the built-in always returns false. When the global
      * flag $_test_force_move_uploaded is set, perform a real rename to simulate
-     * a successful upload. At that exact instant (right after the swap), plant a
-     * valid -wal coming from $_test_plant_foreign_wal — SQLite would silently
-     * apply that foreign journal over the restored DB if it is not removed.
+     * a successful upload. At that exact instant (right after the swap):
+     *   - $_test_plant_foreign_wal plants a valid -wal coming from another DB —
+     *     SQLite would silently apply that foreign journal over the restored DB
+     *     if it is not removed;
+     *   - $_test_corrupt_after_move overwrites the destination with an unreadable
+     *     file — simulates a write error that only materialises after the pivot
+     *     pre-check passed on the source file, so the post-move sanity check
+     *     triggers the rollback (F4).
      */
     function move_uploaded_file(string $from, string $to): bool
     {
@@ -49,6 +54,9 @@ namespace App\Controller {
             return \move_uploaded_file($from, $to);
         }
         $ok = \rename($from, $to);
+        if ($ok && !empty($GLOBALS['_test_corrupt_after_move'])) {
+            \file_put_contents($to, "SQLite format 3\0" . str_repeat('X', 256));
+        }
         if ($ok && !empty($GLOBALS['_test_plant_foreign_wal'])) {
             \file_put_contents($to . '-wal', $GLOBALS['_test_plant_foreign_wal']);
         }
@@ -122,6 +130,7 @@ final class BackupControllerTest extends TestCase
         $GLOBALS['_test_force_db_missing'] = false;
         $GLOBALS['_test_force_move_uploaded'] = false;
         $GLOBALS['_test_plant_foreign_wal'] = '';
+        $GLOBALS['_test_corrupt_after_move'] = false;
 
         // S'assurer que db/workflow.db existe (pour la plupart des tests)
         if (!\file_exists($this->dbPath)) {
@@ -165,8 +174,31 @@ final class BackupControllerTest extends TestCase
         $GLOBALS['_test_force_db_missing'] = false;
         $GLOBALS['_test_force_move_uploaded'] = false;
         $GLOBALS['_test_plant_foreign_wal'] = '';
+        $GLOBALS['_test_corrupt_after_move'] = false;
         $GLOBALS['_test_mails'] = [];
         $GLOBALS['_test_captured_json'] = null;
+    }
+
+    /**
+     * Crée une base SQLite « CircuitDémat » minimale : les 5 tables pivot dont
+     * la présence est exigée par le contrôle anti-base-étrangère (BUG5), plus
+     * toute table supplémentaire passée en argument.
+     *
+     * @param list<string> $extraTables
+     */
+    private function createPivotTablesDb(string $path, array $extraTables = []): void
+    {
+        $pdo = new \PDO('sqlite:' . $path);
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->exec('CREATE TABLE forms (id TEXT)');
+        $pdo->exec('CREATE TABLE submissions (id TEXT)');
+        $pdo->exec('CREATE TABLE tokens (id TEXT)');
+        $pdo->exec('CREATE TABLE steps (id TEXT)');
+        $pdo->exec('CREATE TABLE settings (key TEXT)');
+        foreach ($extraTables as $table) {
+            $pdo->exec('CREATE TABLE ' . $table . ' (v TEXT)');
+        }
+        $pdo = null;
     }
 
     // ── Tests GET ─────────────────────────────────────────────
@@ -331,11 +363,10 @@ final class BackupControllerTest extends TestCase
      */
     public function testHandlePostRestoreBackupWithMoveFailureReturnsError(): void
     {
-        // Créer un fichier .db SQLite valide
+        // Créer un fichier .db CircuitDémat valide (tables pivot présentes,
+        // requises par le contrôle anti-base-étrangère BUG5).
         $validDbPath = sys_get_temp_dir() . '/test_valid_' . uniqid() . '.db';
-        $tmpPdo = new \PDO('sqlite:' . $validDbPath);
-        $tmpPdo->exec('CREATE TABLE forms (id TEXT)');
-        unset($tmpPdo);
+        $this->createPivotTablesDb($validDbPath);
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
@@ -360,6 +391,91 @@ final class BackupControllerTest extends TestCase
             );
         } finally {
             @unlink($validDbPath);
+        }
+    }
+
+    /**
+     * BUG5 (audit 2026-09-17) — une base SQLite étrangère (en-tête valide mais
+     * sans les tables pivot forms/submissions/tokens/steps/settings) ne doit
+     * JAMAIS remplacer la base applicative. Le contrôle refuse AVANT tout
+     * remplacement (pas de snapshot pré-restauration, pas de move) et la base
+     * actuelle reste strictement inchangée.
+     */
+    public function testRestoreBackupRefusesForeignSqliteAndLeavesDatabaseUnchanged(): void
+    {
+        $original = $this->captureDbSnapshot();
+        $this->cleanupPreRestoreBackups();
+
+        // Base SQLite valide mais étrangère : aucune table pivot CircuitDémat.
+        $foreign = sys_get_temp_dir() . '/bc_foreign_db_' . uniqid() . '.db';
+        $foreignPdo = new \PDO('sqlite:' . $foreign);
+        $foreignPdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $foreignPdo->exec('CREATE TABLE foreign_only (v TEXT)');
+        $foreignPdo->prepare('INSERT INTO foreign_only (v) VALUES (?)')->execute(['FOREIGN']);
+        $foreignPdo = null;
+
+        // Sentinelle dans la base réelle : doit survivre si la restauration est refusée.
+        $sentinel = 'bc_sentinel_' . uniqid();
+        $seed = new \PDO('sqlite:' . $this->dbPath);
+        $seed->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $seed->exec('CREATE TABLE IF NOT EXISTS bc_sentinel (v TEXT)');
+        $seed->prepare('INSERT INTO bc_sentinel (v) VALUES (?)')->execute([$sentinel]);
+        $seed = null;
+
+        // Forcer le move : sans le contrôle BUG5, la base étrangère écraserait
+        // la base réelle (le test échouerait alors sur les assertions ci-dessous).
+        $GLOBALS['_test_force_move_uploaded'] = true;
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
+        $_FILES = [
+            'backup_file' => [
+                'name'     => 'foreign.db',
+                'type'     => 'application/x-sqlite3',
+                'tmp_name' => $foreign,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($foreign),
+            ],
+        ];
+
+        try {
+            try {
+                $output = $this->captureOutput(fn() => new BackupController()->handle());
+            } catch (\Throwable) {
+                // Sans le contrôle, la base réelle est remplacée par le schéma
+                // étranger : le rendu échoue (tables attendues absentes). Les
+                // assertions sur la base ci-dessous constatent alors la corruption.
+                $output = '';
+            }
+
+            self::assertStringNotContainsString('a été restaurée avec succès', $output, 'une base étrangère ne doit pas être restaurée');
+            self::assertStringContainsString(
+                'les tables requises (forms, submissions, tokens, steps, settings) sont absentes',
+                $output,
+                'le refus doit nommer les tables pivot manquantes'
+            );
+
+            // Base inchangée : marqueur étranger absent, sentinelle toujours là.
+            $check = new \PDO('sqlite:' . $this->dbPath);
+            $check->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            self::assertSame(
+                0,
+                (int) $check->query("SELECT COUNT(*) FROM sqlite_master WHERE name = 'foreign_only'")->fetchColumn(),
+                'la table étrangère ne doit pas avoir remplacé la base'
+            );
+            self::assertSame(
+                $sentinel,
+                (string) $check->query('SELECT v FROM bc_sentinel ORDER BY rowid DESC LIMIT 1')->fetchColumn(),
+                'la base applicative doit rester intacte'
+            );
+            $check = null;
+
+            // Refus avant tout remplacement : aucune copie pré-restauration créée.
+            self::assertSame([], \glob($this->dbPath . '.before_restore_*') ?: [], 'refus avant tout remplacement');
+        } finally {
+            $GLOBALS['_test_force_move_uploaded'] = false;
+            $this->restoreDbFile($original);
+            $this->cleanupPreRestoreBackups();
+            @unlink($foreign);
         }
     }
 
@@ -576,10 +692,11 @@ final class BackupControllerTest extends TestCase
     {
         $original = $this->captureDbSnapshot();
 
-        // Base "uploadée" (restaurée) avec une table témoin.
+        // Base "uploadée" (restaurée) CircuitDémat valide (tables pivot) avec
+        // une table témoin — sinon le contrôle BUG5 refuserait la restauration.
         $uploaded = sys_get_temp_dir() . '/bc_restore_' . uniqid() . '.db';
+        $this->createPivotTablesDb($uploaded, ['restored_marker']);
         $uploadPdo = new \PDO('sqlite:' . $uploaded);
-        $uploadPdo->exec('CREATE TABLE restored_marker (v TEXT)');
         $uploadPdo->prepare('INSERT INTO restored_marker (v) VALUES (?)')->execute(['RESTORED']);
         $uploadPdo = null;
 
@@ -649,14 +766,16 @@ final class BackupControllerTest extends TestCase
         $seed->prepare('INSERT INTO bc_rollback_marker (v) VALUES (?)')->execute(['RESTORED']);
         $seed = null;
 
-        // Header SQLite valide (passe isValidSqliteDb) mais contenu illisible :
-        // la requête sqlite_master échoue → déclenche le rollback.
-        $corrupt = sys_get_temp_dir() . '/bc_corrupt_' . uniqid() . '.db';
-        \file_put_contents($corrupt, "SQLite format 3\0" . str_repeat('X', 256));
+        // L'upload passe les contrôles (CircuitDémat + tables pivot) mais le
+        // fichier est corrompu PENDANT le remplacement (simulé par l'override) :
+        // l'ouverture PDO post-move échoue → déclenche le rollback.
+        $uploaded = sys_get_temp_dir() . '/bc_corrupt_after_move_' . uniqid() . '.db';
+        $this->createPivotTablesDb($uploaded);
 
         $foreign = $this->startForeignWalDb('rollback');
 
         $GLOBALS['_test_force_move_uploaded'] = true;
+        $GLOBALS['_test_corrupt_after_move'] = true;
         $GLOBALS['_test_plant_foreign_wal'] = $foreign['wal'];
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
@@ -664,9 +783,9 @@ final class BackupControllerTest extends TestCase
             'backup_file' => [
                 'name'     => 'corrupt_restore.db',
                 'type'     => 'application/x-sqlite3',
-                'tmp_name' => $corrupt,
+                'tmp_name' => $uploaded,
                 'error'    => UPLOAD_ERR_OK,
-                'size'     => filesize($corrupt),
+                'size'     => filesize($uploaded),
             ],
         ];
 
@@ -690,15 +809,16 @@ final class BackupControllerTest extends TestCase
             $check = null;
         } finally {
             $GLOBALS['_test_force_move_uploaded'] = false;
+            $GLOBALS['_test_corrupt_after_move'] = false;
             $GLOBALS['_test_plant_foreign_wal'] = '';
             $this->disposeForeignWalDb($foreign);
             $this->restoreDbFile($original);
             $this->cleanupPreRestoreBackups();
-            @unlink($corrupt);
+            @unlink($uploaded);
         }
     }
 
-    // ── Tests F5 : cutoffs de purge en UTC (gmdate) ───────────
+    // ── Tests F5 : cutoffs de purge en UTC (gmdate) ──────────
 
     /**
      * F5 — le cutoff de purge doit être rendu en UTC, pas dans le fuseau

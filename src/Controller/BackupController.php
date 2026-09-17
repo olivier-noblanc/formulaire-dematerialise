@@ -12,6 +12,15 @@ use App\Render\BackupRenderer;
  */
 final class BackupController extends BaseController
 {
+    /**
+     * Tables pivot dont la présence identifie une base CircuitDémat. Une base
+     * SQLite étrangère (autre application, autre schéma) n'a aucune raison de
+     * les contenir toutes.
+     *
+     * @var list<string>
+     */
+    private const array REQUIRED_PIVOT_TABLES = ['forms', 'submissions', 'tokens', 'steps', 'settings'];
+
     public function handle(): void
     {
         App::auth()->requireAdminEffective();
@@ -77,6 +86,14 @@ final class BackupController extends BaseController
                         $errorMsg = 'Seuls les fichiers .db sont acceptés. Fichier fourni : ' . App::html()->escape($origName);
                     } elseif (!$this->isValidSqliteDb($tmpPath)) {
                         $errorMsg = 'Le fichier fourni n\'est pas une base de données SQLite valide. Vérifiez le fichier et réessayez.';
+                    } elseif (!$this->isCircuitDematDatabase($tmpPath)) {
+                        // BUG5 (audit 2026-09-17) : refus AVANT tout remplacement.
+                        // L'en-tête SQLite seul ne prouve pas que le fichier est
+                        // une base CircuitDémat — une base étrangère valide
+                        // écraserait la base applicative et toutes ses données.
+                        $errorMsg = 'Le fichier fourni n\'est pas une base de données CircuitDémat : '
+                            . 'les tables requises (forms, submissions, tokens, steps, settings) sont absentes. '
+                            . 'Restauration refusée pour protéger la base actuelle.';
                     } else {
                         App::db()->release();
                         $backupBefore = $dbPath . '.before_restore_' . date('Ymd_His');
@@ -357,6 +374,42 @@ final class BackupController extends BaseController
     {
         $cutoffTs = strtotime("-{$months} months");
         return gmdate('Y-m-d H:i:s', $cutoffTs !== false ? $cutoffTs : time());
+    }
+
+    /**
+     * Vérifie que le fichier est bien une base CircuitDémat et non une base
+     * SQLite étrangère, en exigeant la présence de toutes les tables pivot.
+     *
+     * BUG5 (audit 2026-09-17) : isValidSqliteDb() ne contrôlait que l'en-tête
+     * « SQLite format 3 » — n'importe quel .db SQLite (autre application, autre
+     * schéma) passait la validation et remplaçait la base applicative, soit une
+     * perte totale des données. On refuse AVANT tout remplacement.
+     */
+    private function isCircuitDematDatabase(string $path): bool
+    {
+        try {
+            // Connexion dédiée en lecture sur le fichier uploadé (pas App::db()).
+            // allowIn: disallowed-calls.neon → PDO::query() pour BackupController.
+            $pdo = new \PDO('sqlite:' . $path);
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            // Noms issus d'une constante interne (jamais d'entrée utilisateur) :
+            // interpolation sûre, pas de placeholder à faire correspondre.
+            $names = "'" . implode("', '", self::REQUIRED_PIVOT_TABLES) . "'";
+            $stmt = $pdo->query(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ({$names})"
+            );
+            if ($stmt === false) {
+                return false;
+            }
+            $found = (int) $stmt->fetchColumn();
+            $stmt = null;
+            $pdo = null;
+            return $found === count(self::REQUIRED_PIVOT_TABLES);
+        } catch (\Throwable $e) {
+            // @silent-ok: fichier illisible/étranger → refus de restauration (retour false surfacé en message d'erreur utilisateur)
+            error_log('backup restore: rejected non-CircuitDemat db: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function isValidSqliteDb(string $path): bool

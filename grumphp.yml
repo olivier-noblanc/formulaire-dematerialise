@@ -14,5 +14,8 @@ grumphp:
         rector:
             config: rector.php
             triggered_by: ['php']
+            # vendor/ est du code tiers/généré (dont les autoload_*.php versionnés) :
+            # jamais retraité par Rector, sinon tout commit sur vendor/ est bloqué.
+            ignore_patterns: ['/vendor/']
         deptrac:
             depfile: deptrac.php
