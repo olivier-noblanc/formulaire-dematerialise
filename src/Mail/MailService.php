@@ -254,11 +254,19 @@ final readonly class MailService implements MailInterface
      * Une ligne dont le corps a été purgé (RGPD) ne peut plus être rejouée :
      * elle est marquée failed sans contacter le SMTP.
      *
+     * BUG2 — garde dry-run : `transmit()` (contrairement à `sendDetailed()`)
+     * n'applique PAS `mail_dry_run`. Sans ce garde-fou, activer le dry-run
+     * laisserait ce worker envoyer de VRAIS emails via SMTP. En dry-run, aucune
+     * ligne n'est revendiquée et aucun SMTP n'est contacté.
+     *
      * @return array{processed: int, sent: int, failed: int, error: int, blocked: int}
      */
     public function replayOutbox(int $limit = 20): array
     {
         $stats = ['processed' => 0, 'sent' => 0, 'failed' => 0, 'error' => 0, 'blocked' => 0];
+        if ($this->settingsService->get('mail_dry_run', '0') === '1') {
+            return $stats;
+        }
         if (!$this->mailRepository->tableExists()) {
             return $stats;
         }
@@ -326,12 +334,24 @@ final readonly class MailService implements MailInterface
      * corps purgé (RGPD) ou plafond de rejeux manuels atteint. Un corps vide est
      * également refusé sans contacter le SMTP.
      *
+     * BUG2 — garde dry-run : `transmit()` ignore `mail_dry_run`. Refus immédiat
+     * (sans revendication ni contact SMTP) quand le dry-run est actif, sinon un
+     * clic opérateur enverrait un vrai email.
+     *
      * @api Point d'entrée consommé par le rejeu manuel opérateur (contrôleur).
      *
      * @return array{success:bool,error:string,smtp_log:string,status:string}
      */
     public function replayFailed(string $id): array
     {
+        if ($this->settingsService->get('mail_dry_run', '0') === '1') {
+            return [
+                'success' => false,
+                'error' => 'Mode dry-run actif — rejeu réel désactivé. Désactivez le dry-run pour rejouer le message.',
+                'smtp_log' => '',
+                'status' => MailStatus::Blocked->value,
+            ];
+        }
         if (!$this->mailRepository->tableExists()) {
             return [
                 'success' => false,

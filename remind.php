@@ -20,7 +20,10 @@ $pdo  = get_pdo();
 $now  = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 $nb   = 0;
 $blocked = 0;
-$relance_max = 3; // défaut si aucun token traité
+// relance_max des tokens bloqués au plafond, par valeur : le résumé reste exact
+// quand plusieurs formulaires (relance_max différents) sont traités.
+/** @var array<int, int> $blockedMax */
+$blockedMax = [];
 
 // Récupérer les IDs des tokens à traiter (pas de fetchAll complet pour éviter les stale reads).
 // P0-3/P0-4 : exclusions déportées dans TokenRepository::findRemindableTokenIds() —
@@ -65,6 +68,7 @@ foreach ($pendingIds as $tokenId) {
         if ($relance_count >= $relance_max) {
             error_log("Max relances atteint pour token {$tok['token']} ({$relance_count}/{$relance_max})");
             $blocked++;
+            $blockedMax[$relance_max] = ($blockedMax[$relance_max] ?? 0) + 1;
             continue;
         }
 
@@ -91,21 +95,37 @@ foreach ($pendingIds as $tokenId) {
             continue;
         }
 
-        $sentOk = false;
-        try {
-            $sentOk = send_mail($tok['email'], $subject, build_mail_html($tok, $tok['step_label'], $tok['token']));
-        } finally {
-            if (!$sentOk) {
-                // Envoi échoué (ou exception) : libérer le créneau revendiqué
-                // pour ne pas compter une relance non envoyée ni bloquer la suivante.
-                $tokenRepository->releaseRelanceClaim($tokenId, $new_count, $relance_count, $tok['relance_at']);
-            }
+        // BUG1 — même correctif que TokenService::remind() : un échec SMTP
+        // réessayable est persisté en outbox (write-ahead) et rejoué par le
+        // worker. Libérer le créneau ferait renvoyer l'email par le rejeu avec
+        // relance_count rabattu → contournement du plafond relance_max (relance
+        // fantôme). Seul un refus DÉFINITIF (MailStatus::Blocked : adresse
+        // destinataire invalide, config SMTP/From absente) libère le créneau.
+        $sendResult = App\Core\App::mail()->sendDetailed(
+            $tok['email'],
+            $subject,
+            build_mail_html($tok, $tok['step_label'], $tok['token'])
+        );
+        $sendStatus = \App\Enum\MailStatus::tryFrom($sendResult['status']) ?? \App\Enum\MailStatus::Error;
+
+        if ($sendStatus === \App\Enum\MailStatus::Blocked) {
+            // Refus définitif, jamais rejoué par l'outbox : libérer le créneau
+            // revendiqué (CAS inverse) pour ne pas compter une relance impossible
+            // ni bloquer la suivante.
+            $tokenRepository->releaseRelanceClaim($tokenId, $new_count, $relance_count, $tok['relance_at']);
+            error_log("Relance bloquée pour token {$tok['token']} : {$sendResult['error']}");
+            continue;
         }
 
-        if ($sentOk) {
-            echo "[{$now->format('Y-m-d H:i:s')}] Relance {$new_count}/{$relance_max} → {$tok['email']} ({$tok['step_label']})\n";
-            $nb++;
+        if (!$sendResult['success']) {
+            // Erreur réessayable / write-ahead : l'envoi est (ou sera) repris par
+            // l'outbox. Le créneau reste revendiqué et la relance comptée.
+            error_log("Relance mise en file d'attente pour token {$tok['token']} : {$sendResult['error']}");
+            continue;
         }
+
+        echo "[{$now->format('Y-m-d H:i:s')}] Relance {$new_count}/{$relance_max} → {$tok['email']} ({$tok['step_label']})\n";
+        $nb++;
     } catch (\Throwable $e) {
         // Aucune transaction ouverte (B3) : rien à rollback.
         error_log("Erreur relance token {$tokenId}: " . $e->getMessage());
@@ -114,7 +134,12 @@ foreach ($pendingIds as $tokenId) {
 
 echo "$nb relance(s) envoyée(s).";
 if ($blocked > 0) {
-    echo " $blocked token(s) bloqué(s) : plafond de relances atteint (max={$relance_max}).";
+    ksort($blockedMax);
+    $maxParts = [];
+    foreach ($blockedMax as $max => $count) {
+        $maxParts[] = $count > 1 ? "max={$max} ({$count})" : "max={$max}";
+    }
+    echo " $blocked token(s) bloqué(s) : plafond de relances atteint (" . implode(', ', $maxParts) . ").";
 }
 echo "\n";
 

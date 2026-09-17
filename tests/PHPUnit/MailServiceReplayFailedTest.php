@@ -47,7 +47,7 @@ final class MailServiceReplayFailedTest extends TestCase
         $this->settings = \App\Core\App::settings();
         $this->mail = new MailService($this->repo, $this->settings);
 
-        foreach (['smtp_host', 'smtp_port', 'smtp_from', 'smtp_from_name'] as $key) {
+        foreach (['smtp_host', 'smtp_port', 'smtp_from', 'smtp_from_name', 'mail_dry_run'] as $key) {
             $this->savedSettings[$key] = $this->settings->get($key, '');
         }
         // SMTP injoignable par défaut pour ces tests.
@@ -55,6 +55,8 @@ final class MailServiceReplayFailedTest extends TestCase
         $this->settings->set('smtp_port', '1', 'test');
         $this->settings->set('smtp_from', 'noreply@test.local', 'test');
         $this->settings->set('smtp_from_name', 'CircuitDemat', 'test');
+        // Envoi réel (pas de dry-run) : ces tests exercent la vraie tentative SMTP.
+        $this->settings->set('mail_dry_run', '0', 'test');
     }
 
     protected function tearDown(): void
@@ -167,6 +169,29 @@ final class MailServiceReplayFailedTest extends TestCase
 
         self::assertFalse($result['success']);
         self::assertSame(MailStatus::Failed->value, $result['status']);
+    }
+
+    /**
+     * BUG2 — mail_dry_run=1 : le rejeu manuel NE DOIT PAS contacter le SMTP ni
+     * revendiquer la ligne. transmit() ignore mail_dry_run ; sans ce garde-fou,
+     * un opérateur cliquerait « rejouer » en dry-run et enverrait un vrai email.
+     */
+    public function testReplayRefusesWhenDryRunEnabled(): void
+    {
+        $this->settings->set('mail_dry_run', '1', 'test');
+        $id = $this->seed();
+        $before = $this->readRow($id);
+
+        $result = $this->mail->replayFailed($id);
+
+        self::assertFalse($result['success']);
+        self::assertSame(MailStatus::Blocked->value, $result['status'], 'refus définitif en dry-run');
+        self::assertStringContainsString('dry-run', $result['error']);
+        $after = $this->readRow($id);
+        self::assertSame(MailStatus::Failed->value, $after['status'], 'la ligne reste failed (non revendiquée)');
+        self::assertSame(0, (int) $after['manual_replay_count'], 'aucune revendication en dry-run');
+        self::assertSame((int) $before['attempts'], (int) $after['attempts'], 'attempts inchangé');
+        self::assertSame($before['next_retry_at'], $after['next_retry_at'], 'bail inchangé');
     }
 
     // ── Rejeu effectif ───────────────────────────────────────────

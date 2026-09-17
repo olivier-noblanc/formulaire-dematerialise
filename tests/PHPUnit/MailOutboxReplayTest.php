@@ -42,7 +42,7 @@ final class MailOutboxReplayTest extends TestCase
         $this->settings = \App\Core\App::settings();
         $this->mail = new MailService($this->repo, $this->settings);
 
-        foreach (['smtp_host', 'smtp_port', 'smtp_from', 'smtp_from_name'] as $key) {
+        foreach (['smtp_host', 'smtp_port', 'smtp_from', 'smtp_from_name', 'mail_dry_run'] as $key) {
             $this->savedSettings[$key] = $this->settings->get($key, '');
         }
         // SMTP injoignable par défaut pour ces tests.
@@ -50,6 +50,8 @@ final class MailOutboxReplayTest extends TestCase
         $this->settings->set('smtp_port', '1', 'test');
         $this->settings->set('smtp_from', 'noreply@test.local', 'test');
         $this->settings->set('smtp_from_name', 'CircuitDemat', 'test');
+        // Envoi réel (pas de dry-run) : ces tests exercent la vraie tentative SMTP.
+        $this->settings->set('mail_dry_run', '0', 'test');
     }
 
     protected function tearDown(): void
@@ -271,6 +273,33 @@ final class MailOutboxReplayTest extends TestCase
         $stats = $this->mail->replayOutbox();
 
         self::assertSame(['processed' => 0, 'sent' => 0, 'failed' => 0, 'error' => 0, 'blocked' => 0], $stats);
+    }
+
+    /**
+     * BUG2 — mail_dry_run=1 : le worker NE DOIT PAS rejouer réellement.
+     * Autrement, activer le dry-run laisserait le cron envoyer de vrais emails
+     * via transmit() (qui, contrairement à sendDetailed(), ignore mail_dry_run).
+     * Aucune ligne touchée (pas de claim : attempts/bail inchangés) et aucun
+     * contact SMTP.
+     */
+    public function testReplayOutboxDoesNothingWhenDryRunEnabled(): void
+    {
+        $this->settings->set('mail_dry_run', '1', 'test');
+        $id = $this->seed(['attempts' => 1, 'next_retry_at' => gmdate('Y-m-d H:i:s', time() - 60)]);
+        $before = $this->readRow($id);
+
+        $stats = $this->mail->replayOutbox();
+
+        self::assertSame(
+            ['processed' => 0, 'sent' => 0, 'failed' => 0, 'error' => 0, 'blocked' => 0],
+            $stats,
+            'en dry-run, aucun rejeu ne doit être tenté'
+        );
+        $after = $this->readRow($id);
+        self::assertSame($before['status'], $after['status'], 'aucune ligne ne doit être revendiquée/finalisée');
+        self::assertSame($before['attempts'], $after['attempts'], 'attempts ne doit pas être incrémenté (pas de claim)');
+        self::assertSame($before['next_retry_at'], $after['next_retry_at'], 'le bail ne doit pas être modifié');
+        self::assertSame($before['body_html'], $after['body_html'], 'la ligne reste intacte');
     }
 
     public function testReplayOutboxSendsMessageAgainstLocalSmtp(): void
