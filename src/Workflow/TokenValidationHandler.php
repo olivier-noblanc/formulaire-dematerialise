@@ -67,7 +67,7 @@ final readonly class TokenValidationHandler
             return ['status' => 'invalid', 'message' => 'Action non autorisée.'];
         }
 
-        $this->tokenRepository->beginTransaction();
+        $this->tokenRepository->beginImmediateTransaction();
 
         try {
             $t = $getTokenWithContext($token);

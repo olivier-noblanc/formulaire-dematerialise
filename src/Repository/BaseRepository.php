@@ -75,6 +75,26 @@ abstract class BaseRepository
         $this->pdo()->beginTransaction();
     }
 
+    /**
+     * Démarre une transaction d'écriture en mode IMMEDIATE.
+     *
+     * BUG3 (audit 2026-09-17) : `PDO::beginTransaction()` émet un `BEGIN`
+     * DEFERRED. En mode WAL, une transaction qui lit puis écrit doit convertir
+     * son verrou de lecture en verrou d'écriture ; si une autre connexion a
+     * committé entre-temps, SQLite échoue immédiatement avec SQLITE_BUSY
+     * (« database is locked ») — un conflit de snapshot que `busy_timeout` ne
+     * rejoue pas. `BEGIN IMMEDIATE` acquiert le verrou d'écriture dès
+     * l'ouverture : les écritures concurrentes se sérialisent sous
+     * `busy_timeout` au lieu d'échouer en pleine transaction.
+     *
+     * Helper défini une seule fois ici (point unique). `commit()`,
+     * `rollBack()` et `inTransaction()` PDO restent valides après ce BEGIN.
+     */
+    public function beginImmediateTransaction(): void
+    {
+        $this->pdo()->exec('BEGIN IMMEDIATE');
+    }
+
     public function commit(): void
     {
         $this->pdo()->commit();

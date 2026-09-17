@@ -20,7 +20,7 @@ trait SubmissionPurgeTrait
     public function deleteCascade(string $id): bool
     {
         $pdo = $this->pdo();
-        $pdo->beginTransaction();
+        $this->beginImmediateTransaction();
         try {
             $this->execute('DELETE FROM submission_validator_data WHERE submission_id = ?', [$id]);
             $this->execute('DELETE FROM alert_log WHERE submission_id = ?', [$id]);

@@ -25,7 +25,7 @@ final readonly class SampleFormsService
         $pdo = $this->formRepository->pdo();
 
         try {
-            $pdo->beginTransaction();
+            $this->formRepository->beginImmediateTransaction();
 
             $sample_forms = [
                 [

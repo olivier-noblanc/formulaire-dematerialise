@@ -67,7 +67,7 @@ final readonly class WorkflowAdvancer
         // (voir flushNotifications) pour ne pas tenir le verrou d'écriture
         // SQLite pendant l'I/O SMTP.
         $notifications = [];
-        $this->tokenRepository->beginTransaction();
+        $this->tokenRepository->beginImmediateTransaction();
         $committed = false;
         try {
             // Tokens déjà créés (lu dans la transaction pour un snapshot cohérent)

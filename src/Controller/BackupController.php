@@ -188,11 +188,29 @@ final class BackupController extends BaseController
                             $ids = $this->submissionRepo->findPurgeableIds($cutoff);
 
                             if ($ids !== []) {
-                                $validatorDataDeleted = $this->submissionRepo->deleteValidatorDataBySubmissionIds($ids);
-                                $alertLogsDeleted = $this->alertRepo->deleteLogBySubmissionIds($ids);
-                                $tokensDeleted = $this->tokenRepo->deleteBySubmissionIds($ids);
-                                $submissionsDeleted = $this->submissionRepo->deleteByIds($ids);
+                                // BUG6 (audit 2026-09-17) : les 4 suppressions
+                                // doivent être atomiques. BEGIN IMMEDIATE (BUG3)
+                                // acquiert le verrou d'écriture dès l'ouverture ;
+                                // toute exception (même un \Error, pas seulement
+                                // \Exception) rollback puis remonte, laissant la
+                                // base intacte.
+                                $this->submissionRepo->beginImmediateTransaction();
+                                try {
+                                    $validatorDataDeleted = $this->submissionRepo->deleteValidatorDataBySubmissionIds($ids);
+                                    $alertLogsDeleted = $this->alertRepo->deleteLogBySubmissionIds($ids);
+                                    $tokensDeleted = $this->tokenRepo->deleteBySubmissionIds($ids);
+                                    $submissionsDeleted = $this->submissionRepo->deleteByIds($ids);
+                                    $this->submissionRepo->commit();
+                                } catch (\Throwable $e) {
+                                    if ($this->submissionRepo->inTransaction()) {
+                                        $this->submissionRepo->rollBack();
+                                    }
+                                    throw $e;
+                                }
 
+                                // Post-commit uniquement : VACUUM ne peut pas
+                                // s'exécuter dans une transaction, et l'audit
+                                // doit tracer une purge réellement committée.
                                 $this->db->vacuum();
 
                                 App::audit()->log(
@@ -213,8 +231,11 @@ final class BackupController extends BaseController
                             } else {
                                 $infoMsg = 'Aucune donnée à purger.';
                             }
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             // @silent-ok: fallback sets user-facing error
+                            // règle 9 catégorie 2 : panne DB attendue → message
+                            // utilisateur + trace. La transaction est déjà fermée
+                            // (rollback dans le catch interne ci-dessus).
                             error_log('purge_confirm error: ' . $e->getMessage());
                             $errorMsg = 'Une erreur technique est survenue.';
                         }

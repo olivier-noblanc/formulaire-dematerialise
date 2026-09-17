@@ -97,7 +97,7 @@ final readonly class RgpdService
         }
 
         try {
-            $this->tokenRepository->beginTransaction();
+            $this->tokenRepository->beginImmediateTransaction();
 
             // B-RG1 fix (audit fonctionnel 2026-07-26) : avant d'anonymiser, on doit
             // invalider les tokens actifs de l'agent ET fermer ses soumissions en cours.
@@ -167,7 +167,7 @@ final readonly class RgpdService
         $count = 0;
         $mailsPurged = 0;
         $bodiesPurged = 0;
-        $this->tokenRepository->beginTransaction();
+        $this->tokenRepository->beginImmediateTransaction();
         try {
             foreach ($oldIds as $oldId) {
                 // Cascade delete : attachments, delegations, tokens, alert_log, submissions.

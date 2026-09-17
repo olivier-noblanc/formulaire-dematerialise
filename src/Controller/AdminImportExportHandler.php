@@ -170,7 +170,7 @@ final class AdminImportExportHandler
 
         $repo = App::getInstance()->get(FormRepository::class);
         try {
-            $repo->pdo()->beginTransaction();
+            $repo->beginImmediateTransaction();
 
             $label = $data['form']['label'];
             $slug = \generate_slug($label);

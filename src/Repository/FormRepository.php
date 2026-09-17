@@ -201,7 +201,7 @@ final class FormRepository extends BaseRepository
     public function deleteCascade(string $formId): void
     {
         $pdo = $this->pdo();
-        $pdo->beginTransaction();
+        $this->beginImmediateTransaction();
         try {
             // Supprimer les données enfants des soumissions
             $this->execute('DELETE FROM submission_validator_data WHERE submission_id IN (SELECT id FROM submissions WHERE form_id = ?)', [$formId]);
