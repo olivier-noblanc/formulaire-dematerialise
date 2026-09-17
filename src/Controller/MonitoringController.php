@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Core\DateHelper;
 use App\Enum\SubmissionField;
 use App\Enum\SubmissionStatus;
 use App\Forms\SubmissionData;
@@ -81,8 +82,6 @@ final class MonitoringController extends BaseController
         try {
             $alertSubmissions = $this->submissionRepo->findActiveWithDeadlineField();
 
-            $nowTs = time();
-
             // Batch fetch pending token counts to avoid N+1
             $alertSubIds = array_column($alertSubmissions, 'id');
             $pendingCounts = $alertSubIds !== []
@@ -92,20 +91,18 @@ final class MonitoringController extends BaseController
             foreach ($alertSubmissions as $alertSubmission) {
                 $data = json_decode($alertSubmission['data'], true) ?? [];
                 $deadlineField = $alertSubmission['deadline_field'];
-                $deadlineStr = $data[$deadlineField] ?? '';
-                if ($deadlineStr === '') {
-                    continue;
-                }
-                if ($deadlineStr === '0') {
-                    continue;
-                }
-
-                $deadlineTs = parse_deadline_date($deadlineStr);
-                if (!((bool)$deadlineTs)) {
+                $deadlineRaw = $data[$deadlineField] ?? '';
+                $deadlineStr = is_scalar($deadlineRaw) ? trim((string) $deadlineRaw) : '';
+                if ($deadlineStr === '' || $deadlineStr === '0') {
                     continue;
                 }
 
-                $daysRemaining = (int) floor(($deadlineTs - $nowTs) / 86400);
+                $deadlineInfo = self::computeDeadlineInfo($deadlineStr);
+                if ($deadlineInfo === null) {
+                    continue;
+                }
+
+                $daysRemaining = $deadlineInfo['days_remaining'];
                 $pendingCount = $pendingCounts[$alertSubmission['id']] ?? 0;
 
                 if ($daysRemaining <= 10) {
@@ -114,8 +111,8 @@ final class MonitoringController extends BaseController
                         'submission_id' => $alertSubmission['id'],
                         'form_label' => $alertSubmission['form_label'],
                         'nom_agent' => $nomAgent,
-                        'deadline' => trim((string) $deadlineStr),
-                        'deadline_formatted' => date('d/m/Y', $deadlineTs),
+                        'deadline' => $deadlineStr,
+                        'deadline_formatted' => $deadlineInfo['deadline_formatted'],
                         'days_remaining' => $daysRemaining,
                         'pending_steps' => $pendingCount,
                         'submitted_by' => $alertSubmission['submitted_by'],
@@ -286,5 +283,38 @@ final class MonitoringController extends BaseController
         $content    = \App\Render\MonitoringRenderer::content($ctx);
 
         echo new \App\Render\PageRenderer()->page('Surveillance', 'monitoring', $pageCss, $content, ['nav_extra' => $navExtra]);
+    }
+
+    /**
+     * Calcule les jours calendaires restants et la date cible formatée à
+     * partir de la valeur d'un champ deadline (AAAA-MM-JJ ou JJ/MM/AAAA).
+     *
+     * BUG4 (audit 2026-09-17) : le calcul précédent
+     * `floor(($deadlineTs - time()) / 86400)` tronquait en périodes de 24h
+     * pleines — une deadline « demain » vue l'après-midi valait 0 (Jour J) et
+     * le jour J vu après minuit valait -1 (faux retard « J+1 »). Délègue à la
+     * source unique DateHelper::parseDate() + calendarDaysUntil() (jours
+     * calendaires Europe/Paris), comme calculateDeadlineUrgency() et
+     * alert_check.php.
+     *
+     * @param string                  $deadlineStr Valeur brute du champ deadline.
+     * @param \DateTimeImmutable|null $now         Instant de référence
+     *                                             (testabilité) ; défaut :
+     *                                             maintenant Europe/Paris.
+     *
+     * @return array{days_remaining: int, deadline_formatted: string}|null null
+     *         si la valeur n'est pas une date valide (ligne alors ignorée).
+     */
+    public static function computeDeadlineInfo(string $deadlineStr, ?\DateTimeImmutable $now = null): ?array
+    {
+        $deadline = DateHelper::parseDate($deadlineStr);
+        if (!$deadline instanceof \DateTimeImmutable) {
+            return null;
+        }
+
+        return [
+            'days_remaining' => DateHelper::calendarDaysUntil($deadline, $now),
+            'deadline_formatted' => $deadline->format('d/m/Y'),
+        ];
     }
 }
