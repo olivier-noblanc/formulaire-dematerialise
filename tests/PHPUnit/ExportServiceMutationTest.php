@@ -471,6 +471,118 @@ final class ExportServiceMutationTest extends TestCase
         );
     }
 
+    // ─ Drift d'OFFSET — snapshot de lecture stable (WAL) ───────────────
+
+    /**
+     * Sans snapshot de lecture, une insertion concurrente entre deux batches
+     * LIMIT/OFFSET décale l'ORDER BY submitted_at DESC : la première ligne du
+     * batch suivant est relue (DOUBLON) et/ou une ligne est sautée (OMISSION).
+     *
+     * Scénario : 600 soumissions (> batch 500 → 2 batches), insertion
+     * concurrente d'une soumission plus récente sur une seconde connexion PDO
+     * exactement entre le batch 1 (500 lignes) et le batch 2. L'export doit
+     * être un snapshot cohérent : exactement les 600 soumissions d'origine,
+     * chacune une seule fois, sans la soumission concurrente (postérieure au
+     * début de l'export).
+     *
+     * Pré-fix (sans snapshot) : le batch 2 (OFFSET 500) relit la 500e ligne
+     * → 601 lignes, doublon. Post-fix : snapshot figé au premier SELECT
+     * → 600 lignes uniques.
+     */
+    public function testCsvChunksStableReadSnapshotUnderConcurrentInsert(): void
+    {
+        $pdo = $this->db->getPdo();
+        $formId = 'form-snapshot-' . uniqid();
+        $slug = 'snapshot-' . uniqid();
+        $pdo->exec("INSERT INTO forms (id, label, slug, description) VALUES ('$formId', 'Snapshot Form', '$slug', 'Test')");
+        $this->createdFormIds[] = $formId;
+
+        // 600 soumissions, submitted_at strictement décroissant et unique pour
+        // un ORDER BY submitted_at DESC déterministe (i=0 le plus récent).
+        $base = new \DateTimeImmutable('2025-01-01 00:00:00', new \DateTimeZone('UTC'));
+        $insertedIds = [];
+        $stmt = $pdo->prepare(
+            "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, '{}', ?, ?, 'en_cours')"
+        );
+        for ($i = 0; $i < 600; $i++) {
+            $id = sprintf('sub-snap-%s-%05d', $formId, $i);
+            $submittedAt = $base->modify('-' . $i . ' seconds')->format('Y-m-d H:i:s');
+            $stmt->execute([$id, $formId, 'agent' . $i . '@test.com', $submittedAt]);
+            $insertedIds[] = $id;
+            $this->createdSubmissionIds[] = $id;
+        }
+
+        $service = new ExportService($this->auth);
+        $gen = $service->csvChunks(['form_id' => $formId]);
+
+        // rewind() exécute le début du générateur (ouverture du snapshot + BOM).
+        $gen->rewind();
+        $chunks = [$gen->current()]; // BOM
+        $gen->next();
+        $chunks[] = $gen->current(); // header
+        for ($i = 0; $i < 500; $i++) {
+            $gen->next();
+            self::assertTrue($gen->valid(), 'Le batch 1 doit contenir 500 lignes.');
+            $chunks[] = $gen->current();
+        }
+        // Ici le générateur est suspendu après le batch 1, AVANT la requête du batch 2.
+
+        // Insertion concurrente sur une seconde connexion PDO : plus récente que
+        // tout → se place en tête de l'ORDER BY submitted_at DESC (ce qui
+        // repousserait toutes les lignes existantes d'un rang sans snapshot).
+        $dbPath = (string) ($GLOBALS['_test_db_path'] ?? dirname(__DIR__, 2) . '/db/workflow_test.db');
+        $writer = new \PDO('sqlite:' . $dbPath);
+        $writer->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $writer->exec('PRAGMA busy_timeout = 5000');
+        $concurrentId = 'sub-snap-concurrent-' . uniqid();
+        $writer->prepare(
+            "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status) VALUES (?, ?, '{}', ?, '2099-01-01 00:00:00', 'en_cours')"
+        )->execute([$concurrentId, $formId, 'concurrent@test.com']);
+        $this->createdSubmissionIds[] = $concurrentId;
+        $writer = null;
+
+        // Batch 2 (et au-delà) — doit rester sur le snapshot initial.
+        while ($gen->valid()) {
+            $gen->next();
+            if ($gen->valid()) {
+                $chunks[] = $gen->current();
+            }
+        }
+
+        $csv = implode('', $chunks);
+        $withoutBom = substr($csv, 3);
+        $lines = array_values(array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== ''));
+        $dataLines = array_slice($lines, 1); // skip header
+
+        $exportedIds = [];
+        foreach ($dataLines as $line) {
+            $cols = str_getcsv($line, ';', '"', '\\');
+            $exportedIds[] = $cols[0] ?? '';
+        }
+
+        self::assertCount(600, $exportedIds, 'Snapshot: exactement 600 lignes de données (aucun doublon).');
+        self::assertCount(
+            600,
+            array_unique($exportedIds),
+            'Snapshot: chaque soumission exportée exactement une fois (zéro doublon).'
+        );
+
+        sort($exportedIds);
+        $expected = $insertedIds;
+        sort($expected);
+        self::assertSame(
+            $expected,
+            $exportedIds,
+            'Snapshot: aucune omission — le set exporté doit être exactement les 600 soumissions d\'origine.'
+        );
+
+        self::assertNotContains(
+            $concurrentId,
+            $exportedIds,
+            'Snapshot: l\'insertion concurrente postérieure au début de l\'export ne doit pas apparaître.'
+        );
+    }
+
     // ── Helper ─────────────────────────────────────────────────────────
 
     /**

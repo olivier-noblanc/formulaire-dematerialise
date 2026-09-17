@@ -96,64 +96,96 @@ final readonly class ExportService
      */
     public function csvChunks(array $options = []): \Generator
     {
-        [$where_sql, $params] = $this->buildWhereClause($options);
-
-        // Récupérer les colonnes JSON distinctes via json_each (une seule requête légère)
-        $all_keys = $this->submissionRepository->findDistinctJsonKeys($where_sql, $params);
-
-        // B-FIX4 : noms des champs checkbox — la conversion Oui/Non ne s'applique qu'à eux
-        $checkbox_names = App::getInstance()->get(FormRepository::class)
-            ->getCheckboxFieldNames(
-                (($options['form_id'] ?? '') !== '') ? (string) $options['form_id'] : null
-            );
-
-        // Flux temporaire de travail pour encoder chaque ligne via fputcsv
-        $tmp = fopen('php://temp', 'r+');
-        if ($tmp === false) {
-            return;
+        // OFFSET drift (audit 2026-09-17) : le streaming pagine l'export
+        // par requêtes LIMIT/OFFSET successives (batch de 500). Sans transaction,
+        // une écriture concurrente insérée/réordonnée entre deux batches décale
+        // l'ORDER BY s.submitted_at DESC : la dernière ligne d'un batch est relue
+        // (doublon) et/ou une ligne est sautée (omission). Une transaction SQLite
+        // — même en lecture seule — fige le snapshot au premier SELECT et le
+        // conserve jusqu'au commit final, ce qui rend l'export cohérent point-in-time.
+        // Compatible WAL : les lecteurs ne bloquent pas l'écrivain (l'insertion
+        // concurrente reste présente en base mais absente de l'export en cours).
+        // La transaction est ouverte via le repository (méthode non-yielding)
+        // pour rester compatible avec la règle PHPStan shipmonk
+        // `checkedExceptionInYieldingMethod` (PDOException ne peut pas être
+        // propagée depuis un générateur).
+        $ownsTransaction = !$this->submissionRepository->inTransaction();
+        if ($ownsTransaction) {
+            $this->submissionRepository->beginTransaction();
         }
-        $csvLine = static function (array $line) use ($tmp): string {
-            fputcsv($tmp, $line, ';', '"', '\\');
-            rewind($tmp);
-            $chunk = (string) stream_get_contents($tmp);
-            ftruncate($tmp, 0);
-            rewind($tmp);
-            return $chunk;
-        };
 
-        // BOM pour Excel
-        yield chr(0xEF) . chr(0xBB) . chr(0xBF);
+        $tmp = null;
 
-        // En-tête fixe
-        yield $csvLine(array_merge(['ID', 'Formulaire', 'Agent', 'Statut', 'Soumis le', 'Clôturé le'], $all_keys));
+        try {
+            [$where_sql, $params] = $this->buildWhereClause($options);
 
-        // Streamer les lignes par batch de 500
-        $batch_size = 500;
-        $offset = 0;
+            // Récupérer les colonnes JSON distinctes via json_each (une seule requête légère)
+            $all_keys = $this->submissionRepository->findDistinctJsonKeys($where_sql, $params);
 
-        do {
-            $rows = $this->submissionRepository->findForExportWithForm($where_sql, $params, $batch_size, $offset);
+            // B-FIX4 : noms des champs checkbox — la conversion Oui/Non ne s'applique qu'à eux
+            $checkbox_names = App::getInstance()->get(FormRepository::class)
+                ->getCheckboxFieldNames(
+                    (($options['form_id'] ?? '') !== '') ? (string) $options['form_id'] : null
+                );
 
-            foreach ($rows as $row) {
-                $data = json_decode($row['data'], true) ?? [];
-                $line = [
-                    $row['id'],
-                    $row['form_label'],
-                    $row['submitted_by'],
-                    $row['status'],
-                    $row['submitted_at'],
-                    $row['closed_at'] ?? '',
-                ];
-                foreach ($all_keys as $all_key) {
-                    $line[] = $this->transformValue($data[$all_key] ?? '', in_array($all_key, $checkbox_names, true));
-                }
-                yield $csvLine($line);
+            // Flux temporaire de travail pour encoder chaque ligne via fputcsv
+            $tmp = fopen('php://temp', 'r+');
+            if ($tmp === false) {
+                return;
             }
+            $csvLine = static function (array $line) use ($tmp): string {
+                fputcsv($tmp, $line, ';', '"', '\\');
+                rewind($tmp);
+                $chunk = (string) stream_get_contents($tmp);
+                ftruncate($tmp, 0);
+                rewind($tmp);
+                return $chunk;
+            };
 
-            $offset += $batch_size;
-        } while (count($rows) === $batch_size);
+            // BOM pour Excel
+            yield chr(0xEF) . chr(0xBB) . chr(0xBF);
 
-        fclose($tmp);
+            // En-tête fixe
+            yield $csvLine(array_merge(['ID', 'Formulaire', 'Agent', 'Statut', 'Soumis le', 'Clôturé le'], $all_keys));
+
+            // Streamer les lignes par batch de 500
+            $batch_size = 500;
+            $offset = 0;
+
+            do {
+                $rows = $this->submissionRepository->findForExportWithForm($where_sql, $params, $batch_size, $offset);
+
+                foreach ($rows as $row) {
+                    $data = json_decode($row['data'], true) ?? [];
+                    $line = [
+                        $row['id'],
+                        $row['form_label'],
+                        $row['submitted_by'],
+                        $row['status'],
+                        $row['submitted_at'],
+                        $row['closed_at'] ?? '',
+                    ];
+                    foreach ($all_keys as $all_key) {
+                        $line[] = $this->transformValue($data[$all_key] ?? '', in_array($all_key, $checkbox_names, true));
+                    }
+                    yield $csvLine($line);
+                }
+
+                $offset += $batch_size;
+            } while (count($rows) === $batch_size);
+        } finally {
+            // Fermé même si le générateur est interrompu en cours de streaming
+            // (le finally s'exécute à la destruction du générateur).
+            if (is_resource($tmp)) {
+                fclose($tmp);
+            }
+            // Libère le snapshot de lecture. Export read-only : commit/rollback
+            // sont équivalents, mais on ferme proprement la transaction qu'on a
+            // ouverte (jamais celle d'un appelant — cf. $ownsTransaction).
+            if ($ownsTransaction && $this->submissionRepository->inTransaction()) {
+                $this->submissionRepository->commit();
+            }
+        }
     }
 
     /**
