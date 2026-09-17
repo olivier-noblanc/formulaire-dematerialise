@@ -98,25 +98,44 @@ final class AdminFormCrudHandler
         if (!App::auth()->isFormOwner($form_id) && !App::auth()->isSuperAdmin()) {
             return ['error' => 'Seuls les propriétaires du formulaire peuvent le supprimer.', 'form_id' => $form_id];
         }
+        // Pré-check hors transaction : échec rapide et message immédiat dans le
+        // cas courant. Le contrôle FAISANT FOI est refait atomiquement dans
+        // FormRepository::deleteCascade() (sous BEGIN IMMEDIATE) : une
+        // soumission créée entre ce pré-check et la transaction y est détectée
+        // et la suppression est refusée sans perte (TOCTOU, audit 2026-09-17).
         $active_count = App::workflow()->hasActiveSubmissions($form_id);
         if ($active_count > 0) {
-            return ['error' => 'Impossible de supprimer ce formulaire : ' . $active_count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.', 'form_id' => $form_id];
+            self::logDeleteRefused($form_id, $active_count);
+            return ['error' => self::activeSubmissionsError($active_count), 'form_id' => $form_id];
         }
         $formRepository = App::getInstance()->get(\App\Repository\FormRepository::class);
-        $db = App::db();
-        $db->beginTransaction();
         try {
-            $formRepository->deleteCascade($form_id);
-            $db->commit();
+            $active_count = $formRepository->deleteCascade($form_id);
         } catch (\Throwable $e) {
-            // @silent-ok: fallback with rollback cleanup
-            $db->rollBack();
+            // @silent-ok: fallback returns user-facing error, rollback géré par deleteCascade
             error_log('handleDeleteForm error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
+        }
+        if ($active_count > 0) {
+            // Refus atomique : une soumission en cours a été créée pendant la
+            // fenêtre entre le pré-check et la transaction. Rien n'a été
+            // supprimé (rollback dans deleteCascade) — on trace le refus.
+            self::logDeleteRefused($form_id, $active_count, ' détectée(s) sous verrou');
+            return ['error' => self::activeSubmissionsError($active_count), 'form_id' => $form_id];
         }
 
         App::audit()->log('form_delete', 'form:' . $form_id, 'Formulaire supprimé');
         return ['redirect' => 'index.php?p=admin_forms'];
+    }
+
+    private static function activeSubmissionsError(int $count): string
+    {
+        return 'Impossible de supprimer ce formulaire : ' . $count . ' soumission(s) en cours y sont rattachée(s). Veuillez attendre que ces demandes soient clôturées ou les annuler avant de supprimer le formulaire.';
+    }
+
+    private static function logDeleteRefused(string $formId, int $count, string $suffix = ''): void
+    {
+        App::audit()->log('form_delete_refused', 'form:' . $formId, 'Suppression refusée : ' . $count . ' soumission(s) en cours' . $suffix);
     }
 
     /**

@@ -198,11 +198,34 @@ final class FormRepository extends BaseRepository
         return $result;
     }
 
-    public function deleteCascade(string $formId): void
+    /**
+     * Supprime un formulaire et toutes ses dépendances dans une transaction
+     * IMMEDIATE, en refusant la suppression si des soumissions sont en cours.
+     *
+     * TOCTOU (audit 2026-09-17) : le handler vérifie `hasActiveSubmissions()`
+     * AVANT d'appeler cette méthode, mais une soumission peut être créée entre
+     * ce check et la suppression. Le comptage est donc refait ICI, APRÈS
+     * `BEGIN IMMEDIATE` : le verrou d'écriture est tenu dès l'ouverture, donc
+     * aucun écrivain ne peut insérer entre le comptage et le DELETE.
+     *
+     * @return int Nombre de soumissions en cours détectées ; 0 si la
+     *             suppression a été effectuée (aucune soumission en cours).
+     */
+    public function deleteCascade(string $formId): int
     {
         $pdo = $this->pdo();
         $this->beginImmediateTransaction();
         try {
+            /** @var array{cnt: int|string|null}|null $row */
+            $row = $this->fetchOne(
+                'SELECT COUNT(*) AS cnt FROM submissions WHERE form_id = ? AND status = ?',
+                [$formId, SubmissionStatus::EnCours->value]
+            );
+            $active = (int) ($row['cnt'] ?? 0);
+            if ($active > 0) {
+                $pdo->rollBack();
+                return $active;
+            }
             // Supprimer les données enfants des soumissions
             $this->execute('DELETE FROM submission_validator_data WHERE submission_id IN (SELECT id FROM submissions WHERE form_id = ?)', [$formId]);
             $this->execute('DELETE FROM alert_log WHERE submission_id IN (SELECT id FROM submissions WHERE form_id = ?)', [$formId]);
@@ -216,6 +239,7 @@ final class FormRepository extends BaseRepository
             $this->execute('DELETE FROM steps WHERE form_id = ?', [$formId]);
             $this->execute('DELETE FROM forms WHERE id = ?', [$formId]);
             $pdo->commit();
+            return 0;
         } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
