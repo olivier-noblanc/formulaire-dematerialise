@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1669** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-16, v10.42.36 ; avant : 1663) |
-| Assertions | **5025** (v10.42.36 ; avant : 4994) |
+| Tests | **1686** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-17, v10.42.37 ; avant : 1669) |
+| Assertions | **5114** (v10.42.37 ; avant : 5025) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -15,7 +15,7 @@
 | Enums métier | **11** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, AssetType, ValidationResultStatus, SubmissionField, MailStatus) |
 | Repositories | **10** |
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
-| CI | **GitHub Actions** (15 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
+| CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
 ---
@@ -29,6 +29,23 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.37 — Audit BUG1→BUG6 (2e lot) + autoload vendor `--no-dev` + garde export frais (2026-09-17)
+| Tâche | Détail |
+|-------|--------|
+| BUG1 — `remind.php` claim | `App::mail()->sendDetailed()` au lieu de `send_mail()` : seul `MailStatus::Blocked` libère `relance_count` (échec `error`/write-ahead conservé → plus de relance fantôme via l'outbox) ; résumé des bloqués par valeur de `relance_max` — commit `a19edbf` |
+| BUG2 — dry-run rejeu | `MailService::replayOutbox()`/`replayFailed()` : garde `mail_dry_run` AVANT revendication (`transmit()` ignore le dry-run → de vrais emails partaient en dry-run) — commit `a19edbf` |
+| BUG3 — contention WAL | `BaseRepository::beginImmediateTransaction()` (`BEGIN IMMEDIATE`) ; call-sites convertis (`WorkflowAdvancer`, `TokenValidationHandler`, `RgpdService` ×2, `FormRepository::deleteCascade`, `SubmissionPurgeTrait::deleteCascade`, `SampleFormsService::populate`, `AdminImportExportHandler::handleImportForm`) — commit `404cb76` |
+| BUG6 — purge atomique | `BackupController::purge_confirm()` : 4 suppressions dans une transaction `BEGIN IMMEDIATE`, rollback sur `\Throwable` + rethrow ; `VACUUM` + audit `purge_data` après commit — commit `404cb76` |
+| BUG4 — jours calendaires | `MonitoringController::computeDeadlineInfo()` → `DateHelper::parseDate()` + `calendarDaysUntil()` (J0/J+1/retard, Europe/Paris) — commit `99d02f6` |
+| BUG5 — base étrangère | `BackupController::isCircuitDematDatabase()` : tables pivot `forms/submissions/tokens/steps/settings` exigées avant tout remplacement (base inchangée en cas de refus) — commit `a973029` |
+| GrumPHP | `rector` : `ignore_patterns: ['/vendor/']` (les `vendor/composer/autoload_*.php` versionnés ne sont plus retraités/bloquants au commit) — commit `a973029` |
+| Vendor `--no-dev` | `vendor/composer/autoload_*` régénéré en `--no-dev` (plus de paquets dev `amphp/*`, `phpstan/*`, `App\Tests\`) ; artefacts d'analyse (`.php-cs-fixer.cache`, `phpstan*.txt`) retirés du suivi + `.gitignore` — commit `47506ed` |
+| Garde CI export frais | Job `vendor-offline-export` : `git archive HEAD` + `require vendor/autoload.php` + vérifie que tous les chemins de l'autoload existent — commit `47506ed` |
+| Owner final — garde PSR-4 PHPMailer | Job `vendor-offline-export` : normalise le préfixe `PHPMailer\PHPMailer\` (`vendor/phpmailer/phpmailer/src`, install-path absent de l'export) vers `vendor/PHPMailer/src` avant le contrôle d'existence → garde vert sous Linux, autoload inchangé (produit fidèle de `composer dump-autoload --no-dev`) |
+| Fix PHPStan tests | `MonitoringDeadlineDaysTest` : propriétés mortes `$createdFormIds`/`$createdSubmissionIds` supprimées (`shipmonk.deadProperty.neverRead`) |
+| Tests | +17 (1669→1686) / +89 assertions (5025→5114) : `MonitoringDeadlineDaysTest` (7), `BaseRepositoryImmediateTransactionTest`, `BackupPurgeConfirmTransactionTest`, `RemindOutboxClaimPathTest` (+ sonde), `BackupControllerTest`/`MailOutboxReplayTest`/`MailServiceReplayFailedTest` enrichis |
+| Vérifs | PHPUnit **1686/5114, 0 échec** ; PHPStan projet + tests **0 erreur** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; gate `scripts/check.ps1` **SUCCÈS (14 étapes, e2e 5/5)** ; garde vendor reproduite en export frais |
 
 ### v10.42.36 — Correctifs BUG1→BUG3 + validation CI complète (2026-09-16)
 | Tâche | Détail |

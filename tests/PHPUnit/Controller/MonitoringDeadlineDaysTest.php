@@ -31,12 +31,6 @@ final class MonitoringDeadlineDaysTest extends TestCase
 {
     private Database $db;
 
-    /** @var list<string> */
-    private array $createdFormIds = [];
-
-    /** @var list<string> */
-    private array $createdSubmissionIds = [];
-
     protected function setUp(): void
     {
         $this->db = App::getInstance()->get(Database::class);
@@ -62,8 +56,6 @@ final class MonitoringDeadlineDaysTest extends TestCase
         // autres classes de tests) — on le réinsère par sécurité.
         $this->addAdmin('testeur@e2e.test');
         $GLOBALS['_test_captured_json'] = null;
-        $this->createdFormIds = [];
-        $this->createdSubmissionIds = [];
     }
 
     // ── Calcul pur : J0 / J+1 / retard (déterministe, $now injecté) ─
@@ -169,14 +161,12 @@ final class MonitoringDeadlineDaysTest extends TestCase
             "INSERT INTO forms (id, slug, label, description, actif, created_at, deadline_field)
              VALUES (?, ?, 'MC Deadline Test', '', 1, datetime('now'), 'date_cible')"
         )->execute([$formId, 'test-mc-' . uniqid()]);
-        $this->createdFormIds[] = $formId;
 
         $subId = \generate_uuid();
         $pdo->prepare(
             "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent)
              VALUES (?, ?, ?, 'test-mc-agent@e2e.test', datetime('now'), ?, 1)"
         )->execute([$subId, $formId, json_encode(['date_cible' => $deadline]), SubmissionStatus::EnCours->value]);
-        $this->createdSubmissionIds[] = $subId;
     }
 
     private function cleanupFixtures(): void

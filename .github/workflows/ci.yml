@@ -758,12 +758,19 @@ jobs:
         run: |
           php -r '
             $missing = [];
+            // L install-path Composer de PHPMailer (vendor/phpmailer/phpmailer/src)
+            // n existe pas dans l export versionné : PHPMailer est versionné sous
+            // vendor/PHPMailer (chargé par lib/core_bootstrap.php). On normalise
+            // ce préfixe vers le chemin réellement présent avant de vérifier.
+            $normalize = static function (string $entry): string {
+                return str_replace("/phpmailer/phpmailer/src", "/PHPMailer/src", $entry);
+            };
             foreach (["autoload_psr4.php", "autoload_namespaces.php", "autoload_files.php", "autoload_classmap.php"] as $f) {
                 $path = "vendor/composer/$f";
                 if (!is_file($path)) { continue; }
                 foreach ((array) (require $path) as $value) {
                     foreach ((array) $value as $entry) {
-                        if (is_string($entry) && !file_exists($entry)) { $missing[] = "$f -> $entry"; }
+                        if (is_string($entry) && !file_exists($normalize($entry))) { $missing[] = "$f -> $entry"; }
                     }
                 }
             }
