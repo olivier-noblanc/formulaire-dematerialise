@@ -506,12 +506,11 @@ final class TokenServiceTest extends TestCase
 
     public function testRegenerateTokenSetsInvalidatedAtAndExcludedFromDone(): void
     {
-        // B3/B-V1 fix (audit 2026-07-26) : regenerate() maintenant set invalidated_at
-        // ET done_at (pour compat advanceWorkflow qui check done_at IS NOT NULL).
-        // Le test original vérifiait juste invalidated_at — ce qui passe toujours.
-        // Le fail précédent était sur $result['success']=false — probablement lié
-        // à une DB de test dans un état instable après d'autres tests. On skip
-        // si la DB n'est pas prête.
+        // B3/B-V1 fix (audit 2026-07-26) : regenerate() set invalidated_at ET done_at
+        // (pour compat advanceWorkflow qui check done_at IS NOT NULL).
+        // Identité admin explicite : l'ancien skip « DB instable » masquait en
+        // réalité un accès refusé quand un test précédent laissait un user non-admin.
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         $pdo = $this->db->getPdo();
         $expiredTokenId = generate_uuid();
         $expiredToken = generate_token();
@@ -520,11 +519,7 @@ final class TokenServiceTest extends TestCase
 
         // Regenerate the expired token
         $result = $this->tokenService->regenerate($expiredTokenId);
-        if (!$result['success']) {
-            // DB peut être dans un état où appendToDataJson échoue (test précédent
-            // a laissé la soumission dans un état incohérent). On skip plutôt que fail.
-            self::markTestSkipped('Regenerate a échoué — DB potentiellement instable après tests précédents : ' . ($result['message'] ?? '?'));
-        }
+        self::assertTrue($result['success'], 'Regenerate doit réussir pour un admin sur une soumission en cours : ' . $result['message']);
 
         // The old token should have invalidated_at set
         $check = $pdo->prepare("SELECT invalidated_at FROM tokens WHERE id = ?");
@@ -543,6 +538,7 @@ final class TokenServiceTest extends TestCase
     {
         // Create an expired token, regenerate it, then verify advanceWorkflow
         // still sees the step as "done" (done_at IS NOT NULL still holds)
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         $pdo = $this->db->getPdo();
         $expiredTokenId = generate_uuid();
         $expiredToken = generate_token();
@@ -551,9 +547,7 @@ final class TokenServiceTest extends TestCase
 
         // Regenerate
         $result = $this->tokenService->regenerate($expiredTokenId);
-        if (!$result['success']) {
-            self::markTestSkipped('Regenerate a échoué — DB potentiellement instable : ' . ($result['message'] ?? '?'));
-        }
+        self::assertTrue($result['success'], 'Regenerate doit réussir pour un admin sur une soumission en cours : ' . $result['message']);
 
         // The old token still has done_at set (advanceWorkflow depends on it)
         $check = $pdo->prepare("SELECT done_at FROM tokens WHERE id = ?");
@@ -775,35 +769,34 @@ final class TokenServiceTest extends TestCase
     public function testCancelNoEmailIfSubmittedByEmpty(): void
     {
         // B8 fix (audit 2026-07-26) : cancel() vérifie maintenant appendToDataJson
-        // retour. Si la DB est dans un état instable (conflit optimistic locking),
-        // cancel() retourne success=false au lieu de failer silencieusement.
-        // On skip si ça arrive — ce n'est pas le comportement testé ici.
+        // retour. Identité admin explicite : l'ancien skip « accès refusé »
+        // masquait l'absence d'admin selon l'ordre des tests.
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
+        $GLOBALS['_test_mails'] = [];
         $pdo = $this->db->getPdo();
         $newSubId = generate_uuid();
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', '', datetime('now'), 'en_cours', 1)")
             ->execute([$newSubId, $this->testFormId]);
 
         $result = $this->tokenService->cancel($newSubId, 'testeur@e2e.test');
-        if (!$result['success']) {
-            self::markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
-        }
-        self::assertTrue($result['success']);
+        self::assertTrue($result['success'], 'Cancel doit réussir pour un admin : ' . $result['message']);
+        self::assertEmpty($GLOBALS['_test_mails'], 'Aucun email ne doit partir quand submitted_by est vide');
 
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
     }
 
     public function testCancelNoEmailIfSubmittedByNotEmail(): void
     {
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
+        $GLOBALS['_test_mails'] = [];
         $pdo = $this->db->getPdo();
         $newSubId = generate_uuid();
         $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, status, rgpd_consent) VALUES (?, ?, '{}', 'not-an-email', datetime('now'), 'en_cours', 1)")
             ->execute([$newSubId, $this->testFormId]);
 
         $result = $this->tokenService->cancel($newSubId, 'testeur@e2e.test');
-        if (!$result['success']) {
-            self::markTestSkipped('cancel a échoué — DB instable ou accès refusé : ' . ($result['message'] ?? '?'));
-        }
-        self::assertTrue($result['success']);
+        self::assertTrue($result['success'], 'Cancel doit réussir pour un admin : ' . $result['message']);
+        self::assertEmpty($GLOBALS['_test_mails'], 'Aucun email ne doit partir quand submitted_by n\'est pas une adresse valide');
         $pdo->prepare("DELETE FROM submissions WHERE id = ?")->execute([$newSubId]);
     }
 

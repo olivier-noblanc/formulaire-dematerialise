@@ -23,6 +23,7 @@ final class TokenServiceMutationKillTest extends TestCase
 {
     private Database $db;
     private TokenService $tokenService;
+    private string $originalUser = '';
 
     /** @var list<string> */
     private array $createdIds = [];
@@ -31,11 +32,16 @@ final class TokenServiceMutationKillTest extends TestCase
     {
         $this->db = App::getInstance()->get(Database::class);
         $this->tokenService = App::getInstance()->get(TokenService::class);
+        // Identité admin déterministe : regenerate()/cancel() exigent un admin.
+        // Évite le skip « accès refusé » selon l'ordre d'exécution des tests.
+        $this->originalUser = $_SERVER['HTTP_X_TEST_USER'] ?? '';
+        $_SERVER['HTTP_X_TEST_USER'] = 'testeur@e2e.test';
         $GLOBALS['_test_mails'] = [];
     }
 
     protected function tearDown(): void
     {
+        $_SERVER['HTTP_X_TEST_USER'] = $this->originalUser;
         $pdo = $this->db->getPdo();
         foreach ($this->createdIds as $id) {
             $pdo->prepare('DELETE FROM tokens WHERE id = ?')->execute([$id]);
@@ -60,9 +66,7 @@ final class TokenServiceMutationKillTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $result = $this->tokenService->regenerate($tokenId);
 
-        if (!$result['success']) {
-            $this->markTestSkipped('regenerate échoué (DB instable) : ' . ($result['message'] ?? '?'));
-        }
+        $this->assertTrue($result['success'], 'Regenerate doit réussir pour un admin : ' . ($result['message'] ?? '?'));
 
         // Mutant Concat ligne 93 : subject doit contenir form_label + step_label
         $mails = $GLOBALS['_test_mails'];
@@ -84,9 +88,7 @@ final class TokenServiceMutationKillTest extends TestCase
         );
 
         $result = $this->tokenService->regenerate($tokenId);
-        if (!$result['success']) {
-            $this->markTestSkipped('regenerate échoué (DB instable) : ' . ($result['message'] ?? '?'));
-        }
+        $this->assertTrue($result['success'], 'Regenerate doit réussir pour un admin : ' . ($result['message'] ?? '?'));
 
         // Mutant Concat ligne 97 : audit_log doit contenir l'email du validateur
         $pdo = $this->db->getPdo();
@@ -109,10 +111,7 @@ final class TokenServiceMutationKillTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $result = $this->tokenService->cancel($subId, 'admin@test.com');
 
-        // Si cancel échoue (DB instable), skip
-        if (!$result['success']) {
-            $this->markTestSkipped('cancel échoué : ' . ($result['message'] ?? '?'));
-        }
+        $this->assertTrue($result['success'], 'Cancel doit réussir pour un admin : ' . ($result['message'] ?? '?'));
 
         // Mutant Concat ligne 175 : subject doit contenir form_label
         $mails = $GLOBALS['_test_mails'];
@@ -141,9 +140,7 @@ final class TokenServiceMutationKillTest extends TestCase
         );
 
         $result = $this->tokenService->cancel($subId, 'admin@test.com');
-        if (!$result['success']) {
-            $this->markTestSkipped('cancel échoué (DB instable) : ' . ($result['message'] ?? '?'));
-        }
+        $this->assertTrue($result['success'], 'Cancel doit réussir pour un admin : ' . ($result['message'] ?? '?'));
 
         $pdo = $this->db->getPdo();
         $stmt = $pdo->prepare("SELECT action, detail, actor FROM audit_log WHERE action = 'submission_cancel' AND target = ? ORDER BY created_at DESC LIMIT 1");
@@ -168,9 +165,7 @@ final class TokenServiceMutationKillTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $result = $this->tokenService->remind($tokenId);
 
-        if (!$result['success']) {
-            $this->markTestSkipped('remind échoué : ' . ($result['message'] ?? '?'));
-        }
+        $this->assertTrue($result['success'], 'Remind doit réussir pour un token en attente : ' . ($result['message'] ?? '?'));
 
         $mails = $GLOBALS['_test_mails'];
         $this->assertNotEmpty($mails);
@@ -200,6 +195,7 @@ final class TokenServiceMutationKillTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $this->tokenService->remind($tokenId);
         $firstMails = $GLOBALS['_test_mails'];
+        $this->assertCount(1, $firstMails, 'Le premier rappel doit envoyer exactement un email');
 
         // Deuxième rappel
         $GLOBALS['_test_mails'] = [];
@@ -271,9 +267,7 @@ final class TokenServiceMutationKillTest extends TestCase
         $GLOBALS['_test_mails'] = [];
         $result = $this->tokenService->delegate($tokenId, 'delegate-to@test.com', 'Motif délégation');
 
-        if (!$result['success']) {
-            $this->markTestSkipped('delegate échoué : ' . ($result['message'] ?? '?'));
-        }
+        $this->assertTrue($result['success'], 'Delegate doit réussir pour un token en attente : ' . ($result['message'] ?? '?'));
 
         $mails = $GLOBALS['_test_mails'];
         $this->assertGreaterThanOrEqual(2, count($mails), 'Au moins 2 emails (nouveau validateur + confirmation)');
