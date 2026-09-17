@@ -212,6 +212,25 @@ final class ValidationServiceTest extends TestCase
         $this->service->validate('2026-13-01', 'date');
     }
 
+    public function testValidateDateRejectsInvalidCalendarDay(): void
+    {
+        // 30 février n'existe pas : strtotime() le normalisait silencieusement
+        // au 2 mars, d'où un « succès » trompeur. checkdate() doit le rejeter.
+        $this->expectException(\InvalidArgumentException::class);
+        $this->service->validate('2026-02-30', 'date');
+    }
+
+    public function testValidateDateRejectsNonLeapFebruary29(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->service->validate('2026-02-29', 'date');
+    }
+
+    public function testValidateDateAcceptsLeapFebruary29(): void
+    {
+        self::assertSame('2024-02-29', $this->service->validate('2024-02-29', 'date'));
+    }
+
     // ── validate() — token ───────────────────────────────────────
 
     public function testValidateTokenValid(): void

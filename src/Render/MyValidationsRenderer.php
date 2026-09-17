@@ -233,9 +233,13 @@ final class MyValidationsRenderer
 
     private static function formatDelay(string $doneAt, string $sentAt): string
     {
-        $doneTs = strtotime($doneAt);
-        $sentTs = strtotime($sentAt);
-        if (!((bool) $doneTs) || !((bool) $sentTs)) {
+        // done_at / sent_at sont stockés en UTC. Les parser avec le fuseau par
+        // défaut (Europe/Paris en prod) fausse la durée d'une heure quand un
+        // changement d'heure sépare les deux instants — le décalage ne
+        // « s'annule » plus dans la soustraction. Fuseau UTC explicite.
+        $doneTs = $doneAt !== '' ? strtotime($doneAt . ' UTC') : false;
+        $sentTs = $sentAt !== '' ? strtotime($sentAt . ' UTC') : false;
+        if ($doneTs === false || $sentTs === false) {
             return '?';
         }
 

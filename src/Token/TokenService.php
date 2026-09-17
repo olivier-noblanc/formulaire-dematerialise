@@ -430,8 +430,25 @@ final readonly class TokenService
             $this->delegationRepository->insertDelegation($delegationId, $tokenId, $tok['email'], $toEmail, $reason, $now, $newTokenRowId);
 
             $this->tokenRepository->commit();
+        } catch (\PDOException $e) {
+            // Course sur hasPendingDuplicate() : un token actif pour
+            // (submission, step, $toEmail) peut être créé entre la vérification
+            // (avant la transaction) et cet INSERT. L'index unique partiel
+            // idx_tokens_active_per_step_email (migration v37) fait alors échouer
+            // l'INSERT en 23000 — miroir du garde-fou de WorkflowTokenCreationTrait.
+            // On renvoie le même message métier que la vérification applicative
+            // au lieu de laisser remonter une exception non gérée.
+            if ($this->tokenRepository->inTransaction()) {
+                $this->tokenRepository->rollBack();
+            }
+            if ($e->getCode() === '23000') {
+                return ['success' => false, 'message' => 'Un token de validation est déjà actif pour ' . $toEmail . ' sur cette étape.'];
+            }
+            throw $e;
         } catch (\Throwable $e) {
-            $this->tokenRepository->rollBack();
+            if ($this->tokenRepository->inTransaction()) {
+                $this->tokenRepository->rollBack();
+            }
             throw $e;
         }
 

@@ -155,7 +155,47 @@ final class AlertCheckInvalidatedTokensTest extends TestCase
         self::assertStringNotContainsString('J-4', $message, 'Le message ne doit plus utiliser le seuil days_before de la règle.');
     }
 
-    // ── Fixtures ────────────────────────────────────────────────────
+    // ── last_alert_check : tracé même sans règle active ─────────────
+
+    public function testLastAlertCheckUpdatedWhenNoActiveRules(): void
+    {
+        $pdo = \App\Core\App::db()->getPdo();
+
+        /** @var list<string> $activeIds */
+        $activeIds = $pdo->query("SELECT id FROM alert_rules WHERE actif = 1")->fetchAll(\PDO::FETCH_COLUMN);
+        $activeIds = array_map(static fn(string $id): string => $id, $activeIds);
+        self::assertNotSame([], $activeIds, 'Prémisse : la base de test contient au moins une règle active.');
+
+        // Neutraliser toutes les règles actives pour emprunter la branche
+        // « aucune règle active » de alert_check.php, et effacer la trace pour
+        // observer l'écriture.
+        $pdo->exec("DELETE FROM settings WHERE key = 'last_alert_check'");
+        $pdo->exec("UPDATE alert_rules SET actif = 0");
+
+        $value = '';
+        try {
+            $this->runAlertCheck(); // release_pdo() + subprocess alert_check.php
+
+            $pdo = \App\Core\App::db()->getPdo();
+            $stmt = $pdo->query("SELECT value FROM settings WHERE key = 'last_alert_check'");
+            $value = $stmt !== false ? (string) $stmt->fetchColumn() : '';
+            $stmt = null;
+        } finally {
+            $pdo = \App\Core\App::db()->getPdo();
+            if ($activeIds !== []) {
+                $placeholders = implode(',', array_fill(0, count($activeIds), '?'));
+                $pdo->prepare("UPDATE alert_rules SET actif = 1 WHERE id IN ($placeholders)")->execute($activeIds);
+            }
+        }
+
+        self::assertNotSame(
+            '',
+            $value,
+            'last_alert_check doit être mis à jour même sans règle active (sinon le monitoring affiche un état périmé).'
+        );
+    }
+
+    // ─ Fixtures ────────────────────────────────────────────────────
 
     /**
      * @param list<array{email: string, done?: bool, invalidated?: bool}> $tokens

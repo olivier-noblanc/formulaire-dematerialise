@@ -38,10 +38,10 @@ $rules = _dbm_q($pdo, "
 $paris_day_start_utc = \App\Core\DateHelper::parisDayStartUtc($now);
 
 if ($rules === []) {
+    // Ne PAS sortir ici : le traçage de fin de script (settings.last_alert_check
+    // + audit_log) doit avoir lieu même sans règle active, sinon le monitoring
+    // affiche un « dernier contrôle » périmé alors que le cron tourne bien.
     echo "[{$now->format('Y-m-d H:i:s')}] Aucune regle d'alerte active.\n";
-    if (($GLOBALS['_lazy_cron_running'] ?? null) === null) {
-        exit(0);
-    }
 }
 
 foreach ($rules as $rule) {

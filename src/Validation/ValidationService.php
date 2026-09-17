@@ -149,11 +149,14 @@ final class ValidationService
 
     private function validateDate(string $value): string
     {
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m) !== 1) {
             throw new \InvalidArgumentException('Format de date invalide (YYYY-MM-DD attendu)');
         }
-        $ts = strtotime($value);
-        if ($ts === false) {
+        // checkdate() plutôt que strtotime() : strtotime('2026-02-30') est
+        // accepté (normalisé au 2 mars), donc une date du calendrier
+        // inexistante passait la validation. Même garde que
+        // DateHelper::parseDate() (calendrier réel).
+        if (!checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
             throw new \InvalidArgumentException('Date invalide');
         }
         return $value;
