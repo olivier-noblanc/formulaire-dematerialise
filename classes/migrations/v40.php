@@ -53,6 +53,14 @@ function apply_migration_v40(PDO $pdo, int $current_version): int {
 
     $ownsTransaction = !$pdo->inTransaction();
     try {
+        // BEGIN IMMEDIATE (cf. BaseRepository::beginImmediateTransaction) : la
+        // migration lit puis écrit ; un BEGIN différé dans une base WAL peut
+        // échouer en SQLITE_BUSY snapshot, que busy_timeout ne rejoue pas. Le
+        // verrou d'écriture est acquis dès l'ouverture.
+        if ($ownsTransaction) {
+            $pdo->exec('BEGIN IMMEDIATE');
+        }
+
         $v40_stmt = $pdo->query("SELECT COUNT(*) FROM schema_version WHERE version = 40");
         if ($v40_stmt === false) {
             throw new \RuntimeException('v40: COUNT query failed');
@@ -61,11 +69,10 @@ function apply_migration_v40(PDO $pdo, int $current_version): int {
         // Libérer le statement avant les écritures (règle SQLITE_LOCKED).
         $v40_stmt = null;
         if ($v40_done > 0) {
+            if ($ownsTransaction) {
+                $pdo->exec('COMMIT');
+            }
             return max($current_version, 40);
-        }
-
-        if ($ownsTransaction) {
-            $pdo->beginTransaction();
         }
 
         // ── submissions.submitted_at : Paris → UTC ──────────────────────
@@ -110,13 +117,17 @@ function apply_migration_v40(PDO $pdo, int $current_version): int {
         $pdo->exec("INSERT INTO schema_version (version, applied_at) VALUES (40, datetime('now'))");
 
         if ($ownsTransaction) {
-            $pdo->commit();
+            $pdo->exec('COMMIT');
         }
 
         return 40;
     } catch (\Throwable $e) {
-        if ($ownsTransaction && $pdo->inTransaction()) {
-            $pdo->rollBack();
+        if ($ownsTransaction) {
+            try {
+                $pdo->exec('ROLLBACK');
+            } catch (\Throwable) {
+                // @silent-ok: BEGIN IMMEDIATE a pu échouer (aucune transaction ouverte).
+            }
         }
         // @silent-ok: log-only — la migration sera retentée au prochain appel.
         error_log("Migration v40 failed: " . $e->getMessage());
