@@ -55,16 +55,29 @@ final class SubmissionViewController extends BaseController
 
         $canEditValidator = $isAdmin || $isFormOwner;
 
+        // Message d'action one-shot (PRG) : posé par un POST puis affiché sur le GET suivant.
+        $actionMsg = (string) ($_SESSION['_flash_action'] ?? '');
+        if ($actionMsg !== '') {
+            unset($_SESSION['_flash_action']);
+        }
+
         // Handle POST actions
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->security->requireCsrf();
             $action = $_POST['action'] ?? '';
 
-            if ($action === 'cancel_submission' && ($isAdmin || $sub['submitted_by'] === $user)) {
-                $this->submissionRepo->cancelById($subId);
-                App::audit()->log('submission_cancel', 'submission:' . $subId, 'Soumission annulée par ' . $user);
+            if ($action === 'cancel_submission') {
+                // P0-B (audit 2026-09-18) : déléguer à TokenService::cancel() au lieu de
+                // SubmissionRepository::cancelById(), qui (a) laissait les tokens actifs
+                // (pas d'invalidated_at), (b) n'ajoutait pas l'entrée JSON 'Annulation',
+                // (c) écrivait un audit 'submission_cancel' mensonger même quand rien
+                // n'était annulé (soumission déjà clôturée). Le service porte aussi
+                // l'autorisation (auteur ou admin) et le CAS anti-double-clôture.
+                $result = App::token()->cancel($subId, $user);
+                $_SESSION['_flash_action'] = $result['message'];
                 // B-EXIT : redirect() au lieu de header()+exit
                 $this->redirect(App::html()->buildUrl('index.php?p=submission_view&id=' . urlencode($subId)));
+                return;
             }
 
             if ($action === 'delete_submission' && $isAdmin) {
@@ -72,6 +85,7 @@ final class SubmissionViewController extends BaseController
                 App::audit()->log('submission_delete', 'submission:' . $subId, 'Soumission supprimée par ' . $user);
                 // B-EXIT : redirect() au lieu de header()+exit
                 $this->redirect(App::html()->buildUrl('index.php?p=dashboard'));
+                return;
             }
         }
 
@@ -115,6 +129,9 @@ final class SubmissionViewController extends BaseController
         $pageCss = $renderer->pageCss();
         ob_start();
         ?>
+  <?php if ($actionMsg !== ''): ?>
+  <div class="msg-info" role="status" aria-live="polite"><?= App::html()->escape($actionMsg) ?></div>
+  <?php endif; ?>
   <h1><span aria-hidden="true">📄</span> Détail de la soumission</h1>
 
   <div class="card">

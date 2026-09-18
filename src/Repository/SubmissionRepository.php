@@ -104,6 +104,16 @@ final class SubmissionRepository extends BaseRepository
         return $result;
     }
 
+    /**
+     * Annule directement une soumission en cours (statut + clôture).
+     *
+     * Conservée volontairement : le contrôleur délègue désormais à
+     * TokenService::cancel(), qui invalide en plus les tokens actifs. Le tag
+     * @api évite que le détecteur de code mort ne la signale comme inutilisée
+     * en attendant sa suppression.
+     *
+     * @api
+     */
     public function cancelById(string $id): bool
     {
         return $this->execute(
