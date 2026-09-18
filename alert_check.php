@@ -3,6 +3,7 @@
 // A executer via Task Scheduler (ex: toutes les 6h)
 // Verifie si des soumissions en cours sont proches de leur date limite
 // et envoie des alertes si les etapes ne sont pas toutes completees
+use App\Enum\MailStatus;
 use App\Enum\SubmissionField;
 use App\Forms\SubmissionData;
 
@@ -97,27 +98,6 @@ foreach ($rules as $rule) {
             }
         }
 
-        // Verifier si une alerte a deja ete envoyee pour cette regle + soumission
-        // aujourd'hui (jour civil de Paris).
-        // S5 fix (2026-09-03) : l'ancienne comparaison d'égalité des jours en UTC
-        // dédoublonnait sur le jour UTC — une alerte envoyée à 23:30 Paris
-        // (21:30 UTC) était encore vue « déjà envoyée aujourd'hui » à 00:30
-        // Paris le lendemain (22:30 UTC, même jour UTC), d'où une fenêtre de
-        // 1-2h sans alerte à chaque changement de jour. sent_at est stocké en
-        // UTC et monotone : `sent_at >= début du jour Paris (en UTC)` ⇔
-        // « envoyé aujourd'hui à Paris », DST-safe via DateHelper.
-        $already = $pdo->prepare("
-            SELECT COUNT(*) FROM alert_log
-            WHERE rule_id = ? AND submission_id = ?
-              AND sent_at >= ?
-        ");
-        $already->execute([$rule['id'], $sub['id'], $paris_day_start_utc]);
-        if ((int)$already->fetchColumn() > 0) {
-            // Alerte deja envoyee aujourd'hui pour cette regle + soumission
-            $nb_skipped++;
-            continue;
-        }
-
         // Calculer les infos pour l'email
         // P0-2 (2026-09-03) : jours CALENDARIOS (J-1/J0/J+1) via DateHelper.
         // L'ancien calcul DateInterval '%a' comptait des périodes de 24h
@@ -139,42 +119,116 @@ foreach ($rules as $rule) {
 
         // Determiner les destinataires
         $recipients = resolve_recipients($pdo, $rule['notify_who'], $sub);
+        if ($recipients === []) {
+            // Aucun destinataire valide : rien à envoyer, rien à revendiquer.
+            continue;
+        }
 
-        // Construire et envoyer l'email d'alerte
+        // P2-D (2026-09-18) — revendication atomique AVANT l'envoi.
+        // L'ancien schéma « SELECT de dédoublonnage → envoi → INSERT » laissait
+        // une fenêtre de course : deux exécutions concurrentes du cron
+        // (Task Scheduler + lazy_cron) lisaient chacune « aucune alerte
+        // aujourd'hui », envoyaient chacune l'email, puis inséraient chacune
+        // leur ligne. La claim est désormais un INSERT ... SELECT gardé par
+        // WHERE NOT EXISTS : sous SQLite (writers sérialisés), une seule
+        // exécution obtient rowCount() = 1 ; la perdante obtient 0 et
+        // s'abstient. Dédoublonnage sur le jour civil de Paris (S5) : sent_at
+        // est stocké en UTC et monotone, donc `sent_at >= début du jour Paris
+        // (en UTC)` ⇔ « déjà alerté aujourd'hui à Paris », DST-safe via
+        // DateHelper::parisDayStartUtc.
+        $claimId = generate_uuid();
+        // Message provisoire : porte déjà le libellé métier exact (D2) pour
+        // rester exploitable si le process meurt avant la mise à jour finale.
+        $claimMessage = "Alerte {$daysLabel} pour {$nom_agent}";
+        $claimStmt = $pdo->prepare("
+            INSERT INTO alert_log (id, rule_id, submission_id, sent_at, message)
+            SELECT ?, ?, ?, datetime('now'), ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM alert_log
+                WHERE rule_id = ? AND submission_id = ? AND sent_at >= ?
+            )
+        ");
+        $claimStmt->execute([$claimId, $rule['id'], $sub['id'], $claimMessage, $rule['id'], $sub['id'], $paris_day_start_utc]);
+        $claimed = $claimStmt->rowCount() > 0;
+        $claimStmt = null;
+        if (!$claimed) {
+            // Alerte deja revendiquee aujourd'hui (execution precedente ou
+            // worker concurrent) : ne pas envoyer de doublon.
+            $nb_skipped++;
+            continue;
+        }
+
+        // Construire et envoyer l'email d'alerte à chaque destinataire.
+        // Le contrat MailService/outbox (write-ahead) distingue deux échecs
+        // (cf. remind.php BUG1 / TokenService BUG2) :
+        //   - `error`   : réessayable, ligne d'outbox persistée et rejouée par
+        //                 le worker → claim CONSERVÉE (sinon le rejeu ET le
+        //                 prochain run cron enverraient deux emails) ;
+        //   - `blocked` : refus définitif, jamais rejoué (adresse destinataire
+        //                 invalide, config SMTP/From absente) → claim LIBÉRÉE
+        //                 pour qu'un run ultérieur retente.
+        $sentRecipients = [];
+        $blockedCount = 0;
+        $retryableFailure = false;
         foreach ($recipients as $recipient) {
             $subject = '[ALERTE] ' . $rule['form_label'] . ' — ' . $urgencyText;
             $body = build_alert_html($sub, $nom_agent, $deadline_formatted, $days_remaining, $rule, $data, $pdo);
-            $sent = send_mail($recipient, $subject, $body);
+            $sendResult = \App\Core\App::mail()->sendDetailed($recipient, $subject, $body);
+            $sendStatus = MailStatus::tryFrom($sendResult['status']) ?? MailStatus::Error;
 
-            if ($sent) {
-                // Logger l'alerte
-                $message = "Alerte {$daysLabel} envoyee a {$recipient} pour {$nom_agent}";
-                // T-01/P-01/O-02 : générer l'UUID côté PHP (generate_uuid est une
-                // fonction PHP, pas SQLite). Binding via paramètre ?.
-                $alert_log_id = generate_uuid();
-                // B11 fix : wrapper l'INSERT dans un try/catch pour ne pas tuer le script
-                // au milieu de la boucle recipients. Si l'INSERT échoue (DB locked,
-                // schéma incohérent), on log via error_log mais on continue à envoyer
-                // les alertes aux autres recipients. Sans ce catch, une seule erreur
-                // INSERT tuait toutes les alertes suivantes (boucle foreach avortée).
-                try {
-                    $pdo->prepare("INSERT INTO alert_log (id, rule_id, submission_id, sent_at, message) VALUES (?, ?, ?, datetime('now'), ?)")
-                        ->execute([$alert_log_id, $rule['id'], $sub['id'], $message]);
-                    $nb_alerts++;
-                } catch (\Throwable $logErr) {
-                    // L'email a été envoyé mais le log a échoué — on continue la
-                    // boucle pour les autres recipients mais on garde une trace.
-                    error_log(sprintf(
-                        '[ALERT_LOG_PERSIST_FAIL] rule=%s submission=%s recipient=%s error=%s',
-                        (string) $rule['id'],
-                        (string) $sub['id'],
-                        $recipient,
-                        $logErr->getMessage()
-                    ));
-                }
+            if ($sendResult['success']) {
+                $sentRecipients[] = $recipient;
+                $nb_alerts++;
                 echo "[{$now->format('Y-m-d H:i:s')}] Alerte {$daysLabel} -> {$recipient} | {$nom_agent} | Deadline: {$deadline_formatted}\n";
+                continue;
+            }
+
+            if ($sendStatus === MailStatus::Blocked) {
+                // Refus définitif : jamais rejoué par l'outbox.
+                $blockedCount++;
+                error_log(sprintf(
+                    '[ALERT_SEND_BLOCKED] rule=%s submission=%s recipient=%s error=%s',
+                    (string) $rule['id'],
+                    (string) $sub['id'],
+                    $recipient,
+                    $sendResult['error']
+                ));
             } else {
-                echo "[{$now->format('Y-m-d H:i:s')}] ERREUR envoi alerte a {$recipient} pour soumission #{$sub['id']}\n";
+                // Erreur réessayable / write-ahead : l'envoi est (ou sera) repris
+                // par l'outbox → la claim reste revendiquée.
+                $retryableFailure = true;
+                error_log(sprintf(
+                    '[ALERT_SEND_RETRY] rule=%s submission=%s recipient=%s error=%s',
+                    (string) $rule['id'],
+                    (string) $sub['id'],
+                    $recipient,
+                    $sendResult['error']
+                ));
+            }
+            echo "[{$now->format('Y-m-d H:i:s')}] ERREUR envoi alerte a {$recipient} pour soumission #{$sub['id']}\n";
+        }
+
+        if ($sentRecipients !== []) {
+            // Préciser la claim avec les destinataires réellement servis (le
+            // libellé métier J-x reste celui de D2).
+            $finalMessage = "Alerte {$daysLabel} envoyee a " . implode(', ', $sentRecipients) . " pour {$nom_agent}";
+            try {
+                $pdo->prepare("UPDATE alert_log SET message = ? WHERE id = ?")->execute([$finalMessage, $claimId]);
+            } catch (\Throwable $updateErr) {
+                // La claim reste en place (déjà revendiquée) ; seule la
+                // précision du message manque — l'échec est tracé, pas avalé.
+                error_log(sprintf('[ALERT_CLAIM_UPDATE_FAIL] id=%s error=%s', $claimId, $updateErr->getMessage()));
+            }
+        } elseif (!$retryableFailure && $blockedCount > 0) {
+            // Aucun envoi possible et aucun rejeu outbox : libérer la claim pour
+            // qu'un run ultérieur retente (sinon l'alerte serait perdue pour la
+            // journée).
+            try {
+                $pdo->prepare("DELETE FROM alert_log WHERE id = ?")->execute([$claimId]);
+            } catch (\Throwable $releaseErr) {
+                // La claim reste bloquante (défaut conservateur anti-doublon) ;
+                // l'échec de libération est tracé, pas avalé.
+                error_log(sprintf('[ALERT_CLAIM_RELEASE_FAIL] id=%s error=%s', $claimId, $releaseErr->getMessage()));
             }
         }
     }
