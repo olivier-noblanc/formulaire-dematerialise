@@ -32,6 +32,7 @@ _Résumé : **Audit robustesse 2026-09-18 (P1-C → P2-E)** — sauvegarde (side
 - **PHPStan level 8** : config projet → **0 erreur** ; config tests (`tests/phpstan.neon`) → **0 erreur** (propriété morte `$seq` retirée de `SubmissionStatsTimezoneTest`).
 - **`tests/run_all.php`** : **SUCCÈS** (5 étapes, non-régression **17/17**) ; **gate Windows `scripts/check.ps1`** : **SUCCÈS** (PHPStan, PHPUnit, e2e Playwright 5/5).
 - **Régression Bug08 adaptée à P2-E** : marqueur source `$submitted_raw` (au lieu de `$submitted_ts`) ; la garantie métier reste « pas d'ISO brut » — le renderer parse UTC → Europe/Paris puis `->format('d/m/Y')`.
+- **Règle 9 (`NoSilentCatchRule`)** : 3 marqueurs `@silent-ok` ajoutés — `SubmissionStatsTrait::processingSeconds()` (borne non-date → ligne ignorée), et `classes/migrations/v40.php` (parse non convertible + catch transactionnel : rollback best-effort puis retour à la version courante, migration retentée). Le marqueur du catch transactionnel était mal placé (sur `error_log` au lieu du premier statement) → désormais en tête de bloc, conformément au job CI bloquant `phpstan-no-silent-catch`.
 - **Rector** : `--dry-run` sur les fichiers modifiés → **OK** ; **Deptrac** → **0 violation**.
 
 ## [10.42.37] — 2026-09-17

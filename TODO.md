@@ -43,7 +43,8 @@
 | Tests durcis | Assertions exactes `AdvanceWorkflowTest` + suppression des skips conditionnels `TokenServiceTest`/`TokenServiceMutationKillTest` — commit `e736bda` |
 | P2-E — migration v40 | Historique Paris→UTC (`submissions.submitted_at`, `settings.last_alert_check`/`last_remind_run`), `BEGIN IMMEDIATE`, idempotente/self-healing — commits `57e3fc7`, `7dab1bd` |
 | Owner final — réconciliation + validations | WIP autoload vendor (dev) écarté (état versionné `--no-dev` conservé, `autoload_files.php` dev non suivi) ; PHPStan tests **0 erreur** (propriété morte `$seq` retirée) ; régression **Bug08** adaptée à P2-E (`$submitted_raw` + `->format('d/m/Y')`) → `run_all.php` **17/17** et gate **SUCCÈS** |
-| Vérifs | PHPUnit **1723/5793, 0 échec** ; PHPStan projet + tests **0 erreur** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; gate `scripts/check.ps1` **SUCCÈS** (e2e Playwright 5/5) |
+| Règle 9 — `@silent-ok` | 3 catches de la vague marqués (job CI bloquant `phpstan-no-silent-catch`) : `SubmissionStatsTrait::processingSeconds` (borne non-date), `classes/migrations/v40.php` (parse non convertible + catch transactionnel, marqueur repositionné en tête de bloc) |
+| Vérifs | PHPUnit **1723/5793, 0 échec** ; PHPStan projet + tests + no-silent-catch **0 erreur** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; gate `scripts/check.ps1` **SUCCÈS** (e2e Playwright 5/5) |
 
 ### v10.42.37 — Audit BUG1→BUG6 (2e lot) + autoload vendor `--no-dev` + garde export frais (2026-09-17)
 | Tâche | Détail |

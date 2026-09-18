@@ -41,6 +41,7 @@ function _migration_v40_paris_to_utc(string $value): ?string
             ->setTimezone(new \DateTimeZone('UTC'))
             ->format('Y-m-d H:i:s');
     } catch (\Exception) {
+        // @silent-ok: valeur non convertible → null, l'appelant laisse la donnée inchangée.
         return null;
     }
 }
@@ -122,6 +123,7 @@ function apply_migration_v40(PDO $pdo, int $current_version): int {
 
         return 40;
     } catch (\Throwable $e) {
+        // @silent-ok: rollback best-effort puis retour à la version courante — la migration est retentée au prochain appel (error_log ci-dessous).
         if ($ownsTransaction) {
             try {
                 $pdo->exec('ROLLBACK');
@@ -129,7 +131,6 @@ function apply_migration_v40(PDO $pdo, int $current_version): int {
                 // @silent-ok: BEGIN IMMEDIATE a pu échouer (aucune transaction ouverte).
             }
         }
-        // @silent-ok: log-only — la migration sera retentée au prochain appel.
         error_log("Migration v40 failed: " . $e->getMessage());
         return $current_version;
     }

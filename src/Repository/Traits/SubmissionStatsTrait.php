@@ -41,6 +41,7 @@ trait SubmissionStatsTrait
             $start = new \DateTimeImmutable($submittedAt, new \DateTimeZone('UTC'));
             $end = new \DateTimeImmutable($closedAt, new \DateTimeZone('UTC'));
         } catch (\Exception) {
+            // @silent-ok: borne non convertible en date → ligne ignorée des moyennes, aucune donnée écrite.
             return null;
         }
         return (float) ($end->getTimestamp() - $start->getTimestamp());
