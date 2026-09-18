@@ -36,9 +36,18 @@ final class SubmissionViewControllerCancelTest extends TestCase
     /** @var list<string> */
     private array $createdAuditTargets = [];
 
+    /**
+     * Utilisateur de test global restauré en tearDown : sans cela, le dernier
+     * HTTP_X_TEST_USER posé ici (« agent-cancel@test.com ») fuit vers les tests
+     * suivants (App::auth()->getUser() masque alors le domaine des emails
+     * affichés — échecs de test selon l'ordre de découverte Windows).
+     */
+    private ?string $savedTestUser = null;
+
     protected function setUp(): void
     {
         $this->db = App::getInstance()->get(Database::class);
+        $this->savedTestUser = $_SERVER['HTTP_X_TEST_USER'] ?? null;
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_GET = [];
         $_POST = [];
@@ -52,6 +61,12 @@ final class SubmissionViewControllerCancelTest extends TestCase
     protected function tearDown(): void
     {
         unset($GLOBALS['_test_no_exit'], $GLOBALS['_test_redirect'], $GLOBALS['_test_captured_json'], $_SESSION['_flash_action']);
+
+        if ($this->savedTestUser === null) {
+            unset($_SERVER['HTTP_X_TEST_USER']);
+        } else {
+            $_SERVER['HTTP_X_TEST_USER'] = $this->savedTestUser;
+        }
 
         $pdo = $this->db->getPdo();
         foreach ($this->createdIds as $id) {

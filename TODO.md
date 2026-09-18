@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1686** (0 fail, 0 errors — `php vendor/bin/phpunit` + gate `scripts/check.ps1` du 2026-09-17, v10.42.37 ; avant : 1669) |
-| Assertions | **5114** (v10.42.37 ; avant : 5025) |
+| Tests | **1723** (0 fail, 0 errors — `php vendor/bin/phpunit` du 2026-09-18, P2-E v10.42.38 ; avant : 1686) |
+| Assertions | **5795** (P2-E v10.42.38 ; avant : 5114) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -110,6 +110,18 @@
 | Nouveaux tests | TokenServicePartialMailFailureTest (3), AdminAlertsRendererDaysBadgeTest (1), FormJsonValidatorTest (2) ; TokenServiceTest +1 |
 | Fix isolation test | `TokenServiceTest` : identité admin `admin@test.com` (fuite `PersonaServiceTest`, non nettoyée) → `testeur@e2e.test` seedé par `phpunit_bootstrap` ; passait par pollution d'ordre P→T, échouait en run isolé après reset — aligné sur v10.42.29 |
 | Vérifs | Gate complète `scripts/check.ps1` **SUCCÈS (14 étapes)** : PHPUnit **1540 tests / 4450 assertions, 0 échec**, PHPStan level 8 (full) **0 erreur**, lint OK, suites fonctionnelles + `run_all` + e2e Playwright OK |
+
+### v10.42.38 — P2-E : référentiel de temps unique UTC (migration v40)
+| Tâche | Détail |
+|-------|--------|
+| Migration v40 | Conversion **atomique + idempotente** des horodatages historiques Paris→UTC : `submissions.submitted_at`, `settings.last_alert_check`, `settings.last_remind_run` — `DateTimeImmutable` Europe/Paris→UTC (DST-aware, pas d'offset fixe), transaction + rollback sur `Throwable`, valeurs invalides laissées intactes, marquage `schema_version` 40 |
+| Writers UTC | `FormSubmissionHandler` (`gmdate`), `alert_check.php` / `remind.php` : `last_alert_check` / `last_remind_run` écrits en UTC |
+| Readers / affichage | `HtmlService::formatDateTimeFr()` n'interprète plus que l'UTC (paramètre transitoire `$fromUtc` retiré) → 9 call sites `submitted_at` ; `AdminAlertsRenderer` + `monitoring_scripts_card` (parsing UTC pour l'âge, affichage Paris) ; `DashboardTableRenderer` (jour civil Paris) ; `BackupController` (oldest/newest) |
+| Stats | `SubmissionStatsTrait` : durées = différence de deux instants UTC ; bornes today/week/month/daily via `gmdate` (indépendant du fuseau système) |
+| Export | CSV `ExportService` : `submitted_at`/`closed_at` affichés en Paris ; JSON `DownloadController` + export RGPD laissés en UTC (référentiel technique) |
+| Tests | `MigrationV40Test` (5 : été/hiver, idempotence, self-healing, invalides) ; `MonitoringScriptsCardTimezoneTest` (3) ; `SubmissionStatsTimezoneTest` réécrit (UTC) ; `HtmlServiceTest` + `ExportServiceMutationTest` adaptés (affichage/export) |
+| Fix isolation test | `SubmissionViewControllerCancelTest` restaure `HTTP_X_TEST_USER` en tearDown (fuite d'ordre de découverte Windows → masquage d'emails dans les tests suivants) |
+| Vérifs | PHPUnit **1723 tests / 5795 assertions, 0 échec** ; PHPStan level 8 **0 erreur** ; Rector dry-run **OK** ; Deptrac **0 violation** |
 
 ### v10.42.29 — Fiabilisation du harnais test_assets_cache + documentation AGENTS.md
 | Tâche | Détail |
@@ -704,4 +716,4 @@ Exclusions légitimes : templates email (MailService, TokenService, etc.) — le
 
 ---
 
-_Dernière mise à jour : 2026-09-16 (correctifs BUG1→BUG3 + validation CI — SQL `<> ''` `findActiveWithDeadlineField`, claim relance conservé sur échec réessayable/outbox, rollback `Throwable` `TokenValidationHandler` ; restauration `vendor/PHPMailer` vérifiée sur 13 jobs `ci.yml` + `csp-check.yml` ; test restauration WAL rendu déterministe (instantané VACUUM INTO + marqueur) après échec CI Linux ; suite unitaire 1669 tests/5025 assertions 0 échec ; PHPStan projet + tests 0 erreur ; tests/run_all.php SUCCÈS 5 étapes/17-17 ; gate scripts/check.ps1 SUCCÈS 15 étapes ; CI GitHub Actions run 35117202626 15/15 jobs verts)_
+_Dernière mise à jour : 2026-09-18 (P2-E — référentiel de temps unique UTC : migration v40 Paris→UTC, writers gmdate, readers/stats/export adaptés, retrait du paramètre `fromUtc` ; PHPUnit 1723 tests / 5795 assertions 0 échec, PHPStan projet + tests 0 erreur, Rector dry-run OK, Deptrac 0 violation). — Historique : 2026-09-16 (correctifs BUG1→BUG3 + validation CI — SQL `<> ''` `findActiveWithDeadlineField`, claim relance conservé sur échec réessayable/outbox, rollback `Throwable` `TokenValidationHandler` ; restauration `vendor/PHPMailer` vérifiée sur 13 jobs `ci.yml` + `csp-check.yml` ; test restauration WAL rendu déterministe (instantané VACUUM INTO + marqueur) après échec CI Linux ; suite unitaire 1669 tests/5025 assertions 0 échec ; PHPStan projet + tests 0 erreur ; tests/run_all.php SUCCÈS 5 étapes/17-17 ; gate scripts/check.ps1 SUCCÈS 15 étapes ; CI GitHub Actions run 35117202626 15/15 jobs verts)_

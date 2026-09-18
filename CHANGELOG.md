@@ -1,5 +1,27 @@
 # Changelog — CircuitDémat
 
+## [10.42.38] — 2026-09-18
+_Résumé : **P2-E — référentiel de temps unique en UTC**. Migration v40 atomique et idempotente convertissant l'historique Paris→UTC (`submissions.submitted_at`, `settings.last_alert_check`/`last_remind_run`), writers `gmdate`, readers/formatters/stats/monitoring/dashboard/export adaptés, paramètre transitoire `fromUtc` retiré._
+
+### 🐛 Fixes — P2-E (audit fuseaux)
+- **Migration v40 — historiques Paris→UTC** (nouveau `classes/migrations/v40.php`, enregistré dans `DatabaseMigrations`) : `submissions.submitted_at`, `settings.last_alert_check` et `settings.last_remind_run` sont convertis en UTC via `DateTimeImmutable` à fuseaux explicites `Europe/Paris` → `UTC` (**DST-aware**, jamais d'offset fixe). Les UPDATE et le marquage `schema_version = 40` sont dans une **transaction unique** (rollback sur toute `\Throwable`) ; la migration est **idempotente / self-healing** (version déjà marquée → aucun rejeu) et **laisse intactes** les valeurs non reconnues comme date SQL.
+- **Writers en UTC** : `FormSubmissionHandler::process()` écrit `submitted_at` en `gmdate()` ; `alert_check.php` et `remind.php` tracent `last_alert_check` / `last_remind_run` en UTC (référentiel unique avec `closed_at`, `tokens`, `mail_log`). L'email de confirmation affiche néanmoins l'heure de Paris (`formatDateTimeFr($now)`).
+- **`HtmlService::formatDateTimeFr()` — paramètre `$fromUtc` retiré** : le référentiel de stockage étant désormais UTC de bout en bout, toute chaîne entrante est interprétée en UTC puis affichée Europe/Paris. Les 9 call sites qui passaient `false` (`submitted_at` : `FormTrackingController`, `SubmissionViewController`, `FormRenderer`, `MySubmissionsRenderer`, `MyValidationsRenderer` ×2, templates `form_content`/`renderHeader` ; `last_alert_check` : `AdminAlertsRenderer`) ont été adaptés — **grep exhaustif** des appelants avant retrait.
+- **Monitoring / dashboard** : `monitoring_scripts_card` et `AdminAlertsRenderer` parsent `last_remind_run`/`last_alert_check` en UTC (`' UTC'`) pour l'âge et affichent Paris ; `DashboardTableRenderer` affiche `submitted_at` en jour civil Paris ; `BackupController` formate `oldest/newest submission` (UTC→Paris).
+- **Stats — un seul référentiel UTC** (`SubmissionStatsTrait`) : les durées de traitement sont la différence de deux instants UTC (plus de conversion Paris) ; les bornes `today`/`week`/`month`/`daily` sont calculées via `gmdate()`, indépendamment du fuseau système (prod IIS Europe/Paris).
+- **Export** : le CSV (`ExportService`) affiche `submitted_at`/`closed_at` en heure de Paris ; le JSON technique (`DownloadController`) et l'export RGPD restent en UTC (référentiel de stockage, pas d'affichage).
+
+###  Tests
+- **`MigrationV40Test`** (5) : chemin nominal été (UTC+2) / hiver (UTC+1), idempotence, self-healing (version marquée sans conversion), valeurs invalides intactes, garde de version.
+- **`MonitoringScriptsCardTimezoneTest`** (3) : affichage UTC→Paris, fraîcheur < 24 h « Actif », valeur périmée « plus de 24h ».
+- **`SubmissionStatsTimezoneTest`** réécrit pour le stockage UTC (durées exactes été/hiver, bornes today/week/month/daily en UTC) ; **`HtmlServiceTest`** et **`ExportServiceMutationTest`** adaptés (affichage/export Paris).
+- **Fix isolation de test** : `SubmissionViewControllerCancelTest` restaure `$_SERVER['HTTP_X_TEST_USER']` en tearDown (la fuite provoquait, selon l'ordre de découverte Windows, le masquage du domaine dans `SubmissionViewRendererTest`/`TokenInvalidatedDisplayTest`).
+
+### ✅ Vérifications (2026-09-18)
+- **PHPUnit complet** : `php vendor/bin/phpunit` → **1723 tests / 5795 assertions, 0 échec, 0 erreur**.
+- **PHPStan level 8** : config projet → **0 erreur**.
+- **Rector** : `--dry-run` sur les fichiers modifiés → **OK** ; **Deptrac** → **0 violation**.
+
 ## [10.42.37] — 2026-09-17
 _Résumé : Second lot de correctifs d'audit **BUG1→BUG6** — créneau de relance conservé dans `remind.php` + résumé par plafond, garde dry-run du rejeu outbox, transaction `BEGIN IMMEDIATE` (contention WAL) + `purge_confirm()` atomique, `days_remaining` en jours calendaires, refus d'une base SQLite étrangère avant restauration — et **autoload `vendor` versionné régénéré en `--no-dev`** (prod IIS offline) avec nouveau job CI « export frais »._
 

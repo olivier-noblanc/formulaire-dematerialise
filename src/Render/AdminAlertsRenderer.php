@@ -45,12 +45,12 @@ final class AdminAlertsRenderer
         $html .= '    <h2>Script de vérification des alertes</h2>' . "\n";
 
         if ($lastAlertCheck !== '' && $lastAlertCheck !== '0') {
-            $checkTs = strtotime($lastAlertCheck);
+            // P2-E : last_alert_check est stocké en UTC (alert_check.php, gmdate()) —
+            // la chaîne est parsée en UTC pour l'âge, puis affichée en Europe/Paris.
+            $checkTs = strtotime($lastAlertCheck . ' UTC');
             $checkAge = ($checkTs !== false) ? (time() - $checkTs) : 999999;
             $checkOk = $checkAge < 86400;
-            // last_alert_check est écrit par alert_check.php via PHP date() :
-            // déjà en heure Paris (cas particulier documenté, P0-1) → fromUtc=false.
-            $lastCheckFormatted = \App\Core\App::html()->formatDateTimeFr($lastAlertCheck, false);
+            $lastCheckFormatted = \App\Core\App::html()->formatDateTimeFr($lastAlertCheck);
 
             $html .= '      <div class="script-status">' . "\n";
             $html .= '        <span class="health-dot ' . ($checkOk ? 'health-ok' : 'health-warn') . '"></span>' . "\n";

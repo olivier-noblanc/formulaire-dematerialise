@@ -318,12 +318,12 @@ final class BackupController extends BaseController
             error_log('backup row count error: ' . $e->getMessage());
         }
 
+        // P2-E : submitted_at est stocké en UTC — parsé en UTC puis affiché en
+        // Europe/Paris (indépendant du fuseau système de la machine).
         $oldestStr = $this->submissionRepo->getOldestSubmittedAt() ?? '';
         $newestStr = $this->submissionRepo->getNewestSubmittedAt() ?? '';
-        $oldestTs = $oldestStr !== '' ? strtotime($oldestStr) : false;
-        $newestTs = $newestStr !== '' ? strtotime($newestStr) : false;
-        $dbStats['oldest_submission'] = ($oldestStr !== '' && $oldestTs !== false) ? date('d/m/Y H:i', $oldestTs) : '—';
-        $dbStats['newest_submission'] = ($newestStr !== '' && $newestTs !== false) ? date('d/m/Y H:i', $newestTs) : '—';
+        $dbStats['oldest_submission'] = $this->formatUtcAsParis($oldestStr);
+        $dbStats['newest_submission'] = $this->formatUtcAsParis($newestStr);
 
         $pageCount = $this->db->getPageCount();
         $freelistCount = $this->db->getFreelistCount();
@@ -418,6 +418,28 @@ final class BackupController extends BaseController
     {
         $cutoffTs = strtotime("-{$months} months");
         return gmdate('Y-m-d H:i:s', $cutoffTs !== false ? $cutoffTs : time());
+    }
+
+    /**
+     * Formate un horodatage SQL UTC en date d'affichage Europe/Paris.
+     *
+     * P2-E : submissions.submitted_at est stocké en UTC ; l'affichage se fait
+     * via DateTimeImmutable à fuseaux explicites (DST-safe, indépendant du
+     * fuseau système). Retourne « — » si la valeur est vide ou invalide.
+     */
+    private function formatUtcAsParis(string $utc): string
+    {
+        if ($utc === '') {
+            return '—';
+        }
+        try {
+            return new \DateTimeImmutable($utc, new \DateTimeZone('UTC'))
+                ->setTimezone(new \DateTimeZone('Europe/Paris'))
+                ->format('d/m/Y H:i');
+        } catch (\Exception) {
+            // @silent-ok: valeur non-date → placeholder.
+            return '—';
+        }
     }
 
     /**

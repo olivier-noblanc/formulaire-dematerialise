@@ -69,8 +69,21 @@ final class DashboardTableRenderer
         $deadline_urgency = (string) ($dl['style'] ?? '');
 
         $form_label = App::html()->escape(t_jargon((string) ($row['form_label'] ?? '')));
-        $submitted_ts = strtotime((string) ($row['submitted_at'] ?? ''));
-        $submitted    = $submitted_ts !== false ? App::html()->escape(date('d/m/Y', $submitted_ts)) : '—';
+        // P2-E : submitted_at est stocké en UTC — affiché en jour civil de Paris.
+        $submitted = '—';
+        $submitted_raw = (string) ($row['submitted_at'] ?? '');
+        if ($submitted_raw !== '') {
+            try {
+                $submitted = App::html()->escape(
+                    new \DateTimeImmutable($submitted_raw, new \DateTimeZone('UTC'))
+                        ->setTimezone(new \DateTimeZone('Europe/Paris'))
+                        ->format('d/m/Y')
+                );
+            } catch (\Exception) {
+                // @silent-ok: valeur non-date → placeholder « — ».
+                $submitted = '—';
+            }
+        }
         $view_url     = 'index.php?p=submission_view&id=' . urlencode((string) ($row['id'] ?? ''));
 
         $tokens_html = '';

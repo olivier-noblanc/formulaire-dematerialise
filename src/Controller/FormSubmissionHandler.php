@@ -30,7 +30,9 @@ final class FormSubmissionHandler
      */
     public static function process(array $form, array $form_fields, string $submitted_by): array
     {
-        $now = date('Y-m-d H:i:s');
+        // P2-E : horodatage stocké en UTC (référentiel unique avec closed_at,
+        // tokens, mail_log). L'affichage le reconvertit en Europe/Paris.
+        $now = gmdate('Y-m-d H:i:s');
         $data = [];
 
         // Sécurité : exclure les champs internes du JSON de données métier
@@ -99,7 +101,7 @@ final class FormSubmissionHandler
             '<p>Votre demande <strong>'
             . App::html()->h(App::html()->tJargon($form['label']))
             . '</strong> a bien été enregistrée le '
-            . App::html()->h(date('d/m/Y à H:i'))
+            . App::html()->h(App::html()->formatDateTimeFr($now))
             . '.</p><p>'
             . App::html()->h(App::html()->tJargon(
                 'Le workflow de validation a été déclenché. Vous serez notifié par email lorsque votre demande sera traitée ou si un refus est émis.'

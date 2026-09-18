@@ -1,11 +1,13 @@
 <?php
 $remind_html = '';
 if ($last_remind !== '' && $last_remind !== '0') {
-    $remind_ts  = strtotime((string) $last_remind);
+    // P2-E : last_remind_run est stocké en UTC — parsing UTC explicite pour
+    // l'âge, affichage reconverti en Europe/Paris par formatDateTimeFr().
+    $remind_ts  = strtotime($last_remind . ' UTC');
     $remind_age = ($remind_ts !== false) ? (time() - $remind_ts) : 999999;
     $remind_ok  = $remind_age < 86400;
     $remind_dot_cls = $remind_ok ? 'health-ok' : 'health-warn';
-    $remind_date    = \App\Core\App::html()->escape(date('d/m/Y à H:i', $remind_ts !== false ? $remind_ts : 0));
+    $remind_date    = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $last_remind));
     $remind_badge   = $remind_ok
         ? '<br><span class="badge badge-ok mt-25"><span aria-hidden="true">✓</span> Actif</span>'
         : '<br><span class="badge badge-warn mt-25"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';
@@ -20,11 +22,13 @@ if ($last_remind !== '' && $last_remind !== '0') {
 
 $alert_html = '';
 if ($last_alert_check !== '' && $last_alert_check !== '0') {
-    $alert_ts  = strtotime((string) $last_alert_check);
+    // P2-E : last_alert_check est stocké en UTC — parsing UTC explicite pour
+    // l'âge, affichage reconverti en Europe/Paris par formatDateTimeFr().
+    $alert_ts  = strtotime($last_alert_check . ' UTC');
     $alert_age = ($alert_ts !== false) ? (time() - $alert_ts) : 999999;
     $alert_ok  = $alert_age < 86400;
     $alert_dot_cls = $alert_ok ? 'health-ok' : 'health-warn';
-    $alert_date    = \App\Core\App::html()->escape(date('d/m/Y à H:i', $alert_ts !== false ? $alert_ts : 0));
+    $alert_date    = \App\Core\App::html()->escape(\App\Core\App::html()->formatDateTimeFr((string) $last_alert_check));
     $alert_badge   = $alert_ok
         ? '<br><span class="badge badge-ok mt-25"><span aria-hidden="true">✓</span> Actif</span>'
         : '<br><span class="badge badge-warn mt-25"><span aria-hidden="true">⚠</span> Il y a plus de 24h</span>';

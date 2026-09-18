@@ -219,7 +219,7 @@ final class FormRenderer
             'h'          => $h,
             'tJargon'    => $tJargon,
             'form'       => $form,
-            'date'       => $h(\App\Core\App::html()->formatDateTimeFr((string) ($existing_submission['submitted_at'] ?? ''), false)),
+            'date'       => $h(\App\Core\App::html()->formatDateTimeFr((string) ($existing_submission['submitted_at'] ?? ''))),
             'existingId' => urlencode((string) ($existing_submission['id'] ?? '')),
             'confirmUrl' => 'index.php?p=form&f=' . urlencode($slug) . '&confirmed=1',
         ]);

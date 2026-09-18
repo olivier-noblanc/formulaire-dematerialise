@@ -9,21 +9,19 @@ use App\Repository\SubmissionRepository;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Bug confirmé — SubmissionStatsTrait mélangeait deux référentiels de temps :
- * submissions.submitted_at est écrit en heure locale de Paris (PHP date() sous
- * Europe/Paris, voir config.php) alors que closed_at est en UTC (SQLite
- * datetime('now') / PHP gmdate()).
+ * P2-E — référentiel de temps unique (UTC) pour les statistiques.
  *
- * Conséquences testées ici :
- *  - durées de traitement (AVG closed_at - submitted_at) sous-estimées de 1 à 2 h
- *    selon la saison (heure d'été / d'hiver) ;
- *  - compteurs today/week/month faussés car submitted_at (Paris) était comparé à
- *    `datetime('now')` (UTC).
+ * Avant P2-E, `submissions.submitted_at` était écrit en heure locale de Paris
+ * (PHP date() sous Europe/Paris) alors que `closed_at` était en UTC, ce qui
+ * faussait durées et compteurs. La migration v40 a converti l'historique et
+ * les writers utilisent désormais gmdate() : les deux bornes sont en UTC.
  *
- * Les tests tournent sur une base SQLite temporaire isolée (schéma migré) pour
- * ne pas dépendre de la base partagée de la suite, et forcent le fuseau PHP sur
- * Europe/Paris (comme la prod) : la correction doit alors être déterministe
- * quel que soit le fuseau système de la machine (UTC sur la CI).
+ * Ces tests vérifient que les calculs sont exacts et indépendants du fuseau
+ * système du serveur (forcé ici sur Europe/Paris, comme la prod) :
+ *  - durées de traitement = différence de deux instants UTC (été/hiver) ;
+ *  - compteurs today/week/month et fenêtre daily calculés en UTC (gmdate).
+ *
+ * Base SQLite temporaire isolée (schéma migré).
  */
 final class SubmissionStatsTimezoneTest extends TestCase
 {
@@ -65,22 +63,21 @@ final class SubmissionStatsTimezoneTest extends TestCase
         }
     }
 
-    // ─ Durées : conversion Paris → UTC ─────────────────────────────
+    // ─ Durées : soustraction de deux instants UTC ──────────────────
 
     /**
-     * submitted_at en heure de Paris, closed_at en UTC.
-     *  - été   : 2026-07-01 10:00 Paris = 08:00 UTC → closed 11:00 UTC = 3 h (10800 s)
-     *  - hiver : 2026-01-15 10:00 Paris = 09:00 UTC → closed 11:00 UTC = 2 h (7200 s)
-     * moyenne = 9000 s ; l'ancien calcul (soustraction des epochs « bruts »)
-     * donnait 3600 s (durée affichée systématiquement 1 h trop courte).
+     * submitted_at et closed_at sont tous deux en UTC (P2-E).
+     *  - été   : submitted 08:00 UTC, closed 11:00 UTC → 3 h (10800 s) ;
+     *  - hiver : submitted 09:00 UTC, closed 11:00 UTC → 2 h (7200 s).
+     * moyenne = 9000 s.
      */
-    public function testAverageProcessingSecondsCorrectsParisVersusUtcAcrossSeasons(): void
+    public function testAverageProcessingSecondsIsExactWithUtcStorage(): void
     {
         $year = (int) date('Y');
         $formId = $this->insertForm('stats-tz-durations');
 
-        $this->insertClosed($formId, $year . '-07-01 10:00:00', $year . '-07-01 11:00:00', 'summer@test.stats');
-        $this->insertClosed($formId, $year . '-01-15 10:00:00', $year . '-01-15 11:00:00', 'winter@test.stats');
+        $this->insertClosed($formId, $year . '-07-01 08:00:00', $year . '-07-01 11:00:00', 'summer@test.stats');
+        $this->insertClosed($formId, $year . '-01-15 09:00:00', $year . '-01-15 11:00:00', 'winter@test.stats');
 
         self::assertEqualsWithDelta(9000.0, $this->repo->getAvgProcessingSeconds(), 0.001);
         // Alias historique (MonitoringController) : même résultat.
@@ -93,13 +90,13 @@ final class SubmissionStatsTimezoneTest extends TestCase
         self::assertSame(2, (int) $row['valide']);
     }
 
-    public function testStatsByPeriodAverageCorrectsParisVersusUtc(): void
+    public function testStatsByPeriodAverageIsExactWithUtcStorage(): void
     {
         $year = (int) date('Y');
         $formId = $this->insertForm('stats-tz-period');
 
-        $this->insertClosed($formId, $year . '-07-01 10:00:00', $year . '-07-01 11:00:00', 'p-summer@test.stats');
-        $this->insertClosed($formId, $year . '-01-15 10:00:00', $year . '-01-15 11:00:00', 'p-winter@test.stats');
+        $this->insertClosed($formId, $year . '-07-01 08:00:00', $year . '-07-01 11:00:00', 'p-summer@test.stats');
+        $this->insertClosed($formId, $year . '-01-15 09:00:00', $year . '-01-15 11:00:00', 'p-winter@test.stats');
 
         $periods = $this->repo->getStatsByPeriod('%Y-%m', '-12 months', 12);
 
@@ -110,48 +107,41 @@ final class SubmissionStatsTimezoneTest extends TestCase
 
         self::assertArrayHasKey($year . '-07', $byPeriod);
         self::assertArrayHasKey($year . '-01', $byPeriod);
-        // Été : 3 h réelles ; hiver : 2 h réelles.
         self::assertEqualsWithDelta(10800.0, (float) $byPeriod[$year . '-07']['avg_processing_seconds'], 0.001);
         self::assertEqualsWithDelta(7200.0, (float) $byPeriod[$year . '-01']['avg_processing_seconds'], 0.001);
     }
 
-    // ─ Compteurs : bornes calculées en heure de Paris ──────────────
+    // ─ Compteurs : bornes calculées en UTC ─────────────────────────
 
-    public function testGlobalCountsWeekAndMonthUseParisReference(): void
+    public function testGlobalCountsWeekAndMonthUseUtcReference(): void
     {
         $formId = $this->insertForm('stats-tz-counts');
 
-        // Hors fenêtre : 7 j + 1 h et 30 j + 1 h dans le passé (heure de Paris).
-        // L'ancien code comparait à `datetime('now')` (UTC) → ces lignes étaient
-        // comptées à tort.
-        $this->insertClosed($formId, $this->paris('-7 days', -3600), $this->paris('-7 days', -3600), 'out-week@test.stats');
-        $this->insertClosed($formId, $this->paris('-30 days', -3600), $this->paris('-30 days', -3600), 'out-month@test.stats');
+        // Hors fenêtre : 7 j + 1 h et 30 j + 1 h dans le passé (UTC).
+        $this->insertClosed($formId, $this->utc('-7 days', -3600), $this->utc('-7 days', -3600), 'out-week@test.stats');
+        $this->insertClosed($formId, $this->utc('-30 days', -3600), $this->utc('-30 days', -3600), 'out-month@test.stats');
 
         // Dans la fenêtre semaine/mois.
-        $this->insertClosed($formId, $this->paris('-6 days'), $this->paris('-6 days'), 'in-week@test.stats');
+        $this->insertClosed($formId, $this->utc('-6 days'), $this->utc('-6 days'), 'in-week@test.stats');
 
-        // Aujourd'hui (heure de Paris).
-        $now = $this->paris('now');
+        // Aujourd'hui (date UTC).
+        $now = $this->utc('now');
         $this->insertClosed($formId, $now, $now, 'today@test.stats');
 
         $counts = $this->repo->getGlobalStatsCounts();
 
-        self::assertSame(1, (int) $counts['today'], 'une soumission de maintenant doit compter dans today (date de Paris)');
+        self::assertSame(1, (int) $counts['today'], 'une soumission de maintenant doit compter dans today (date UTC)');
         self::assertSame(2, (int) $counts['this_week'], 'seules les lignes à -6 j et maintenant sont dans this_week');
-        // La ligne à -7 j - 1 h est hors semaine mais dans le mois ; celle à
-        // -30 j - 1 h est hors mois : 3 lignes retenues (-7 j, -6 j, maintenant)
-        // au lieu de 4 avec l'ancien seuil UTC.
         self::assertSame(3, (int) $counts['this_month'], 'seules les lignes à -7 j, -6 j et maintenant sont dans this_month');
     }
 
-    public function testDailyCountsUsesParisReferenceWindow(): void
+    public function testDailyCountsUsesUtcReferenceWindow(): void
     {
         $formId = $this->insertForm('stats-tz-daily');
 
-        // Hors fenêtre (7 j + 1 h) : exclue par la correction, comptée avec l'ancien
-        // seuil UTC.
-        $this->insertClosed($formId, $this->paris('-7 days', -3600), $this->paris('-7 days', -3600), 'daily-out@test.stats');
-        $this->insertClosed($formId, $this->paris('-2 days'), $this->paris('-2 days'), 'daily-in@test.stats');
+        // Hors fenêtre (7 j + 1 h).
+        $this->insertClosed($formId, $this->utc('-7 days', -3600), $this->utc('-7 days', -3600), 'daily-out@test.stats');
+        $this->insertClosed($formId, $this->utc('-2 days'), $this->utc('-2 days'), 'daily-in@test.stats');
 
         $daily = $this->repo->getDailyCounts(7);
         $total = 0;
@@ -164,13 +154,13 @@ final class SubmissionStatsTimezoneTest extends TestCase
     // ── Fixtures ────────────────────────────────────────────────────
 
     /**
-     * Horodatage en heure locale de Paris (comme FormSubmissionHandler via PHP
-     * date()), décalé d'une durée relative — ex. paris('-7 days', -3600).
+     * Horodatage en UTC (comme FormSubmissionHandler / gmdate()), décalé d'une
+     * durée relative — ex. utc('-7 days', -3600).
      */
-    private function paris(string $modifier, int $offsetSeconds = 0): string
+    private function utc(string $modifier, int $offsetSeconds = 0): string
     {
         $ts = strtotime($modifier);
-        return date('Y-m-d H:i:s', ($ts !== false ? $ts : time()) + $offsetSeconds);
+        return gmdate('Y-m-d H:i:s', ($ts !== false ? $ts : time()) + $offsetSeconds);
     }
 
     private function insertForm(string $slug): string

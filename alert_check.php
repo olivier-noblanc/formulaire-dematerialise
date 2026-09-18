@@ -240,8 +240,9 @@ if ($nb_skipped > 0) {
 }
 echo "\n";
 
-// Tracer l'execution
-\App\Core\App::settings()->set('last_alert_check', date('Y-m-d H:i:s'), 'alert_check.php');
+// Tracer l'execution — P2-E : horodatage stocké en UTC (gmdate), comme le
+// reste de la base ; l'affichage le reconvertit en Europe/Paris.
+\App\Core\App::settings()->set('last_alert_check', gmdate('Y-m-d H:i:s'), 'alert_check.php');
 \App\Core\App::audit()->log('alert_check', 'alert', "{$nb_alerts} alerte(s) envoyee(s), {$nb_skipped} ignoree(s)", 'alert_check.php');
 
 // ── Fonctions utilitaires ──────────────────────────────────────

@@ -290,7 +290,9 @@ final class ExportServiceMutationTest extends TestCase
         self::assertSame('Mutant5 Form', $dataRow[1], 'Colonne 1 (Formulaire) doit contenir le label du form');
         self::assertSame('agent.mutant5@test.com', $dataRow[2], 'Colonne 2 (Agent) doit contenir submitted_by');
         self::assertSame('en_cours', $dataRow[3], 'Colonne 3 (Statut) doit contenir le status');
-        self::assertSame('2025-06-15 12:30:00', $dataRow[4], 'Colonne 4 (Soumis le) doit contenir submitted_at');
+        // P2-E : submitted_at est stocké en UTC ; le CSV l'affiche en Europe/Paris
+        // (15/06/2025 12:30 UTC, heure d'été UTC+2 → 14:30 Paris).
+        self::assertSame('15/06/2025 à 14:30', $dataRow[4], 'Colonne 4 (Soumis le) doit afficher submitted_at en heure de Paris');
         self::assertSame('', $dataRow[5], 'Colonne 5 (Clôturé le) doit être vide car closed_at IS NULL');
 
         // Le header doit avoir les 6 colonnes fixes + 'nom'
@@ -327,8 +329,9 @@ final class ExportServiceMutationTest extends TestCase
         $lines = array_filter(explode("\n", $withoutBom), fn ($l): bool => trim($l) !== '');
         $dataRow = str_getcsv($lines[1], ';', '"', '\\');
 
+        // P2-E : closed_at UTC 20/06/2025 09:00 → 11:00 Paris (heure d'été UTC+2).
         self::assertSame(
-            '2025-06-20 09:00:00',
+            '20/06/2025 à 11:00',
             $dataRow[5],
             'Mutant #5: closed_at doit être en colonne 5 (pas de shift par retrait d\'item).'
         );

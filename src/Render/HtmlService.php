@@ -84,17 +84,18 @@ final class HtmlService implements HtmlInterface
      * interprétait la chaîne UTC avec le fuseau serveur, dates affichées
      * 1-2h trop tôt en prod).
      *
-     * Cas particulier documenté ($fromUtc = false) : colonnes écrites par
-     * PHP date() donc déjà en heure Paris — submissions.submitted_at
-     * (FormSubmissionHandler) et settings.last_alert_check (alert_check.php).
+     * P2-E (2026-09-18) : le référentiel de stockage est désormais UTC de bout
+     * en bout (y compris submissions.submitted_at et settings.last_alert_check,
+     * passés à gmdate()). Le paramètre transitoire $fromUtc a été retiré : toute
+     * chaîne entrante est interprétée en UTC puis affichée en Europe/Paris.
      */
-    public function formatDateTimeFr(?string $dateStr, bool $fromUtc = true): string
+    public function formatDateTimeFr(?string $dateStr): string
     {
         if ($dateStr === null || $dateStr === '') {
             return '';
         }
         try {
-            $dt = new \DateTimeImmutable($dateStr, new \DateTimeZone($fromUtc ? 'UTC' : 'Europe/Paris'));
+            $dt = new \DateTimeImmutable($dateStr, new \DateTimeZone('UTC'));
         } catch (\Exception) {
             // @silent-ok: entrée non-date → chaîne vide (l'ancien code
             // affichait « 01/01/1970 à 01:00 » via (int) strtotime()).

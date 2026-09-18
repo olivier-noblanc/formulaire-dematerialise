@@ -143,6 +143,7 @@ if ($blocked > 0) {
 }
 echo "\n";
 
-// Tracer la derniere execution pour le monitoring
-\App\Core\App::settings()->set('last_remind_run', date('Y-m-d H:i:s'), 'remind.php');
+// Tracer la derniere execution pour le monitoring — P2-E : UTC ($now est déjà
+// en UTC), référentiel unique ; l'affichage le reconvertit en Europe/Paris.
+\App\Core\App::settings()->set('last_remind_run', $now->format('Y-m-d H:i:s'), 'remind.php');
 \App\Core\App::audit()->log('remind_run', 'remind', "{$nb} relance(s) envoyée(s), {$blocked} bloquée(s)", 'remind.php');

@@ -209,6 +209,8 @@ final class DownloadController extends BaseController
                 'form_id'       => (string) ($submission['form_id'] ?? ''),
                 'form_label'    => (string) ($submission['form_label'] ?? ''),
                 'submitted_by'  => (string) ($submission['submitted_by'] ?? ''),
+                // P2-E : export JSON technique — horodatages laissés en UTC
+                // (référentiel de stockage), pas de conversion d'affichage.
                 'submitted_at'  => (string) ($submission['submitted_at'] ?? ''),
                 'closed_at'     => (string) ($submission['closed_at'] ?? ''),
                 'status'        => (string) ($submission['status'] ?? ''),

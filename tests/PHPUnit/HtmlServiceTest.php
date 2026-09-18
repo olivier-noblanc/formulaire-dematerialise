@@ -499,11 +499,13 @@ final class HtmlServiceTest extends TestCase
         self::assertSame('01/09/2026 à 10:45', $this->service->formatDateTimeFr('2026-09-01 08:45'));
     }
 
-    public function testFormatDateTimeFrParisInputNotConverted(): void
+    public function testFormatDateTimeFrSubmittedAtStoredUtcDisplaysParis(): void
     {
-        // P0-1 cas particulier : submissions.submitted_at est écrit par PHP date()
-        // (FormSubmissionHandler) donc déjà en heure Paris — ne pas convertir.
-        self::assertSame('01/09/2026 à 08:45', $this->service->formatDateTimeFr('2026-09-01 08:45', false));
+        // P2-E : submissions.submitted_at est désormais stocké en UTC (gmdate).
+        // Été (UTC+2) : 01/07/2026 10:00 UTC → 12:00 Paris.
+        self::assertSame('01/07/2026 à 12:00', $this->service->formatDateTimeFr('2026-07-01 10:00:00'));
+        // Hiver (UTC+1) : 15/01/2026 10:00 UTC → 11:00 Paris.
+        self::assertSame('15/01/2026 à 11:00', $this->service->formatDateTimeFr('2026-01-15 10:00:00'));
     }
 
     public function testFormatDateTimeFrInvalidDateReturnsEmpty(): void

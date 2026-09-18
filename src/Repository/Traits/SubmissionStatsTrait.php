@@ -9,18 +9,14 @@ namespace App\Repository\Traits;
  *
  * Utilisé par SubmissionRepository.
  *
- * Référentiels de temps (audit 2026-09-17) : dans `submissions`,
- * `submitted_at` est écrit par PHP `date()` sous Europe/Paris (voir
- * config.php) alors que `closed_at` est en UTC (SQLite `datetime('now')` /
- * PHP `gmdate()`). Toute soustraction ou comparaison directe entre ces deux
- * colonnes mélange donc deux référentiels et fausse les durées ainsi que les
- * compteurs today/week/month. Ce trait :
- *  - calcule les durées via un helper PHP qui ramène les deux bornes au même
- *    référentiel UTC, avec DateTimeZone('Europe/Paris') — donc correct été/hiver
- *    et indépendant du fuseau système de la machine (contrairement au
- *    modificateur SQLite `'utc'`, dépendant du fuseau de l'OS) ;
- *  - compare `submitted_at` à des bornes calculées dans le même référentiel
- *    local pour les compteurs de période.
+ * Référentiel de temps (P2-E, 2026-09-18) : `submitted_at` est désormais
+ * écrit en UTC (PHP `gmdate()` ; migration v40 ayant converti l'historique
+ * Paris → UTC), comme `closed_at` (SQLite `datetime('now')` / `gmdate()`).
+ * Toutes les soustractions et bornes de période se font donc dans un unique
+ * référentiel UTC :
+ *  - durées = différence de deux instants UTC ;
+ *  - bornes today/week/month calculées avec `gmdate()` pour rester UTC quel
+ *    que soit le fuseau système de la machine (la prod IIS est Europe/Paris).
  *
  * @method bool execute(string $sql, array<int, mixed> $params = [])
  * @method \PDO pdo()
@@ -30,10 +26,9 @@ trait SubmissionStatsTrait
     /**
      * Durée de traitement en secondes.
      *
-     * `submitted_at` est en heure locale de Paris (PHP date() sous
-     * Europe/Paris), `closed_at` en UTC (SQLite datetime('now') / PHP gmdate()).
-     * Les deux bornes sont ramenées au même référentiel avant soustraction —
-     * sans quoi la durée est sous-estimée de 1 à 2 h selon la saison.
+     * `submitted_at` et `closed_at` sont tous deux stockés en UTC (P2-E) :
+     * la soustraction des instants est directe. Fuseau explicite pour ne pas
+     * dépendre du fuseau système du serveur.
      * Retourne null si une borne est absente, vide ou invalide (la ligne est
      * alors ignorée des moyennes au lieu de les fausser).
      */
@@ -43,7 +38,7 @@ trait SubmissionStatsTrait
             return null;
         }
         try {
-            $start = new \DateTimeImmutable($submittedAt, new \DateTimeZone('Europe/Paris'));
+            $start = new \DateTimeImmutable($submittedAt, new \DateTimeZone('UTC'));
             $end = new \DateTimeImmutable($closedAt, new \DateTimeZone('UTC'));
         } catch (\Exception) {
             return null;
@@ -129,10 +124,9 @@ trait SubmissionStatsTrait
      */
     public function getDailyCounts(int $days): array
     {
-        // submitted_at est en heure locale (Paris) → borne calculée dans le
-        // même référentiel. `datetime('now')` (UTC) décalait la fenêtre de 1-2 h.
-        $daysTs = strtotime("-{$days} days");
-        $since = date('Y-m-d H:i:s', $daysTs !== false ? $daysTs : time());
+        // submitted_at est en UTC (P2-E) → borne calculée en UTC via gmdate(),
+        // indépendamment du fuseau système (prod Europe/Paris).
+        $since = gmdate('Y-m-d H:i:s', time() - $days * 86400);
         /** @var array<int, array{day: string, cnt: int}> $result */
         $result = $this->fetchAll(
             'SELECT DATE(submitted_at) as day, COUNT(*) as cnt
@@ -211,10 +205,10 @@ trait SubmissionStatsTrait
      */
     public function getStatsByPeriod(string $format, string $interval, int $limit): array
     {
-        // submitted_at est en heure locale (Paris) → borne dans le même
-        // référentiel ; `datetime('now', ?)` (UTC) décalait la fenêtre.
+        // submitted_at est en UTC (P2-E) → borne calculée en UTC via gmdate(),
+        // indépendamment du fuseau système (prod Europe/Paris).
         $sinceTs = strtotime($interval);
-        $since = date('Y-m-d H:i:s', $sinceTs !== false ? $sinceTs : time());
+        $since = gmdate('Y-m-d H:i:s', $sinceTs !== false ? $sinceTs : time());
         /** @var list<array{period: string, total: int|string, valide: int|string, refuse: int|string, en_cours: int|string}> $rows */
         $rows = $this->fetchAll(
             "SELECT
@@ -265,15 +259,11 @@ trait SubmissionStatsTrait
      */
     public function getGlobalStatsCounts(): array
     {
-        // submitted_at est en heure locale (Paris) : les bornes today/week/month
-        // sont calculées dans ce référentiel. Les comparer à `datetime('now')`
-        // (UTC) décalait les compteurs de 1-2 h (bascule de date autour de
-        // minuit, fenêtre de 7/30 jours décalée).
-        $today = date('Y-m-d');
-        $weekAgoTs = strtotime('-7 days');
-        $monthAgoTs = strtotime('-30 days');
-        $weekAgo = date('Y-m-d H:i:s', $weekAgoTs !== false ? $weekAgoTs : time());
-        $monthAgo = date('Y-m-d H:i:s', $monthAgoTs !== false ? $monthAgoTs : time());
+        // submitted_at est en UTC (P2-E) : bornes today/week/month calculées en
+        // UTC via gmdate(), indépendamment du fuseau système (prod Europe/Paris).
+        $today = gmdate('Y-m-d');
+        $weekAgo = gmdate('Y-m-d H:i:s', time() - 7 * 86400);
+        $monthAgo = gmdate('Y-m-d H:i:s', time() - 30 * 86400);
         /** @var array{total: int|string, en_cours: int|string, valide: int|string, refuse: int|string, today: int|string, this_week: int|string, this_month: int|string}|null $result */
         $result = $this->fetchOne(
             "SELECT

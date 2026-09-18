@@ -157,13 +157,15 @@ final readonly class ExportService
 
                 foreach ($rows as $row) {
                     $data = json_decode($row['data'], true) ?? [];
+                    // P2-E : submitted_at/closed_at sont stockés en UTC ; le CSV
+                    // est un affichage utilisateur → reconvertis en Europe/Paris.
                     $line = [
                         $row['id'],
                         $row['form_label'],
                         $row['submitted_by'],
                         $row['status'],
-                        $row['submitted_at'],
-                        $row['closed_at'] ?? '',
+                        App::html()->formatDateTimeFr((string) $row['submitted_at']),
+                        App::html()->formatDateTimeFr((string) ($row['closed_at'] ?? '')),
                     ];
                     foreach ($all_keys as $all_key) {
                         $line[] = $this->transformValue($data[$all_key] ?? '', in_array($all_key, $checkbox_names, true));
