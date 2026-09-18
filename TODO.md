@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1723** (0 fail, 0 errors — `php vendor/bin/phpunit` du 2026-09-18, P2-E v10.42.38 ; avant : 1686) |
-| Assertions | **5795** (P2-E v10.42.38 ; avant : 5114) |
+| Tests | **1723** (0 fail, 0 errors — `php vendor/bin/phpunit` du 2026-09-18, audit robustesse v10.42.38 ; avant : 1686) |
+| Assertions | **5793** (audit robustesse v10.42.38 ; avant : 5114) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,21 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.38 — Audit robustesse 2026-09-18 (P1-C → P2-E) + référentiel UTC (migration v40)
+| Tâche | Détail |
+|-------|--------|
+| P1-C — sidecars WAL + SHA-256 | `BackupController` : `removeWalSidecars()` retourne `false` si un `unlink` échoue (refus/rollback, jamais de faux succès) ; identité SHA-256 du fichier validé comparée à la base en place + contrôle tables pivot après le move — commit `0275a2c` |
+| P2-D — claim atomique alerte | `alert_check.php` : `INSERT ... SELECT WHERE NOT EXISTS` **avant** l'envoi (`rowCount 0` = déjà revendiqué) ; claim libérée seulement sur `MailStatus::Blocked` — commit `ef8c137` |
+| TOCTOU suppression | `FormRepository::deleteCascade` recompte les soumissions en cours **après** `BEGIN IMMEDIATE`, refuse par rollback ; `handleDeleteForm` sans transaction imbriquée + audit `form_delete_refused` — commit `2e1f375` |
+| Export snapshot | `ExportService::csvChunks()` : transaction read-only fige le snapshot (LIMIT/OFFSET ne dérive plus sous écriture concurrente) — commit `5a9546a` |
+| Stats temps unique | `SubmissionStatsTrait` : durées + bornes today/week/month/daily via `DateTimeImmutable` à fuseaux explicites — commit `183b096` (fusionné dans P2-E) |
+| 4 correctifs ciblés | `alert_check` trace même sans règle active ; `formatDelay` UTC explicite (DST) ; `validateDate` → `checkdate()` ; `delegate` → violation `23000` convertie en erreur métier — commit `9469a92` |
+| Annulation déléguée | POST `cancel_submission` → `TokenService::cancel()` (tokens invalidés, audit véridique, autorisation + CAS, flash PRG) — commit `0e75c12` |
+| Tests durcis | Assertions exactes `AdvanceWorkflowTest` + suppression des skips conditionnels `TokenServiceTest`/`TokenServiceMutationKillTest` — commit `e736bda` |
+| P2-E — migration v40 | Historique Paris→UTC (`submissions.submitted_at`, `settings.last_alert_check`/`last_remind_run`), `BEGIN IMMEDIATE`, idempotente/self-healing — commits `57e3fc7`, `7dab1bd` |
+| Owner final — réconciliation + validations | WIP autoload vendor (dev) écarté (état versionné `--no-dev` conservé, `autoload_files.php` dev non suivi) ; PHPStan tests **0 erreur** (propriété morte `$seq` retirée) ; régression **Bug08** adaptée à P2-E (`$submitted_raw` + `->format('d/m/Y')`) → `run_all.php` **17/17** et gate **SUCCÈS** |
+| Vérifs | PHPUnit **1723/5793, 0 échec** ; PHPStan projet + tests **0 erreur** ; `tests/run_all.php` **SUCCÈS** (5 étapes, 17/17) ; gate `scripts/check.ps1` **SUCCÈS** (e2e Playwright 5/5) |
 
 ### v10.42.37 — Audit BUG1→BUG6 (2e lot) + autoload vendor `--no-dev` + garde export frais (2026-09-17)
 | Tâche | Détail |

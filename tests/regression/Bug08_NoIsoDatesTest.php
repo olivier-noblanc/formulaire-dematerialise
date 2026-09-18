@@ -113,12 +113,16 @@ function run_bug08_test(): bool {
     if ($r['ok']) $successes[] = 'AdminAccessController.php (created_at)';
     else $failures[] = $r['msg'];
 
-    // ── 4. DashboardRenderer.php — $submitted_ts doit utiliser date('d/m/Y', ...) ──
-        $r = bug08_check_date_format(
+    // ── 4. DashboardTableRenderer.php — submitted_at doit être formaté d/m/Y ──
+    // P2-E (2026-09-18) : le stockage est désormais UTC ; le renderer parse la
+    // valeur avec un fuseau explicite (`new DateTimeImmutable(..., UTC)`) puis
+    // `->format('d/m/Y')` en Europe/Paris. La règle métier reste : jamais d'ISO
+    // brut en sortie (escape direct de `$row['submitted_at']` interdit).
+    $r = bug08_check_date_format(
         $root . '/src/Render/DashboardTableRenderer.php',
-        '$submitted_ts',
-        '/date\s*\(\s*[\'"]d\/m\/Y[\'"]/',
-        '',
+        '$submitted_raw',
+        '/->format\(\s*[\'"]d\/m\/Y[\'"]|date\s*\(\s*[\'"]d\/m\/Y[\'"]/',
+        '/escape\s*\(\s*\(string\)\s*\(\s*\$row\[\'submitted_at\'\]/',
         'DashboardTableRenderer.php : submitted_at'
     );
     if ($r['ok']) $successes[] = 'DashboardTableRenderer.php (submitted_at)';

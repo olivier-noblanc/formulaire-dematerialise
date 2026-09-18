@@ -30,7 +30,6 @@ final class SubmissionStatsTimezoneTest extends TestCase
     private string $savedTz;
     private Database $db;
     private SubmissionRepository $repo;
-    private int $seq = 0;
 
     protected function setUp(): void
     {
@@ -175,7 +174,6 @@ final class SubmissionStatsTimezoneTest extends TestCase
 
     private function insertClosed(string $formId, string $submittedAt, string $closedAt, string $email): void
     {
-        $this->seq++;
         $stmt = $this->db->getPdo()->prepare(
             "INSERT INTO submissions (id, form_id, data, submitted_by, submitted_at, closed_at, status, rgpd_consent)
              VALUES (?, ?, '{}', ?, ?, ?, 'valide', 1)"
