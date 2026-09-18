@@ -95,6 +95,11 @@ final class BackupController extends BaseController
                             . 'les tables requises (forms, submissions, tokens, steps, settings) sont absentes. '
                             . 'Restauration refusée pour protéger la base actuelle.';
                     } else {
+                        // P1-C : identité AVANT remplacement. On fixe l'empreinte
+                        // SHA-256 du fichier réellement validé (upload) avant que
+                        // move_uploaded_file() ne le déplace ; elle sera comparée à
+                        // l'empreinte de la base en place après le move.
+                        $expectedHash = hash_file('sha256', $tmpPath);
                         App::db()->release();
                         $backupBefore = $dbPath . '.before_restore_' . date('Ymd_His');
                         // B-02-2 fix (audit 2026-07-26) : copy() retournait false silencieusement
@@ -116,21 +121,47 @@ final class BackupController extends BaseController
                             // F4 (audit 2026-09-16) : supprimer les -wal/-shm de
                             // l'ancienne base AVANT toute ouverture. Sinon SQLite
                             // rejouerait un journal étranger sur la base restaurée.
-                            self::removeWalSidecars($dbPath);
-                            try {
-                                // Sanity-check de la DB restaurée : on ouvre une connexion PDO
-                                // dédiée (pas le singleton App::db()) sur le fichier backup, et
-                                // on vérifie que sqlite_master répond. Cette PDO n'est PAS couverte
-                                // par le Repository layer — c'est un test ponctuel d'un fichier
-                                // externe. allowIn: disallowed-calls.neon → PDO::query().
-                                $testPdo = new \PDO('sqlite:' . $dbPath);
-                                $testPdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                                $testCountStmt = $testPdo->query('SELECT COUNT(*) FROM sqlite_master');
-                                if ($testCountStmt === false) {
-                                    throw new \RuntimeException('Backup restore: COUNT query failed');
+                            // P1-C : removeWalSidecars() retourne false si un sidecar
+                            // survit (verrou Windows) — impossible d'annoncer un succès.
+                            $restoreFailed = false;
+                            $failureCause = 'La base restaurée semble corrompue';
+                            $failureLog = '';
+
+                            if (!self::removeWalSidecars($dbPath)) {
+                                $restoreFailed = true;
+                                $failureCause = 'Un journal WAL de l\'ancienne base n\'a pas pu être supprimé';
+                                $failureLog = 'WAL sidecar(s) survived removal';
+                            } elseif ($expectedHash === false) {
+                                // Empreinte du fichier validé indisponible : impossible
+                                // de prouver l'identité de la base désormais en place.
+                                $restoreFailed = true;
+                                $failureLog = 'uploaded db hash unavailable';
+                            } else {
+                                // P1-C : identité APRÈS remplacement. L'empreinte
+                                // SHA-256 de la base en place doit correspondre à
+                                // celle du fichier validé avant le move — sinon le
+                                // contenu restauré n'est pas celui qui a passé les
+                                // pré-contrôles (troncature, écriture partielle).
+                                $actualHash = @hash_file('sha256', $dbPath);
+                                if ($actualHash === false || !hash_equals($expectedHash, $actualHash)) {
+                                    $restoreFailed = true;
+                                    $failureLog = 'restored db hash mismatch';
+                                } elseif (!$this->isCircuitDematDatabase($dbPath)) {
+                                    // Sanity-check de la DB réellement en place : elle
+                                    // doit toujours contenir les tables pivot CircuitDémat.
+                                    // Un simple COUNT(*) sur sqlite_master était insuffisant :
+                                    // SQLite ouvre un fichier vide/tronqué comme une base
+                                    // valide et renvoie 0 sans exception → « restaurée avec
+                                    // succès » sur une base vide, puis erreurs "no such
+                                    // table" à la première requête. Source unique de la
+                                    // liste des tables pivot (BUG5). allowIn:
+                                    // disallowed-calls.neon → PDO::query().
+                                    $restoreFailed = true;
+                                    $failureLog = 'restored db is not a CircuitDemat database';
                                 }
-                                $testCountStmt->fetchColumn();
-                                $testPdo = null;
+                            }
+
+                            if (!$restoreFailed) {
                                 App::audit()->log(
                                     'backup_restore',
                                     'database',
@@ -139,22 +170,25 @@ final class BackupController extends BaseController
                                 );
                                 $successMsg = 'La base de données a été restaurée avec succès depuis « ' . App::html()->escape($origName) . ' ». '
                                                . 'Une copie de la base précédente a été conservée : ' . App::html()->escape(basename($backupBefore));
-                            } catch (\Exception $e) {
-                                // @silent-ok: fallback with rollback cleanup
+                            } else {
                                 // B-02-3 fix : copy() de secours non vérifié — si échec, message
                                 // disait 'rétablie' alors que la DB était vide/corrompue.
                                 // F4 : retirer aussi les -wal/-shm de la base restaurée
                                 // corrompue avant de recopier la sauvegarde d'origine.
-                                self::removeWalSidecars($dbPath);
-                                $rollbackOk = true;
+                                // P1-C : si un sidecar résiste encore, le rollback n'est
+                                // pas fiable → échec explicite (jamais de faux 'rétablie').
+                                $sidecarsOk = self::removeWalSidecars($dbPath);
+                                $rollbackOk = false;
                                 if (file_exists($backupBefore)) {
-                                    $rollbackOk = @copy($backupBefore, $dbPath);
+                                    $rollbackOk = @copy($backupBefore, $dbPath) && $sidecarsOk;
                                 }
-                                error_log('backup_restore error: ' . $e->getMessage() . ' | rollback copy: ' . ($rollbackOk ? 'ok' : 'FAILED'));
+                                error_log('backup_restore error: ' . $failureLog
+                                    . ' | sidecar removal: ' . ($sidecarsOk ? 'ok' : 'FAILED')
+                                    . ' | rollback copy: ' . ($rollbackOk ? 'ok' : 'FAILED'));
                                 if ($rollbackOk) {
-                                    $errorMsg = 'La base restaurée semble corrompue. La base d\'origine a été rétablie.';
+                                    $errorMsg = $failureCause . '. La base d\'origine a été rétablie.';
                                 } else {
-                                    $errorMsg = 'La base restaurée semble corrompue ET la restauration de secours a échoué. La sauvegarde manuelle est disponible : ' . App::html()->escape(basename($backupBefore)) . '. Contactez l\'administrateur.';
+                                    $errorMsg = $failureCause . ' ET la restauration de secours a échoué. La sauvegarde manuelle est disponible : ' . App::html()->escape(basename($backupBefore)) . '. Contactez l\'administrateur.';
                                 }
                             }
                         } elseif ($backupOk) {
@@ -352,14 +386,24 @@ final class BackupController extends BaseController
      * ou rollback), un -wal/-shm résiduel de l'ANCIENNE base ne doit pas
      * subsister à côté de la nouvelle — SQLite le rejouerait et corromprait
      * la base restaurée.
+     *
+     * P1-C : la suppression est vérifiée. Sous Windows un sidecar peut rester
+     * verrouillé (handle ouvert) : `@unlink()` échoue alors silencieusement.
+     * On relit l'existence après suppression et on retourne false si un sidecar
+     * survit, pour que l'appelant refuse/rollback au lieu de poursuivre sur une
+     * base que SQLite corromprait à la réouverture.
+     *
+     * @return bool true si aucun sidecar ne subsiste, false sinon.
      */
-    public static function removeWalSidecars(string $dbPath): void
+    public static function removeWalSidecars(string $dbPath): bool
     {
-        foreach ([$dbPath . '-wal', $dbPath . '-shm'] as $sidecar) {
+        $sidecars = [$dbPath . '-wal', $dbPath . '-shm'];
+        foreach ($sidecars as $sidecar) {
             if (file_exists($sidecar)) {
                 @unlink($sidecar);
             }
         }
+        return array_all($sidecars, fn(string $sidecar): bool => !file_exists($sidecar));
     }
 
     /**

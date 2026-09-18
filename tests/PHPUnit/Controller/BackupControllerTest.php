@@ -47,6 +47,14 @@ namespace App\Controller {
      *     file — simulates a write error that only materialises after the pivot
      *     pre-check passed on the source file, so the post-move sanity check
      *     triggers the rollback (F4).
+     *   - $_test_empty_after_move truncates the destination to 0 byte — SQLite
+     *     treats an empty file as a valid empty database (COUNT sqlite_master = 0,
+     *     no exception), so a sanity check limited to readability would report a
+     *     false success. The pivot-table check must reject it and roll back.
+     *   - $_test_swap_after_move replaces the destination with ANOTHER valid
+     *     CircuitDémat database after the rename. The pivot-table check would
+     *     accept it (all pivot tables present), so only the SHA-256 identity
+     *     check (before/after move) can detect the substitution.
      */
     function move_uploaded_file(string $from, string $to): bool
     {
@@ -57,10 +65,31 @@ namespace App\Controller {
         if ($ok && !empty($GLOBALS['_test_corrupt_after_move'])) {
             \file_put_contents($to, "SQLite format 3\0" . str_repeat('X', 256));
         }
+        if ($ok && !empty($GLOBALS['_test_empty_after_move'])) {
+            \file_put_contents($to, '');
+        }
+        if ($ok && !empty($GLOBALS['_test_swap_after_move'])) {
+            \copy($GLOBALS['_test_swap_after_move'], $to);
+        }
         if ($ok && !empty($GLOBALS['_test_plant_foreign_wal'])) {
             \file_put_contents($to . '-wal', $GLOBALS['_test_plant_foreign_wal']);
         }
         return $ok;
+    }
+
+    /**
+     * Override unlink for BackupController tests. When $_test_force_unlink_fail
+     * is set, every deletion in the App\Controller namespace fails silently —
+     * a portable simulation of a locked sidecar (Windows keeps an open handle,
+     * Linux would honour the unlink). BackupController::removeWalSidecars() must
+     * therefore re-check survivors and report failure instead of claiming success.
+     */
+    function unlink(string $filename): bool
+    {
+        if (!empty($GLOBALS['_test_force_unlink_fail'])) {
+            return false;
+        }
+        return \unlink($filename);
     }
 }
 
@@ -131,6 +160,9 @@ final class BackupControllerTest extends TestCase
         $GLOBALS['_test_force_move_uploaded'] = false;
         $GLOBALS['_test_plant_foreign_wal'] = '';
         $GLOBALS['_test_corrupt_after_move'] = false;
+        $GLOBALS['_test_empty_after_move'] = false;
+        $GLOBALS['_test_swap_after_move'] = '';
+        $GLOBALS['_test_force_unlink_fail'] = false;
 
         // S'assurer que db/workflow.db existe (pour la plupart des tests)
         if (!\file_exists($this->dbPath)) {
@@ -175,6 +207,9 @@ final class BackupControllerTest extends TestCase
         $GLOBALS['_test_force_move_uploaded'] = false;
         $GLOBALS['_test_plant_foreign_wal'] = '';
         $GLOBALS['_test_corrupt_after_move'] = false;
+        $GLOBALS['_test_empty_after_move'] = false;
+        $GLOBALS['_test_swap_after_move'] = '';
+        $GLOBALS['_test_force_unlink_fail'] = false;
         $GLOBALS['_test_mails'] = [];
         $GLOBALS['_test_captured_json'] = null;
     }
@@ -479,7 +514,327 @@ final class BackupControllerTest extends TestCase
         }
     }
 
-    // ── Tests POST purge_count ────────────────────────────────
+    /**
+     * BUG5 (complément) — le contrôle exige la présence de TOUTES les tables
+     * pivot, pas d'une partie : une base SQLite valide qui n'en contient que
+     * 4 sur 5 (ici `settings` absente) doit être refusée comme une base
+     * étrangère, sans toucher à la base en place.
+     */
+    public function testRestoreBackupRefusesDbMissingOnePivotTable(): void
+    {
+        $original = $this->captureDbSnapshot();
+        $this->cleanupPreRestoreBackups();
+
+        // Base SQLite valide, 4 tables pivot sur 5 (settings manquante) + une
+        // table « étrangère » qui ne doit jamais remplacer la base applicative.
+        $partial = sys_get_temp_dir() . '/bc_partial_db_' . uniqid() . '.db';
+        $partialPdo = new \PDO('sqlite:' . $partial);
+        $partialPdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        foreach (['forms', 'submissions', 'tokens', 'steps'] as $table) {
+            $partialPdo->exec('CREATE TABLE ' . $table . ' (id TEXT)');
+        }
+        $partialPdo->exec('CREATE TABLE foreign_only (v TEXT)');
+        $partialPdo = null;
+
+        $sentinel = 'bc_partial_sentinel_' . uniqid();
+        $seed = new \PDO('sqlite:' . $this->dbPath);
+        $seed->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $seed->exec('CREATE TABLE IF NOT EXISTS bc_partial_marker (v TEXT)');
+        $seed->prepare('INSERT INTO bc_partial_marker (v) VALUES (?)')->execute([$sentinel]);
+        $seed = null;
+
+        $GLOBALS['_test_force_move_uploaded'] = true;
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
+        $_FILES = [
+            'backup_file' => [
+                'name'     => 'partial.db',
+                'type'     => 'application/x-sqlite3',
+                'tmp_name' => $partial,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($partial),
+            ],
+        ];
+
+        try {
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+
+            self::assertStringNotContainsString('a été restaurée avec succès', $output, '4/5 tables pivot ne doivent pas être restaurées');
+            self::assertStringContainsString(
+                'les tables requises (forms, submissions, tokens, steps, settings) sont absentes',
+                $output,
+                'le refus doit nommer les tables pivot requises'
+            );
+
+            $check = new \PDO('sqlite:' . $this->dbPath);
+            $check->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            self::assertSame(
+                0,
+                (int) $check->query("SELECT COUNT(*) FROM sqlite_master WHERE name = 'foreign_only'")->fetchColumn(),
+                'la table étrangère ne doit pas avoir remplacé la base'
+            );
+            self::assertSame(
+                $sentinel,
+                (string) $check->query('SELECT v FROM bc_partial_marker ORDER BY rowid DESC LIMIT 1')->fetchColumn(),
+                'la base applicative doit rester intacte'
+            );
+            $check = null;
+
+            self::assertSame([], \glob($this->dbPath . '.before_restore_*') ?: [], 'refus avant tout remplacement');
+        } finally {
+            $GLOBALS['_test_force_move_uploaded'] = false;
+            $this->restoreDbFile($original);
+            $this->cleanupPreRestoreBackups();
+            @unlink($partial);
+        }
+    }
+
+    /**
+     * Le sanity-check post-restauration doit exiger que la base réellement en
+     * place soit une base CircuitDémat, pas seulement qu'elle soit lisible : un
+     * fichier vide/0 octet est une base SQLite valide pour SQLite (`COUNT(*)`
+     * sur `sqlite_master` = 0, aucune exception). Un contrôle limité à la
+     * lisibilité affichait donc « restaurée avec succès » sur une base vide,
+     * puis l'application échouait en « no such table ». Ici le fichier restauré
+     * est vidé pendant le move → le contrôle pivot échoue → rollback.
+     */
+    public function testRestoreBackupEmptyAfterMoveTriggersRollback(): void
+    {
+        $original = $this->captureDbSnapshot();
+        $this->cleanupPreRestoreBackups();
+
+        $sentinel = 'bc_empty_sentinel_' . uniqid();
+        $seed = new \PDO('sqlite:' . $this->dbPath);
+        $seed->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $seed->exec('CREATE TABLE IF NOT EXISTS bc_empty_marker (v TEXT)');
+        $seed->prepare('INSERT INTO bc_empty_marker (v) VALUES (?)')->execute([$sentinel]);
+        $seed = null;
+
+        // L'upload passe le pré-contrôle (tables pivot) puis est vidé pendant le
+        // remplacement : seule la vérification post-move peut détecter le problème.
+        $uploaded = sys_get_temp_dir() . '/bc_empty_after_move_' . uniqid() . '.db';
+        $this->createPivotTablesDb($uploaded);
+
+        $GLOBALS['_test_force_move_uploaded'] = true;
+        $GLOBALS['_test_empty_after_move'] = true;
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
+        $_FILES = [
+            'backup_file' => [
+                'name'     => 'empty_restore.db',
+                'type'     => 'application/x-sqlite3',
+                'tmp_name' => $uploaded,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($uploaded),
+            ],
+        ];
+
+        try {
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+
+            self::assertStringNotContainsString('a été restaurée avec succès', $output, 'une base vide ne doit pas être annoncée comme restaurée');
+            self::assertStringContainsString('semble corrompue', $output);
+            self::assertStringContainsString('a été rétablie', $output);
+
+            // La sauvegarde pré-restauration (instantané) a été remise en place.
+            $check = new \PDO('sqlite:' . $this->dbPath);
+            $check->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            self::assertSame(
+                $sentinel,
+                (string) $check->query('SELECT v FROM bc_empty_marker ORDER BY rowid DESC LIMIT 1')->fetchColumn(),
+                'le rollback doit rétablir la base d\'origine'
+            );
+            $check = null;
+        } finally {
+            $GLOBALS['_test_force_move_uploaded'] = false;
+            $GLOBALS['_test_empty_after_move'] = false;
+            $this->restoreDbFile($original);
+            $this->cleanupPreRestoreBackups();
+            @unlink($uploaded);
+        }
+    }
+
+    /**
+     * P1-C — removeWalSidecars() doit signaler qu'une suppression a échoué :
+     * un sidecar verrouillé (unlink qui échoue, cas Windows) doit être détecté
+     * par relecture de son existence et retourner false, jamais un faux succès.
+     * Le test est portable : l'échec d'unlink est simulé via l'override
+     * namespaced $_test_force_unlink_fail (indépendant du système de fichiers).
+     */
+    public function testRemoveWalSidecarsReportsFailureWhenSidecarSurvives(): void
+    {
+        $db = sys_get_temp_dir() . '/bc_sidecar_lock_' . uniqid() . '.db';
+        \file_put_contents($db, "SQLite format 3\0" . str_repeat(' ', 128));
+        \file_put_contents($db . '-wal', 'LOCKED');
+
+        $GLOBALS['_test_force_unlink_fail'] = true;
+        $refused = BackupController::removeWalSidecars($db);
+        $survived = \file_exists($db . '-wal');
+        $GLOBALS['_test_force_unlink_fail'] = false;
+        $removed = BackupController::removeWalSidecars($db);
+
+        // Nettoyage avant assertions (aucune fuite si une assertion échoue).
+        @\unlink($db);
+
+        self::assertFalse($refused, 'un sidecar survivant ne doit pas être signalé comme supprimé');
+        self::assertTrue($survived, 'le sidecar verrouillé doit toujours exister après l\'échec d\'unlink');
+        self::assertTrue($removed, 'une fois déverrouillé, le sidecar doit être supprimé');
+        self::assertFileDoesNotExist($db . '-wal');
+    }
+
+    /**
+     * P1-C — identité post-remplacement (hash SHA-256 avant/après). Une AUTRE
+     * base CircuitDémat valide (toutes les tables pivot présentes) est
+     * substituée pendant le move : le contrôle « tables pivot » la validerait,
+     * seule la comparaison d'empreinte détecte que le contenu restauré n'est
+     * pas celui qui a passé les pré-contrôles. Le rollback rétablit l'original.
+     */
+    public function testRestoreBackupHashMismatchAfterMoveTriggersRollback(): void
+    {
+        $original = $this->captureDbSnapshot();
+        $this->cleanupPreRestoreBackups();
+
+        $sentinel = 'bc_hash_sentinel_' . uniqid();
+        $seed = new \PDO('sqlite:' . $this->dbPath);
+        $seed->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $seed->exec('CREATE TABLE IF NOT EXISTS bc_hash_marker (v TEXT)');
+        $seed->prepare('INSERT INTO bc_hash_marker (v) VALUES (?)')->execute([$sentinel]);
+        $seed = null;
+
+        // Base uploadée valide ; une base valide différente est copiée par-dessus
+        // pendant le move (tables pivot identiques → le pré-contrôle passe).
+        $uploaded = sys_get_temp_dir() . '/bc_hash_upload_' . uniqid() . '.db';
+        $this->createPivotTablesDb($uploaded);
+        $alternate = sys_get_temp_dir() . '/bc_hash_swap_' . uniqid() . '.db';
+        $this->createPivotTablesDb($alternate, ['swapped_marker']);
+        $swapPdo = new \PDO('sqlite:' . $alternate);
+        $swapPdo->prepare('INSERT INTO swapped_marker (v) VALUES (?)')->execute(['SWAPPED']);
+        $swapPdo = null;
+
+        $GLOBALS['_test_force_move_uploaded'] = true;
+        $GLOBALS['_test_swap_after_move'] = $alternate;
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
+        $_FILES = [
+            'backup_file' => [
+                'name'     => 'hash_mismatch.db',
+                'type'     => 'application/x-sqlite3',
+                'tmp_name' => $uploaded,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($uploaded),
+            ],
+        ];
+
+        try {
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+
+            self::assertStringNotContainsString(
+                'a été restaurée avec succès',
+                $output,
+                'un contenu dont le hash diffère ne doit pas être annoncé comme restauré'
+            );
+            self::assertStringContainsString('semble corrompue', $output);
+            self::assertStringContainsString('a été rétablie', $output);
+
+            $check = new \PDO('sqlite:' . $this->dbPath);
+            $check->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            self::assertSame(
+                $sentinel,
+                (string) $check->query('SELECT v FROM bc_hash_marker ORDER BY rowid DESC LIMIT 1')->fetchColumn(),
+                'le rollback doit rétablir la base d\'origine'
+            );
+            self::assertSame(
+                0,
+                (int) $check->query("SELECT COUNT(*) FROM sqlite_master WHERE name = 'swapped_marker'")->fetchColumn(),
+                'la base substituée ne doit pas rester en place'
+            );
+            $check = null;
+        } finally {
+            $GLOBALS['_test_force_move_uploaded'] = false;
+            $GLOBALS['_test_swap_after_move'] = '';
+            $this->restoreDbFile($original);
+            $this->cleanupPreRestoreBackups();
+            @\unlink($uploaded);
+            @\unlink($alternate);
+        }
+    }
+
+    /**
+     * P1-C — un sidecar WAL verrouillé pendant la restauration doit être refusé
+     * et rollbacké : laisser un -wal étranger à côté de la base restaurée
+     * corromprait celle-ci à la réouverture. Comme le sidecar résiste aussi au
+     * rollback, le contrôleur doit l'indiquer explicitement (rollback non
+     * présenté comme fiable) plutôt que d'annoncer un succès ou un « rétablie ».
+     */
+    public function testRestoreBackupRefusesAndRollsBackWhenWalSidecarLocked(): void
+    {
+        $original = $this->captureDbSnapshot();
+        $this->cleanupPreRestoreBackups();
+
+        $sentinel = 'bc_locked_sentinel_' . uniqid();
+        $seed = new \PDO('sqlite:' . $this->dbPath);
+        $seed->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $seed->exec('CREATE TABLE IF NOT EXISTS bc_locked_marker (v TEXT)');
+        $seed->prepare('INSERT INTO bc_locked_marker (v) VALUES (?)')->execute([$sentinel]);
+        $seed = null;
+
+        $uploaded = sys_get_temp_dir() . '/bc_locked_upload_' . uniqid() . '.db';
+        $this->createPivotTablesDb($uploaded, ['restored_marker']);
+
+        // WAL valide planté pendant le move ; l'unlink verrouillé l'empêche de
+        // partir, y compris lors du rollback.
+        $foreign = $this->startForeignWalDb('locked');
+
+        $GLOBALS['_test_force_move_uploaded'] = true;
+        $GLOBALS['_test_plant_foreign_wal'] = $foreign['wal'];
+        $GLOBALS['_test_force_unlink_fail'] = true;
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['action' => 'restore_backup', 'csrf_token' => 'test'];
+        $_FILES = [
+            'backup_file' => [
+                'name'     => 'locked_restore.db',
+                'type'     => 'application/x-sqlite3',
+                'tmp_name' => $uploaded,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($uploaded),
+            ],
+        ];
+
+        try {
+            $output = $this->captureOutput(fn() => new BackupController()->handle());
+
+            self::assertStringNotContainsString(
+                'a été restaurée avec succès',
+                $output,
+                'un sidecar non supprimable ne doit pas aboutir à un succès'
+            );
+            self::assertStringContainsString('n&apos;a pas pu être supprimé', $output);
+            self::assertStringContainsString('a échoué', $output);
+
+            // Déverrouillage + purge du -wal avant lecture (il est encore là).
+            $GLOBALS['_test_force_unlink_fail'] = false;
+            BackupController::removeWalSidecars($this->dbPath);
+
+            $check = new \PDO('sqlite:' . $this->dbPath);
+            $check->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            self::assertSame(
+                $sentinel,
+                (string) $check->query('SELECT v FROM bc_locked_marker ORDER BY rowid DESC LIMIT 1')->fetchColumn(),
+                'la copie pré-restauration doit être remise en place'
+            );
+            $check = null;
+        } finally {
+            $GLOBALS['_test_force_move_uploaded'] = false;
+            $GLOBALS['_test_plant_foreign_wal'] = '';
+            $GLOBALS['_test_force_unlink_fail'] = false;
+            $this->disposeForeignWalDb($foreign);
+            $this->restoreDbFile($original);
+            $this->cleanupPreRestoreBackups();
+            @\unlink($uploaded);
+        }
+    }
+
+    // ── Tests POST purge_count ───────────────────────────────
 
     /**
      * POST action=purge_count avec une valeur de mois invalide doit
