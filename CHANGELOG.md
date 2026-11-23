@@ -1,5 +1,33 @@
 # Changelog — CircuitDémat
 
+## [10.42.40] — 2026-11-23
+_Résumé : les champs obligatoires dont la valeur provient de PDO sous forme de chaîne (`'1'`) affichent désormais leur étoile rouge et reçoivent bien l’attribut HTML `required`._
+
+### 🐛 Fixes
+- **`FormRenderer::field()`** : normalise la valeur `required` en entier avant de tester l’obligation, afin de gérer aussi bien les valeurs SQLite `1` que `'1'` sans modifier le comportement des champs optionnels ou désactivés.
+
+### 🧪 Tests
+- **`FormRendererTest`** : ajout d’une régression couvrant `required` sous forme chaîne et vérifiant l’étoile rouge ainsi que `required aria-required="true"`.
+
+### ✅ Vérifications (2026-11-23)
+- `php vendor/bin/phpunit --filter FormRendererTest` → **8 tests / 22 assertions, 0 échec**.
+
+## [10.42.39] — 2026-10-13
+_Résumé : correctif de l'export JSON de formulaire — `required` normalisé en drapeau `0/1` (les valeurs ordinales legacy/IA ne sont plus exportées brutes), nom de fichier toujours `.json` (base de repli si slug vide) et `Content-Disposition` RFC 6266/5987 (filename ASCII + filename* UTF-8) avec `Content-Type: application/json`. Détecté via l'export JSON `gestion_d_une_arrivee_prod` (anomalie A1 du cahier des charges workflow)._
+
+### 🐛 Fixes — export/import JSON de formulaire
+- **`AdminImportExportHandler::handleExportForm()`** : `required` est normalisé en `{0,1}` à l'export (`(int) !== 0 → 1`) — la colonne `form_fields.required` pouvait porter une séquence d'ordre legacy (1..28) et produisait un JSON hors contrat de schéma. Le nom de fichier utilise une base de repli `form_export` quand le slug est vide/exotique : l'ancien `preg_replace(...) . '.json'` produisait `.json`, un « pointfile » sans nom que les navigateurs (Edge) téléchargent sans extension.
+- **`AdminImportExportHandler::handleImportForm()`** : `required` normalisé en `{0,1}` à l'import — un JSON généré par IA déposant un numéro d'ordre dans `required` corrompait `form_fields.required`.
+- **`FormJsonValidator`** : avertit (sans bloquer) quand `required` n'est ni booléen ni `0/1`, en précisant que la valeur sera normalisée à `1` (obligatoire) à l'import.
+- **`AdminFormsController`** : le téléchargement force `Content-Type: application/json; charset=utf-8`, garantit l'extension `.json` sur le nom de fichier et émet `Content-Disposition` conforme RFC 6266/5987 (`filename` ASCII + `filename*` UTF-8) — l'extension reste préservée côté Edge/Chrome quel que soit le paramètre retenu.
+
+### 🧪 Tests
+- **`tests/PHPUnit/AdminImportExportTest.php`** (+4) : `required` exporté ∈ `{0,1}` quelle que soit la valeur DB ; import d'un `required` ordinal (`21`, généré par IA) normalisé à `1` sans corrompre `form_fields.required` ; `FormJsonValidator` avertit sans bloquer ; nom de fichier garanti avec extension `.json` + base de repli `form_export` quand le slug est vide.
+
+### ✅ Vérifications (2026-10-13)
+- `php vendor/bin/phpunit --filter AdminImportExportTest` → **17 tests / 74 assertions, 0 échec**.
+- `php -l` sur les 4 fichiers modifiés (`AdminImportExportHandler`, `AdminFormsController`, `FormJsonValidator`, `AdminImportExportTest`) → OK.
+
 ## [10.42.38] — 2026-09-18
 _Résumé : **Audit robustesse 2026-09-18 (P1-C → P2-E)** — sauvegarde (sidecars WAL verrouillés, identité SHA-256 au restore), anti-doublon cron (revendication atomique), fermeture du TOCTOU de suppression de formulaire, snapshot de lecture stable de l'export CSV, stats sur référentiel de temps unique, correctifs ciblés (alert_check sans règle, `formatDelay` DST, `checkdate`, course `delegate`, annulation déléguée à `TokenService::cancel`), durcissement des tests, et **migration v40 convertissant l'historique Paris→UTC**._
 

@@ -19,7 +19,7 @@ final class FormRenderer
     /**
      * Renders a dynamic field as HTML with ARIA error support.
      *
-     * @param array{field_name: string, label: string, required: int, field_type: string, hint: string, options: string|null} $field Field definition
+     * @param array{field_name: string, label: string, required: int|string, field_type: string, hint: string, options: string|null} $field Field definition
      * @param mixed  $posted_val   Posted value (or null)
      * @param array<string, string>  $field_errors Validation errors by field_name
      * @param string $datalist_id  LDAP autocompletion datalist ID
@@ -30,8 +30,9 @@ final class FormRenderer
     {
         $name          = \App\Core\App::html()->escape($field['field_name']);
         $label         = \App\Core\App::html()->escape(t_jargon($field['label']));
-        $req_span      = $field['required'] === 1 ? ' <span class="req">*</span>' : '';
-        $required_attr = (!$disabled && $field['required'] === 1) ? ' required aria-required="true"' : '';
+        $is_required   = (int) $field['required'] === 1;
+        $req_span      = $is_required ? ' <span class="req">*</span>' : '';
+        $required_attr = (!$disabled && $is_required) ? ' required aria-required="true"' : '';
         $error_class   = isset($field_errors[(string) $field['field_name']]) ? ' field-error' : '';
         $disabled_attr = $disabled ? ' disabled' : '';
 

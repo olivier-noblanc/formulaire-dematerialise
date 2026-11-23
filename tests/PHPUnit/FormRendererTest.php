@@ -98,6 +98,22 @@ final class FormRendererTest extends TestCase
         self::assertStringContainsString('aria-required="true"', $html);
     }
 
+    public function testStringRequiredTextHasRequiredAttributeAndMarker(): void
+    {
+        $field = [
+            'field_name' => 'nom',
+            'label' => 'Nom',
+            'field_type' => 'text',
+            'required' => '1',
+            'hint' => '',
+            'options' => null,
+        ];
+        $html = $this->renderer->field($field, null, [], '', false);
+
+        self::assertStringContainsString('<span class="req">*</span>', $html);
+        self::assertStringContainsString(' required aria-required="true"', $html);
+    }
+
     /**
      * Régression — bug confirmé par StructuralHtmlTest (règle S2, route
      * /index.php?p=form&f=onboarding) : quand une carte mélange un champ

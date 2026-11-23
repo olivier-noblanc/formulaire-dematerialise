@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1723** (0 fail, 0 errors — `php vendor/bin/phpunit` du 2026-09-18, audit robustesse v10.42.38 ; avant : 1686) |
-| Assertions | **5793** (audit robustesse v10.42.38 ; avant : 5114) |
+| Tests | **1728** (1723 audit robustesse v10.42.38 + 4 export/import JSON v10.42.39 + 1 régression FormRenderer v10.42.40 — tests ciblés verts, run complet par l’owner) |
+| Assertions | **5795** (audit robustesse v10.42.38 ; avant : 5114) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -29,6 +29,21 @@
 ---
 
 ## ✅ Terminé (historique)
+
+### v10.42.40 — Étoile des champs obligatoires issue de PDO (2026-11-23)
+| Tâche | Détail |
+|-------|--------|
+| Normalisation renderer | `FormRenderer::field()` compare désormais `(int) $field['required']` à `1` : les valeurs SQLite `1` et `'1'` sont rendues comme obligatoires, sans changement pour les champs optionnels ou désactivés |
+| Test de régression | `FormRendererTest` vérifie avec `required='1'` l’étoile rouge (`class="req"`) et `required aria-required="true"` |
+| Vérifications | `php vendor/bin/phpunit --filter FormRendererTest` → **8 tests / 22 assertions, 0 échec** |
+
+### v10.42.39 — Export/Import JSON de formulaire (required 0/1 + filename .json) (2026-10-13)
+| Tâche | Détail |
+|-------|--------|
+| Export `required` normalisé | `AdminImportExportHandler::handleExportForm()` : `required` ∈ `{0,1}` (`(int) !== 0 → 1`) — une colonne legacy portant une séquence d'ordre (1..28, anomalie A1) n'est plus exportée brute |
+| Filename + Content-Type | Base de repli `form_export` si slug vide (l'ancien code produisait `.json`, pointfile sans extension) ; `Content-Type: application/json; charset=utf-8` + `Content-Disposition` RFC 6266/5987 (`filename` ASCII + `filename*` UTF-8) dans `AdminFormsController` |
+| Import `required` normalisé | `handleImportForm()` : `(int) !== 0 → 1` — un `required` ordinal (JSON IA) ne corrompt plus `form_fields.required` ; `FormJsonValidator` avertit sans bloquer |
+| Tests | `AdminImportExportTest` (+4) : export ∈ {0,1}, import `required`=21 → 1, warning validateur, filename garanti/repli — `--filter AdminImportExportTest` → **17 tests / 74 assertions, 0 échec** |
 
 ### v10.42.38 — Audit robustesse 2026-09-18 (P1-C → P2-E) + référentiel UTC (migration v40)
 | Tâche | Détail |
