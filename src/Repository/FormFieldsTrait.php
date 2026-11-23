@@ -92,9 +92,11 @@ trait FormFieldsTrait
     public function createField(array $data): string
     {
         $id = \generate_uuid();
+        $required = $data['required'] ?? 0;
+        $this->assertValidRequired($required);
         $this->execute(
             'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? FieldType::Text->value, $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $data['required'] ?? 0, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? FilledBy::Demandeur->value, $data['validator_step'] ?? '', $data['visibility'] ?? FieldVisibility::All->value]
+            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? FieldType::Text->value, $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $required, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? FilledBy::Demandeur->value, $data['validator_step'] ?? '', $data['visibility'] ?? FieldVisibility::All->value]
         );
         return $id;
     }
@@ -104,6 +106,9 @@ trait FormFieldsTrait
      */
     public function updateField(string $fieldId, array $data): bool
     {
+        if (array_key_exists('required', $data)) {
+            $this->assertValidRequired($data['required']);
+        }
         $allowed = ['label', 'field_type', 'field_name', 'options', 'hint', 'required', 'ordre', 'card_group', 'filled_by', 'validator_step', 'visibility', 'condition'];
         $fields = [];
         $params = [];
@@ -118,6 +123,14 @@ trait FormFieldsTrait
         }
         $params[] = $fieldId;
         return $this->execute('UPDATE form_fields SET ' . implode(', ', $fields) . ' WHERE id = ?', $params);
+    }
+
+    /** @throws \InvalidArgumentException */
+    private function assertValidRequired(mixed $required): void
+    {
+        if ($required !== 0 && $required !== '0' && $required !== 1 && $required !== '1') {
+            throw new \InvalidArgumentException('form_fields.required must be exactly 0, 1, "0" or "1"');
+        }
     }
 
     public function deleteField(string $fieldId): bool

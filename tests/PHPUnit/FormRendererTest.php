@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use App\Render\FormRenderer;
 
 /**
@@ -98,13 +99,13 @@ final class FormRendererTest extends TestCase
         self::assertStringContainsString('aria-required="true"', $html);
     }
 
-    public function testStringRequiredTextHasRequiredAttributeAndMarker(): void
+    public function testNormalizedRequiredTextHasRequiredAttributeAndMarker(): void
     {
         $field = [
             'field_name' => 'nom',
             'label' => 'Nom',
             'field_type' => 'text',
-            'required' => '1',
+            'required' => 1,
             'hint' => '',
             'options' => null,
         ];
@@ -112,6 +113,26 @@ final class FormRendererTest extends TestCase
 
         self::assertStringContainsString('<span class="req">*</span>', $html);
         self::assertStringContainsString(' required aria-required="true"', $html);
+    }
+
+    #[DataProvider('nonNormalizedRequiredProvider')]
+    public function testRendererDoesNotReinterpretNonNormalizedRequiredValues(mixed $required): void
+    {
+        $field = [
+            'field_name' => 'nom', 'label' => 'Nom', 'field_type' => 'text',
+            'required' => $required, 'hint' => '', 'options' => null,
+        ];
+        $html = $this->renderer->field($field, null, [], '', false);
+        self::assertStringNotContainsString('<span class="req">*</span>', $html);
+        self::assertStringNotContainsString('aria-required="true"', $html);
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function nonNormalizedRequiredProvider(): iterable
+    {
+        yield 'zero string' => ['0'];
+        yield 'legacy integer' => [2];
+        yield 'legacy string' => ['2'];
     }
 
     /**

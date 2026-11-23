@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Core\App;
 use App\Enum\FilledBy;
+use App\Repository\FormFieldsTrait;
 use App\Render\FormRenderer;
 
 /**
@@ -14,6 +15,7 @@ use App\Render\FormRenderer;
  */
 final class FormController extends BaseController
 {
+    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     /**
      * Point d'entrée du contrôleur.
      */
@@ -77,7 +79,8 @@ final class FormController extends BaseController
 
         // Charger les champs dynamiques du formulaire (filled_by='demandeur')
         $all_form_fields = App::validatorData()->getFormFields($form['id']);
-        $form_fields = array_filter($all_form_fields, fn(array $f): bool => !isset($f['filled_by']) || $f['filled_by'] === '' || $f['filled_by'] === FilledBy::Demandeur->value);
+        /** @var list<FormFieldRow> $form_fields */
+        $form_fields = array_values(array_filter($all_form_fields, fn(array $f): bool => !isset($f['filled_by']) || $f['filled_by'] === '' || $f['filled_by'] === FilledBy::Demandeur->value));
 
         $submission_id = '';
 

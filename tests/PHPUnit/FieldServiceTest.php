@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use App\Forms\FieldService;
 use App\Core\Database;
 
@@ -73,6 +74,85 @@ final class FieldServiceTest extends TestCase
         foreach ($fields as $field) {
             self::assertSame('validator', $field['filled_by']);
         }
+    }
+
+    public function testGetFieldsNormalizesRequiredToStrictBooleanInteger(): void
+    {
+        $fields = $this->fields->getFields($this->testFormId);
+        self::assertNotEmpty($fields);
+        foreach ($fields as $field) {
+            self::assertIsInt($field['required']);
+            self::assertContains($field['required'], [0, 1]);
+        }
+    }
+
+    public function testGetValidatorFieldsNormalizesLegacyRequiredValue(): void
+    {
+        $method = new \ReflectionMethod(FieldService::class, 'normalizeRows');
+        $method->setAccessible(true);
+        $rows = [[
+            'id' => 'field-legacy', 'form_id' => 'form-test', 'label' => 'Field', 'field_type' => 'text',
+            'field_name' => 'legacy', 'options' => null, 'hint' => '', 'required' => 21, 'ordre' => 1,
+            'card_group' => 'Général', 'filled_by' => 'validator', 'validator_step' => '',
+            'visibility' => 'all', 'condition' => '',
+        ]];
+        $this->expectException(\InvalidArgumentException::class);
+        $method->invoke($this->fields, $rows);
+    }
+
+    #[DataProvider('requiredNormalizationProvider')]
+    public function testNormalizationContractForAllDatabaseRepresentations(mixed $raw, int $expected): void
+    {
+        $method = new \ReflectionMethod(FieldService::class, 'normalizeRows');
+        $method->setAccessible(true);
+        $row = [
+            'id' => 'field-contract', 'form_id' => 'form-test', 'label' => 'Field', 'field_type' => 'text',
+            'field_name' => 'contract', 'options' => null, 'hint' => '', 'required' => $raw, 'ordre' => 1,
+            'card_group' => 'Général', 'filled_by' => 'demandeur', 'validator_step' => '',
+            'visibility' => 'all', 'condition' => '',
+        ];
+        if ($expected === 0 && $raw !== 0 && $raw !== '0') {
+            $this->expectException(\InvalidArgumentException::class);
+        }
+        $normalized = $method->invoke($this->fields, [$row])[0]['required'];
+        self::assertSame($expected, $normalized);
+        self::assertIsInt($normalized);
+    }
+
+    public function testCreateFieldRejectsLegacyRequiredBeforeDatabase(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->fields->formRepository->createField([
+            'form_id' => $this->testFormId,
+            'label' => 'Invalid',
+            'field_name' => 'invalid_required',
+            'required' => 21,
+        ]);
+    }
+
+    public function testUpdateFieldRejectsNullRequiredBeforeDatabase(): void
+    {
+        $fieldId = $this->db->getPdo()->query("SELECT id FROM form_fields WHERE form_id = '" . $this->testFormId . "'")->fetchColumn();
+        $this->expectException(\InvalidArgumentException::class);
+        $this->fields->formRepository->updateField((string) $fieldId, ['required' => null]);
+    }
+
+    /** @return iterable<string, array{mixed, int}> */
+    public static function requiredNormalizationProvider(): iterable
+    {
+        yield 'null' => [null, 0];
+        yield 'empty' => ['', 0];
+        yield 'zero integer' => [0, 0];
+        yield 'zero string' => ['0', 0];
+        yield 'one integer' => [1, 1];
+        yield 'one string' => ['1', 1];
+        yield 'legacy integer rejected' => [2, 0];
+        yield 'legacy string rejected' => ['2', 0];
+        yield 'legacy ordinal rejected' => [21, 0];
+        yield 'negative rejected' => [-1, 0];
+        yield 'true rejected' => [true, 0];
+        yield 'false rejected' => [false, 0];
+        yield 'arbitrary string rejected' => ['yes', 0];
     }
 
     public function testGetFieldsWithNonexistentFormReturnsEmpty(): void

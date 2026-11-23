@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use App\Controller\FormValidationHandler;
 use App\Enum\FieldVisibility;
 
@@ -66,6 +67,30 @@ final class FormValidationHandlerTest extends TestCase
         $_POST['x'] = '';
         $fields = [$this->makeField('x', 'text', 1)];
         self::assertSame(['x' => 'Ce champ est obligatoire'], FormValidationHandler::validateFields($fields));
+    }
+
+    #[DataProvider('nonNormalizedRequiredProvider')]
+    public function testValidationDoesNotReinterpretNonNormalizedRequiredValues(mixed $required): void
+    {
+        $_POST['x'] = '';
+        $fields = [$this->makeFieldWithRawRequired('x', $required)];
+        self::assertSame([], FormValidationHandler::validateFields($fields));
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function nonNormalizedRequiredProvider(): iterable
+    {
+        yield 'zero string' => ['0'];
+        yield 'legacy integer' => [2];
+        yield 'legacy string' => ['2'];
+    }
+
+    /** @return array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: mixed, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string} */
+    private function makeFieldWithRawRequired(string $name, mixed $required): array
+    {
+        $field = $this->makeField($name, 'text', 0);
+        $field['required'] = $required;
+        return $field;
     }
 
     public function testRequiredFieldWithMissingPostKeyStillFails(): void

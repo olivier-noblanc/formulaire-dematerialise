@@ -8,6 +8,7 @@ use App\Contract\FieldInterface;
 use App\Core\App;
 use App\Enum\FieldType;
 use App\Repository\FormRepository;
+use App\Repository\FormFieldsTrait;
 use App\Repository\SubmissionRepository;
 
 /**
@@ -18,6 +19,7 @@ use App\Repository\SubmissionRepository;
  */
 final readonly class FieldService implements FieldInterface
 {
+    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     public FormRepository $formRepository;
     public SubmissionRepository $submissionRepository;
 
@@ -32,22 +34,7 @@ final readonly class FieldService implements FieldInterface
 
     /**
      * Récupère les champs d'un formulaire, optionnellement filtrés par filled_by.
-     * @return array<int, array{
-     *   id: string,
-     *   form_id: string,
-     *   label: string,
-     *   field_type: string,
-     *   field_name: string,
-     *   options: string|null,
-     *   hint: string,
-     *   required: int,
-     *   ordre: int,
-     *   card_group: string,
-     *   filled_by: string,
-     *   validator_step: string,
-     *   visibility: string,
-     *   condition: string
-     * }>
+     * @return list<FormFieldRow>
      */
     public function getFields(string $formId, ?string $filledBy = null): array
     {
@@ -57,33 +44,39 @@ final readonly class FieldService implements FieldInterface
             return $cache[$cacheKey];
         }
 
-        $result = $this->formRepository->getFieldsByFilledBy($formId, $filledBy);
+        $result = $this->normalizeRows($this->formRepository->getFieldsByFilledBy($formId, $filledBy));
         $cache[$cacheKey] = $result;
         return $result;
     }
 
     /**
      * Récupère les champs validateur d'un formulaire, optionnellement filtrés par step.
-     * @return array<int, array{
-     *   id: string,
-     *   form_id: string,
-     *   label: string,
-     *   field_type: string,
-     *   field_name: string,
-     *   options: string|null,
-     *   hint: string,
-     *   required: int,
-     *   ordre: int,
-     *   card_group: string,
-     *   filled_by: string,
-     *   validator_step: string,
-     *   visibility: string,
-     *   condition: string
-     * }>
+     * @return list<FormFieldRow>
      */
     public function getValidatorFields(string $formId, ?string $stepId = null): array
     {
-        return $this->formRepository->getValidatorFields($formId, $stepId);
+        return $this->normalizeRows($this->formRepository->getValidatorFields($formId, $stepId));
+    }
+
+    /** @param list<FormFieldRow> $rows @return list<FormFieldRow> */
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(static function (array $row): array {
+            $row['required'] = self::normalizeRequired($row['required'] ?? null);
+            return $row;
+        }, $rows);
+    }
+
+    /** @throws \InvalidArgumentException */
+    private static function normalizeRequired(mixed $required): int
+    {
+        if ($required === 0 || $required === '0') {
+            return 0;
+        }
+        if ($required === 1 || $required === '1') {
+            return 1;
+        }
+        throw new \InvalidArgumentException('form_fields.required must be exactly 0, 1, "0" or "1"');
     }
 
     /**

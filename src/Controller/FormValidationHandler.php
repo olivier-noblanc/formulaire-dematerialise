@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Core\DateHelper;
 use App\Enum\FieldType;
+use App\Repository\FormFieldsTrait;
 
 /**
  * Validation des données POST d'un formulaire dynamique.
@@ -16,10 +17,11 @@ use App\Enum\FieldType;
  */
 final class FormValidationHandler
 {
+    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     /**
      * Valide les champs obligatoires (sauf File) et le format email.
      *
-     * @param list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $form_fields
+     * @param list<FormFieldRow> $form_fields
      * @return array<string, string> Erreurs indexées par field_name
      */
     public static function validateFields(array $form_fields): array
@@ -35,7 +37,7 @@ final class FormValidationHandler
             $value = trim((string) ($_POST[$field_name] ?? ''));
             // B-FIX1 (2026-09-01) : '0' est une valeur légitime (option de select,
             // quantité...) — seul l'absence de valeur ('') bloque un champ requis
-            if ((bool) $field['required'] && $value === '') {
+            if ($field['required'] === 1 && $value === '') {
                 $errors[$field_name] = 'Ce champ est obligatoire';
                 continue;
             }
@@ -68,9 +70,9 @@ final class FormValidationHandler
      * rendu). Une condition vide/invalide est évaluée à true → le champ
      * reste validé (comportement conservateur).
      *
-     * @param array<int, array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $form_fields
+     * @param list<FormFieldRow> $form_fields
      * @param array<string, mixed> $post_data
-     * @return list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}>
+     * @return list<FormFieldRow>
      */
     public static function filterConditionallyHidden(array $form_fields, array $post_data): array
     {
@@ -83,7 +85,7 @@ final class FormValidationHandler
     /**
      * Valide les fichiers uploadés obligatoires.
      *
-     * @param list<array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string}> $form_fields
+     * @param list<FormFieldRow> $form_fields
      * @return array<string, string> Erreurs indexées par field_name
      */
     public static function validateFiles(array $form_fields): array
@@ -94,7 +96,7 @@ final class FormValidationHandler
             $field_name = (string) $field['field_name'];
 
             if ($field_type === FieldType::File->value) {
-                if ((bool) $field['required'] && (!isset($_FILES[$field_name]['name']) || $_FILES[$field_name]['name'] === '')) {
+                if ($field['required'] === 1 && (!isset($_FILES[$field_name]['name']) || $_FILES[$field_name]['name'] === '')) {
                     $errors[$field_name] = 'Ce fichier est obligatoire';
                 }
             }

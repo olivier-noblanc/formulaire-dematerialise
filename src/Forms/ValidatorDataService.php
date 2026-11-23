@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Forms;
 
 use App\Repository\FormRepository;
+use App\Repository\FormFieldsTrait;
 use App\Repository\SubmissionRepository;
 
 /**
@@ -17,6 +18,7 @@ use App\Repository\SubmissionRepository;
  */
 final readonly class ValidatorDataService
 {
+    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     public function __construct(
         private SubmissionRepository $submissionRepository,
         private FormRepository $formRepository,
@@ -97,22 +99,7 @@ final readonly class ValidatorDataService
      * Délègue à FieldService::getValidatorFields().
      */
     /**
-     * @return array<int, array{
-     *   id: string,
-     *   form_id: string,
-     *   label: string,
-     *   field_type: string,
-     *   field_name: string,
-     *   options: string|null,
-     *   hint: string,
-     *   required: int,
-     *   ordre: int,
-     *   card_group: string,
-     *   filled_by: string,
-     *   validator_step: string,
-     *   visibility: string,
-     *   condition: string
-     * }>
+     * @return list<FormFieldRow>
      */
     public function getFormValidatorFields(string $formId, ?string $stepId = null): array
     {
@@ -124,22 +111,7 @@ final readonly class ValidatorDataService
      * Délègue à FieldService::getFields().
      */
     /**
-     * @return array<int, array{
-     *   id: string,
-     *   form_id: string,
-     *   label: string,
-     *   field_type: string,
-     *   field_name: string,
-     *   options: string|null,
-     *   hint: string,
-     *   required: int,
-     *   ordre: int,
-     *   card_group: string,
-     *   filled_by: string,
-     *   validator_step: string,
-     *   visibility: string,
-     *   condition: string
-     * }>
+     * @return list<FormFieldRow>
      */
     public function getFormFields(string $formId, ?string $filledBy = null): array
     {

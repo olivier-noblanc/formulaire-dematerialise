@@ -1,5 +1,25 @@
 # Changelog — CircuitDémat
 
+## [10.42.42] — 2026-11-23
+_Résumé : contrat strict et migration v41 pour `form_fields.required`._
+
+### 🐛 Fixes
+- `FieldService`, `createField()` et `updateField()` acceptent uniquement `0`, `1`, `'0'` et `'1'` ; les valeurs NULL, vides et legacy sont rejetées explicitement.
+- Migration v41 vérifie les anomalies avant tout DDL puis impose `NOT NULL DEFAULT 0 CHECK (required IN (0, 1))`, avec rollback et idempotence.
+
+### 🧪 Tests
+- Tests ciblés FieldService et MigrationV41 ajoutés pour les rejets, le préflight destructif et l’idempotence.
+
+## [10.42.41] — 2026-11-23
+_Résumé : normalisation centralisée de `form_fields.required` dans `FieldService`._
+
+### 🐛 Fixes
+- `FieldService` expose désormais `required` comme entier strict `0` ou `1` : null/vide/zéro donnent `0`, toute valeur non nulle legacy donne `1`.
+- Preview, renderer et validation serveur consomment le même contrat ; `FormFieldRow` est réutilisé dans les PHPDoc.
+
+### 🧪 Tests
+- Tests ciblés `FieldServiceTest`, `FormRendererTest` et `FormValidationHandlerTest` ; syntaxe PHP vérifiée sur les contrôleurs/renderers modifiés.
+
 ## [10.42.40] — 2026-11-23
 _Résumé : les champs obligatoires dont la valeur provient de PDO sous forme de chaîne (`'1'`) affichent désormais leur étoile rouge et reçoivent bien l’attribut HTML `required`._
 

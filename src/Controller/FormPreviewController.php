@@ -12,6 +12,12 @@ use App\Enum\FilledBy;
  */
 final class FormPreviewController extends BaseController
 {
+    /** @param array{required: int} $field */
+    private static function isRequired(array $field): bool
+    {
+        return $field['required'] === 1;
+    }
+
     public function handle(): void
     {
         App::auth()->requireAdminEffective();
@@ -77,11 +83,12 @@ final class FormPreviewController extends BaseController
       <?php foreach ($fields as $previewField):
           $fieldName = \App\Core\App::html()->escape($previewField['field_name']);
           $fieldLabel = \App\Core\App::html()->escape($previewField['label']);
-          $required = ($previewField['required'] !== 0) ? 'required' : '';
+           $isRequired = self::isRequired($previewField);
+           $required = $isRequired ? 'required' : '';
           $placeholder = ($previewField['hint'] ?? '') === '' ? '' : \App\Core\App::html()->escape($previewField['hint']);
           ?>
       <div class="field">
-        <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= ($previewField['required'] !== 0) ? '<span class="u-c-danger">*</span>' : '' ?></label>
+         <label for="preview_<?= $fieldName ?>"><?= $fieldLabel ?> <?= $isRequired ? '<span class="u-c-danger">*</span>' : '' ?></label>
         <?php if ($previewField['field_type'] === FieldType::Textarea->value): ?>
           <textarea id="preview_<?= $fieldName ?>" name="<?= $fieldName ?>" rows="3" <?= $required ?> placeholder="<?= $placeholder ?>"></textarea>
         <?php elseif ($previewField['field_type'] === FieldType::Select->value && isset($previewField['options']) && $previewField['options'] !== [] && $previewField['options'] !== ''): ?>

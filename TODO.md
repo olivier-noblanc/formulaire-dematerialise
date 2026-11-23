@@ -30,6 +30,20 @@
 
 ## ✅ Terminé (historique)
 
+### v10.42.42 — Contrat strict `required` et migration v41 (2026-11-23)
+| Tâche | Détail |
+|-------|--------|
+| Contrat applicatif | Seuls int/chaînes `0` et `1` sont acceptés ; NULL, vide et valeurs legacy lèvent une exception |
+| Schéma v41 | Préflight sans DDL, reconstruction explicite, `NOT NULL DEFAULT 0 CHECK`, rollback et idempotence |
+| Tests | FieldService et MigrationV41 ciblés ; aucune suite complète exécutée |
+
+### v10.42.41 — Normalisation centralisée des champs obligatoires (2026-11-23)
+| Tâche | Détail |
+|-------|--------|
+| Frontière FieldService | `getFields()` et `getValidatorFields()` normalisent `required` en `0/1`, y compris les valeurs legacy non nulles |
+| Consommateurs | Preview, renderer, validation serveur et contrôleur public utilisent le contrat `FormFieldRow` partagé |
+| Tests ciblés | `FieldServiceTest`, `FormRendererTest`, `FormValidationHandlerTest` ; pas de suite complète exécutée |
+
 ### v10.42.40 — Étoile des champs obligatoires issue de PDO (2026-11-23)
 | Tâche | Détail |
 |-------|--------|
