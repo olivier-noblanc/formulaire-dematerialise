@@ -18,6 +18,13 @@
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.43 — Durcissement flags/status (2026-11-23)
+| Tâche | Détail |
+|-------|--------|
+| Contrat import | `forms.actif` et `steps[].actif` acceptent uniquement int/string `0/1`; booléen, NULL et autres valeurs bloqués |
+| Schéma | Migrations v42/v43 ajoutées pour `actif` et `submissions.status`, avec préflight, contraintes et rollback |
+| Validation | Tests ciblés migration, import et preview OK; PHPStan, Rector, GrumPHP et gate OK |
+
 ---
 
 ## 📏 Règles de taille

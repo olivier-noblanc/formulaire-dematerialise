@@ -89,6 +89,9 @@ final class FormRepository extends BaseRepository
      */
     public function create(array $data): string
     {
+        if (array_key_exists('actif', $data) && (!is_int($data['actif']) || !in_array($data['actif'], [0, 1], true))) {
+            throw new \InvalidArgumentException('forms.actif must be 0 or 1');
+        }
         $id = \generate_uuid();
         $this->execute(
             "INSERT INTO forms (id, label, slug, description, actif, created_at, deadline_field, relance_delai_h, relance_max) VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?, ?)",
@@ -102,11 +105,14 @@ final class FormRepository extends BaseRepository
      */
     public function update(string $id, array $data): bool
     {
+        if (array_key_exists('actif', $data) && (!is_int($data['actif']) || !in_array($data['actif'], [0, 1], true))) {
+            throw new \InvalidArgumentException('forms.actif must be 0 or 1');
+        }
         $allowed = ['label', 'slug', 'description', 'actif', 'deadline_field', 'relance_delai_h', 'relance_max'];
         $fields = [];
         $params = [];
         foreach ($data as $key => $value) {
-            if (!in_array($key, $allowed, true)) {
+            if (!array_key_exists($key, array_flip($allowed))) {
                 continue;
             }
             $fields[] = "`$key` = ?";

@@ -20,8 +20,8 @@ final class FormPreviewControllerTest extends TestCase
     public function testPreviewRequiredMarkerUsesNormalizedContract(mixed $required, bool $expected): void
     {
         $method = new \ReflectionMethod(FormPreviewController::class, 'isRequired');
-        $method->setAccessible(true);
-        self::assertSame($expected, $method->invoke(null, ['required' => $required]));
+        $controller = new \ReflectionClass(FormPreviewController::class)->newInstanceWithoutConstructor();
+        self::assertSame($expected, $method->invoke($controller, ['required' => $required]));
     }
 
     /** @return iterable<string, array{mixed, bool}> */

@@ -40,8 +40,8 @@ final class FormJsonValidator
             if (isset($data['form']['description']) && !is_string($data['form']['description'])) {
                 $errors[] = 'form.description doit être une chaîne de caractères.';
             }
-            if (isset($data['form']['actif']) && !is_bool($data['form']['actif']) && !is_numeric($data['form']['actif'])) {
-                $warnings[] = 'form.actif devrait être true/false ou 1/0. Trouvé : ' . gettype($data['form']['actif']);
+            if (array_key_exists('actif', $data['form']) && !self::isStrictFlag($data['form']['actif'])) {
+                $errors[] = 'form.actif doit être 0, 1, "0" ou "1". Les booléens, null et autres valeurs sont refusés.';
             }
         }
 
@@ -116,9 +116,21 @@ final class FormJsonValidator
                     $warnings[] = "$prefix : field_type = \"{$f['field_type']}\" mais \"options\" est renseigné. Seul le type \"select\" utilise les options.";
                 }
 
-                // required
-                if (isset($f['required']) && !is_bool($f['required']) && !is_numeric($f['required'])) {
-                    $warnings[] = "$prefix.required devrait être true/false ou 1/0. Trouvé : " . json_encode($f['required']);
+                // required — contrat de schéma : booléen strict ou 0/1.
+                // Toute autre valeur numérique (ex. un numéro d'ordre écrit par
+                // erreur ou par une IA) est acceptée mais avertie : elle sera
+                // normalisée à 1 (obligatoire) à l'import, jamais stockée telle
+                // quelle dans form_fields.required.
+                if (isset($f['required'])) {
+                    $req_raw = $f['required'];
+                    $req_ok = is_bool($req_raw)
+                        || (is_int($req_raw) && ($req_raw === 0 || $req_raw === 1));
+                    if (!$req_ok && is_numeric($req_raw)) {
+                        $req_ok = ((int) $req_raw === 0 || (int) $req_raw === 1);
+                    }
+                    if (!$req_ok) {
+                        $warnings[] = "$prefix.required doit être un booléen (true/false) ou 0/1. Trouvé : " . json_encode($req_raw) . '. Toute valeur non nulle sera normalisée à 1 (champ obligatoire) à l\'import.';
+                    }
                 }
 
                 // ordre
@@ -230,8 +242,8 @@ final class FormJsonValidator
                 }
 
                 // actif
-                if (isset($s['actif']) && !is_bool($s['actif']) && !is_numeric($s['actif'])) {
-                    $warnings[] = "$prefix.actif devrait être true/false ou 1/0.";
+                if (array_key_exists('actif', $s) && !self::isStrictFlag($s['actif'])) {
+                    $errors[] = "$prefix.actif doit être 0, 1, \"0\" ou \"1\". Les booléens, null et autres valeurs sont refusés.";
                 }
 
                 // v19 — Condition d'exécution (branches conditionnelles)
@@ -315,6 +327,12 @@ final class FormJsonValidator
             'errors'   => $errors,
             'warnings' => $warnings,
         ];
+    }
+
+    private static function isStrictFlag(mixed $value): bool
+    {
+        return (is_int($value) && ($value === 0 || $value === 1))
+            || (is_string($value) && ($value === '0' || $value === '1'));
     }
 
     /**

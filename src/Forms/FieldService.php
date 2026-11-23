@@ -16,10 +16,11 @@ use App\Repository\SubmissionRepository;
  *
  * Tout accès DB passe par les repositories injectés ($formRepository,
  * $submissionRepository) ou résolus via App::getInstance().
+ *
+ * @phpstan-import-type FormFieldRow from FormFieldsTrait
  */
 final readonly class FieldService implements FieldInterface
 {
-    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     public FormRepository $formRepository;
     public SubmissionRepository $submissionRepository;
 
@@ -58,13 +59,18 @@ final readonly class FieldService implements FieldInterface
         return $this->normalizeRows($this->formRepository->getValidatorFields($formId, $stepId));
     }
 
-    /** @param list<FormFieldRow> $rows @return list<FormFieldRow> */
+    /**
+     * @param array<int, FormFieldRow> $rows
+     * @return list<FormFieldRow>
+     */
     private function normalizeRows(array $rows): array
     {
-        return array_map(static function (array $row): array {
+        /** @var list<FormFieldRow> $normalized */
+        $normalized = array_values(array_map(static function (array $row): array {
             $row['required'] = self::normalizeRequired($row['required'] ?? null);
             return $row;
-        }, $rows);
+        }, $rows));
+        return $normalized;
     }
 
     /** @throws \InvalidArgumentException */

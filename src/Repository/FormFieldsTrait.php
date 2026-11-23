@@ -128,7 +128,7 @@ trait FormFieldsTrait
     /** @throws \InvalidArgumentException */
     private function assertValidRequired(mixed $required): void
     {
-        if ($required !== 0 && $required !== '0' && $required !== 1 && $required !== '1') {
+        if (!in_array($required, [0, '0', 1, '1'], true)) {
             throw new \InvalidArgumentException('form_fields.required must be exactly 0, 1, "0" or "1"');
         }
     }

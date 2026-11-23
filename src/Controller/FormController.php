@@ -12,10 +12,11 @@ use App\Render\FormRenderer;
  * Contrôleur du formulaire de demande (form.php?f=<slug>).
  *
  * Routing, auth checks, délégation — la logique métier est dans les handlers.
+ *
+ * @phpstan-import-type FormFieldRow from FormFieldsTrait
  */
 final class FormController extends BaseController
 {
-    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     /**
      * Point d'entrée du contrôleur.
      */

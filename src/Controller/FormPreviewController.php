@@ -13,7 +13,7 @@ use App\Enum\FilledBy;
 final class FormPreviewController extends BaseController
 {
     /** @param array{required: int} $field */
-    private static function isRequired(array $field): bool
+    private function isRequired(array $field): bool
     {
         return $field['required'] === 1;
     }
@@ -83,7 +83,7 @@ final class FormPreviewController extends BaseController
       <?php foreach ($fields as $previewField):
           $fieldName = \App\Core\App::html()->escape($previewField['field_name']);
           $fieldLabel = \App\Core\App::html()->escape($previewField['label']);
-           $isRequired = self::isRequired($previewField);
+           $isRequired = $this->isRequired($previewField);
            $required = $isRequired ? 'required' : '';
           $placeholder = ($previewField['hint'] ?? '') === '' ? '' : \App\Core\App::html()->escape($previewField['hint']);
           ?>

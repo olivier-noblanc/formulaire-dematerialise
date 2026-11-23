@@ -165,6 +165,9 @@ trait FormStepsTrait
      */
     public function createStep(array $data): string
     {
+        if (array_key_exists('actif', $data) && (!is_int($data['actif']) || !in_array($data['actif'], [0, 1], true))) {
+            throw new \InvalidArgumentException('steps.actif must be 0 or 1');
+        }
         $id = \generate_uuid();
         $this->execute(
             'INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)',
@@ -178,11 +181,14 @@ trait FormStepsTrait
      */
     public function updateStep(string $stepId, array $data): bool
     {
+        if (array_key_exists('actif', $data) && (!is_int($data['actif']) || !in_array($data['actif'], [0, 1], true))) {
+            throw new \InvalidArgumentException('steps.actif must be 0 or 1');
+        }
         $allowed = ['label', 'ordre', 'actif', 'condition'];
         $fields = [];
         $params = [];
         foreach ($data as $key => $value) {
-            if (in_array($key, $allowed, true)) {
+            if (array_key_exists($key, array_flip($allowed))) {
                 $fields[] = "`$key` = ?";
                 $params[] = $value;
             }

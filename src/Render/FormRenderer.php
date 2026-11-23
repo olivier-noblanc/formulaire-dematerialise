@@ -19,9 +19,9 @@ final class FormRenderer
     /**
      * Renders a dynamic field as HTML with ARIA error support.
      *
-     * @param FormFieldRow $field Field definition
-     * @param mixed  $posted_val   Posted value (or null)
-     * @param array<string, string>  $field_errors Validation errors by field_name
+     * @param array{id: string, form_id: string, label: string, field_type: string, field_name: string, options: string|null, hint: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string, condition: string} $field Field definition
+     * @param mixed $posted_val Posted value (or null)
+     * @param array<string, string> $field_errors Validation errors by field_name
      * @param string $datalist_id  LDAP autocompletion datalist ID
      * @param bool   $disabled     If true, field is disabled (preview mode)
      * @return string HTML of the field

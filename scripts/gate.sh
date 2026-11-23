@@ -46,7 +46,11 @@ ok()    { printf "${C_GREEN}[OK]${C_RESET} %s\n" "$*"; }
 
 # ─── Récapitulatif (tableau) ─────────────────────────────────────────────────
 # Stocke les résultats : "ÉTAPE|DURÉE|STATUT"
-declare -a RESULTS=()
+# Separate declaration and initialization for compatibility with older
+# Git-for-Windows/MSYS Bash versions (``declare -a name=()`` is rejected by
+# some shipped versions even though indexed arrays themselves are supported).
+declare -a RESULTS
+RESULTS=()
 add_result() {
     # $1 = étape, $2 = durée (ex: "12.3s"), $3 = statut ("OK"|"ÉCHEC"|"SKIP")
     RESULTS+=("$1|$2|$3")

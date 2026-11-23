@@ -57,7 +57,7 @@ final class FormJsonValidatorTest extends TestCase
                 [
                     'label' => 'Étape 1',
                     'ordre' => 1,
-                    'actif' => true,
+                    'actif' => 1,
                     'recipients' => ['manager@exemple.invalid'],
                 ],
             ],

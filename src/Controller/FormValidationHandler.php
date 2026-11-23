@@ -14,10 +14,11 @@ use App\Repository\FormFieldsTrait;
  * Extrait de FormController pour réduire la taille du contrôleur.
  * Méthodes statiques pures — utilisent les superglobales ($_POST, $_FILES)
  * directement comme le faisait le code historique.
+ *
+ * @phpstan-import-type FormFieldRow from FormFieldsTrait
  */
 final class FormValidationHandler
 {
-    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     /**
      * Valide les champs obligatoires (sauf File) et le format email.
      *

@@ -8,7 +8,10 @@
 set -euo pipefail
 
 # Résolution du répertoire projet (le script est dans scripts/)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Use $0 rather than the Bash-only BASH_SOURCE array: this wrapper is invoked
+# by the hooks through Git-for-Windows' Bash, whose compatibility mode can
+# reject the array expansion with "bad substitution".
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_DIR"
 

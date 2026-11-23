@@ -15,10 +15,11 @@ use App\Repository\SubmissionRepository;
  * Conserve uniquement la logique spécifique aux validateurs :
  * getSubmissionValidatorData (filtrage par step) et
  * getValidatorStatusBatch (batch avec pré-résolution form_id).
+ *
+ * @phpstan-import-type FormFieldRow from FormFieldsTrait
  */
 final readonly class ValidatorDataService
 {
-    /** @phpstan-import-type FormFieldRow from FormFieldsTrait */
     public function __construct(
         private SubmissionRepository $submissionRepository,
         private FormRepository $formRepository,
@@ -103,7 +104,7 @@ final readonly class ValidatorDataService
      */
     public function getFormValidatorFields(string $formId, ?string $stepId = null): array
     {
-        return $this->fieldService->getValidatorFields($formId, $stepId);
+        return array_values($this->fieldService->getValidatorFields($formId, $stepId));
     }
 
     /**
@@ -115,7 +116,7 @@ final readonly class ValidatorDataService
      */
     public function getFormFields(string $formId, ?string $filledBy = null): array
     {
-        return $this->fieldService->getFields($formId, $filledBy);
+        return array_values($this->fieldService->getFields($formId, $filledBy));
     }
 
     /**
