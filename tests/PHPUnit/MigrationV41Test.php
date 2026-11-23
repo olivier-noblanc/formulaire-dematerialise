@@ -31,7 +31,7 @@ final class MigrationV41Test extends TestCase
         require_once dirname(__DIR__, 2) . '/classes/migrations/v41.php';
         $pdo = $this->openBase();
         self::assertSame(41, apply_migration_v41($pdo, 40));
-        $required = array_values(array_filter($pdo->query('PRAGMA table_info(form_fields)')->fetchAll(PDO::FETCH_ASSOC), static fn(array $row): bool => $row['name'] === 'required'))[0];
+        $required = array_first(array_filter($pdo->query('PRAGMA table_info(form_fields)')->fetchAll(PDO::FETCH_ASSOC), static fn(array $row): bool => $row['name'] === 'required'));
         self::assertSame(1, (int) $required['notnull']);
         self::assertStringContainsString('CHECK (required IN (0, 1))', (string) $pdo->query("SELECT sql FROM sqlite_master WHERE name = 'form_fields'")->fetchColumn());
         $this->expectException(\PDOException::class);
@@ -44,7 +44,15 @@ final class MigrationV41Test extends TestCase
         $pdo = $this->openBase();
         $pdo->exec("INSERT INTO form_fields (id, form_id, label, field_name, required) VALUES ('bad','form','F','bad',21)");
         try { apply_migration_v41($pdo, 40); self::fail('migration should reject invalid data'); }
-        catch (\RuntimeException $e) { self::assertStringContainsString('v41 blocked', $e->getMessage()); }
+        catch (\RuntimeException $e) {
+            self::assertStringContainsString('v41 blocked', $e->getMessage());
+            self::assertStringContainsString("id='bad'", $e->getMessage());
+            self::assertStringContainsString('required=21', $e->getMessage());
+            self::assertStringContainsString("typeof(required)='integer'", $e->getMessage());
+            self::assertStringContainsString("field_name='bad'", $e->getMessage());
+            self::assertStringContainsString("form_id='form'", $e->getMessage());
+            self::assertStringContainsString("label='F'", $e->getMessage());
+        }
         self::assertSame(2, (int) $pdo->query('SELECT COUNT(*) FROM form_fields')->fetchColumn());
         self::assertSame(0, (int) $pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE name = 'form_fields_new'")->fetchColumn());
     }

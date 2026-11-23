@@ -19,7 +19,8 @@ function apply_migration_v41(PDO $pdo, int $current_version): int
     }
 
     // This must remain before every DROP/ALTER/RENAME/UPDATE.
-    $preflight = $pdo->query("SELECT id, typeof(required) AS required_type, required
+    $preflight = $pdo->query("SELECT id, required, typeof(required) AS required_type,
+            field_name, form_id, label
         FROM form_fields
         WHERE required IS NULL OR required NOT IN (0, 1)
         ORDER BY id LIMIT 10");
@@ -29,7 +30,19 @@ function apply_migration_v41(PDO $pdo, int $current_version): int
     $invalidRows = $preflight->fetchAll(PDO::FETCH_ASSOC);
     $preflight = null;
     if ($invalidRows !== []) {
-        $sample = array_map(static fn(array $row): string => (string) $row['id'] . ':' . (string) $row['required_type'], $invalidRows);
+        $sample = array_map(static function (array $row): string {
+            $required = $row['required'] === null ? 'NULL' : var_export($row['required'], true);
+            $label = array_key_exists('label', $row) && $row['label'] !== null
+                ? ', label=' . var_export($row['label'], true)
+                : '';
+
+            return 'id=' . var_export($row['id'], true)
+                . ', required=' . $required
+                . ', typeof(required)=' . var_export($row['required_type'], true)
+                . ', field_name=' . var_export($row['field_name'], true)
+                . ', form_id=' . var_export($row['form_id'], true)
+                . $label;
+        }, $invalidRows);
         throw new \RuntimeException('v41 blocked: invalid form_fields.required values (' . implode(', ', $sample) . ')');
     }
 
