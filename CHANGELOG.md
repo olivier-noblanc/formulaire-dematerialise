@@ -1,5 +1,28 @@
 # Changelog — CircuitDémat
 
+## [10.42.45] — 2026-11-24
+_Résumé : squash des migrations v1-v41 et baseline complète v42._
+
+### 🔧 Refactor
+- La création initiale construit désormais directement le schéma v42 complet, ses contraintes, index, triggers et seeds, puis inscrit la baseline 42 atomiquement.
+- Les migrations historiques v1-v41 sont retirées du chemin de production ; v43 reste appliquée séparément et autorise plusieurs soumissions `en_cours` identiques.
+- Aucune base locale n'a été modifiée ou migrée.
+
+### 🧪 Tests
+- Validation locale limitée à la syntaxe PHP ; la validation complète de la baseline vierge et de l'idempotence est laissée à GitHub Actions.
+
+## [10.42.44] — 2026-11-24
+_Résumé : lot urgent de migrations fail-closed et atomiques._
+
+### 🐛 Fixes
+- Les migrations v30, v31, v33, v37, v38 et v39 propagent désormais les échecs au lieu de les masquer, rollbackent leurs opérations et ne publient leur version qu'après succès.
+- L'orchestrateur vérifie l'atteinte de la version cible pour v30, v31 et v33 comme pour les migrations récentes ; v40 conserve sa transaction atomique et propage les erreurs.
+- La migration v38 marque `schema_version` dans la même transaction que la reconstruction ; v43 reste inchangée et ne recrée pas d'index global.
+
+### 🧪 Tests
+- Syntaxe PHP vérifiée sur les migrations et l'orchestrateur.
+- PHPUnit ciblé migrations/orchestration : 15 tests / 68 assertions, 0 échec.
+
 ## [10.42.43] — 2026-11-23
 _Résumé : durcissement des drapeaux `actif` et du statut des soumissions._
 

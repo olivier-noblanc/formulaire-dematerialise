@@ -18,6 +18,23 @@
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.45 — Baseline migrations v42 (2026-11-24)
+| Tâche | Détail |
+|-------|--------|
+| Squash | Migrations v1-v41 supprimées ; `schema_initial.php` crée le schéma complet et marque v42 après seeds/contrôles |
+| Suite | v43 est conservée ; v44 sera la prochaine migration versionnée |
+| Soumissions | Aucun index unique global `(form_id, submitted_by)` ; plusieurs `en_cours` restent possibles |
+| Bases locales | Aucune base `workflow.db` ou `db/workflow.db` modifiée |
+| Validation | CI GitHub Actions à valider ; pas de gate ni suite complète locale |
+
+### v10.42.44 — Lot urgent migrations fail-closed (2026-11-24)
+| Tâche | Détail |
+|-------|--------|
+| Atomicité | v30/v31/v33/v37/v38/v39 rollbackent sur échec ; v40 propage l'échec après rollback ; `schema_version` est publié après validation |
+| Orchestration | v30/v31/v33 utilisent `_dbm_apply_required()` comme les migrations v36+ |
+| Préservation | v43 et son absence d'index unique global restent inchangées |
+| Tests | 15 tests / 68 assertions ciblés, 0 échec ; aucun gate ni suite complète locale |
+
 ### v10.42.43 — Durcissement flags/status (2026-11-23)
 | Tâche | Détail |
 |-------|--------|

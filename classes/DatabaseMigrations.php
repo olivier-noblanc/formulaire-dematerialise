@@ -6,25 +6,17 @@ declare(strict_types=1);
  *
  * Ce fichier orchestre les migrations SQLite. Toutes les migrations
  * sont désormais dans classes/migrations/ :
- *   - schema_initial.php    : création initiale des tables + seeding admin
- *   - seed_default_forms.php: seeding des 8 formulaires par défaut
- *   - v10.php à v22.php      : une migration par fichier
- *   - post_migration.php     : seeds différés post-v14
+ *   - schema_initial.php    : création initiale complète v42 + seeds
+ *   - v43.php               : statut submissions NOT NULL
  *
- * Note : les migrations v1 à v9 ont été supprimées (plus aucune base
- * antérieure à v10 en production). Le schéma initial crée directement
- * les tables dans leur état post-v9 (PK TEXT/UUID).
+ * Les versions v1 à v41 sont squashées dans la baseline 42.
  *
  * @package Migrations
  */
 
 // ── Chargement des modules de migration ──
 require_once __DIR__ . '/migrations/schema_initial.php';
-require_once __DIR__ . '/migrations/seed_default_forms.php';
-for ($v = 10; $v <= 43; $v++) {
-    require_once __DIR__ . '/migrations/v' . sprintf('%02d', $v) . '.php';
-}
-require_once __DIR__ . '/migrations/post_migration.php';
+require_once __DIR__ . '/migrations/v43.php';
 
 // ── Helper query (utilisé par toutes les migrations) ──
 
@@ -67,57 +59,11 @@ function _dbm_apply_required(PDO $pdo, int $current_version, callable $migration
 /**
  * Applique toutes les migrations SQLite dans l'ordre.
  *
- * Étapes :
- *   1. apply_schema_initial() — création des tables + seeding admin
- *   2. apply_migration_v10() à apply_migration_v22() — migrations versionnées
- *   3. apply_post_migration_fixes() — seeds différés
+ * Étapes : baseline v42 puis migration v43.
  *
  * @param PDO $pdo Connexion PDO
  */
 function db_migrate(PDO $pdo): void {
-    // ── 1. Création initiale des tables ──
-    $seed_needed = false;
-    $current_version = apply_schema_initial($pdo, $seed_needed);
-
-    // ── 2. Migrations versionnées v10 à v24 ──
-    $current_version = apply_migration_v10($pdo, $current_version);
-    $current_version = apply_migration_v11($pdo, $current_version);
-    $current_version = apply_migration_v12($pdo, $current_version);
-    $current_version = apply_migration_v13($pdo, $current_version);
-    $current_version = apply_migration_v14($pdo, $current_version);
-    $current_version = apply_migration_v15($pdo, $current_version);
-    $current_version = apply_migration_v16($pdo, $current_version);
-    $current_version = apply_migration_v17($pdo, $current_version);
-    $current_version = apply_migration_v18($pdo, $current_version);
-    $current_version = apply_migration_v19($pdo, $current_version);
-    $current_version = apply_migration_v20($pdo, $current_version);
-    $current_version = apply_migration_v21($pdo, $current_version);
-    $current_version = apply_migration_v22($pdo, $current_version);
-    $current_version = apply_migration_v23($pdo, $current_version);
-    $current_version = apply_migration_v24($pdo, $current_version);
-    $current_version = apply_migration_v25($pdo, $current_version);
-    $current_version = apply_migration_v26($pdo, $current_version);
-    $current_version = apply_migration_v27($pdo, $current_version);
-    $current_version = apply_migration_v28($pdo, $current_version);
-    $current_version = apply_migration_v29($pdo, $current_version);
-    $current_version = apply_migration_v30($pdo, $current_version);
-    $current_version = apply_migration_v31($pdo, $current_version);
-    $current_version = apply_migration_v32($pdo, $current_version);
-    $current_version = apply_migration_v33($pdo, $current_version);
-    $current_version = apply_migration_v34($pdo, $current_version);
-    $current_version = apply_migration_v35($pdo, $current_version);
-    // v36+ must publish their returned version. In particular, v36-v40 may
-    // return the input version after a handled PDO failure; fail closed here
-    // so a later migration never runs on a partially migrated schema.
-    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v36', 36);
-    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v37', 37);
-    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v38', 38);
-    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v39', 39);
-    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v40', 40);
-    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v41', 41);
-    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v42', 42);
+    $current_version = apply_schema_initial($pdo);
     $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v43', 43);
-
-    // ── 3. Post-migration fixes (seeds différés, etc.) ──
-    apply_post_migration_fixes($pdo, $seed_needed);
 }
