@@ -51,8 +51,18 @@ final class AdminFormsController extends BaseController
             $result = AdminFormsHandlers::dispatch($action, (string) $formId);
             if ($result !== null) {
                 if (isset($result['json_output']) && isset($result['filename'])) {
+                    $download_name = (string) $result['filename'];
+                    // Garantit l'extension .json même si le handler en amont
+                    // n'en fournissait pas (base vide, slug exotique…).
+                    if (!str_ends_with(strtolower($download_name), '.json')) {
+                        $download_name .= '.json';
+                    }
+                    // RFC 6266/5987 : "filename" ASCII (compatibilité large) +
+                    // "filename*" UTF-8 (navigateurs modernes). L'extension est
+                    // ainsi préservée côté client quel que soit le paramètre retenu.
+                    $ascii_name = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $download_name) ?? $download_name;
                     header('Content-Type: application/json; charset=utf-8');
-                    header('Content-Disposition: attachment; filename="' . $result['filename'] . '"');
+                    header("Content-Disposition: attachment; filename=\"{$ascii_name}\"; filename*=UTF-8''" . rawurlencode($download_name));
                     echo $result['json_output'];
                     exit;
                 }

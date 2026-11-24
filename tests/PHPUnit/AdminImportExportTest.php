@@ -136,6 +136,123 @@ final class AdminImportExportTest extends TestCase
         }
     }
 
+    /**
+     * Le nom de fichier de l'export doit TOUJOURS porter l'extension .json
+     * (Content-Disposition exploitable par le navigateur).
+     */
+    public function testExportFilenameAlwaysEndsWithJsonExtension(): void
+    {
+        $sourceId = $this->createSourceForm();
+        $_POST['form_id'] = $sourceId;
+        try {
+            $result = AdminImportExportHandler::handleExportForm();
+            self::assertArrayNotHasKey('error', $result, $result['error'] ?? '');
+            self::assertStringEndsWith('.json', (string) $result['filename']);
+        } finally {
+            $this->deleteForm($sourceId);
+        }
+    }
+
+    /**
+     * Le nom de fichier ne doit JAMAIS être un « pointfile » sans nom (ex.
+     * ".json") : un slug vide produisait ".json", qu'Edge/Windows interprète
+     * comme un fichier sans nom ni extension (« téléchargement sans
+     * extension »). On garantit ici une base de repli non vide.
+     */
+    public function testExportFilenameFallsBackWhenSlugEmpty(): void
+    {
+        $id = $this->repo->create([
+            'label' => 'Slug vide ' . uniqid(),
+            'slug' => '',
+        ]);
+        $_POST['form_id'] = $id;
+        try {
+            $result = AdminImportExportHandler::handleExportForm();
+            self::assertArrayNotHasKey('error', $result, $result['error'] ?? '');
+            $filename = (string) $result['filename'];
+            self::assertNotSame('.json', $filename, 'Un slug vide ne doit pas produire un fichier ".json" sans nom');
+            self::assertStringStartsWith('form_export', $filename);
+            self::assertStringEndsWith('.json', $filename);
+        } finally {
+            $this->deleteForm($id);
+        }
+    }
+
+    /**
+     * Contrat de schéma : "required" est exporté sous forme 0/1 (jamais un
+     * numéro d'ordre ou une valeur booléenne libre).
+     */
+    public function testExportNormalizesRequiredToBooleanFlag(): void
+    {
+        $sourceId = $this->createSourceForm();
+        $_POST['form_id'] = $sourceId;
+        try {
+            $result = AdminImportExportHandler::handleExportForm();
+            $json = json_decode((string) $result['json_output'], true);
+            self::assertIsArray($json);
+            foreach ($json['fields'] as $idx => $f) {
+                self::assertContains(
+                    $f['required'],
+                    [0, 1],
+                    "fields[$idx].required doit valoir 0 ou 1, trouvé : " . json_encode($f['required'])
+                );
+            }
+        } finally {
+            $this->deleteForm($sourceId);
+        }
+    }
+
+    /**
+     * Un JSON d'import dont "required" contient un numéro d'ordre (généré par
+     * IA) ne doit PAS corrompre form_fields.required : la valeur est normalisée
+     * à 1 (obligatoire).
+     */
+    public function testImportNormalizesNonBooleanRequiredToFlag(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => 'Test required normalisé ' . uniqid()],
+            'fields' => [
+                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'required' => 21, 'filled_by' => 'demandeur'],
+                ['label' => 'Avis', 'field_type' => 'textarea', 'field_name' => 'avis', 'required' => 0, 'filled_by' => 'validator', 'validator_step' => null],
+            ],
+            'steps' => [
+                ['label' => 'Validation RH', 'ordre' => 1, 'actif' => 1, 'recipients' => ['rh@exemple.invalid']],
+            ],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        try {
+            $byName = [];
+            foreach ($this->repo->getFields($newId) as $f) {
+                $byName[$f['field_name']] = (int) $f['required'];
+            }
+            self::assertSame(1, $byName['nom'], 'required=21 (numéro d\'ordre) doit être normalisé à 1');
+            self::assertSame(0, $byName['avis'], 'required=0 doit rester 0');
+        } finally {
+            $this->deleteForm($newId);
+        }
+    }
+
+    /**
+     * FormJsonValidator avertit (sans bloquer) quand "required" n'est ni
+     * booléen ni 0/1 — l'import reste possible et normalise la valeur.
+     */
+    public function testValidatorWarnsOnNonBooleanRequired(): void
+    {
+        $result = \App\Forms\FormJsonValidator::validate([
+            'schema_version' => '1.0',
+            'form' => ['label' => 'F'],
+            'fields' => [
+                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'required' => 21, 'card_group' => 'G'],
+            ],
+            'steps' => [],
+        ]);
+        self::assertTrue($result['valid'], 'required=21 ne doit pas bloquer l\'import');
+        self::assertStringContainsString('required', implode("\n", $result['warnings']));
+    }
+
     // ── Round-trip : export → import ──────────────────────────
 
     public function testImportRestoresRelanceConfig(): void

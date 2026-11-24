@@ -1,15 +1,19 @@
 <?php
 declare(strict_types=1);
 
+use App\Enum\SubmissionStatus;
+
 /** Strict, non-nullable submissions.status and NULL-safe guards. */
 function apply_migration_v43(PDO $pdo, int $current_version): int
 {
+    $statusValues = array_map(static fn (SubmissionStatus $status): string => $status->value, SubmissionStatus::cases());
+    $statusSql = "'" . implode("', '", $statusValues) . "'";
     if ($current_version >= 43 && $current_version < 900) return $current_version;
     $done = $pdo->query('SELECT COUNT(*) FROM schema_version WHERE version = 43');
     if ($done === false) throw new RuntimeException('v43: version query failed');
     $already = (int) $done->fetchColumn(); $done = null;
     if ($already > 0) return max($current_version, 43);
-    $badQuery = $pdo->query("SELECT id, typeof(status) AS status_type, status FROM submissions WHERE status IS NULL OR status NOT IN ('en_cours','valide','refuse','annule') LIMIT 10");
+    $badQuery = $pdo->query("SELECT id, typeof(status) AS status_type, status FROM submissions WHERE status IS NULL OR status NOT IN ($statusSql) LIMIT 10");
     if ($badQuery === false) throw new RuntimeException('v43: preflight query failed');
     $bad = $badQuery->fetchAll(PDO::FETCH_ASSOC); $badQuery = null;
     if ($bad !== []) throw new RuntimeException('v43 blocked: invalid submissions.status values');
@@ -23,7 +27,7 @@ function apply_migration_v43(PDO $pdo, int $current_version): int
         if ($sqlQuery === false) throw new RuntimeException('v43: schema query failed');
         $sql = (string) $sqlQuery->fetchColumn(); $sqlQuery = null;
         if ($sql === '') throw new RuntimeException('v43: missing submissions table');
-        $strict = preg_replace('/status\s+TEXT\s+DEFAULT\s+\'en_cours\'(?:\s+CHECK\s*\(status\s+IN\s*\([^)]*\)\))?/i', "status TEXT NOT NULL DEFAULT 'en_cours' CHECK (status IN ('en_cours', 'valide', 'refuse', 'annule'))", $sql);
+        $strict = preg_replace('/status\s+TEXT\s+DEFAULT\s+\'en_cours\'(?:\s+CHECK\s*\(status\s+IN\s*\([^)]*\)\))?/i', "status TEXT NOT NULL DEFAULT 'en_cours' CHECK (status IN ($statusSql))", $sql);
         if (!is_string($strict)) throw new RuntimeException('v43: cannot rewrite submissions');
         $strict = preg_replace('/\bsubmissions\b/', 'submissions_new', $strict, 1);
         if (!is_string($strict)) throw new RuntimeException('v43: cannot rename submissions');
@@ -32,11 +36,10 @@ function apply_migration_v43(PDO $pdo, int $current_version): int
         $pdo->exec('INSERT INTO submissions_new SELECT * FROM submissions');
         $pdo->exec('DROP TABLE submissions');
         $pdo->exec('ALTER TABLE submissions_new RENAME TO submissions');
-        $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_active_per_form_user ON submissions(form_id, submitted_by) WHERE status = 'en_cours' AND closed_at IS NULL");
         $pdo->exec('DROP TRIGGER IF EXISTS check_submissions_status_insert');
         $pdo->exec('DROP TRIGGER IF EXISTS check_submissions_status_update');
-        $pdo->exec("CREATE TRIGGER check_submissions_status_insert BEFORE INSERT ON submissions WHEN NEW.status IS NULL OR NEW.status NOT IN ('en_cours','valide','refuse','annule') BEGIN SELECT RAISE(ABORT, 'Invalid submissions.status'); END");
-        $pdo->exec("CREATE TRIGGER check_submissions_status_update BEFORE UPDATE OF status ON submissions WHEN NEW.status IS NULL OR NEW.status NOT IN ('en_cours','valide','refuse','annule') BEGIN SELECT RAISE(ABORT, 'Invalid submissions.status'); END");
+        $pdo->exec("CREATE TRIGGER check_submissions_status_insert BEFORE INSERT ON submissions WHEN NEW.status IS NULL OR NEW.status NOT IN ($statusSql) BEGIN SELECT RAISE(ABORT, 'Invalid submissions.status'); END");
+        $pdo->exec("CREATE TRIGGER check_submissions_status_update BEFORE UPDATE OF status ON submissions WHEN NEW.status IS NULL OR NEW.status NOT IN ($statusSql) BEGIN SELECT RAISE(ABORT, 'Invalid submissions.status'); END");
         $pdo->exec("INSERT INTO schema_version (version, applied_at) VALUES (43, datetime('now'))");
         $pdo->exec('COMMIT');
         return 43;

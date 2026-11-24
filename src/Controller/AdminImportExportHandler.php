@@ -55,7 +55,11 @@ final class AdminImportExportHandler
                 'field_type' => $f['field_type'],
                 'field_name' => $f['field_name'],
                 'options' => ($f['options'] !== null && $f['options'] !== '') ? json_decode($f['options'], true) : null,
-                'required' => (int) $f['required'],
+                // Contrat de schéma stable : "required" est un drapeau 0/1.
+                // On normalise toute valeur legacy/non booléenne (ex. numéro
+                // d'ordre écrit dans cette colonne) en 1 (obligatoire) sans
+                // jamais exporter de valeur hors {0,1}.
+                'required' => (((int) $f['required']) !== 0) ? 1 : 0,
                 'ordre' => (int) $f['ordre'],
                 'card_group' => $f['card_group'] ?? 'Général',
                 'hint' => $f['hint'] ?? '',
@@ -84,7 +88,15 @@ final class AdminImportExportHandler
             ];
         }
 
-        $filename = (preg_replace('/[^a-z0-9_-]/i', '_', $form_data['slug']) ?? '') . '.json';
+        // Nom de fichier : base dérivée du slug (jeu de caractères [a-z0-9_-]).
+        // On garantit (1) une base non vide — un slug absent/exotique produisait
+        // un fichier ".json" sans nom exploitable — et (2) l'extension ".json"
+        // systématiquement présente dans le Content-Disposition.
+        $slug_base = preg_replace('/[^a-z0-9_-]/i', '_', (string) ($form_data['slug'] ?? ''));
+        if ($slug_base === null || $slug_base === '') {
+            $slug_base = 'form_export';
+        }
+        $filename = $slug_base . '.json';
         $jsonOutput = json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return [
             'filename' => $filename,
@@ -184,6 +196,7 @@ final class AdminImportExportHandler
                 'label' => $label,
                 'slug' => $slug,
                 'description' => $desc,
+                'actif' => (int) ($data['form']['actif'] ?? 1),
                 'deadline_field' => $deadline,
                 'relance_delai_h' => (is_numeric($relance_delai) && (int) $relance_delai > 0) ? (int) $relance_delai : null,
                 'relance_max' => (is_numeric($relance_max) && (int) $relance_max >= 0) ? (int) $relance_max : null,
@@ -217,7 +230,11 @@ final class AdminImportExportHandler
                         'field_type' => $f['field_type'] ?? FieldType::Text->value,
                         'field_name' => $field_name,
                         'options' => $options_json,
-                        'required' => (int) ($f['required'] ?? 0),
+                        // Contrat d'import : normaliser "required" en 0/1 quel que
+                        // soit le type d'entrée (bool, "1", 21…). Sans cela, un
+                        // JSON généré par IA qui met un numéro d'ordre dans
+                        // "required" corrompait la colonne form_fields.required.
+                        'required' => (((int) ($f['required'] ?? 0)) !== 0) ? 1 : 0,
                         'ordre' => (int) ($f['ordre'] ?? $ordre),
                         'card_group' => $f['card_group'] ?? 'Général',
                         'hint' => $raw_hint,

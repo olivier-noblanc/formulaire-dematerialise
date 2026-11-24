@@ -22,7 +22,7 @@
 | Tâche | Détail |
 |-------|--------|
 | Contrat import | `forms.actif` et `steps[].actif` acceptent uniquement int/string `0/1`; booléen, NULL et autres valeurs bloqués |
-| Schéma | Migrations v42/v43 ajoutées pour `actif` et `submissions.status`, avec préflight, contraintes et rollback |
+| Schéma | Migrations v42/v43 ajoutées pour `actif` et `submissions.status`, avec préflight, contraintes et rollback ; v43 conserve plusieurs arrivées simultanées par agent |
 | Validation | Tests ciblés migration, import et preview OK; PHPStan, Rector, GrumPHP et gate OK |
 
 ---

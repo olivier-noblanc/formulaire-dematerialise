@@ -6,9 +6,11 @@ _Résumé : durcissement des drapeaux `actif` et du statut des soumissions._
 ### 🐛 Fixes
 - Imports JSON et repositories refusent désormais les drapeaux `actif` hors contrat strict `0/1` (entiers ou chaînes), sans accepter les booléens/NULL.
 - Migrations v42/v43 ajoutent préflight bloquant, `NOT NULL`/`CHECK`, rollback et idempotence pour `actif` et `submissions.status`; les triggers de statut sont NULL-safe.
+- Migration v43 ne recrée plus l'index unique global des soumissions actives par formulaire et agent : plusieurs arrivées simultanées du même agent sont conservées.
 
 ### 🧪 Tests
 - Validation JSON existante adaptée au contrat strict; tests ciblés migration, import et preview exécutés avec succès.
+- Régression migration v43 : deux soumissions `en_cours` du même formulaire et agent sont conservées sans index unique global.
 
 ## [10.42.42] — 2026-11-23
 _Résumé : contrat strict et migration v41 pour `form_fields.required`._
