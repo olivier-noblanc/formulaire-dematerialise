@@ -18,6 +18,12 @@
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.46 — Fallback admin des destinataires (2026-11-24)
+| Tâche | Détail |
+|-------|--------|
+| Isolation tests | `AdminRepositoryTest` restaure `SETTINGS_DEFAULTS['admin_email']` dans ses `finally` ; le setting partagé n'est plus laissé vide avant `ResolveRecipientTest` |
+| Validation | `ResolveRecipientTest` + `AdminRepositoryTest` ciblés : 62/62 verts ; aucune suite complète ni gate locale |
+
 ### v10.42.45 — Baseline migrations v42 (2026-11-24)
 | Tâche | Détail |
 |-------|--------|

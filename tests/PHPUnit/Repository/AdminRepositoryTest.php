@@ -74,7 +74,7 @@ final class AdminRepositoryTest extends TestCase
             self::assertSame('super-admin@test.com', $this->repo->getSuperAdminEmail());
             self::assertTrue($this->repo->isSuperAdmin('super-admin@test.com'));
         } finally {
-            $settings->set('admin_email', '', 'test');
+            $settings->set('admin_email', defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : '', 'test');
         }
     }
 
@@ -90,7 +90,7 @@ final class AdminRepositoryTest extends TestCase
         try {
             self::assertTrue($this->repo->isSuperAdmin('SUPER-ADMIN@TEST.COM'));
         } finally {
-            $settings->set('admin_email', '', 'test');
+            $settings->set('admin_email', defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : '', 'test');
         }
     }
 

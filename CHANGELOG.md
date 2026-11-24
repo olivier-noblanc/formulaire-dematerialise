@@ -1,5 +1,14 @@
 # Changelog — CircuitDémat
 
+## [10.42.46] — 2026-11-24
+_Résumé : restauration du setting admin_email après les tests d'administration._
+
+### 🐛 Fixes
+- `AdminRepositoryTest` restaure désormais la valeur de configuration de `admin_email` au lieu de laisser une valeur vide dans la base partagée ; les tests suivants retrouvent ainsi le fallback administrateur semé par la baseline.
+
+### 🧪 Tests
+- `ResolveRecipientTest` et `AdminRepositoryTest` ciblés : 62 tests / 75 assertions, 0 échec.
+
 ## [10.42.45] — 2026-11-24
 _Résumé : squash des migrations v1-v41 et baseline complète v42._
 
