@@ -38,7 +38,7 @@ final class MigrationV42V43Test extends TestCase
         $pdo = $this->migrate();
         db_migrate($pdo);
 
-        self::assertSame(44, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
+        self::assertSame(45, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
         self::assertSame(1, (int) $pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='forms'")->fetchColumn());
         self::assertSame(1, (int) $pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='mail_log'")->fetchColumn());
         self::assertSame(0, (int) $pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_submissions_active_per_form_user'")->fetchColumn());
