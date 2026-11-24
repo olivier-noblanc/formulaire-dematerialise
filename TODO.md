@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1728** (1723 audit robustesse v10.42.38 + 4 export/import JSON v10.42.39 + 1 régression FormRenderer v10.42.40 — tests ciblés verts, run complet par l’owner) |
-| Assertions | **5795** (audit robustesse v10.42.38 ; avant : 5114) |
+| Tests | **1776** (1749 mesurés par la CI du run 45411264634 + 27 tests ciblés `AlertNotifyWhoTest`/`MigrationV45LegacyActiveIndexTest`, v10.42.47) |
+| Assertions | **5829** (5781 mesurées par la CI du run 45411264634 + 48, v10.42.47) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -17,6 +17,17 @@
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
+
+### v10.42.47 — CI réparée + migration v45 index legacy (2026-11-24)
+| Tâche | Détail |
+|-------|--------|
+| CI (run 45411264634) | Erreur de syntaxe `AdminAlertsController` (2 accolades manquantes) : 10 jobs en échec ; structure rétablie, déduplication conservée |
+| Migration v45 | `DROP INDEX IF EXISTS idx_submissions_active_per_form_user` pour les bases ayant déjà appliqué l'ancienne v43 (index unique global conservé, non rejouée) |
+| Cohérence schéma | Base fraîche vérifiée : `schema_version` = 42,43,44,45 ; 20 tables, 11 index (dont `idx_tokens_active_per_step_email` partiel), 4 triggers, 0 violation FK, aucun index `idx_submissions_active_per_form_user` |
+| Tests notify_who | 5 sentinelles + emails valides/invalides + résolution `custom` + refus `createRule`/`updateRule` |
+| Docs | Commentaires `DatabaseMigrations.php` et `renderTechnique_section.php` réalignés sur v43→v45 |
+| Validation | Ciblée : PHPUnit 61/101, PHPStan level 8 + `tests/` + 3 configs, Rector dry-run, phpcpd — verts ; suite complète et gate laissées à la CI |
+| Reste à faire | `alert_rules.notify_who` n'a **pas** de contrainte `CHECK` SQL (seule la validation PHP la protège) — candidat v46 |
 
 ### v10.42.46 — Fallback admin des destinataires (2026-11-24)
 | Tâche | Détail |

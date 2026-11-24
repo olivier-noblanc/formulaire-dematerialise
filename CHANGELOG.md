@@ -1,5 +1,19 @@
 # Changelog — CircuitDémat
 
+## [10.42.47] — 2026-11-24
+_Résumé : réparation de la CI (erreur de syntaxe) et migration v45 qui supprime l'index unique legacy des soumissions actives._
+
+### 🐛 Fixes
+- `AdminAlertsController` : le refactor de déduplication avait supprimé deux accolades fermantes, produisant une erreur d'analyse (`unexpected token "private"`) qui faisait échouer 10 jobs de la CI (lint, 4 PHPStan, Rector, PHPUnit). La structure du `else` de `update_rule` est rétablie ; la déduplication est conservée.
+- Migration v45 : `DROP INDEX IF EXISTS idx_submissions_active_per_form_user`. Une base ayant déjà appliqué l'ancienne v43 conservait `schema_version = 43` et l'index unique global — la v43 corrigée ne rejouait donc jamais et une deuxième soumission active pour un même `form_id`/`submitted_by` restait refusée. La v45 répare ces bases ; elle est un no-op sur une base fraîche (la baseline v42 ne crée jamais cet index).
+- `DatabaseMigrations.php` : le commentaire d'en-tête listait les migrations jusqu'à v43 alors que v44 était déjà exécutée ; il mentionne désormais v44 et v45. Le commentaire de la page technique (`renderTechnique_section.php`) annonçait « migrations v0→v11 » : corrigé en « baseline v42 + migrations v43→v45 ».
+
+### 🧪 Tests
+- Nouveau `AlertNotifyWhoTest` : les 5 sentinelles (`admin`, `submitter`, `validators`, `admin+submitter`, `admin+validators`), emails valides, 11 valeurs invalides, résolution de la sentinelle `custom` (email absent/invalide/valide) et refus `InvalidArgumentException` de `createRule`/`updateRule` sans écriture résiduelle.
+- Nouveau `MigrationV45LegacyActiveIndexTest` : reproduit une base portant l'index legacy pour prouver le blocage réel, vérifie sa suppression par v45, la réapparition de plusieurs soumissions actives et l'idempotence.
+- `MigrationV42V43Test` : la version cible attendue passe de 44 à 45.
+- Vérifications ciblées locales : PHPUnit (61 tests / 101 assertions, 0 échec), PHPStan level 8 complet, PHPStan `tests/`, configs `sql-placeholder`/`no-inline`/`no-silent-catch`, Rector dry-run complet et phpcpd (`--min-lines=10 --min-tokens=50`) : tous verts.
+
 ## [10.42.46] — 2026-11-24
 _Résumé : restauration du setting admin_email après les tests d'administration._
 
