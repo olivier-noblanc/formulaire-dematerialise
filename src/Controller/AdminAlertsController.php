@@ -94,6 +94,8 @@ final class AdminAlertsController extends BaseController
                             // @silent-ok: fallback sets user-facing error message
                             error_log('alert_rule_update error: ' . $e->getMessage());
                             $errorMsg = 'Une erreur technique est survenue.';
+                        }
+                    }
                 }
             } elseif ($action === 'delete_rule') {
                 $ruleId = trim($_POST['rule_id'] ?? '');
