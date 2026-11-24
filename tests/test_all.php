@@ -278,7 +278,11 @@ test('Soumission d\'un formulaire onboarding', function() use ($pdo, $onboarding
     ]);
     $submission_uuid = generate_uuid();
     $stmt = $pdo->prepare("INSERT INTO submissions (id, form_id, data, submitted_by, status, submitted_at) VALUES (?, ?, ?, ?, 'en_cours', datetime('now'))");
-    $stmt->execute([$submission_uuid, $onboarding_id, $data, 'testeur@exemple.invalid']);
+    // Le sous-processus de rendu s'authentifie comme testeur@e2e.test
+    // (voir HTTP_X_TEST_USER ci-dessous). Utiliser la même identité permet à
+    // submission_view de vérifier l'accès de l'auteur sans dépendre d'un
+    // état de session admin qui n'est pas une source d'autorisation.
+    $stmt->execute([$submission_uuid, $onboarding_id, $data, 'testeur@e2e.test']);
     if ($submission_uuid) {
         global $submission_id;
         $submission_id = $submission_uuid;
