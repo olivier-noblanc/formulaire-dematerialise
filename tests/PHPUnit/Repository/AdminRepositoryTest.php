@@ -68,9 +68,13 @@ final class AdminRepositoryTest extends TestCase
 
     public function testIsSuperAdminReturnsTrueForAdminEmail(): void
     {
-        $adminEmail = $this->repo->getSuperAdminEmail();
-        if ($adminEmail !== '') {
-            self::assertTrue($this->repo->isSuperAdmin($adminEmail));
+        $settings = new SettingsRepository(\App\Core\App::getInstance()->get(Database::class));
+        $settings->set('admin_email', 'super-admin@test.com', 'test');
+        try {
+            self::assertSame('super-admin@test.com', $this->repo->getSuperAdminEmail());
+            self::assertTrue($this->repo->isSuperAdmin('super-admin@test.com'));
+        } finally {
+            $settings->set('admin_email', '', 'test');
         }
     }
 
@@ -81,9 +85,12 @@ final class AdminRepositoryTest extends TestCase
 
     public function testIsSuperAdminIsCaseInsensitive(): void
     {
-        $adminEmail = $this->repo->getSuperAdminEmail();
-        if ($adminEmail !== '') {
-            self::assertTrue($this->repo->isSuperAdmin(strtoupper($adminEmail)));
+        $settings = new SettingsRepository(\App\Core\App::getInstance()->get(Database::class));
+        $settings->set('admin_email', 'super-admin@test.com', 'test');
+        try {
+            self::assertTrue($this->repo->isSuperAdmin('SUPER-ADMIN@TEST.COM'));
+        } finally {
+            $settings->set('admin_email', '', 'test');
         }
     }
 

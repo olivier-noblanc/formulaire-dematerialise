@@ -11,18 +11,20 @@ final class DateTest extends TestCase
     {
         $ts = parse_deadline_date('2026-01-15');
         self::assertIsInt($ts);
-        self::assertSame(2026, (int)date('Y', $ts));
-        self::assertSame(1, (int)date('m', $ts));
-        self::assertSame(15, (int)date('d', $ts));
+        $date = (new \DateTimeImmutable('@' . $ts))->setTimezone(new \DateTimeZone('Europe/Paris'));
+        self::assertSame(2026, (int)$date->format('Y'));
+        self::assertSame(1, (int)$date->format('m'));
+        self::assertSame(15, (int)$date->format('d'));
     }
 
     public function testParseDeadlineDateFrench(): void
     {
         $ts = parse_deadline_date('15/01/2026');
         self::assertIsInt($ts);
-        self::assertSame(2026, (int)date('Y', $ts));
-        self::assertSame(1, (int)date('m', $ts));
-        self::assertSame(15, (int)date('d', $ts));
+        $date = (new \DateTimeImmutable('@' . $ts))->setTimezone(new \DateTimeZone('Europe/Paris'));
+        self::assertSame(2026, (int)$date->format('Y'));
+        self::assertSame(1, (int)$date->format('m'));
+        self::assertSame(15, (int)$date->format('d'));
     }
 
     public function testParseDeadlineDateInvalid(): void

@@ -14,14 +14,24 @@ final class DateHelperTest extends TestCase
     {
         $result = DateHelper::parseDeadlineDate('15/01/2026');
         self::assertIsInt($result);
-        self::assertSame('2026-01-15', date('Y-m-d', $result));
+        self::assertSame(
+            '2026-01-15',
+            (new \DateTimeImmutable('@' . $result))
+                ->setTimezone(new \DateTimeZone('Europe/Paris'))
+                ->format('Y-m-d')
+        );
     }
 
     public function testParseDeadlineDateReturnsTimestampForIsoDate(): void
     {
         $result = DateHelper::parseDeadlineDate('2026-01-15');
         self::assertIsInt($result);
-        self::assertSame('2026-01-15', date('Y-m-d', $result));
+        self::assertSame(
+            '2026-01-15',
+            (new \DateTimeImmutable('@' . $result))
+                ->setTimezone(new \DateTimeZone('Europe/Paris'))
+                ->format('Y-m-d')
+        );
     }
 
     public function testParseDeadlineDateReturnsNullForEmptyString(): void
