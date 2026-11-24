@@ -48,6 +48,23 @@ function _dbm_q(PDO $pdo, string $sql): PDOStatement {
 // ── Migration orchestrator ──
 
 /**
+ * Execute one migration and refuse to continue unless it reaches its target.
+ *
+ * @param callable(PDO, int): int $migration
+ */
+function _dbm_apply_required(PDO $pdo, int $current_version, callable $migration, int $target_version): int
+{
+    $next_version = $migration($pdo, $current_version);
+    // A database may already be beyond this migration; that is a successful
+    // no-op. Only a returned lower version means the migration failed.
+    if ($next_version < $target_version) {
+        throw new RuntimeException("Migration v{$target_version} did not reach version {$target_version}");
+    }
+
+    return $next_version;
+}
+
+/**
  * Applique toutes les migrations SQLite dans l'ordre.
  *
  * Étapes :
@@ -89,14 +106,17 @@ function db_migrate(PDO $pdo): void {
     $current_version = apply_migration_v33($pdo, $current_version);
     $current_version = apply_migration_v34($pdo, $current_version);
     $current_version = apply_migration_v35($pdo, $current_version);
-    apply_migration_v36($pdo, $current_version);
-    apply_migration_v37($pdo, $current_version);
-    apply_migration_v38($pdo, $current_version);
-    apply_migration_v39($pdo, $current_version);
-    apply_migration_v40($pdo, $current_version);
-    apply_migration_v41($pdo, $current_version);
-    apply_migration_v42($pdo, $current_version);
-    apply_migration_v43($pdo, $current_version);
+    // v36+ must publish their returned version. In particular, v36-v40 may
+    // return the input version after a handled PDO failure; fail closed here
+    // so a later migration never runs on a partially migrated schema.
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v36', 36);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v37', 37);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v38', 38);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v39', 39);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v40', 40);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v41', 41);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v42', 42);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v43', 43);
 
     // ── 3. Post-migration fixes (seeds différés, etc.) ──
     apply_post_migration_fixes($pdo, $seed_needed);
