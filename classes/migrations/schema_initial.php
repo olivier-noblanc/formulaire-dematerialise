@@ -64,7 +64,10 @@ function apply_schema_initial(PDO $pdo): int
         $pdo->exec("CREATE TRIGGER IF NOT EXISTS check_tokens_action_insert BEFORE INSERT ON tokens WHEN NEW.action IS NOT NULL AND NEW.action NOT IN ('valider','refuser','annule') BEGIN SELECT RAISE(ABORT,'Invalid tokens.action'); END");
         $pdo->exec("CREATE TRIGGER IF NOT EXISTS check_tokens_action_update BEFORE UPDATE OF action ON tokens WHEN NEW.action IS NOT NULL AND NEW.action NOT IN ('valider','refuser','annule') BEGIN SELECT RAISE(ABORT,'Invalid tokens.action'); END");
         $adminEmail = '';
-        try { $adminEmail = App::auth()->getAdminEmail(); } catch (Throwable) { $adminEmail = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : ''; }
+        try { $adminEmail = App::auth()->getAdminEmail(); } catch (Throwable) {
+            // @silent-ok: initial schema bootstrap may run before AuthService is registered; use configured admin fallback
+            $adminEmail = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : '';
+        }
         if ($adminEmail !== '') $pdo->prepare('INSERT OR IGNORE INTO admins (id,email) VALUES (?,?)')->execute([generate_uuid(), $adminEmail]);
         seed_default_forms($pdo);
         apply_post_migration_fixes($pdo);
