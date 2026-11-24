@@ -97,7 +97,7 @@ function seed_default_forms(PDO $pdo): void {
             ['token_expire_days', '30'],
             ['app_name', 'CircuitDémat'],
             ['app_favicon', ''],
-            ['admin_email', defined('SETTINGS_DEFAULTS') ? (string) SETTINGS_DEFAULTS['admin_email'] : ''],
+            ['admin_email', defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : ''],
             ['ldap_suggest_enabled', '0'],
             ['ldap_suggest_filter', '(|(cn=*{query}*)(mail=*{query}*)(sn=*{query}*)(givenName=*{query}*))'],
         ];
@@ -110,7 +110,7 @@ function seed_default_forms(PDO $pdo): void {
     // Le fallback owner -> admin lit ce setting, qui doit exister même si
     // d'autres settings ont déjà été créés avant l'initialisation complète.
     $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('admin_email', ?)")
-        ->execute([defined('SETTINGS_DEFAULTS') ? (string) SETTINGS_DEFAULTS['admin_email'] : '']);
+        ->execute([defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS['admin_email'] : '']);
 
     // Seed formulaire onboarding s'il n'existe pas
     $onb_count = _dbm_q($pdo, "SELECT COUNT(*) FROM forms WHERE slug = 'onboarding'")->fetchColumn();
