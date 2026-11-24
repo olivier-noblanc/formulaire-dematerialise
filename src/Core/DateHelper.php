@@ -14,19 +14,34 @@ final class DateHelper
 {
     /**
      * Parse a date string (YYYY-MM-DD or DD/MM/YYYY) and return Unix timestamp.
+     *
+     * The date is interpreted as midnight in Europe/Paris.  Do not use
+     * strtotime() here: it accepts calendar overflows (for example
+     * 2026-02-30) and uses the process default timezone.
      */
     public static function parseDeadlineDate(string $dateStr): ?int
     {
         $dateStr = trim($dateStr);
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
-            $ts = strtotime($dateStr);
-            return $ts !== false ? $ts : null;
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dateStr, $m)) {
+            $year = (int) $m[1];
+            $month = (int) $m[2];
+            $day = (int) $m[3];
+        } elseif (preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', $dateStr, $m) === 1) {
+            $day = (int) $m[1];
+            $month = (int) $m[2];
+            $year = (int) $m[3];
+        } else {
+            return null;
         }
-        if (preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', $dateStr, $m)) {
-            $ts = strtotime("{$m[3]}-{$m[2]}-{$m[1]}");
-            return $ts !== false ? $ts : null;
+
+        if (!checkdate($month, $day, $year)) {
+            return null;
         }
-        return null;
+
+        return new \DateTimeImmutable(
+            sprintf('%04d-%02d-%02d 00:00:00', $year, $month, $day),
+            new \DateTimeZone('Europe/Paris')
+        )->getTimestamp();
     }
 
     /**

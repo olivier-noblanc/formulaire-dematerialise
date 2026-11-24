@@ -34,6 +34,31 @@ final class DateHelperTest extends TestCase
         self::assertNull(DateHelper::parseDeadlineDate('not-a-date'));
     }
 
+    public function testParseDeadlineDateRejectsInvalidCalendarDate(): void
+    {
+        self::assertNull(DateHelper::parseDeadlineDate('2026-02-30'));
+        self::assertNull(DateHelper::parseDeadlineDate('30/02/2026'));
+    }
+
+    public function testParseDeadlineDateIsParisMidnightRegardlessOfDefaultTimezone(): void
+    {
+        $previousTimezone = date_default_timezone_get();
+        try {
+            date_default_timezone_set('UTC');
+            $utcDefault = DateHelper::parseDeadlineDate('2026-07-15');
+            date_default_timezone_set('Europe/Paris');
+            $parisDefault = DateHelper::parseDeadlineDate('2026-07-15');
+        } finally {
+            date_default_timezone_set($previousTimezone);
+        }
+
+        self::assertSame($utcDefault, $parisDefault);
+        self::assertSame(
+            '2026-07-14 22:00:00',
+            new \DateTimeImmutable('@' . $utcDefault)->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s')
+        );
+    }
+
     // ── calculateDeadlineUrgency ────────────────────────────────
 
     public function testDeadlineUrgencyReturnsNullForEmptyDeadline(): void

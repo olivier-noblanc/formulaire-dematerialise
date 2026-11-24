@@ -56,8 +56,12 @@ final readonly class WorkflowAdvancer
 
         $now = gmdate('Y-m-d H:i:s');
         $expireDays = (int) $this->settingsService->get('token_expire_days', '30');
-        $expiresAt_ts = strtotime("+{$expireDays} days");
-        $expiresAt = gmdate('Y-m-d H:i:s', $expiresAt_ts !== false ? $expiresAt_ts : time());
+        // The stored contract is UTC SQL time.  Build both instants in UTC so
+        // the result is independent of the IIS/PHP default timezone and of a
+        // Europe/Paris DST transition.
+        $expiresAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'))
+            ->modify("+{$expireDays} days")
+            ->format('Y-m-d H:i:s');
 
         // Transaction pour séquencer les lectures/écritures de tokens
         // et empêcher les doublons entre requêtes concurrentes.
