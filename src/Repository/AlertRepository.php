@@ -8,7 +8,6 @@ use App\Enum\SubmissionStatus;
 
 final class AlertRepository extends BaseRepository
 {
-    /** @param string $notifyWho */
     public static function isValidNotifyWho(string $notifyWho): bool
     {
         return in_array($notifyWho, ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators'], true)

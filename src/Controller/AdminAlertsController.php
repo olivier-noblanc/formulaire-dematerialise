@@ -42,18 +42,7 @@ final class AdminAlertsController extends BaseController
                 } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {
-                    if ($notifyWho === 'custom') {
-                        if ($customEmail === '' || $customEmail === '0') {
-                            $errorMsg = 'L\'adresse email personnalisée est obligatoire.';
-                        } elseif (filter_var($customEmail, FILTER_VALIDATE_EMAIL) === false) {
-                            $errorMsg = 'L\'adresse email personnalisée est invalide.';
-                        } else {
-                            $notifyWho = $customEmail;
-                        }
-                    }
-                    if ($errorMsg === '' && !AlertRepository::isValidNotifyWho($notifyWho)) {
-                        $errorMsg = 'Le destinataire de l\'alerte est invalide.';
-                    }
+                    $errorMsg = $this->normalizeNotifyWho($notifyWho, $customEmail);
 
                     if ($errorMsg === '') {
                         try {
@@ -88,18 +77,7 @@ final class AdminAlertsController extends BaseController
                 } elseif ($label === '' || $label === '0') {
                     $errorMsg = 'Le libellé de la règle est obligatoire.';
                 } else {
-                    if ($notifyWho === 'custom') {
-                        if ($customEmail === '' || $customEmail === '0') {
-                            $errorMsg = 'L\'adresse email personnalisée est obligatoire.';
-                        } elseif (filter_var($customEmail, FILTER_VALIDATE_EMAIL) === false) {
-                            $errorMsg = 'L\'adresse email personnalisée est invalide.';
-                        } else {
-                            $notifyWho = $customEmail;
-                        }
-                    }
-                    if ($errorMsg === '' && !AlertRepository::isValidNotifyWho($notifyWho)) {
-                        $errorMsg = 'Le destinataire de l\'alerte est invalide.';
-                    }
+                    $errorMsg = $this->normalizeNotifyWho($notifyWho, $customEmail);
 
                     if ($errorMsg === '') {
                         try {
@@ -116,8 +94,6 @@ final class AdminAlertsController extends BaseController
                             // @silent-ok: fallback sets user-facing error message
                             error_log('alert_rule_update error: ' . $e->getMessage());
                             $errorMsg = 'Une erreur technique est survenue.';
-                        }
-                    }
                 }
             } elseif ($action === 'delete_rule') {
                 $ruleId = trim($_POST['rule_id'] ?? '');
@@ -185,6 +161,28 @@ final class AdminAlertsController extends BaseController
             $dateFieldsByForm,
         );
         echo $this->renderPage('Alertes', 'alerts', '', $content);
+    }
+
+    /**
+     * Resolves the custom alert recipient and validates the resulting value.
+     */
+    private function normalizeNotifyWho(string &$notifyWho, string $customEmail): string
+    {
+        if ($notifyWho === 'custom') {
+            if ($customEmail === '' || $customEmail === '0') {
+                return 'L\'adresse email personnalisée est obligatoire.';
+            }
+            if (filter_var($customEmail, FILTER_VALIDATE_EMAIL) === false) {
+                return 'L\'adresse email personnalisée est invalide.';
+            }
+            $notifyWho = $customEmail;
+        }
+
+        if (!AlertRepository::isValidNotifyWho($notifyWho)) {
+            return 'Le destinataire de l\'alerte est invalide.';
+        }
+
+        return '';
     }
 
 }
