@@ -45,7 +45,7 @@ final class DatabaseMigrationsOrchestrationTest extends TestCase
 
         self::assertSame(
             36,
-            _dbm_apply_required($pdo, 35, static fn(PDO $connection, int $version): int => 36, 36)
+            _dbm_apply_required($pdo, 35, static fn(): int => 36, 36)
         );
     }
 }
