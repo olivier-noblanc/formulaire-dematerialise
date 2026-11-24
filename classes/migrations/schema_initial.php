@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Core\App;
+use App\Enum\MailStatus;
 
 require_once __DIR__ . '/seed_default_forms.php';
 require_once __DIR__ . '/post_migration.php';
@@ -12,7 +13,12 @@ function apply_schema_initial(PDO $pdo): int
     $pdo->exec('PRAGMA foreign_keys = ON');
     $pdo->exec('PRAGMA journal_mode = WAL');
     $pdo->exec('CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
-    $version = (int) $pdo->query('SELECT COALESCE(MAX(version), 0) FROM schema_version')->fetchColumn();
+    $versionStatement = $pdo->query('SELECT COALESCE(MAX(version), 0) FROM schema_version');
+    if ($versionStatement === false) {
+        throw new RuntimeException('Unable to read schema version');
+    }
+    $version = (int) $versionStatement->fetchColumn();
+    $versionStatement = null;
     if ($version >= 42 && $version < 900) return $version;
 
     $pdo->beginTransaction();
@@ -36,7 +42,7 @@ function apply_schema_initial(PDO $pdo): int
             "CREATE TABLE IF NOT EXISTS submission_validator_data (id TEXT PRIMARY KEY NOT NULL, submission_id TEXT NOT NULL, field_name TEXT NOT NULL, field_label TEXT NOT NULL, field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text','email','date','select','checkbox','textarea','file')), value TEXT, filled_by TEXT NOT NULL DEFAULT 'validator' CHECK (filled_by IN ('demandeur','validator')), filled_at DATETIME DEFAULT CURRENT_TIMESTAMP, step_id TEXT, step_label TEXT, filled_by_email TEXT, token_id TEXT, FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE)",
             "CREATE TABLE IF NOT EXISTS lazy_cron (task_key TEXT PRIMARY KEY, last_run DATETIME NOT NULL, run_count INTEGER DEFAULT 0)",
             "CREATE TABLE IF NOT EXISTS persona_tokens (id TEXT PRIMARY KEY, token TEXT NOT NULL UNIQUE, admin_email TEXT NOT NULL, target_email TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), expires_at TEXT NOT NULL, revoked_at TEXT)",
-            "CREATE TABLE IF NOT EXISTS mail_log (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, recipient TEXT NOT NULL, subject TEXT NOT NULL, body_html TEXT, status TEXT NOT NULL CHECK (status IN ('pending','sent','error','failed','blocked','dry_run')), error_message TEXT DEFAULT '', smtp_log TEXT DEFAULT '', attempts INTEGER NOT NULL DEFAULT 0, next_retry_at TEXT, manual_replay_count INTEGER NOT NULL DEFAULT 0, actor TEXT DEFAULT '', ip TEXT DEFAULT '')",
+            "CREATE TABLE IF NOT EXISTS mail_log (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, recipient TEXT NOT NULL, subject TEXT NOT NULL, body_html TEXT, status TEXT NOT NULL CHECK (status IN ('" . implode("','", MailStatus::values()) . "')), error_message TEXT DEFAULT '', smtp_log TEXT DEFAULT '', attempts INTEGER NOT NULL DEFAULT 0, next_retry_at TEXT, manual_replay_count INTEGER NOT NULL DEFAULT 0, actor TEXT DEFAULT '', ip TEXT DEFAULT '')",
         ];
         foreach ($ddl as $sql) $pdo->exec($sql);
         foreach ([
@@ -62,7 +68,13 @@ function apply_schema_initial(PDO $pdo): int
         if ($adminEmail !== '') $pdo->prepare('INSERT OR IGNORE INTO admins (id,email) VALUES (?,?)')->execute([generate_uuid(), $adminEmail]);
         seed_default_forms($pdo);
         apply_post_migration_fixes($pdo);
-        if ($pdo->query('PRAGMA foreign_key_check')->fetchAll(PDO::FETCH_ASSOC) !== []) throw new RuntimeException('v42: foreign key check failed');
+        $foreignKeyCheck = $pdo->query('PRAGMA foreign_key_check');
+        if ($foreignKeyCheck === false) {
+            throw new RuntimeException('v42: unable to run foreign key check');
+        }
+        $foreignKeyViolations = $foreignKeyCheck->fetchAll(PDO::FETCH_ASSOC);
+        $foreignKeyCheck = null;
+        if ($foreignKeyViolations !== []) throw new RuntimeException('v42: foreign key check failed');
         $pdo->exec("INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (42, datetime('now'))");
         $pdo->commit();
         return 42;
