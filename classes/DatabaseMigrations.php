@@ -17,6 +17,7 @@ declare(strict_types=1);
 // ── Chargement des modules de migration ──
 require_once __DIR__ . '/migrations/schema_initial.php';
 require_once __DIR__ . '/migrations/v43.php';
+require_once __DIR__ . '/migrations/v44.php';
 
 // ── Helper query (utilisé par toutes les migrations) ──
 
@@ -59,11 +60,12 @@ function _dbm_apply_required(PDO $pdo, int $current_version, callable $migration
 /**
  * Applique toutes les migrations SQLite dans l'ordre.
  *
- * Étapes : baseline v42 puis migration v43.
+ * Étapes : baseline v42 puis migrations v43 et v44.
  *
  * @param PDO $pdo Connexion PDO
  */
 function db_migrate(PDO $pdo): void {
     $current_version = apply_schema_initial($pdo);
     $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v43', 43);
+    _dbm_apply_required($pdo, $current_version, 'apply_migration_v44', 44);
 }

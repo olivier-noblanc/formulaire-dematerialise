@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Repository\AlertRepository;
 
 /**
  * Contrôleur de la page Alertes paramétrables (admin).
@@ -50,6 +51,9 @@ final class AdminAlertsController extends BaseController
                             $notifyWho = $customEmail;
                         }
                     }
+                    if ($errorMsg === '' && !AlertRepository::isValidNotifyWho($notifyWho)) {
+                        $errorMsg = 'Le destinataire de l\'alerte est invalide.';
+                    }
 
                     if ($errorMsg === '') {
                         try {
@@ -92,6 +96,9 @@ final class AdminAlertsController extends BaseController
                         } else {
                             $notifyWho = $customEmail;
                         }
+                    }
+                    if ($errorMsg === '' && !AlertRepository::isValidNotifyWho($notifyWho)) {
+                        $errorMsg = 'Le destinataire de l\'alerte est invalide.';
                     }
 
                     if ($errorMsg === '') {

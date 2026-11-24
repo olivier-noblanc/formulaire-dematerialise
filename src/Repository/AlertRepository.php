@@ -8,11 +8,21 @@ use App\Enum\SubmissionStatus;
 
 final class AlertRepository extends BaseRepository
 {
+    /** @param string $notifyWho */
+    public static function isValidNotifyWho(string $notifyWho): bool
+    {
+        return in_array($notifyWho, ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators'], true)
+            || filter_var($notifyWho, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
     /**
      * @param array{form_id: string, days_before: int, condition_type: string, notify_who: string, label: string} $data
      */
     public function createRule(array $data): string
     {
+        if (!self::isValidNotifyWho($data['notify_who'])) {
+            throw new \InvalidArgumentException('notify_who is invalid');
+        }
         $id = \generate_uuid();
         $this->execute(
             'INSERT INTO alert_rules (id, form_id, days_before, condition_type, notify_who, label, actif) VALUES (?, ?, ?, ?, ?, ?, 1)',
@@ -26,6 +36,9 @@ final class AlertRepository extends BaseRepository
      */
     public function updateRule(string $ruleId, array $data): bool
     {
+        if (!self::isValidNotifyWho($data['notify_who'])) {
+            throw new \InvalidArgumentException('notify_who is invalid');
+        }
         return $this->execute(
             'UPDATE alert_rules SET days_before=?, condition_type=?, notify_who=?, label=?, actif=? WHERE id=?',
             [$data['days_before'], $data['condition_type'], $data['notify_who'], $data['label'], $data['actif'], $ruleId]
