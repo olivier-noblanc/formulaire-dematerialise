@@ -125,24 +125,33 @@ final class SettingsServiceTest extends TestCase
     }
 
     /**
-     * SETTINGS_DEFAULTS contient des entiers (smtp_port, mail_dry_run). Quand la
-     * ligne est absente, get() doit tout de même satisfaire son type de retour
-     * `string` — sinon TypeError dans toute page qui lit le réglage.
+     * Quand la ligne est absente, get() doit satisfaire son type de retour
+     * `string` pour chaque défaut configuré — y compris les défauts entiers
+     * d'une configuration locale (smtp_port = 587, mail_dry_run = 0), qui
+     * provoquaient un TypeError dans toute page lisant le réglage.
      */
-    public function testIntegerDefaultIsCastToStringOnFallback(): void
+    public function testEveryConfiguredDefaultIsReturnedAsStringOnFallback(): void
     {
         $pdo = $this->db->getPdo();
-        $saved = $pdo->query("SELECT value FROM settings WHERE key = 'mail_dry_run'")->fetchColumn();
-        $pdo->exec("DELETE FROM settings WHERE key = 'mail_dry_run'");
-        $this->resetStaticCache();
 
-        try {
-            self::assertSame('0', $this->settings->get('mail_dry_run'));
-        } finally {
-            if (is_string($saved) || is_int($saved)) {
-                $this->settings->set('mail_dry_run', (string) $saved, 'test');
-            }
+        foreach (array_keys(SETTINGS_DEFAULTS) as $key) {
+            $fetch = $pdo->prepare('SELECT value FROM settings WHERE key = ?');
+            $fetch->execute([$key]);
+            $saved = $fetch->fetchColumn();
+            $delete = $pdo->prepare('DELETE FROM settings WHERE key = ?');
+            $delete->execute([$key]);
             $this->resetStaticCache();
+
+            try {
+                $value = $this->settings->get($key);
+                self::assertIsString($value, "get('{$key}') doit retourner une string");
+                self::assertSame((string) SETTINGS_DEFAULTS[$key], $value);
+            } finally {
+                if (is_string($saved) || is_int($saved)) {
+                    $this->settings->set($key, (string) $saved, 'test');
+                }
+                $this->resetStaticCache();
+            }
         }
     }
 
