@@ -1,5 +1,24 @@
 # Changelog — CircuitDémat
 
+## [10.42.49] — 2026-11-25
+_Résumé : durcissement SQLite centralisé — `foreign_keys`, `busy_timeout` et `trusted_schema` posés en un seul point (`Database::applySessionPragmas`), y compris pour les connexions hors connexion applicative._
+
+### ✨ Features
+- `App\Core\Database::applySessionPragmas(\PDO)` devient le **point central unique** de configuration d'une connexion SQLite : `PRAGMA foreign_keys = ON`, `PRAGMA busy_timeout = Database::BUSY_TIMEOUT_MS` (5 000 ms, valeur unique du projet) et `PRAGMA trusted_schema = OFF`. `applyConnectionPragmas()` y délègue puis ajoute `journal_mode = WAL`.
+- `PRAGMA trusted_schema = OFF` est conditionné à `Database::sqliteSupportsTrustedSchema()` (seuil `TRUSTED_SCHEMA_MIN_SQLITE = 3.31.0`, janvier 2020). Sur un SQLite antérieur, le PRAGMA est inconnu — donc silencieusement ignoré et non garantissable : la détection renvoie `false`, le PRAGMA n'est pas posé, et les tests documentent explicitement cette limitation au lieu de faire semblant. Aucun contournement applicatif n'est possible dans ce cas.
+- Le mode journal n'est **pas** touché par `applySessionPragmas()` : la même fonction sert à durcir des fichiers de sauvegarde ouverts en lecture, qu'un passage en WAL modifierait de façon persistante.
+
+### 🔒 Sécurité
+- Connexions hors du point central alignées : `resolve_base_url()` (connexion CLI ad-hoc sur `DB_PATH`) et les deux connexions de `BackupController` (`createConsistentSnapshot()` sur un fichier à sauvegarder, `isCircuitDematDatabase()` sur une base **uploadée**, donc non fiable). Cette dernière bénéficie directement de `trusted_schema = OFF` : une vue ou un trigger du schéma chargé ne peut plus invoquer une fonction applicative non « innocuous ».
+- Preuve comportementale en test : une vue appelant une fonction enregistrée s'exécute avec `trusted_schema = ON` et est refusée (`unsafe use of …`) dès que le durcissement est appliqué.
+
+### 🧪 Tests
+- `DatabaseTest` : 8 tests ciblés — `foreign_keys` sur connexion fraîche (désactivé par défaut → activé), `busy_timeout` = constante du projet, `trusted_schema` = 0 sur runtime compatible, matrice de détection de version (3.30.1 / 3.31.0 / 3.53.2), non-régression du mode journal, connexion applicative durcie après migration, et blocage d'une fonction appelée depuis une vue du schéma.
+- PHPStan (job `tests/`) signalait `Call to an undefined method PDO::createFunction()` : `PDO::connect()` est déclaré `: static`, son type reste donc `PDO`. La connexion de test passe par `Pdo\Sqlite::connect()` (même objet à l'exécution, type `Pdo\Sqlite` côté analyse) — sans `@phpstan-ignore` ni `assert()`.
+- Validation locale ciblée : `DatabaseTest` + `BackupControllerTest`, `BackupPurgeConfirmTransactionTest`, `TokenServiceDelegateRaceTest`, `DatabaseMigrationsOrchestrationTest`, `MigrationV4*`, `EnumConstraintTest`, `BaseRepositoryImmediateTransactionTest`, `FormRepositoryDeleteCascadeGuardTest`, `AdminImportExportTest`, `ExportServiceMutationTest` — 120 tests / 2 418 assertions verts. PHPStan level 8 sur les fichiers touchés et PHPStan `tests/` complet, Rector dry-run, Deptrac, `php -l` : verts.
+- CI du run 45662731747 : **16 jobs verts**, 1 801 tests / 5 979 assertions (+9 tests, +29 assertions ; 2 dépréciations et 1 test ignoré préexistants).
+- Aucune base `workflow.db` ni `db/workflow.db` modifiée : les tests créent leurs propres fichiers via `sys_get_temp_dir()`.
+
 ## [10.42.48] — 2026-11-25
 _Résumé : durcissement de `alert_rules.notify_who` — enum NotifyWho, contrainte SQL v46, et centralisation des paliers d'urgence dans UrgencyLevel._
 

@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1792** (mesurés par la CI du run 45627531511, v10.42.48) |
-| Assertions | **5950** (CI run 45627531511, v10.42.48) |
+| Tests | **1801** (mesurés par la CI du run 45662731747, v10.42.49) |
+| Assertions | **5979** (CI run 45662731747, v10.42.49) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -17,6 +17,18 @@
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
+
+### v10.42.49 — durcissement SQLite centralisé (2026-11-25)
+| Tâche | Détail |
+|-------|--------|
+| Point central | `Database::applySessionPragmas(\PDO)` : `foreign_keys=ON`, `busy_timeout=BUSY_TIMEOUT_MS` (5 000), `trusted_schema=OFF`. `applyConnectionPragmas()` y délègue + WAL. |
+| `trusted_schema` | Supporté à partir de SQLite 3.31.0 (`TRUSTED_SCHEMA_MIN_SQLITE`) ; détection explicite (`sqliteSupportsTrustedSchema`), et limitation testée/documentée en dessous du seuil. Runtime local et CI : 3.53.2. |
+| Mode journal | Jamais modifié par `applySessionPragmas()` (fichiers de sauvegarde ouverts en lecture). |
+| Hors point central | `resolve_base_url()` (CLI) et les 2 connexions de `BackupController` (snapshot `VACUUM INTO`, base uploadée non fiable) passent par le point central. |
+| PHPStan tests/ | `Call to an undefined method PDO::createFunction()` : `PDO::connect()` est `: static` → type `PDO`. Connexion du test via `Pdo\Sqlite::connect()` (même objet runtime, type explicite), sans ignore ni `assert()`. |
+| Tests | +9 tests / +29 assertions : `DatabaseTest` (FK/busy_timeout/trusted_schema sur connexion fraîche, matrice de versions, non-régression journal_mode, connexion applicative post-migration, blocage d'une fonction appelée depuis une vue). |
+| Validation | Ciblée : 120 tests / 2 418 assertions verts ; PHPStan level 8 (fichiers touchés) + `tests/` complet, Rector dry-run, Deptrac, `php -l` : verts. CI run 45662731747 : **16 jobs verts, 1801 tests / 5979 assertions**. |
+| Bases locales | Aucune modification de `workflow.db` ni `db/workflow.db` (bases de test créées via `sys_get_temp_dir()`). |
 
 ### v10.42.48 — notify_who typé + contrainte SQL v46 (2026-11-25)
 | Tâche | Détail |
