@@ -368,7 +368,17 @@ echo "── 4. Rendu des pages (sans erreur fatale) ──\n";
 
 // Récupérer un UUID valide pour les tests de pages
 $test_form_uuid = $pdo->query("SELECT id FROM forms WHERE slug='onboarding' LIMIT 1")->fetchColumn();
-$test_submission_uuid = $pdo->query("SELECT id FROM submissions LIMIT 1")->fetchColumn();
+// La page submission_view doit être demandée sur une soumission que
+// testeur@e2e.test (identité du sous-processus, HTTP_X_TEST_USER) est autorisé
+// à consulter. `SELECT id FROM submissions LIMIT 1` renvoyait une ligne
+// arbitraire — l'ordre est celui de l'index de la PK, donc d'UUID aléatoires :
+// une fois sur deux c'était la soumission du scénario de refus
+// (refus@exemple.invalid), pour laquelle un 403 est la réponse CORRECTE, et le
+// sous-processus sortait en code 1 → « Détail soumission: Exit code 1 » ~50 %
+// du temps (reproduit 4/5 sur origin/master). On cible donc explicitement la
+// soumission créée par ce harnais, à défaut celle du même auteur.
+$test_submission_uuid = $submission_id
+    ?: $pdo->query("SELECT id FROM submissions WHERE submitted_by = 'testeur@e2e.test' ORDER BY rowid DESC LIMIT 1")->fetchColumn();
 
 $pages = [
     'index.php' => ['label' => 'Page d\'accueil', 'get' => []],
