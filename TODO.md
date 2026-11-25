@@ -29,6 +29,8 @@
 | Tests | +9 tests / +29 assertions : `DatabaseTest` (FK/busy_timeout/trusted_schema sur connexion fraîche, matrice de versions, non-régression journal_mode, connexion applicative post-migration, blocage d'une fonction appelée depuis une vue). |
 | Validation | Ciblée : 120 tests / 2 418 assertions verts ; PHPStan level 8 (fichiers touchés) + `tests/` complet, Rector dry-run, Deptrac, `php -l` : verts. CI run 45662731747 : **16 jobs verts, 1801 tests / 5979 assertions**. |
 | Bases locales | Aucune modification de `workflow.db` ni `db/workflow.db` (bases de test créées via `sys_get_temp_dir()`). |
+| Runtime CI | `.forgejo/workflows/ci.yml` installait `php8.4-*` (sous le minimum `composer.json ^8.5`) → passé en `php8.5-*` + vérification stricte `PHP_VERSION_ID >= 80500` et extensions `pdo_sqlite`/`sqlite3`/`mbstring`/`xml`/`tokenizer`. |
+| Garde-fou GH | Step bloquant « Vérifier le runtime PHP (>= 8.5) » dans `lint` (+ `csp-check.yml`) : `Runtime PHP : 8.5.13 (>= 8.5)` dans les logs ; `scripts/check.ps1` refuse désormais un PHP < 8.5 en local. |
 
 ### v10.42.48 — notify_who typé + contrainte SQL v46 (2026-11-25)
 | Tâche | Détail |
