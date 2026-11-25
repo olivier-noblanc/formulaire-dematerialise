@@ -4,19 +4,32 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1776** (1749 mesurés par la CI du run 45411264634 + 27 tests ciblés `AlertNotifyWhoTest`/`MigrationV45LegacyActiveIndexTest`, v10.42.47) |
-| Assertions | **5829** (5781 mesurées par la CI du run 45411264634 + 48, v10.42.47) |
+| Tests | **1792** (1776 mesurés v10.42.47 + 16 nouveaux en v10.42.48) |
+| Assertions | **5920** (5829 mesurées v10.42.47 + 91 en v10.42.48) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
 | PHPStan erreurs baseline | **463** (level 8, 362 entrées — régénéré 2026-08-24, v10.42.16, -571 entrées stale) |
 | Style "" inline | **0** (zéro — cleanup complet 2026-08-01, 84 style="" migrés) |
 | Classes CSS sémantiques | **384** (style_utility.css — cleanup complet + progress-0 à 100) |
-| Enums métier | **11** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, AssetType, ValidationResultStatus, SubmissionField, MailStatus) |
+| Enums métier | **12** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, AssetType, ValidationResultStatus, SubmissionField, MailStatus, NotifyWho) |
 | Repositories | **10** |
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
+
+### v10.42.48 — notify_who typé + contrainte SQL v46 (2026-11-25)
+| Tâche | Détail |
+|-------|--------|
+| Enum `NotifyWho` | Source de vérité unique des 5 sentinelles (`values`/`isSentinel`/`label`) ; `CUSTOM_OPTION` = option d'interface jamais stockée. Les emails personnalisés restent dynamiques (`FILTER_VALIDATE_EMAIL`). |
+| Consommateurs | `AlertRepository`, `AdminAlertsController`, `AdminAlertsRenderer` (options + badges), `alert_check.php::resolve_recipients()` — la liste n'est plus recopiée dans 4 fichiers. |
+| `UrgencyLevel` | 4 paliers (`overdue`/`critical`/`warning`/`ok`) + `fromDaysRemaining()` (seuils 0/2/5 j) ; `DateHelper` et `monitoring_active_alerts.php` en dérivent. Classes CSS inchangées (présentation). |
+| Migration v46 | `CHECK (notify_who IN (<5 sentinelles>) OR notify_who LIKE '_%@_%.%')` ; préflight strict, rebuild atomique (`PRAGMA foreign_keys` hors transaction), rollback, idempotence, vérification post-rebuild. Une ligne invalide bloque la migration sans normalisation. |
+| Convergence | Base fraîche et base migrée depuis v45 produisent le même `sqlite_master.sql` pour `alert_rules` (test dédié). |
+| Fix settings | `SettingsService::get()` caste `SETTINGS_DEFAULTS` en chaîne (les défauts `smtp_port`/`mail_dry_run` sont des entiers → `TypeError` si la ligne manquait). |
+| Tests | +16 tests / +91 assertions : `NotifyWhoEnumTest`, `MigrationV46AlertNotifyWhoTest`, `DateHelperTest` (warning + invariant enum + `fromDaysRemaining`), `SettingsServiceTest` (repli entier), `MigrationV42V43Test` cible 46. |
+| Validation | Ciblée : 83 tests / 204 assertions verts ; PHPStan level 8 sur les fichiers touchés, Rector dry-run, Deptrac : verts. Suite complète et `check.ps1` laissées à la CI. |
+| Bases locales | Aucune modification de `workflow.db` ni `db/workflow.db` (seule `db/workflow_test.db`, base de test, est migrée par la suite). |
 
 ### v10.42.47 — CI réparée + migration v45 index legacy (2026-11-24)
 | Tâche | Détail |
@@ -27,7 +40,7 @@
 | Tests notify_who | 5 sentinelles + emails valides/invalides + résolution `custom` + refus `createRule`/`updateRule` |
 | Docs | Commentaires `DatabaseMigrations.php` et `renderTechnique_section.php` réalignés sur v43→v45 |
 | Validation | Ciblée : PHPUnit 61/101, PHPStan level 8 + `tests/` + 3 configs, Rector dry-run, phpcpd — verts ; suite complète et gate laissées à la CI |
-| Reste à faire | `alert_rules.notify_who` n'a **pas** de contrainte `CHECK` SQL (seule la validation PHP la protège) — candidat v46 |
+| Reste à faire | `alert_rules.notify_who` n'a **pas** de contrainte `CHECK` SQL (seule la validation PHP la protège) — candidat v46 → **traité en v10.42.48 (migration v46)** |
 
 ### v10.42.46 — Fallback admin des destinataires (2026-11-24)
 | Tâche | Détail |

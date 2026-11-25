@@ -1,5 +1,26 @@
 # Changelog — CircuitDémat
 
+## [10.42.48] — 2026-11-25
+_Résumé : durcissement de `alert_rules.notify_who` — enum NotifyWho, contrainte SQL v46, et centralisation des paliers d'urgence dans UrgencyLevel._
+
+### ✨ Features
+- Nouvel enum `App\Enum\NotifyWho` : source de vérité unique des 5 sentinelles (`admin`, `submitter`, `validators`, `admin+submitter`, `admin+validators`), avec `values()`, `isSentinel()` et `label()`. L'option d'interface `custom` y est déclarée comme constante `CUSTOM_OPTION` — elle n'est jamais stockée et reste résolue en email validé par `FILTER_VALIDATE_EMAIL`. Les emails personnalisés restent des valeurs dynamiques, hors enum.
+- Migration **v46** : `alert_rules.notify_who` porte désormais une contrainte `CHECK (notify_who IN (<5 sentinelles>) OR notify_who LIKE '_%@_%.%')`. Préflight PHP strict des lignes existantes (sentinelle ou `FILTER_VALIDATE_EMAIL` uniquement), reconstruction atomique de la table avec `PRAGMA foreign_keys=OFF` hors transaction (aucun cascade delete des `alert_log`), rollback complet en cas d'échec et idempotence via `schema_version`. Une valeur invalide fait échouer la migration avec la liste des règles fautives — aucune normalisation, aucune perte silencieuse. La forme SQL de l'email est volontairement plus permissive que PHP : la `CHECK` ne peut pas refuser une adresse valide.
+- `App\Enum\UrgencyLevel` couvre désormais les **quatre** paliers métier (`overdue`, `critical`, `warning`, `ok`) avec `values()` et `fromDaysRemaining()` (seuils 0/2/5 jours). `DateHelper::calculateDeadlineUrgency()` et `monitoring_active_alerts.php` dérivent leur classification de l'enum au lieu de dupliquer les seuils ; les classes CSS (`overdue`, `urgent`, `warning`, `ok`) restent de la présentation.
+
+### 🐛 Fixes
+- `SettingsService::get()` déclarait `string` mais renvoyait un `int` quand la clé retombait sur `SETTINGS_DEFAULTS` (`smtp_port` = 587, `mail_dry_run` = 0) et que la ligne était absente de la base — `TypeError` immédiat dans toute page lisant le réglage (page Surveillance, cartes SMTP). Le repli est désormais casté en chaîne.
+
+### 🔧 Refactor
+- `AlertRepository::isValidNotifyWho()`, `AdminAlertsController::normalizeNotifyWho()`, `AdminAlertsRenderer` (options du sélecteur + libellé des badges) et le `switch` de `alert_check.php::resolve_recipients()` s'appuient sur `NotifyWho` : la liste des 5 sentinelles n'est plus recopiée dans quatre fichiers.
+- Commentaire d'en-tête de `DatabaseMigrations.php` et page technique (`renderTechnique_section.php`) réalignés sur « migrations v43→v46 ».
+
+### 🧪 Tests
+- Nouveau `NotifyWhoEnumTest` : enum = exactement les 5 sentinelles, `isSentinel` (rejette `custom`, casse, sentinelles inconnues, emails), libellés présents, contrat du repository, et les `<option>` du renderer générées depuis l'enum.
+- Nouveau `MigrationV46AlertNotifyWhoTest` : `CHECK` présente sur base fraîche, convergence base fraîche / base migrée depuis v45 (SQL identique), acceptation des 5 sentinelles + 4 emails (dont `+`), rejet de `foo`/`custom`/chaîne vide/`admin + submitter`/`foo@`, préflight bloquant sans normalisation (valeur et compteur intacts, version 46 absente), succès après correction de la ligne, idempotence.
+- `DateHelperTest` : palier `warning` (J-5) et invariant « toute urgence appartient à `UrgencyLevel` », plus `fromDaysRemaining()` sur les bornes ; `SettingsServiceTest` : repli entier casté en chaîne ; `MigrationV42V43Test` : version cible 45 → 46.
+- Vérifications ciblées locales (83 tests / 204 assertions), PHPStan level 8 sur les fichiers touchés, Rector dry-run, Deptrac : verts. Suite complète et `check.ps1` laissées à la CI.
+
 ## [10.42.47] — 2026-11-24
 _Résumé : réparation de la CI (erreur de syntaxe) et migration v45 qui supprime l'index unique legacy des soumissions actives._
 
