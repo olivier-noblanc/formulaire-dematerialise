@@ -30,14 +30,14 @@ if (!function_exists('resolve_base_url')) {
             $base = defined('BASE_URL') ? BASE_URL : '';
 
             // Si BASE_URL contient localhost, la détecter dynamiquement
-            if (strpos($base, 'localhost') !== false || $base === '') {
+            if (str_contains($base, 'localhost') || $base === '') {
                 $protocol = (($_SERVER['HTTPS'] ?? '') !== '' && strtolower((string)$_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
                 if (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') !== '') {
                     $protocol = strtolower(trim($_SERVER['HTTP_X_FORWARDED_PROTO'])) === 'https' ? 'https' : 'http';
                 }
                 $host = '';
                 if (($_SERVER['HTTP_X_FORWARDED_HOST'] ?? '') !== '') {
-                    $hosts = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_HOST']));
+                    $hosts = array_map(trim(...), explode(',', $_SERVER['HTTP_X_FORWARDED_HOST']));
                     $host = $hosts[0];
                 } elseif (($_SERVER['HTTP_HOST'] ?? '') !== '') {
                     $host = $_SERVER['HTTP_HOST'];
@@ -48,7 +48,7 @@ if (!function_exists('resolve_base_url')) {
                 $path = '';
                 if (($_SERVER['SCRIPT_NAME'] ?? '') !== '') {
                     $dir = dirname($_SERVER['SCRIPT_NAME']);
-                    if ($dir !== '/' && $dir !== '\\' && $dir !== '.') {
+                    if (!in_array($dir, ['/', '\\', '.'], true)) {
                         $path = $dir;
                     }
                 }
@@ -63,11 +63,15 @@ if (!function_exists('resolve_base_url')) {
             try {
                 $dbPath = defined('DB_PATH') ? DB_PATH : DEFAULT_DB_PATH;
                 $pdo = new PDO('sqlite:' . $dbPath);
+                // Durcissement de session identique à la connexion applicative
+                // (point central : Database::applySessionPragmas) — busy_timeout
+                // notamment, pour ne pas échouer en SQLITE_BUSY pendant un cron.
+                \App\Core\Database::applySessionPragmas($pdo);
                 $stmt = $pdo->prepare("SELECT value FROM settings WHERE key = ?");
                 $stmt->execute(['base_url']);
                 $val = $stmt->fetchColumn();
                 $cached = $val ?? (defined('BASE_URL') ? BASE_URL : 'http://localhost');
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 $cached = defined('BASE_URL') ? BASE_URL : 'http://localhost';
             }
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Core\Database;
 use App\Render\BackupRenderer;
 
 /**
@@ -367,7 +368,9 @@ final class BackupController extends BaseController
             // Connexion dédiée (pas App::db(), déjà libéré côté restore) sur le
             // fichier à sauvegarder. allowIn: disallowed-calls.neon → PDO::query().
             $source = new \PDO('sqlite:' . $sourceDbPath);
-            $source->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            // Durcissement de session (point central). Pas de WAL ici : le
+            // fichier de sauvegarde ne doit pas être modifié par l'ouverture.
+            Database::applySessionPragmas($source);
             $source->query('VACUUM INTO ' . $source->quote($destination));
             $source = null;
         } catch (\Throwable $e) {
@@ -457,7 +460,9 @@ final class BackupController extends BaseController
             // Connexion dédiée en lecture sur le fichier uploadé (pas App::db()).
             // allowIn: disallowed-calls.neon → PDO::query() pour BackupController.
             $pdo = new \PDO('sqlite:' . $path);
-            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            // Fichier NON fiable : trusted_schema=OFF interdit au schéma chargé
+            // (vue, trigger, CHECK) d'invoquer une fonction non « innocuous ».
+            Database::applySessionPragmas($pdo);
             // Noms issus d'une constante interne (jamais d'entrée utilisateur) :
             // interpolation sûre, pas de placeholder à faire correspondre.
             $names = "'" . implode("', '", self::REQUIRED_PIVOT_TABLES) . "'";

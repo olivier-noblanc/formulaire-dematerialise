@@ -11,6 +11,21 @@ use App\Contract\DatabaseInterface;
  */
 final class Database implements DatabaseInterface
 {
+    /**
+     * Délai d'attente SQLite sur un verrou (ms) — valeur unique du projet.
+     * Sans lui, un accès concurrent (cron + requête web) échoue immédiatement
+     * en SQLITE_BUSY au lieu d'attendre la fin de la transaction concurrente.
+     */
+    public const int BUSY_TIMEOUT_MS = 5000;
+
+    /**
+     * Première version de SQLite exposant `PRAGMA trusted_schema` (3.31.0,
+     * janvier 2020). Sur une version antérieure le PRAGMA est inconnu : il est
+     * silencieusement ignoré et ne peut donc pas être garanti (voir
+     * CHANGELOG/TODO pour la limitation documentée).
+     */
+    public const string TRUSTED_SCHEMA_MIN_SQLITE = '3.31.0';
+
     private ?\PDO $pdo = null;
     private ?\PDO $pdoTest = null;
 
@@ -106,10 +121,59 @@ final class Database implements DatabaseInterface
      */
     public function applyConnectionPragmas(\PDO $pdo): void
     {
+        self::applySessionPragmas($pdo);
+        $pdo->exec('PRAGMA journal_mode = WAL');
+    }
+
+    /**
+     * Applique les PRAGMA de durcissement **de session** à une connexion SQLite.
+     *
+     * Point central unique : toute connexion applicative (connexion réelle,
+     * connexion de test, script CLI, fichier de sauvegarde ouvert en lecture)
+     * doit passer par ici plutôt que de recopier les PRAGMA.
+     *
+     * - `foreign_keys = ON` : SQLite les désactive par défaut, y compris pour
+     *   les `ON DELETE CASCADE` du schéma.
+     * - `busy_timeout = BUSY_TIMEOUT_MS` : attente au lieu d'un SQLITE_BUSY
+     *   immédiat en accès concurrent.
+     * - `trusted_schema = OFF` (SQLite ≥ 3.31.0 seulement) : interdit au
+     *   schéma (vue, trigger, CHECK, colonne générée) d'invoquer une fonction
+     *   non « innocuous ». Sur une version plus ancienne, la détection renvoie
+     *   false et le PRAGMA n'est pas posé : la limitation est documentée et
+     *   testée (DatabaseTest::testApplySessionPragmasDisablesTrustedSchema…).
+     *
+     * Le mode journal n'est **pas** touché ici : cette méthode sert aussi à
+     * durcir des fichiers de sauvegarde ouverts en lecture, qu'un passage en
+     * WAL modifierait de façon persistante (voir applyConnectionPragmas()).
+     */
+    public static function applySessionPragmas(\PDO $pdo): void
+    {
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $pdo->exec('PRAGMA foreign_keys = ON');
-        $pdo->exec('PRAGMA busy_timeout = 5000');
-        $pdo->exec('PRAGMA journal_mode = WAL');
+        $pdo->exec('PRAGMA busy_timeout = ' . self::BUSY_TIMEOUT_MS);
+
+        if (self::sqliteSupportsTrustedSchema(self::sqliteVersion($pdo))) {
+            $pdo->exec('PRAGMA trusted_schema = OFF');
+        }
+    }
+
+    /**
+     * `PRAGMA trusted_schema` existe-t-il dans cette version de SQLite ?
+     * Séparé de la connexion pour être testable par matrice de versions.
+     */
+    public static function sqliteSupportsTrustedSchema(string $sqliteVersion): bool
+    {
+        return version_compare($sqliteVersion, self::TRUSTED_SCHEMA_MIN_SQLITE, '>=');
+    }
+
+    /**
+     * Version SQLite de la connexion (« 3.53.2 »), sans requête : évite
+     * d'ouvrir un statement (et le verrou de lecture associé) juste pour
+     * connaître la version du moteur.
+     */
+    private static function sqliteVersion(\PDO $pdo): string
+    {
+        return (string) $pdo->getAttribute(\PDO::ATTR_SERVER_VERSION);
     }
 
     /**
