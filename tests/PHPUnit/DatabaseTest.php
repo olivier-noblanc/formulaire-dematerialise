@@ -398,9 +398,12 @@ final class DatabaseTest extends TestCase
     public function testApplySessionPragmasBlocksFunctionCalledFromSchema(): void
     {
         $tmpFile = $this->tempDbPath();
-        // PHP 8.5 : PDO::connect() renvoie le driver Pdo\Sqlite (createFunction()
-        // non déprécié, contrairement à PDO::sqliteCreateFunction()).
-        $pdo = \PDO::connect('sqlite:' . $tmpFile);
+        // PHP 8.5 : la fonction de test doit être enregistrée sur le driver
+        // Pdo\Sqlite (createFunction(), non déprécié — contrairement à
+        // PDO::sqliteCreateFunction()). Passer par `Pdo\Sqlite::connect()`
+        // (et non `PDO::connect()`, dont le type de retour `static` reste PDO)
+        // donne à PHPStan le type réellement manipulé.
+        $pdo = \Pdo\Sqlite::connect('sqlite:' . $tmpFile);
 
         try {
             if (!\App\Core\Database::sqliteSupportsTrustedSchema($this->sqliteVersion($pdo))) {
