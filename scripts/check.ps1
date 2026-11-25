@@ -80,10 +80,19 @@ $PlaywrightAvailable = $false
 
 if (-not $PhpBin) {
     Err "PHP introuvable dans le PATH — dépendance critique manquante."
-    Err "Installez PHP 8.4+ et ajoutez-le au PATH."
+    Err "Installez PHP 8.5+ et ajoutez-le au PATH."
     exit 2
 }
 Info "PHP détecté : $(& $PhpBin -v | Select-Object -First 1)"
+
+# Même contrat runtime que la CI : PHP >= 8.5 (composer.json « php: ^8.5 »).
+# Sans cette garde, un PHP plus ancien ne casse qu'au milieu des tests, via
+# vendor/composer/platform_check.php (require vendor/autoload.php).
+$PhpVersionId = [int](& $PhpBin -r 'echo PHP_VERSION_ID;')
+if ($PhpVersionId -lt 80500) {
+    Err "PHP $(& $PhpBin -r 'echo PHP_VERSION;') détecté — PHP 8.5+ requis (composer.json ^8.5)."
+    exit 2
+}
 
 if (-not $NodeBin) {
     Warn "Node.js introuvable dans le PATH — tests Playwright e2e seront skippés."

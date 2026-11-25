@@ -4,7 +4,7 @@
 # Codeberg qui ont une limite de 5 minutes par job sur codeberg-small).
 #
 # Étapes (fail-fast via set -e implicite) :
-#   1. Install PHP 8.4 + extensions (pdo_sqlite, mbstring, xml) depuis sury.org
+#   1. Install PHP 8.5 + extensions (pdo_sqlite, mbstring, xml) depuis sury.org
 #   2. Lint PHP (php -l sur tous les .php)
 #   3. PHPStan (analyse statique niveau 6, baseline autorisée)
 #   4. Tests fonctionnels (test_all.php — 57 tests)
@@ -28,8 +28,11 @@
 # Settings → General → Repository visibility.
 #
 # ⚠️ Docker-in-Docker n'est PAS supporté sur les runners Codeberg.
-# On ne peut pas utiliser `container: php:8.4-cli` ni `docker-php-ext-install`.
-# À la place, on installe PHP 8.4 via apt depuis le dépôt sury.org.
+# On ne peut pas utiliser `container: php:8.5-cli` ni `docker-php-ext-install`.
+# À la place, on installe PHP 8.5 via apt depuis le dépôt sury.org.
+# La version installée est VÉRIFIÉE juste après (PHP_VERSION_ID >= 80500) :
+# composer.json exige ^8.5, un runtime plus ancien doit faire échouer la CI
+# ici plutôt que de retomber silencieusement sur le PHP du runner.
 
 name: CI
 
@@ -47,8 +50,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── 2. Installer PHP 8.4 + extensions ──────────────────
-      - name: Install PHP 8.4 + extensions
+      # ── 2. Installer PHP 8.5 + extensions ──────────────────
+      - name: Install PHP 8.5 + extensions
         run: |
           set -e
           apt-get update
@@ -60,13 +63,16 @@ jobs:
             > /etc/apt/sources.list.d/sury-php.list
           apt-get update
           apt-get install -y --no-install-recommends \
-            php8.4-cli \
-            php8.4-sqlite3 \
-            php8.4-mbstring \
-            php8.4-xml \
-            php8.4-curl
+            php8.5-cli \
+            php8.5-sqlite3 \
+            php8.5-mbstring \
+            php8.5-xml \
+            php8.5-curl
           php --version
-          php -m | grep -E 'pdo_sqlite|mbstring|xml|tokenizer' || true
+          # Vérification stricte (pas de `|| true`) : le runtime doit être
+          # PHP >= 8.5 (composer.json : ^8.5) et fournir SQLite via PDO.
+          php -r 'if (PHP_VERSION_ID < 80500) { fwrite(STDERR, "PHP " . PHP_VERSION . " détecté — PHP >= 8.5 requis (composer.json ^8.5).\n"); exit(1); } echo "Runtime PHP : " . PHP_VERSION . " (>= 8.5)\n";'
+          php -r 'foreach (["pdo_sqlite", "sqlite3", "mbstring", "xml", "tokenizer"] as $ext) { if (!extension_loaded($ext)) { fwrite(STDERR, "Extension PHP manquante : " . $ext . "\n"); exit(1); } } echo "Extensions requises : OK\n";'
 
       # ── 3. Lint PHP (syntaxe sur tous les fichiers) ────────
       - name: Lint PHP

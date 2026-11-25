@@ -124,7 +124,7 @@ Quand tu corriges un bug, ajoute un test immortel dans `tests/regression/` :
 
 ## Dépendances
 
-- PHP 8.4 (avec mbstring, pdo_sqlite)
+- PHP 8.5 (avec mbstring, pdo_sqlite)
 - Node.js 18+ et Playwright (`npm install -g playwright` ou via `node_modules`)
 - Chromium pour Playwright (`playwright install chromium`)
 

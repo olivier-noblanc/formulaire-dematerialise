@@ -16,6 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # Contrat runtime : PHP >= 8.5 (composer.json « php: ^8.5 »). Chaque job
+  # installe cette version via shivammathur/setup-php ; le job `lint` vérifie
+  # en plus le runtime effectif (PHP_VERSION_ID >= 80500) pour qu'aucune job
+  # ne puisse retomber silencieusement sur le PHP préinstallé du runner.
   CI_CONFIG: |
     <?php
     define('DEFAULT_DB_PATH', __DIR__ . '/db/workflow.db');
@@ -46,6 +50,12 @@ jobs:
           php-version: '8.5'
           extensions: pdo_sqlite, sqlite3
           coverage: none
+      # Assertion du contrat runtime : setup-php échoue déjà si la version
+      # demandée est indisponible, mais ce garde-fou rend explicite et
+      # bloquant le fait qu'aucun job ne tourne sur un PHP < 8.5.
+      - name: Vérifier le runtime PHP (>= 8.5)
+        run: |
+          php -r 'if (PHP_VERSION_ID < 80500) { fwrite(STDERR, "PHP " . PHP_VERSION . " détecté — PHP >= 8.5 requis (composer.json ^8.5).\n"); exit(1); } echo "Runtime PHP : " . PHP_VERSION . " (>= 8.5)\n";'
       - name: Lint all PHP files
         run: |
           failed=0
@@ -160,6 +170,10 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
+          # pdo_sqlite/sqlite3 explicites même pour les jobs PHPStan : leurs
+          # bootstrapFiles incluent helpers.php → lib/core_bootstrap.php, qui
+          # exige pdo_sqlite (sinon « extension manquante » en plein bootstrap).
+          extensions: pdo_sqlite, sqlite3
           coverage: none
       - name: Get composer cache directory
         id: composer-cache
@@ -207,6 +221,10 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
+          # pdo_sqlite/sqlite3 explicites même pour les jobs PHPStan : leurs
+          # bootstrapFiles incluent helpers.php → lib/core_bootstrap.php, qui
+          # exige pdo_sqlite (sinon « extension manquante » en plein bootstrap).
+          extensions: pdo_sqlite, sqlite3
           coverage: none
       - name: Get composer cache directory
         id: composer-cache
@@ -251,6 +269,10 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
+          # pdo_sqlite/sqlite3 explicites même pour les jobs PHPStan : leurs
+          # bootstrapFiles incluent helpers.php → lib/core_bootstrap.php, qui
+          # exige pdo_sqlite (sinon « extension manquante » en plein bootstrap).
+          extensions: pdo_sqlite, sqlite3
           coverage: none
       - name: Get composer cache directory
         id: composer-cache
@@ -745,6 +767,10 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
+          # pdo_sqlite/sqlite3 explicites même pour les jobs PHPStan : leurs
+          # bootstrapFiles incluent helpers.php → lib/core_bootstrap.php, qui
+          # exige pdo_sqlite (sinon « extension manquante » en plein bootstrap).
+          extensions: pdo_sqlite, sqlite3
           coverage: none
       - name: Reconstituer un export frais (fichiers versionnés uniquement)
         run: |

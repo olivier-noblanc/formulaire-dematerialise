@@ -158,7 +158,7 @@
           <thead><tr><th>Composant</th><th>Technologie</th></tr></thead>
           <tbody>
             <tr><td>Serveur web</td><td>IIS (Windows Server) avec authentification Windows</td></tr>
-            <tr><td>Langage</td><td>PHP 8.4+ (procédural, sans framework)</td></tr>
+            <tr><td>Langage</td><td>PHP 8.5+ (procédural, sans framework)</td></tr>
             <tr><td>Base de données</td><td>SQLite (fichier db/workflow.db, mode WAL)</td></tr>
             <tr><td>Envoi d'emails</td><td>PHPMailer via SMTP (pas d'auth SMTP)</td></tr>
             <tr><td>Relance automatique</td><td>Lazy cron (remind.php, 1×/heure) — pas de Planificateur Windows requis</td></tr>
