@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Render;
 
 use App\Core\App;
+use App\Enum\NotifyWho;
 
 /**
  * Rendu de la page Alertes paramétrables (admin).
@@ -193,12 +194,7 @@ final class AdminAlertsRenderer
                     $html .= '                <div class="field">' . "\n";
                     $html .= '                  <label>Notifier</label>' . "\n";
                     $html .= '                  <select name="notify_who">' . "\n";
-                    $html .= '                    <option value="admin"' . ($rule['notify_who'] === 'admin' ? ' selected' : '') . '>Administrateurs</option>' . "\n";
-                    $html .= '                    <option value="submitter"' . ($rule['notify_who'] === 'submitter' ? ' selected' : '') . '>Agent (demandeur)</option>' . "\n";
-                    $html .= '                    <option value="validators"' . ($rule['notify_who'] === 'validators' ? ' selected' : '') . '>Validateurs en cours</option>' . "\n";
-                    $html .= '                    <option value="admin+submitter"' . ($rule['notify_who'] === 'admin+submitter' ? ' selected' : '') . '>Admins + Agent</option>' . "\n";
-                    $html .= '                    <option value="admin+validators"' . ($rule['notify_who'] === 'admin+validators' ? ' selected' : '') . '>Admins + Validateurs</option>' . "\n";
-                    $html .= '                    <option value="custom"' . (in_array($rule['notify_who'], ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators'], true) ? '' : ' selected') . '>Courriel personnalisé</option>' . "\n";
+                    $html .= self::notifyWhoOptions($rule['notify_who'], '                    ');
                     $html .= '                  </select>' . "\n";
                     $html .= '                </div>' . "\n";
                     $html .= '                <div class="field custom-email-field">' . "\n";
@@ -261,12 +257,7 @@ final class AdminAlertsRenderer
         $html .= '        <div class="field">' . "\n";
         $html .= '          <label>Notifier</label>' . "\n";
         $html .= '          <select name="notify_who">' . "\n";
-        $html .= '            <option value="admin">Administrateurs</option>' . "\n";
-        $html .= '            <option value="submitter">Agent (demandeur)</option>' . "\n";
-        $html .= '            <option value="validators">Validateurs en cours</option>' . "\n";
-        $html .= '            <option value="admin+submitter">Admins + Agent</option>' . "\n";
-        $html .= '            <option value="admin+validators">Admins + Validateurs</option>' . "\n";
-        $html .= '            <option value="custom">Courriel personnalisé</option>' . "\n";
+        $html .= self::notifyWhoOptions(null, '            ');
         $html .= '          </select>' . "\n";
         $html .= '        </div>' . "\n";
         $html .= '        <div class="field custom-email-field">' . "\n";
@@ -317,17 +308,35 @@ final class AdminAlertsRenderer
         return $html . ('  </div>' . "\n");
     }
 
+    /**
+     * Options du sélecteur « Notifier » — dérivées de l'enum NotifyWho pour
+     * éviter une quatrième copie de la liste fermée.
+     */
+    private static function notifyWhoOptions(?string $selected, string $indent = ''): string
+    {
+        $html = '';
+        foreach (NotifyWho::cases() as $case) {
+            $html .= $indent . self::notifyWhoOption($case->value, $case->label(), $selected === $case->value);
+        }
+
+        return $html . $indent . self::notifyWhoOption(
+            NotifyWho::CUSTOM_OPTION,
+            'Courriel personnalisé',
+            $selected !== null && !NotifyWho::isSentinel($selected),
+        );
+    }
+
+    private static function notifyWhoOption(string $value, string $label, bool $selected): string
+    {
+        return '<option value="' . $value . '"' . ($selected ? ' selected' : '') . '>'
+            . $label . '</option>' . "\n";
+    }
+
     private static function notifyWhoLabel(string $val): string
     {
-        $map = [
-            'admin' => 'Administrateurs',
-            'submitter' => 'Agent (demandeur)',
-            'validators' => 'Validateurs en cours',
-            'admin+submitter' => 'Admins + Agent',
-            'admin+validators' => 'Admins + Validateurs',
-        ];
-        if (isset($map[$val])) {
-            return $map[$val];
+        $sentinel = NotifyWho::tryFrom($val);
+        if ($sentinel !== null) {
+            return $sentinel->label();
         }
         if (filter_var($val, FILTER_VALIDATE_EMAIL)) {
             return 'Courriel : ' . $val;

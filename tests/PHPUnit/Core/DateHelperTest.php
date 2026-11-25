@@ -5,6 +5,7 @@ namespace App\Tests;
 
 use PHPUnit\Framework\TestCase;
 use App\Core\DateHelper;
+use App\Enum\UrgencyLevel;
 
 final class DateHelperTest extends TestCase
 {
@@ -16,7 +17,7 @@ final class DateHelperTest extends TestCase
         self::assertIsInt($result);
         self::assertSame(
             '2026-01-15',
-            (new \DateTimeImmutable('@' . $result))
+            new \DateTimeImmutable('@' . $result)
                 ->setTimezone(new \DateTimeZone('Europe/Paris'))
                 ->format('Y-m-d')
         );
@@ -28,7 +29,7 @@ final class DateHelperTest extends TestCase
         self::assertIsInt($result);
         self::assertSame(
             '2026-01-15',
-            (new \DateTimeImmutable('@' . $result))
+            new \DateTimeImmutable('@' . $result)
                 ->setTimezone(new \DateTimeZone('Europe/Paris'))
                 ->format('Y-m-d')
         );
@@ -112,7 +113,38 @@ final class DateHelperTest extends TestCase
     {
         $inSevenDays = date('d/m/Y', strtotime('+7 days'));
         $result = DateHelper::calculateDeadlineUrgency($inSevenDays);
-        self::assertSame('ok', $result['urgency']);
+        self::assertSame(UrgencyLevel::Ok->value, $result['urgency']);
+    }
+
+    public function testDeadlineUrgencyWarningForFiveDaysLeft(): void
+    {
+        // Le palier 3–5 jours était une chaîne magique ('warning') hors enum.
+        $inFiveDays = date('d/m/Y', strtotime('+5 days'));
+        $result = DateHelper::calculateDeadlineUrgency($inFiveDays);
+        self::assertSame(UrgencyLevel::Warning->value, $result['urgency']);
+        self::assertSame('deadline-warning', $result['style']);
+    }
+
+    public function testEveryUrgencyValueBelongsToTheEnum(): void
+    {
+        foreach ([-3, -1, 0, 1, 2, 3, 5, 6, 30] as $offset) {
+            $deadline = date('d/m/Y', strtotime(sprintf('%+d days', $offset)));
+            $urgency = DateHelper::calculateDeadlineUrgency($deadline)['urgency'];
+            self::assertNotNull(
+                UrgencyLevel::tryFrom($urgency),
+                "Urgence '{$urgency}' (J{$offset}) doit appartenir à UrgencyLevel."
+            );
+        }
+    }
+
+    public function testFromDaysRemainingMatchesTheHistoricalThresholds(): void
+    {
+        self::assertSame(UrgencyLevel::Overdue, UrgencyLevel::fromDaysRemaining(-1));
+        self::assertSame(UrgencyLevel::Critical, UrgencyLevel::fromDaysRemaining(0));
+        self::assertSame(UrgencyLevel::Critical, UrgencyLevel::fromDaysRemaining(2));
+        self::assertSame(UrgencyLevel::Warning, UrgencyLevel::fromDaysRemaining(3));
+        self::assertSame(UrgencyLevel::Warning, UrgencyLevel::fromDaysRemaining(5));
+        self::assertSame(UrgencyLevel::Ok, UrgencyLevel::fromDaysRemaining(6));
     }
 
     // ── calendarDaysUntil — P0-2 : jours calendaires J-1/J0/J+1 ──

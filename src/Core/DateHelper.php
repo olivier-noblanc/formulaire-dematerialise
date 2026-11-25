@@ -144,19 +144,14 @@ final class DateHelper
         }
         $days_left = self::calendarDaysUntil($deadline);
         $result['days_left'] = $days_left;
-        if ($days_left < 0) {
-            $result['urgency'] = UrgencyLevel::Overdue->value;
-            $result['style'] = 'deadline-overdue';
-        } elseif ($days_left <= 2) {
-            $result['urgency'] = UrgencyLevel::Critical->value;
-            $result['style'] = 'deadline-critical';
-        } elseif ($days_left <= 5) {
-            $result['urgency'] = 'warning';
-            $result['style'] = 'deadline-warning';
-        } else {
-            $result['urgency'] = 'ok';
-            $result['style'] = '';
-        }
+        $urgency = UrgencyLevel::fromDaysRemaining($days_left);
+        $result['urgency'] = $urgency->value;
+        $result['style'] = match ($urgency) {
+            UrgencyLevel::Overdue => 'deadline-overdue',
+            UrgencyLevel::Critical => 'deadline-critical',
+            UrgencyLevel::Warning => 'deadline-warning',
+            UrgencyLevel::Ok => '',
+        };
         return $result;
     }
 }

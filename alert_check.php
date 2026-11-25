@@ -4,6 +4,7 @@
 // Verifie si des soumissions en cours sont proches de leur date limite
 // et envoie des alertes si les etapes ne sont pas toutes completees
 use App\Enum\MailStatus;
+use App\Enum\NotifyWho;
 use App\Enum\SubmissionField;
 use App\Forms\SubmissionData;
 
@@ -298,21 +299,21 @@ function has_incomplete_steps(PDO $pdo, string $submission_id): bool {
 function resolve_recipients(PDO $pdo, string $notify_who, array $submission): array {
     $recipients = [];
 
-    switch ($notify_who) {
-        case 'admin':
+    switch (NotifyWho::tryFrom($notify_who)) {
+        case NotifyWho::Admin:
             // Tous les admins
             $admins = _dbm_q($pdo, "SELECT email FROM admins")->fetchAll(PDO::FETCH_COLUMN);
             $recipients = array_merge($recipients, $admins);
             break;
 
-        case 'submitter':
+        case NotifyWho::Submitter:
             // L'agent qui a soumis le formulaire
             if (isset($submission['submitted_by']) && $submission['submitted_by'] !== '' && $submission['submitted_by'] !== '0') {
                 $recipients[] = $submission['submitted_by'];
             }
             break;
 
-        case 'validators':
+        case NotifyWho::Validators:
             // Les validateurs ayant des tokens en cours
             // FIX-A : tokens invalides exclus (plus de validateur actif derriere)
             $stmt = $pdo->prepare("SELECT DISTINCT email FROM tokens WHERE submission_id = ? AND done_at IS NULL AND invalidated_at IS NULL");
@@ -321,7 +322,7 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
             $recipients = array_merge($recipients, $validators);
             break;
 
-        case 'admin+submitter':
+        case NotifyWho::AdminAndSubmitter:
             // Admin + agent
             $admins = _dbm_q($pdo, "SELECT email FROM admins")->fetchAll(PDO::FETCH_COLUMN);
             $recipients = array_merge($recipients, $admins);
@@ -330,7 +331,7 @@ function resolve_recipients(PDO $pdo, string $notify_who, array $submission): ar
             }
             break;
 
-        case 'admin+validators':
+        case NotifyWho::AdminAndValidators:
             // Admin + validateurs en cours
             $admins = _dbm_q($pdo, "SELECT email FROM admins")->fetchAll(PDO::FETCH_COLUMN);
             $recipients = array_merge($recipients, $admins);

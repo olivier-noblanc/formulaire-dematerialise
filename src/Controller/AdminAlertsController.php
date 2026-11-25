@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Enum\NotifyWho;
 use App\Repository\AlertRepository;
 
 /**
@@ -170,7 +171,7 @@ final class AdminAlertsController extends BaseController
      */
     private function normalizeNotifyWho(string &$notifyWho, string $customEmail): string
     {
-        if ($notifyWho === 'custom') {
+        if ($notifyWho === NotifyWho::CUSTOM_OPTION) {
             if ($customEmail === '' || $customEmail === '0') {
                 return 'L\'adresse email personnalisée est obligatoire.';
             }

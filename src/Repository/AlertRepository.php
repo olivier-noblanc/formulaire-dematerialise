@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Enum\NotifyWho;
 use App\Enum\SubmissionStatus;
 
 final class AlertRepository extends BaseRepository
 {
     public static function isValidNotifyWho(string $notifyWho): bool
     {
-        return in_array($notifyWho, ['admin', 'submitter', 'validators', 'admin+submitter', 'admin+validators'], true)
+        return NotifyWho::isSentinel($notifyWho)
             || filter_var($notifyWho, FILTER_VALIDATE_EMAIL) !== false;
     }
 
