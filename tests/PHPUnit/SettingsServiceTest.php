@@ -124,4 +124,31 @@ final class SettingsServiceTest extends TestCase
         self::assertNotEmpty($updatedAt);
     }
 
+    /**
+     * SETTINGS_DEFAULTS contient des entiers (smtp_port, mail_dry_run). Quand la
+     * ligne est absente, get() doit tout de même satisfaire son type de retour
+     * `string` — sinon TypeError dans toute page qui lit le réglage.
+     */
+    public function testIntegerDefaultIsCastToStringOnFallback(): void
+    {
+        $pdo = $this->db->getPdo();
+        $saved = $pdo->query("SELECT value FROM settings WHERE key = 'mail_dry_run'")->fetchColumn();
+        $pdo->exec("DELETE FROM settings WHERE key = 'mail_dry_run'");
+        $this->resetStaticCache();
+
+        try {
+            self::assertSame('0', $this->settings->get('mail_dry_run'));
+        } finally {
+            if (is_string($saved) || is_int($saved)) {
+                $this->settings->set('mail_dry_run', (string) $saved, 'test');
+            }
+            $this->resetStaticCache();
+        }
+    }
+
+    private function resetStaticCache(): void
+    {
+        $reflection = new \ReflectionClass(SettingsService::class);
+        $reflection->getProperty('cache')->setValue(null, []);
+    }
 }

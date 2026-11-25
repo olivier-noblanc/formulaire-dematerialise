@@ -34,10 +34,13 @@ final class SettingsService implements SettingsInterface
             // @silent-ok: fallback — DB not yet ready, use default
         }
 
+        // SETTINGS_DEFAULTS contient des entiers (smtp_port, mail_dry_run) :
+        // sans cast, get() déclarée `string` renvoyait un int et levait un
+        // TypeError dès que la ligne était absente de la base.
         /** @var array<string, string>|string $defaults */
         $defaults = defined('SETTINGS_DEFAULTS') ? SETTINGS_DEFAULTS : [];
         \assert(\is_array($defaults));
-        $result = $defaults[$key] ?? $default;
+        $result = (string) ($defaults[$key] ?? $default);
         self::$cache[$key] = $result;
         return $result;
     }
