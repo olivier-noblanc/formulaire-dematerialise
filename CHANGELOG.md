@@ -19,7 +19,7 @@ _Résumé : durcissement de `alert_rules.notify_who` — enum NotifyWho, contrai
 - Nouveau `NotifyWhoEnumTest` : enum = exactement les 5 sentinelles, `isSentinel` (rejette `custom`, casse, sentinelles inconnues, emails), libellés présents, contrat du repository, et les `<option>` du renderer générées depuis l'enum.
 - Nouveau `MigrationV46AlertNotifyWhoTest` : `CHECK` présente sur base fraîche, convergence base fraîche / base migrée depuis v45 (SQL identique), acceptation des 5 sentinelles + 4 emails (dont `+`), rejet de `foo`/`custom`/chaîne vide/`admin + submitter`/`foo@`, préflight bloquant sans normalisation (valeur et compteur intacts, version 46 absente), succès après correction de la ligne, idempotence.
 - `DateHelperTest` : palier `warning` (J-5) et invariant « toute urgence appartient à `UrgencyLevel` », plus `fromDaysRemaining()` sur les bornes ; `SettingsServiceTest` : repli entier casté en chaîne ; `MigrationV42V43Test` : version cible 45 → 46.
-- Vérifications ciblées locales (83 tests / 204 assertions), PHPStan level 8 sur les fichiers touchés, Rector dry-run, Deptrac : verts. Suite complète et `check.ps1` laissées à la CI.
+- Vérifications ciblées locales (83 tests / 204 assertions), PHPStan level 8 sur les fichiers touchés, Rector dry-run, Deptrac : verts. CI du run 45627531511 : 1792 tests / 5950 assertions, 0 échec, 16 jobs verts.
 
 ## [10.42.47] — 2026-11-24
 _Résumé : réparation de la CI (erreur de syntaxe) et migration v45 qui supprime l'index unique legacy des soumissions actives._

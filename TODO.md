@@ -4,8 +4,8 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tests | **1792** (1776 mesurés v10.42.47 + 16 nouveaux en v10.42.48) |
-| Assertions | **5920** (5829 mesurées v10.42.47 + 91 en v10.42.48) |
+| Tests | **1792** (mesurés par la CI du run 45627531511, v10.42.48) |
+| Assertions | **5950** (CI run 45627531511, v10.42.48) |
 | `noUntypedArray` PHPStan | **0** ✅ (157 → 0 — Wave 2 shapes/aliases, v10.42.15) |
 | Coverage | **33.5%** (codecov.io) — cible 60% |
 | Infection MSI | **30%** min — cible 50% |
@@ -28,7 +28,7 @@
 | Convergence | Base fraîche et base migrée depuis v45 produisent le même `sqlite_master.sql` pour `alert_rules` (test dédié). |
 | Fix settings | `SettingsService::get()` caste `SETTINGS_DEFAULTS` en chaîne (les défauts `smtp_port`/`mail_dry_run` sont des entiers → `TypeError` si la ligne manquait). |
 | Tests | +16 tests / +91 assertions : `NotifyWhoEnumTest`, `MigrationV46AlertNotifyWhoTest`, `DateHelperTest` (warning + invariant enum + `fromDaysRemaining`), `SettingsServiceTest` (repli entier), `MigrationV42V43Test` cible 46. |
-| Validation | Ciblée : 83 tests / 204 assertions verts ; PHPStan level 8 sur les fichiers touchés, Rector dry-run, Deptrac : verts. Suite complète et `check.ps1` laissées à la CI. |
+| Validation | Ciblée : 83 tests / 204 assertions verts ; PHPStan level 8 sur les fichiers touchés, Rector dry-run, Deptrac : verts. CI du run 45627531511 : **1792 tests / 5950 assertions, 16 jobs verts**. |
 | Bases locales | Aucune modification de `workflow.db` ni `db/workflow.db` (seule `db/workflow_test.db`, base de test, est migrée par la suite). |
 
 ### v10.42.47 — CI réparée + migration v45 index legacy (2026-11-24)
