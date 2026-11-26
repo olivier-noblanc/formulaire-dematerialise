@@ -56,6 +56,15 @@ web.config
 *.swp
 *.swo
 
+# OpenCode — état local d'outillage (node_modules, locks, sessions, caches).
+# `.opencode/opencode.json` n'est PAS de l'état local : c'est la configuration
+# PROJET (agent/permissions), déjà versionnée. Elle reste donc explicitement
+# non ignorée, pour qu'aucune évolution de cette configuration ne devienne
+# invisible. Idem pour un futur `.opencode/plugins/` fourni par le projet.
+/.opencode/*
+!/.opencode/opencode.json
+!/.opencode/plugins/
+
 # Tests
 /tool-results/
 /spc

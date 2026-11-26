@@ -1,7 +1,14 @@
 <?php
 declare(strict_types=1);
 
+use App\Enum\FieldType;
+use App\Enum\FieldVisibility;
+use App\Enum\FilledBy;
 use App\Validation\RecipientAddress;
+
+// Source de vérité unique des groupes `card_group` du seed (aucune dépendance à
+// l'autoload : même disponibilité que les autres fichiers de migration).
+require_once __DIR__ . '/form_field_groups.php';
 
 /**
  * v47 — durcissement des ordres et des destinataires.
@@ -12,10 +19,14 @@ use App\Validation\RecipientAddress;
  *  - `step_recipients.email` : email classique ou référence `{{...}}`, jamais
  *    vide ni tronquée.
  *
- * `form_fields` : la rotation legacy d'export connaît une signature exacte,
- * réparée de façon déterministe (voir le préflight). Toute rotation qui ne
- * correspond pas exactement à cette signature reste bloquante : aucune
- * réparation silencieuse, aucun ID perdu.
+ * `form_fields` : deux rotations sont reconnues et réparées de façon
+ * déterministe (voir le préflight) :
+ *  - signature A, `required` porte l'ancien ordre (entier >= 2) ;
+ *  - signature B, observée en production, `required` reste un booléen 0/1,
+ *    `ordre` porte le nom du groupe, `card_group` l'ancien hint et `hint` est
+ *    vide.
+ * Toute autre combinaison reste bloquante : aucune réparation silencieuse,
+ * aucun ID perdu.
  *
  * Cause historique : le dépôt contient des reconstructions positionnelles
  * `INSERT INTO ... SELECT *` (v43/v44 au moment de v47, v30/v31/v33 avant le
@@ -44,6 +55,22 @@ use App\Validation\RecipientAddress;
  * Le rebuild des trois tables est atomique (BEGIN IMMEDIATE, FK hors
  * transaction comme v43/v44/v46), avec contrôle des comptes de lignes et du
  * schéma après reconstruction.
+ *
+ * Renumérotation : `form_fields.ordre` n'est jamais réécrit sur la table en
+ * place. Les valeurs réparées sont injectées via une table TEMP (`v47_field_fixes`)
+ * puis projetées par jointure dans `form_fields_new` (table neuve, donc vide) au
+ * moment du rebuild. Cette stratégie est indépendante de tout index
+ * `(form_id, ordre)` : une base déployée pourrait en porter un (créé hors dépôt)
+ * qu'une suite d'`UPDATE` ligne à ligne violerait en cours de permutation
+ * (ex. signature B : la ligne à l'ordre 3 reçoit 1 alors que la ligne à l'ordre 1
+ * n'a pas encore reçu 2).
+ *
+ * Colonnes à liste fermée (`field_type`, `filled_by`, `visibility`) : le
+ * préflight les compare aux enums `App\Enum\*` AVANT le moindre BEGIN et
+ * remonte colonne + ID + valeur. Les CHECK du rebuild en sont le miroir SQL
+ * (SQLite ne lit pas un enum) : sans ce préflight, une valeur héritée invalide
+ * ne produirait qu'un « CHECK constraint failed » générique au milieu du
+ * rebuild, sans ID.
  */
 function apply_migration_v47(PDO $pdo, int $current_version): int
 {
@@ -74,24 +101,70 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
     }
     $rows = null;
 
-    // ── Préflight form_fields + réparation de la rotation connue ──
-    // Signature EXACTE observée en production (rotation d'un import legacy) :
+    // ── Préflight strict : colonnes à liste fermée ──
+    // Source de vérité PHP = les enums `App\Enum\*` (règle « aucune liste de
+    // valeurs recopiée »). Les CHECK du rebuild en sont le miroir SQL. Sans ce
+    // préflight, une valeur héritée invalide remonterait en
+    // « CHECK constraint failed » au milieu du rebuild, sans colonne ni ID.
+    $invalid = array_merge(
+        $invalid,
+        v47_off_list_values($pdo, 'field_type', 'form_fields.field_type', v47_enum_values(FieldType::cases())),
+        v47_off_list_values($pdo, 'filled_by', 'form_fields.filled_by', v47_enum_values(FilledBy::cases())),
+        v47_off_list_values($pdo, 'visibility', 'form_fields.visibility', v47_enum_values(FieldVisibility::cases())),
+    );
+
+    // ── Préflight form_fields + réparation des rotations connues ──
+    // Signature A (rotation legacy par position, `required` = ancien ordre) :
     //   required   = ancien ordre (entier >= 2)
     //   ordre      = ancien card_group (0/vide si défaut, sinon texte du groupe)
     //   card_group = ancien hint (vide, ou l'un des textes de hint documentés)
     //   hint       = ''
-    // Réparation déterministe, uniquement pour cette signature :
-    //   card_group := ordre      (0/vide -> 'Général', sinon texte observé)
-    //   hint       := card_group (texte du hint observé, vide conservé)
-    //   required   := 0          (valeur d'origine non récupérable, choix
-    //                             conservateur : ne force pas un champ requis)
-    //   ordre      := séquentiel  (règle ORDER BY documentée plus bas)
-    // Toute autre combinaison (hint non vide, `ordre` numérique positif, ou
-    // card_group non vide hors liste documentée) est fail-closed : aucune
+    //
+    // Signature B (rotation réelle observée en production, `required` = 0/1) :
+    //   required   = 0 ou 1 (booléen métier conservé)
+    //   ordre      = nom du groupe (`Identité de l'agent`, `Informatique (IT)`, ...)
+    //   card_group = ancien hint (vide, documenté, ou texte libre non reconnu
+    //                comme groupe)
+    //   hint       = ''
+    //
+    // La signature B n'est acceptée que si le texte d'`ordre` est un groupe
+    // suffisamment établi : groupe documenté du seed, groupe déjà observé dans
+    // un `card_group` sain, ou texte répété sur au moins deux lignes. Un texte
+    // isolé et inconnu reste ambigu et bloque. Un `card_group` qui est lui-même
+    // un groupe établi bloque également : deux groupes dans la même ligne sont
+    // ambigus.
+    //
+    // Réparations déterministes :
+    //   signature A : card_group := ordre (0/vide -> 'Général'),
+    //                 hint := card_group, required := 0,
+    //                 ordre := séquentiel après le plus grand ordre sain.
+    //   signature B : card_group := ordre, hint := card_group actuel,
+    //                 required := 0/1 conservé,
+    //                 ordre := 1..N pour tout le formulaire (groupes ordonnés
+    //                 par première apparition, lignes d'un groupe par ordre
+    //                 source puis rowid).
+    // Toute autre combinaison (hint non vide, `ordre` numérique positif, texte
+    // d'ordre non établi, card_group non documenté) est fail-closed : aucune
     // réparation silencieuse.
     $rotations = [];
     /** @var list<array{rowid:int,id:string,form_id:string,old_ordre:int,hint_text:string,group_text:string}> $repairable */
     $repairable = [];
+    /** @var list<array{rowid:int,id:string,form_id:string,required:int,hint_text:string,group_text:string}> $groupRepairable */
+    $groupRepairable = [];
+    /**
+     * @var array<string, list<array{
+     *   rowid:int,
+     *   id:string,
+     *   required:int|null,
+     *   ordre:int|string,
+     *   card_group:string,
+     *   hint:string,
+     *   kind:string,
+     *   group_key:string,
+     *   source_rank:int|null
+     * }>> $allRowsByForm
+     */
+    $allRowsByForm = [];
     $legacyHintGroups = [
         'Préciser les droits ou le rôle valideur le cas échéant',
         'Préciser les applications métiers nécessaires',
@@ -105,6 +178,13 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
         'Matériel attribué par défaut',
         'Préciser les autres équipements nécessaires',
     ];
+    // Groupes documentés du seed, via la source partagée
+    // `classes/migrations/form_field_groups.php` (également consommée par
+    // `seed_default_forms.php` et surveillée par
+    // `scripts/check_form_field_groups.php` en CI). La liste reste fermée : un
+    // texte isolé hors de ces groupes (et sans preuve par répétition) ne doit
+    // jamais être converti.
+    $legacyGroups = default_form_field_card_groups();
     $rows = $pdo->query(
         'SELECT rowid AS rid, id, form_id, required, ordre, card_group, hint '
         . 'FROM form_fields ORDER BY form_id, rowid'
@@ -112,7 +192,39 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
     if ($rows === false) {
         throw new RuntimeException('v47: form_fields rotation preflight query failed');
     }
-    foreach ($rows->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $fieldRows = $rows->fetchAll(PDO::FETCH_ASSOC);
+    $rows = null;
+
+    // Groupes établis par les données : un `card_group` sain (ordre entier) ou
+    // un texte d'`ordre` répété au moins deux fois. Cela couvre les groupes
+    // personnalisés multi-champs sans accepter un texte isolé arbitraire.
+    $knownGroups = array_fill_keys($legacyGroups, true);
+    $ordreTextSeen = [];
+    foreach ($fieldRows as $row) {
+        $ordreRaw = $row['ordre'];
+        $validOrdre = (is_int($ordreRaw) && $ordreRaw >= 0)
+            || (is_string($ordreRaw) && preg_match('/^\d+$/', $ordreRaw) === 1);
+        if ($validOrdre) {
+            $group = trim((string) ($row['card_group'] ?? ''));
+            if ($group !== '' && !in_array($group, $legacyHintGroups, true)) {
+                $knownGroups[$group] = true;
+            }
+            continue;
+        }
+        if (is_string($ordreRaw)) {
+            $text = trim($ordreRaw);
+            if ($text !== '' && preg_match('/^-?\d+$/', $text) !== 1) {
+                $ordreTextSeen[$text] = ($ordreTextSeen[$text] ?? 0) + 1;
+            }
+        }
+    }
+    foreach ($ordreTextSeen as $text => $count) {
+        if ($count >= 2 && !in_array($text, $legacyHintGroups, true)) {
+            $knownGroups[$text] = true;
+        }
+    }
+
+    foreach ($fieldRows as $row) {
         $required = $row['required'];
         $requiredInt = is_int($required)
             ? $required
@@ -124,6 +236,7 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
         $ordreText = is_string($ordreRaw)
             && trim($ordreRaw) !== ''
             && preg_match('/^-?\d+$/', trim($ordreRaw)) !== 1;
+        $ordreTextValue = $ordreText ? trim((string) $ordreRaw) : '';
 
         $cardGroup = trim((string) ($row['card_group'] ?? ''));
         $hint = trim((string) ($row['hint'] ?? ''));
@@ -132,62 +245,216 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             || $requiredInt < 0
             || ($requiredInt !== 0 && $requiredInt !== 1);
         $knownHintInCardGroup = $hint === '' && in_array($cardGroup, $legacyHintGroups, true);
+        $cardGroupIsEstablishedGroup = $cardGroup !== '' && isset($knownGroups[$cardGroup]);
+        $cardGroupIsHint = $cardGroup === '' || !$cardGroupIsEstablishedGroup;
         $exactRotation = $requiredInt !== null
             && $requiredInt >= 2
             && ($ordreDefault || $ordreText)
             && $hint === ''
             && ($cardGroup === '' || $knownHintInCardGroup);
+        $groupRotation = $requiredInt !== null
+            && ($requiredInt === 0 || $requiredInt === 1)
+            && $ordreText
+            && isset($knownGroups[$ordreTextValue])
+            && $hint === ''
+            && $cardGroupIsHint;
+
+        $meta = [
+            'rowid' => (int) $row['rid'],
+            'id' => (string) $row['id'],
+            'required' => $requiredInt,
+            'ordre' => is_int($ordreRaw) ? $ordreRaw : (is_string($ordreRaw) ? $ordreRaw : ''),
+            'card_group' => $cardGroup,
+            'hint' => $hint,
+            'kind' => 'healthy',
+            'group_key' => $cardGroup === '' ? 'Général' : $cardGroup,
+            'source_rank' => null,
+        ];
 
         if ($exactRotation) {
+            $meta['kind'] = 'old';
+            $meta['group_key'] = $ordreDefault ? 'Général' : $ordreTextValue;
+            $meta['source_rank'] = $requiredInt;
             $repairable[] = [
                 'rowid' => (int) $row['rid'],
                 'id' => (string) $row['id'],
                 'form_id' => (string) $row['form_id'],
-                'old_ordre' => $requiredInt,
+                'old_ordre' => (int) $requiredInt,
                 'hint_text' => $cardGroup,
-                'group_text' => $ordreDefault ? '' : trim((string) $ordreRaw),
+                'group_text' => $ordreDefault ? '' : $ordreTextValue,
             ];
-            continue;
+        } elseif ($groupRotation) {
+            $meta['kind'] = 'group';
+            $meta['group_key'] = $ordreTextValue;
+            $groupRepairable[] = [
+                'rowid' => (int) $row['rid'],
+                'id' => (string) $row['id'],
+                'form_id' => (string) $row['form_id'],
+                'required' => (int) $requiredInt,
+                'hint_text' => $cardGroup,
+                'group_text' => $ordreTextValue,
+            ];
+        } else {
+            $validOrdre = (is_int($ordreRaw) && $ordreRaw >= 0)
+                || (is_string($ordreRaw) && preg_match('/^\d+$/', $ordreRaw) === 1);
+            if ($validOrdre) {
+                $meta['source_rank'] = (int) $ordreRaw;
+            } elseif ($ordreText) {
+                $reason = 'ordre text is not an established group';
+                if (isset($knownGroups[$ordreTextValue])) {
+                    if ($hint !== '') {
+                        $reason = 'hint is not empty';
+                    } elseif ($cardGroupIsEstablishedGroup) {
+                        $reason = 'card_group is an established group, not a hint';
+                    } elseif ($invalidRequired) {
+                        $reason = 'required is not 0/1';
+                    }
+                }
+                $rotations[] = 'id=' . $row['id']
+                    . ' required=' . json_encode($required)
+                    . ' ordre=' . json_encode($ordreRaw, JSON_UNESCAPED_UNICODE)
+                    . ' card_group=' . json_encode($cardGroup, JSON_UNESCAPED_UNICODE)
+                    . ' hint=' . json_encode($hint, JSON_UNESCAPED_UNICODE)
+                    . ' reason=' . $reason;
+            } else {
+                $invalid[] = 'form_fields.ordre id=' . $row['id']
+                    . ' value=' . json_encode($ordreRaw);
+            }
+
+            if ($invalidRequired) {
+                $invalid[] = 'form_fields.required id=' . $row['id']
+                    . ' value=' . json_encode($required)
+                    . ($ordreZero ? ' (possible ordre déplacé)' : '');
+            }
+
+            if ($knownHintInCardGroup && !$ordreText) {
+                $rotations[] = 'id=' . $row['id']
+                    . ' required=' . json_encode($required)
+                    . ' ordre=' . json_encode($ordreRaw)
+                    . ' card_group=' . json_encode($cardGroup, JSON_UNESCAPED_UNICODE)
+                    . ' reason=known hint in card_group without the full signature';
+            }
         }
 
-        $validOrdre = (is_int($ordreRaw) && $ordreRaw >= 0)
-            || (is_string($ordreRaw) && preg_match('/^\d+$/', $ordreRaw) === 1);
-        if (!$validOrdre) {
-            $invalid[] = 'form_fields.ordre id=' . $row['id']
-                . ' value=' . json_encode($ordreRaw);
-        }
-
-        if ($invalidRequired) {
-            $invalid[] = 'form_fields.required id=' . $row['id']
-                . ' value=' . json_encode($required)
-                . ($ordreZero ? ' (possible ordre déplacé)' : '');
-        }
-
-        if ($knownHintInCardGroup) {
-            $rotations[] = 'id=' . $row['id']
-                . ' required=' . json_encode($required)
-                . ' ordre=' . json_encode($ordreRaw)
-                . ' card_group=' . json_encode($cardGroup, JSON_UNESCAPED_UNICODE);
-        }
+        $allRowsByForm[(string) $row['form_id']][] = $meta;
     }
-    $rows = null;
 
     // ── Ordre de renumérotation (déterministe et documenté) ──
-    // Pour chaque `form_id` concerné, les lignes réparées sont triées par
-    // `required` ASC (ancien ordre métier conservé par la rotation), puis
-    // `rowid` ASC (départage stable des égalités). Elles reçoivent des ordres
-    // contigus strictement supérieurs au plus grand `ordre` déjà présent dans
-    // le formulaire : les lignes saines (hors signature) ne sont jamais
-    // renumérotées et aucun doublon n'est créé. Si le formulaire est
-    // entièrement en rotation, la base vaut 1 et les ordres sont exactement
-    // 1..N.
+    // Signature A : les lignes réparées sont triées par `required` ASC (ancien
+    // ordre métier conservé), puis `rowid`, et reçoivent des ordres contigus
+    // strictement supérieurs au plus grand `ordre` sain du formulaire.
+    //
+    // Signature B : le formulaire entier est renuméroté 1..N. Les groupes sont
+    // ordonnés par première apparition (rowid minimal), puis les lignes d'un
+    // même groupe par ordre source (`ordre` sain ou ancien ordre de la
+    // signature A), et enfin par rowid. Cela rend l'ordre indépendant des
+    // collisions et stable entre deux exécutions.
+    $groupFormIds = [];
+    foreach ($groupRepairable as $candidate) {
+        $groupFormIds[$candidate['form_id']] = true;
+    }
+
+    /**
+     * @var list<array{
+     *   rowid:int,
+     *   id:string,
+     *   form_id:string,
+     *   repaired:bool,
+     *   required:int,
+     *   hint:string,
+     *   card_group:string,
+     *   ordre:int
+     * }> $assignments
+     */
+    $assignments = [];
+
+    foreach (array_keys($groupFormIds) as $formIdKey) {
+        $formId = (string) $formIdKey;
+        $rowsForForm = $allRowsByForm[$formId] ?? [];
+        if ($rowsForForm === []) {
+            throw new RuntimeException('v47: group rotation rows missing for form ' . $formId);
+        }
+
+        $groupFirstRowid = [];
+        foreach ($rowsForForm as $meta) {
+            $group = $meta['group_key'];
+            if (!isset($groupFirstRowid[$group]) || $meta['rowid'] < $groupFirstRowid[$group]) {
+                $groupFirstRowid[$group] = $meta['rowid'];
+            }
+        }
+
+        /**
+         * @var list<array{
+         *   group_first:int,
+         *   rank:int,
+         *   rowid:int,
+         *   meta:array{
+         *     rowid:int,
+         *     id:string,
+         *     required:int|null,
+         *     ordre:int|string,
+         *     card_group:string,
+         *     hint:string,
+         *     kind:string,
+         *     group_key:string,
+         *     source_rank:int|null
+         *   }
+         * }> $sortable
+         */
+        $sortable = [];
+        foreach ($rowsForForm as $meta) {
+            $sortable[] = [
+                'group_first' => $groupFirstRowid[$meta['group_key']],
+                'rank' => $meta['source_rank'] ?? PHP_INT_MAX,
+                'rowid' => $meta['rowid'],
+                'meta' => $meta,
+            ];
+        }
+        usort(
+            $sortable,
+            static fn(array $a, array $b): int => [$a['group_first'], $a['rank'], $a['rowid']]
+                <=> [$b['group_first'], $b['rank'], $b['rowid']]
+        );
+
+        $ordre = 1;
+        foreach ($sortable as $entry) {
+            $meta = $entry['meta'];
+            $repaired = $meta['kind'] !== 'healthy';
+            $requiredValue = $meta['required'] ?? 0;
+            $hintValue = $meta['hint'];
+            $cardGroupValue = $meta['card_group'];
+
+            if ($meta['kind'] === 'group') {
+                $cardGroupValue = $meta['group_key'];
+                $hintValue = $meta['card_group'];
+            } elseif ($meta['kind'] === 'old') {
+                $requiredValue = 0;
+                $cardGroupValue = $meta['group_key'];
+                $hintValue = $meta['card_group'];
+            }
+
+            $assignments[] = [
+                'rowid' => $meta['rowid'],
+                'id' => $meta['id'],
+                'form_id' => $formId,
+                'repaired' => $repaired,
+                'required' => $requiredValue,
+                'hint' => $hintValue,
+                'card_group' => $cardGroupValue,
+                'ordre' => $ordre,
+            ];
+            $ordre++;
+        }
+    }
+
     /** @var array<string, list<array{rowid:int,id:string,form_id:string,old_ordre:int,hint_text:string,group_text:string}>> $byForm */
     $byForm = [];
     foreach ($repairable as $candidate) {
+        if (isset($groupFormIds[$candidate['form_id']])) {
+            continue; // déjà couvert par la renumérotation 1..N du formulaire
+        }
         $byForm[$candidate['form_id']][] = $candidate;
     }
-    /** @var list<array{rowid:int,id:string,form_id:string,hint:string,card_group:string,ordre:int}> $assignments */
-    $assignments = [];
     foreach ($byForm as $formId => $list) {
         usort($list, static fn(array $a, array $b): int => [$a['old_ordre'], $a['rowid']] <=> [$b['old_ordre'], $b['rowid']]);
 
@@ -208,6 +475,8 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
                 'rowid' => $candidate['rowid'],
                 'id' => $candidate['id'],
                 'form_id' => $formId,
+                'repaired' => true,
+                'required' => 0,
                 'hint' => $candidate['hint_text'],
                 'card_group' => $candidate['group_text'] === '' ? 'Général' : $candidate['group_text'],
                 'ordre' => $next,
@@ -216,9 +485,8 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
         }
     }
 
-    // Contrôle des doublons avant écriture : les nouveaux ordres sont
-    // strictement supérieurs au maximum existant, donc uniques. Une collision
-    // signalerait un bug de calcul.
+    // Contrôle des doublons avant écriture : chaque ordre attribué doit être
+    // unique dans son formulaire.
     $seen = [];
     foreach ($assignments as $assignment) {
         $key = $assignment['form_id'] . ':' . $assignment['ordre'];
@@ -258,12 +526,14 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
     if ($invalid !== [] || $rotations !== []) {
         $diagnostics = [];
         if ($invalid !== []) {
-            $diagnostics[] = 'invalid ordre/recipient/required values for '
-                . implode(', ', array_slice($invalid, 0, 10));
+            $diagnostics[] = 'invalid ordre/recipient/required/enumerated values for '
+                . implode(', ', array_slice($invalid, 0, 10))
+                . (count($invalid) > 10 ? ' … (' . count($invalid) . ' total)' : '');
         }
         if ($rotations !== []) {
-            $diagnostics[] = 'ambiguous form_fields.card_group/hint rotation (not the exact known signature, not repaired) for '
-                . implode(', ', array_slice($rotations, 0, 10));
+            $diagnostics[] = 'ambiguous form_fields.card_group/hint rotation (not one of the exact known signatures, not repaired) for '
+                . implode(', ', array_slice($rotations, 0, 10))
+                . (count($rotations) > 10 ? ' … (' . count($rotations) . ' total)' : '');
         }
         throw new RuntimeException('v47 blocked: ' . implode('; ', $diagnostics));
     }
@@ -289,22 +559,53 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
     try {
         $pdo->exec('BEGIN IMMEDIATE');
 
-        // ── Réparation form_fields : rotation exacte capturée au préflight ──
-        // card_group := groupe observé (défaut si vide), hint := hint observé,
-        // required := 0, ordre := séquentiel calculé ci-dessus.
+        // ── Réparation form_fields : valeurs réparées isolées en table TEMP ──
+        // Signature A : card_group := groupe observé, hint := hint observé,
+        //               required := 0, ordre := séquentiel calculé.
+        // Signature B : card_group := groupe observé, hint := hint observé,
+        //               required := 0/1 conservé, ordre := 1..N du formulaire.
+        // Les lignes saines d'un formulaire de signature B ne reçoivent que
+        // leur nouvelle position (`repaired = false`, autres colonnes NULL).
+        //
+        // Aucun UPDATE sur la table vivante : la signature B permute des ordres
+        // (la ligne à l'ordre 3 reçoit 1, celle à l'ordre 1 reçoit 2), donc une
+        // réécriture ligne à ligne collisionnerait avec tout index
+        // UNIQUE (form_id, ordre) qu'un déploiement porterait hors dépôt. Les
+        // valeurs sont projetées par jointure dans la table neuve (vide), ce qui
+        // rend la renumérotation indépendante de l'index et atomique.
+        $pdo->exec(
+            'CREATE TEMP TABLE IF NOT EXISTS v47_field_fixes ('
+            . 'field_rowid INTEGER PRIMARY KEY, '
+            . 'hint TEXT, card_group TEXT, required INTEGER, ordre INTEGER NOT NULL)'
+        );
+        $pdo->exec('DELETE FROM v47_field_fixes');
         if ($assignments !== []) {
-            $repairField = $pdo->prepare(
-                'UPDATE form_fields SET hint = ?, card_group = ?, required = 0, ordre = ? WHERE rowid = ?'
+            $fixInsert = $pdo->prepare(
+                'INSERT INTO v47_field_fixes (field_rowid, hint, card_group, required, ordre) '
+                . 'VALUES (?, ?, ?, ?, ?)'
             );
             foreach ($assignments as $assignment) {
-                $repairField->execute([
-                    $assignment['hint'],
-                    $assignment['card_group'],
-                    $assignment['ordre'],
-                    $assignment['rowid'],
-                ]);
+                if ($assignment['repaired']) {
+                    $fixInsert->execute([
+                        $assignment['rowid'],
+                        $assignment['hint'],
+                        $assignment['card_group'],
+                        $assignment['required'],
+                        $assignment['ordre'],
+                    ]);
+                } else {
+                    // Ligne saine : seule la position change, le reste est
+                    // laissé intact par COALESCE au moment du rebuild.
+                    $fixInsert->execute([
+                        $assignment['rowid'],
+                        null,
+                        null,
+                        null,
+                        $assignment['ordre'],
+                    ]);
+                }
             }
-            $repairField = null;
+            $fixInsert = null;
         }
 
         $update = $pdo->prepare('UPDATE step_recipients SET email = ? WHERE id = ?');
@@ -326,9 +627,16 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
         );
         $formFieldColumns = 'id, form_id, label, field_type, field_name, options, hint, '
             . 'required, ordre, card_group, filled_by, validator_step, visibility, `condition`';
+        // Projection par nom de colonne des deux côtés, avec les réparations
+        // appliquées en une seule passe (table cible vide → aucun état
+        // intermédiaire partagé avec les ordres existants).
         $pdo->exec(
             "INSERT INTO form_fields_new ({$formFieldColumns}) "
-            . "SELECT {$formFieldColumns} FROM form_fields"
+            . 'SELECT f.id, f.form_id, f.label, f.field_type, f.field_name, f.options, '
+            . 'COALESCE(x.hint, f.hint), COALESCE(x.required, f.required), '
+            . 'COALESCE(x.ordre, f.ordre), COALESCE(x.card_group, f.card_group), '
+            . 'f.filled_by, f.validator_step, f.visibility, f.`condition` '
+            . 'FROM form_fields f LEFT JOIN temp.v47_field_fixes x ON x.field_rowid = f.rowid'
         );
         $pdo->exec('DROP TABLE form_fields');
         $pdo->exec('ALTER TABLE form_fields_new RENAME TO form_fields');
@@ -422,20 +730,27 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
                 $verify->execute([$assignment['id']]);
                 $repaired = $verify->fetch(PDO::FETCH_ASSOC);
                 if (!is_array($repaired)
-                    || (string) $repaired['hint'] !== $assignment['hint']
-                    || (string) $repaired['card_group'] !== $assignment['card_group']
-                    || (int) $repaired['required'] !== 0
+                    || (int) $repaired['required'] !== $assignment['required']
                     || (int) $repaired['ordre'] !== $assignment['ordre']) {
                     throw new RuntimeException(
                         'v47: repaired form_fields row not persisted for id=' . $assignment['id']
                     );
                 }
+                if ($assignment['repaired']
+                    && ((string) $repaired['hint'] !== $assignment['hint']
+                        || (string) $repaired['card_group'] !== $assignment['card_group'])) {
+                    throw new RuntimeException(
+                        'v47: repaired form_fields group/hint not persisted for id=' . $assignment['id']
+                    );
+                }
             }
             $verify = null;
 
-            // Les ordres attribués sont contigus et strictement au-dessus du
-            // maximum existant : toute ligne supplémentaire dans l'intervalle
-            // serait un doublon avec une ligne saine.
+            // Signature A : les ordres attribués sont contigus et strictement
+            // au-dessus du maximum existant, donc aucun doublon possible.
+            // Signature B : tout le formulaire est renuméroté 1..N, donc le
+            // nombre de lignes dans l'intervalle doit égaler le nombre de
+            // lignes attribuées.
             /** @var array<string, list<int>> $ordresByForm */
             $ordresByForm = [];
             foreach ($assignments as $assignment) {
@@ -455,6 +770,10 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             $duplicateQuery = null;
         }
 
+        // Table de travail confinée à cette connexion : supprimée avant COMMIT
+        // pour ne laisser aucun résidu sur une connexion de longue vie.
+        $pdo->exec('DROP TABLE IF EXISTS v47_field_fixes');
+
         $pdo->exec("INSERT INTO schema_version (version, applied_at) VALUES (47, datetime('now'))");
         $pdo->exec('COMMIT');
         return 47;
@@ -468,4 +787,66 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             $pdo->exec('PRAGMA foreign_keys = ON');
         }
     }
+}
+
+/**
+ * Valeurs d'un enum string-backed, sous forme de `list<string>`.
+ *
+ * Utilisé par les préflights v47 pour que les listes fermées (`field_type`,
+ * `filled_by`, `visibility`) ne soient jamais recopiées : l'enum reste la
+ * source de vérité, les CHECK SQL n'en sont que le miroir.
+ *
+ * @param array<int, \BackedEnum> $cases
+ * @return list<string>
+ */
+function v47_enum_values(array $cases): array
+{
+    $values = [];
+    foreach ($cases as $case) {
+        $values[] = (string) $case->value;
+    }
+
+    return $values;
+}
+
+/**
+ * Préflight d'une colonne `form_fields` à liste fermée.
+ *
+ * Retourne un diagnostic par ligne fautive (colonne + ID + valeur réelle) au
+ * lieu de laisser SQLite échouer plus tard sur un « CHECK constraint failed »
+ * générique. Aucune réparation : une valeur hors liste bloque la migration.
+ *
+ * @param list<string> $allowed Valeurs autorisées (issues d'un enum)
+ * @return list<string>
+ */
+function v47_off_list_values(PDO $pdo, string $column, string $label, array $allowed): array
+{
+    // Colonne interpolée : liste blanche explicite, jamais une entrée externe.
+    if (!in_array($column, ['field_type', 'filled_by', 'visibility'], true)) {
+        throw new RuntimeException('v47: preflight refused for column ' . $column);
+    }
+    if ($allowed === []) {
+        throw new RuntimeException('v47: empty allowed list for column ' . $column);
+    }
+
+    $placeholders = implode(', ', array_fill(0, count($allowed), '?'));
+    $stmt = $pdo->prepare(
+        "SELECT id, {$column} AS value FROM form_fields "
+        . "WHERE {$column} IS NULL OR typeof({$column}) <> 'text' "
+        . "OR {$column} NOT IN ({$placeholders}) LIMIT 10"
+    );
+    if ($stmt === false) {
+        throw new RuntimeException('v47: ' . $column . ' preflight query failed');
+    }
+    $stmt->execute($allowed);
+
+    $diagnostics = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $diagnostics[] = $label
+            . ' id=' . $row['id']
+            . ' value=' . json_encode($row['value'], JSON_UNESCAPED_UNICODE);
+    }
+    $stmt = null;
+
+    return $diagnostics;
 }

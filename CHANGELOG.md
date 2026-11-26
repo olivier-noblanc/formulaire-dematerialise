@@ -1,5 +1,29 @@
 # Changelog — CircuitDémat
 
+## [10.42.52] — 2026-11-26
+_Résumé : finalisation du correctif v47 — signatures de rotation A/B documentées, groupes `card_group` partagés avec garde CI anti-dérive, préflight des listes fermées et renumérotation atomique indépendante de tout index._
+
+### 🔒 Sécurité / Correctifs
+- **Deux signatures de rotation `form_fields` reconnues et documentées** (`classes/migrations/v47.php`) :
+  - **Signature A** (rotation legacy par position) : `required` porte l'ancien ordre (entier `>= 2`), `ordre` porte l'ancien `card_group` (`0`/vide ou texte), `card_group` porte l'ancien hint (vide ou hint documenté), `hint = ''`. Réparation : `card_group := ordre` (`Général` si `0`/vide), `hint := card_group` observé, `required := 0`, `ordre` contigu strictement après le plus grand ordre sain.
+  - **Signature B** (rotation réellement observée en production) : `required` reste le **booléen métier `0`/`1`** (variante `required=1` incluse, donc pas de normalisation à `0`), `ordre` porte le **nom du groupe**, `card_group` porte l'ancien hint (vide, documenté ou texte libre), `hint = ''`. Réparation : `card_group := ordre`, `hint := card_group` observé, **`required` conservé tel quel**, formulaire entier renuméroté `1..N` (groupes par première apparition, lignes par ordre source puis `rowid`).
+  - Un `ordre` textuel n'est accepté que s'il désigne un groupe **établi** (groupe du seed, groupe déjà présent dans un `card_group` sain, ou texte répété sur ≥ 2 lignes) ; texte isolé inconnu, `hint` non vide ou `card_group` déjà établi = fail-closed, sans ID perdu.
+- **Groupes `card_group` : duplication rendue impossible à ignorer** : nouvelle source partagée `classes/migrations/form_field_groups.php` (`default_form_field_card_groups()`), chargée par `require_once` (aucune dépendance à l'autoload, disponible en installation fraîche comme en migration). `seed_default_forms.php` et `v47.php` la référencent ; `scripts/check_form_field_groups.php` (nouvelle étape du job CI `sql-structure`) vérifie **dans les deux sens** que chaque groupe seedé existe dans la liste et que chaque groupe de la liste est seedé (sauf `Général`, valeur par défaut), et interdit la réintroduction d'une liste littérale `$legacyGroups = [` dans `v47.php`. Une garde CI plutôt qu'une génération pour préserver la lisibilité ligne par ligne du seed.
+- **Préflight des colonnes à liste fermée** : `form_fields.field_type`, `filled_by` et `visibility` sont comparés **avant le moindre `BEGIN`** aux enums `App\Enum\FieldType` / `FilledBy` / `FieldVisibility` (`v47_off_list_values()`, `v47_enum_values()`). Le diagnostic remonte la colonne, l'ID et la valeur réelle (`form_fields.field_type id=… value=…`) au lieu d'un « CHECK constraint failed » générique au milieu du rebuild. Les CHECK SQL restent le miroir (SQLite ne lit pas un enum) ; aucune réparation silencieuse.
+- **Renumérotation atomique, indépendante de tout index** : `form_fields.ordre` n'est plus réécrit par des `UPDATE` ligne à ligne. Les valeurs réparées sont isolées dans une table TEMP (`v47_field_fixes`) puis projetées en une seule passe dans `form_fields_new` (`COALESCE(x.hint, f.hint)`, etc.), table neuve donc vide. Une signature B permute des ordres (la ligne à l'ordre 3 reçoit 1 alors que celle à l'ordre 1 reçoit 2) : un `UPDATE` intermédiaire aurait violé tout index `UNIQUE (form_id, ordre)` créé hors dépôt. La table TEMP est supprimée avant `COMMIT`, et le rollback la fait disparaître avec la transaction. Le contrôle de doublons calculés avant écriture et la vérification post-rebuild (contiguïté + comptage par intervalle) sont conservés.
+
+### 🧪 Tests
+- `MigrationV47OrdreAndRecipientsTest::testOffListEnumeratedColumnsBlockBeforeRebuildWithDiagnostics` : pour `field_type`, `filled_by` et `visibility`, injection d'une valeur héritée invalide (`PRAGMA ignore_check_constraints`, même mécanisme que les fixtures `required`) puis vérification que v47 bloque **avant** rebuild avec `colonne id=<uuid> value="…"`, sans « CHECK constraint failed », sans marquer la version 47 et sans ajouter les CHECK.
+- Aucun autre test existant modifié sur le fond : les états finaux attendus (signatures A/B, lignes saines, doublons) sont inchangés.
+- Nouvelle garde statique CI : `php scripts/check_form_field_groups.php` (0 dépendance, aucune base) — alignement seed ↔ liste partagée ↔ consommation par v47.
+
+### 🧹 Hygiène dépôt
+- `.gitignore` : `.opencode/` est désormais ignoré comme état local d'outillage (`node_modules`, locks, sessions), **sauf** `.opencode/opencode.json` (configuration projet versionnée, `$schema` + `permissions`) et un futur `.opencode/plugins/` fourni par le projet, explicitement ré-inclus. Vérifié : `.github/`, `AGENTS.md` et `opencode.json` restent visibles ; les caches déjà couverts (`nul`, `.phpunit.result.cache`, `.phpstan-cache`, `.php-cs-fixer.cache`, `.deptrac.cache`, `.playwright-mcp/`, `*.db`/`-wal`/`-shm`) n'ont nécessité aucune règle supplémentaire.
+
+### ⚠️ Risques CI / déploiement
+- Aucune base locale touchée, aucune suite de tests lancée (consigne) : `php -l` ciblé sur les quatre fichiers modifiés/ajoutés. La CI reste l'arbitre (PHPUnit, PHPStan 8, gardes statiques).
+- Un groupe ajouté au seed sans être ajouté à `form_field_groups.php` fait désormais échouer la CI (et inversement) : c'est voulu, la liste est un contrat partagé avec la détection de rotation de v47.
+
 ## [10.42.51] — 2026-11-26
 _Résumé : durcissement complet de l'import JSON (FormJsonValidator + AdminImportExportHandler) et migration v48 (unicité `form_fields.field_name` par formulaire)._
 

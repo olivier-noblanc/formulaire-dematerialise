@@ -13,10 +13,13 @@ use PHPUnit\Framework\TestCase;
  *
  * La migration est fail-closed : seules les valeurs tronquées documentées
  * sont réparées, et seulement quand le libellé d'étape confirme la
- * correspondance. La rotation legacy `form_fields` est réparée uniquement
- * pour sa signature exacte (`required >= 2`, `ordre = 0`, `card_group`
- * contenant un hint connu, `hint = ''`) ; toute autre valeur invalide ou
- * rotation ambiguë bloque avant écriture.
+ * correspondance. Deux rotations `form_fields` sont réparées :
+ *  - signature A (`required >= 2`, `ordre = 0`/texte, `card_group` un hint
+ *    connu ou vide, `hint = ''`) ;
+ *  - signature B observée en production (`required = 0/1`, `ordre` = nom de
+ *    groupe, `card_group` = hint connu ou vide, `hint = ''`), avec
+ *    renumérotation 1..N du formulaire.
+ * Toute autre valeur invalide ou rotation ambiguë bloque avant écriture.
  */
 final class MigrationV47OrdreAndRecipientsTest extends TestCase
 {
@@ -107,7 +110,7 @@ final class MigrationV47OrdreAndRecipientsTest extends TestCase
 
     /**
      * Insère un champ en contournant la CHECK `required IN (0,1)` de la
-     * baseline, nécessaire pour reproduire la rotation legacy.
+     * baseline, nécessaire pour reproduire les rotations legacy et groupe.
      *
      * @param array<string, int|string> $values
      */
@@ -346,6 +349,315 @@ final class MigrationV47OrdreAndRecipientsTest extends TestCase
         self::assertSame(0, $duplicates);
     }
 
+    public function testGroupRotationWithMultipleGroupsPreservesRequiredAndRenumbers(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->insertForm($pdo, 'groupes-' . uniqid());
+
+        // `ordre` porte le groupe, `card_group` l'ancien hint, `hint` est vide,
+        // `required` reste le booléen métier 0/1.
+        $itFirst = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Informatique (IT)',
+            'card_group' => 'Matériel attribué par défaut',
+            'hint' => '',
+        ]);
+        $identiteFirst = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => '',
+            'hint' => '',
+        ]);
+        $identiteSecond = $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => 'Site et numéro de bureau',
+            'hint' => '',
+        ]);
+        $itSecond = $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 'Informatique (IT)',
+            'card_group' => '',
+            'hint' => '',
+        ]);
+
+        self::assertSame(47, apply_migration_v47($pdo, 46));
+
+        // Groupes par première apparition : IT (rowid 1) puis Identité (rowid 2).
+        // Lignes d'un même groupe : rowid stable (aucun ordre source disponible).
+        $expected = [
+            $itFirst => [
+                'ordre' => 1,
+                'required' => 1,
+                'card_group' => 'Informatique (IT)',
+                'hint' => 'Matériel attribué par défaut',
+            ],
+            $itSecond => [
+                'ordre' => 2,
+                'required' => 0,
+                'card_group' => 'Informatique (IT)',
+                'hint' => '',
+            ],
+            $identiteFirst => [
+                'ordre' => 3,
+                'required' => 1,
+                'card_group' => 'Identité de l\'agent',
+                'hint' => '',
+            ],
+            $identiteSecond => [
+                'ordre' => 4,
+                'required' => 0,
+                'card_group' => 'Identité de l\'agent',
+                'hint' => 'Site et numéro de bureau',
+            ],
+        ];
+        foreach ($expected as $fieldId => $row) {
+            $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+            $stmt->execute([$fieldId]);
+            $actual = $stmt->fetch(PDO::FETCH_ASSOC);
+            self::assertIsArray($actual);
+            self::assertSame($row['required'], (int) $actual['required']);
+            self::assertSame($row['ordre'], (int) $actual['ordre']);
+            self::assertSame($row['card_group'], (string) $actual['card_group']);
+            self::assertSame($row['hint'], (string) $actual['hint']);
+        }
+
+        $duplicates = (int) $pdo->query(
+            'SELECT COUNT(*) FROM (SELECT ordre FROM form_fields WHERE form_id = '
+            . $pdo->quote($formId) . ' GROUP BY ordre HAVING COUNT(*) > 1)'
+        )->fetchColumn();
+        self::assertSame(0, $duplicates);
+    }
+
+    public function testGroupRotationRenumbersHealthyRowsWithoutChangingTheirGroup(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->insertForm($pdo, 'groupes-sain-' . uniqid());
+
+        $healthy = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 5,
+            'card_group' => 'Décision',
+            'hint' => 'Hint sain',
+        ]);
+        $rotated = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => 'Site et numéro de bureau',
+            'hint' => '',
+        ]);
+
+        self::assertSame(47, apply_migration_v47($pdo, 46));
+
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$healthy]);
+        $healthyRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($healthyRow);
+        self::assertSame(1, (int) $healthyRow['required']);
+        self::assertSame(1, (int) $healthyRow['ordre']);
+        self::assertSame('Décision', (string) $healthyRow['card_group']);
+        self::assertSame('Hint sain', (string) $healthyRow['hint']);
+
+        $stmt->execute([$rotated]);
+        $rotatedRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($rotatedRow);
+        self::assertSame(1, (int) $rotatedRow['required']);
+        self::assertSame(2, (int) $rotatedRow['ordre']);
+        self::assertSame('Identité de l\'agent', (string) $rotatedRow['card_group']);
+        self::assertSame('Site et numéro de bureau', (string) $rotatedRow['hint']);
+    }
+
+    public function testGroupRotationAcceptsRepeatedCustomGroup(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->insertForm($pdo, 'groupe-custom-' . uniqid());
+
+        $first = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Groupe personnalisé',
+            'card_group' => '',
+            'hint' => '',
+        ]);
+        $second = $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 'Groupe personnalisé',
+            'card_group' => 'Site et numéro de bureau',
+            'hint' => '',
+        ]);
+
+        self::assertSame(47, apply_migration_v47($pdo, 46));
+
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$first]);
+        $firstRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($firstRow);
+        self::assertSame(1, (int) $firstRow['required']);
+        self::assertSame(1, (int) $firstRow['ordre']);
+        self::assertSame('Groupe personnalisé', (string) $firstRow['card_group']);
+
+        $stmt->execute([$second]);
+        $secondRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($secondRow);
+        self::assertSame(0, (int) $secondRow['required']);
+        self::assertSame(2, (int) $secondRow['ordre']);
+        self::assertSame('Groupe personnalisé', (string) $secondRow['card_group']);
+        self::assertSame('Site et numéro de bureau', (string) $secondRow['hint']);
+    }
+
+    public function testProductionGroupRotationVariantWithRequiredOne(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->insertForm($pdo, 'variante-production-' . uniqid());
+
+        // Variante exacte signalée en production : ordre = groupe,
+        // card_group = ancien hint, hint = '', required = 1.
+        $identiteHint = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => 'Adresse email personnelle de l\'agent',
+            'hint' => '',
+        ]);
+        $identiteSansHint = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => '',
+            'hint' => '',
+        ]);
+        $itHint = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Informatique (IT)',
+            'card_group' => 'Matériel attribué par défaut',
+            'hint' => '',
+        ]);
+
+        self::assertSame(47, apply_migration_v47($pdo, 46));
+
+        $expected = [
+            $identiteHint => [
+                'ordre' => 1,
+                'card_group' => 'Identité de l\'agent',
+                'hint' => 'Adresse email personnelle de l\'agent',
+            ],
+            $identiteSansHint => [
+                'ordre' => 2,
+                'card_group' => 'Identité de l\'agent',
+                'hint' => '',
+            ],
+            $itHint => [
+                'ordre' => 3,
+                'card_group' => 'Informatique (IT)',
+                'hint' => 'Matériel attribué par défaut',
+            ],
+        ];
+        foreach ($expected as $fieldId => $row) {
+            $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+            $stmt->execute([$fieldId]);
+            $actual = $stmt->fetch(PDO::FETCH_ASSOC);
+            self::assertIsArray($actual);
+            self::assertSame(1, (int) $actual['required']);
+            self::assertSame($row['ordre'], (int) $actual['ordre']);
+            self::assertSame($row['card_group'], (string) $actual['card_group']);
+            self::assertSame($row['hint'], (string) $actual['hint']);
+        }
+    }
+
+    public function testGroupRotationWithUnknownGroupTextBlocks(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->formId($pdo);
+        $repairableId = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => 'Site et numéro de bureau',
+            'hint' => '',
+        ]);
+        $fieldId = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 'Groupe métier non documenté',
+            'card_group' => 'Matériel attribué par défaut',
+            'hint' => '',
+        ]);
+
+        try {
+            apply_migration_v47($pdo, 46);
+            self::fail('Un texte d’ordre isolé et inconnu doit rester bloquant.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('v47 blocked', $exception->getMessage());
+            self::assertStringContainsString('ordre text is not an established group', $exception->getMessage());
+            self::assertStringContainsString($fieldId, $exception->getMessage());
+        }
+
+        self::assertSame(46, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$fieldId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame(1, (int) $row['required']);
+        self::assertSame('Groupe métier non documenté', (string) $row['ordre']);
+        self::assertSame('Matériel attribué par défaut', (string) $row['card_group']);
+        self::assertSame('', (string) $row['hint']);
+
+        // Aucune écriture partielle : la ligne pourtant réparable n'a pas bougé.
+        $stmt->execute([$repairableId]);
+        $repairableRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($repairableRow);
+        self::assertSame(1, (int) $repairableRow['required']);
+        self::assertSame('Identité de l\'agent', (string) $repairableRow['ordre']);
+        self::assertSame('Site et numéro de bureau', (string) $repairableRow['card_group']);
+        self::assertSame('', (string) $repairableRow['hint']);
+    }
+
+    public function testGroupRotationAcceptsUndocumentedNonEmptyCardGroupAsHint(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $fieldId = $this->insertLegacyField($pdo, $this->formId($pdo), [
+            'required' => 1,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => 'Hint maison non documenté',
+            'hint' => '',
+        ]);
+
+        self::assertSame(47, apply_migration_v47($pdo, 46));
+
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$fieldId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame(1, (int) $row['required']);
+        self::assertSame(1, (int) $row['ordre']);
+        self::assertSame('Identité de l\'agent', (string) $row['card_group']);
+        self::assertSame('Hint maison non documenté', (string) $row['hint']);
+    }
+
+    public function testGroupRotationWithCardGroupThatIsAnEstablishedGroupBlocks(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $fieldId = $this->insertLegacyField($pdo, $this->formId($pdo), [
+            'required' => 1,
+            'ordre' => 'Identité de l\'agent',
+            'card_group' => 'Logistique',
+            'hint' => '',
+        ]);
+
+        try {
+            apply_migration_v47($pdo, 46);
+            self::fail('Deux groupes établis dans la même ligne doivent rester bloquants.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('v47 blocked', $exception->getMessage());
+            self::assertStringContainsString('card_group is an established group, not a hint', $exception->getMessage());
+            self::assertStringContainsString($fieldId, $exception->getMessage());
+        }
+
+        self::assertSame(46, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$fieldId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame(1, (int) $row['required']);
+        self::assertSame('Identité de l\'agent', (string) $row['ordre']);
+        self::assertSame('Logistique', (string) $row['card_group']);
+    }
+
     public function testAmbiguousRotationWithNumericOrderBlocks(): void
     {
         $pdo = $this->v46Pdo($this->newDbPath());
@@ -464,6 +776,47 @@ final class MigrationV47OrdreAndRecipientsTest extends TestCase
         self::assertSame(1, (int) $row['required']);
         self::assertSame(6, (int) $row['ordre']);
         self::assertSame('Groupe permuté', (string) $row['card_group']);
+    }
+
+    public function testOffListEnumeratedColumnsBlockBeforeRebuildWithDiagnostics(): void
+    {
+        $cases = [
+            ['field_type', 'number', 'form_fields.field_type'],
+            ['filled_by', 'admin', 'form_fields.filled_by'],
+            ['visibility', 'hidden', 'form_fields.visibility'],
+        ];
+
+        foreach ($cases as [$column, $value, $label]) {
+            $pdo = $this->v46Pdo($this->newDbPath());
+            $fieldId = \generate_uuid();
+            // La baseline porte une CHECK sur ces colonnes : on l'ignore le
+            // temps d'injecter la valeur héritée invalide (même mécanisme que
+            // `insertLegacyField` pour `required`).
+            $pdo->exec('PRAGMA ignore_check_constraints = ON');
+            $pdo->prepare(
+                'INSERT INTO form_fields (id, form_id, label, field_name, ' . $column . ') '
+                . 'VALUES (?, ?, ?, ?, ?)'
+            )->execute([$fieldId, $this->formId($pdo), 'Champ invalide', 'champ_invalide', $value]);
+            $pdo->exec('PRAGMA ignore_check_constraints = OFF');
+
+            try {
+                apply_migration_v47($pdo, 46);
+                self::fail('Une valeur hors liste doit bloquer v47 (' . $column . ').');
+            } catch (\RuntimeException $exception) {
+                // Diagnostic explicite AVANT le moindre BEGIN : colonne + ID +
+                // valeur, pas un « CHECK constraint failed » générique.
+                self::assertStringContainsString('v47 blocked', $exception->getMessage());
+                self::assertStringContainsString($label . ' id=' . $fieldId, $exception->getMessage());
+                self::assertStringContainsString('value="' . $value . '"', $exception->getMessage());
+                self::assertStringNotContainsString('CHECK constraint failed', $exception->getMessage());
+            }
+
+            self::assertSame(
+                0,
+                (int) $pdo->query('SELECT COUNT(*) FROM schema_version WHERE version = 47')->fetchColumn()
+            );
+            self::assertStringNotContainsString("typeof(ordre) = 'integer'", $this->tableSql($pdo, 'form_fields'));
+        }
     }
 
     public function testMigrationIsIdempotent(): void

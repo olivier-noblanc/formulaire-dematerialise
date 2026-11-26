@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+// Source de vérité des groupes `card_group` seedés, partagée avec la migration
+// v47 (`$legacyGroups`). Les libellés restent écrits en clair ligne par ligne
+// pour la lisibilité des formulaires ; la dérive entre ces littéraux et la
+// liste partagée est bloquée en CI par
+// `scripts/check_form_field_groups.php` (contrôle bidirectionnel).
+require_once __DIR__ . '/form_field_groups.php';
+
 /**
  * Seed default forms — onboarding, outboarding, etc.
  *

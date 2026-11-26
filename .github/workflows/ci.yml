@@ -80,6 +80,11 @@ jobs:
           php-version: '8.5'
           coverage: none
       - run: php scripts/check_sql_structure.php
+      - name: Garde dérive groupes card_group (seed ↔ v47)
+        # La liste des groupes `card_group` est partagée
+        # (classes/migrations/form_field_groups.php) entre le seed et la
+        # migration v47 ; ce garde bloque toute duplication silencieuse.
+        run: php scripts/check_form_field_groups.php
 
   # ── Analyse statique ─────────────────────────────────────────
   phpstan:

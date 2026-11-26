@@ -18,6 +18,19 @@
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.52 — finalisation correctif v47 : signatures A/B, groupes partagés, renumérotation atomique (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| Signature A | `required` = ancien ordre (`>= 2`), `ordre` = ancien `card_group` (`0`/vide ou texte), `card_group` = ancien hint (vide/documenté), `hint=''`. Réparation : `card_group := ordre` (`Général` si `0`/vide), `hint := card_group`, `required := 0`, ordres contigus après le max sain. |
+| Signature B | `required` = **booléen métier `0`/`1` conservé** (variante `required=1` incluse), `ordre` = nom du groupe, `card_group` = ancien hint, `hint=''`. Réparation : `card_group := ordre`, `hint := card_group`, formulaire renuméroté `1..N` (groupes par première apparition, lignes par ordre source puis `rowid`). |
+| Ambiguïté | Groupe `ordre` accepté seulement s'il est établi (seed, `card_group` sain existant, ou texte répété ≥ 2 fois) ; `hint` non vide / `card_group` déjà groupe / texte isolé inconnu = fail-closed. |
+| Source partagée groupes | `classes/migrations/form_field_groups.php` (`default_form_field_card_groups()`) consommée par `require_once` depuis `seed_default_forms.php` et `v47.php` (pas de dépendance autoload). Libellés du seed gardés en clair pour la lisibilité. |
+| Garde anti-dérive CI | `scripts/check_form_field_groups.php` (étape du job `sql-structure`) : contrôle bidirectionnel seed ↔ liste (sauf `Général`) + interdiction de réintroduire une liste littérale `$legacyGroups = [` dans v47. 0 dépendance, aucune base. |
+| Préflight listes fermées | `field_type`/`filled_by`/`visibility` comparés aux enums `FieldType`/`FilledBy`/`FieldVisibility` avant `BEGIN` ; diagnostic `colonne id=… value=…` au lieu d'un « CHECK constraint failed » générique. |
+| Renumérotation atomique | Plus aucun `UPDATE ... SET ordre` sur `form_fields` : table TEMP `v47_field_fixes` + projection `COALESCE` par jointure dans `form_fields_new` (table vide). Indépendant de tout index `UNIQUE (form_id, ordre)` ; TEMP supprimée avant `COMMIT`, rollback avec la transaction. |
+| Tests | +1 test ciblé (`testOffListEnumeratedColumnsBlockBeforeRebuildWithDiagnostics`) pour le préflight des trois colonnes ; états finaux des tests existants inchangés. Nouvelle garde statique CI. |
+| Validation | Aucune base locale touchée, aucune suite lancée (consigne) : `php -l` ciblé uniquement (v47, form_field_groups, seed_default_forms, check_form_field_groups). CI arbitre. |
+
 ### v10.42.51 — import JSON durci + unicité `field_name` (2026-11-26)
 | Tâche | Détail |
 |-------|--------|
