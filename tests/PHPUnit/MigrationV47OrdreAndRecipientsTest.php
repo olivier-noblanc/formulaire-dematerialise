@@ -610,7 +610,11 @@ final class MigrationV47OrdreAndRecipientsTest extends TestCase
     public function testGroupRotationAcceptsUndocumentedNonEmptyCardGroupAsHint(): void
     {
         $pdo = $this->v46Pdo($this->newDbPath());
-        $fieldId = $this->insertLegacyField($pdo, $this->formId($pdo), [
+        // Formulaire dédié : la renumérotation signature B couvre tout le
+        // formulaire 1..N. Utiliser un form seedé rendrait l'ordre attendu
+        // dépendant du nombre de champs livrés par le seed.
+        $formId = $this->insertForm($pdo, 'hint-maison-' . uniqid());
+        $fieldId = $this->insertLegacyField($pdo, $formId, [
             'required' => 1,
             'ordre' => 'Identité de l\'agent',
             'card_group' => 'Hint maison non documenté',

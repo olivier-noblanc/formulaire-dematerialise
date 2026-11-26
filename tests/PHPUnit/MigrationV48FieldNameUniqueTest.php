@@ -130,7 +130,10 @@ final class MigrationV48FieldNameUniqueTest extends TestCase
 
         self::assertSame(
             2,
-            (int) $pdo->query("SELECT COUNT(*) FROM form_fields WHERE lower(field_name) = 'nom'")->fetchColumn()
+            (int) $pdo->query(
+                "SELECT COUNT(*) FROM form_fields "
+                . "WHERE lower(field_name) = 'nom' AND form_id IN ('form-3', 'form-4')"
+            )->fetchColumn()
         );
     }
 

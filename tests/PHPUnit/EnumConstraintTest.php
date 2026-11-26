@@ -159,7 +159,9 @@ final class EnumConstraintTest extends TestCase
         $formId = $this->createTestForm($pdo);
 
         foreach (['demandeur', 'validator'] as $filledBy) {
-            $fieldId = $this->createTestFormField($pdo, $formId, filledBy: $filledBy);
+            // v48 impose un field_name unique par formulaire : varier le nom
+            // permet de tester plusieurs valeurs d'enum dans le même form.
+            $fieldId = $this->createTestFormField($pdo, $formId, filledBy: $filledBy, fieldName: 'test_field_' . $filledBy);
             $fetched = $pdo->prepare("SELECT filled_by FROM form_fields WHERE id = ?");
             $fetched->execute([$fieldId]);
             self::assertSame($filledBy, $fetched->fetchColumn());
@@ -198,7 +200,9 @@ final class EnumConstraintTest extends TestCase
 
         foreach (FieldVisibility::cases() as $visibilityCase) {
             $visibility = $visibilityCase->value;
-            $fieldId = $this->createTestFormField($pdo, $formId, visibility: $visibility);
+            // v48 impose un field_name unique par formulaire : varier le nom
+            // permet de tester plusieurs valeurs d'enum dans le même form.
+            $fieldId = $this->createTestFormField($pdo, $formId, visibility: $visibility, fieldName: 'test_field_' . $visibility);
             $fetched = $pdo->prepare("SELECT visibility FROM form_fields WHERE id = ?");
             $fetched->execute([$fieldId]);
             self::assertSame($visibility, $fetched->fetchColumn());
@@ -346,11 +350,11 @@ final class EnumConstraintTest extends TestCase
         return $id;
     }
 
-    private function createTestFormField(\PDO $pdo, string $formId, string $filledBy = 'demandeur', string $visibility = FieldVisibility::All->value): string
+    private function createTestFormField(\PDO $pdo, string $formId, string $filledBy = 'demandeur', string $visibility = FieldVisibility::All->value, string $fieldName = 'test_field'): string
     {
         $id = \generate_uuid();
-        $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, filled_by, visibility) VALUES (?, ?, 'Test', 'text', 'test_field', ?, ?)")
-            ->execute([$id, $formId, $filledBy, $visibility]);
+        $pdo->prepare("INSERT INTO form_fields (id, form_id, label, field_type, field_name, filled_by, visibility) VALUES (?, ?, 'Test', 'text', ?, ?, ?)")
+            ->execute([$id, $formId, $fieldName, $filledBy, $visibility]);
         return $id;
     }
 
