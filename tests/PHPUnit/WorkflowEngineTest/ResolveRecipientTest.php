@@ -174,6 +174,24 @@ final class ResolveRecipientTest extends Base
         self::assertSame('{{owner}}', $result);
     }
 
+    public function testResolveDynamicRecipientWithOwnerEmailAliasMatchesOwner(): void
+    {
+        [$formId] = $this->createTestForm();
+        $this->createFormOwner($formId, 'owner-alias-' . uniqid() . '@test.com');
+        $subId = $this->createTestSubmission($formId);
+
+        $owner = $this->workflow->resolveDynamicRecipient('{{owner}}', [], $subId);
+        $ownerEmail = $this->workflow->resolveDynamicRecipient('{{owner_email}}', [], $subId);
+
+        self::assertNotSame('{{owner_email}}', $ownerEmail);
+        self::assertSame($owner, $ownerEmail);
+    }
+
+    public function testResolveDynamicRecipientWithOwnerEmailAndNoSubmissionReturnsToken(): void
+    {
+        self::assertSame('{{owner_email}}', $this->workflow->resolveDynamicRecipient('{{owner_email}}', []));
+    }
+
     public function testResolveDynamicRecipientWithOwnerAndRealSubmission(): void
     {
         [$formId] = $this->createTestForm();
@@ -251,7 +269,7 @@ final class ResolveRecipientTest extends Base
 
     public function testResolveDynamicRecipientOwnerWithNullSubmission(): void
     {
-        $result = $this->workflow->resolveDynamicRecipient('{{owner}}', [], null);
+        $result = $this->workflow->resolveDynamicRecipient('{{owner}}', []);
         self::assertSame('{{owner}}', $result);
     }
 

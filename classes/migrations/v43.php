@@ -33,7 +33,22 @@ function apply_migration_v43(PDO $pdo, int $current_version): int
         if (!is_string($strict)) throw new RuntimeException('v43: cannot rename submissions');
         $pdo->exec('DROP TABLE IF EXISTS submissions_new');
         $pdo->exec($strict);
-        $pdo->exec('INSERT INTO submissions_new SELECT * FROM submissions');
+        // Mapping par NOM de colonne, jamais positionnel : la liste réelle des
+        // colonnes de la table source est réutilisée des deux côtés. Un
+        // `SELECT *` dépendrait de l'ordre physique et pourrait permuter les
+        // valeurs si un déploiement a un ordre différent.
+        $columnsQuery = $pdo->query('PRAGMA table_info(submissions)');
+        if ($columnsQuery === false) throw new RuntimeException('v43: column list query failed');
+        $columns = [];
+        foreach ($columnsQuery->fetchAll(PDO::FETCH_ASSOC) as $column) {
+            $name = (string) ($column['name'] ?? '');
+            if ($name === '') throw new RuntimeException('v43: missing column name');
+            $columns[] = '`' . str_replace('`', '``', $name) . '`';
+        }
+        $columnsQuery = null;
+        if ($columns === []) throw new RuntimeException('v43: empty column list');
+        $columnList = implode(', ', $columns);
+        $pdo->exec("INSERT INTO submissions_new ({$columnList}) SELECT {$columnList} FROM submissions");
         $pdo->exec('DROP TABLE submissions');
         $pdo->exec('ALTER TABLE submissions_new RENAME TO submissions');
         $pdo->exec('DROP TRIGGER IF EXISTS check_submissions_status_insert');

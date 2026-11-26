@@ -7,6 +7,7 @@ namespace App\Workflow;
 use App\Repository\FormRepository;
 use App\Repository\SubmissionRepository;
 use App\Settings\SettingsService;
+use App\Validation\RecipientAddress;
 
 /**
  * Résout les destinataires dynamiques ({{owner}}, {{field_name}}).
@@ -24,8 +25,8 @@ final readonly class RecipientResolver
     /** @param array<string, mixed> $formData */
     public function resolve(string $recipient, mixed $formData, ?string $submissionId = null): string
     {
-        // Cas spécial : {{owner}}
-        if ($recipient === '{{owner}}') {
+        // Cas spécial : {{owner}} et son alias {{owner_email}} (proposé par l'UI).
+        if ($recipient === '{{owner}}' || $recipient === '{{owner_email}}') {
             if ($submissionId !== null) {
                 $fid = $this->submissionRepository->findFormIdById($submissionId);
                 if ($fid !== null && $fid !== '') {
@@ -43,8 +44,9 @@ final readonly class RecipientResolver
             return $recipient;
         }
 
-        if (preg_match('/^\{\{([a-z][a-z0-9_]*)\}\}$/', $recipient, $m) === 1) {
-            $fieldName = $m[1];
+        $dynamicName = RecipientAddress::dynamicName($recipient);
+        if ($dynamicName !== null) {
+            $fieldName = $dynamicName;
             if (isset($formData[$fieldName]) && (bool)($formData[$fieldName])) {
                 $resolved = trim((string) $formData[$fieldName]);
                 if (filter_var($resolved, FILTER_VALIDATE_EMAIL) !== false) {

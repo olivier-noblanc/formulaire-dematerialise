@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Enum\FieldType;
 use App\Enum\FieldVisibility;
 use App\Enum\FilledBy;
+use App\Validation\OrderValue;
 
 /**
  * @internal Trait utilisé par FormRepository pour limiter la taille du fichier principal.
@@ -94,9 +95,10 @@ trait FormFieldsTrait
         $id = \generate_uuid();
         $required = $data['required'] ?? 0;
         $this->assertValidRequired($required);
+        $ordre = OrderValue::assertValid($data['ordre'] ?? 0, 'form_fields.ordre');
         $this->execute(
             'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? FieldType::Text->value, $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $required, $data['ordre'] ?? 0, $data['card_group'] ?? 'Général', $data['filled_by'] ?? FilledBy::Demandeur->value, $data['validator_step'] ?? '', $data['visibility'] ?? FieldVisibility::All->value]
+            [$id, $data['form_id'], $data['label'], $data['field_type'] ?? FieldType::Text->value, $data['field_name'], $data['options'] ?? null, $data['hint'] ?? '', $required, $ordre, $data['card_group'] ?? 'Général', $data['filled_by'] ?? FilledBy::Demandeur->value, $data['validator_step'] ?? '', $data['visibility'] ?? FieldVisibility::All->value]
         );
         return $id;
     }
@@ -108,6 +110,9 @@ trait FormFieldsTrait
     {
         if (array_key_exists('required', $data)) {
             $this->assertValidRequired($data['required']);
+        }
+        if (array_key_exists('ordre', $data)) {
+            $data['ordre'] = OrderValue::assertValid($data['ordre'], 'form_fields.ordre');
         }
         $allowed = ['label', 'field_type', 'field_name', 'options', 'hint', 'required', 'ordre', 'card_group', 'filled_by', 'validator_step', 'visibility', 'condition'];
         $fields = [];

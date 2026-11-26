@@ -51,12 +51,12 @@ final class AdvanceWorkflowTest extends Base
         $countStmt->execute([$subId]);
         self::assertSame(1, (int) $countStmt->fetchColumn(), 'advanceWorkflow doit créer exactement un token pour l\'étape');
     }
-    public function testAdvanceWorkflowSkipsInvalidEmailRecipients(): void
+    public function testAdvanceWorkflowSkipsUnresolvedDynamicRecipient(): void
     {
         [$formId, $stepId] = $this->createTestForm();
         $pdo = $this->db->getPdo();
         $srId = \generate_uuid();
-        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, 'invalid-email')")
+        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, '{{unresolved_recipient}}')")
             ->execute([$srId, $stepId]);
         $this->createdIds['step_recipients'][] = $srId;
         $subId = $this->createTestSubmission($formId);
@@ -208,7 +208,7 @@ final class AdvanceWorkflowTest extends Base
         self::assertNotEmpty($row['closed_at'], 'La soumission doit être clôturée quand tous les groupes sont validés');
         self::assertSame('valide', $row['status'], 'La soumission doit être clôturée au statut valide');
     }
-    public function testAdvanceWorkflowSkipsRecipientZero(): void
+    public function testRecipientZeroIsRejectedByDatabase(): void
     {
         $pdo = $this->db->getPdo();
         $formId = \generate_uuid();
@@ -217,16 +217,14 @@ final class AdvanceWorkflowTest extends Base
         $stepId = \generate_uuid();
         $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, 'ZeroStep', 1, 1)")->execute([$stepId, $formId]);
         $this->createdIds['steps'][] = $stepId;
-        $srId0 = \generate_uuid();
-        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, '0')")->execute([$srId0, $stepId]);
-        $this->createdIds['step_recipients'][] = $srId0;
-        $subId = $this->createTestSubmission($formId);
-        $this->workflow->advanceWorkflow($subId);
-        $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND email = '0'");
-        $check->execute([$subId]);
-        self::assertSame(0, (int) $check->fetchColumn());
+        try {
+            $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, '0')")->execute([\generate_uuid(), $stepId]);
+            self::fail('La contrainte v47 doit refuser un destinataire 0.');
+        } catch (\PDOException $exception) {
+            self::assertStringContainsString('constraint', strtolower($exception->getMessage()));
+        }
     }
-    public function testAdvanceWorkflowSkipsEmptyRecipient(): void
+    public function testEmptyRecipientIsRejectedByDatabase(): void
     {
         $pdo = $this->db->getPdo();
         $formId = \generate_uuid();
@@ -235,14 +233,12 @@ final class AdvanceWorkflowTest extends Base
         $stepId = \generate_uuid();
         $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, 'EmptyStep', 1, 1)")->execute([$stepId, $formId]);
         $this->createdIds['steps'][] = $stepId;
-        $srIdEmpty = \generate_uuid();
-        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, '')")->execute([$srIdEmpty, $stepId]);
-        $this->createdIds['step_recipients'][] = $srIdEmpty;
-        $subId = $this->createTestSubmission($formId);
-        $this->workflow->advanceWorkflow($subId);
-        $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND email = ''");
-        $check->execute([$subId]);
-        self::assertSame(0, (int) $check->fetchColumn());
+        try {
+            $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, '')")->execute([\generate_uuid(), $stepId]);
+            self::fail('La contrainte v47 doit refuser un destinataire vide.');
+        } catch (\PDOException $exception) {
+            self::assertStringContainsString('constraint', strtolower($exception->getMessage()));
+        }
     }
     public function testAdvanceWorkflowClosesImmediatelyWithNoSteps(): void
     {
@@ -301,7 +297,7 @@ final class AdvanceWorkflowTest extends Base
         $check->execute([$subId, $stepId]);
         self::assertSame(1, (int) $check->fetchColumn(), 'Un token doit être créé quand la condition est vraie');
     }
-    public function testAdvanceWorkflowSkipsInvalidEmailRecipient(): void
+    public function testInvalidEmailRecipientIsRejectedByDatabase(): void
     {
         $pdo = $this->db->getPdo();
         $formId = \generate_uuid();
@@ -310,14 +306,12 @@ final class AdvanceWorkflowTest extends Base
         $stepId = \generate_uuid();
         $pdo->prepare("INSERT INTO steps (id, form_id, label, ordre, actif) VALUES (?, ?, 'InvEmailStep', 1, 1)")->execute([$stepId, $formId]);
         $this->createdIds['steps'][] = $stepId;
-        $srId = \generate_uuid();
-        $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, 'not-an-email')")->execute([$srId, $stepId]);
-        $this->createdIds['step_recipients'][] = $srId;
-        $subId = $this->createTestSubmission($formId);
-        $this->workflow->advanceWorkflow($subId);
-        $check = $pdo->prepare("SELECT COUNT(*) FROM tokens WHERE submission_id = ? AND step_id = ?");
-        $check->execute([$subId, $stepId]);
-        self::assertSame(0, (int) $check->fetchColumn());
+        try {
+            $pdo->prepare("INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, 'not-an-email')")->execute([\generate_uuid(), $stepId]);
+            self::fail('La contrainte v47 doit refuser un email invalide.');
+        } catch (\PDOException $exception) {
+            self::assertStringContainsString('constraint', strtolower($exception->getMessage()));
+        }
     }
     public function testAdvanceWorkflowResolvesOwnerRecipient(): void
     {

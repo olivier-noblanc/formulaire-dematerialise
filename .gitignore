@@ -82,6 +82,7 @@ nul
 # PHPUnit
 /phpunit.phar
 /.phpunit.result.cache
+/tests/.phpunit.result.cache
 
 # Temporary files
 /test_output*.txt

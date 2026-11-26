@@ -64,6 +64,23 @@ jobs:
           done < <(find src/ lib/ classes/ tests/ -name '*.php' 2>/dev/null; find . -maxdepth 1 -name '*.php')
           exit $failed
 
+  # ── Garde SQL structurelle ───────────────────────────────────
+  # Détecte les erreurs SQL que ni `php -l` ni PHPStan ne voient : `SELECT *`
+  # (src/, classes/migrations/), `INSERT` applicatif sans liste explicite de
+  # colonnes, et écritures directes vers form_fields/steps/step_recipients
+  # hors src/Repository/ et classes/migrations/. Script dédié sans dépendance
+  # (aucune base de données, aucun bootstrap) : voir AGENTS.md.
+  sql-structure:
+    name: Garde SQL structurelle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - run: php scripts/check_sql_structure.php
+
   # ── Analyse statique ─────────────────────────────────────────
   phpstan:
     name: PHPStan (level 8)

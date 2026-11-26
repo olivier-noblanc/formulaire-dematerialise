@@ -1,5 +1,63 @@
 # Changelog — CircuitDémat
 
+## [10.42.51] — 2026-11-26
+_Résumé : durcissement complet de l'import JSON (FormJsonValidator + AdminImportExportHandler) et migration v48 (unicité `form_fields.field_name` par formulaire)._
+
+### 🔒 Sécurité / Correctifs
+- **Whitelist stricte des clés JSON** : racine (`schema_version`, `exported_at`, `form`, `fields`, `steps`), `form`, champ, étape et condition (`field`/`op`/`value`). Toute clé inconnue est une erreur bloquante, plus jamais ignorée en silence.
+- **`required` strict** : seuls `true`/`false`, entiers `0`/`1` et chaînes `"0"`/`"1"` sont acceptés. Un numéro d'ordre IA (`21`), un float ou une chaîne libre ne sont plus convertis en silence : l'import est bloqué avant toute écriture. L'import normalise uniquement les formes déjà validées (`normalizeFlag`).
+- **Listes JSON obligatoires** : `fields`, `steps` et `recipients` doivent satisfaire `array_is_list()` (un objet `{...}` est refusé).
+- **Ordres stricts** : `form_fields.ordre` entier `>= 0` (négatif = erreur avant DB, plus un warning), `steps.ordre` entier `>= 1`, borne commune `MAX_ORDER = 1000`.
+- **Décodage JSON durci** : `JSON_THROW_ON_ERROR` + profondeur explicite (`FormJsonValidator::JSON_MAX_DEPTH = 32`) pour l'import, la validation et les conditions (objet ou chaîne JSON). La racine doit être un objet : un JSON scalaire/tableau est refusé explicitement (plus de `TypeError`).
+- **`validator_step`** : doit référencer le label exact d'une étape déclarée dans le même document (les UUID d'étape sont refusés : ils ne survivent pas à l'import). `filled_by = "demandeur"` + `validator_step` non vide = erreur (plus un warning d'« ignoré »). Un champ validateur sans `validator_step` reste un champ global (warning explicite).
+- **Export cohérent** : `form_fields.validator_step` stocké en ID d'étape par l'UI est converti en label à l'export ; le round-trip export → import reste donc possible avec la validation stricte.
+- **`deadline_field`** : doit référencer un `field_name` réellement défini dans `fields` (comparaison insensible à la casse), sinon erreur.
+- **Doublons `field_name`** : détectés dans le JSON, y compris pour les noms générés depuis le libellé (le nom généré est désormais calculé et contrôlé par le validateur, plus seulement à l'import). Les `field_name` non snake_case deviennent des erreurs (plus des warnings).
+- **Migration `v48`** : index `UNIQUE (form_id, lower(field_name))` (`idx_ff_form_field_name`). Préflight fail-closed : si des doublons existent déjà, la migration bloque avec `form_id`/`field_name`/IDs et la requête de diagnostic — aucune suppression ni renommage silencieux (renommer casserait les soumissions indexées par `field_name`).
+- **Bornes documentées** : `MAX_FIELDS = 200`, `MAX_STEPS = 50`, `MAX_RECIPIENTS_PER_STEP = 50`, `MAX_OPTIONS_PER_FIELD = 200`, `MAX_OPTION_LENGTH = 255`, `MAX_CONDITION_VALUES = 100`, `MAX_LABEL_LENGTH = 255`, `MAX_FIELD_NAME_LENGTH = 64`, `MAX_DESCRIPTION_LENGTH = 5000`, `MAX_HINT_LENGTH = 1000`, `MAX_CARD_GROUP_LENGTH = 100`, `MAX_EMAIL_LENGTH = 254`. Relances alignées sur les CHECK SQL : `relance_delai_h` ∈ [1, 720], `relance_max` ∈ [0, 20].
+- **Listes fermées centralisées** : types de champs (`FieldType::cases()`), `filled_by` (`FilledBy::cases()`), `visibility` (`FieldVisibility::cases()`), opérateurs de condition (`ConditionEvaluator::VALID_OPS`) — plus aucune liste recopiée en dur dans le validateur.
+- **Warnings d'import plus jamais jetés** : un import valide avec avertissements ne redirige plus silencieusement ; il expose `form_id`, `success`, `warnings[]`, `validation_html` et `preserved_json` (page admin réaffichée avec le formulaire sélectionné et le détail des avertissements).
+- **Catch d'import utile** : `\InvalidArgumentException` (ordre/required/destinataire/field_name) → message explicite « Import refusé : … » + JSON préservé, transaction rollbackée ; violation `UNIQUE constraint failed: form_fields.form_id, form_fields.field_name` → message dédié ; `PDOException` inattendue → message générique journalisé ; toute autre exception est propagée après rollback (règle 9).
+- **Décisions métier documentées** : `form.slug` est volontairement ignoré à l'import (slug régénéré depuis le label pour garantir l'unicité globale) ; `card_group` vide est normalisé en « Général » à l'import (cohérent avec le warning) ; les avertissements restent non bloquants mais visibles.
+
+### 🧪 Tests
+- `FormJsonValidatorTest` : +22 tests couvrant clés inconnues (racine/form/champ/étape/condition), `required` strict, `actif` booléen, `steps`/`recipients` non-listes, ordres négatif/non entier/0, `validator_step` inconnu et cohérence `filled_by`, `deadline_field` inconnu, doublons explicites et générés, borne `MAX_FIELDS`, condition JSON invalide, forme d'export complète.
+- `AdminImportExportTest` : blocage `required=21` sans écriture, import de drapeaux booléens, warnings surfacés, clé inconnue, doublons générés, `validator_step` inconnu, `deadline_field` inconnu, ordre négatif, racine JSON non-objet, export ID d'étape → label ; helper d'import acceptant redirect ou `form_id`.
+- `MigrationV48FieldNameUniqueTest` : index unique insensible à la casse, rejet SQL des doublons dans un même formulaire, autorisation entre formulaires distincts, blocage de la migration sur doublons préexistants (sans marquer la version ni créer l'index), idempotence.
+- Assertions de version maximale mises à jour de 47 → 48 (`MigrationV42V43Test`, `MigrationV46AlertNotifyWhoTest`, `MigrationV47OrdreAndRecipientsTest`).
+
+### ⚠️ Risques CI / déploiement
+- **v48 fail-closed** : une base contenant déjà des `field_name` dupliqués dans un même formulaire fera échouer le démarrage avec un diagnostic explicite. C'est intentionnel (pas de réparation destructrice) ; corriger les doublons avant déploiement.
+- **Anciens exports** : un JSON exporté avant ce correctif peut contenir un UUID d'étape dans `validator_step` (valeur stockée par l'UI). Il est désormais refusé ; réexporter le formulaire (l'export convertit l'ID en label) ou remplacer la valeur par le label de l'étape.
+- L'ajout d'un `field_name` déjà utilisé via l'UI renvoie maintenant un message explicite (`AdminFieldCrudHandler`) au lieu d'une erreur technique générique.
+- Les tests locaux n'ont pas été exécutés (consigne) ; la syntaxe (`php -l`), PHPStan niveau 8, Rector (`--dry-run` propre après application mécanique des types de constantes) et Deptrac (0 violation) ont été vérifiés en local. La CI reste l'arbitre (PHPUnit, gate).
+- Deptrac : `App\Validation\OrderValue` et `App\Validation\RecipientAddress` sont des objets-valeurs purs, désormais collectés dans une couche de fondation `ValueObject` (comme `Enum`/`Contract`) au lieu de `Service`, car les repositories en dépendent légitimement (validation de format avant écriture).
+
+## [10.42.50] — 2026-11-26
+_Résumé : durcissement des ordres et des destinataires (migration v47) + résolution réelle de `{{owner_email}}` et centralisation du format dynamique._
+
+### ✨ Features
+- `RecipientAddress` (`src/Validation/RecipientAddress.php`) devient la source unique du format `{{...}}` (`DYNAMIC_PATTERN`, `isDynamic()`, `dynamicName()`, `isValid()`, `normalize()`), réutilisée par `AdminRecipientHandler`, `FormJsonValidator` et `RecipientResolver`.
+- `{{owner_email}}`, proposé par l'UI, est désormais un alias fonctionnel de `{{owner}}` dans `RecipientResolver` : même propriétaire, même repli admin, même comportement fail-closed si la soumission est absente.
+- `OrderValue` (`src/Validation/OrderValue.php`) centralise la validation des ordres : `form_fields.ordre >= 0`, `steps.ordre > 0`, chaînes numériques HTML acceptées.
+
+### 🔒 Sécurité / Correctifs
+- Migration `v47` : `form_fields.ordre` NOT NULL/entier/>=0, `steps.ordre` entier >0, `step_recipients.email` non vide, non tronqué, email classique ou `{{...}}`. Rebuild atomique des trois tables, contrôles de comptes et de schéma après reconstruction, idempotence, rollback.
+- Préflight fail-closed : les emails inconnus ou tronqués hors correspondance documentée bloquent la migration avec les IDs. Les seules réparations sont les quatre correspondances documentées (`dreets-bfc.{communication,logis,esic,rh}@` → `@dreets.gouv.fr`) et uniquement si le libellé d'étape correspond exactement (`Validation COM/LOGIS/ESIC/RH`).
+- Rotation historique `form_fields` : la migration répare automatiquement la signature exacte connue (`required` = ancien ordre `>= 2`, `ordre` = ancien `card_group` (`0`/vide ou texte), `card_group` = hint documenté ou vide, `hint = ''`) en restituant `card_group` depuis l'`ordre` observé (`Général` si `0`/vide) et `hint` depuis le `card_group` observé, en ramenant `required` à `0` (valeur d'origine non récupérable) et en renumérotant `ordre` de façon déterministe (`ORDER BY required ASC, rowid ASC`, contigu, strictement après le plus grand ordre sain du `form_id`, soit exactement 1..N si le formulaire est entièrement en rotation). Les lignes saines ne sont jamais renumérotées ; toute rotation ambiguë (`ordre` numérique positif avec `required >= 2`, ou hint connu sans la signature complète) reste bloquante (fail-closed), avec contrôle des doublons après reconstruction.
+- Repository : `createRecipient()` valide/normalise l'email, `createField()`/`updateField()` et `createStep()`/`updateStep()` valident `ordre`, `duplicate()` revalide les trois domaines.
+- Rebuilds de migration : `v43` (submissions) et `v44` (form_fields) copiaient avec `INSERT INTO ... SELECT *`, donc par position physique. Elles utilisent désormais une liste de colonnes explicite des deux côtés (dérivée de `PRAGMA table_info` pour v43, littérale pour v44) ; `v47` fait de même via une variable unique par table. Un test statique interdit toute régression `INSERT ... SELECT *` dans `classes/migrations/`.
+- CHECK v47 renforcées sur les invariants réellement exprimables : `typeof(required) = 'integer' AND required IN (0,1)`, `typeof(actif) = 'integer' AND actif IN (0,1)`, en plus de `typeof(ordre) = 'integer'`. SQLite ne peut pas distinguer une permutation sémantique (une valeur légale dans la mauvaise colonne) : cette détection reste portée par le préflight v47, pas par les CHECK.
+- Cause historique documentée dans `v47.php` : les rebuilds positionnels (v30/v31/v33 avant le squash, v43/v44 au moment de v47) sont un mécanisme réel de rotation, mais l'origine exacte de la rotation observée en production n'est pas prouvée par l'historique du dépôt ; la détection + renumérotation explicites déjà décidées sont conservées.
+
+### 🧪 Tests
+- Ajout de `MigrationV47OrdreAndRecipientsTest` : contraintes SQL, réparation documentée, refus des valeurs inconnues, réparation déterministe de la rotation `card_group`/`hint` (ordre 1..N + lignes saines préservées + doublons), idempotence, contrats `RecipientAddress`/`OrderValue`, et preuve que le rebuild v47 conserve les valeurs par nom quand l'ordre physique des colonnes est permuté.
+- `MigrationV42V43Test` : preuve qu'un rebuild v44 avec colonnes physiquement réordonnées conserve `hint`/`required`/`ordre`/`card_group` par nom (un `SELECT *` échouerait), plus garde statique interdisant `INSERT ... SELECT *` dans les migrations.
+- `ResolveRecipientTest` : alias `{{owner_email}}` aligné sur `{{owner}}`.
+- `FormRepositoryTest` : `createRecipient` refuse un email invalide / accepte `{{owner_email}}` ; `createField`/`createStep` refusent les ordres invalides.
+- Fixtures `AdvanceWorkflowTest` adaptées à la nouvelle contrainte (les inserts `''`, `'0'`, `'not-an-email'` deviennent des assertions de rejet SQL, un token dynamique non résolu conserve la couverture du skip).
+- Exécution locale volontairement non lancée (consigne utilisateur) : CI uniquement.
+
 ## [10.42.49] — 2026-11-25
 _Résumé : durcissement SQLite centralisé — `foreign_keys`, `busy_timeout` et `trusted_schema` posés en un seul point (`Database::applySessionPragmas`), y compris pour les connexions hors connexion applicative._
 

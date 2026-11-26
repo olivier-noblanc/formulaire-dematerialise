@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\App;
+use App\Validation\RecipientAddress;
 
 /**
  * Handlers pour les destinataires d'étape et propriétaires de formulaire.
@@ -24,8 +25,8 @@ final class AdminRecipientHandler
         if ($step_id === '' || $step_id === '0' || ($email === '' || $email === '0')) {
             return ['error' => 'L\'étape et le courriel sont requis.'];
         }
-        $is_dynamic = preg_match('/^\{\{[a-z][a-z0-9_]*\}\}$/', $email) === 1;
-        if (!$is_dynamic && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        $is_dynamic = RecipientAddress::isDynamic($email);
+        if (!RecipientAddress::isValid($email)) {
             return ['error' => 'Le destinataire "' . \App\Core\App::html()->escape($email) . '" n\'est ni une adresse email valide ni une référence dynamique {{field_name}}. Format attendu : prenom.nom@' . App::settings()->get('email_domain', 'exemple.invalid') . ' ou {{nom_du_champ}}'];
         }
         try {

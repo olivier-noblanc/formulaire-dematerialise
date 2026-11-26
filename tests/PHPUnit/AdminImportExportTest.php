@@ -92,6 +92,22 @@ final class AdminImportExportTest extends TestCase
         $this->repo->deleteCascade($formId);
     }
 
+    /**
+     * @param array<string, mixed> $imported
+     */
+    private function importId(array $imported): string
+    {
+        if (isset($imported['redirect'])) {
+            return $this->extractRedirectFormId((string) $imported['redirect']);
+        }
+        self::assertArrayHasKey(
+            'form_id',
+            $imported,
+            'Import bloqué ou sans identifiant : ' . ($imported['error'] ?? '')
+        );
+        return (string) $imported['form_id'];
+    }
+
     private function extractRedirectFormId(string $redirect): string
     {
         $query = (string) parse_url($redirect, PHP_URL_QUERY);
@@ -203,57 +219,273 @@ final class AdminImportExportTest extends TestCase
     }
 
     /**
-     * Un JSON d'import dont "required" contient un numéro d'ordre (généré par
-     * IA) ne doit PAS corrompre form_fields.required : la valeur est normalisée
-     * à 1 (obligatoire).
+     * Audit 2026-11-26 — "required" est strict : un numéro d'ordre (21)
+     * n'est plus converti en 1 en silence, l'import est bloqué avant écriture.
      */
-    public function testImportNormalizesNonBooleanRequiredToFlag(): void
+    public function testImportBlocksNonBooleanRequired(): void
+    {
+        $label = 'Test required strict ' . uniqid();
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => $label],
+            'fields' => [
+                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'required' => 21, 'filled_by' => 'demandeur'],
+            ],
+            'steps' => [],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+
+        self::assertArrayHasKey('error', $imported, 'required=21 doit bloquer l\'import');
+        self::assertArrayNotHasKey('form_id', $imported, 'Aucun formulaire ne doit être créé');
+        self::assertArrayNotHasKey('redirect', $imported);
+        self::assertStringContainsString('required', (string) ($imported['preserved_json'] ?? ''));
+
+        $created = array_column($this->repo->findAll(), 'label');
+        self::assertNotContains($label, $created, 'Aucune ligne forms ne doit être persistée');
+    }
+
+    /**
+     * Les drapeaux explicites acceptés (bool true/false, 0/1) restent
+     * importables et sont stockés en 0/1.
+     */
+    public function testImportAcceptsExplicitBooleanRequired(): void
     {
         $_POST['json_data'] = json_encode([
             'schema_version' => '1.0',
-            'form' => ['label' => 'Test required normalisé ' . uniqid()],
+            'form' => ['label' => 'Test required bool ' . uniqid()],
             'fields' => [
-                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'required' => 21, 'filled_by' => 'demandeur'],
-                ['label' => 'Avis', 'field_type' => 'textarea', 'field_name' => 'avis', 'required' => 0, 'filled_by' => 'validator', 'validator_step' => null],
+                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'required' => true, 'filled_by' => 'demandeur'],
+                ['label' => 'Avis', 'field_type' => 'textarea', 'field_name' => 'avis', 'required' => false, 'filled_by' => 'demandeur'],
             ],
-            'steps' => [
-                ['label' => 'Validation RH', 'ordre' => 1, 'actif' => 1, 'recipients' => ['rh@exemple.invalid']],
-            ],
+            'steps' => [],
         ]);
         $imported = AdminImportExportHandler::handleImportForm();
-        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
-        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->importId($imported);
         try {
             $byName = [];
             foreach ($this->repo->getFields($newId) as $f) {
                 $byName[$f['field_name']] = (int) $f['required'];
             }
-            self::assertSame(1, $byName['nom'], 'required=21 (numéro d\'ordre) doit être normalisé à 1');
-            self::assertSame(0, $byName['avis'], 'required=0 doit rester 0');
+            self::assertSame(1, $byName['nom']);
+            self::assertSame(0, $byName['avis']);
         } finally {
             $this->deleteForm($newId);
         }
     }
 
     /**
-     * FormJsonValidator avertit (sans bloquer) quand "required" n'est ni
-     * booléen ni 0/1 — l'import reste possible et normalise la valeur.
+     * P2 — les avertissements ne sont plus jetés : un import valide avec
+     * avertissements expose form_id/success/warnings (pas de redirect muet).
      */
-    public function testValidatorWarnsOnNonBooleanRequired(): void
+    public function testImportSurfacesWarningsInsteadOfDiscardingThem(): void
     {
-        $result = \App\Forms\FormJsonValidator::validate([
+        $_POST['json_data'] = json_encode([
             'schema_version' => '1.0',
-            'form' => ['label' => 'F'],
+            'form' => ['label' => 'Test warnings ' . uniqid()],
             'fields' => [
-                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'required' => 21, 'card_group' => 'G'],
+                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'required' => 1, 'filled_by' => 'demandeur'],
+            ],
+            'steps' => [
+                ['label' => 'Validation RH', 'ordre' => 1, 'actif' => 1, 'recipients' => ['rh@exemple.invalid']],
+            ],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        self::assertArrayNotHasKey('redirect', $imported, 'Avec avertissements, la page doit être réaffichée');
+        self::assertArrayHasKey('form_id', $imported);
+        self::assertArrayHasKey('warnings', $imported);
+        self::assertNotEmpty($imported['warnings'], 'Les avertissements doivent être transmis');
+        self::assertStringContainsString('avertissement', (string) $imported['success']);
+        self::assertStringContainsString('card_group', (string) ($imported['validation_html'] ?? ''));
+
+        $this->deleteForm((string) $imported['form_id']);
+    }
+
+    /**
+     * Sans avertissement, l'import conserve le comportement historique
+     * (redirection vers le formulaire importé).
+     */
+    public function testImportWithoutWarningsRedirects(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => 'Test import propre ' . uniqid()],
+            'fields' => [
+                [
+                    'label' => 'Nom',
+                    'field_type' => 'text',
+                    'field_name' => 'nom',
+                    'required' => 1,
+                    'ordre' => 1,
+                    'card_group' => 'Identité',
+                    'hint' => '',
+                    'filled_by' => 'demandeur',
+                    'validator_step' => '',
+                    'visibility' => 'all',
+                ],
+            ],
+            'steps' => [
+                ['label' => 'Validation RH', 'ordre' => 1, 'actif' => 1, 'recipients' => ['rh@exemple.invalid']],
+            ],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        self::assertArrayHasKey('redirect', $imported);
+        self::assertArrayNotHasKey('warnings', $imported);
+
+        $newId = $this->importId($imported);
+        $this->deleteForm($newId);
+    }
+
+    public function testImportBlocksUnknownTopLevelKey(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => 'Test unknown key ' . uniqid()],
+            'fields' => [],
+            'steps' => [],
+            'webhook' => ['url' => 'https://example.invalid'],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('error', $imported);
+        self::assertArrayNotHasKey('form_id', $imported);
+        self::assertStringContainsString('propriété inconnue', (string) ($imported['validation_html'] ?? ''));
+    }
+
+    public function testImportBlocksDuplicateGeneratedFieldName(): void
+    {
+        $label = 'Test duplicate generated ' . uniqid();
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => $label],
+            'fields' => [
+                ['label' => 'Adresse postale', 'field_type' => 'text'],
+                ['label' => 'Adresse postale', 'field_type' => 'text'],
             ],
             'steps' => [],
         ]);
-        self::assertTrue($result['valid'], 'required=21 ne doit pas bloquer l\'import');
-        self::assertStringContainsString('required', implode("\n", $result['warnings']));
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('error', $imported);
+        self::assertArrayNotHasKey('form_id', $imported);
+        self::assertStringContainsString('doublon', (string) ($imported['validation_html'] ?? ''));
+
+        $created = array_column($this->repo->findAll(), 'label');
+        self::assertNotContains($label, $created);
+    }
+
+    public function testImportBlocksUnknownValidatorStep(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => 'Test validator step ' . uniqid()],
+            'fields' => [
+                ['label' => 'Avis', 'field_type' => 'text', 'field_name' => 'avis', 'filled_by' => 'validator', 'validator_step' => 'Étape fantôme'],
+            ],
+            'steps' => [
+                ['label' => 'Étape réelle', 'ordre' => 1, 'actif' => 1, 'recipients' => ['rh@exemple.invalid']],
+            ],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('error', $imported);
+        self::assertStringContainsString('ne correspond à aucune étape', (string) ($imported['validation_html'] ?? ''));
+    }
+
+    public function testImportBlocksUnknownDeadlineField(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => 'Test deadline ' . uniqid(), 'deadline_field' => 'date_absente'],
+            'fields' => [
+                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom'],
+            ],
+            'steps' => [],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('error', $imported);
+        self::assertStringContainsString('deadline_field', (string) ($imported['validation_html'] ?? ''));
+    }
+
+    public function testImportBlocksNegativeOrdre(): void
+    {
+        $_POST['json_data'] = json_encode([
+            'schema_version' => '1.0',
+            'form' => ['label' => 'Test ordre négatif ' . uniqid()],
+            'fields' => [
+                ['label' => 'Nom', 'field_type' => 'text', 'field_name' => 'nom', 'ordre' => -3],
+            ],
+            'steps' => [],
+        ]);
+        $imported = AdminImportExportHandler::handleImportForm();
+        self::assertArrayHasKey('error', $imported);
+        self::assertStringContainsString('négatif', (string) ($imported['validation_html'] ?? ''));
+    }
+
+    public function testImportRejectsJsonRootThatIsNotAnObject(): void
+    {
+        $_POST['json_data'] = '"just a string"';
+        $imported = AdminImportExportHandler::handleImportForm();
+
+        self::assertArrayHasKey('error', $imported);
+        self::assertStringContainsString('objet', (string) $imported['error']);
     }
 
     // ── Round-trip : export → import ──────────────────────────
+
+    /**
+     * Audit 2026-11-26 : l'UI stocke l'ID de l'étape dans
+     * form_fields.validator_step ; l'export doit le convertir en label, sinon
+     * l'import strict (label obligatoire) refuserait le round-trip.
+     */
+    public function testExportTranslatesValidatorStepIdToLabel(): void
+    {
+        $id = $this->repo->create([
+            'label' => 'Test validator step export ' . uniqid(),
+            'slug' => 'test-vs-export-' . uniqid(),
+        ]);
+        try {
+            $stepId = $this->repo->createStep([
+                'form_id' => $id,
+                'label' => 'Validation manager',
+                'ordre' => 1,
+                'actif' => 1,
+            ]);
+            $this->repo->createField([
+                'form_id' => $id,
+                'label' => 'Avis manager',
+                'field_type' => 'text',
+                'field_name' => 'avis_manager',
+                'filled_by' => 'validator',
+                'validator_step' => $stepId,
+            ]);
+
+            $_POST['form_id'] = $id;
+            $result = AdminImportExportHandler::handleExportForm();
+            self::assertArrayNotHasKey('error', $result, $result['error'] ?? '');
+            $json = json_decode((string) $result['json_output'], true);
+            self::assertIsArray($json);
+            self::assertSame(
+                'Validation manager',
+                $json['fields'][0]['validator_step'],
+                'L\'ID d\'étape doit être exporté sous forme de label'
+            );
+
+            // Preuve du round-trip : le JSON exporté est réimportable tel quel
+            // (la validation stricte exige un label, pas un UUID).
+            $_POST['json_data'] = (string) $result['json_output'];
+            $imported = AdminImportExportHandler::handleImportForm();
+            $newId = $this->importId($imported);
+            try {
+                $fields = $this->repo->getFields($newId);
+                self::assertSame('Validation manager', $fields[0]['validator_step']);
+            } finally {
+                $this->deleteForm($newId);
+            }
+        } finally {
+            unset($_POST['form_id'], $_POST['json_data']);
+            $this->deleteForm($id);
+        }
+    }
 
     public function testImportRestoresRelanceConfig(): void
     {
@@ -265,8 +497,8 @@ final class AdminImportExportTest extends TestCase
 
         $_POST['json_data'] = $exported['json_output'];
         $imported = AdminImportExportHandler::handleImportForm();
-        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
-        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->importId($imported);
         try {
             $row = $this->repo->findById($newId);
             self::assertNotNull($row);
@@ -287,8 +519,8 @@ final class AdminImportExportTest extends TestCase
 
         $_POST['json_data'] = $exported['json_output'];
         $imported = AdminImportExportHandler::handleImportForm();
-        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
-        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->importId($imported);
         try {
             $steps = $this->repo->getSteps($newId);
             self::assertCount(2, $steps);
@@ -319,8 +551,8 @@ final class AdminImportExportTest extends TestCase
 
         $_POST['json_data'] = $first['json_output'];
         $imported = AdminImportExportHandler::handleImportForm();
-        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
-        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->importId($imported);
         try {
             // Ré-exporter le formulaire importé : form + steps doivent être équivalents
             $_POST['form_id'] = $newId;
@@ -354,8 +586,8 @@ final class AdminImportExportTest extends TestCase
 
         $_POST['json_data'] = $exported['json_output'];
         $imported = AdminImportExportHandler::handleImportForm();
-        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
-        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->importId($imported);
         try {
             $fields = $this->repo->getFields($newId);
             self::assertSame(
@@ -445,8 +677,8 @@ final class AdminImportExportTest extends TestCase
             ],
         ]);
         $imported = AdminImportExportHandler::handleImportForm();
-        self::assertArrayHasKey('redirect', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
-        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->importId($imported);
         try {
             $steps = $this->repo->getSteps($newId);
             self::assertCount(1, $steps);
@@ -491,8 +723,8 @@ final class AdminImportExportTest extends TestCase
             'steps' => [],
         ]);
         $imported = AdminImportExportHandler::handleImportForm();
-        self::assertArrayHasKey('redirect', $imported);
-        $newId = $this->extractRedirectFormId((string) $imported['redirect']);
+        self::assertArrayNotHasKey('error', $imported, 'Import bloqué : ' . ($imported['error'] ?? ''));
+        $newId = $this->importId($imported);
         try {
             $config = $this->repo->getRelanceConfig($newId);
             self::assertSame(48, $config['relance_delai_h'], 'Sans relance dans le JSON, fallback 48 h');

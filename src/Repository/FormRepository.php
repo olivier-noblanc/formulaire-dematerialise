@@ -8,6 +8,8 @@ use App\Enum\FieldType;
 use App\Enum\FieldVisibility;
 use App\Enum\FilledBy;
 use App\Enum\SubmissionStatus;
+use App\Validation\OrderValue;
+use App\Validation\RecipientAddress;
 
 final class FormRepository extends BaseRepository
 {
@@ -269,19 +271,21 @@ final class FormRepository extends BaseRepository
 
         foreach ($this->getFields($sourceId) as $f) {
             $newFieldId = \generate_uuid();
+            $fieldOrdre = OrderValue::assertValid($f['ordre'], 'form_fields.ordre');
             // P0-5 : conserver `condition` — la copie perdait la logique
             // d'affichage conditionnel des champs (colonne vide dans la copie).
             $this->execute(
                 'INSERT INTO form_fields (id, form_id, label, field_type, field_name, options, hint, required, ordre, card_group, filled_by, validator_step, visibility, condition) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $f['ordre'], $f['card_group'], $f['filled_by'] ?? FilledBy::Demandeur->value, $f['validator_step'] ?? '', $f['visibility'] ?? FieldVisibility::All->value, $f['condition'] ?? '']
+                [$newFieldId, $newId, $f['label'], $f['field_type'], $f['field_name'], $f['options'], $f['hint'] ?? '', $f['required'], $fieldOrdre, $f['card_group'], $f['filled_by'] ?? FilledBy::Demandeur->value, $f['validator_step'] ?? '', $f['visibility'] ?? FieldVisibility::All->value, $f['condition'] ?? '']
             );
         }
 
         foreach ($this->getSteps($sourceId) as $s) {
             $newStepId = \generate_uuid();
+            $stepOrdre = OrderValue::assertValid($s['ordre'], 'steps.ordre', 1);
             $this->execute(
                 'INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)',
-                [$newStepId, $newId, $s['label'], $s['ordre'], $s['actif'], (string) ($s['condition'] ?? '')]
+                [$newStepId, $newId, $s['label'], $stepOrdre, $s['actif'], (string) ($s['condition'] ?? '')]
             );
 
             /** @var list<array{id: string, step_id: string, email: string}> $recips */
@@ -290,7 +294,7 @@ final class FormRepository extends BaseRepository
                 $newRecipId = \generate_uuid();
                 $this->execute(
                     'INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)',
-                    [$newRecipId, $newStepId, $recip['email']]
+                    [$newRecipId, $newStepId, RecipientAddress::normalize($recip['email'])]
                 );
             }
         }

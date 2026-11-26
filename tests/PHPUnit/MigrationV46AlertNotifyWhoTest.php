@@ -94,7 +94,7 @@ final class MigrationV46AlertNotifyWhoTest extends TestCase
     {
         $pdo = $this->migratedPdo($this->newDbPath());
 
-        self::assertSame(46, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
+        self::assertSame(48, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
         self::assertStringContainsString('notify_who IN', $this->alertRulesSql($pdo));
         self::assertStringContainsString('LIKE', $this->alertRulesSql($pdo));
     }
@@ -184,6 +184,6 @@ final class MigrationV46AlertNotifyWhoTest extends TestCase
         db_migrate($pdo);
 
         self::assertSame(1, (int) $pdo->query('SELECT COUNT(*) FROM schema_version WHERE version = 46')->fetchColumn());
-        self::assertSame(46, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
+        self::assertSame(48, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
     }
 }

@@ -14,7 +14,7 @@
             <table class="fields-table">
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th title="Ordre d'affichage des champs dans le formulaire">Ordre</th>
                         <th>Groupe</th>
                         <th>Libellé</th>
                         <th>Identifiant</th>

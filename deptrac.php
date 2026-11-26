@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Deptrac\Deptrac\Contract\Config\Collector\ClassLikeConfig;
 use Deptrac\Deptrac\Contract\Config\Collector\DirectoryConfig;
 use Deptrac\Deptrac\Contract\Config\DeptracConfig;
@@ -18,12 +20,19 @@ return static function (DeptracConfig $config): void {
             $contract = Layer::withName('Contract')->collectors(
                 ClassLikeConfig::create('App\\Contract\\.*'),
             ),
+            // Objets-valeurs de validation (format d'ordre, d'adresse) : purs,
+            // sans dépendance, donc au même niveau de fondation que Enum/Contract
+            // et accessibles depuis toutes les couches (Repository inclus).
+            $valueObject = Layer::withName('ValueObject')->collectors(
+                ClassLikeConfig::create(\App\Validation\OrderValue::class),
+                ClassLikeConfig::create(\App\Validation\RecipientAddress::class),
+            ),
 
             // ── Infrastructure ──────────────────────────────
             $infrastructure = Layer::withName('Infrastructure')->collectors(
                 ClassLikeConfig::create('App\\Core\\Database.*'),
-                ClassLikeConfig::create('App\\Core\\App'),
-                ClassLikeConfig::create('App\\Core\\SlugHelper'),
+                ClassLikeConfig::create(\App\Core\App::class),
+                ClassLikeConfig::create(\App\Core\SlugHelper::class),
             ),
 
             // ── Data layer ──────────────────────────────────
@@ -44,7 +53,7 @@ return static function (DeptracConfig $config): void {
                 ClassLikeConfig::create('App\\Forms\\.*'),
                 ClassLikeConfig::create('App\\Export\\.*'),
                 ClassLikeConfig::create('App\\Rgpd\\.*'),
-                ClassLikeConfig::create('App\\Validation\\.*'),
+                ClassLikeConfig::create(\App\Validation\ValidationService::class),
                 ClassLikeConfig::create('App\\Email\\.*'),
                 ClassLikeConfig::create('App\\Persona\\.*'),
                 ClassLikeConfig::create('App\\Stats\\.*'),
@@ -68,19 +77,22 @@ return static function (DeptracConfig $config): void {
             // Contract: can depend on Enum
             Ruleset::forLayer($contract)->accesses($enum),
 
-            // Infrastructure: depends on Enum, Contract, Service, Repository, Render (DI container wires everything)
-            Ruleset::forLayer($infrastructure)->accesses($enum, $contract, $service, $repository, $render),
+            // ValueObject: isolate (aucune dépendance sortante)
+            Ruleset::forLayer($valueObject),
 
-            // Repository: depends on Infrastructure, Enum, Contract
-            Ruleset::forLayer($repository)->accesses($infrastructure, $enum, $contract),
+            // Infrastructure: depends on Enum, Contract, ValueObject, Service, Repository, Render (DI container wires everything)
+            Ruleset::forLayer($infrastructure)->accesses($enum, $contract, $valueObject, $service, $repository, $render),
 
-            // Service: depends on Repository, Infrastructure, Enum, Contract, Render
-            Ruleset::forLayer($service)->accesses($repository, $infrastructure, $enum, $contract, $render),
+            // Repository: depends on Infrastructure, Enum, Contract, ValueObject
+            Ruleset::forLayer($repository)->accesses($infrastructure, $enum, $contract, $valueObject),
 
-            // Render: depends on Service, Infrastructure, Enum, Contract (NOT Repository directly)
-            Ruleset::forLayer($render)->accesses($service, $infrastructure, $enum, $contract),
+            // Service: depends on Repository, Infrastructure, Enum, Contract, ValueObject, Render
+            Ruleset::forLayer($service)->accesses($repository, $infrastructure, $enum, $contract, $valueObject, $render),
 
-            // Controller: depends on Service, Repository, Render, Infrastructure, Enum, Contract
-            Ruleset::forLayer($controller)->accesses($service, $repository, $render, $infrastructure, $enum, $contract),
+            // Render: depends on Service, Infrastructure, Enum, Contract, ValueObject (NOT Repository directly)
+            Ruleset::forLayer($render)->accesses($service, $infrastructure, $enum, $contract, $valueObject),
+
+            // Controller: depends on Service, Repository, Render, Infrastructure, Enum, Contract, ValueObject
+            Ruleset::forLayer($controller)->accesses($service, $repository, $render, $infrastructure, $enum, $contract, $valueObject),
         );
 };

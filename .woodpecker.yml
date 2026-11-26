@@ -18,6 +18,12 @@ pipeline:
     commands:
       - find . -name "*.php" -not -path "./vendor/*" -not -path "./tests/*" -not -path "./node_modules/*" | xargs -l1 php -l
 
+  # ── Étape 1b : Garde SQL structurelle (statique, sans base) ──
+  sql_structure:
+    image: php:8.5-cli
+    commands:
+      - php scripts/check_sql_structure.php
+
   # ── Étape 2 : PHPStan (analyse statique niveau 8) ──
   phpstan:
     image: php:8.5-cli

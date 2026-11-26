@@ -18,6 +18,43 @@
 | CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.51 — import JSON durci + unicité `field_name` (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| Whitelist clés JSON | Racine/form/champ/étape/condition : toute clé inconnue = erreur bloquante. |
+| `required` strict | Booléen ou `0`/`1` (entier ou chaîne) uniquement ; `21`, float et chaînes libres bloqués, aucune coercion. Import aligné (`normalizeFlag`). |
+| Listes | `fields`, `steps`, `recipients` exigent `array_is_list()`. |
+| Ordres | `form_fields.ordre` entier `>= 0` (négatif = erreur avant DB) ; `steps.ordre >= 1` ; borne `MAX_ORDER = 1000`. |
+| JSON | `JSON_THROW_ON_ERROR` + `JSON_MAX_DEPTH = 32` (import, validation, conditions) ; racine non-objet refusée explicitement. |
+| `validator_step` | Label d'une étape existante obligatoire ; UUID refusés ; `filled_by=demandeur` + `validator_step` = erreur ; champ validateur global (step vide) = warning. Export convertit l'ID stocké en label pour préserver le round-trip. |
+| `deadline_field` | Doit référencer un `field_name` défini (insensible à la casse). |
+| Doublons `field_name` | Détection dans le validateur, noms générés inclus ; `field_name` non snake_case = erreur. Migration **v48** : index `UNIQUE (form_id, lower(field_name))`, fail-closed sur doublons préexistants (diagnostic + IDs, aucune réparation destructive). |
+| Bornes | `MAX_FIELDS=200`, `MAX_STEPS=50`, `MAX_RECIPIENTS_PER_STEP=50`, `MAX_OPTIONS_PER_FIELD=200`, `MAX_OPTION_LENGTH=255`, `MAX_CONDITION_VALUES=100`, `MAX_LABEL_LENGTH=255`, `MAX_FIELD_NAME_LENGTH=64`, `MAX_DESCRIPTION_LENGTH=5000`, `MAX_HINT_LENGTH=1000`, `MAX_CARD_GROUP_LENGTH=100`, `MAX_EMAIL_LENGTH=254`, `relance_delai_h ∈ [1,720]`, `relance_max ∈ [0,20]` (CHECK SQL alignés). |
+| Enums | `FieldType::cases()`, `FilledBy::cases()`, `FieldVisibility::cases()`, `ConditionEvaluator::VALID_OPS` — plus de listes dupliquées. |
+| Warnings import | Import valide + warnings → `form_id`/`success`/`warnings[]`/`validation_html`/`preserved_json` (pas de redirect muet). |
+| Catch import | `InvalidArgumentException` → « Import refusé : … » ; violation UNIQUE → message dédié ; `PDOException` inconnue → message générique + log ; autres exceptions propagées après rollback. |
+| Décisions KISS | `form.slug` ignoré (slug régénéré) ; `card_group` vide → « Général » ; warnings non bloquants mais visibles. |
+| Tests | `FormJsonValidatorTest` (+22), `AdminImportExportTest` (nouvelles failles + helper), `MigrationV48FieldNameUniqueTest` ; versions max 47→48 mises à jour. |
+| Risque CI/prod | v48 bloque le démarrage si doublons existants (voulu, corriger avant déploiement). Aucun test local exécuté (consigne) ; `php -l` ciblé OK ; CI à lancer. |
+
+### v10.42.50 — ordres + destinataires durcis, `{{owner_email}}` résolu (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| `form_fields.ordre` | NOT NULL, entier, `>= 0` (migration v47 + `OrderValue`) ; `createField`/`updateField`/`duplicate` valident avant écriture. |
+| `steps.ordre` | Entier strictement positif (`> 0`) ; parallèles légitimes conservés (plusieurs étapes au même ordre autorisées). |
+| `step_recipients.email` | CHECK SQLite : non vide, sans espace/contrôle, un seul `@`, domaine présent, ou `{{...}}` ; repository `createRecipient` + `duplicate` valident. |
+| Emails tronqués | Réparation limitée aux 4 correspondances documentées et au libellé d'étape exact ; tout autre cas bloque avec IDs. |
+| `card_group`/`hint` | Rotation historique réparée pour sa signature exacte (`required` = ancien ordre `>= 2`, `ordre` = ancien `card_group` (`0`/vide ou texte), `card_group` = hint documenté ou vide, `hint=''`) : `card_group := ordre` (défaut `Général` si `0`/vide), `hint := card_group`, `required := 0`, `ordre` renuméroté (`ORDER BY required ASC, rowid ASC`, contigu après le max sain, 1..N si formulaire entièrement en rotation). Lignes saines intactes, doublons contrôlés ; rotation ambiguë fail-closed. |
+| `required` legacy | Valeur hors {0,1} : réparée à `0` uniquement dans la signature exacte de rotation ; toute autre valeur bloque la migration (pas de normalisation silencieuse). |
+| `{{owner_email}}` | Alias fonctionnel de `{{owner}}` dans `RecipientResolver` (propriétaire puis repli admin). |
+| Regex dynamique | `RecipientAddress::DYNAMIC_PATTERN` unique, réutilisée par `AdminRecipientHandler`, `FormJsonValidator`, `RecipientResolver`. |
+| Tests | `MigrationV47OrdreAndRecipientsTest`, `ResolveRecipientTest` (alias), fixtures `AdvanceWorkflowTest` adaptées. |
+| Rebuilds SQL | `v43`, `v44` et `v47` copient par liste de colonnes explicite des deux côtés (fini `INSERT ... SELECT *`) ; garde statique CI interdisant toute régression. |
+| CHECK v47 | `typeof(required) = 'integer'` et `typeof(actif) = 'integer'` ajoutés à `typeof(ordre) = 'integer'`. Portée limitée aux domaines : SQLite ne distingue pas une permutation sémantique, détectée par le préflight. |
+| Cause historique | Rebuilds positionnels = mécanisme réel de rotation ; origine exacte de la rotation prod non prouvée par l'historique → détection + renumérotation explicites conservées. |
+| Tests rebuild | V44 et V47 avec colonnes physiquement réordonnées : valeurs conservées par nom ; test statique `INSERT ... SELECT *` interdit. |
+| Validation | Aucune exécution locale (consigne) ; CI à lancer. Aucune base `.db` touchée. |
+
 ### v10.42.49 — durcissement SQLite centralisé (2026-11-25)
 | Tâche | Détail |
 |-------|--------|

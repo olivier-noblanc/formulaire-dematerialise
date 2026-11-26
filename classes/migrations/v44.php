@@ -49,7 +49,13 @@ function apply_migration_v44(PDO $pdo, int $current_version): int
         $sql = "CREATE TABLE form_fields_new (id TEXT PRIMARY KEY NOT NULL, form_id TEXT NOT NULL, label TEXT NOT NULL, field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text','email','date','select','checkbox','textarea','file')), field_name TEXT NOT NULL, options TEXT, hint TEXT DEFAULT '', required INTEGER NOT NULL DEFAULT 0 CHECK (required IN (0,1)), ordre INTEGER DEFAULT 0, card_group TEXT DEFAULT 'Général', filled_by TEXT NOT NULL DEFAULT 'demandeur' CHECK (filled_by IN ('demandeur','validator')), validator_step TEXT DEFAULT '', visibility TEXT NOT NULL DEFAULT 'all' CHECK (visibility IN ('all','owner_only')), `condition` TEXT DEFAULT '', FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE)";
         $pdo->exec('DROP TABLE IF EXISTS form_fields_new');
         $pdo->exec($sql);
-        $pdo->exec('INSERT INTO form_fields_new SELECT * FROM form_fields');
+        // Mapping par NOM de colonne, jamais positionnel : un `SELECT *`
+        // copierait les valeurs dans l'ordre physique de la table source, qui
+        // peut différer de l'ordre de `form_fields_new` et permuter
+        // silencieusement required/ordre/card_group/hint (cf. v47).
+        $columns = 'id, form_id, label, field_type, field_name, options, hint, '
+            . 'required, ordre, card_group, filled_by, validator_step, visibility, `condition`';
+        $pdo->exec("INSERT INTO form_fields_new ({$columns}) SELECT {$columns} FROM form_fields");
         $pdo->exec('DROP TABLE form_fields');
         $pdo->exec('ALTER TABLE form_fields_new RENAME TO form_fields');
         $pdo->exec('CREATE INDEX IF NOT EXISTS idx_ff_form ON form_fields(form_id)');

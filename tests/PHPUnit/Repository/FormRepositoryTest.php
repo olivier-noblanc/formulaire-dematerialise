@@ -115,6 +115,48 @@ final class FormRepositoryTest extends TestCase
         return [$formId, $stepIds];
     }
 
+    public function testCreateRecipientRejectsInvalidEmailAndAcceptsDynamicReference(): void
+    {
+        [, $stepIds] = $this->createTestFormWithSteps();
+
+        try {
+            $this->repo->createRecipient($stepIds[1], 'not-an-email');
+            self::fail('createRecipient doit refuser un email invalide.');
+        } catch (\InvalidArgumentException) {
+            self::assertTrue(true);
+        }
+
+        $recipientId = $this->repo->createRecipient($stepIds[1], '{{owner_email}}');
+        $this->createdRecipientIds[] = $recipientId;
+        $row = $this->repo->fetchOne('SELECT email FROM step_recipients WHERE id = ?', [$recipientId]);
+        self::assertNotNull($row);
+        self::assertSame('{{owner_email}}', (string) $row['email']);
+    }
+
+    public function testCreateFieldAndStepRejectInvalidOrdre(): void
+    {
+        [$formId] = $this->createTestFormWithSteps();
+
+        try {
+            $this->repo->createField([
+                'form_id' => $formId,
+                'label' => 'Champ invalide',
+                'field_name' => 'champ_invalide',
+                'ordre' => -1,
+            ]);
+            self::fail('createField doit refuser un ordre négatif.');
+        } catch (\InvalidArgumentException) {
+            self::assertTrue(true);
+        }
+
+        try {
+            $this->repo->createStep(['form_id' => $formId, 'label' => 'Étape invalide', 'ordre' => 0]);
+            self::fail('createStep doit refuser un ordre nul.');
+        } catch (\InvalidArgumentException) {
+            self::assertTrue(true);
+        }
+    }
+
     public function testGetStepsWithRecipientObjectsReturnsRecipientObjects(): void
     {
         [$formId, $stepIds] = $this->createTestFormWithSteps();

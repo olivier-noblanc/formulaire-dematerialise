@@ -1,3 +1,22 @@
 {
-  "$schema": "https://opencode.ai/config.json"
+  "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "ask" },
+    { "action": "shell", "resource": "git status *", "effect": "allow" },
+    { "action": "shell", "resource": "git log *", "effect": "allow" },
+    { "action": "shell", "resource": "git diff *", "effect": "allow" },
+    { "action": "shell", "resource": "git rev-parse *", "effect": "allow" },
+    { "action": "shell", "resource": "git show *", "effect": "allow" },
+    { "action": "shell", "resource": "php -l *", "effect": "allow" },
+    { "action": "shell", "resource": "php tests/*", "effect": "allow" },
+    { "action": "shell", "resource": "php vendor/bin/phpunit *", "effect": "allow" },
+    { "action": "shell", "resource": "vendor/bin/phpunit *", "effect": "allow" },
+    { "action": "shell", "resource": "composer *", "effect": "allow" },
+    { "action": "shell", "resource": "phpstan *", "effect": "allow" },
+    { "action": "shell", "resource": "rector *", "effect": "allow" },
+    { "action": "shell", "resource": "phpcpd *", "effect": "allow" },
+    { "action": "shell", "resource": "gh run list *", "effect": "allow" },
+    { "action": "shell", "resource": "gh run view *", "effect": "allow" },
+    { "action": "shell", "resource": "gh run watch *", "effect": "allow" }
+  ]
 }

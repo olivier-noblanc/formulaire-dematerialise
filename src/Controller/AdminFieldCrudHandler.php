@@ -56,6 +56,9 @@ final class AdminFieldCrudHandler
         if ($data['form_id'] === '' || $data['form_id'] === '0' || ($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
             return ['error' => 'Le libellé du champ est requis.'];
         }
+        if ($data['ordre'] < 0) {
+            return ['error' => 'L\'ordre du champ doit être un entier positif ou nul.'];
+        }
         try {
             $options_json = \parse_options_input($data['options_raw']);
             $ff_hint = trim($_POST['ff_hint'] ?? '');
@@ -71,6 +74,9 @@ final class AdminFieldCrudHandler
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($data['form_id']) . '#field-' . urlencode($new_field_id)];
         } catch (\PDOException $e) {
             // @silent-ok: fallback returns user-facing error
+            if (self::isFieldNameConflict($e)) {
+                return ['error' => 'Ce nom technique (field_name) est déjà utilisé par un autre champ de ce formulaire.'];
+            }
             error_log('handleAddField error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -85,6 +91,9 @@ final class AdminFieldCrudHandler
         $data = self::readFieldPostData();
         if ($field_id === '' || $field_id === '0' || ($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
             return ['error' => 'Le libellé du champ est requis.'];
+        }
+        if ($data['ordre'] < 0) {
+            return ['error' => 'L\'ordre du champ doit être un entier positif ou nul.'];
         }
         try {
             $options_json = \parse_options_input($data['options_raw']);
@@ -101,6 +110,9 @@ final class AdminFieldCrudHandler
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($data['form_id']) . '#field-' . urlencode($field_id)];
         } catch (\PDOException $e) {
             // @silent-ok: fallback returns user-facing error
+            if (self::isFieldNameConflict($e)) {
+                return ['error' => 'Ce nom technique (field_name) est déjà utilisé par un autre champ de ce formulaire.'];
+            }
             error_log('handleUpdateField error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
@@ -125,5 +137,16 @@ final class AdminFieldCrudHandler
             error_log('handleDeleteField error: ' . $e->getMessage());
             return ['error' => 'Une erreur technique est survenue.'];
         }
+    }
+
+    /**
+     * Détecte la violation de l'index UNIQUE v48 (form_id, lower(field_name)).
+     * SQLite rapporte soit les colonnes, soit le nom de l'index d'expression.
+     */
+    private static function isFieldNameConflict(\PDOException $e): bool
+    {
+        $message = $e->getMessage();
+        return str_contains($message, 'UNIQUE constraint failed')
+            && (str_contains($message, 'field_name') || str_contains($message, 'idx_ff_form_field_name'));
     }
 }

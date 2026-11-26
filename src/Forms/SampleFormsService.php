@@ -210,7 +210,7 @@ final readonly class SampleFormsService
                         $step_uuid = $this->formRepository->createStep([
                             'form_id' => $form_uuid,
                             'label' => $s['label'],
-                            'ordre' => $s['ordre'] ?? 0,
+                            'ordre' => $s['ordre'] ?? 1,
                             'actif' => 1,
                         ]);
 

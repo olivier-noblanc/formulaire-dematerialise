@@ -16,6 +16,7 @@ namespace App\Controller;
  *  - 'json_output'     (string)        → export JSON à télécharger
  *  - 'filename'        (string)        → nom du fichier d'export
  *  - 'form_id'         (string)        → override $form_id (compat comportement)
+ *  - 'warnings'        (list<string>)  → avertissements d'import (rendus visibles)
  *  - null                              → aucune action / handler inexistant
  */
 final class AdminFormsHandlers
@@ -77,7 +78,7 @@ final class AdminFormsHandlers
      *
      * @param string $action      Valeur de $_POST['action'].
      * @param string $get_form_id form_id validé issu de $_GET.
-     * @return array{error?: string, redirect?: string, success?: string, form_id?: string, filename?: string, json_output?: string, validation_html?: string, preserved_json?: string}|null
+     * @return array{error?: string, redirect?: string, success?: string, form_id?: string, filename?: string, json_output?: string, validation_html?: string, preserved_json?: string, warnings?: list<string>}|null
      */
     public static function dispatch(string $action, string $get_form_id = ''): ?array
     {

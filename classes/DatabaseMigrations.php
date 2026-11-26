@@ -12,6 +12,8 @@ declare(strict_types=1);
  *   - v45.php               : suppression de l'index unique legacy des
  *                             soumissions actives
  *   - v46.php               : contrainte CHECK sur alert_rules.notify_who
+ *   - v47.php               : ordres entiers >= 0 et destinataires durcis
+ *   - v48.php               : unicité de form_fields.field_name par formulaire
  *
  * Les versions v1 à v41 sont squashées dans la baseline 42.
  *
@@ -24,6 +26,8 @@ require_once __DIR__ . '/migrations/v43.php';
 require_once __DIR__ . '/migrations/v44.php';
 require_once __DIR__ . '/migrations/v45.php';
 require_once __DIR__ . '/migrations/v46.php';
+require_once __DIR__ . '/migrations/v47.php';
+require_once __DIR__ . '/migrations/v48.php';
 
 // ── Helper query (utilisé par toutes les migrations) ──
 
@@ -66,7 +70,7 @@ function _dbm_apply_required(PDO $pdo, int $current_version, callable $migration
 /**
  * Applique toutes les migrations SQLite dans l'ordre.
  *
- * Étapes : baseline v42 puis migrations v43, v44, v45 et v46.
+ * Étapes : baseline v42 puis migrations v43, v44, v45, v46, v47 et v48.
  *
  * @param PDO $pdo Connexion PDO
  */
@@ -75,5 +79,7 @@ function db_migrate(PDO $pdo): void {
     $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v43', 43);
     $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v44', 44);
     $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v45', 45);
-    _dbm_apply_required($pdo, $current_version, 'apply_migration_v46', 46);
+    $current_version = _dbm_apply_required($pdo, $current_version, 'apply_migration_v46', 46);
+    _dbm_apply_required($pdo, $current_version, 'apply_migration_v47', 47);
+    _dbm_apply_required($pdo, $current_version, 'apply_migration_v48', 48);
 }

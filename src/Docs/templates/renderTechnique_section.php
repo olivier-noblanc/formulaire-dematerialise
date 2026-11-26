@@ -42,7 +42,7 @@
           &nbsp;&nbsp;<span class="file">alert_check.php</span> — Script CLI de vérification des alertes J-N (lazy cron 1×/jour)<br>
           &nbsp;&nbsp;<span class="file">index.php?p=docs</span> — Cette page de documentation<br>
           &nbsp;&nbsp;<span class="file">index.php?p=changelog</span> — Journal des versions (parse CHANGELOG.md)<br>
-          &nbsp;&nbsp;<span class="dir"><span aria-hidden="true">📁</span> classes/</span> — DatabaseMigrations.php (baseline v42 + migrations v43→v46 et seeding)<br>
+          &nbsp;&nbsp;<span class="dir"><span aria-hidden="true">📁</span> classes/</span> — DatabaseMigrations.php (baseline v42 + migrations v43→v48 et seeding)<br>
           &nbsp;&nbsp;<span class="dir"><span aria-hidden="true">📁</span> PHPMailer/</span> — Librairie d'envoi d'emails<br>
           &nbsp;&nbsp;<span class="dir"><span aria-hidden="true">📁</span> db/</span> — Base de données SQLite (workflow.db)<br>
           &nbsp;&nbsp;<span class="dir"><span aria-hidden="true">📁</span> cache/</span> — Cache file-based (LDAP suggestions, settings)

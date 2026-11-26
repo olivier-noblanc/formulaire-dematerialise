@@ -16,7 +16,7 @@ use App\Render\AdminSettingsRenderer;
 
 /**
  * @param array<string, mixed> $data
- * @return array{valid: bool, errors: string[], warnings: string[]}
+ * @return array{valid: bool, errors: list<string>, warnings: list<string>}
  */
 function validate_form_json(array $data): array
 {
@@ -24,7 +24,7 @@ function validate_form_json(array $data): array
 }
 
 /**
- * @param array{valid: bool, errors: string[], warnings: string[]} $result
+ * @param array{valid: bool, errors: list<string>, warnings: list<string>} $result
  */
 function format_validation_results(array $result): string
 {

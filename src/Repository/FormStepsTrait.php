@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Validation\OrderValue;
+use App\Validation\RecipientAddress;
+
 /**
  * @internal Trait utilisé par FormRepository pour limiter la taille du fichier principal.
  *
@@ -169,9 +172,10 @@ trait FormStepsTrait
             throw new \InvalidArgumentException('steps.actif must be 0 or 1');
         }
         $id = \generate_uuid();
+        $ordre = OrderValue::assertValid($data['ordre'] ?? 1, 'steps.ordre', 1);
         $this->execute(
             'INSERT INTO steps (id, form_id, label, ordre, actif, `condition`) VALUES (?, ?, ?, ?, ?, ?)',
-            [$id, $data['form_id'], $data['label'], $data['ordre'] ?? 0, $data['actif'] ?? 1, $data['condition'] ?? '']
+            [$id, $data['form_id'], $data['label'], $ordre, $data['actif'] ?? 1, $data['condition'] ?? '']
         );
         return $id;
     }
@@ -183,6 +187,9 @@ trait FormStepsTrait
     {
         if (array_key_exists('actif', $data) && (!is_int($data['actif']) || !in_array($data['actif'], [0, 1], true))) {
             throw new \InvalidArgumentException('steps.actif must be 0 or 1');
+        }
+        if (array_key_exists('ordre', $data)) {
+            $data['ordre'] = OrderValue::assertValid($data['ordre'], 'steps.ordre', 1);
         }
         $allowed = ['label', 'ordre', 'actif', 'condition'];
         $fields = [];
@@ -211,6 +218,7 @@ trait FormStepsTrait
 
     public function createRecipient(string $stepId, string $email): string
     {
+        $email = RecipientAddress::normalize($email);
         $id = \generate_uuid();
         $this->execute(
             'INSERT INTO step_recipients (id, step_id, email) VALUES (?, ?, ?)',
