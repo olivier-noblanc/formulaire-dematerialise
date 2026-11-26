@@ -65,6 +65,15 @@ web.config
 !/.opencode/opencode.json
 !/.opencode/plugins/
 
+# Outillage local d'agents (artefacts de travail, jamais du code projet).
+# Ancrés à la racine : seuls les répertoires d'outillage du dépôt sont visés.
+# Les fichiers déjà versionnés dans ces répertoires restent suivis (une règle
+# `.gitignore` ne désindexe jamais un fichier déjà tracké) : aucune suppression
+# n'est effectuée ici.
+/.superpowers/
+/.build/php-modernization/
+/.codegraph/
+
 # Tests
 /tool-results/
 /spc
