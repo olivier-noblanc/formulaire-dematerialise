@@ -11,11 +11,13 @@ use App\Enum\FilledBy;
 
 /**
  * Handlers CRUD pour les champs de formulaire (add, update, delete).
+ *
+ * @phpstan-type FieldPostData array{form_id: string, label: string, field_name: string, field_type: string, options_raw: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string}
  */
 final class AdminFieldCrudHandler
 {
     /**
-     * @return array{form_id: string, label: string, field_name: string, field_type: string, options_raw: string, required: int, ordre: int, card_group: string, filled_by: string, validator_step: string, visibility: string}
+     * @return FieldPostData
      */
     private static function readFieldPostData(): array
     {
@@ -48,6 +50,25 @@ final class AdminFieldCrudHandler
     }
 
     /**
+     * Lit les données POST du champ et applique les validations communes à
+     * l'ajout et à la modification (libellé/nom technique, ordre).
+     *
+     * @return array{0: FieldPostData, 1: string|null} [données du champ, error_msg_or_null]
+     */
+    private static function readValidatedFieldData(string $form_id): array
+    {
+        $data = self::readFieldPostData();
+        $data['form_id'] = $form_id;
+        if (($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
+            return [$data, 'Le libellé du champ est requis.'];
+        }
+        if ($data['ordre'] < 0) {
+            return [$data, 'L\'ordre du champ doit être un entier positif ou nul.'];
+        }
+        return [$data, null];
+    }
+
+    /**
      * @return array{error: string}|array{redirect: string}
      */
     public static function handleAddField(): array
@@ -56,13 +77,9 @@ final class AdminFieldCrudHandler
         if ($err !== null) {
             return ['error' => $err];
         }
-        $data = self::readFieldPostData();
-        $data['form_id'] = $form_id;
-        if (($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
-            return ['error' => 'Le libellé du champ est requis.'];
-        }
-        if ($data['ordre'] < 0) {
-            return ['error' => 'L\'ordre du champ doit être un entier positif ou nul.'];
+        [$data, $data_err] = self::readValidatedFieldData($form_id);
+        if ($data_err !== null) {
+            return ['error' => $data_err];
         }
         try {
             $options_json = \parse_options_input($data['options_raw']);
@@ -100,13 +117,9 @@ final class AdminFieldCrudHandler
         if ($form_err !== null) {
             return ['error' => $form_err];
         }
-        $data = self::readFieldPostData();
-        $data['form_id'] = $form_id;
-        if (($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
-            return ['error' => 'Le libellé du champ est requis.'];
-        }
-        if ($data['ordre'] < 0) {
-            return ['error' => 'L\'ordre du champ doit être un entier positif ou nul.'];
+        [$data, $data_err] = self::readValidatedFieldData($form_id);
+        if ($data_err !== null) {
+            return ['error' => $data_err];
         }
         try {
             $options_json = \parse_options_input($data['options_raw']);
@@ -134,7 +147,7 @@ final class AdminFieldCrudHandler
     /**
      * @return array{error: string}|array{redirect: string}
      */
-    public static function handleDeleteField(): ?array
+    public static function handleDeleteField(): array
     {
         [$field_id, $field_err] = AdminFormsHandlers::postUuid('field_id', 'de champ');
         if ($field_err !== null) {

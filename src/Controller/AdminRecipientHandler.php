@@ -43,9 +43,9 @@ final class AdminRecipientHandler
     }
 
     /**
-     * @return array{error?: string, redirect?: string}|null
+     * @return array{error?: string, redirect?: string}
      */
-    public static function handleDeleteRecipient(string $get_form_id): ?array
+    public static function handleDeleteRecipient(string $get_form_id): array
     {
         [$recipient_id, $err] = AdminFormsHandlers::postUuid('recipient_id', 'de destinataire');
         if ($err !== null) {
