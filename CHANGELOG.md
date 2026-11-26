@@ -1,5 +1,19 @@
 # Changelog — CircuitDémat
 
+## [10.42.53] — 2026-11-26
+_Résumé : correctif du job CI `vendor-offline-export` — l'autoload versionné avait été régénéré en mode dev (références `amphp/*`, `phpstan/*`), cassant `vendor/autoload.php` sur l'export hors-ligne. Autoload re-dumpé en `--no-dev`, garde CI unique et diagnostic en amont du `require`._
+
+### 🔒 Correctifs
+- **Cause racine** : `vendor/composer/autoload_psr4.php`, `autoload_static.php`, `autoload_classmap.php`, `autoload_real.php` et `autoload_files.php` étaient issus d'un `composer dump-autoload` en **mode dev**. `autoload_real.php:41` exécutait donc `require vendor/composer/../amphp/amp/src/functions.php`, absent de l'export versionné (`amphp/*` n'est tiré que par `phpro/grumphp`, `require-dev`). 1781 chemins référencés pointaient vers des paquets dev-only.
+- **Correctif** : régénération de l'autoload versionné via `composer dump-autoload --no-dev`. Le fichier `vendor/composer/autoload_files.php` disparaît (plus aucun `files` en prod), `autoload_psr4.php` ne contient plus que `PHPMailer\PHPMailer\` + `App\` / `App\PHPStan\` / `App\Rector\`, `autoload_classmap.php` seulement `Composer\InstalledVersions`. Aucune ligne d'autoload supprimée à la main, aucune exception ajoutée.
+- **Prod inchangée** : `phpmailer/phpmailer` reste la seule dépendance d'exécution, chargée par `lib/core_bootstrap.php` depuis `vendor/PHPMailer/src` (alias documenté) ; `composer.lock` n'est pas modifié.
+
+### 🧪 Tests / Gardes CI
+- **Nouveau `scripts/check_vendor_autoload.php`** (source unique, 0 dépendance, aucune base) : échoue si un chemin d'autoload pointe vers un paquet `packages-dev` de `composer.lock` (mode dev détecté, y compris dans `autoload_static.php` via réflexion) et, avec `--require-exists`, si un chemin référencé est absent du disque. Résolution lexicale des `composer/../pkg` produits par `autoload_static.php` et alias `phpmailer/phpmailer/src` → `PHPMailer/src`.
+- **Job `vendor-offline-export`** : le contrôle de cohérence passe désormais **avant** le `require` (diagnostic utile au lieu d'un fatal PHP), remplace le heredoc PHP inline, et une étape de fumée vérifie que `App\Core\App`, `App\Mail\MailService`, `App\Token\TokenService` se résolvent depuis l'export frais.
+- **AGENTS.md** : contrat documenté (autoload commité = `--no-dev` ; relancer `composer dump-autoload --no-dev` après tout `composer install` local avant de committer `vendor/composer/`).
+- Validation locale effectuée sans base et sans PHPUnit/PHPStan : `php -l` sur le nouveau script, `composer dump-autoload --no-dev` (exit 0), export frais reconstitué (`git archive HEAD`) → `check_vendor_autoload.php --require-exists` exit 0, `require vendor/autoload.php` exit 0, fumée `App\*` exit 0 ; sur l'export d'avant correctif, le même contrôle sort en exit 1 avec la liste des paquets dev. La CI reste l'arbitre.
+
 ## [10.42.52] — 2026-11-26
 _Résumé : finalisation du correctif v47 — signatures de rotation A/B documentées, groupes `card_group` partagés avec garde CI anti-dérive, préflight des listes fermées et renumérotation atomique indépendante de tout index._
 

@@ -15,8 +15,18 @@
 | Enums métier | **12** (SubmissionStatus, FieldType, ValidationAction, FilledBy, FieldVisibility, AdminRequestStatus, UrgencyLevel, AssetType, ValidationResultStatus, SubmissionField, MailStatus, NotifyWho) |
 | Repositories | **10** |
 | Fichiers > 350 lignes | **0** (FormRenderer ✅ 460→344 — 8 templates extraits) |
-| CI | **GitHub Actions** (16 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
+| CI | **GitHub Actions** (17 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
+
+### v10.42.53 — autoload versionné en `--no-dev` (correctif job CI `vendor-offline-export`) (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| Cause racine | `vendor/composer/autoload_*.php` régénérés en mode dev → `autoload_real.php:41` exigeait `vendor/composer/../amphp/amp/src/functions.php` (require-dev via `phpro/grumphp`), absent de l'export versionné. 1781 chemins dev-only. |
+| Correctif | `composer dump-autoload --no-dev` : `autoload_psr4.php` = `PHPMailer\PHPMailer\` + `App\` / `App\PHPStan\` / `App\Rector\` ; `autoload_classmap.php` = `Composer\InstalledVersions` ; `autoload_files.php` supprimé (aucun `files` en prod). Aucune ligne retirée à la main, `composer.lock` inchangé. |
+| Garde CI unique | `scripts/check_vendor_autoload.php` : détecte tout chemin vers un paquet `packages-dev` (y compris via `autoload_static.php`, réflexion) ; `--require-exists` vérifie la présence réelle des chemins. |
+| Job `vendor-offline-export` | Contrôle de cohérence déplacé **avant** le `require` (diagnostic explicite au lieu d'un fatal), heredoc PHP inline remplacé par le script, nouvelle étape de fumée `App\Core\App` / `App\Mail\MailService` / `App\Token\TokenService`. |
+| Contrat documenté | `AGENTS.md` § « Autoload versionné : toujours `--no-dev` » : relancer `composer dump-autoload --no-dev` après tout `composer install` local avant de committer `vendor/composer/`. |
+| Validation | Aucune base touchée, ni PHPUnit ni PHPStan en local : `php -l` du script, `composer dump-autoload --no-dev` (0), export frais → `check_vendor_autoload.php --require-exists` (0), `require vendor/autoload.php` (0), fumée `App\*` (0) ; export pré-correctif → exit 1. CI arbitre. |
 
 ### v10.42.52 — finalisation correctif v47 : signatures A/B, groupes partagés, renumérotation atomique (2026-11-26)
 | Tâche | Détail |

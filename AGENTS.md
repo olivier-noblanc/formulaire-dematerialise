@@ -120,6 +120,15 @@ Ces fichiers sont la source de vérité de l'état du projet. Ne jamais les oubl
 - **Remote** : `https://github.com/olivier-noblanc/formulaire-dematerialise.git` (HTTPS)
 - **IIS prod** : pas d'accès web — vendor/ doit être commit, pas de `composer install` possible en prod. Les fichiers d'autoload doivent être à jour dans le repo.
 
+### Autoload versionné : toujours `--no-dev`
+
+Seuls `vendor/autoload.php`, `vendor/composer/` et `vendor/PHPMailer/` sont versionnés (`.gitignore`). L'autoload commité doit correspondre à un **`composer dump-autoload --no-dev`** : en mode dev, il référence `amphp/*`, `phpstan/*`… (require-dev) absents de l'export versionné et `vendor/autoload.php` meurt sur `require vendor/composer/../amphp/amp/src/functions.php`.
+
+- **Après tout `composer install` / `composer update` local** (qui régénère l'autoload en mode dev), relancer `composer dump-autoload --no-dev` **avant** de committer `vendor/composer/`. Les trois fichiers qui changent : `autoload_psr4.php`, `autoload_static.php`, `autoload_classmap.php` (et `autoload_real.php` ; `autoload_files.php` disparaît puisqu'aucun `files` ne reste).
+- **Contrôle** : `php scripts/check_vendor_autoload.php` (depuis la racine) échoue si l'autoload référence un paquet `require-dev` ; `--require-exists` vérifie en plus que chaque chemin référencé existe (mode export frais). Le job CI `vendor-offline-export` l'exécute sur un `git archive HEAD` **avant** le `require`.
+- **Conséquence assumée** : localement, l'autoload `--no-dev` ne charge pas PHPUnit/PHPStan ; c'est le `composer install` (mode dev) qui les rend utilisables. Ne jamais committer la version dev : la CI le refuse.
+- **Rituel de commit de `vendor/composer/`** : `composer dump-autoload --no-dev`, puis `git commit --no-verify`. Le hook pre-commit `grumphp` (phpstan/rector/deptrac) ne peut pas démarrer sans l'autoload dev — les deux états sont incompatibles dans un même arbre de travail. Après le commit, `composer dump-autoload` (sans `--no-dev`) pour retrouver l'outillage local ; `git status` montrera alors `vendor/composer/*` modifié, ce qui est normal et ne doit jamais être committé.
+
 ---
 
 ## SQLite — piège intra-processus (Windows/NTFS)

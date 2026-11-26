@@ -781,6 +781,8 @@ jobs:
   # (`composer dump-autoload --no-dev`) : régénéré en mode dev, il référence
   # des paquets absents de l'export (amphp/*, phpstan/*…) et fait échouer le
   # `require .../functions.php` d'autoload_real.php.
+  # Le contrôle de cohérence (scripts/check_vendor_autoload.php) tourne AVANT
+  # le `require` pour produire le diagnostic utile plutôt qu'un fatal PHP.
   vendor-offline-export:
     name: Vendor offline (export frais)
     runs-on: ubuntu-latest
@@ -798,33 +800,25 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/export"
           git archive HEAD | tar -x -C "$RUNNER_TEMP/export"
+      - name: Vérifier la cohérence de l'autoload versionné (no-dev + chemins présents)
+        working-directory: ${{ runner.temp }}/export
+        run: php "$GITHUB_WORKSPACE/scripts/check_vendor_autoload.php" --require-exists
       - name: Require vendor/autoload.php depuis l'export frais
         working-directory: ${{ runner.temp }}/export
         run: php -r "require 'vendor/autoload.php'; echo 'vendor/autoload.php OK (no-dev)', PHP_EOL;"
-      - name: Vérifier qu'aucun chemin dev n'est référencé par l'autoload
+      - name: Booter l'autoload applicatif depuis l'export frais
         working-directory: ${{ runner.temp }}/export
         run: |
-          php -r '
-            $missing = [];
-            // L install-path Composer de PHPMailer (vendor/phpmailer/phpmailer/src)
-            // n existe pas dans l export versionné : PHPMailer est versionné sous
-            // vendor/PHPMailer (chargé par lib/core_bootstrap.php). On normalise
-            // ce préfixe vers le chemin réellement présent avant de vérifier.
-            $normalize = static function (string $entry): string {
-                return str_replace("/phpmailer/phpmailer/src", "/PHPMailer/src", $entry);
-            };
-            foreach (["autoload_psr4.php", "autoload_namespaces.php", "autoload_files.php", "autoload_classmap.php"] as $f) {
-                $path = "vendor/composer/$f";
-                if (!is_file($path)) { continue; }
-                foreach ((array) (require $path) as $value) {
-                    foreach ((array) $value as $entry) {
-                        if (is_string($entry) && !file_exists($normalize($entry))) { $missing[] = "$f -> $entry"; }
-                    }
-                }
-            }
-            if ($missing !== []) {
-                fwrite(STDERR, "Chemins introuvables (autoload non généré en --no-dev ?) :\n" . implode("\n", $missing) . "\n");
-                exit(1);
-            }
-            echo "Autoload : tous les chemins référencés existent dans l\x27export.", PHP_EOL;
-          '
+          cat > autoload_smoke.php <<'PHP'
+          <?php
+          declare(strict_types=1);
+          require 'vendor/autoload.php';
+          foreach (['App\Core\App', 'App\Mail\MailService', 'App\Token\TokenService'] as $class) {
+              if (!class_exists($class)) {
+                  fwrite(STDERR, 'Classe non résolue via l\'autoload versionné : ' . $class . PHP_EOL);
+                  exit(1);
+              }
+          }
+          echo 'Autoload applicatif OK (App\* résolu depuis l\'export)', PHP_EOL;
+          PHP
+          php autoload_smoke.php
