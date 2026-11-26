@@ -56,12 +56,22 @@ final class AdminStepCrudHandler
         $condition_field = trim($_POST['condition_field'] ?? '');
         $condition_op    = trim($_POST['condition_op'] ?? '');
         $condition_value = trim($_POST['condition_value'] ?? '');
-        $valid_ops = \App\Workflow\ConditionEvaluator::VALID_OPS;
-        if ($condition_op !== '' && !in_array($condition_op, $valid_ops, true)) {
-            $condition_op = '';
-        }
         if (strlen($condition_value) > 1000) {
             $condition_value = substr($condition_value, 0, 1000);
+        }
+
+        // Une condition existante ne doit jamais disparaître par accident : une
+        // étape sans condition s'exécute inconditionnellement. Si un champ est
+        // sélectionné mais que l'opérateur manque ou est inconnu, on refuse
+        // l'enregistrement avec un message explicite au lieu de sauver sans
+        // condition (comportement précédent : `$condition_op = ''` → condition
+        // supprimée silencieusement).
+        $valid_ops = \App\Workflow\ConditionEvaluator::VALID_OPS;
+        if ($condition_field !== '' && $condition_op === '') {
+            return ['error' => 'Condition d\'exécution incomplète : choisissez un opérateur, ou sélectionnez « — Toujours exécuter — » pour supprimer explicitement la condition.'];
+        }
+        if ($condition_op !== '' && !in_array($condition_op, $valid_ops, true)) {
+            return ['error' => 'Opérateur de condition inconnu. Valeurs acceptées : ' . implode(', ', $valid_ops) . '.'];
         }
 
         $condition_json = '';

@@ -55,7 +55,11 @@ final class ConfirmActionController extends BaseController
             'remove_owner' => [
                 'label'       => 'Retirer un propriétaire de formulaire',
                 'description' => 'Voulez-vous vraiment retirer ce propriétaire',
-                'params'      => ['id', 'form_id'],
+                // Audit 2026-11-26 : le renderer envoyait name="id" alors que
+                // AdminRecipientHandler::handleDeleteOwner() lit $_POST['owner_id']
+                // → « Paramètres manquants » à chaque confirmation. Le nom du
+                // champ POST doit être owner_id, comme le lit le handler.
+                'params'      => ['owner_id', 'form_id'],
                 'param_label' => 'propriétaire',
                 'danger'      => true,
             ],
@@ -119,7 +123,7 @@ final class ConfirmActionController extends BaseController
                 $detailText = \App\Core\App::html()->escape($email) . ' ?';
                 break;
             case 'remove_owner':
-                $ownerId = trim($_GET['id']);
+                $ownerId = trim($_GET['owner_id']);
                 $owEmail = App::getInstance()->get(\App\Repository\FormRepository::class)->findOwnerEmailById($ownerId);
                 $detailText = ($owEmail !== null && $owEmail !== '') ? App::html()->displayUser($owEmail) . ' ?' : '#' . \App\Core\App::html()->escape($ownerId) . ' ?';
                 break;

@@ -47,9 +47,9 @@ final class AdminRecipientHandler
      */
     public static function handleDeleteRecipient(string $get_form_id): ?array
     {
-        $recipient_id = trim($_POST['recipient_id'] ?? '');
-        if ($recipient_id === '' || $recipient_id === '0') {
-            return null;
+        [$recipient_id, $err] = AdminFormsHandlers::postUuid('recipient_id', 'de destinataire');
+        if ($err !== null) {
+            return ['error' => $err];
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);
@@ -69,9 +69,12 @@ final class AdminRecipientHandler
      */
     public static function handleAddOwner(): array
     {
-        $form_id = trim($_POST['form_id'] ?? '');
+        [$form_id, $err] = AdminFormsHandlers::postFormId();
+        if ($err !== null) {
+            return ['error' => $err];
+        }
         $owner_email = trim($_POST['owner_email'] ?? '');
-        if ($form_id === '' || $form_id === '0' || ($owner_email === '' || $owner_email === '0')) {
+        if ($owner_email === '' || $owner_email === '0') {
             return ['error' => 'Le courriel du propriétaire est requis.'];
         }
         if (filter_var($owner_email, FILTER_VALIDATE_EMAIL) === false) {
@@ -94,10 +97,18 @@ final class AdminRecipientHandler
      */
     public static function handleDeleteOwner(): array
     {
-        $owner_id = trim($_POST['owner_id'] ?? '');
-        $form_id = trim($_POST['form_id'] ?? '');
-        if ($owner_id === '' || $owner_id === '0' || ($form_id === '' || $form_id === '0')) {
-            return ['error' => 'Paramètres manquants pour retirer le propriétaire (owner_id=' . \App\Core\App::html()->escape($owner_id) . ', form_id=' . \App\Core\App::html()->escape($form_id) . ').'];
+        // La page de confirmation (confirm_action) poste `owner_id`
+        // (params ['owner_id','form_id'] dans ConfirmActionController) ; le
+        // renderer envoyait auparavant `id` : le retrait échouait toujours
+        // (« paramètres manquants »). `id` reste accepté en repli pour les
+        // appels directs hérités, `owner_id` restant prioritaire.
+        [$owner_id, $owner_err] = AdminFormsHandlers::postUuid('owner_id', 'de propriétaire', 'id');
+        if ($owner_err !== null) {
+            return ['error' => $owner_err];
+        }
+        [$form_id, $form_err] = AdminFormsHandlers::postFormId();
+        if ($form_err !== null) {
+            return ['error' => $form_err];
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);

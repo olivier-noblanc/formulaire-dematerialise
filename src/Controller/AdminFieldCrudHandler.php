@@ -52,8 +52,13 @@ final class AdminFieldCrudHandler
      */
     public static function handleAddField(): array
     {
+        [$form_id, $err] = AdminFormsHandlers::postFormId();
+        if ($err !== null) {
+            return ['error' => $err];
+        }
         $data = self::readFieldPostData();
-        if ($data['form_id'] === '' || $data['form_id'] === '0' || ($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
+        $data['form_id'] = $form_id;
+        if (($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
             return ['error' => 'Le libellé du champ est requis.'];
         }
         if ($data['ordre'] < 0) {
@@ -87,9 +92,17 @@ final class AdminFieldCrudHandler
      */
     public static function handleUpdateField(): array
     {
-        $field_id = trim($_POST['field_id'] ?? '');
+        [$field_id, $field_err] = AdminFormsHandlers::postUuid('field_id', 'de champ');
+        if ($field_err !== null) {
+            return ['error' => $field_err];
+        }
+        [$form_id, $form_err] = AdminFormsHandlers::postFormId();
+        if ($form_err !== null) {
+            return ['error' => $form_err];
+        }
         $data = self::readFieldPostData();
-        if ($field_id === '' || $field_id === '0' || ($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
+        $data['form_id'] = $form_id;
+        if (($data['label'] === '' || $data['label'] === '0') || ($data['field_name'] === '' || $data['field_name'] === '0')) {
             return ['error' => 'Le libellé du champ est requis.'];
         }
         if ($data['ordre'] < 0) {
@@ -119,14 +132,17 @@ final class AdminFieldCrudHandler
     }
 
     /**
-     * @return array{error: string}|array{redirect: string}|null
+     * @return array{error: string}|array{redirect: string}
      */
     public static function handleDeleteField(): ?array
     {
-        $field_id = trim($_POST['field_id'] ?? '');
-        $form_id = trim($_POST['form_id'] ?? '');
-        if ($field_id === '' || $field_id === '0') {
-            return null;
+        [$field_id, $field_err] = AdminFormsHandlers::postUuid('field_id', 'de champ');
+        if ($field_err !== null) {
+            return ['error' => $field_err];
+        }
+        [$form_id, $form_err] = AdminFormsHandlers::postFormId();
+        if ($form_err !== null) {
+            return ['error' => $form_err];
         }
         try {
             $repo = App::getInstance()->get(\App\Repository\FormRepository::class);

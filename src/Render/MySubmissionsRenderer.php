@@ -27,7 +27,8 @@ final class MySubmissionsRenderer
      *   form_label: string,
      *   form_slug: string,
      *   deadline_field: string|null,
-     *   workflow_steps: array<int, array{step_id: string, step_label: string, step_status: string, step_detail: string}>,
+     *   workflow_steps: array<int, array{step_id: string, step_label: string, step_status: string, step_detail: string, tokens?: list<array{email?: string, sent_at?: string|null, done_at?: string|null, relance_at?: string|null, expires_at?: string|null, relance_count?: int}>}>,
+     *   tokens?: list<array{email?: string, sent_at?: string|null, done_at?: string|null, relance_at?: string|null, expires_at?: string|null, relance_count?: int}>,
      *   progress_pct: int|float,
      *   progress_done: int,
      *   progress_total: int
@@ -88,7 +89,11 @@ final class MySubmissionsRenderer
         } else {
             foreach ($submissions as $submission) {
                 $data   = json_decode($submission['data'], true);
+                if (!is_array($data)) {
+                    $data = [];
+                }
                 $status = $submission['status'] ?? SubmissionStatus::EnCours->value;
+
 
                 $statusLabel = match ($status) {
                     SubmissionStatus::Valide->value  => '✓ Validée',
@@ -102,6 +107,21 @@ final class MySubmissionsRenderer
                     SubmissionStatus::Annule->value  => 'badge-annule',
                     default   => 'badge-en-cours',
                 };
+
+                // Tooltip purement CSS (aucun JS) sur le badge de statut.
+                // Il n'affiche que des données réellement présentes côté PHP
+                // (date de la décision issue de validations[], total des
+                // relances issu des tokens). Aucune ligne → aucun tooltip.
+                $statusTip = self::buildStatusTip($data, $status, $submission['tokens'] ?? []);
+                if ($statusTip !== '') {
+                    $badgeCls .= ' has-tip';
+                }
+                // aria-hidden : le badge est dans le lien, son contenu entrerait
+                // dans le nom accessible du lien. Le tooltip est un complément
+                // visuel (les mêmes informations restent dans le détail).
+                $statusTipHtml = $statusTip === ''
+                    ? ''
+                    : '<span class="sub-tip" aria-hidden="true">' . $statusTip . '</span>';
 
                 $deadlineField = $submission['deadline_field'] ?? '';
                 $deadlineVal   = $deadlineField !== '' ? ($data[$deadlineField] ?? '') : '';
@@ -143,7 +163,7 @@ final class MySubmissionsRenderer
                               <div class="sub-card-title">{$formLabel} {$deadlineBadge}</div>
                               <div class="sub-card-date">Soumis le {$submittedAt} — {$prenomNom}</div>
                             </div>
-                            <span class="badge {$badgeCls}">{$statusLabel}</span>
+                            <span class="badge {$badgeCls}">{$statusLabel}{$statusTipHtml}</span>
                           </div>
                           </a>
                           <div class="sub-card-body">
@@ -169,11 +189,21 @@ final class MySubmissionsRenderer
                         default     => '○',
                     };
                     $stepLabel = App::html()->escape($ws['step_label'] ?? '');
-                    $html .= "            <div class=\"tl-step {$cls}\">\n";
+                    // Tooltip « sablier » : envoi / relances / réponse / expiration
+                    // des tokens de l'étape, uniquement s'ils existent. tabindex="0"
+                    // rend le contenu atteignable au clavier (survol = focus).
+                    $stepTip = self::buildStepTip($ws['tokens'] ?? []);
+                    $tipAttrs = $stepTip === '' ? '' : ' tabindex="0"';
+                    $tipCls   = $stepTip === '' ? '' : ' has-tip';
+                    $tipHtml  = $stepTip === '' ? '' : '<span class="sub-tip">' . $stepTip . '</span>';
+                    $html .= "            <div class=\"tl-step {$cls}{$tipCls}\"{$tipAttrs}>\n";
                     $html .= "              <span class=\"tl-icon\" aria-hidden=\"true\">{$icon}</span>\n";
                     $html .= "              <span class=\"tl-label\">{$stepLabel}</span>\n";
                     if ((bool) ($ws['step_detail'] ?? '')) {
                         $html .= "                <span class=\"tl-detail\">{$ws['step_detail']}</span>\n";
+                    }
+                    if ($tipHtml !== '') {
+                        $html .= "              {$tipHtml}\n";
                     }
                     $html .= "            </div>\n";
                 }
@@ -232,6 +262,120 @@ final class MySubmissionsRenderer
         }
 
         return $html;
+    }
+
+    /**
+     * Contenu du tooltip d'une étape du circuit (« sablier »).
+     *
+     * Uniquement ce que les tokens contiennent réellement : date d'envoi,
+     * validité du lien, relances, date de la dernière relance, date de la
+     * réponse. Les lignes viennent de HtmlService::tokenTimelineLines() —
+     * même source de texte que le `title` natif du diagramme de workflow —
+     * puis sont échappées ici. Retourne '' si aucune donnée : le rendu
+     * n'ajoute alors ni tooltip ni tabindex.
+     *
+     * @param list<array{email?: string, sent_at?: string|null, done_at?: string|null, relance_at?: string|null, expires_at?: string|null, relance_count?: int}> $tokens
+     */
+    private static function buildStepTip(array $tokens): string
+    {
+        $html = App::html();
+        $items = '';
+
+        foreach ($tokens as $token) {
+            $email = $token['email'] ?? '';
+            if ($email === '') {
+                continue;
+            }
+
+            $meta = '';
+            foreach ($html->tokenTimelineLines($token) as $line) {
+                $meta .= '<span class="sub-tip-meta">' . $html->escape($line) . '</span>';
+            }
+
+            if ($meta === '') {
+                continue;
+            }
+
+            // Pas de <li> : le tooltip vit dans un <span> (badge) pour le statut,
+            // un <ul> y serait invalide — d'où des items en <span>.
+            $items .= '<span class="sub-tip-item"><span class="sub-tip-who">' . $html->displayUser($email) . '</span>' . $meta . '</span>';
+        }
+
+        if ($items === '') {
+            return '';
+        }
+
+        return '<span class="sub-tip-list">' . $items . '</span>';
+    }
+
+    /**
+     * Contenu du tooltip du badge de statut.
+     *
+     * Uniquement des données réellement disponibles : la décision
+     * (validations[] porte l'action, l'auteur, l'étape et la date) et le
+     * nombre total de relances (somme des tokens). Rien d'autre n'est
+     * affiché — si ces données manquent, la fonction retourne '' et le badge
+     * reste un badge simple.
+     *
+     * @param array<array-key, mixed> $data Données JSON de la soumission
+     * @param list<array{email?: string, sent_at?: string|null, done_at?: string|null, relance_at?: string|null, expires_at?: string|null, relance_count?: int}> $tokens
+     */
+    private static function buildStatusTip(array $data, string $status, array $tokens): string
+    {
+        $html = App::html();
+        $lines = '';
+
+        $wantedAction = match ($status) {
+            SubmissionStatus::Valide->value => ValidationAction::Valider->value,
+            SubmissionStatus::Refuse->value => ValidationAction::Refuser->value,
+            SubmissionStatus::Annule->value => ValidationAction::Annule->value,
+            default => '',
+        };
+
+        if ($wantedAction !== '') {
+            $validations = $data[SubmissionField::VALIDATIONS->value] ?? null;
+            $decision = null;
+            if (is_array($validations)) {
+                foreach ($validations as $validation) {
+                    if (is_array($validation) && ($validation['action'] ?? '') === $wantedAction) {
+                        $decision = $validation;
+                    }
+                }
+            }
+
+            if (is_array($decision)) {
+                $label = match ($wantedAction) {
+                    ValidationAction::Valider->value => 'Validée',
+                    ValidationAction::Refuser->value => 'Refusée',
+                    default => 'Annulée',
+                };
+                $line = $label;
+                $date = $html->formatDateTimeFr(is_string($decision['date'] ?? null) ? $decision['date'] : null);
+                if ($date !== '') {
+                    $line .= ' le ' . $html->escape($date);
+                }
+                $email = $decision['email'] ?? null;
+                $by = $html->displayUser(is_string($email) ? $email : '');
+                if ($by !== '') {
+                    $line .= ' par ' . $by;
+                }
+                $stepLabel = $decision['step_label'] ?? null;
+                if (is_string($stepLabel) && $stepLabel !== '') {
+                    $line .= ' (' . $html->escape($stepLabel) . ')';
+                }
+                $lines .= '<span class="sub-tip-line">' . $line . '</span>';
+            }
+        }
+
+        $relances = 0;
+        foreach ($tokens as $token) {
+            $relances += (int) ($token['relance_count'] ?? 0);
+        }
+        if ($relances > 0) {
+            $lines .= '<span class="sub-tip-line">Relances : ' . $html->escape($html->formatRelanceCount($relances)) . '</span>';
+        }
+
+        return $lines;
     }
 
     private static function simplifyLabel(string $label): string

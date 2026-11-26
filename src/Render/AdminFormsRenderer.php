@@ -19,16 +19,6 @@ final class AdminFormsRenderer
         return self::$instance ??= new self();
     }
 
-    // ── CSS ──────────────────────────────────────────────────────
-
-    /**
-     * CSS spécifique à la page admin_forms.php.
-     */
-    public function getPageCss(): string
-    {
-        return $this->loadTemplate('adminForms_pageCss.php');
-    }
-
     // ── Field type helpers ───────────────────────────────────────
 
     /**
@@ -199,8 +189,6 @@ final class AdminFormsRenderer
         $error_msg    = $ctx->error_msg;
         $success_msg  = $ctx->success_msg;
 
-        $page_css = $this->getPageCss();
-
         ob_start();
         ?>
         <h1><span aria-hidden="true">⚙</span> Gestion des formulaires</h1>
@@ -237,7 +225,7 @@ final class AdminFormsRenderer
         if ($content === false) {
             $content = '';
         }
-        echo new PageRenderer()->page('Gestion des formulaires', 'forms', $page_css, $content);
+        echo new PageRenderer()->page('Gestion des formulaires', 'forms', '', $content);
     }
 
     // ── Template loader ──────────────────────────────────────────

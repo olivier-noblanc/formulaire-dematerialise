@@ -21,7 +21,7 @@
                     <td><?= \App\Core\App::html()->displayUser($owner['email']) ?></td>
                     <td><?= \App\Core\App::html()->escape($owner['added_at']) ?></td>
                     <td>
-                        <a href="index.php?p=confirm_action&action=remove_owner&id=<?= $owner['id'] ?>&form_id=<?= $form_id ?>" class="btn btn-sm btn-danger">Retirer</a>
+                        <a href="index.php?p=confirm_action&action=remove_owner&owner_id=<?= \App\Core\App::html()->escape((string) $owner['id']) ?>&form_id=<?= \App\Core\App::html()->escape((string) $form_id) ?>" class="btn btn-sm btn-danger">Retirer</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

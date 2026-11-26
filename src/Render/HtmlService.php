@@ -114,10 +114,85 @@ final class HtmlService implements HtmlInterface
      */
     public function formatRelanceSuffix(int $relanceCount): string
     {
+        $label = $this->formatRelanceCount($relanceCount);
+        return $label === '' ? '' : ' — ' . $label;
+    }
+
+    /**
+     * Formate "N rappel(s) envoyé(s)" sans préfixe, ou "" si aucune relance.
+     *
+     * Source unique du pluriel : formatRelanceSuffix() s'appuie dessus, et
+     * les lignes de tooltip (tokenTimelineLines) l'utilisent telles quelles
+     * puisqu'elles n'ont pas besoin du tiret de liaison.
+     */
+    public function formatRelanceCount(int $relanceCount): string
+    {
         if ($relanceCount <= 0) {
             return '';
         }
-        return ' — ' . $relanceCount . ' rappel' . ($relanceCount > 1 ? 's' : '') . ' envoyé' . ($relanceCount > 1 ? 's' : '');
+        return $relanceCount . ' rappel' . ($relanceCount > 1 ? 's' : '') . ' envoyé' . ($relanceCount > 1 ? 's' : '');
+    }
+
+    /**
+     * Lignes de suivi d'un token validateur, dans l'ordre chronologique :
+     * notification envoyée, validité du lien, relances, dernière relance,
+     * réponse. Seules les données réellement présentes sont retournées.
+     *
+     * Source unique du texte de statut d'un token : le `title` natif du
+     * diagramme de workflow (renderWorkflowDiagram.php) et les tooltips CSS
+     * de « Mes demandes » (MySubmissionsRenderer) en dérivent tous les deux,
+     * pour éviter deux formulations divergentes du même fait.
+     *
+     * Chaînes BRUTES (non échappées) : l'appelant échappe selon son contexte
+     * (attribut HTML ou contenu de tooltip).
+     *
+     * @param array<array-key, mixed> $token
+     * @return list<string>
+     */
+    public function tokenTimelineLines(array $token): array
+    {
+        $lines = [];
+
+        // « Réponse » et non « Validée » : done_at est aussi renseigné sur un
+        // refus, la ligne ne doit donc pas affirmer une validation.
+        $done = $this->formatDateTimeFr($this->stringOrNull($token['done_at'] ?? null));
+        if ($done !== '') {
+            $lines[] = 'Réponse le ' . $done;
+        } else {
+            $sent = $this->formatDateTimeFr($this->stringOrNull($token['sent_at'] ?? null));
+            if ($sent !== '') {
+                $lines[] = 'Notification envoyée le ' . $sent;
+            }
+            $expires = $this->formatDateTimeFr($this->stringOrNull($token['expires_at'] ?? null));
+            if ($expires !== '') {
+                $lines[] = 'Lien valable jusqu\'au ' . $expires;
+            }
+        }
+
+        $relanceCount = (int) ($token['relance_count'] ?? 0);
+        $relanceLabel = $this->formatRelanceCount($relanceCount);
+        if ($relanceLabel !== '') {
+            $lines[] = $relanceLabel;
+        }
+        if ($relanceCount > 0) {
+            $lastRelance = $this->formatDateTimeFr($this->stringOrNull($token['relance_at'] ?? null));
+            if ($lastRelance !== '') {
+                $lines[] = 'Dernière relance le ' . $lastRelance;
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Retourne la valeur si c'est une chaîne non vide, sinon null.
+     *
+     * Sert aux lectures de tokens venues de sources non typées (json, rows
+     * SQL chargées en `array`) avant formatDateTimeFr().
+     */
+    private function stringOrNull(mixed $value): ?string
+    {
+        return is_string($value) && $value !== '' ? $value : null;
     }
 
     /**

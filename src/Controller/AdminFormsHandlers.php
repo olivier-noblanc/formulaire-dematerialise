@@ -24,19 +24,51 @@ final class AdminFormsHandlers
     // ── Helpers internes ───────────────────────────────────────────
 
     /**
+     * Extrait et valide un identifiant UUID depuis $_POST.
+     *
+     * Toute écriture (INSERT/UPDATE/DELETE) doit passer par ce helper plutôt que
+     * d'utiliser un identifiant brut : un identifiant non UUID ne peut désigner
+     * aucune ligne et doit produire une erreur utilisateur, pas une requête.
+     *
+     * @param string      $key         Clé de $_POST (field_id, step_id, recipient_id, …)
+     * @param string      $subject     Libellé du sujet pour le message d'erreur (« de champ »)
+     * @param string|null $fallbackKey Clé alternative lue si $key est vide
+     * @return array{0:string,1:string|null} [valeur validée, error_msg_or_null]
+     */
+    public static function postUuid(string $key, string $subject, ?string $fallbackKey = null): array
+    {
+        $raw = (string) ($_POST[$key] ?? '');
+        if (trim($raw) === '' && $fallbackKey !== null) {
+            $raw = (string) ($_POST[$fallbackKey] ?? '');
+        }
+
+        return self::validateUuidValue($raw, $subject);
+    }
+
+    /**
+     * Valide une valeur d'identifiant UUID déjà extraite (POST, GET, JSON…).
+     *
+     * @param string $raw     Valeur brute à valider
+     * @param string $subject Libellé du sujet pour le message d'erreur (« de formulaire »)
+     * @return array{0:string,1:string|null} [valeur validée, error_msg_or_null]
+     */
+    public static function validateUuidValue(string $raw, string $subject): array
+    {
+        try {
+            return [(string) \validate_input(trim($raw), 'uuid'), null];
+        } catch (\InvalidArgumentException) {
+            // @silent-ok: fallback returns user-facing validation error
+            return ['', 'Identifiant ' . $subject . ' invalide.'];
+        }
+    }
+
+    /**
      * Extrait et valide un form_id depuis $_POST.
      * @return array{0:string,1:string|null} [form_id, error_msg_or_null]
      */
     public static function postFormId(): array
     {
-        $form_id = trim($_POST['form_id'] ?? '');
-        try {
-            $form_id = (string) \validate_input($form_id, 'uuid');
-            return [$form_id, null];
-        } catch (\InvalidArgumentException) {
-            // @silent-ok: fallback returns user-facing validation error
-            return ['', 'Identifiant de formulaire invalide.'];
-        }
+        return self::validateUuidValue((string) ($_POST['form_id'] ?? ''), 'de formulaire');
     }
 
     /**
@@ -45,14 +77,7 @@ final class AdminFormsHandlers
      */
     public static function postStepId(): array
     {
-        $step_id = trim($_POST['step_id'] ?? '');
-        try {
-            $step_id = (string) \validate_input($step_id, 'uuid');
-            return [$step_id, null];
-        } catch (\InvalidArgumentException) {
-            // @silent-ok: fallback returns user-facing validation error
-            return ['', 'Identifiant d\'étape invalide.'];
-        }
+        return self::validateUuidValue((string) ($_POST['step_id'] ?? ''), 'd\'étape');
     }
 
     /**
@@ -101,6 +126,12 @@ final class AdminFormsHandlers
             'export_form'      => AdminImportExportHandler::handleExportForm(),
             'validate_json'    => AdminImportExportHandler::handleValidateJson(),
             'import_form'      => AdminImportExportHandler::handleImportForm(),
+            // Audit 2026-11-26 : le bouton « Formulaires exemples »
+            // (adminForms_selectorPanel.php) postait action=populate_samples,
+            // accepté par le contrôleur (CSRF vérifié) puis ignoré ici —
+            // dispatch() renvoyait null et rien ne se passait. Le service
+            // existait déjà (SampleFormsService via populate_sample_forms()).
+            'populate_samples'  => AdminFormCrudHandler::handlePopulateSamples(),
             default            => null,
         };
     }

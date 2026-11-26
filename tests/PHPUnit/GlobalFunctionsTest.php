@@ -98,7 +98,6 @@ final class GlobalFunctionsTest extends TestCase
         'handle_admin_settings_post',
 
         // Admin forms render
-        'get_admin_forms_page_css',
         'get_admin_forms_field_types',
         'field_type_icon',
         'field_type_label',

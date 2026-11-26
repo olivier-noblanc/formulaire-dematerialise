@@ -188,4 +188,32 @@ final class AdminFormCrudHandler
             'success' => 'Formulaire dupliqué avec succès.',
         ];
     }
+
+    /**
+     * Peuple la base avec les formulaires d'exemple (onboarding, outboarding,
+     * accès SI) via SampleFormsService.
+     *
+     * action=populate_samples est postée par le bouton « Formulaires exemples »
+     * de adminForms_selectorPanel.php. Le formulaire porte déjà son jeton CSRF
+     * (requireCsrf() est appelé par AdminFormsController avant dispatch()).
+     * Pas de redirection : la page se réaffiche avec le message de succès,
+     * comme le handler historique (pages/admin_forms.php, supprimé en v10.7.0)
+     * et comme handleValidateJson(). SampleFormsService::populate() ignore les
+     * formulaires dont le slug existe déjà : un renvoi n'a donc pas d'effet
+     * destructif.
+     *
+     * @return array{success: string}|array{error: string}
+     */
+    public static function handlePopulateSamples(): array
+    {
+        try {
+            return ['success' => \populate_sample_forms(App::db()->getPdo())];
+        } catch (\Throwable $e) {
+            // @silent-ok: fallback returns user-facing error (aucune écriture
+            // partielle : SampleFormsService::populate() est transactionnel et
+            // rollback en interne avant de relancer en RuntimeException)
+            error_log('handlePopulateSamples error: ' . $e->getMessage());
+            return ['error' => 'Le peuplement des formulaires exemples a échoué. Consultez les journaux du serveur pour le détail.'];
+        }
+    }
 }

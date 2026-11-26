@@ -27,7 +27,7 @@
                     <?php foreach ($form_fields as $ff): ?>
                         <?php if ($edit_field_id === $ff['id']): ?>
                             <!-- ── Edit field inline ──────────────── -->
-                            <tr>
+                            <tr id="field-<?= \App\Core\App::html()->escape($ff['id']) ?>" class="editing">
                                 <td colspan="7" class="u-bac-pad">
                                     <h4 class="heading-primary-2">Modifier le champ</h4>
                                     <form method="POST">

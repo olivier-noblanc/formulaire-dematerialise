@@ -62,6 +62,10 @@ final class MySubmissionsController extends BaseController
 
             foreach ($sub['workflow_steps'] as &$ws) {
                 $stepId = $ws['step_id'];
+                // Tokens de l'étape exposés tels quels : le rendu en dérive un
+                // tooltip (envoi, relances, réponse) sans requête
+                // supplémentaire — même forme que renderWorkflowDiagram.
+                $ws['tokens'] = $tokensByStep[$stepId] ?? [];
                 if (!isset($tokensByStep[$stepId])) {
                     $ws['step_status'] = 'upcoming';
                     $ws['step_detail'] = '';

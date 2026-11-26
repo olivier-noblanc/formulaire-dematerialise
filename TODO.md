@@ -18,6 +18,44 @@
 | CI | **GitHub Actions** (17 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.57 — suppression du CSS mort admin_forms (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| ✅ Fait | `src/Render/templates/adminForms_pageCss.php` supprimé (jamais servi : `PageRenderer::page()` ignore `$page_css` ; CSS servi par `assets.php` → `lib/admin_forms_page.css`). |
+| ✅ Fait | `AdminFormsRenderer::getPageCss()` supprimé + appel `$page_css` retiré de `renderPage()` ; `PageRenderer::page(..., '', $content)`. Rendu inchangé. |
+| ✅ Fait | Wrapper global `get_admin_forms_page_css()` supprimé (`src/lib_wrappers_admin.php`) — plus d'appelant. |
+| ✅ Fait | `tests/PHPUnit/GlobalFunctionsTest.php` : entrée `get_admin_forms_page_css` retirée de la liste attendue. |
+| Validation | Aucune base `.db`, aucun test lourd local : `php -l` ciblé sur `AdminFormsRenderer.php`, `lib_wrappers_admin.php`, `GlobalFunctionsTest.php`. CI arbitre. `admin_settings_page_css()` conservé (chemin vivant distinct). |
+
+### v10.42.56 — my_submissions : tooltips CSS (survol + focus clavier) (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| ✅ Fait | `MySubmissionsRenderer` : `.sub-tip` sur le badge de statut (date de décision + relances) et sur chaque `.tl-step` (envoi, validité du lien, relances, dernière relance, réponse). `tabindex="0"` + `:focus-visible` sur les étapes ; badge `aria-hidden` (dans le lien) révélé par `.sub-card a:focus-visible`. Aucune donnée inventée : pas de ligne → pas de tooltip. |
+| ✅ Fait | `HtmlService::tokenTimelineLines()` + `formatRelanceCount()` : source unique du texte, reprise par `renderWorkflowDiagram.php` (le `title` natif ne contient plus de HTML via `displayUser()`). |
+| ✅ Fait | `TokenReadSubmissionTrait::findBySubmissionIds()` sélectionne `relance_at` (colonne existante, aucune migration) ; `MySubmissionsController` attache `workflow_steps[].tokens`. |
+| ✅ Fait | `lib/style_pages.css` : panneau large maîtrisée, multi-lignes, flèche, `pointer-events: none`, `prefers-reduced-motion` ; `.sub-card` en `overflow: visible` + rayon du header compensé (sinon tooltip rogné). |
+| ⏳ Reste (CI) | Tests PHPUnit non écrits localement (consigne) : à ajouter — (1) `MySubmissionsRenderer::content()` avec `tokens` → présence de `has-tip`/`sub-tip`, `tabindex="0"`, absence de `<li>` hors liste ; (2) absence de tooltip quand `tokens` est vide ; (3) `HtmlServiceTest` : `tokenTimelineLines()` (en attente / validé / relance seule / vide) ; (4) `CssCoverageTest` couvre déjà les préfixes `sub-`/`tl-` — vérifier que `sub-tip*` n'est pas signalé. |
+| ⏳ Reste (CI) | `phpstan` (level 8) + `scripts/check.ps1` : non lancés localement, la CI tranche. |
+| Décision | Pas de repli mobile (ni `<details>` ni « tap ») : l'application n'est jamais utilisée sur mobile. |
+
+### v10.42.55 — post-audit : `remove_owner` (nom de champ POST) + `populate_samples` (routage) (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| Bug 1 — symptôme | Retirer un propriétaire depuis `admin_forms#owners` : la page de confirmation s'affiche, « Confirmer » renvoie « Paramètres manquants pour retirer le propriétaire (owner_id=, form_id=…) », le propriétaire reste en base. Aucun test ne le voyait (le test de routage vérifiait l'existence du handler, pas le nom du champ). |
+| Bug 1 — cause | `ConfirmActionController` déclarait `params=['id','form_id']` → `ConfirmActionRenderer` rendait `<input name="id">` ; `AdminRecipientHandler::handleDeleteOwner()` lit `$_POST['owner_id']`. |
+| Bug 1 — correctif | `owner_id` devient le nom canonique : `params=['owner_id','form_id']`, lecture `$_GET['owner_id']`, lien `adminForms_ownersSection.php` en `&owner_id=` (valeurs échappées). `delete_owner` et `remove_owner` restent routés vers `handleDeleteOwner()`. |
+| Bug 2 — symptôme | Bouton « 📦 Formulaires exemples » (`adminForms_selectorPanel.php`) : POST + CSRF OK, puis rien (aucun formulaire créé, aucun message). |
+| Bug 2 — cause | `action=populate_samples` absent du `match` de `AdminFormsHandlers::dispatch()` → `default => null`. Le service `SampleFormsService::populate()` et le wrapper `populate_sample_forms()` existaient déjà. |
+| Bug 2 — correctif | Nouvelle branche `'populate_samples' => AdminFormCrudHandler::handlePopulateSamples()` : appelle `populate_sample_forms(App::db()->getPdo())`, retourne `success` (compte créés/ignorés) ou `error` (message + `error_log`, service transactionnel donc aucun état partiel). Pas de redirection (même comportement que l'ex-handler `pages/admin_forms.php` et `handleValidateJson()`), renvoi idempotent (slugs existants ignorés). |
+| Garde ajoutée | `tests/test_confirm_action_dispatch.php` étape 6 : pour chaque action remappée, chaque paramètre déclaré doit être relu en `$_POST['<nom>']` par un fichier handler. Aurait bloqué le bug 1. |
+| Garde ajoutée (bug 2) | `tests/PHPUnit/Controller/AdminFormsSampleActionTest.php` : template → `dispatch()` → handler → `populate_sample_forms()`, + CSRF dans le panneau. 0 base. |
+| Surlignage | `lib/admin_forms_page.css` : `.step-card.editing/:target/:focus-within` → fond `--c-primary-100`, liseré 8px, halo 3px, relief, libellé souligné, `scroll-margin-top` ; `tr.editing/:target/:focus-within` → fond teinté + cadre 2px `outline` sur le `<tr>` + liseré 8px ; anneau `input/select/textarea:focus` 3px ; `@media (forced-colors: active)`. `adminForms_formFieldsSection.php` : `<tr id="field-…" class="editing">`. Cause du « on ne voit rien » : les règles fortes étaient dans `adminForms_pageCss.php`, template **jamais servi** (`PageRenderer::page()` ignore `$page_css`) — commentaire d'en-tête ajouté, puis le template mort a été supprimé (cf. v10.42.57), le CSS étant servi uniquement par `lib/admin_forms_page.css`. |
+| Opérateurs de condition | `ConditionEvaluator::OP_LABELS` (6 canoniques) + `OP_ALIASES` (`equals`→`eq`, `not_equals`→`neq`) + `opChoices($currentOp)` : le select du template itère cette source au lieu de recopier 5 valeurs sur 8. Un alias déjà enregistré est réinjecté et reste sélectionné (plus de réécriture vers `equals`). |
+| Condition hors liste | Champ non listé parmi les validateurs → option sélectionnée « champ actuel — absent des champs validateurs » + avertissement visible ; le handler ne filtre pas. Opérateur vide/inconnu → erreur explicite (« Condition d'exécution incomplète », « Opérateur de condition inconnu ») au lieu de sauver l'étape sans condition. |
+| Identifiants UUID | `AdminFormsHandlers::validateUuidValue()` (cœur) + `postUuid($key,$subject,$fallback)` ; `handleAddField/handleUpdateField/handleDeleteField`, `handleDeleteRecipient`, `handleAddOwner/handleDeleteOwner` valident `form_id`/`field_id`/`recipient_id`/`owner_id` et renvoient `['error' => 'Identifiant … invalide.']` avant toute requête. |
+| Tests ajoutés | `ConditionEvaluatorOpChoicesTest` (invariants source unique), `AdminFormsStepConditionTest` (HTML du select : 6 opérateurs, alias préservé, champ orphelin conservé), `AdminStepConditionGuardTest` (condition non effacée, `eq` non réécrit), `AdminFormsUuidValidationTest` (erreurs UUID + aucune écriture). |
+| Validation | Aucune base `.db`, ni PHPUnit/PHPStan/`check.ps1` : `php -l` ciblé sur les fichiers PHP modifiés. CI arbitre (dont `test_confirm_action_dispatch.php`). |
+
 ### v10.42.54 — v47 : signature C (rotation partielle `card_group`/`hint`) (2026-11-26)
 | Tâche | Détail |
 |-------|--------|

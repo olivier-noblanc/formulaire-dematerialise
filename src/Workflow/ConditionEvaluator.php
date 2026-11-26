@@ -10,12 +10,74 @@ use App\Contract\ConditionInterface;
  * Évaluateur de conditions (partagé entre fields et steps).
  *
  * Format JSON : {"field": "nom_champ", "op": "eq", "value": "valeur"}
- * Opérateurs : eq, neq, in, not_empty, empty
+ * Opérateurs canoniques : eq, neq, contains, in, not_empty, empty
+ * Alias historiques acceptés : equals (→ eq), not_equals (→ neq)
+ *
+ * VALID_OPS est la seule source de vérité des valeurs acceptées : la validation
+ * (import JSON, handlers) et les listes déroulantes de l'UI doivent la
+ * référencer, jamais recopier une liste d'opérateurs.
  */
 final class ConditionEvaluator implements ConditionInterface
 {
     /** @var list<string> Opérateurs valides supportés par l'évaluateur */
     public const array VALID_OPS = ['eq', 'equals', 'neq', 'not_equals', 'contains', 'in', 'not_empty', 'empty'];
+
+    /**
+     * Libellés des opérateurs canoniques — source unique des libellés UI.
+     * Toute clé de cette table doit exister dans VALID_OPS (couvert par test).
+     *
+     * @var array<string, string>
+     */
+    public const array OP_LABELS = [
+        'eq'        => 'Égal à',
+        'neq'       => 'Différent de',
+        'contains'  => 'Contient',
+        'in'        => 'Dans la liste (valeurs séparées par des virgules)',
+        'not_empty' => 'Non vide',
+        'empty'     => 'Vide',
+    ];
+
+    /**
+     * Alias historiques → opérateur canonique équivalent.
+     * Toute clé et toute valeur doivent exister dans VALID_OPS (couvert par test).
+     *
+     * @var array<string, string>
+     */
+    public const array OP_ALIASES = [
+        'equals'     => 'eq',
+        'not_equals' => 'neq',
+    ];
+
+    /**
+     * Opérateur canonique d'un alias (`equals` → `eq`).
+     * Une valeur inconnue (ou déjà canonique) est retournée inchangée.
+     */
+    public static function canonicalOp(string $op): string
+    {
+        return self::OP_ALIASES[$op] ?? $op;
+    }
+
+    /**
+     * Couples valeur => libellé à afficher dans un <select> d'opérateur.
+     *
+     * `$currentOp` est la valeur brute de la condition déjà enregistrée. Si elle
+     * est un alias historique absent de OP_LABELS, elle est ajoutée à la liste :
+     * sans cela, le navigateur sélectionnerait la première option du select et
+     * l'enregistrement réécrirait silencieusement la condition vers un synonyme
+     * (voire vers un opérateur différent si l'alias disparaissait de la liste).
+     *
+     * @return array<string, string>
+     */
+    public static function opChoices(string $currentOp = ''): array
+    {
+        $choices = self::OP_LABELS;
+        if ($currentOp !== '' && !isset($choices[$currentOp]) && in_array($currentOp, self::VALID_OPS, true)) {
+            $label = $choices[self::canonicalOp($currentOp)] ?? $currentOp;
+            $choices[$currentOp] = $label . ' (alias « ' . $currentOp . ' »)';
+        }
+
+        return $choices;
+    }
     /**
      * Évalue une condition générique.
      * @param string|null $conditionJson Le JSON de la condition

@@ -60,11 +60,6 @@ function handle_admin_settings_post(): array
 
 // ── ADMIN FORMS RENDER ────────────────────────────────────────────
 
-function get_admin_forms_page_css(): string
-{
-    return AdminFormsRenderer::getInstance()->getPageCss();
-}
-
 /**
  * @return array<string, string>
  */

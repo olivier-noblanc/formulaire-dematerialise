@@ -27,6 +27,11 @@ declare(strict_types=1);
  * exécuté ses vérifications est pire qu'aucun test : il donne une fausse
  * confiance et peut laisser passer une régression jusqu'en E2E, voire en
  * production.
+ *
+ * Étape 6 ajoutée le 2026-11-26 (audit) : le routage ne suffit pas, il faut
+ * aussi que le nom des champs POST rendus par ConfirmActionRenderer
+ * (<input name="…">) soit celui que le handler lit dans $_POST. Le bug
+ * remove_owner (`id` envoyé, `owner_id` attendu) passait les étapes 1-5.
  */
 
 /** @return never */
@@ -154,10 +159,16 @@ if ($pageToController === []) {
 // lecture du code que le handler réel existe bien :
 // - remove_owner : délégué à AdminFormsHandlers::dispatch(), un tableau de
 //   dispatch ('remove_owner' => AdminRecipientHandler::handleDeleteOwner())
-//   et non un if/switch sur $action — le nom cherché est le même, mais le
-//   fichier à inspecter n'est pas le contrôleur lui-même.
+//   et non un if/switch sur $action — le nom cherché est le même, mais les
+//   fichiers à inspecter ne sont pas le contrôleur lui-même : le dispatcher
+//   (AdminFormsHandlers) ET le handler réel (AdminRecipientHandler), qui lit
+//   `owner_id` via AdminFormsHandlers::postUuid('owner_id', …).
 $KNOWN_ACTION_REMAP = [
-    'remove_owner' => ['searchFor' => 'remove_owner', 'files' => ['src/Controller/AdminFormsController.php', 'src/Controller/AdminFormsHandlers.php']],
+    'remove_owner' => ['searchFor' => 'remove_owner', 'files' => [
+        'src/Controller/AdminFormsController.php',
+        'src/Controller/AdminFormsHandlers.php',
+        'src/Controller/AdminRecipientHandler.php',
+    ]],
 ];
 
 function cad_file_has_handler(string $file, string $searchFor): bool
@@ -213,8 +224,60 @@ foreach (array_keys($actionsConfig) as $action) {
     }
 }
 
+// ── Étape 6 : contrat de nommage des paramètres POST ──
+//
+// ConfirmActionRenderer rend chaque entrée de $actionsConfig['params'] en
+// <input type="hidden" name="…">. Le handler doit lire EXACTEMENT ce nom dans
+// $_POST. Le routage (étapes 1-5) ne voit pas ce désaccord : les deux côtés
+// existent, mais l'un envoie un champ que l'autre ne lit pas.
+//
+// Bug réel trouvé par l'audit du 2026-11-26 : remove_owner déclarait
+// params=['id','form_id'] → <input name="id">, alors que
+// AdminRecipientHandler::handleDeleteOwner() lit $_POST['owner_id'] →
+// « Paramètres manquants pour retirer le propriétaire » à chaque confirmation,
+// en production, sans qu'aucun test ne le voie.
+//
+// Le contrôle est limité aux actions remappées : ce sont les seules dont on
+// sait statiquement quels fichiers portent le handler (les autres actions sont
+// lues dans le contrôleur lui-même, cas non couvert ici pour ne pas produire de
+// faux positif sur les paramètres portés par l'URL, cf. delete_submission).
+$paramViolations = [];
+foreach ($KNOWN_ACTION_REMAP as $action => $remap) {
+    $params = $actionsConfig[$action]['params'] ?? null;
+    if ($params === null) {
+        // Action disparue de ConfirmActionController : le remap est obsolète,
+        // rien à vérifier (le routage, lui, ne la mentionne plus).
+        continue;
+    }
+    $handlerSources = [];
+    foreach ($remap['files'] as $relFile) {
+        $handlerSources[] = cad_read_or_crash($repoRoot . '/' . $relFile);
+    }
+    foreach ($params as $param) {
+        $quoted = preg_quote($param, '/');
+        $read = false;
+        foreach ($handlerSources as $src) {
+            // Lecture directe ($_POST['owner_id']) ou via un helper de
+            // validation qui reçoit le nom du champ (postUuid('owner_id', …)).
+            if (preg_match("/\\\$_POST\[\s*'$quoted'\s*\]/", $src) === 1
+                || preg_match("/\(\s*'$quoted'\s*,/", $src) === 1) {
+                $read = true;
+                break;
+            }
+        }
+        if ($read) {
+            $passed++;
+            echo "  ✅ $action : paramètre '$param' relu dans \$_POST par le handler\n";
+        } else {
+            $paramViolations[] = "Action '$action' déclare le paramètre '$param' (<input name=\"$param\">) mais aucun handler remappé (" . implode(', ', $remap['files']) . ") ne lit \$_POST['$param'].";
+            echo "  ❌ $action : paramètre '$param' NON relu par le handler\n";
+        }
+    }
+}
+$violations = array_merge($violations, $paramViolations);
+
 echo "\n═══════════════════════════════════════════════════\n";
-echo "  ROUTING TESTS — " . ($violations === [] ? "✅ AUCUNE VIOLATION" : "❌ " . count($violations) . " violation(s)") . "\n";
+echo "  ROUTING + CONTRAT POST — " . ($violations === [] ? "✅ AUCUNE VIOLATION" : "❌ " . count($violations) . " violation(s)") . "\n";
 foreach ($violations as $v) {
     echo "    • $v\n";
 }

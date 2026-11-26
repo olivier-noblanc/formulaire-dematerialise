@@ -18,28 +18,24 @@ foreach ($workflow_steps as $i => $ws) {
     $validators_html = '';
     if ($tokens !== [] && $tokens !== null) {
         foreach ($tokens as $token) {
-            $email        = \App\Core\App::html()->displayUser((string) ($token['email'] ?? ''));
+            $html         = \App\Core\App::html();
+            $email        = $html->displayUser((string) ($token['email'] ?? ''));
             $relance      = (int) ($token['relance_count'] ?? 0);
             $done         = (bool) ($token['done_at']);
             $is_current   = ($ws['step_status'] ?? '') === 'current';
 
+            // Texte du title natif : source unique HtmlService::tokenTimelineLines()
+            // (mêmes lignes que les tooltips CSS de « Mes demandes »). Échappé,
+            // et omis quand il n'y a rien à dire.
+            $tooltip_lines = $html->tokenTimelineLines($token);
+            $title_attr    = $tooltip_lines === []
+                ? ''
+                : ' title="' . $html->escape(implode(' — ', $tooltip_lines)) . '"';
+
             if ($done) {
-                $tooltip = 'Validé par ' . $email . ' le ' . \App\Core\App::html()->formatDateTimeFr((string) ($token['done_at'] ?? ''));
-                $tooltip .= \App\Core\App::html()->formatRelanceSuffix($relance);
-                if ($relance > 0 && isset($token['relance_at']) && $token['relance_at'] !== '' && $token['relance_at'] !== '0') {
-                    $tooltip .= ' (dernier le ' . \App\Core\App::html()->formatDateTimeFr((string) $token['relance_at']) . ')';
-                }
-                $icon = '<span class="wf-check" aria-hidden="true" title="' . \App\Core\App::html()->escape($tooltip) . '">✓</span>';
+                $icon = '<span class="wf-check" aria-hidden="true"' . $title_attr . '>✓</span>';
             } elseif ($is_current) {
-                $tooltip = 'Email envoyé le ' . \App\Core\App::html()->formatDateTimeFr((string) ($token['sent_at'] ?? ''));
-                if (isset($token['expires_at']) && $token['expires_at'] !== '' && $token['expires_at'] !== '0') {
-                    $tooltip .= ' — expire le ' . \App\Core\App::html()->formatDateTimeFr((string) $token['expires_at']);
-                }
-                $tooltip .= \App\Core\App::html()->formatRelanceSuffix($relance);
-                if ($relance > 0 && isset($token['relance_at']) && $token['relance_at'] !== '' && $token['relance_at'] !== '0') {
-                    $tooltip .= ' (dernier le ' . \App\Core\App::html()->formatDateTimeFr((string) $token['relance_at']) . ')';
-                }
-                $icon = '<span class="wf-pending" aria-hidden="true" title="' . \App\Core\App::html()->escape($tooltip) . '">⏳</span>';
+                $icon = '<span class="wf-pending" aria-hidden="true"' . $title_attr . '>⏳</span>';
             } else {
                 $icon = '<span class="wf-waiting" aria-hidden="true">○</span>';
             }

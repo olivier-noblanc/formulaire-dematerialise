@@ -140,9 +140,37 @@ body.page-forms .step-card {
     align-items: flex-start;
     gap: 1rem;
 }
-body.page-forms .step-card.editing {
-    background: #f0f4ff;
-    border-color: var(--c-primary-dark);
+/* Étape courante : en cours d'édition, ciblée par l'ancre (#step-…), ou
+   contenant l'élément qui a le focus (clavier). L'ancien fond #f0f4ff était
+   indistinguable du fond de la carte (var(--c-bg-warm) = #F5F9FF) : on passe
+   à un fond franchement teinté + liseré bleu + anneau de halo.
+   Le padding-left compense l'épaisseur du liseré (aucun décalage du texte). */
+body.page-forms .step-card.editing,
+body.page-forms .step-card:target,
+body.page-forms .step-card:focus-within {
+    background: var(--c-primary-100);
+    border-color: var(--c-primary);
+    border-left: 8px solid var(--c-primary);
+    padding-left: calc(1rem - 7px);
+    box-shadow: var(--shadow-md), 0 0 0 3px var(--c-primary-200);
+    scroll-margin-top: 1rem;
+}
+/* Repère supplémentaire, visible même sur un écran à faible contraste :
+   un trait plein sous le libellé de l'étape courante. */
+body.page-forms .step-card.editing .step-label,
+body.page-forms .step-card:target .step-label,
+body.page-forms .step-card:focus-within .step-label {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+/* Anneau de focus des contrôles de cette page : le halo global
+   (rgba(0,0,145,.1)) est trop discret sur fond blanc. */
+body.page-forms input:focus,
+body.page-forms select:focus,
+body.page-forms textarea:focus {
+    border-color: var(--c-primary);
+    box-shadow: 0 0 0 3px var(--c-primary-200);
 }
 body.page-forms .step-info { flex: 1; }
 .step-info .step-label { font-weight: bold; color: var(--c-primary-dark); }
@@ -189,7 +217,80 @@ body.page-forms .fields-table tbody td {
     border-bottom: 1px solid #eee;
     vertical-align: middle;
 }
-body.page-forms .fields-table tbody tr:hover { background: #f0f4ff; }
+/* Survol : à peine plus soutenu que la rayure des lignes paires (#F5F9FF),
+   mais nettement plus clair que l'état actif (fond teinté + cadre + liseré)
+   pour que les deux ne se confondent pas. */
+body.page-forms .fields-table tbody tr:hover { background: #EDF2FD; }
+
+/* Ligne courante du tableau : édition inline (classe `editing`, comme les
+   cartes d'étape), cible d'ancre (#field-…) ou ligne qui contient l'élément
+   focalisé au clavier. Avant, seule la cellule d'édition portait un fond
+   #f0f4ff (.u-bac-pad) : trop proche du blanc pour être vue.
+   Choix techniques :
+   — fond teinté posé sur les cellules (le fond d'un <tr> est recouvert par
+     ses <td>) ;
+   — cadre 2px tracé en `outline` sur le <tr> : les traits restent alignés
+     d'une cellule à l'autre, alors que des box-shadow par cellule décalaient
+     d'1px la colonne « actions » (cellule en display:flex) ;
+   — liseré 8px sur la première cellule : une bordure verticale de <tr> n'est
+     pas rendue avec border-collapse: collapse.
+   Aucune incidence sur la géométrie : pas de saut de hauteur. */
+body.page-forms .fields-table tbody tr.editing,
+body.page-forms .fields-table tbody tr:target,
+body.page-forms .fields-table tbody tr:focus-within {
+    outline: 2px solid var(--c-primary);
+    outline-offset: -2px;
+    scroll-margin-top: 1rem; /* l'ancre reste visible même sur un tableau long */
+}
+body.page-forms .fields-table tbody tr.editing > td,
+body.page-forms .fields-table tbody tr:target > td,
+body.page-forms .fields-table tbody tr:focus-within > td {
+    background: var(--c-primary-100);
+}
+body.page-forms .fields-table tbody tr.editing > td:first-child,
+body.page-forms .fields-table tbody tr:target > td:first-child,
+body.page-forms .fields-table tbody tr:focus-within > td:first-child {
+    box-shadow: inset 8px 0 0 0 var(--c-primary);
+}
+/* Sur fond teinté, les puces claires (type de champ, identifiant technique)
+   se confondraient avec la ligne : on les redonne en blanc sur filet. */
+body.page-forms .fields-table tbody tr.editing .field-type-badge,
+body.page-forms .fields-table tbody tr.editing .styled-box-2,
+body.page-forms .fields-table tbody tr:target .field-type-badge,
+body.page-forms .fields-table tbody tr:target .styled-box-2,
+body.page-forms .fields-table tbody tr:focus-within .field-type-badge,
+body.page-forms .fields-table tbody tr:focus-within .styled-box-2 {
+    background: var(--c-surface);
+    box-shadow: inset 0 0 0 1px var(--c-primary-200);
+}
+/* Arrivée par ancre (#field-…) : bref éclair pour situer la ligne. */
+@keyframes ff-active-arrive {
+    from { background-color: var(--c-primary-200); }
+    to   { background-color: var(--c-primary-100); }
+}
+body.page-forms .fields-table tbody tr:target > td,
+body.page-forms .step-card:target {
+    animation: ff-active-arrive .9s var(--ease-out) 1 both;
+}
+@media (prefers-reduced-motion: reduce) {
+    body.page-forms .fields-table tbody tr:target > td,
+    body.page-forms .step-card:target {
+        animation: none;
+    }
+}
+/* Mode contraste élevé (Windows) : les fonds et box-shadow sont ignorés par
+   le système, seul `outline` reste visible. */
+@media (forced-colors: active) {
+    body.page-forms .fields-table tbody tr.editing,
+    body.page-forms .fields-table tbody tr:target,
+    body.page-forms .fields-table tbody tr:focus-within,
+    body.page-forms .step-card.editing,
+    body.page-forms .step-card:target,
+    body.page-forms .step-card:focus-within {
+        outline: 3px solid Highlight;
+        outline-offset: 2px;
+    }
+}
 .field-type-badge {
     display: inline-flex;
     align-items: center;

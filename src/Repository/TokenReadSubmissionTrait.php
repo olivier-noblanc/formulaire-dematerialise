@@ -71,7 +71,7 @@ trait TokenReadSubmissionTrait
      * (RGPD) ne doit pas les compter comme en attente.
      *
      * @param array<int, string> $submissionIds
-     * @return array<string, list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}>>
+     * @return array<string, list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, relance_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}>>
      */
     public function findBySubmissionIds(array $submissionIds): array
     {
@@ -79,10 +79,10 @@ trait TokenReadSubmissionTrait
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($submissionIds), '?'));
-        /** @var list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}> $rows */
+        /** @var list<array{submission_id: string, id: string, token: string, relance_count: int, expires_at: string|null, relance_at: string|null, email: string, done_at: string|null, sent_at: string|null, step_id: string, label: string, step_label: string, ordre: int}> $rows */
         $rows = $this->fetchAll(
             "SELECT t.submission_id, t.id, t.token, t.relance_count, t.expires_at,
-                    t.email, t.done_at, t.sent_at, t.step_id,
+                    t.relance_at, t.email, t.done_at, t.sent_at, t.step_id,
                     st.label, st.label as step_label, st.ordre
              FROM tokens t
              JOIN steps st ON st.id = t.step_id

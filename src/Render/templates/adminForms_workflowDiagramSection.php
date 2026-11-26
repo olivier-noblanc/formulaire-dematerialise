@@ -106,6 +106,21 @@
                         }
 
                         $validator_fields = $form_id !== '' ? \App\Core\App::validatorData()->getFormValidatorFields((string) $form_id) : [];
+
+                        // Une condition enregistrée peut référencer un champ qui n'est
+                        // plus dans la liste des champs validateurs (champ renommé, passé
+                        // en « rempli par le demandeur », formulaire sans champ validateur).
+                        // L'afficher comme option explicite évite de la vider
+                        // silencieusement : une étape sans condition s'exécute toujours.
+                        $existing_field_listed = false;
+                        foreach ($validator_fields as $vf) {
+                            if ((string) ($vf['field_name'] ?? '') === $existing_condition['field']) {
+                                $existing_field_listed = true;
+                                break;
+                            }
+                        }
+                        $existing_field_orphan = $existing_condition['field'] !== '' && !$existing_field_listed;
+                        $condition_op_choices = \App\Workflow\ConditionEvaluator::opChoices($existing_condition['op']);
                         ?>
 
                                     <?php if ($can_have_condition): ?>
@@ -116,6 +131,11 @@
                                                     <label>Champ validateur à tester</label>
                                                     <select name="condition_field">
                                                         <option value="">— Toujours exécuter (pas de condition) —</option>
+                                                        <?php if ($existing_field_orphan): ?>
+                                                            <option value="<?= \App\Core\App::html()->escape($existing_condition['field']) ?>" selected>
+                                                                <?= \App\Core\App::html()->escape($existing_condition['field']) ?> (champ actuel — absent des champs validateurs)
+                                                            </option>
+                                                        <?php endif; ?>
                                                         <?php foreach ($validator_fields as $vf): ?>
                                                             <?php $vf_name = (string) ($vf['field_name'] ?? ''); ?>
                                                             <option value="<?= \App\Core\App::html()->escape($vf_name) ?>" <?= $existing_condition['field'] === $vf_name ? 'selected' : '' ?>>
@@ -123,20 +143,16 @@
                                                             </option>
                                                         <?php endforeach; ?>
                                                     </select>
+                                                    <?php if ($existing_field_orphan): ?>
+                                                        <span class="hint u-col-fon-13">
+                                                            ⚠️ Le champ testé par la condition actuelle n'est pas un champ validateur de ce formulaire : la condition est conservée telle quelle. Choisissez un autre champ ou « — Toujours exécuter — » pour la modifier.
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="field">
                                                     <label>Opérateur</label>
                                                     <select name="condition_op">
-                                                        <?php
-                                            $ops = [
-                                                'equals'     => 'Égal à',
-                                                'not_equals' => 'Différent de',
-                                                'contains'   => 'Contient',
-                                                'not_empty'  => 'Non vide',
-                                                'empty'      => 'Vide',
-                                            ];
-                                        foreach ($ops as $op_val => $op_label):
-                                            ?>
+                                                        <?php foreach ($condition_op_choices as $op_val => $op_label): ?>
                                                             <option value="<?= \App\Core\App::html()->escape($op_val) ?>" <?= $existing_condition['op'] === $op_val ? 'selected' : '' ?>><?= \App\Core\App::html()->escape($op_label) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
@@ -144,7 +160,7 @@
                                                 <div class="field">
                                                     <label>Valeur attendue</label>
                                                     <input type="text" name="condition_value" value="<?= \App\Core\App::html()->escape($existing_condition['value']) ?>" placeholder="ex: Acceptée">
-                                                    <span class="hint u-col-fon-13">Utilisé pour « Égal à », « Différent de », « Contient ». Ignoré pour « Non vide » / « Vide ».</span>
+                                                    <span class="hint u-col-fon-13">Utilisé pour « Égal à », « Différent de », « Contient » et « Dans la liste ». Ignoré pour « Non vide » / « Vide ».</span>
                                                 </div>
                                             </div>
                                         </details>
