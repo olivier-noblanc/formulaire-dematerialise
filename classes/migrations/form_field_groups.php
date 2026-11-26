@@ -15,7 +15,8 @@ declare(strict_types=1);
  * Consommateurs :
  *  - `seed_default_forms.php` : littéraux `card_group` des lignes seedées ;
  *  - `v47.php` : liste fermée utilisée pour reconnaître une rotation
- *    `card_group`/`hint` (signature B) sans jamais convertir un texte isolé ;
+ *    `card_group`/`hint` (signatures B et C) sans jamais convertir un texte
+ *    isolé ;
  *  - `scripts/check_form_field_groups.php` (CI) : contrôle de dérive
  *    bidirectionnel entre cette liste et les littéraux du seed.
  *

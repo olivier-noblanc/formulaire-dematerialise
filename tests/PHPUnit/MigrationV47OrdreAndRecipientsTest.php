@@ -18,7 +18,12 @@ use PHPUnit\Framework\TestCase;
  *    connu ou vide, `hint = ''`) ;
  *  - signature B observée en production (`required = 0/1`, `ordre` = nom de
  *    groupe, `card_group` = hint connu ou vide, `hint = ''`), avec
- *    renumérotation 1..N du formulaire.
+ *    renumérotation 1..N du formulaire ;
+ *  - signature C observée en production (`required = 0/1` et `ordre` entier
+ *    positif conservés, `card_group` = hint documenté, `hint = ''` : seul le
+ *    segment `card_group`/`hint` a tourné), réparée uniquement si le groupe
+ *    réel est prouvé par le contexte du même formulaire (encadrement par deux
+ *    lignes saines du même groupe, ou unanimité des lignes saines).
  * Toute autre valeur invalide ou rotation ambiguë bloque avant écriture.
  */
 final class MigrationV47OrdreAndRecipientsTest extends TestCase
@@ -711,6 +716,184 @@ final class MigrationV47OrdreAndRecipientsTest extends TestCase
             self::assertStringContainsString('card_group/hint rotation', $exception->getMessage());
             self::assertStringContainsString($fieldId, $exception->getMessage());
         }
+    }
+
+    /**
+     * Signature C (rotation partielle) : `required` et `ordre` portent encore
+     * leurs valeurs métier, seul le couple `card_group`/`hint` a tourné.
+     * Le groupe réel n'existe nulle part dans la ligne : il est prouvé par
+     * encadrement (ligne saine la plus proche avant et après, même groupe).
+     */
+    public function testPartialCardGroupHintRotationIsRepairedFromBracketingContext(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->insertForm($pdo, 'partiel-' . uniqid());
+
+        $before = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 30,
+            'card_group' => 'Identité de l\'agent',
+            'hint' => 'Hint sain conservé',
+        ]);
+        $rotated = $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 31,
+            'card_group' => 'Site et numéro de bureau',
+            'hint' => '',
+        ]);
+        $after = $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 32,
+            'card_group' => 'Identité de l\'agent',
+            'hint' => '',
+        ]);
+        // Autre groupe plus loin : l'unanimité du formulaire est fausse, seul
+        // l'encadrement prouve le groupe de la ligne réparée.
+        $other = $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 33,
+            'card_group' => 'Informatique (IT)',
+            'hint' => '',
+        ]);
+
+        self::assertSame(47, apply_migration_v47($pdo, 46));
+
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$rotated]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame(0, (int) $row['required'], 'required 0/1 doit être conservé');
+        self::assertSame(31, (int) $row['ordre'], 'la position observée doit être conservée');
+        self::assertSame('Identité de l\'agent', (string) $row['card_group']);
+        self::assertSame('Site et numéro de bureau', (string) $row['hint']);
+
+        $expected = [
+            $before => ['ordre' => 30, 'card_group' => 'Identité de l\'agent', 'hint' => 'Hint sain conservé'],
+            $after => ['ordre' => 32, 'card_group' => 'Identité de l\'agent', 'hint' => ''],
+            $other => ['ordre' => 33, 'card_group' => 'Informatique (IT)', 'hint' => ''],
+        ];
+        foreach ($expected as $fieldId => $values) {
+            $stmt->execute([$fieldId]);
+            $actual = $stmt->fetch(PDO::FETCH_ASSOC);
+            self::assertIsArray($actual);
+            self::assertSame($values['ordre'], (int) $actual['ordre']);
+            self::assertSame($values['card_group'], (string) $actual['card_group']);
+            self::assertSame($values['hint'], (string) $actual['hint']);
+        }
+    }
+
+    /**
+     * Signature C : si le contexte du formulaire n'est pas univoque (groupes
+     * différents avant/après, aucun voisin sain), aucune réparation n'est
+     * inventée. Le diagnostic nomme les groupes candidats.
+     */
+    public function testPartialCardGroupHintRotationBlocksWithoutUnambiguousContext(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->insertForm($pdo, 'partiel-ambigu-' . uniqid());
+
+        $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 30,
+            'card_group' => 'Identité de l\'agent',
+            'hint' => '',
+        ]);
+        $rotated = $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 31,
+            'card_group' => 'Site et numéro de bureau',
+            'hint' => '',
+        ]);
+        $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 32,
+            'card_group' => 'Informatique (IT)',
+            'hint' => '',
+        ]);
+
+        try {
+            apply_migration_v47($pdo, 46);
+            self::fail('Un groupe non prouvable par le contexte doit rester bloquant.');
+        } catch (\RuntimeException $exception) {
+            $message = $exception->getMessage();
+            self::assertStringContainsString('v47 blocked', $message);
+            self::assertStringContainsString($rotated, $message);
+            self::assertStringContainsString('real group not provable from form context', $message);
+            self::assertStringContainsString('before="Identité de l\'agent"', $message);
+            self::assertStringContainsString('after="Informatique (IT)"', $message);
+        }
+
+        self::assertSame(46, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$rotated]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame(0, (int) $row['required']);
+        self::assertSame(31, (int) $row['ordre']);
+        self::assertSame('Site et numéro de bureau', (string) $row['card_group']);
+        self::assertSame('', (string) $row['hint']);
+    }
+
+    /**
+     * Signature C : l'unanimité des lignes saines du formulaire est une preuve
+     * suffisante quand il n'existe pas de voisin des deux côtés. `required=1`
+     * doit être conservé (aucune normalisation à 0).
+     */
+    public function testPartialCardGroupHintRotationUsesUnanimousFormContext(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $formId = $this->insertForm($pdo, 'partiel-unanime-' . uniqid());
+
+        $this->insertLegacyField($pdo, $formId, [
+            'required' => 0,
+            'ordre' => 5,
+            'card_group' => 'Logistique',
+            'hint' => '',
+        ]);
+        $rotated = $this->insertLegacyField($pdo, $formId, [
+            'required' => 1,
+            'ordre' => 31,
+            'card_group' => 'Matériel attribué par défaut',
+            'hint' => '',
+        ]);
+
+        self::assertSame(47, apply_migration_v47($pdo, 46));
+
+        $stmt = $pdo->prepare('SELECT required, ordre, card_group, hint FROM form_fields WHERE id = ?');
+        $stmt->execute([$rotated]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame(1, (int) $row['required']);
+        self::assertSame(31, (int) $row['ordre']);
+        self::assertSame('Logistique', (string) $row['card_group']);
+        self::assertSame('Matériel attribué par défaut', (string) $row['hint']);
+    }
+
+    /**
+     * Ambiguïté restante : un hint documenté dans `card_group` alors que
+     * `hint` est déjà rempli ne peut pas être une signature C (qui exige
+     * `hint=''`). Aucune devinette : fail-closed.
+     */
+    public function testDocumentedHintInCardGroupWithNonEmptyHintBlocks(): void
+    {
+        $pdo = $this->v46Pdo($this->newDbPath());
+        $fieldId = $this->insertLegacyField($pdo, $this->formId($pdo), [
+            'required' => 0,
+            'ordre' => 7,
+            'card_group' => 'Préciser les droits ou le rôle valideur le cas échéant',
+            'hint' => 'Hint déjà présent',
+        ]);
+
+        try {
+            apply_migration_v47($pdo, 46);
+            self::fail('Deux hints dans la même ligne doivent rester bloquants.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('v47 blocked', $exception->getMessage());
+            self::assertStringContainsString($fieldId, $exception->getMessage());
+            self::assertStringContainsString('while hint is not empty', $exception->getMessage());
+        }
+
+        self::assertSame(46, (int) $pdo->query('SELECT MAX(version) FROM schema_version')->fetchColumn());
     }
 
     public function testLegacyRequiredWithoutCardGroupRotationStillBlocks(): void

@@ -1,5 +1,24 @@
 # Changelog — CircuitDémat
 
+## [10.42.54] — 2026-11-26
+_Résumé : v47 débloquée pour la variante réelle de production `required=0`, `ordre` entier (ex. 31), `card_group` = hint documenté, `hint=''` — nouvelle signature C (rotation du seul segment `card_group`/`hint`), réparée uniquement quand le groupe réel est prouvé par le contexte du formulaire, sinon bloquée avec les groupes candidats._
+
+### 🔒 Correctifs
+- **Signature C de rotation `form_fields`** (`classes/migrations/v47.php`) : une ligne `required ∈ {0,1}` (booléen métier intact), `ordre` entier `>= 1` (position réelle intacte), `card_group` égal à un texte de `$legacyHintGroups` et `hint = ''` n'est ni saine ni couverte par A/B : seul le couple `card_group`/`hint` a tourné d'un cran. Auparavant elle bloquait la migration (`reason=known hint in card_group without the full signature`).
+- **Réparation sous preuve, jamais par supposition** : le groupe réel n'étant présent nulle part dans la ligne, il est refusé s'il n'est pas prouvé par le **même formulaire**. Deux preuves acceptées : (1) *encadrement* — la ligne saine la plus proche avant et la plus proche après l'`ordre` observé portent le même groupe établi ; (2) *unanimité* — toutes les lignes saines du formulaire partagent un unique groupe établi. Aucun mapping `hint` → groupe codé en dur. Sans preuve : fail-closed avec `before=`, `after=` et `form_groups=` dans le diagnostic (au lieu du seul message générique).
+- **Réparation appliquée** : `hint := card_group` observé, `card_group :=` groupe prouvé, `required` observé conservé (`0` ou `1`, aucune normalisation), `ordre` observé conservé (`31` reste `31`). Si le même formulaire porte aussi une signature B, il est renuméroté `1..N` comme avant ; une ligne C seule ne déclenche aucune renumérotation.
+- **Ambiguïté restante désormais bloquante** : `card_group` = hint documenté **avec** `hint` non vide (« deux hints dans la même ligne ») n'est pas une signature C et n'est plus accepté silencieusement — diagnostic dédié, aucune devinette.
+- **Contrôle d'unicité post-rebuild corrigé** : le comptage `BETWEEN min(ordre) AND max(ordre) == nombre d'ordres attribués` supposait des ordres contigus. La signature C conservant les positions observées, deux réparations séparées par une ligne saine auraient été vues à tort comme un doublon. Remplacé par un contrôle exact `COUNT(*) WHERE form_id = ? AND ordre = ?` par ordre attribué (les signatures A et B restent couvertes : elles attribuent explicitement tous les ordres qu'elles touchent), message enrichi de l'ordre fautif.
+
+### 🧪 Tests
+- `MigrationV47OrdreAndRecipientsTest` : +4 tests — réparation C par encadrement (avec un second groupe plus loin pour prouver que l'encadrement, et non l'unanimité, décide), blocage C sans contexte univoque (assertion sur `before=`/`after=`/`reason` + version restant 46 + ligne intacte), réparation C par unanimité avec `required=1` conservé, blocage du cas « deux hints dans la même ligne ».
+- Les tests existants des signatures A/B et des cas bloquants ne sont pas modifiés sur le fond (le message du cas `ordre=0` gagne un détail entre parenthèses, la sous-chaîne testée `card_group/hint rotation` est inchangée).
+
+### ⚠️ Risques
+- Une réparation C n'est possible que si le formulaire contient au moins une ligne saine porteuse d'un groupe établi autour de la ligne (ou une unanimité). Une ligne C isolée dans un formulaire sans voisin sain reste bloquante : c'est voulu, la réparation exigerait une supposition.
+- Une ligne légitimement saine dont le `card_group` serait *exactement* un texte de hint documenté (groupe personnalisé homonyme) serait mal classée candidate ; elle ne peut être réparée que si elle est encadrée par des lignes d'un autre groupe établi identique — cas improbable, et aucune conversion ne se produit sans cette preuve (fail-closed sinon).
+- Aucune base `.db` touchée, aucune suite locale lancée (consigne) : `php -l` ciblé sur les trois fichiers modifiés. La CI reste l'arbitre (PHPUnit, PHPStan 8, gardes statiques).
+
 ## [10.42.53] — 2026-11-26
 _Résumé : correctif du job CI `vendor-offline-export` — l'autoload versionné avait été régénéré en mode dev (références `amphp/*`, `phpstan/*`), cassant `vendor/autoload.php` sur l'export hors-ligne. Autoload re-dumpé en `--no-dev`, garde CI unique et diagnostic en amont du `require`._
 

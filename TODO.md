@@ -18,6 +18,17 @@
 | CI | **GitHub Actions** (17 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.54 — v47 : signature C (rotation partielle `card_group`/`hint`) (2026-11-26)
+| Tâche | Détail |
+|-------|--------|
+| Cas prod débloqué | `id=637f8649-…`, `required=0`, `ordre=31` (entier), `card_group="Site et numéro de bureau"` (hint documenté), `hint=''` : ni signature A (required < 2), ni B (`ordre` n'est pas un groupe), mais seul le segment `card_group`/`hint` a tourné. |
+| Signature C | `required ∈ {0,1}` et `ordre` entier `>= 1` conservés, `card_group :=` groupe **prouvé**, `hint := card_group` observé. Aucun mapping hint→groupe, aucune réparation aveugle de tous les `card_group` qui ressemblent à un hint. |
+| Preuve du groupe | (1) encadrement : lignes saines les plus proches avant/après l'`ordre` observé, même groupe établi ; (2) unanimité : toutes les lignes saines du formulaire partagent un unique groupe établi. Sinon fail-closed avec `before=`, `after=`, `form_groups=`. |
+| Ambiguïtés restantes | `card_group` = hint documenté + `hint` non vide → diagnostic « two hints in one row » (avant : accepté en silence) ; `ordre` non entier positif, `required` hors 0/1 → diagnostic enrichi. |
+| Unicité post-rebuild | Contrôle par intervalle remplacé par `COUNT(*) WHERE form_id=? AND ordre=?` par ordre attribué (la signature C laisse des trous légitimes entre deux réparations). |
+| Tests | +4 dans `MigrationV47OrdreAndRecipientsTest` : réparation par encadrement, blocage sans contexte, réparation par unanimité (`required=1` conservé), blocage « deux hints ». |
+| Validation | `php -l` ciblé (v47, form_field_groups, test) uniquement ; aucune base `.db` touchée, aucune suite locale (consigne). CI arbitre. |
+
 ### v10.42.53 — autoload versionné en `--no-dev` (correctif job CI `vendor-offline-export`) (2026-11-26)
 | Tâche | Détail |
 |-------|--------|

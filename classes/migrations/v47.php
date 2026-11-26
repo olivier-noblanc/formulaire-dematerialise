@@ -19,12 +19,17 @@ require_once __DIR__ . '/form_field_groups.php';
  *  - `step_recipients.email` : email classique ou référence `{{...}}`, jamais
  *    vide ni tronquée.
  *
- * `form_fields` : deux rotations sont reconnues et réparées de façon
+ * `form_fields` : trois rotations sont reconnues et réparées de façon
  * déterministe (voir le préflight) :
  *  - signature A, `required` porte l'ancien ordre (entier >= 2) ;
  *  - signature B, observée en production, `required` reste un booléen 0/1,
  *    `ordre` porte le nom du groupe, `card_group` l'ancien hint et `hint` est
- *    vide.
+ *    vide ;
+ *  - signature C (rotation partielle), `required` reste 0/1 et `ordre` reste
+ *    la position entière réelle de la ligne, mais `card_group` porte l'ancien
+ *    hint et `hint` est vide : seul le segment `card_group`/`hint` a tourné.
+ *    Le groupe réel n'est jamais deviné : il doit être prouvé par le contexte
+ *    du même formulaire (voir la passe de résolution), sinon la ligne bloque.
  * Toute autre combinaison reste bloquante : aucune réparation silencieuse,
  * aucun ID perdu.
  *
@@ -134,6 +139,23 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
     // un groupe établi bloque également : deux groupes dans la même ligne sont
     // ambigus.
     //
+    // Signature C (rotation partielle, observée en production) :
+    //   required   = 0 ou 1 (booléen métier intact)
+    //   ordre      = position entière réelle >= 1 (intacte)
+    //   card_group = ancien hint (uniquement un texte de `legacyHintGroups`)
+    //   hint       = ''
+    // Seuls `card_group` et `hint` ont tourné d'un cran. Le groupe réel n'est
+    // PAS contenu dans la ligne : il est déduit du contexte du même formulaire,
+    // et seulement s'il est prouvé. Deux preuves acceptées :
+    //   (1) encadrement : la ligne saine la plus proche avant et la plus proche
+    //       après l'`ordre` observé portent le MÊME groupe établi ;
+    //   (2) unanimité : toutes les lignes saines du formulaire partagent un
+    //       unique groupe établi.
+    // Aucun hint->groupe n'est codé en dur (ce serait une supposition, pas une
+    // preuve), et un `card_group` qui n'est pas un hint documenté n'entre jamais
+    // dans cette signature. Sans preuve : fail-closed avec les groupes
+    // candidats (`before`, `after`, `form_groups`) dans le diagnostic.
+    //
     // Réparations déterministes :
     //   signature A : card_group := ordre (0/vide -> 'Général'),
     //                 hint := card_group, required := 0,
@@ -143,14 +165,23 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
     //                 ordre := 1..N pour tout le formulaire (groupes ordonnés
     //                 par première apparition, lignes d'un groupe par ordre
     //                 source puis rowid).
+    //   signature C : card_group := groupe prouvé par le contexte du formulaire,
+    //                 hint := card_group actuel, required := 0/1 conservé,
+    //                 ordre := position observée conservée (renumérotée 1..N
+    //                 seulement si le même formulaire porte aussi une
+    //                 signature B).
     // Toute autre combinaison (hint non vide, `ordre` numérique positif, texte
-    // d'ordre non établi, card_group non documenté) est fail-closed : aucune
-    // réparation silencieuse.
+    // d'ordre non établi, card_group non documenté, signature C sans groupe
+    // prouvable) est fail-closed : aucune réparation silencieuse.
     $rotations = [];
     /** @var list<array{rowid:int,id:string,form_id:string,old_ordre:int,hint_text:string,group_text:string}> $repairable */
     $repairable = [];
     /** @var list<array{rowid:int,id:string,form_id:string,required:int,hint_text:string,group_text:string}> $groupRepairable */
     $groupRepairable = [];
+    /** @var list<array{rowid:int,id:string,form_id:string,required:int,ordre:int,card_group:string}> $partialHintCandidates */
+    $partialHintCandidates = [];
+    /** @var list<array{rowid:int,id:string,form_id:string,required:int,ordre:int,hint_text:string,group:string}> $hintRepairs */
+    $hintRepairs = [];
     /**
      * @var array<string, list<array{
      *   rowid:int,
@@ -238,6 +269,16 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             && preg_match('/^-?\d+$/', trim($ordreRaw)) !== 1;
         $ordreTextValue = $ordreText ? trim((string) $ordreRaw) : '';
 
+        // Position entière utilisable (0 = défaut historique, donc pas une
+        // position) ; sert uniquement à la signature C, qui conserve l'`ordre`
+        // réel de la ligne.
+        $ordreInt = null;
+        if (is_int($ordreRaw) && $ordreRaw >= 0) {
+            $ordreInt = $ordreRaw;
+        } elseif (is_string($ordreRaw) && preg_match('/^\d+$/', trim($ordreRaw)) === 1) {
+            $ordreInt = (int) trim($ordreRaw);
+        }
+
         $cardGroup = trim((string) ($row['card_group'] ?? ''));
         $hint = trim((string) ($row['hint'] ?? ''));
 
@@ -258,6 +299,17 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             && isset($knownGroups[$ordreTextValue])
             && $hint === ''
             && $cardGroupIsHint;
+
+        // Signature C (rotation partielle) : seul le segment `card_group`/`hint`
+        // a tourné. `required` (0/1) et `ordre` (position entière >= 1) portent
+        // encore leurs valeurs métier, `card_group` contient un hint documenté
+        // et `hint` est vide. La réparation dépend du groupe réel, prouvé par
+        // le contexte du formulaire dans la passe de résolution.
+        $partialHintRotation = $requiredInt !== null
+            && ($requiredInt === 0 || $requiredInt === 1)
+            && $ordreInt !== null
+            && $ordreInt >= 1
+            && $knownHintInCardGroup;
 
         $meta = [
             'rowid' => (int) $row['rid'],
@@ -294,6 +346,19 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
                 'hint_text' => $cardGroup,
                 'group_text' => $ordreTextValue,
             ];
+        } elseif ($partialHintRotation) {
+            $meta['kind'] = 'hint_card';
+            $meta['source_rank'] = $ordreInt;
+            // Groupe réel inconnu à ce stade : résolu par contexte plus bas.
+            $meta['group_key'] = '';
+            $partialHintCandidates[] = [
+                'rowid' => (int) $row['rid'],
+                'id' => (string) $row['id'],
+                'form_id' => (string) $row['form_id'],
+                'required' => $requiredInt === null ? 0 : $requiredInt,
+                'ordre' => $ordreInt === null ? 0 : $ordreInt,
+                'card_group' => $cardGroup,
+            ];
         } else {
             $validOrdre = (is_int($ordreRaw) && $ordreRaw >= 0)
                 || (is_string($ordreRaw) && preg_match('/^\d+$/', $ordreRaw) === 1);
@@ -328,15 +393,113 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             }
 
             if ($knownHintInCardGroup && !$ordreText) {
+                $reasonDetail = $ordreInt === null || $ordreInt < 1
+                    ? 'ordre is not a positive integer position'
+                    : 'required is not 0/1';
                 $rotations[] = 'id=' . $row['id']
                     . ' required=' . json_encode($required)
                     . ' ordre=' . json_encode($ordreRaw)
                     . ' card_group=' . json_encode($cardGroup, JSON_UNESCAPED_UNICODE)
-                    . ' reason=known hint in card_group without the full signature';
+                    . ' reason=known hint in card_group without the full signature ('
+                    . $reasonDetail . ')';
+            }
+
+            // Ambiguïté restante : `card_group` porte un hint documenté alors
+            // que `hint` est déjà rempli → deux hints dans la même ligne, donc
+            // ni ligne saine, ni signature C (qui exige `hint=''`), ni hint
+            // récupérable. Aucune devinette : fail-closed.
+            if ($hint !== '' && !$ordreText && in_array($cardGroup, $legacyHintGroups, true)) {
+                $rotations[] = 'id=' . $row['id']
+                    . ' required=' . json_encode($required)
+                    . ' ordre=' . json_encode($ordreRaw)
+                    . ' card_group=' . json_encode($cardGroup, JSON_UNESCAPED_UNICODE)
+                    . ' hint=' . json_encode($hint, JSON_UNESCAPED_UNICODE)
+                    . ' reason=known hint in card_group while hint is not empty (two hints in one row)';
             }
         }
 
         $allRowsByForm[(string) $row['form_id']][] = $meta;
+    }
+
+    // ── Signature C : résolution du groupe réel, uniquement par preuve ──
+    // Le groupe n'est jamais déduit du hint observé (aucun mapping codé en
+    // dur) : il vient du contexte du MÊME formulaire, et seulement si ce
+    // contexte est univoque. Les candidats sont déjà retirés des sources
+    // (kind `hint_card`), les lignes saines d'un `card_group` documenté ne
+    // sont pas des sources (un hint n'est pas un groupe).
+    foreach ($partialHintCandidates as $candidate) {
+        $formId = $candidate['form_id'];
+        $sources = [];
+        foreach ($allRowsByForm[$formId] ?? [] as $meta) {
+            $rank = $meta['source_rank'];
+            if ($meta['kind'] !== 'healthy' || !is_int($rank) || $rank < 0) {
+                continue;
+            }
+            $group = $meta['card_group'];
+            if ($group === '' || !isset($knownGroups[$group])) {
+                continue;
+            }
+            $sources[] = ['ordre' => $rank, 'group' => $group];
+        }
+
+        $before = null;
+        $after = null;
+        foreach ($sources as $source) {
+            if ($source['ordre'] < $candidate['ordre']) {
+                if ($before === null || $source['ordre'] > $before['ordre']) {
+                    $before = $source;
+                }
+            } elseif ($source['ordre'] > $candidate['ordre']) {
+                if ($after === null || $source['ordre'] < $after['ordre']) {
+                    $after = $source;
+                }
+            }
+        }
+
+        $formGroups = [];
+        foreach ($sources as $source) {
+            if (!in_array($source['group'], $formGroups, true)) {
+                $formGroups[] = $source['group'];
+            }
+        }
+
+        $bracketedGroup = $before !== null
+            && $after !== null
+            && $before['group'] === $after['group']
+            ? $before['group']
+            : null;
+        $unanimousGroup = count($formGroups) === 1 ? $formGroups[0] : null;
+        $provenGroup = $bracketedGroup ?? $unanimousGroup;
+
+        if ($provenGroup === null) {
+            $rotations[] = 'id=' . $candidate['id']
+                . ' required=' . json_encode($candidate['required'])
+                . ' ordre=' . json_encode($candidate['ordre'])
+                . ' card_group=' . json_encode($candidate['card_group'], JSON_UNESCAPED_UNICODE)
+                . ' hint=' . json_encode('', JSON_UNESCAPED_UNICODE)
+                . ' reason=known hint in card_group, real group not provable from form context'
+                . ' before=' . json_encode($before === null ? null : $before['group'], JSON_UNESCAPED_UNICODE)
+                . ' after=' . json_encode($after === null ? null : $after['group'], JSON_UNESCAPED_UNICODE)
+                . ' form_groups=' . json_encode($formGroups, JSON_UNESCAPED_UNICODE);
+            continue;
+        }
+
+        foreach ($allRowsByForm[$formId] as $index => $meta) {
+            if ($meta['rowid'] !== $candidate['rowid']) {
+                continue;
+            }
+            $allRowsByForm[$formId][$index]['group_key'] = $provenGroup;
+        }
+
+        $hintRepairs[] = [
+            'rowid' => $candidate['rowid'],
+            'id' => $candidate['id'],
+            'form_id' => $formId,
+            'required' => $candidate['required'],
+            'ordre' => $candidate['ordre'],
+            'hint_text' => $candidate['card_group'],
+            'group' => $provenGroup,
+        ];
     }
 
     // ── Ordre de renumérotation (déterministe et documenté) ──
@@ -431,6 +594,12 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
                 $requiredValue = 0;
                 $cardGroupValue = $meta['group_key'];
                 $hintValue = $meta['card_group'];
+            } elseif ($meta['kind'] === 'hint_card') {
+                // Signature C : groupe prouvé par le contexte, hint rendu à sa
+                // colonne, `required` conservé. Seul l'`ordre` suit la
+                // renumérotation 1..N, imposée par la signature B du formulaire.
+                $cardGroupValue = $meta['group_key'];
+                $hintValue = $meta['card_group'];
             }
 
             $assignments[] = [
@@ -483,6 +652,26 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             ];
             $next++;
         }
+    }
+
+    // Signature C hors formulaire renuméroté (aucune signature B) : seuls
+    // `card_group` et `hint` changent. `ordre` et `required` observés — déjà
+    // valides (entier >= 1, booléen 0/1) — sont conservés tels quels, donc les
+    // positions existantes du formulaire ne bougent pas.
+    foreach ($hintRepairs as $candidate) {
+        if (isset($groupFormIds[$candidate['form_id']])) {
+            continue; // déjà couvert par la renumérotation 1..N du formulaire
+        }
+        $assignments[] = [
+            'rowid' => $candidate['rowid'],
+            'id' => $candidate['id'],
+            'form_id' => $candidate['form_id'],
+            'repaired' => true,
+            'required' => $candidate['required'],
+            'hint' => $candidate['hint_text'],
+            'card_group' => $candidate['group'],
+            'ordre' => $candidate['ordre'],
+        ];
     }
 
     // Contrôle des doublons avant écriture : chaque ordre attribué doit être
@@ -564,6 +753,8 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
         //               required := 0, ordre := séquentiel calculé.
         // Signature B : card_group := groupe observé, hint := hint observé,
         //               required := 0/1 conservé, ordre := 1..N du formulaire.
+        // Signature C : card_group := groupe prouvé par le contexte, hint :=
+        //               hint observé, required et ordre observés conservés.
         // Les lignes saines d'un formulaire de signature B ne reçoivent que
         // leur nouvelle position (`repaired = false`, autres colonnes NULL).
         //
@@ -746,25 +937,29 @@ function apply_migration_v47(PDO $pdo, int $current_version): int
             }
             $verify = null;
 
-            // Signature A : les ordres attribués sont contigus et strictement
-            // au-dessus du maximum existant, donc aucun doublon possible.
-            // Signature B : tout le formulaire est renuméroté 1..N, donc le
-            // nombre de lignes dans l'intervalle doit égaler le nombre de
-            // lignes attribuées.
+            // Unicité contrôlée par ordre attribué, pas par intervalle : la
+            // signature C conserve les ordres observés et peut laisser des
+            // trous entre deux réparations (une ligne saine entre deux lignes
+            // réparées), ce qu'un comptage `BETWEEN min AND max` interpréterait
+            // à tort comme un doublon. Signatures A et B restent couvertes :
+            // elles attribuent explicitement tous les ordres qu'elles touchent.
             /** @var array<string, list<int>> $ordresByForm */
             $ordresByForm = [];
             foreach ($assignments as $assignment) {
                 $ordresByForm[$assignment['form_id']][] = $assignment['ordre'];
             }
             $duplicateQuery = $pdo->prepare(
-                'SELECT COUNT(*) FROM form_fields WHERE form_id = ? AND ordre BETWEEN ? AND ?'
+                'SELECT COUNT(*) FROM form_fields WHERE form_id = ? AND ordre = ?'
             );
             foreach ($ordresByForm as $formId => $ordres) {
-                $duplicateQuery->execute([$formId, min($ordres), max($ordres)]);
-                if ((int) $duplicateQuery->fetchColumn() !== count($ordres)) {
-                    throw new RuntimeException(
-                        'v47: duplicate ordre detected for form ' . $formId . ' after repair'
-                    );
+                foreach (array_unique($ordres) as $ordre) {
+                    $duplicateQuery->execute([$formId, $ordre]);
+                    if ((int) $duplicateQuery->fetchColumn() !== 1) {
+                        throw new RuntimeException(
+                            'v47: duplicate ordre detected for form ' . $formId
+                            . ' after repair (ordre=' . $ordre . ')'
+                        );
+                    }
                 }
             }
             $duplicateQuery = null;
