@@ -534,6 +534,7 @@ final class FormJsonValidator
             try {
                 $decoded = json_decode($raw, true, self::JSON_MAX_DEPTH, JSON_THROW_ON_ERROR);
             } catch (\JsonException) {
+                // @silent-ok: catégorie 2 — entrée utilisateur attendue, convertie en erreur de validation bloquante ($errors), affichée et import avorté
                 $errors[] = "$prefix.condition est une chaîne mais n'est pas un JSON valide (profondeur maximale : " . self::JSON_MAX_DEPTH . '). Utilisez un objet {field, op, value} ou supprimez la propriété.';
                 return;
             }

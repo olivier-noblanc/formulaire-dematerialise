@@ -372,6 +372,7 @@ final class AdminImportExportHandler
             }
             return ['redirect' => 'index.php?p=admin_forms&form_id=' . urlencode($new_id)];
         } catch (\InvalidArgumentException $e) {
+            // @silent-ok: catégorie 2 — rollback puis erreur métier retournée à l'UI (msg-error), jamais avalée
             // Violation prévisible d'un contrat métier (ordre, required,
             // destinataire, field_name…) : message explicite, jamais le
             // générique « erreur technique ». La transaction est fermée avant
@@ -382,6 +383,7 @@ final class AdminImportExportHandler
                 'preserved_json' => $json_input,
             ];
         } catch (\PDOException $e) {
+            // @silent-ok: catégorie 2 — rollback puis erreur structurée retournée à l'UI (index unique détaillé, sinon message générique après error_log)
             self::rollbackIfNeeded($repo);
             $message = $e->getMessage();
             // Index d'expression v48 : SQLite peut rapporter soit les colonnes,
@@ -424,6 +426,7 @@ final class AdminImportExportHandler
         try {
             $decoded = json_decode($json, true, FormJsonValidator::JSON_MAX_DEPTH, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
+            // @silent-ok: catégorie 2 — JSON invalide est une entrée utilisateur attendue, message précis retourné (ok=false)
             return [
                 'ok' => false,
                 'error' => 'JSON invalide : ' . $e->getMessage() . '. Vérifiez la syntaxe (virgules manquantes, guillemets non fermés, profondeur maximale ' . FormJsonValidator::JSON_MAX_DEPTH . ').',
@@ -460,6 +463,7 @@ final class AdminImportExportHandler
             try {
                 $cond = json_decode($raw, true, FormJsonValidator::JSON_MAX_DEPTH, JSON_THROW_ON_ERROR);
             } catch (\JsonException) {
+                // @silent-ok: catégorie 2 — renvoie valid=false, converti en refus d'import explicite par le garde fail-closed de handleImportForm
                 return ['provided' => true, 'valid' => false, 'condition' => []];
             }
         }
