@@ -514,25 +514,25 @@ final class HtmlServiceTest extends TestCase
         self::assertSame('', $this->service->formatDateTimeFr('not-a-date'));
     }
 
-    // ── formatRelanceSuffix() ───────────────────────────────────
+    // ── formatRelanceCount() ───────────────────────────────────
 
-    public function testFormatRelanceSuffixZeroReturnsEmpty(): void
+    public function testFormatRelanceCountZeroReturnsEmpty(): void
     {
-        self::assertSame('', $this->service->formatRelanceSuffix(0));
+        self::assertSame('', $this->service->formatRelanceCount(0));
     }
 
-    public function testFormatRelanceSuffixNegativeReturnsEmpty(): void
+    public function testFormatRelanceCountNegativeReturnsEmpty(): void
     {
-        self::assertSame('', $this->service->formatRelanceSuffix(-1));
+        self::assertSame('', $this->service->formatRelanceCount(-1));
     }
 
-    public function testFormatRelanceSuffixOneIsSingular(): void
+    public function testFormatRelanceCountOneIsSingular(): void
     {
-        self::assertSame(' — 1 rappel envoyé', $this->service->formatRelanceSuffix(1));
+        self::assertSame('1 rappel envoyé', $this->service->formatRelanceCount(1));
     }
 
-    public function testFormatRelanceSuffixTwoIsPlural(): void
+    public function testFormatRelanceCountTwoIsPlural(): void
     {
-        self::assertSame(' — 2 rappels envoyés', $this->service->formatRelanceSuffix(2));
+        self::assertSame('2 rappels envoyés', $this->service->formatRelanceCount(2));
     }
 }

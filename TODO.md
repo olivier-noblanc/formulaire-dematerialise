@@ -18,6 +18,15 @@
 | CI | **GitHub Actions** (17 jobs bloquants + CSP Check) — CI + CSP Check + Dependabot |
 | Remote | **github.com/olivier-noblanc/formulaire-dematerialise** (**public**) |
 
+### v10.42.58 — CI PHPStan : 4 erreurs corrigées à la cause (2026-11-27)
+| Tâche | Détail |
+|-------|--------|
+| ✅ Fait | `AdminFormCrudHandler::handlePopulateSamples()` n'appelle plus `App::db()->getPdo()` (`noDirectPdo`) : `populate_sample_forms()` délègue à `SampleFormsService` via le container (`src/bootstrap.php`) — transaction/idempotence inchangées, portées par le service. |
+| ✅ Fait | `populate_sample_forms()` : paramètre `\PDO` mort retiré ; plus d'instanciation de service hors bootstrap. |
+| ✅ Fait | `HtmlService::formatRelanceSuffix()` supprimée (`shipmonk.deadMethod`) ; `formatRelanceCount()` reste la source unique du pluriel ; 4 tests `HtmlServiceTest` réécrits sur `formatRelanceCount()` ; `AGENTS.md` corrigé. |
+| ✅ Fait | Array shapes : `tokenTimelineLines()` (shape ouvert des colonnes lues) et `buildStatusTip()` (`list<array{action, date, email, step_label}>` produite par `validationDecisions(mixed)`, ancien `array<array-key, mixed>`). |
+| Validation | Aucune base `.db`, aucun test lourd local : `php -l` ciblé sur les fichiers PHP modifiés. CI arbitre. |
+
 ### v10.42.57 — suppression du CSS mort admin_forms (2026-11-26)
 | Tâche | Détail |
 |-------|--------|

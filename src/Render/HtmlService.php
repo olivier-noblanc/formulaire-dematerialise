@@ -105,25 +105,13 @@ final class HtmlService implements HtmlInterface
     }
 
     /**
-     * Formate un fragment " — N rappel(s) envoyé(s)" à ajouter à un texte
-     * de statut de token, ou une chaîne vide si aucune relance.
-     *
-     * Centralise le pluriel dupliqué (2 occurrences dans
-     * SubmissionViewRenderer, une variante dans MyValidationsRenderer)
-     * signalé 2026-07-30.
-     */
-    public function formatRelanceSuffix(int $relanceCount): string
-    {
-        $label = $this->formatRelanceCount($relanceCount);
-        return $label === '' ? '' : ' — ' . $label;
-    }
-
-    /**
      * Formate "N rappel(s) envoyé(s)" sans préfixe, ou "" si aucune relance.
      *
-     * Source unique du pluriel : formatRelanceSuffix() s'appuie dessus, et
-     * les lignes de tooltip (tokenTimelineLines) l'utilisent telles quelles
-     * puisqu'elles n'ont pas besoin du tiret de liaison.
+     * Source unique du pluriel des relances : les lignes de tooltip
+     * (tokenTimelineLines) et le tooltip de statut de « Mes demandes »
+     * l'utilisent telles quelles. L'ancien `formatRelanceSuffix()` (variante
+     * « — N rappel(s) envoyé(s) ») a été supprimé : plus aucun appelant en
+     * production, chaque contexte préfixe lui-même le libellé.
      */
     public function formatRelanceCount(int $relanceCount): string
     {
@@ -146,7 +134,13 @@ final class HtmlService implements HtmlInterface
      * Chaînes BRUTES (non échappées) : l'appelant échappe selon son contexte
      * (attribut HTML ou contenu de tooltip).
      *
-     * @param array<array-key, mixed> $token
+     * Le shape est **ouvert** (`...`) : les producteurs de tokens (rows SQL de
+     * `workflow_steps[].tokens`, JSON) portent d'autres clés (`email`, `token`,
+     * `step_id`…) qui ne sont pas lues ici. Seules les colonnes de suivi sont
+     * déclarées ; `relance_count` tolère le texte comme l'entier (valeur SQLite
+     * ou JSON), d'où le cast `(int)` côté appel.
+     *
+     * @param array{done_at?: string|null, sent_at?: string|null, expires_at?: string|null, relance_at?: string|null, relance_count?: int|string|null, ...} $token
      * @return list<string>
      */
     public function tokenTimelineLines(array $token): array

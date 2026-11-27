@@ -24,6 +24,7 @@ use App\Docs\DocumentationService;
 use App\Email\EmailVerificationService;
 use App\Export\ExportService;
 use App\Forms\FieldService;
+use App\Forms\SampleFormsService;
 use App\Forms\ValidatorDataService;
 use App\Mail\MailService;
 use App\Persona\PersonaService;
@@ -107,6 +108,10 @@ $app->set(AttachmentService::class, new AttachmentService($attachmentRepo));
 
 // Validator data service
 $app->set(ValidatorDataService::class, new ValidatorDataService($app->get(SubmissionRepository::class), $app->get(FormRepository::class), $fields));
+
+// Sample forms service (formulaires d'exemple — transactionnel et idempotent,
+// appelé par populate_sample_forms() depuis l'action admin populate_samples)
+$app->set(SampleFormsService::class, new SampleFormsService($app->get(FormRepository::class)));
 
 // Cron service
 $app->set(CronService::class, new CronService($db, $app->get(LazyCronRepository::class)));

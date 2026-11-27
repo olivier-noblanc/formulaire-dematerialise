@@ -112,7 +112,7 @@ final class MySubmissionsRenderer
                 // Il n'affiche que des données réellement présentes côté PHP
                 // (date de la décision issue de validations[], total des
                 // relances issu des tokens). Aucune ligne → aucun tooltip.
-                $statusTip = self::buildStatusTip($data, $status, $submission['tokens'] ?? []);
+                $statusTip = self::buildStatusTip(self::validationDecisions($data), $status, $submission['tokens'] ?? []);
                 if ($statusTip !== '') {
                     $badgeCls .= ' has-tip';
                 }
@@ -309,6 +309,47 @@ final class MySubmissionsRenderer
     }
 
     /**
+     * Décisions de validation d'une soumission (`data.validations`), réduites
+     * aux clés réellement lues par le tooltip de statut.
+     *
+     * Frontière de typage : le JSON vient de la base et n'est pas typé, tout
+     * ce qui est en aval (`buildStatusTip()`) travaille sur un shape précis.
+     * Les entrées non conformes sont écartées plutôt que devinées.
+     *
+     * @param mixed $data Données JSON de la soumission (décodées, non typées)
+     * @return list<array{action: string, date: string|null, email: string|null, step_label: string|null}>
+     */
+    private static function validationDecisions(mixed $data): array
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+        $raw = $data[SubmissionField::VALIDATIONS->value] ?? null;
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $decisions = [];
+        foreach ($raw as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $action    = $entry['action'] ?? null;
+            $date      = $entry['date'] ?? null;
+            $email     = $entry['email'] ?? null;
+            $stepLabel = $entry['step_label'] ?? null;
+            $decisions[] = [
+                'action'     => is_string($action) ? $action : '',
+                'date'       => is_string($date) ? $date : null,
+                'email'      => is_string($email) ? $email : null,
+                'step_label' => is_string($stepLabel) ? $stepLabel : null,
+            ];
+        }
+
+        return $decisions;
+    }
+
+    /**
      * Contenu du tooltip du badge de statut.
      *
      * Uniquement des données réellement disponibles : la décision
@@ -317,10 +358,10 @@ final class MySubmissionsRenderer
      * affiché — si ces données manquent, la fonction retourne '' et le badge
      * reste un badge simple.
      *
-     * @param array<array-key, mixed> $data Données JSON de la soumission
+     * @param list<array{action: string, date: string|null, email: string|null, step_label: string|null}> $decisions Décisions normalisées par validationDecisions()
      * @param list<array{email?: string, sent_at?: string|null, done_at?: string|null, relance_at?: string|null, expires_at?: string|null, relance_count?: int}> $tokens
      */
-    private static function buildStatusTip(array $data, string $status, array $tokens): string
+    private static function buildStatusTip(array $decisions, string $status, array $tokens): string
     {
         $html = App::html();
         $lines = '';
@@ -333,34 +374,32 @@ final class MySubmissionsRenderer
         };
 
         if ($wantedAction !== '') {
-            $validations = $data[SubmissionField::VALIDATIONS->value] ?? null;
+            // Dernière décision correspondante : même règle qu'avant la
+            // normalisation (le JSON ne garantit pas l'ordre des étapes).
             $decision = null;
-            if (is_array($validations)) {
-                foreach ($validations as $validation) {
-                    if (is_array($validation) && ($validation['action'] ?? '') === $wantedAction) {
-                        $decision = $validation;
-                    }
+            foreach ($decisions as $candidate) {
+                if ($candidate['action'] === $wantedAction) {
+                    $decision = $candidate;
                 }
             }
 
-            if (is_array($decision)) {
+            if ($decision !== null) {
                 $label = match ($wantedAction) {
                     ValidationAction::Valider->value => 'Validée',
                     ValidationAction::Refuser->value => 'Refusée',
                     default => 'Annulée',
                 };
                 $line = $label;
-                $date = $html->formatDateTimeFr(is_string($decision['date'] ?? null) ? $decision['date'] : null);
+                $date = $html->formatDateTimeFr($decision['date']);
                 if ($date !== '') {
                     $line .= ' le ' . $html->escape($date);
                 }
-                $email = $decision['email'] ?? null;
-                $by = $html->displayUser(is_string($email) ? $email : '');
+                $by = $html->displayUser($decision['email'] ?? '');
                 if ($by !== '') {
                     $line .= ' par ' . $by;
                 }
-                $stepLabel = $decision['step_label'] ?? null;
-                if (is_string($stepLabel) && $stepLabel !== '') {
+                $stepLabel = $decision['step_label'] ?? '';
+                if ($stepLabel !== '') {
                     $line .= ' (' . $html->escape($stepLabel) . ')';
                 }
                 $lines .= '<span class="sub-tip-line">' . $line . '</span>';

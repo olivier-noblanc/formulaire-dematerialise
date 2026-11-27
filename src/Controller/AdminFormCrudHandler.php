@@ -207,7 +207,7 @@ final class AdminFormCrudHandler
     public static function handlePopulateSamples(): array
     {
         try {
-            return ['success' => \populate_sample_forms(App::db()->getPdo())];
+            return ['success' => \populate_sample_forms()];
         } catch (\Throwable $e) {
             // @silent-ok: fallback returns user-facing error (aucune écriture
             // partielle : SampleFormsService::populate() est transactionnel et

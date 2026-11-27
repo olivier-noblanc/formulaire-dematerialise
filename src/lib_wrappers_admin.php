@@ -9,6 +9,8 @@ declare(strict_types=1);
  * All functions here are thin wrappers delegating to OOP classes.
  */
 
+use App\Core\App;
+use App\Forms\SampleFormsService;
 use App\Render\AdminFormsRenderer;
 use App\Render\AdminSettingsRenderer;
 
@@ -33,9 +35,18 @@ function format_validation_results(array $result): string
 
 // ── SAMPLE FORMS ─────────────────────────────────────────────────
 
-function populate_sample_forms(\PDO $pdo): string
+/**
+ * Peuple la base avec les formulaires d'exemple (onboarding, outboarding,
+ * accès SI).
+ *
+ * Délègue au service enregistré dans le container : transaction et
+ * idempotence (slugs déjà présents ignorés) restent portées par
+ * SampleFormsService::populate(). Aucun PDO ne transite par l'appelant, qui
+ * n'a pas à connaître la couche d'accès aux données.
+ */
+function populate_sample_forms(): string
 {
-    return new \App\Forms\SampleFormsService(new \App\Repository\FormRepository(\App\Core\App::db()))->populate();
+    return App::getInstance()->get(SampleFormsService::class)->populate();
 }
 
 // ── ADMIN FORMS HANDLERS ─────────────────────────────────────────
