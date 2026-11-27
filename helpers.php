@@ -180,6 +180,10 @@ $_app->set(\App\Token\TokenService::class, new \App\Token\TokenService(
     $_app->get(\App\Repository\DelegationRepository::class)
 ));
 $_app->set(\App\Forms\ValidatorDataService::class, new \App\Forms\ValidatorDataService($_app->get(\App\Repository\SubmissionRepository::class), $_app->get(\App\Repository\FormRepository::class), $_app->get(\App\Forms\FieldService::class)));
+// SampleFormsService : populate_sample_forms() le résout depuis le container
+// (action admin populate_samples) — la transaction et l'idempotence restent
+// portées par le service.
+$_app->set(\App\Forms\SampleFormsService::class, new \App\Forms\SampleFormsService($_app->get(\App\Repository\FormRepository::class)));
 $_attachment_repo = $_app->get(\App\Repository\AttachmentRepository::class);
 $_app->set(\App\Attachment\AttachmentService::class, new \App\Attachment\AttachmentService($_attachment_repo));
 $_app->set(\App\Cron\CronService::class, new \App\Cron\CronService($_db_service, $_app->get(\App\Repository\LazyCronRepository::class)));

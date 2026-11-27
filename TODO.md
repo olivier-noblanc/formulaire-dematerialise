@@ -21,11 +21,12 @@
 ### v10.42.58 — CI PHPStan : 4 erreurs corrigées à la cause (2026-11-27)
 | Tâche | Détail |
 |-------|--------|
-| ✅ Fait | `AdminFormCrudHandler::handlePopulateSamples()` n'appelle plus `App::db()->getPdo()` (`noDirectPdo`) : `populate_sample_forms()` délègue à `SampleFormsService` via le container (`src/bootstrap.php`) — transaction/idempotence inchangées, portées par le service. |
+| ✅ Fait | `AdminFormCrudHandler::handlePopulateSamples()` n'appelle plus `App::db()->getPdo()` (`noDirectPdo`) : `populate_sample_forms()` délègue à `SampleFormsService` via le container (`src/bootstrap.php` + `helpers.php`) — transaction/idempotence inchangées, portées par le service. |
+| ✅ Fait | `SampleFormsService` enregistré **aussi** dans `helpers.php` (bootstrap réellement chargé par `index.php`/`router.php`/cron et par PHPUnit) : sinon `Service non enregistré` en prod + `ControllerRegistryTest::testHelpersAndBootstrapRegisterSameServices` rouge (seul test rouge du run 45985830599). |
 | ✅ Fait | `populate_sample_forms()` : paramètre `\PDO` mort retiré ; plus d'instanciation de service hors bootstrap. |
 | ✅ Fait | `HtmlService::formatRelanceSuffix()` supprimée (`shipmonk.deadMethod`) ; `formatRelanceCount()` reste la source unique du pluriel ; 4 tests `HtmlServiceTest` réécrits sur `formatRelanceCount()` ; `AGENTS.md` corrigé. |
 | ✅ Fait | Array shapes : `tokenTimelineLines()` (shape ouvert des colonnes lues) et `buildStatusTip()` (`list<array{action, date, email, step_label}>` produite par `validationDecisions(mixed)`, ancien `array<array-key, mixed>`). |
-| Validation | Aucune base `.db`, aucun test lourd local : `php -l` ciblé sur les fichiers PHP modifiés. CI arbitre. |
+| Validation | Aucune base `.db`, aucun test lourd local : `php -l` ciblé sur les fichiers PHP modifiés (+ `helpers.php`). CI arbitre. Parité helpers ↔ bootstrap rejouée hors PHPUnit : `helpersOnly=[]`, `bootstrapOnly=[]`. |
 
 ### v10.42.57 — suppression du CSS mort admin_forms (2026-11-26)
 | Tâche | Détail |
